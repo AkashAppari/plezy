@@ -46,6 +46,8 @@ class PlayerNative implements Player {
   final _audioDeviceController = StreamController<AudioDevice>.broadcast();
   final _audioDevicesController = StreamController<List<AudioDevice>>.broadcast();
   final _playbackRestartController = StreamController<void>.broadcast();
+  // MPV handles all formats, so this stream never emits (only ExoPlayer needs fallback)
+  final _backendSwitchedController = StreamController<void>.broadcast();
 
   StreamSubscription? _eventSubscription;
   bool _disposed = false;
@@ -68,6 +70,7 @@ class PlayerNative implements Player {
       audioDevice: _audioDeviceController.stream,
       audioDevices: _audioDevicesController.stream,
       playbackRestart: _playbackRestartController.stream,
+      backendSwitched: _backendSwitchedController.stream,
     );
 
     _setupEventListener();
@@ -656,5 +659,6 @@ class PlayerNative implements Player {
     await _audioDeviceController.close();
     await _audioDevicesController.close();
     await _playbackRestartController.close();
+    await _backendSwitchedController.close();
   }
 }
