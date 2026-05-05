@@ -255,6 +255,7 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
       defaultHeaders: config.headers,
       connectTimeout: MediaServerTimeouts.connect,
       receiveTimeout: MediaServerTimeouts.receive,
+      usePlexApiClient: true,
       client: httpClient,
     );
   }
@@ -270,9 +271,16 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
     required String serverId,
     String? serverName,
     required http.Client httpClient,
+    List<String>? prioritizedEndpoints,
     List<({String identifier, String gridEndpoint})> epgProviders = const [],
   }) {
-    final client = PlexClient._(config, serverId: serverId, serverName: serverName, httpClient: httpClient);
+    final client = PlexClient._(
+      config,
+      serverId: serverId,
+      serverName: serverName,
+      httpClient: httpClient,
+      prioritizedEndpoints: prioritizedEndpoints,
+    );
     client._providerLibraries = const [];
     client._providerEpg = epgProviders;
     return client;
@@ -287,6 +295,8 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
 
   /// Execute a GET request with endpoint failover retry. On timeout/connection
   /// errors the next endpoint is tried (once). Non-GET methods are not retried.
+  /// Optional hub surfaces disable endpoint failover so a slow row does not
+  /// move the whole client away from an otherwise working endpoint.
   @override
   Future<MediaServerResponse> _getWithFailover(
     String path, {
@@ -294,6 +304,7 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
     Map<String, String>? headers,
     Duration? timeout,
     AbortController? abort,
+    bool allowEndpointFailover = true,
   }) async {
     final gen = _endpointManager?.generation;
     try {
@@ -307,7 +318,8 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
       throwIfHttpError(response);
       return response;
     } on MediaServerHttpException catch (e) {
-      if (!_shouldAttemptFailover(e) ||
+      if (!allowEndpointFailover ||
+          !_shouldAttemptFailover(e) ||
           _failoverSwitching ||
           _endpointManager == null ||
           gen != _endpointManager.generation) {
@@ -1083,6 +1095,7 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
         queryParameters: {'identifier': 'home.continue,home.ondeck', 'count': count, 'includeGuids': 1},
         timeout: timeout,
         abort: abort,
+        allowEndpointFailover: false,
       ),
     );
     final sid = serverId;
@@ -1532,6 +1545,7 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
       final response = await _getWithFailover(
         '/hubs/sections/$sectionId',
         queryParameters: {'count': limit, 'includeGuids': 1},
+        allowEndpointFailover: false,
       );
       final sid = serverId;
       final sname = serverName;
@@ -1556,6 +1570,7 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
           queryParameters: {'count': limit, 'includeGuids': 1},
           timeout: timeout,
           abort: abort,
+          allowEndpointFailover: false,
         ),
       );
       final sid = serverId;
@@ -1571,7 +1586,11 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
   /// Get related hubs for a specific metadata item (collections, similar, "more from" director/actor)
   Future<List<PlexHubDto>> _getRelatedHubs(String ratingKey, {int count = 10}) async {
     try {
-      final response = await _getWithFailover('/hubs/metadata/$ratingKey/related', queryParameters: {'count': count});
+      final response = await _getWithFailover(
+        '/hubs/metadata/$ratingKey/related',
+        queryParameters: {'count': count},
+        allowEndpointFailover: false,
+      );
       final sid = serverId;
       final sname = serverName;
       final data = response.data as Map<String, dynamic>;

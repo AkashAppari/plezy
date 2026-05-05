@@ -61,6 +61,39 @@ void main() {
       expect(httpClient.requests.map((r) => r.url.path), everyElement('/hubs'));
       expect(httpClient.requests.map((r) => r.url.queryParameters['count']), everyElement('12'));
     });
+
+    test('fetchGlobalHubs retries transient failures without switching Plex endpoints', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      addTearDown(db.close);
+
+      const primary = 'http://primary:32400';
+      const fallback = 'http://fallback:32400';
+      final httpClient = _SequenceClient([
+        (_) async => throw TimeoutException('queued behind cold handshakes'),
+        (_) async => _jsonResponse(_globalHubsPayload()),
+      ]);
+      final client = PlexClient.forTesting(
+        config: PlexConfig(
+          baseUrl: primary,
+          token: 'token',
+          clientIdentifier: 'client-id',
+          product: 'Plezy',
+          version: 'test',
+        ),
+        serverId: 'server-id',
+        serverName: 'Server',
+        httpClient: httpClient,
+        prioritizedEndpoints: const [primary, fallback],
+      );
+      addTearDown(client.close);
+
+      final hubs = await client.fetchGlobalHubs(limit: 12);
+
+      expect(hubs, hasLength(1));
+      expect(client.config.baseUrl, primary);
+      expect(httpClient.requests.map((r) => r.url.origin), everyElement(primary));
+    });
   });
 }
 

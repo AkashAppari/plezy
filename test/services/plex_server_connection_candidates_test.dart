@@ -1,12 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/plex_auth_service.dart';
 
-Map<String, dynamic> _serverJson(Map<String, dynamic> connection) => {
+Map<String, dynamic> _serverJson(Map<String, dynamic> connection) => _serverJsonWithConnections([connection]);
+
+Map<String, dynamic> _serverJsonWithConnections(List<Map<String, dynamic>> connections) => {
   'name': 'Home Server',
   'clientIdentifier': 'srv-1',
   'accessToken': 'token-1',
   'owned': true,
-  'connections': [connection],
+  'connections': connections,
 };
 
 Map<String, dynamic> _connectionJson({
@@ -107,6 +109,42 @@ void main() {
       expect(server.connections.map((c) => c.uri), isNot(contains('http://plex.example.com')));
       expect(urls, contains('https://plex.example.com'));
       expect(urls, isNot(contains('http://plex.example.com:32400')));
+    });
+
+    test('treats custom public HTTPS preferred endpoint as remote for failover filtering', () {
+      const preferred = 'https://plex.example.com';
+      const localPlexDirect = 'https://192-168-1-50.abc.plex.direct:32400';
+      const remotePlexDirect = 'https://203-0-113-10.abc.plex.direct:32400';
+      final server = PlexServer.fromJson(
+        _serverJsonWithConnections([
+          _connectionJson(protocol: 'https', address: '192.168.1.50', port: 32400, uri: localPlexDirect, local: true),
+          _connectionJson(protocol: 'https', address: '203.0.113.10', port: 32400, uri: remotePlexDirect),
+        ]),
+      );
+
+      final urls = server.prioritizedEndpointUrls(preferredFirst: preferred);
+
+      expect(server.networkClassForUrl(preferred), PlexNetworkClass.remote);
+      expect(urls.first, preferred);
+      expect(urls, contains(remotePlexDirect));
+      expect(urls, isNot(contains(localPlexDirect)));
+      expect(urls, isNot(contains('http://192.168.1.50:32400')));
+    });
+
+    test('does not treat custom local-looking preferred endpoint as remote', () {
+      const preferred = 'https://plex.lan';
+      const localPlexDirect = 'https://192-168-1-50.abc.plex.direct:32400';
+      final server = PlexServer.fromJson(
+        _serverJsonWithConnections([
+          _connectionJson(protocol: 'https', address: '192.168.1.50', port: 32400, uri: localPlexDirect, local: true),
+        ]),
+      );
+
+      final urls = server.prioritizedEndpointUrls(preferredFirst: preferred);
+
+      expect(server.networkClassForUrl(preferred), PlexNetworkClass.unknown);
+      expect(urls.first, preferred);
+      expect(urls, contains(localPlexDirect));
     });
   });
 }

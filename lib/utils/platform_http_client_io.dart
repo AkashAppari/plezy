@@ -1,4 +1,4 @@
-import 'dart:io' show Platform;
+import 'dart:io' show HttpClient, Platform;
 
 import 'package:cronet_http/cronet_http.dart';
 import 'package:cupertino_http/cupertino_http.dart';
@@ -56,4 +56,16 @@ http.Client createPlatformClient() {
   }
   _logPlatformClient(Platform.operatingSystem, 'IOClient');
   return IOClient();
+}
+
+http.Client createPlexApiClient() {
+  if (Platform.isLinux) {
+    _logPlatformClient('linux', 'IOClient (Plex API tuned)');
+    return IOClient(
+      HttpClient()
+        ..maxConnectionsPerHost = 12
+        ..idleTimeout = const Duration(seconds: 90),
+    );
+  }
+  return createPlatformClient();
 }

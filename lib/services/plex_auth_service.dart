@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io' show InternetAddress;
+import 'dart:io' show InternetAddress, InternetAddressType;
 import 'storage_service.dart';
 import 'plex_client.dart';
 import '../models/plex/plex_user_profile.dart';
@@ -604,11 +604,22 @@ class PlexServer {
     return null;
   }
 
-  /// Classify [url] against the server's published connections. Returns
-  /// [PlexNetworkClass.unknown] when the URL doesn't match any known endpoint
-  /// (e.g. a manually-entered custom URL).
+  /// Classify [url] against the server's published connections. Custom public
+  /// HTTPS hostnames are treated as remote so failover avoids LAN-only URLs.
   PlexNetworkClass networkClassForUrl(String url) {
-    return _candidateForUrl(url)?.connection.networkClass ?? PlexNetworkClass.unknown;
+    return _candidateForUrl(url)?.connection.networkClass ?? _classifyCustomPreferredUrl(url);
+  }
+
+  PlexNetworkClass _classifyCustomPreferredUrl(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null || uri.scheme.toLowerCase() != 'https') return PlexNetworkClass.unknown;
+
+    final host = _normalizedHost(uri.host);
+    if (host.isEmpty || _isLocalOrPrivateHost(host)) return PlexNetworkClass.unknown;
+
+    // A manually entered HTTPS reverse-proxy hostname behaves like a remote
+    // endpoint for failover: LAN candidates often cannot be reached from it.
+    return PlexNetworkClass.remote;
   }
 
   List<_ConnectionCandidate> _buildPrioritizedCandidates({Set<String>? excludeUrls, PlexNetworkClass? restrictTo}) {
@@ -904,6 +915,42 @@ class PlexServer {
   static String _normalizedHost(String host) {
     final bare = host.startsWith('[') && host.endsWith(']') ? host.substring(1, host.length - 1) : host;
     return bare.toLowerCase();
+  }
+
+  static bool _isLocalOrPrivateHost(String host) {
+    final address = InternetAddress.tryParse(host);
+    if (address != null) return _isPrivateOrLocalAddress(address);
+
+    if (host == 'localhost' || !host.contains('.')) return true;
+    if (host.endsWith('.local') || host.endsWith('.lan') || host.endsWith('.home.arpa') || host.endsWith('.internal')) {
+      return true;
+    }
+
+    return false;
+  }
+
+  static bool _isPrivateOrLocalAddress(InternetAddress address) {
+    final bytes = address.rawAddress;
+    if (address.type == InternetAddressType.IPv4 && bytes.length == 4) {
+      final a = bytes[0];
+      final b = bytes[1];
+      return a == 0 ||
+          a == 10 ||
+          a == 127 ||
+          (a == 169 && b == 254) ||
+          (a == 172 && b >= 16 && b <= 31) ||
+          (a == 192 && b == 168);
+    }
+
+    if (address.type == InternetAddressType.IPv6 && bytes.length == 16) {
+      final first = bytes[0];
+      final second = bytes[1];
+      final isLoopback = bytes.take(15).every((b) => b == 0) && bytes[15] == 1;
+      final isUnspecified = bytes.every((b) => b == 0);
+      return isLoopback || isUnspecified || (first & 0xfe) == 0xfc || (first == 0xfe && (second & 0xc0) == 0x80);
+    }
+
+    return false;
   }
 
   /// Returns true if the address is known to be unreachable from external
