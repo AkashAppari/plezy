@@ -31,6 +31,7 @@ import 'services/native_window_service.dart';
 import 'services/fullscreen_state_manager.dart';
 import 'services/settings_service.dart';
 import 'utils/platform_detector.dart';
+import 'services/apple_tv_remote_touch_service.dart';
 import 'services/discord_rpc_service.dart';
 import 'services/gamepad_service.dart';
 import 'services/trakt/trakt_scrobble_service.dart';
@@ -214,6 +215,9 @@ Future<void> _bootstrapApp() async {
   // Initialize gamepad service (all platforms — universal_gamepad auto-registers
   // and intercepts input events, so we must listen to re-dispatch them)
   GamepadService.instance.start();
+  if (PlatformDetector.isAppleTV()) {
+    AppleTvRemoteTouchService.instance.start();
+  }
 
   if (PlatformDetector.isDesktopOS()) {
     unawaited(DiscordRPCService.instance.initialize());

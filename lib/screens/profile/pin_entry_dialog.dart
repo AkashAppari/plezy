@@ -6,7 +6,6 @@ import '../../focus/dpad_navigator.dart';
 import '../../focus/focus_theme.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../focus/key_event_utils.dart';
-import '../../focus/key_repeat_helper.dart';
 import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
@@ -28,6 +27,8 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
   late AnimationController _shakeController;
   late Animation<double> _shakeAnimation;
   final _pinInputKey = GlobalKey<_TvPinInputState>();
+  final _cancelFocusNode = FocusNode(debugLabel: 'PinCancelButton');
+  final _submitFocusNode = FocusNode(debugLabel: 'PinSubmitButton');
 
   @override
   void initState() {
@@ -52,6 +53,8 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
   @override
   void dispose() {
     _shakeController.dispose();
+    _cancelFocusNode.dispose();
+    _submitFocusNode.dispose();
     super.dispose();
   }
 
@@ -61,6 +64,18 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
 
   void _cancel() {
     Navigator.of(context).pop(null);
+  }
+
+  void _focusPinDigit(int index) {
+    _pinInputKey.currentState?._requestDigitFocus(index);
+  }
+
+  void _focusSubmit() {
+    _submitFocusNode.requestFocus();
+  }
+
+  void _focusCancel() {
+    _cancelFocusNode.requestFocus();
   }
 
   @override
@@ -93,6 +108,7 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
               hasError: widget.errorMessage != null,
               isMobile: isMobile,
               isTV: isTV,
+              onMoveToSubmit: isMobile ? null : _focusSubmit,
             ),
             if (widget.errorMessage != null) ...[
               const SizedBox(height: 12),
@@ -102,12 +118,20 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
         ),
         actions: [
           FocusableButton(
+            focusNode: _cancelFocusNode,
             onPressed: _cancel,
+            onNavigateRight: isMobile ? null : _focusSubmit,
+            onNavigateUp: () => _focusPinDigit(0),
+            onBack: _cancel,
             child: TextButton(onPressed: _cancel, child: Text(t.common.cancel)),
           ),
           if (!isMobile)
             FocusableButton(
+              focusNode: _submitFocusNode,
               onPressed: () => _pinInputKey.currentState?._trySubmit(),
+              onNavigateLeft: _focusCancel,
+              onNavigateUp: () => _focusPinDigit(3),
+              onBack: _cancel,
               child: FilledButton(
                 onPressed: () => _pinInputKey.currentState?._trySubmit(),
                 child: Text(t.common.submit),
@@ -125,6 +149,7 @@ class _TvPinInput extends StatefulWidget {
   final bool hasError;
   final bool isMobile;
   final bool isTV;
+  final VoidCallback? onMoveToSubmit;
 
   const _TvPinInput({
     super.key,
@@ -133,13 +158,14 @@ class _TvPinInput extends StatefulWidget {
     required this.hasError,
     required this.isMobile,
     required this.isTV,
+    this.onMoveToSubmit,
   });
 
   @override
   State<_TvPinInput> createState() => _TvPinInputState();
 }
 
-class _TvPinInputState extends State<_TvPinInput> with KeyRepeatHelper<_TvPinInput>, ControllerDisposerMixin {
+class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
   final List<int?> _digits = [null, null, null, null];
   int _activeIndex = 0;
   bool _isFocused = false;
@@ -168,7 +194,6 @@ class _TvPinInputState extends State<_TvPinInput> with KeyRepeatHelper<_TvPinInp
 
   @override
   void dispose() {
-    stopRepeat();
     _focusNode.dispose();
     for (final node in _mobileFocusNodes) {
       node.dispose();
@@ -197,6 +222,12 @@ class _TvPinInputState extends State<_TvPinInput> with KeyRepeatHelper<_TvPinInp
   void _trySubmit() {
     final pin = _getPin();
     if (pin != null) widget.onSubmit(pin);
+  }
+
+  void _requestDigitFocus(int index) {
+    final nextIndex = index < 0 ? 0 : (index > 3 ? 3 : index);
+    setState(() => _activeIndex = nextIndex);
+    _focusNode.requestFocus();
   }
 
   void _incrementDigit() {
@@ -243,6 +274,9 @@ class _TvPinInputState extends State<_TvPinInput> with KeyRepeatHelper<_TvPinInp
     final backResult = handleBackKeyAction(event, widget.onCancel);
     if (backResult != KeyEventResult.ignored) return backResult;
 
+    final selectResult = handleOneShotSelect(event, _trySubmit);
+    if (selectResult != KeyEventResult.ignored) return selectResult;
+
     if (event is KeyDownEvent) {
       // Number key input (desktop only, TV uses d-pad)
       if (!widget.isTV) {
@@ -268,16 +302,18 @@ class _TvPinInputState extends State<_TvPinInput> with KeyRepeatHelper<_TvPinInp
         });
         return KeyEventResult.handled;
       }
+    }
 
+    if (event.isActionable) {
       // Up arrow → increment digit
       if (key.isUpKey) {
-        startRepeat(_incrementDigit);
+        _incrementDigit();
         return KeyEventResult.handled;
       }
 
       // Down arrow → decrement digit
       if (key.isDownKey) {
-        startRepeat(_decrementDigit);
+        _decrementDigit();
         return KeyEventResult.handled;
       }
 
@@ -295,20 +331,7 @@ class _TvPinInputState extends State<_TvPinInput> with KeyRepeatHelper<_TvPinInp
           setState(() => _activeIndex++);
           return KeyEventResult.handled;
         }
-        // At rightmost digit, let focus move to submit button
-        return KeyEventResult.ignored;
-      }
-
-      // Select / Enter → submit
-      if (key.isSelectKey) {
-        _trySubmit();
-        return KeyEventResult.handled;
-      }
-    }
-
-    if (event is KeyUpEvent) {
-      if (key.isUpKey || key.isDownKey) {
-        stopRepeat();
+        widget.onMoveToSubmit?.call();
         return KeyEventResult.handled;
       }
     }
@@ -367,7 +390,6 @@ class _TvPinInputState extends State<_TvPinInput> with KeyRepeatHelper<_TvPinInp
       autofocus: true,
       onFocusChange: (hasFocus) {
         setState(() => _isFocused = hasFocus);
-        if (!hasFocus) stopRepeat();
       },
       onKeyEvent: _handleKeyEvent,
       child: _buildDigitRow(context, showArrows: showArrows),
