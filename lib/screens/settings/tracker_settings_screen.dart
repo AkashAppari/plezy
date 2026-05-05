@@ -12,15 +12,11 @@ import '../../services/trackers/simkl/simkl_tracker.dart';
 import '../../services/trackers/tracker_constants.dart';
 import '../../services/settings_service.dart';
 import '../../utils/dialogs.dart';
-import '../../widgets/app_icon.dart';
 import '../../widgets/device_code_dialog.dart';
-import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/oauth_proxy_dialog.dart';
-import '../../widgets/setting_tile.dart';
-import '../../widgets/settings_builder.dart';
-import '../../widgets/settings_section.dart';
+import '../../widgets/settings_page.dart';
+import 'tracker_account_settings_body.dart';
 import 'tracker_connect_launcher.dart';
-import 'tracker_library_filter_screen.dart';
 
 Future<void> startMalConnection(BuildContext context) {
   final account = context.read<TrackersProvider>();
@@ -145,58 +141,27 @@ class TrackerSettingsScreen extends StatelessWidget {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (context.mounted) Navigator.of(context).pop();
           });
-          return FocusedScrollScaffold(
+          return SettingsPage.slivers(
             title: title,
             slivers: const [SliverFillRemaining(child: SizedBox.shrink())],
           );
         }
 
         final username = config.username(account);
-        return FocusedScrollScaffold(
+        return TrackerAccountSettingsBody(
           title: title,
-          slivers: [
-            SliverList(
-              delegate: SliverChildListDelegate([
-                ListTile(
-                  leading: const AppIcon(Symbols.account_circle_rounded, fill: 1),
-                  title: Text(username != null ? t.trackers.connectedAs(username: username) : config.displayName),
-                ),
-                SettingsSectionHeader(t.settings.behavior),
-                SettingSwitchTile(
-                  pref: config.scrobblePref,
-                  icon: Symbols.auto_timer,
-                  title: t.trackers.scrobble,
-                  subtitle: t.trackers.scrobbleDescription,
-                  onAfterWrite: config.onScrobbleChanged,
-                ),
-                SettingsBuilder(
-                  prefs: [
-                    SettingsService.trackerFilterModePref(config.service),
-                    SettingsService.trackerFilterIdsPref(config.service),
-                  ],
-                  builder: (context) {
-                    final settings = SettingsService.instanceOrNull!;
-                    return ListTile(
-                      leading: const AppIcon(Symbols.filter_list_rounded, fill: 1),
-                      title: Text(t.trackers.libraryFilter.title),
-                      subtitle: Text(TrackerLibraryFilterScreen.subtitleFor(settings, config.service)),
-                      trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(builder: (_) => TrackerLibraryFilterScreen(service: config.service)),
-                      ),
-                    );
-                  },
-                ),
-                const Divider(height: 32),
-                ListTile(
-                  leading: AppIcon(Symbols.link_off_rounded, fill: 1, color: Theme.of(context).colorScheme.error),
-                  title: Text(t.common.disconnect, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                  onTap: () => _disconnect(context, account),
-                ),
-                const SizedBox(height: 24),
-              ]),
+          accountTitle: username != null ? t.trackers.connectedAs(username: username) : config.displayName,
+          service: config.service,
+          toggles: [
+            TrackerSettingsToggle(
+              pref: config.scrobblePref,
+              icon: Symbols.auto_timer,
+              title: t.trackers.scrobble,
+              subtitle: t.trackers.scrobbleDescription,
+              onAfterWrite: config.onScrobbleChanged,
             ),
           ],
+          onDisconnect: () => _disconnect(context, account),
         );
       },
     );

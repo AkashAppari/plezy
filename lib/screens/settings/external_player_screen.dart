@@ -10,9 +10,9 @@ import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/external_player_models.dart';
 import '../../services/settings_service.dart';
-import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
+import '../../widgets/settings_page.dart';
 import '../../widgets/settings_section.dart';
 
 class ExternalPlayerScreen extends StatelessWidget {
@@ -21,46 +21,42 @@ class ExternalPlayerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final knownPlayers = KnownPlayers.getForCurrentPlatform();
-    return FocusedScrollScaffold(
+    return SettingsPage(
       title: Text(t.externalPlayer.title),
-      slivers: [
-        SliverList(
-          delegate: SliverChildListDelegate([
-            SettingSwitchTile(
-              pref: SettingsService.useExternalPlayer,
-              icon: Symbols.open_in_new_rounded,
-              title: t.externalPlayer.useExternalPlayer,
-              subtitle: t.externalPlayer.useExternalPlayerDescription,
-            ),
-            SettingsBuilder(
-              prefs: [
-                SettingsService.useExternalPlayer,
-                SettingsService.selectedExternalPlayer,
-                SettingsService.customExternalPlayers,
-              ],
-              builder: (context) {
-                final svc = SettingsService.instanceOrNull!;
-                if (!svc.read(SettingsService.useExternalPlayer)) return const SizedBox.shrink();
-                final selected = svc.read(SettingsService.selectedExternalPlayer);
-                final custom = svc.read(SettingsService.customExternalPlayers);
-                return Column(
-                  children: [
-                    SettingsSectionHeader(t.externalPlayer.selectPlayer),
-                    ...knownPlayers.map((p) => _PlayerTile(player: p, selectedId: selected.id)),
-                    SettingsSectionHeader(t.externalPlayer.customPlayers),
-                    ...custom.map((p) => _PlayerTile(player: p, selectedId: selected.id, isCustom: true)),
-                    ListTile(
-                      leading: const AppIcon(Symbols.add_rounded, fill: 1),
-                      title: Text(t.externalPlayer.addCustomPlayer),
-                      onTap: () => _showAddCustomPlayerDialog(context),
-                    ),
-                  ],
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-          ]),
+      children: [
+        SettingSwitchTile(
+          pref: SettingsService.useExternalPlayer,
+          icon: Symbols.open_in_new_rounded,
+          title: t.externalPlayer.useExternalPlayer,
+          subtitle: t.externalPlayer.useExternalPlayerDescription,
         ),
+        SettingsBuilder(
+          prefs: [
+            SettingsService.useExternalPlayer,
+            SettingsService.selectedExternalPlayer,
+            SettingsService.customExternalPlayers,
+          ],
+          builder: (context) {
+            final svc = SettingsService.instanceOrNull!;
+            if (!svc.read(SettingsService.useExternalPlayer)) return const SizedBox.shrink();
+            final selected = svc.read(SettingsService.selectedExternalPlayer);
+            final custom = svc.read(SettingsService.customExternalPlayers);
+            return Column(
+              children: [
+                SettingsSectionHeader(t.externalPlayer.selectPlayer),
+                ...knownPlayers.map((p) => _PlayerTile(player: p, selectedId: selected.id)),
+                SettingsSectionHeader(t.externalPlayer.customPlayers),
+                ...custom.map((p) => _PlayerTile(player: p, selectedId: selected.id, isCustom: true)),
+                ListTile(
+                  leading: const AppIcon(Symbols.add_rounded, fill: 1),
+                  title: Text(t.externalPlayer.addCustomPlayer),
+                  onTap: () => _showAddCustomPlayerDialog(context),
+                ),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 24),
       ],
     );
   }

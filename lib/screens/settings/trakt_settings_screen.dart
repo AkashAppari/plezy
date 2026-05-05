@@ -10,14 +10,10 @@ import '../../services/trackers/tracker_constants.dart';
 import '../../services/trakt/trakt_scrobble_service.dart';
 import '../../services/trakt/trakt_sync_service.dart';
 import '../../utils/dialogs.dart';
-import '../../widgets/app_icon.dart';
 import '../../widgets/device_code_dialog.dart';
-import '../../widgets/focused_scroll_scaffold.dart';
-import '../../widgets/setting_tile.dart';
-import '../../widgets/settings_builder.dart';
-import '../../widgets/settings_section.dart';
+import '../../widgets/settings_page.dart';
+import 'tracker_account_settings_body.dart';
 import 'tracker_connect_launcher.dart';
-import 'tracker_library_filter_screen.dart';
 
 Future<void> startTraktConnection(BuildContext context) {
   final account = context.read<TraktAccountProvider>();
@@ -61,68 +57,35 @@ class TraktSettingsScreen extends StatelessWidget {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (context.mounted) Navigator.of(context).pop();
           });
-          return FocusedScrollScaffold(
+          return SettingsPage.slivers(
             title: Text(t.trakt.title),
             slivers: const [SliverFillRemaining(child: SizedBox.shrink())],
           );
         }
 
         final username = account.username;
-        return FocusedScrollScaffold(
+        return TrackerAccountSettingsBody(
           title: Text(t.trakt.title),
-          slivers: [
-            SliverList(
-              delegate: SliverChildListDelegate([
-                ListTile(
-                  leading: const AppIcon(Symbols.account_circle_rounded, fill: 1),
-                  title: Text(username != null ? t.trakt.connectedAs(username: username) : t.trakt.connected),
-                  subtitle: Text(t.trakt.connected),
-                ),
-                SettingsSectionHeader(t.settings.behavior),
-                SettingSwitchTile(
-                  pref: SettingsService.enableTraktScrobble,
-                  icon: Symbols.auto_timer,
-                  title: t.trakt.scrobble,
-                  subtitle: t.trakt.scrobbleDescription,
-                  onAfterWrite: TraktScrobbleService.instance.setEnabled,
-                ),
-                SettingSwitchTile(
-                  pref: SettingsService.enableTraktWatchedSync,
-                  icon: Symbols.check_circle_rounded,
-                  title: t.trakt.watchedSync,
-                  subtitle: t.trakt.watchedSyncDescription,
-                  onAfterWrite: TraktSyncService.instance.setEnabled,
-                ),
-                SettingsBuilder(
-                  prefs: [
-                    SettingsService.trackerFilterModePref(TrackerService.trakt),
-                    SettingsService.trackerFilterIdsPref(TrackerService.trakt),
-                  ],
-                  builder: (context) {
-                    final settings = SettingsService.instanceOrNull!;
-                    return ListTile(
-                      leading: const AppIcon(Symbols.filter_list_rounded, fill: 1),
-                      title: Text(t.trackers.libraryFilter.title),
-                      subtitle: Text(TrackerLibraryFilterScreen.subtitleFor(settings, TrackerService.trakt)),
-                      trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const TrackerLibraryFilterScreen(service: TrackerService.trakt),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                const Divider(height: 32),
-                ListTile(
-                  leading: AppIcon(Symbols.link_off_rounded, fill: 1, color: Theme.of(context).colorScheme.error),
-                  title: Text(t.common.disconnect, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                  onTap: () => _disconnect(context, account),
-                ),
-                const SizedBox(height: 24),
-              ]),
+          accountTitle: username != null ? t.trakt.connectedAs(username: username) : t.trakt.connected,
+          accountSubtitle: t.trakt.connected,
+          service: TrackerService.trakt,
+          toggles: [
+            TrackerSettingsToggle(
+              pref: SettingsService.enableTraktScrobble,
+              icon: Symbols.auto_timer,
+              title: t.trakt.scrobble,
+              subtitle: t.trakt.scrobbleDescription,
+              onAfterWrite: TraktScrobbleService.instance.setEnabled,
+            ),
+            TrackerSettingsToggle(
+              pref: SettingsService.enableTraktWatchedSync,
+              icon: Symbols.check_circle_rounded,
+              title: t.trakt.watchedSync,
+              subtitle: t.trakt.watchedSyncDescription,
+              onAfterWrite: TraktSyncService.instance.setEnabled,
             ),
           ],
+          onDisconnect: () => _disconnect(context, account),
         );
       },
     );

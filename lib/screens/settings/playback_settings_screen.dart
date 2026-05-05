@@ -12,9 +12,9 @@ import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
-import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
+import '../../widgets/settings_page.dart';
 import '../../widgets/settings_section.dart';
 import 'external_player_screen.dart';
 import 'mpv_config_screen.dart';
@@ -45,163 +45,159 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
   Widget build(BuildContext context) {
     final isMobile = PlatformDetector.isMobile(context);
 
-    return FocusedScrollScaffold(
+    return SettingsPage(
       title: Text(t.settings.videoPlayback),
-      slivers: [
-        SliverList(
-          delegate: SliverChildListDelegate([
-            SettingsSectionHeader(t.settings.player),
-            if (Platform.isAndroid) _playerBackendSelector(),
-            _externalPlayerTile(),
-            _hardwareDecodingTile(),
-            if ((Platform.isAndroid && !PlatformDetector.isTV()) || Platform.isIOS || Platform.isMacOS) _autoPipTile(),
-            if (Platform.isAndroid) _matchContentFrameRateTile(),
-            if (Platform.isWindows) _matchRefreshRateTile(),
-            if (Platform.isWindows) _matchDynamicRangeTile(),
-            _displaySwitchDelayTile(),
-            _tunneledPlaybackTile(),
-            _bufferSizeTile(),
-            _defaultQualityTile(),
+      children: [
+        SettingsSectionHeader(t.settings.player),
+        if (Platform.isAndroid) _playerBackendSelector(),
+        _externalPlayerTile(),
+        _hardwareDecodingTile(),
+        if ((Platform.isAndroid && !PlatformDetector.isTV()) || Platform.isIOS || Platform.isMacOS) _autoPipTile(),
+        if (Platform.isAndroid) _matchContentFrameRateTile(),
+        if (Platform.isWindows) _matchRefreshRateTile(),
+        if (Platform.isWindows) _matchDynamicRangeTile(),
+        _displaySwitchDelayTile(),
+        _tunneledPlaybackTile(),
+        _bufferSizeTile(),
+        _defaultQualityTile(),
 
-            SettingsSectionHeader(t.settings.subtitlesAndConfig),
-            SettingNavigationTile(
-              icon: Symbols.subtitles_rounded,
-              title: t.settings.subtitleStyling,
-              subtitle: t.settings.subtitleStylingDescription,
-              destinationBuilder: (_) => const SubtitleStylingScreen(),
-            ),
-            _mpvConfigTile(),
-
-            SettingsSectionHeader(t.settings.seekAndTiming),
-            SettingNumberTile(
-              pref: SettingsService.seekTimeSmall,
-              icon: Symbols.replay_10_rounded,
-              title: t.settings.smallSkipDuration,
-              subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
-              labelText: t.settings.secondsLabel,
-              suffixText: t.settings.secondsShort,
-              min: 1,
-              max: 120,
-              onAfterWrite: (_) => _keyboardService?.refreshFromStorage(),
-            ),
-            SettingNumberTile(
-              pref: SettingsService.seekTimeLarge,
-              icon: Symbols.replay_30_rounded,
-              title: t.settings.largeSkipDuration,
-              subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
-              labelText: t.settings.secondsLabel,
-              suffixText: t.settings.secondsShort,
-              min: 1,
-              max: 120,
-              onAfterWrite: (_) => _keyboardService?.refreshFromStorage(),
-            ),
-            SettingNumberTile(
-              pref: SettingsService.rewindOnResume,
-              icon: Symbols.replay_rounded,
-              title: t.settings.rewindOnResume,
-              subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
-              labelText: t.settings.secondsLabel,
-              suffixText: t.settings.secondsShort,
-              min: 0,
-              max: 10,
-            ),
-            SettingNumberTile(
-              pref: SettingsService.sleepTimerDuration,
-              icon: Symbols.bedtime_rounded,
-              title: t.settings.defaultSleepTimer,
-              subtitleBuilder: (v) => t.settings.minutesUnit(minutes: v.toString()),
-              labelText: t.settings.minutesLabel,
-              suffixText: t.settings.minutesShort,
-              min: 5,
-              max: 240,
-            ),
-            SettingNumberTile(
-              pref: SettingsService.maxVolume,
-              icon: Symbols.volume_up_rounded,
-              title: t.settings.maxVolume,
-              subtitleBuilder: (v) => t.settings.maxVolumePercent(percent: v.toString()),
-              labelText: t.settings.maxVolumeDescription,
-              suffixText: '%',
-              min: 100,
-              max: 300,
-            ),
-
-            SettingsSectionHeader(t.settings.behavior),
-            if (DiscordRPCService.isAvailable)
-              SettingSwitchTile(
-                pref: SettingsService.enableDiscordRPC,
-                icon: Symbols.chat_rounded,
-                title: t.settings.discordRichPresence,
-                subtitle: t.settings.discordRichPresenceDescription,
-                onAfterWrite: (v) => DiscordRPCService.instance.setEnabled(v),
-              ),
-            if (PlatformDetector.shouldActAsRemoteHost(context))
-              SettingSwitchTile(
-                pref: SettingsService.enableCompanionRemoteServer,
-                icon: Symbols.phone_android_rounded,
-                title: t.settings.companionRemoteServer,
-                subtitle: t.settings.companionRemoteServerDescription,
-              ),
-            SettingSwitchTile(
-              pref: SettingsService.rememberTrackSelections,
-              icon: Symbols.bookmark_rounded,
-              title: t.settings.rememberTrackSelections,
-              subtitle: t.settings.rememberTrackSelectionsDescription,
-            ),
-            if (!isMobile)
-              SettingSwitchTile(
-                pref: SettingsService.clickVideoTogglesPlayback,
-                icon: Symbols.play_pause_rounded,
-                title: t.settings.clickVideoTogglesPlayback,
-                subtitle: t.settings.clickVideoTogglesPlaybackDescription,
-              ),
-
-            SettingsSectionHeader(t.settings.autoSkip),
-            SettingSwitchTile(
-              pref: SettingsService.autoSkipIntro,
-              icon: Symbols.fast_forward_rounded,
-              title: t.settings.autoSkipIntro,
-              subtitle: t.settings.autoSkipIntroDescription,
-            ),
-            SettingSwitchTile(
-              pref: SettingsService.autoSkipCredits,
-              icon: Symbols.skip_next_rounded,
-              title: t.settings.autoSkipCredits,
-              subtitle: t.settings.autoSkipCreditsDescription,
-            ),
-            SettingSwitchTile(
-              pref: SettingsService.forceSkipMarkerFallback,
-              icon: Symbols.tune_rounded,
-              title: t.settings.forceSkipMarkerFallback,
-              subtitle: t.settings.forceSkipMarkerFallbackDescription,
-            ),
-            SettingNumberTile(
-              pref: SettingsService.autoSkipDelay,
-              icon: Symbols.timer_rounded,
-              title: t.settings.autoSkipDelay,
-              subtitleBuilder: (v) => t.settings.autoSkipDelayDescription(seconds: v.toString()),
-              labelText: t.settings.secondsLabel,
-              suffixText: t.settings.secondsShort,
-              min: 1,
-              max: 30,
-            ),
-            SettingRegexTile(
-              pref: SettingsService.introPattern,
-              icon: Symbols.match_case_rounded,
-              title: t.settings.introPattern,
-              subtitle: t.settings.introPatternDescription,
-              defaultValue: SettingsService.defaultIntroPattern,
-            ),
-            SettingRegexTile(
-              pref: SettingsService.creditsPattern,
-              icon: Symbols.match_case_rounded,
-              title: t.settings.creditsPattern,
-              subtitle: t.settings.creditsPatternDescription,
-              defaultValue: SettingsService.defaultCreditsPattern,
-            ),
-            const SizedBox(height: 24),
-          ]),
+        SettingsSectionHeader(t.settings.subtitlesAndConfig),
+        SettingNavigationTile(
+          icon: Symbols.subtitles_rounded,
+          title: t.settings.subtitleStyling,
+          subtitle: t.settings.subtitleStylingDescription,
+          destinationBuilder: (_) => const SubtitleStylingScreen(),
         ),
+        _mpvConfigTile(),
+
+        SettingsSectionHeader(t.settings.seekAndTiming),
+        SettingNumberTile(
+          pref: SettingsService.seekTimeSmall,
+          icon: Symbols.replay_10_rounded,
+          title: t.settings.smallSkipDuration,
+          subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
+          labelText: t.settings.secondsLabel,
+          suffixText: t.settings.secondsShort,
+          min: 1,
+          max: 120,
+          onAfterWrite: (_) => _keyboardService?.refreshFromStorage(),
+        ),
+        SettingNumberTile(
+          pref: SettingsService.seekTimeLarge,
+          icon: Symbols.replay_30_rounded,
+          title: t.settings.largeSkipDuration,
+          subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
+          labelText: t.settings.secondsLabel,
+          suffixText: t.settings.secondsShort,
+          min: 1,
+          max: 120,
+          onAfterWrite: (_) => _keyboardService?.refreshFromStorage(),
+        ),
+        SettingNumberTile(
+          pref: SettingsService.rewindOnResume,
+          icon: Symbols.replay_rounded,
+          title: t.settings.rewindOnResume,
+          subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
+          labelText: t.settings.secondsLabel,
+          suffixText: t.settings.secondsShort,
+          min: 0,
+          max: 10,
+        ),
+        SettingNumberTile(
+          pref: SettingsService.sleepTimerDuration,
+          icon: Symbols.bedtime_rounded,
+          title: t.settings.defaultSleepTimer,
+          subtitleBuilder: (v) => t.settings.minutesUnit(minutes: v.toString()),
+          labelText: t.settings.minutesLabel,
+          suffixText: t.settings.minutesShort,
+          min: 5,
+          max: 240,
+        ),
+        SettingNumberTile(
+          pref: SettingsService.maxVolume,
+          icon: Symbols.volume_up_rounded,
+          title: t.settings.maxVolume,
+          subtitleBuilder: (v) => t.settings.maxVolumePercent(percent: v.toString()),
+          labelText: t.settings.maxVolumeDescription,
+          suffixText: '%',
+          min: 100,
+          max: 300,
+        ),
+
+        SettingsSectionHeader(t.settings.behavior),
+        if (DiscordRPCService.isAvailable)
+          SettingSwitchTile(
+            pref: SettingsService.enableDiscordRPC,
+            icon: Symbols.chat_rounded,
+            title: t.settings.discordRichPresence,
+            subtitle: t.settings.discordRichPresenceDescription,
+            onAfterWrite: (v) => DiscordRPCService.instance.setEnabled(v),
+          ),
+        if (PlatformDetector.shouldActAsRemoteHost(context))
+          SettingSwitchTile(
+            pref: SettingsService.enableCompanionRemoteServer,
+            icon: Symbols.phone_android_rounded,
+            title: t.settings.companionRemoteServer,
+            subtitle: t.settings.companionRemoteServerDescription,
+          ),
+        SettingSwitchTile(
+          pref: SettingsService.rememberTrackSelections,
+          icon: Symbols.bookmark_rounded,
+          title: t.settings.rememberTrackSelections,
+          subtitle: t.settings.rememberTrackSelectionsDescription,
+        ),
+        if (!isMobile)
+          SettingSwitchTile(
+            pref: SettingsService.clickVideoTogglesPlayback,
+            icon: Symbols.play_pause_rounded,
+            title: t.settings.clickVideoTogglesPlayback,
+            subtitle: t.settings.clickVideoTogglesPlaybackDescription,
+          ),
+
+        SettingsSectionHeader(t.settings.autoSkip),
+        SettingSwitchTile(
+          pref: SettingsService.autoSkipIntro,
+          icon: Symbols.fast_forward_rounded,
+          title: t.settings.autoSkipIntro,
+          subtitle: t.settings.autoSkipIntroDescription,
+        ),
+        SettingSwitchTile(
+          pref: SettingsService.autoSkipCredits,
+          icon: Symbols.skip_next_rounded,
+          title: t.settings.autoSkipCredits,
+          subtitle: t.settings.autoSkipCreditsDescription,
+        ),
+        SettingSwitchTile(
+          pref: SettingsService.forceSkipMarkerFallback,
+          icon: Symbols.tune_rounded,
+          title: t.settings.forceSkipMarkerFallback,
+          subtitle: t.settings.forceSkipMarkerFallbackDescription,
+        ),
+        SettingNumberTile(
+          pref: SettingsService.autoSkipDelay,
+          icon: Symbols.timer_rounded,
+          title: t.settings.autoSkipDelay,
+          subtitleBuilder: (v) => t.settings.autoSkipDelayDescription(seconds: v.toString()),
+          labelText: t.settings.secondsLabel,
+          suffixText: t.settings.secondsShort,
+          min: 1,
+          max: 30,
+        ),
+        SettingRegexTile(
+          pref: SettingsService.introPattern,
+          icon: Symbols.match_case_rounded,
+          title: t.settings.introPattern,
+          subtitle: t.settings.introPatternDescription,
+          defaultValue: SettingsService.defaultIntroPattern,
+        ),
+        SettingRegexTile(
+          pref: SettingsService.creditsPattern,
+          icon: Symbols.match_case_rounded,
+          title: t.settings.creditsPattern,
+          subtitle: t.settings.creditsPatternDescription,
+          defaultValue: SettingsService.defaultCreditsPattern,
+        ),
+        const SizedBox(height: 24),
       ],
     );
   }

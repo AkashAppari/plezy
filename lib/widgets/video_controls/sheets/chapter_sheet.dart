@@ -16,6 +16,7 @@ import '../../../utils/provider_extensions.dart';
 import '../../../utils/scroll_utils.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
+import '../widgets/media_selector_thumbnail.dart';
 import 'base_video_control_sheet.dart';
 import '../../optimized_media_image.dart';
 
@@ -96,37 +97,21 @@ class _ChapterSheetState extends State<ChapterSheet> {
               return FocusableListTile(
                 key: index == 0 ? _initialScroll.firstItemKey : null,
                 leading: chapter.thumb != null
-                    ? SizedBox(
+                    ? MediaSelectorThumbnail(
                         width: 60,
                         height: 34,
-                        child: Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: const BorderRadius.all(Radius.circular(4)),
-                              child: OptimizedMediaImage.thumb(
-                                client: _tryGetClientForChapters(context),
-                                imagePath: chapter.thumb,
-                                localFilePath: localThumbPath,
-                                width: 60,
-                                height: 34,
-                                fit: BoxFit.cover,
-                                errorWidget: (context, url, error) =>
-                                    const AppIcon(Symbols.image_rounded, fill: 1, color: Colors.white54, size: 34),
-                              ),
-                            ),
-                            if (isCurrentChapter)
-                              Positioned.fill(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: const BorderRadius.all(Radius.circular(4)),
-                                    border: Border.fromBorderSide(
-                                      BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
+                        thumbnail: OptimizedMediaImage.thumb(
+                          client: _tryGetClientForChapters(context),
+                          imagePath: chapter.thumb,
+                          localFilePath: localThumbPath,
+                          width: 60,
+                          height: 34,
+                          fit: BoxFit.cover,
+                          errorWidget: (context, url, error) =>
+                              const AppIcon(Symbols.image_rounded, fill: 1, color: Colors.white54, size: 34),
                         ),
+                        isCurrent: isCurrentChapter,
+                        borderColor: Theme.of(context).colorScheme.primary,
                       )
                     : null,
                 title: Text(

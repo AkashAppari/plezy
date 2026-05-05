@@ -14,7 +14,7 @@ import '../utils/snackbar_helper.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
 import '../i18n/strings.g.dart';
-import 'libraries/state_messages.dart';
+import 'libraries/content_state_builder.dart';
 
 /// Abstract base class for screens displaying media lists (collections/playlists)
 /// Provides common state management and playback functionality
@@ -117,11 +117,7 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
   /// Returns a list of slivers to display based on current state
   List<Widget> buildStateSlivers() {
     if (errorMessage != null) {
-      return [
-        SliverFillRemaining(
-          child: ErrorStateWidget(message: errorMessage!, icon: Symbols.error_outline_rounded, onRetry: loadItems),
-        ),
-      ];
+      return [SliverErrorState(message: errorMessage!, onRetry: loadItems)];
     }
 
     if (items.isEmpty && isLoading) {
@@ -129,11 +125,7 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
     }
 
     if (items.isEmpty) {
-      return [
-        SliverFillRemaining(
-          child: EmptyStateWidget(message: emptyMessage, icon: emptyIcon),
-        ),
-      ];
+      return [SliverEmptyState(message: emptyMessage, icon: emptyIcon)];
     }
 
     return [];

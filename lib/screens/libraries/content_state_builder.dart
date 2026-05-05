@@ -25,7 +25,7 @@ class SliverErrorState extends StatelessWidget {
 /// Sliver wrapper around [EmptyStateWidget] for use in `CustomScrollView.slivers`.
 class SliverEmptyState extends StatelessWidget {
   final String message;
-  final IconData icon;
+  final IconData? icon;
   final String? subtitle;
 
   const SliverEmptyState({super.key, required this.message, required this.icon, this.subtitle});

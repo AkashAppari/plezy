@@ -19,6 +19,7 @@ import '../../../utils/player_utils.dart';
 import '../../../utils/provider_extensions.dart';
 import '../../app_icon.dart';
 import '../../optimized_media_image.dart';
+import 'media_selector_thumbnail.dart';
 
 /// Horizontal scrollable strip of chapter/queue items shown on swipe-up.
 class ContentStrip extends StatefulWidget {
@@ -518,33 +519,13 @@ class ContentStripState extends State<ContentStrip> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
+            MediaSelectorThumbnail(
               width: itemWidth,
               height: thumbHeight,
-              child: Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.all(Radius.circular(6)),
-                    child:
-                        thumbnail ??
-                        Container(
-                          color: Colors.white10,
-                          child: const Center(
-                            child: AppIcon(Symbols.movie_rounded, fill: 1, color: Colors.white38, size: 28),
-                          ),
-                        ),
-                  ),
-                  if (isCurrent)
-                    Positioned.fill(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: const BorderRadius.all(Radius.circular(6)),
-                          border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 2)),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+              thumbnail: thumbnail,
+              isCurrent: isCurrent,
+              borderColor: Colors.white,
+              radius: 6,
             ),
             const SizedBox(height: 4),
             Text(

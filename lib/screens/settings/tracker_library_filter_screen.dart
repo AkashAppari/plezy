@@ -9,9 +9,9 @@ import '../../services/settings_service.dart';
 import '../../services/trackers/tracker_constants.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focusable_list_tile.dart';
-import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
+import '../../widgets/settings_page.dart';
 import '../../widgets/settings_section.dart';
 
 /// Per-provider library whitelist/blacklist screen. Toggling a switch
@@ -119,10 +119,7 @@ class TrackerLibraryFilterScreen extends StatelessWidget {
 
             children.add(const SizedBox(height: 24));
 
-            return FocusedScrollScaffold(
-              title: title,
-              slivers: [SliverList(delegate: SliverChildListDelegate(children))],
-            );
+            return SettingsPage(title: title, children: children);
           },
         );
       },

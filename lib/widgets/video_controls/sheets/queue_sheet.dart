@@ -11,6 +11,7 @@ import '../../../utils/provider_extensions.dart';
 import '../../../utils/scroll_utils.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
+import '../widgets/media_selector_thumbnail.dart';
 import 'base_video_control_sheet.dart';
 import '../../optimized_media_image.dart';
 
@@ -102,34 +103,20 @@ class _QueueSheetState extends State<QueueSheet> {
     // Try to get client for thumbnails, may fail in offline mode
     final client = context.tryGetMediaClientForServer(item.serverId);
 
-    return SizedBox(
+    return MediaSelectorThumbnail(
       width: _kThumbWidth,
       height: _kThumbHeight,
-      child: Stack(
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.all(Radius.circular(4)),
-            child: OptimizedMediaImage.thumb(
-              client: client,
-              imagePath: item.thumbPath,
-              width: _kThumbWidth,
-              height: _kThumbHeight,
-              fit: BoxFit.cover,
-              errorWidget: (context, url, error) =>
-                  AppIcon(Symbols.image_rounded, fill: 1, color: Colors.white54, size: _kThumbHeight),
-            ),
-          ),
-          if (isCurrent)
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.all(Radius.circular(4)),
-                  border: Border.fromBorderSide(BorderSide(color: Theme.of(context).colorScheme.primary, width: 2)),
-                ),
-              ),
-            ),
-        ],
+      thumbnail: OptimizedMediaImage.thumb(
+        client: client,
+        imagePath: item.thumbPath,
+        width: _kThumbWidth,
+        height: _kThumbHeight,
+        fit: BoxFit.cover,
+        errorWidget: (context, url, error) =>
+            AppIcon(Symbols.image_rounded, fill: 1, color: Colors.white54, size: _kThumbHeight),
       ),
+      isCurrent: isCurrent,
+      borderColor: Theme.of(context).colorScheme.primary,
     );
   }
 
