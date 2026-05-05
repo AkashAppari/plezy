@@ -1,9 +1,14 @@
+import 'package:json_annotation/json_annotation.dart';
+
 import '../../utils/external_ids.dart';
+
+part 'trakt_ids.g.dart';
 
 /// External IDs for matching Plex items against Trakt's catalog.
 ///
 /// Trakt prefers (in order): trakt > slug > imdb > tmdb > tvdb. Movies use
 /// imdb/tmdb; episodes use the show's tvdb/tmdb/imdb plus season/episode index.
+@JsonSerializable(includeIfNull: false)
 class TraktIds {
   final int? trakt;
   final String? slug;
@@ -16,21 +21,9 @@ class TraktIds {
   /// True when at least one external ID is set (i.e. usable for Trakt matching).
   bool get hasAny => imdb != null || tmdb != null || tvdb != null || trakt != null || slug != null;
 
-  Map<String, dynamic> toJson() => {
-    if (trakt != null) 'trakt': trakt,
-    if (slug != null) 'slug': slug,
-    if (imdb != null) 'imdb': imdb,
-    if (tmdb != null) 'tmdb': tmdb,
-    if (tvdb != null) 'tvdb': tvdb,
-  };
+  Map<String, dynamic> toJson() => _$TraktIdsToJson(this);
 
-  factory TraktIds.fromJson(Map<String, dynamic> json) => TraktIds(
-    trakt: (json['trakt'] as num?)?.toInt(),
-    slug: json['slug'] as String?,
-    imdb: json['imdb'] as String?,
-    tmdb: (json['tmdb'] as num?)?.toInt(),
-    tvdb: (json['tvdb'] as num?)?.toInt(),
-  );
+  factory TraktIds.fromJson(Map<String, dynamic> json) => _$TraktIdsFromJson(json);
 
   factory TraktIds.fromExternal(ExternalIds ids) => TraktIds(imdb: ids.imdb, tmdb: ids.tmdb, tvdb: ids.tvdb);
 }

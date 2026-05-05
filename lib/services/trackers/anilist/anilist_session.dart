@@ -1,10 +1,15 @@
+import 'package:json_annotation/json_annotation.dart';
+
 import '../oauth_proxy_client.dart';
 import '../tracker_session_utils.dart';
+
+part 'anilist_session.g.dart';
 
 /// Immutable AniList OAuth session.
 ///
 /// Implicit grant — no refresh token. Tokens are valid for 1 year; on expiry
 /// the user must re-auth.
+@JsonSerializable(fieldRename: FieldRename.snake)
 class AnilistSession with EncodedTrackerSession {
   final String accessToken;
   final int expiresAt;
@@ -25,19 +30,9 @@ class AnilistSession with EncodedTrackerSession {
   }
 
   @override
-  Map<String, dynamic> toJson() => {
-    'access_token': accessToken,
-    'expires_at': expiresAt,
-    'username': username,
-    'created_at': createdAt,
-  };
+  Map<String, dynamic> toJson() => _$AnilistSessionToJson(this);
 
-  factory AnilistSession.fromJson(Map<String, dynamic> json) => AnilistSession(
-    accessToken: json['access_token'] as String,
-    expiresAt: (json['expires_at'] as num).toInt(),
-    username: json['username'] as String?,
-    createdAt: (json['created_at'] as num).toInt(),
-  );
+  factory AnilistSession.fromJson(Map<String, dynamic> json) => _$AnilistSessionFromJson(json);
 
   /// Build a session from the OAuth-proxy result. AniList tokens last 1 year
   /// and have no refresh; when the proxy doesn't echo an explicit expiry we

@@ -173,6 +173,9 @@ String toBulletedString(List<String> parts) {
   return parts.join(' · ');
 }
 
+String formatRating(double value) =>
+    value == value.truncateToDouble() ? value.toInt().toString() : value.toStringAsFixed(1);
+
 final RegExp _trailingZeroPattern = RegExp(r'\.?0+$');
 
 /// Format a playback rate for display (e.g. 1.25 → "1.25x", 2.0 → "2x").

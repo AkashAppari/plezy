@@ -328,7 +328,11 @@ class _PlexMetadataEditScreenState extends State<PlexMetadataEditScreen> {
                   child: ListView(
                     shrinkWrap: true,
                     children: options.map((option) {
-                      return FocusableRadioListTile<String>(title: Text(option.label), value: option.value);
+                      return FocusableRadioListTile<String>(
+                        key: ValueKey(option.value),
+                        title: Text(option.label),
+                        value: option.value,
+                      );
                     }).toList(),
                   ),
                 ),

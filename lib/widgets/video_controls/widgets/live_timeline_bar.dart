@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../../models/livetv_capture_buffer.dart';
 import '../../../mpv/mpv.dart';
 import '../../../focus/focusable_wrapper.dart';
+import '../../../utils/formatters.dart';
 
 /// Timeline bar for live TV time-shift.
 ///
@@ -51,9 +51,9 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
 
   int _displayPosition(Duration playerPosition) => _isDragging ? _dragPositionEpoch : _currentEpoch(playerPosition);
 
-  String _formatEpochTime(int epochSeconds) {
+  String _formatEpochTime(BuildContext context, int epochSeconds) {
     final dt = DateTime.fromMillisecondsSinceEpoch(epochSeconds * 1000);
-    return DateFormat.jm().format(dt);
+    return formatClockTime(dt, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context));
   }
 
   double _epochToFraction(int epoch) {
@@ -88,7 +88,7 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
     return Row(
       children: [
         Text(
-          _formatEpochTime(displayPos),
+          _formatEpochTime(context, displayPos),
           style: const TextStyle(color: Colors.white70, fontSize: 13, fontFeatures: [FontFeature.tabularFigures()]),
         ),
         const SizedBox(width: 8),
@@ -107,7 +107,7 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              _formatEpochTime(displayPos),
+              _formatEpochTime(context, displayPos),
               style: const TextStyle(color: Colors.white70, fontSize: 12, fontFeatures: [FontFeature.tabularFigures()]),
             ),
           ),

@@ -80,7 +80,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
           Text(
             (widget.episode.userRating! / 2) == (widget.episode.userRating! / 2).truncateToDouble()
                 ? '${(widget.episode.userRating! / 2).toInt()}'
-                : (widget.episode.userRating! / 2).toStringAsFixed(1),
+                : formatRating(widget.episode.userRating! / 2),
             style: mutedStyle,
           ),
         ],

@@ -75,6 +75,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
   int _gridChannelIndex = 0;
   int _gridColumn = 0; // 0=channel, 1=program
   bool _hasFocus = false;
+  final ValueNotifier<bool> _hasFocusNotifier = ValueNotifier(false);
   LiveTvProgram? _focusedProgram;
   bool _pendingFocus = false;
 
@@ -144,7 +145,14 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
     _gridHorizontalController.dispose();
     _channelVerticalController.dispose();
     _timeIndicatorTimer?.cancel();
+    _hasFocusNotifier.dispose();
     super.dispose();
+  }
+
+  void _handleGuideFocusChange(bool hasFocus) {
+    if (_hasFocus == hasFocus) return;
+    _hasFocus = hasFocus;
+    _hasFocusNotifier.value = hasFocus;
   }
 
   void _syncGridToHeader() {
@@ -506,7 +514,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
     return OverlaySheetHost(
       child: Focus(
         focusNode: _guideFocusNode,
-        onFocusChange: (hasFocus) => setState(() => _hasFocus = hasFocus),
+        onFocusChange: _handleGuideFocusChange,
         onKeyEvent: _handleKeyEvent,
         child: _buildGuideGrid(theme),
       ),
@@ -514,87 +522,92 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
   }
 
   Widget _buildGuideGrid(ThemeData theme) {
-    return Column(
-      children: [
-        _buildTimeNavigation(theme),
-        Expanded(
-          child: ListenableBuilder(
-            listenable: _gridHorizontalController,
-            builder: (context, child) {
-              return Stack(children: [child!, _buildNowIndicatorOverlay(theme)]);
-            },
-            child: Column(
-              children: [
-                Row(
+    return ValueListenableBuilder<bool>(
+      valueListenable: _hasFocusNotifier,
+      builder: (context, hasFocus, child) {
+        return Column(
+          children: [
+            _buildTimeNavigation(theme),
+            Expanded(
+              child: ListenableBuilder(
+                listenable: _gridHorizontalController,
+                builder: (context, child) {
+                  return Stack(children: [child!, _buildNowIndicatorOverlay(theme)]);
+                },
+                child: Column(
                   children: [
-                    const SizedBox(width: _channelColumnWidth, height: _timeHeaderHeight),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        controller: _headerHorizontalController,
-                        scrollDirection: Axis.horizontal,
-                        physics: const ClampingScrollPhysics(),
-                        child: SizedBox(
-                          width: _totalGridWidth(),
-                          height: _timeHeaderHeight,
-                          child: _buildTimeHeader(theme),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                Expanded(
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: _channelColumnWidth,
-                        child: ListView.builder(
-                          controller: _channelVerticalController,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: widget.channels.length,
-                          itemExtent: _rowHeight,
-                          itemBuilder: (context, index) =>
-                              _buildChannelCell(widget.channels[index], theme, index: index),
-                        ),
-                      ),
-                      Expanded(
-                        child: NotificationListener<ScrollNotification>(
-                          onNotification: (notification) {
-                            if (notification is ScrollUpdateNotification &&
-                                notification.metrics.axis == Axis.vertical) {
-                              if (_channelVerticalController.hasClients) {
-                                _channelVerticalController.jumpTo(notification.metrics.pixels);
-                              }
-                            }
-                            return false;
-                          },
+                    Row(
+                      children: [
+                        const SizedBox(width: _channelColumnWidth, height: _timeHeaderHeight),
+                        Expanded(
                           child: SingleChildScrollView(
-                            controller: _gridHorizontalController,
+                            controller: _headerHorizontalController,
                             scrollDirection: Axis.horizontal,
                             physics: const ClampingScrollPhysics(),
                             child: SizedBox(
                               width: _totalGridWidth(),
-                              child: ListView.builder(
-                                controller: _gridVerticalController,
-                                itemCount: widget.channels.length,
-                                itemExtent: _rowHeight,
-                                itemBuilder: (context, index) {
-                                  final channel = widget.channels[index];
-                                  final programs = _getProgramsForChannel(channel);
-                                  return _buildProgramRow(channel, programs, theme, channelIndex: index);
-                                },
-                              ),
+                              height: _timeHeaderHeight,
+                              child: _buildTimeHeader(theme),
                             ),
                           ),
                         ),
+                      ],
+                    ),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: _channelColumnWidth,
+                            child: ListView.builder(
+                              controller: _channelVerticalController,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: widget.channels.length,
+                              itemExtent: _rowHeight,
+                              itemBuilder: (context, index) =>
+                                  _buildChannelCell(widget.channels[index], theme, index: index),
+                            ),
+                          ),
+                          Expanded(
+                            child: NotificationListener<ScrollNotification>(
+                              onNotification: (notification) {
+                                if (notification is ScrollUpdateNotification &&
+                                    notification.metrics.axis == Axis.vertical) {
+                                  if (_channelVerticalController.hasClients) {
+                                    _channelVerticalController.jumpTo(notification.metrics.pixels);
+                                  }
+                                }
+                                return false;
+                              },
+                              child: SingleChildScrollView(
+                                controller: _gridHorizontalController,
+                                scrollDirection: Axis.horizontal,
+                                physics: const ClampingScrollPhysics(),
+                                child: SizedBox(
+                                  width: _totalGridWidth(),
+                                  child: ListView.builder(
+                                    controller: _gridVerticalController,
+                                    itemCount: widget.channels.length,
+                                    itemExtent: _rowHeight,
+                                    itemBuilder: (context, index) {
+                                      final channel = widget.channels[index];
+                                      final programs = _getProgramsForChannel(channel);
+                                      return _buildProgramRow(channel, programs, theme, channelIndex: index);
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 

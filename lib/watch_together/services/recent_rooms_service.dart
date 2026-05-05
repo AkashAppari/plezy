@@ -1,32 +1,26 @@
 import 'dart:convert';
 
+import 'package:json_annotation/json_annotation.dart';
+
 import '../../services/settings_service.dart';
 import '../models/watch_session.dart';
 
+part 'recent_rooms_service.g.dart';
+
+@JsonSerializable(includeIfNull: false)
 class RecentRoom {
   final String code;
   final String? name;
+  @JsonKey(fromJson: _dateTimeFromMillis, toJson: _dateTimeToMillis)
   final DateTime lastUsed;
+  @JsonKey(fromJson: _controlModeFromIndex, toJson: _controlModeToIndex)
   final ControlMode? controlMode;
 
   const RecentRoom({required this.code, this.name, required this.lastUsed, this.controlMode});
 
-  Map<String, dynamic> toJson() => {
-    'code': code,
-    if (name != null) 'name': name,
-    'lastUsed': lastUsed.millisecondsSinceEpoch,
-    if (controlMode != null) 'controlMode': controlMode!.index,
-  };
+  Map<String, dynamic> toJson() => _$RecentRoomToJson(this);
 
-  factory RecentRoom.fromJson(Map<String, dynamic> json) {
-    final modeIndex = json['controlMode'] as int?;
-    return RecentRoom(
-      code: json['code'] as String,
-      name: json['name'] as String?,
-      lastUsed: DateTime.fromMillisecondsSinceEpoch(json['lastUsed'] as int),
-      controlMode: modeIndex != null ? ControlMode.values[modeIndex] : null,
-    );
-  }
+  factory RecentRoom.fromJson(Map<String, dynamic> json) => _$RecentRoomFromJson(json);
 
   RecentRoom copyWith({
     String? code,
@@ -41,6 +35,17 @@ class RecentRoom {
     controlMode: controlMode ?? this.controlMode,
   );
 }
+
+DateTime _dateTimeFromMillis(int value) => DateTime.fromMillisecondsSinceEpoch(value);
+
+int _dateTimeToMillis(DateTime value) => value.millisecondsSinceEpoch;
+
+ControlMode? _controlModeFromIndex(int? index) {
+  if (index == null || index < 0 || index >= ControlMode.values.length) return null;
+  return ControlMode.values[index];
+}
+
+int? _controlModeToIndex(ControlMode? value) => value?.index;
 
 class RecentRoomsService {
   static const int _maxRooms = 20;

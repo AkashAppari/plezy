@@ -3,6 +3,7 @@ import 'package:plezy/services/trackers/anilist/anilist_session.dart';
 import 'package:plezy/services/trackers/mal/mal_session.dart';
 import 'package:plezy/services/trackers/simkl/simkl_session.dart';
 import 'package:plezy/services/trackers/tracker_session_utils.dart';
+import 'package:plezy/services/trakt/trakt_session.dart';
 
 void main() {
   group('tracker token expiry helpers', () {
@@ -24,6 +25,39 @@ void main() {
       final decoded = decodeTrackerSessionJson(encoded, (json) => json);
 
       expect(decoded, {'access_token': 'abc', 'created_at': 123});
+    });
+
+    test('round-trips Trakt sessions with snake-case keys and default scope', () {
+      const session = TraktSession(
+        accessToken: 'trakt-at',
+        refreshToken: 'trakt-rt',
+        expiresAt: 2000,
+        scope: 'public',
+        createdAt: 1000,
+      );
+
+      expect(session.toJson(), {
+        'access_token': 'trakt-at',
+        'refresh_token': 'trakt-rt',
+        'expires_at': 2000,
+        'username': null,
+        'scope': 'public',
+        'created_at': 1000,
+      });
+
+      final decoded = TraktSession.fromJson({
+        'access_token': 'trakt-at',
+        'refresh_token': 'trakt-rt',
+        'expires_at': 2000,
+        'created_at': 1000,
+      });
+
+      expect(decoded.accessToken, 'trakt-at');
+      expect(decoded.refreshToken, 'trakt-rt');
+      expect(decoded.expiresAt, 2000);
+      expect(decoded.username, isNull);
+      expect(decoded.scope, 'public');
+      expect(decoded.createdAt, 1000);
     });
 
     test('round-trips AniList sessions through shared encode mixin', () {

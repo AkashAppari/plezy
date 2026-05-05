@@ -251,7 +251,7 @@ class _ConnectionCandidate {
   final bool isPlexDirectUri;
   final bool isHttps;
 
-  _ConnectionCandidate(this.connection, this.url, this.isPlexDirectUri, this.isHttps);
+  const _ConnectionCandidate(this.connection, this.url, this.isPlexDirectUri, this.isHttps);
 }
 
 /// Represents a Plex Media Server

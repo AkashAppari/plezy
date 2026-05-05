@@ -49,49 +49,35 @@ class MediaServerHttpException extends MediaServerException {
 
   /// Map a caught exception to a [MediaServerHttpException].
   factory MediaServerHttpException.from(Object error, {Uri? uri}) {
-    if (error is MediaServerHttpException) return error;
-
-    if (error is RequestAbortedException) {
-      return MediaServerHttpException(
+    return switch (error) {
+      MediaServerHttpException() => error,
+      RequestAbortedException(:final message, uri: final errorUri) => MediaServerHttpException(
         type: MediaServerHttpErrorType.cancelled,
-        message: error.message,
-        requestUri: error.uri ?? uri,
-      );
-    }
-
-    if (error is TimeoutException) {
-      return MediaServerHttpException(
+        message: message,
+        requestUri: errorUri ?? uri,
+      ),
+      TimeoutException(:final message) => MediaServerHttpException(
         type: MediaServerHttpErrorType.connectionTimeout,
-        message: error.message,
+        message: message,
         requestUri: uri,
-      );
-    }
-
-    if (error is SocketException) {
-      return MediaServerHttpException(
+      ),
+      SocketException(:final message) => MediaServerHttpException(
         type: MediaServerHttpErrorType.connectionError,
-        message: error.message,
+        message: message,
         requestUri: uri,
-      );
-    }
-
-    if (error is HttpException) {
-      return MediaServerHttpException(
+      ),
+      HttpException(:final message) => MediaServerHttpException(
         type: MediaServerHttpErrorType.connectionError,
-        message: error.message,
+        message: message,
         requestUri: uri,
-      );
-    }
-
-    if (error is ClientException) {
-      return MediaServerHttpException(
+      ),
+      ClientException(:final message, uri: final errorUri) => MediaServerHttpException(
         type: MediaServerHttpErrorType.connectionError,
-        message: error.message,
-        requestUri: error.uri ?? uri,
-      );
-    }
-
-    return MediaServerHttpException(type: MediaServerHttpErrorType.unknown, message: error.toString(), requestUri: uri);
+        message: message,
+        requestUri: errorUri ?? uri,
+      ),
+      _ => MediaServerHttpException(type: MediaServerHttpErrorType.unknown, message: error.toString(), requestUri: uri),
+    };
   }
 
   /// Whether the error looks transient (network/timeout) and worth retrying.

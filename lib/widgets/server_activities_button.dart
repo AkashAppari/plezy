@@ -25,7 +25,7 @@ class _ServerResult {
   final String serverName;
   final List<PlexActivity> activities;
 
-  _ServerResult({required this.serverId, required this.serverName, required this.activities});
+  const _ServerResult({required this.serverId, required this.serverName, required this.activities});
 }
 
 class _PanelData {

@@ -428,7 +428,7 @@ class _MediaCardList extends StatelessWidget {
         }
 
         if (mi.rating != null) {
-          parts.add('${mi.rating!.toStringAsFixed(1)}★');
+          parts.add('${formatRating(mi.rating!)}★');
         }
 
         if (mi.studio != null && mi.studio!.isNotEmpty) {

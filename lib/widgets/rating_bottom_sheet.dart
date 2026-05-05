@@ -6,6 +6,7 @@ import '../widgets/overlay_sheet.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/input_mode_tracker.dart';
 import '../i18n/strings.g.dart';
+import '../utils/formatters.dart';
 
 class RatingBottomSheet extends StatefulWidget {
   final double currentRating;
@@ -17,9 +18,6 @@ class RatingBottomSheet extends StatefulWidget {
   @override
   State<RatingBottomSheet> createState() => _RatingBottomSheetState();
 }
-
-String formatRating(double value) =>
-    value == value.truncateToDouble() ? value.toInt().toString() : value.toStringAsFixed(1);
 
 class _RatingBottomSheetState extends State<RatingBottomSheet> {
   late double _selectedRating;

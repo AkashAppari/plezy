@@ -646,6 +646,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
                     children: options.map((grouping) {
                       final isSelected = _selectedGrouping == grouping;
                       return FocusableListTile(
+                        key: ValueKey(grouping),
                         dense: true,
                         leading: AppIcon(
                           isSelected ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,

@@ -1248,6 +1248,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
           statusIcon = const Icon(Icons.cancel, size: 14, color: failColor);
         }
         return Padding(
+          key: ValueKey(entry.key),
           padding: const EdgeInsets.symmetric(vertical: 2),
           child: Row(
             mainAxisSize: MainAxisSize.min,

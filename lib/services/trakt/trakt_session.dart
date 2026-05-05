@@ -1,10 +1,15 @@
+import 'package:json_annotation/json_annotation.dart';
+
 import '../trackers/tracker_session_utils.dart';
+
+part 'trakt_session.g.dart';
 
 /// Immutable Trakt OAuth session.
 ///
 /// Persisted as a JSON blob under `user_{uuid}_trakt_session` in
 /// `SharedPreferences`. Tokens are stored in plaintext, matching the security
 /// model of the existing Plex token.
+@JsonSerializable(fieldRename: FieldRename.snake)
 class TraktSession {
   final String accessToken;
   final String refreshToken;
@@ -15,6 +20,7 @@ class TraktSession {
   /// Trakt username (`@handle`), populated after `getUserSettings`.
   final String? username;
 
+  @JsonKey(defaultValue: 'public')
   final String scope;
 
   /// Epoch seconds at which the session was first created.
@@ -53,25 +59,9 @@ class TraktSession {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-    'access_token': accessToken,
-    'refresh_token': refreshToken,
-    'expires_at': expiresAt,
-    'username': username,
-    'scope': scope,
-    'created_at': createdAt,
-  };
+  Map<String, dynamic> toJson() => _$TraktSessionToJson(this);
 
-  factory TraktSession.fromJson(Map<String, dynamic> json) {
-    return TraktSession(
-      accessToken: json['access_token'] as String,
-      refreshToken: json['refresh_token'] as String,
-      expiresAt: (json['expires_at'] as num).toInt(),
-      username: json['username'] as String?,
-      scope: json['scope'] as String? ?? 'public',
-      createdAt: (json['created_at'] as num).toInt(),
-    );
-  }
+  factory TraktSession.fromJson(Map<String, dynamic> json) => _$TraktSessionFromJson(json);
 
   /// Build a session from Trakt's `/oauth/token` or `/oauth/device/token` response,
   /// which uses `expires_in` (relative seconds) rather than `expires_at`.

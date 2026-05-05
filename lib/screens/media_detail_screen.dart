@@ -599,13 +599,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final isNumeric = mediaClient?.capabilities.numericUserRating ?? true;
     final hasRating = metadata.userRating != null && metadata.userRating! > 0;
     final starValue = hasRating ? metadata.userRating! / 2.0 : 0.0;
-    final colorScheme = Theme.of(context).colorScheme;
-    final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
-    final showFocus = _ratingChipFocusNode.hasFocus && isKeyboardMode;
-
-    final bgColor = showFocus ? colorScheme.inverseSurface : colorScheme.secondaryContainer.withValues(alpha: 0.8);
-    final fgColor = showFocus ? colorScheme.onInverseSurface : colorScheme.onSecondaryContainer;
-
     final activate = isNumeric ? () => _showRatingDialog(metadata, starValue) : () => _toggleLike(metadata);
 
     final iconData = isNumeric ? Symbols.star_rounded : Symbols.thumb_up_rounded;
@@ -615,50 +608,60 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     // "Rate" label as the action prompt either way.
     final label = isNumeric && hasRating ? formatRating(starValue) : t.mediaMenu.rate;
 
-    return FocusableWrapper(
-      focusNode: _ratingChipFocusNode,
-      onSelect: activate,
-      borderRadius: 100,
-      disableScale: true,
-      focusColor: Colors.transparent,
-      onFocusChange: (_) => setState(() {}),
-      onKeyEvent: (_, event) {
-        if (!event.isActionable) return KeyEventResult.ignored;
-        final key = event.logicalKey;
-        if (key.isDownKey) {
-          _playButtonFocusNode.requestFocus();
-          return KeyEventResult.handled;
-        }
-        if (key.isUpKey) {
-          return KeyEventResult.handled; // consume — nothing above
-        }
-        return KeyEventResult.ignored;
-      },
-      child: GestureDetector(
-        onTap: activate,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(color: bgColor, borderRadius: const BorderRadius.all(Radius.circular(100))),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AppIcon(
-                iconData,
-                fill: hasRating ? 1 : 0,
-                color: showFocus ? fgColor : (hasRating ? activeIconColor : fgColor),
-                size: 16,
+    return ListenableBuilder(
+      listenable: _ratingChipFocusNode,
+      builder: (context, _) {
+        final colorScheme = Theme.of(context).colorScheme;
+        final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
+        final showFocus = _ratingChipFocusNode.hasFocus && isKeyboardMode;
+        final bgColor = showFocus ? colorScheme.inverseSurface : colorScheme.secondaryContainer.withValues(alpha: 0.8);
+        final fgColor = showFocus ? colorScheme.onInverseSurface : colorScheme.onSecondaryContainer;
+
+        return FocusableWrapper(
+          focusNode: _ratingChipFocusNode,
+          onSelect: activate,
+          borderRadius: 100,
+          disableScale: true,
+          focusColor: Colors.transparent,
+          onKeyEvent: (_, event) {
+            if (!event.isActionable) return KeyEventResult.ignored;
+            final key = event.logicalKey;
+            if (key.isDownKey) {
+              _playButtonFocusNode.requestFocus();
+              return KeyEventResult.handled;
+            }
+            if (key.isUpKey) {
+              return KeyEventResult.handled; // consume — nothing above
+            }
+            return KeyEventResult.ignored;
+          },
+          child: GestureDetector(
+            onTap: activate,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeOutCubic,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(color: bgColor, borderRadius: const BorderRadius.all(Radius.circular(100))),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppIcon(
+                    iconData,
+                    fill: hasRating ? 1 : 0,
+                    color: showFocus ? fgColor : (hasRating ? activeIconColor : fgColor),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    label,
+                    style: TextStyle(color: fgColor, fontSize: 13, fontWeight: FontWeight.w500),
+                  ),
+                ],
               ),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                style: TextStyle(color: fgColor, fontSize: 13, fontWeight: FontWeight.w500),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -2190,10 +2193,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                             Focus(
                               focusNode: _overviewFocusNode,
                               onKeyEvent: _handleOverviewKeyEvent,
-                              onFocusChange: (_) => setState(() {}),
-                              child: Builder(
-                                builder: (context) {
-                                  final innerTheme = Theme.of(context);
+                              child: ListenableBuilder(
+                                listenable: _overviewFocusNode,
+                                builder: (context, _) {
                                   final showFocus =
                                       _overviewFocusNode.hasFocus && InputModeTracker.isKeyboardMode(context);
                                   return AnimatedContainer(
@@ -2203,13 +2205,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                       borderRadius: const BorderRadius.all(Radius.circular(8)),
                                       border: Border.all(
                                         color: showFocus
-                                            ? innerTheme.colorScheme.primary.withValues(alpha: 0.5)
+                                            ? theme.colorScheme.primary.withValues(alpha: 0.5)
                                             : Colors.transparent,
                                         width: 2,
                                       ),
                                     ),
                                     child: () {
-                                      final summaryStyle = innerTheme.textTheme.bodyLarge?.copyWith(height: 1.6);
+                                      final summaryStyle = theme.textTheme.bodyLarge?.copyWith(height: 1.6);
                                       if (isTv) {
                                         return Text(metadata.summary!, style: summaryStyle);
                                       }
@@ -2601,7 +2603,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     // image + inner padding + text area + outer list padding + focus scale headroom
     final containerHeight = imageSize + innerPadding * 2 + 66 + 16;
 
-    final hasFocus = _castFocusNode.hasFocus;
     final theme = Theme.of(context);
     final actorNameStyle = theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600);
     final actorRoleStyle = theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant);
@@ -2609,74 +2610,85 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return Focus(
       focusNode: _castFocusNode,
       onKeyEvent: _handleCastKeyEvent,
-      onFocusChange: (_) => setState(() {}),
-      child: SizedBox(
-        height: containerHeight,
-        child: HorizontalScrollWithArrows(
-          controller: _castScrollController,
-          builder: (scrollController) => ListView.builder(
-            controller: scrollController,
-            scrollDirection: Axis.horizontal,
-            clipBehavior: Clip.none,
-            padding: const EdgeInsets.symmetric(vertical: 5),
-            itemCount: metadata.roles!.length,
-            itemBuilder: (context, index) {
-              final actor = metadata.roles![index];
-              final isFocused = hasFocus && index == _focusedCastIndex;
+      child: ListenableBuilder(
+        listenable: _castFocusNode,
+        builder: (context, _) {
+          final hasFocus = _castFocusNode.hasFocus;
 
-              return Padding(
-                padding: const EdgeInsets.only(right: 4),
-                child: FocusBuilders.buildLockedFocusWrapper(
-                  context: context,
-                  isFocused: isFocused,
-                  borderRadius: tokens(context).radiusSm,
-                  onTap: () => _navigateToActorMedia(actor),
-                  child: Padding(
-                    padding: const EdgeInsets.all(innerPadding),
-                    child: SizedBox(
-                      width: cardWidth,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                            child: OptimizedMediaImage(
-                              client: getServerBoundMediaClient(context),
-                              imagePath: actor.thumbPath,
-                              width: imageSize,
-                              height: imageSize,
-                              fit: BoxFit.cover,
-                              imageType: ImageType.avatar,
-                              fallbackIcon: Symbols.person_rounded,
-                            ),
+          return SizedBox(
+            height: containerHeight,
+            child: HorizontalScrollWithArrows(
+              controller: _castScrollController,
+              builder: (scrollController) => ListView.builder(
+                controller: scrollController,
+                scrollDirection: Axis.horizontal,
+                clipBehavior: Clip.none,
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                itemCount: metadata.roles!.length,
+                itemBuilder: (context, index) {
+                  final actor = metadata.roles![index];
+                  final isFocused = hasFocus && index == _focusedCastIndex;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: FocusBuilders.buildLockedFocusWrapper(
+                      context: context,
+                      isFocused: isFocused,
+                      borderRadius: tokens(context).radiusSm,
+                      onTap: () => _navigateToActorMedia(actor),
+                      child: Padding(
+                        padding: const EdgeInsets.all(innerPadding),
+                        child: SizedBox(
+                          width: cardWidth,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                                child: OptimizedMediaImage(
+                                  client: getServerBoundMediaClient(context),
+                                  imagePath: actor.thumbPath,
+                                  width: imageSize,
+                                  height: imageSize,
+                                  fit: BoxFit.cover,
+                                  imageType: ImageType.avatar,
+                                  fallbackIcon: Symbols.person_rounded,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      actor.tag,
+                                      style: actorNameStyle,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    if (actor.role != null) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        actor.role!,
+                                        style: actorRoleStyle,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(actor.tag, style: actorNameStyle, maxLines: 2, overflow: TextOverflow.ellipsis),
-                                if (actor.role != null) ...[
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    actor.role!,
-                                    style: actorRoleStyle,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
+                  );
+                },
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -2694,44 +2706,49 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final posterHeight = (cardWidth - 16) * (9 / 16);
     final containerHeight = posterHeight + 66;
 
-    final hasFocus = _extrasFocusNode.hasFocus;
-
     return Focus(
       focusNode: _extrasFocusNode,
       onKeyEvent: _handleExtrasKeyEvent,
-      child: SizedBox(
-        height: containerHeight,
-        child: HorizontalScrollWithArrows(
-          controller: _extrasScrollController,
-          builder: (scrollController) => ListView.builder(
-            controller: scrollController,
-            scrollDirection: Axis.horizontal,
-            clipBehavior: Clip.none,
-            padding: const EdgeInsets.symmetric(vertical: 5),
-            itemCount: _extras!.length,
-            itemBuilder: (context, index) {
-              final extra = _extras![index];
-              final isFocused = hasFocus && index == _focusedExtraIndex;
-              final cardKey = _extraCardKeys.putIfAbsent(index, () => GlobalKey<MediaCardState>());
+      child: ListenableBuilder(
+        listenable: _extrasFocusNode,
+        builder: (context, _) {
+          final hasFocus = _extrasFocusNode.hasFocus;
 
-              return Padding(
-                padding: const EdgeInsets.only(right: 4),
-                child: FocusBuilders.buildLockedFocusWrapper(
-                  context: context,
-                  isFocused: isFocused,
-                  onTap: () => navigateToVideoPlayer(context, metadata: extra),
-                  child: MediaCard(
-                    key: cardKey,
-                    item: extra,
-                    width: cardWidth,
-                    height: posterHeight,
-                    forceGridMode: true,
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
+          return SizedBox(
+            height: containerHeight,
+            child: HorizontalScrollWithArrows(
+              controller: _extrasScrollController,
+              builder: (scrollController) => ListView.builder(
+                controller: scrollController,
+                scrollDirection: Axis.horizontal,
+                clipBehavior: Clip.none,
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                itemCount: _extras!.length,
+                itemBuilder: (context, index) {
+                  final extra = _extras![index];
+                  final isFocused = hasFocus && index == _focusedExtraIndex;
+                  final cardKey = _extraCardKeys.putIfAbsent(index, () => GlobalKey<MediaCardState>());
+
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: FocusBuilders.buildLockedFocusWrapper(
+                      context: context,
+                      isFocused: isFocused,
+                      onTap: () => navigateToVideoPlayer(context, metadata: extra),
+                      child: MediaCard(
+                        key: cardKey,
+                        item: extra,
+                        width: cardWidth,
+                        height: posterHeight,
+                        forceGridMode: true,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          );
+        },
       ),
     );
   }

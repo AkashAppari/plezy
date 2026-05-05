@@ -345,7 +345,7 @@ class TrackSelectionResult<T> {
   final T track;
   final TrackSelectionPriority priority;
 
-  TrackSelectionResult(this.track, this.priority);
+  const TrackSelectionResult(this.track, this.priority);
 }
 
 /// Service for selecting and applying audio and subtitle tracks based on

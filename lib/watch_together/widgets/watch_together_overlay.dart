@@ -343,6 +343,7 @@ class _ParticipantNotificationOverlayState extends State<ParticipantNotification
               ParticipantEventType.buffering => t.watchTogether.participantBuffering(name: n.event.displayName),
             };
             return Container(
+              key: ValueKey(n.id),
               margin: const EdgeInsets.only(bottom: 4),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: const BoxDecoration(

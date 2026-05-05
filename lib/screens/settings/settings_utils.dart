@@ -90,6 +90,7 @@ Future<T?> showSelectionDialog<T>({
           children: options.map((option) {
             final selected = option.value == currentValue;
             return FocusableListTile(
+              key: ValueKey(option.value),
               leading: Icon(
                 selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
                 color: selected ? Theme.of(dialogContext).colorScheme.primary : null,

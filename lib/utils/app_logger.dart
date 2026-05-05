@@ -30,7 +30,7 @@ class LogEntry {
   final Object? error;
   final StackTrace? stackTrace;
 
-  LogEntry({required this.timestamp, required this.level, required this.message, this.error, this.stackTrace});
+  const LogEntry({required this.timestamp, required this.level, required this.message, this.error, this.stackTrace});
 
   /// Estimate the memory size of this log entry in bytes
   int get estimatedSize {

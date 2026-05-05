@@ -47,6 +47,7 @@ import '../mixins/watch_state_aware.dart';
 import '../utils/watch_state_notifier.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
+import '../utils/formatters.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/layout_constants.dart';
@@ -1609,7 +1610,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       Text(
                         [
                           contentTypeLabel,
-                          if (heroItem.rating != null) '★ ${heroItem.rating!.toStringAsFixed(1)}',
+                          if (heroItem.rating != null) '★ ${formatRating(heroItem.rating!)}',
                           if (heroItem.contentRating != null) formatContentRating(heroItem.contentRating!),
                           if (heroItem.year != null) heroItem.year.toString(),
                         ].join(' • '),

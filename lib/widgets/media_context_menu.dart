@@ -1674,6 +1674,7 @@ class _FocusableContextMenuSheetState extends State<_FocusableContextMenuSheet> 
                   final index = entry.key;
                   final action = entry.value;
                   return FocusableListTile(
+                    key: ValueKey(action.value),
                     focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
                     leading: AppIcon(action.icon, fill: 1),
                     title: Text(action.label),
@@ -1798,6 +1799,7 @@ class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
                         final index = entry.key;
                         final action = entry.value;
                         return FocusableListTile(
+                          key: ValueKey(action.value),
                           focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
                           leading: AppIcon(action.icon, fill: 1, size: 20),
                           title: Text(action.label),
