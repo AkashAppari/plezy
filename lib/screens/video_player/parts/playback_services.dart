@@ -123,7 +123,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         if (_nextEpisode != null) _playNext();
       } else if (event is PreviousTrackEvent) {
         appLogger.d('Media control: Previous track event received');
-        if (_previousEpisode != null) _playPrevious();
+        unawaited(_restartOrPlayPrevious());
       }
     });
 

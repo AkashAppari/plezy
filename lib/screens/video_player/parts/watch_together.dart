@@ -63,6 +63,18 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     }
   }
 
+  void _notifyWatchTogetherSeek(Duration position) {
+    try {
+      final watchTogether = context.read<WatchTogetherProvider>();
+      if (watchTogether.isInSession) {
+        // Sync manager applies canControl checks; matching play/pause avoids timing gaps.
+        watchTogether.onLocalSeek(position);
+      }
+    } catch (e) {
+      appLogger.d('Could not notify watch together of seek', error: e);
+    }
+  }
+
   /// Handle media switch from host (guest only)
   /// Uses VideoPlayerScreen's context for proper navigation (pushReplacement)
   Future<void> _handlePlayerMediaSwitch(String ratingKey, String serverId, String title) async {

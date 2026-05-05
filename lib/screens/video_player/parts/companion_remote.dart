@@ -10,7 +10,7 @@ extension _VideoPlayerCompanionRemoteMethods on VideoPlayerScreenState {
       if (mounted && _nextEpisode != null) _playNext();
     };
     receiver.onPreviousTrack = () {
-      if (mounted && _previousEpisode != null) _playPrevious();
+      if (mounted) unawaited(_restartOrPlayPrevious());
     };
     receiver.onSeekForward = () async {
       if (player == null) return;

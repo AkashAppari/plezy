@@ -29,6 +29,31 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     await _navigateToEpisode(_previousEpisode!);
   }
 
+  Future<void> _restartOrPlayPrevious() async {
+    final currentPlayer = player;
+    if (!mounted || currentPlayer == null || _isLoadingPrevious) return;
+
+    if (!shouldRestartBeforePreviousItem(currentPlayer.state.position) && _previousEpisode != null) {
+      await _playPrevious();
+      return;
+    }
+
+    _autoPlayTimer?.cancel();
+    _dismissStillWatching();
+
+    _setPlayerState(() {
+      _showPlayNextDialog = false;
+      _completionTriggered = false;
+    });
+
+    final target = clampSeekPosition(currentPlayer, Duration.zero);
+    await currentPlayer.seek(target);
+    if (!mounted || currentPlayer != player) return;
+
+    _notifyWatchTogetherSeek(target);
+    _updateMediaControlsPlaybackState();
+  }
+
   /// Navigates to a new episode, preserving playback state and track selections.
   /// When PiP is active, swaps the media source in-place to keep the PiP window alive.
   Future<void> _navigateToEpisode(MediaItem episodeMetadata) async {

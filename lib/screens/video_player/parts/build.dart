@@ -146,7 +146,8 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                     if (widget.isLive) {
                       onPrevious = _hasPreviousChannel ? () => _switchLiveChannel(-1) : null;
                     } else {
-                      onPrevious = (_previousEpisode != null && _canNavigateEpisodes()) ? _playPrevious : null;
+                      final canRestartOrPrevious = _currentMetadata.isEpisode || _previousEpisode != null;
+                      onPrevious = (canRestartOrPrevious && _canNavigateEpisodes()) ? _restartOrPlayPrevious : null;
                     }
 
                     return Video(
@@ -172,19 +173,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         onAudioTrackChanged: _onAudioTrackChanged,
                         onSubtitleTrackChanged: _onSubtitleTrackChanged,
                         onSecondarySubtitleTrackChanged: _onSecondarySubtitleTrackChanged,
-                        onSeekCompleted: (position) {
-                          // Notify Watch Together of seek for sync
-                          // Note: canControl() check is done in sync manager, not here
-                          // This matches play/pause behavior and avoids timing issues
-                          try {
-                            final watchTogether = this.context.read<WatchTogetherProvider>();
-                            if (watchTogether.isInSession) {
-                              watchTogether.onLocalSeek(position);
-                            }
-                          } catch (e) {
-                            // Watch Together not available, ignore
-                          }
-                        },
+                        onSeekCompleted: _notifyWatchTogetherSeek,
                         onBack: _handleBackButton,
                         onReachedEnd: ({skipAutoPlayCountdown = false}) =>
                             _onVideoCompleted(true, skipAutoPlayCountdown: skipAutoPlayCountdown),
