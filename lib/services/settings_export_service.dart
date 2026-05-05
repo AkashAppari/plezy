@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/app_logger.dart';
+import '../utils/formatters.dart';
 import '../utils/platform_detector.dart';
 import 'file_picker_service.dart';
 import 'settings_service.dart';
@@ -271,9 +272,9 @@ class SettingsExportService {
 
   static Future<String> _defaultFileName() async {
     final now = DateTime.now();
-    final y = now.year.toString().padLeft(4, '0');
-    final m = now.month.toString().padLeft(2, '0');
-    final d = now.day.toString().padLeft(2, '0');
+    final y = padNumber(now.year, 4);
+    final m = padNumber(now.month, 2);
+    final d = padNumber(now.day, 2);
     return 'plezy-settings-$y$m$d.$fileExtension';
   }
 

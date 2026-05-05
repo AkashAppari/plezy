@@ -6,12 +6,14 @@ import '../../focus/focusable_action_bar.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/livetv_channel.dart';
+import '../../mixins/mounted_set_state_mixin.dart';
 import '../../models/livetv_program.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/loading_indicator_box.dart';
 import '../../widgets/overlay_sheet.dart';
 import 'live_tv_actions_mixin.dart';
 import 'livetv_recording_actions.dart';
@@ -34,7 +36,7 @@ class LiveTvShowScheduleScreen extends StatefulWidget {
 }
 
 class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen>
-    with LiveTvActionsMixin<LiveTvShowScheduleScreen> {
+    with LiveTvActionsMixin<LiveTvShowScheduleScreen>, MountedSetStateMixin {
   List<LiveTvProgram> _programs = [];
   bool _isLoading = true;
 
@@ -51,7 +53,7 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen>
     final multiServer = context.read<MultiServerProvider>();
     final genericClient = multiServer.getClientForServer(widget.serverId);
     if (genericClient == null) {
-      if (mounted) setState(() => _isLoading = false);
+      setStateIfMounted(() => _isLoading = false);
       return;
     }
 
@@ -128,7 +130,7 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen>
             : null,
         slivers: [
           if (_isLoading)
-            const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+            LoadingIndicatorBox.sliver
           else if (_programs.isEmpty)
             SliverFillRemaining(child: Center(child: Text(t.liveTv.noPrograms)))
           else

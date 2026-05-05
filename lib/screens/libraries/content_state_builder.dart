@@ -3,6 +3,39 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../i18n/strings.g.dart';
 import 'state_messages.dart';
 
+/// Sliver wrapper around [ErrorStateWidget] for use in `CustomScrollView.slivers`.
+class SliverErrorState extends StatelessWidget {
+  final String message;
+  final VoidCallback? onRetry;
+  final String? retryLabel;
+
+  const SliverErrorState({super.key, required this.message, this.onRetry, this.retryLabel});
+
+  @override
+  Widget build(BuildContext context) => SliverFillRemaining(
+    child: ErrorStateWidget(
+      message: message,
+      icon: Symbols.error_outline_rounded,
+      onRetry: onRetry,
+      retryLabel: retryLabel ?? t.common.retry,
+    ),
+  );
+}
+
+/// Sliver wrapper around [EmptyStateWidget] for use in `CustomScrollView.slivers`.
+class SliverEmptyState extends StatelessWidget {
+  final String message;
+  final IconData icon;
+  final String? subtitle;
+
+  const SliverEmptyState({super.key, required this.message, required this.icon, this.subtitle});
+
+  @override
+  Widget build(BuildContext context) => SliverFillRemaining(
+    child: EmptyStateWidget(message: message, icon: icon, subtitle: subtitle),
+  );
+}
+
 /// A widget that handles loading, error, empty, and content states
 /// Provides a consistent UI pattern across the app for data-driven screens
 class ContentStateBuilder<T> extends StatelessWidget {

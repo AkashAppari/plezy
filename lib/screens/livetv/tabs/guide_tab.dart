@@ -10,6 +10,7 @@ import '../../../focus/dpad_navigator.dart';
 import '../../../focus/input_mode_tracker.dart';
 import '../../../focus/key_event_utils.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../mixins/mounted_set_state_mixin.dart';
 import '../../../models/livetv_channel.dart';
 import '../../../models/livetv_program.dart';
 import '../../../providers/multi_server_provider.dart';
@@ -45,7 +46,7 @@ class GuideTab extends StatefulWidget {
 
 enum _GuideZone { timeNav, grid }
 
-class GuideTabState extends State<GuideTab> {
+class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
   static const _slotWidth = 180.0;
   static const _channelColumnWidth = 100.0;
   static const _rowHeight = 64.0;
@@ -111,7 +112,7 @@ class GuideTabState extends State<GuideTab> {
 
     _timeIndicatorTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       // ignore: no-empty-block - setState triggers rebuild to update time indicator
-      if (mounted) setState(() {});
+      setStateIfMounted(() {});
     });
   }
 
@@ -121,7 +122,7 @@ class GuideTabState extends State<GuideTab> {
     _timeIndicatorTimer?.cancel();
     _timeIndicatorTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       // ignore: no-empty-block - setState triggers rebuild to update time indicator
-      if (mounted) setState(() {});
+      setStateIfMounted(() {});
     });
   }
 

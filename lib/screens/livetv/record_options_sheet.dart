@@ -8,6 +8,7 @@ import '../../focus/focusable_text_field.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/media_server_client.dart';
+import '../../mixins/controller_disposer_mixin.dart';
 import '../../models/livetv_program.dart';
 import '../../models/media_subscription.dart';
 import '../../utils/app_logger.dart';
@@ -472,13 +473,13 @@ class _IntSettingRow extends StatefulWidget {
   State<_IntSettingRow> createState() => _IntSettingRowState();
 }
 
-class _IntSettingRowState extends State<_IntSettingRow> {
+class _IntSettingRowState extends State<_IntSettingRow> with ControllerDisposerMixin {
   late final TextEditingController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.currentValue?.toString() ?? '');
+    _controller = createTextEditingController(text: widget.currentValue?.toString() ?? '');
   }
 
   @override
@@ -486,12 +487,6 @@ class _IntSettingRowState extends State<_IntSettingRow> {
     super.didUpdateWidget(oldWidget);
     final next = widget.currentValue?.toString() ?? '';
     if (next != _controller.text) _controller.text = next;
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 
   @override
@@ -542,13 +537,13 @@ class _TextSettingRow extends StatefulWidget {
   State<_TextSettingRow> createState() => _TextSettingRowState();
 }
 
-class _TextSettingRowState extends State<_TextSettingRow> {
+class _TextSettingRowState extends State<_TextSettingRow> with ControllerDisposerMixin {
   late final TextEditingController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.currentValue?.toString() ?? '');
+    _controller = createTextEditingController(text: widget.currentValue?.toString() ?? '');
   }
 
   @override
@@ -556,12 +551,6 @@ class _TextSettingRowState extends State<_TextSettingRow> {
     super.didUpdateWidget(oldWidget);
     final next = widget.currentValue?.toString() ?? '';
     if (next != _controller.text) _controller.text = next;
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 
   @override

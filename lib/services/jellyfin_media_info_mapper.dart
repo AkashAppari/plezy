@@ -1,3 +1,5 @@
+import 'package:collection/collection.dart';
+
 import '../media/media_version.dart';
 import '../media/media_source_info.dart';
 import '../utils/jellyfin_time.dart';
@@ -197,7 +199,7 @@ Map<int, TrickplayInfo>? _parseTrickplayManifest(Object? raw, String? sourceId) 
       // Source id not in the manifest — fall back to the first nested
       // entry so the user still gets *something*. The caller already
       // chose the right source; this is best-effort recovery.
-      final first = raw.values.cast<Object?>().firstWhere((v) => v is Map, orElse: () => null);
+      final first = raw.values.firstWhereOrNull((v) => v is Map);
       if (first is! Map) return null;
       resolutionMap = first;
     }

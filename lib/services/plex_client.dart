@@ -248,8 +248,7 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
            : null,
        _onEndpointChanged = onEndpointChanged,
        _onAllEndpointsExhausted = onAllEndpointsExhausted {
-    LogRedactionManager.registerServerUrl(config.baseUrl);
-    LogRedactionManager.registerToken(config.token);
+    LogRedactionManager.registerServer(config.baseUrl, config.token);
 
     _http = MediaServerHttpClient(
       baseUrl: config.baseUrl,

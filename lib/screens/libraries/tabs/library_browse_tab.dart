@@ -30,6 +30,7 @@ import '../library_alpha_bar_strategy.dart';
 import '../library_filter_sort_loader.dart';
 import '../../../widgets/focusable_media_card.dart';
 import '../../../widgets/focusable_filter_chip.dart';
+import '../../../widgets/loading_indicator_box.dart';
 import '../../../widgets/media_grid_delegate.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../../../mixins/library_tab_focus_mixin.dart';
@@ -38,7 +39,7 @@ import '../filters_bottom_sheet.dart';
 import '../sort_bottom_sheet.dart';
 import '../../../widgets/app_icon.dart';
 import '../../../widgets/focusable_list_tile.dart';
-import '../state_messages.dart';
+import '../content_state_builder.dart';
 import '../../../services/storage_service.dart';
 import '../../../services/settings_service.dart';
 import '../../../mixins/grid_focus_node_mixin.dart';
@@ -1384,28 +1385,15 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     }
 
     if (isLoading && totalSize == 0 && loadedItems.isEmpty) {
-      return [const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))];
+      return [LoadingIndicatorBox.sliver];
     }
 
     if (errorMessage != null && loadedItems.isEmpty) {
-      return [
-        SliverFillRemaining(
-          child: ErrorStateWidget(
-            message: errorMessage!,
-            icon: Symbols.error_outline_rounded,
-            onRetry: _loadContent,
-            retryLabel: t.common.retry,
-          ),
-        ),
-      ];
+      return [SliverErrorState(message: errorMessage!, onRetry: _loadContent)];
     }
 
     if (totalSize == 0 && !isLoading) {
-      return [
-        SliverFillRemaining(
-          child: EmptyStateWidget(message: t.libraries.thisLibraryIsEmpty, icon: Symbols.folder_open_rounded),
-        ),
-      ];
+      return [SliverEmptyState(message: t.libraries.thisLibraryIsEmpty, icon: Symbols.folder_open_rounded)];
     }
 
     return [

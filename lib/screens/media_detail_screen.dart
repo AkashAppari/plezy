@@ -1848,6 +1848,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return Symbols.recommend_rounded;
   }
 
+  static const Widget _sectionLoading = Center(
+    child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()),
+  );
+
+  Widget _sectionEmpty(BuildContext context, String message) {
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Center(
+        child: Text(message, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey)),
+      ),
+    );
+  }
+
   /// Build episode list directly when the library hides seasons for single-season shows
   Widget _buildEpisodesList() {
     final client = _getMediaClientForMetadata(context);
@@ -2217,19 +2230,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           if (isShow && !_showEpisodesDirectly) ...[
                             // Season tabs + inline episodes
                             if (_isLoadingSeasons)
-                              const Center(
-                                child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()),
-                              )
+                              _sectionLoading
                             else if (_seasons.isEmpty)
-                              Padding(
-                                padding: const EdgeInsets.all(32),
-                                child: Center(
-                                  child: Text(
-                                    t.messages.noSeasonsFound,
-                                    style: theme.textTheme.bodyLarge?.copyWith(color: Colors.grey),
-                                  ),
-                                ),
-                              )
+                              _sectionEmpty(context, t.messages.noSeasonsFound)
                             else ...[
                               Text(
                                 key: _seasonsSectionKey,
@@ -2240,21 +2243,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                               _buildSeasonTabs(),
                               const SizedBox(height: 16),
                               if (_isLoadingSeasonEpisodes)
-                                const Center(
-                                  child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()),
-                                )
+                                _sectionLoading
                               else if (_episodes.isNotEmpty)
                                 _buildEpisodesList()
                               else
-                                Padding(
-                                  padding: const EdgeInsets.all(32),
-                                  child: Center(
-                                    child: Text(
-                                      t.messages.noEpisodesFoundGeneral,
-                                      style: theme.textTheme.bodyLarge?.copyWith(color: Colors.grey),
-                                    ),
-                                  ),
-                                ),
+                                _sectionEmpty(context, t.messages.noEpisodesFoundGeneral),
                             ],
                             const SizedBox(height: 24),
                           ] else if ((isShow && _showEpisodesDirectly) || metadata.isSeason) ...[
@@ -2266,21 +2259,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                             ),
                             const SizedBox(height: 12),
                             if (_isLoadingSeasons || _isLoadingEpisodes)
-                              const Center(
-                                child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()),
-                              )
+                              _sectionLoading
                             else if (_episodes.isNotEmpty)
                               _buildEpisodesList()
                             else
-                              Padding(
-                                padding: const EdgeInsets.all(32),
-                                child: Center(
-                                  child: Text(
-                                    t.messages.noEpisodesFoundGeneral,
-                                    style: theme.textTheme.bodyLarge?.copyWith(color: Colors.grey),
-                                  ),
-                                ),
-                              ),
+                              _sectionEmpty(context, t.messages.noEpisodesFoundGeneral),
                             const SizedBox(height: 24),
                           ],
 

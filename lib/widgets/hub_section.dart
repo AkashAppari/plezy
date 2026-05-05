@@ -14,6 +14,7 @@ import '../utils/grid_size_calculator.dart';
 import '../theme/mono_tokens.dart';
 import '../focus/locked_hub_controller.dart';
 import '../media/media_hub.dart';
+import '../mixins/mounted_set_state_mixin.dart';
 import '../screens/hub_detail_screen.dart';
 import '../utils/media_navigation_helper.dart';
 import 'focus_builders.dart';
@@ -76,7 +77,7 @@ class HubSection extends StatefulWidget {
   State<HubSection> createState() => HubSectionState();
 }
 
-class HubSectionState extends State<HubSection> {
+class HubSectionState extends State<HubSection> with MountedSetStateMixin {
   static const _longPressDuration = Duration(milliseconds: 500);
 
   late FocusNode _hubFocusNode;
@@ -130,7 +131,7 @@ class HubSectionState extends State<HubSection> {
       _longPressTriggered = false;
     }
     // ignore: no-empty-block - setState triggers rebuild to update focus styling
-    if (mounted) setState(() {});
+    setStateIfMounted(() {});
   }
 
   /// Request focus on this hub at a specific item index
@@ -144,7 +145,7 @@ class HubSectionState extends State<HubSection> {
     _scrollToIndex(clamped);
     _hubFocusNode.requestFocus();
     // ignore: no-empty-block - setState triggers rebuild to update focus styling
-    if (mounted) setState(() {});
+    setStateIfMounted(() {});
 
     _scrollHubIntoView();
   }

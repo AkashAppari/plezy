@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/loading_indicator_box.dart';
 import '../../i18n/strings.g.dart';
 
 class MergedLicenseEntry {
@@ -52,10 +53,7 @@ class LicensesScreen extends StatelessWidget {
       builder: (context, snapshot) {
         final mergedLicenses = snapshot.data;
         if (mergedLicenses == null) {
-          return FocusedScrollScaffold(
-            title: Text(t.screens.licenses),
-            slivers: const [SliverFillRemaining(child: Center(child: CircularProgressIndicator()))],
-          );
+          return FocusedScrollScaffold(title: Text(t.screens.licenses), slivers: [LoadingIndicatorBox.sliver]);
         }
 
         return FocusedScrollScaffold(

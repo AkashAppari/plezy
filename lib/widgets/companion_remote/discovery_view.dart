@@ -7,6 +7,7 @@ import '../../connection/connection_registry.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
+import '../../mixins/mounted_set_state_mixin.dart';
 import '../../models/plex/plex_home.dart';
 import '../../profiles/active_plex_identity.dart';
 import '../../profiles/active_profile_provider.dart';
@@ -24,7 +25,7 @@ class DiscoveryView extends StatefulWidget {
   State<DiscoveryView> createState() => _DiscoveryViewState();
 }
 
-class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMixin {
+class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMixin, MountedSetStateMixin {
   late final _hostAddressController = createTextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isConnecting = false;
@@ -127,7 +128,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
       if (!mounted) return;
       setState(() => _errorMessage = _parseErrorMessage(e.toString()));
     } finally {
-      if (mounted) setState(() => _isConnecting = false);
+      setStateIfMounted(() => _isConnecting = false);
     }
   }
 

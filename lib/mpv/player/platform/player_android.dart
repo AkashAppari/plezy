@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/services.dart';
 
 import '../../models.dart';
@@ -200,10 +201,7 @@ class PlayerAndroid extends PlayerBase {
           final storedId = _hiddenSubtitleTrackId;
           if (storedId != null) {
             _hiddenSubtitleTrackId = null;
-            final track = state.tracks.subtitle.cast<SubtitleTrack?>().firstWhere(
-              (t) => t?.id == storedId,
-              orElse: () => null,
-            );
+            final track = state.tracks.subtitle.firstWhereOrNull((t) => t.id == storedId);
             if (track != null) {
               await selectSubtitleTrack(track);
             }

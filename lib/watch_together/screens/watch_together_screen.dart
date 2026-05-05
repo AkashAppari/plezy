@@ -7,6 +7,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../mixins/mounted_set_state_mixin.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../focus/focusable_wrapper.dart';
@@ -74,7 +75,7 @@ class _NotInSessionView extends StatefulWidget {
   State<_NotInSessionView> createState() => _NotInSessionViewState();
 }
 
-class _NotInSessionViewState extends State<_NotInSessionView> {
+class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetStateMixin {
   bool _isCreating = false;
   bool _isJoining = false;
   String? _enteringRoomCode;
@@ -218,7 +219,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
         displayName: _plexDisplayName,
       );
       await RecentRoomsService.addOrUpdateRoom(sessionId, controlMode: controlMode);
-      if (mounted) setState(() => _recentRooms = RecentRoomsService.getRecentRooms());
+      setStateIfMounted(() => _recentRooms = RecentRoomsService.getRecentRooms());
     } catch (e) {
       appLogger.e('Failed to create session', error: e);
       if (mounted) {
@@ -262,7 +263,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
     try {
       await widget.watchTogether.joinSession(sessionId, displayName: _plexDisplayName);
       await RecentRoomsService.addOrUpdateRoom(sessionId);
-      if (mounted) setState(() => _recentRooms = RecentRoomsService.getRecentRooms());
+      setStateIfMounted(() => _recentRooms = RecentRoomsService.getRecentRooms());
     } catch (e) {
       appLogger.e('Failed to join session', error: e);
       if (mounted) {
@@ -285,7 +286,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
         displayName: _plexDisplayName,
       );
       await RecentRoomsService.addOrUpdateRoom(room.code);
-      if (mounted) setState(() => _recentRooms = RecentRoomsService.getRecentRooms());
+      setStateIfMounted(() => _recentRooms = RecentRoomsService.getRecentRooms());
     } catch (e) {
       appLogger.e('Failed to enter room', error: e);
       if (mounted) {

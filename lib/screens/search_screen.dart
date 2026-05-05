@@ -13,6 +13,7 @@ import '../providers/multi_server_provider.dart';
 import '../utils/app_logger.dart';
 import '../utils/snackbar_helper.dart';
 import '../widgets/desktop_app_bar.dart';
+import '../widgets/loading_indicator_box.dart';
 import '../widgets/pill_input_decoration.dart';
 import '../widgets/focusable_media_card.dart';
 import '../utils/focus_utils.dart';
@@ -232,7 +233,7 @@ class _SearchScreenState extends State<SearchScreen>
               ),
             ),
             if (_isSearching)
-              const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+              LoadingIndicatorBox.sliver
             else if (!_hasSearched)
               SliverFillRemaining(
                 child: StateMessageWidget(

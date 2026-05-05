@@ -23,6 +23,7 @@ import '../../utils/app_logger.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/backend_badge.dart';
+import '../../widgets/loading_indicator_box.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../libraries/state_messages.dart';
 import 'pin_entry_dialog.dart';
@@ -175,7 +176,7 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
                 ),
               ),
               if (snapshot.connectionState != ConnectionState.done)
-                const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+                LoadingIndicatorBox.sliver
               else if (candidates.isEmpty)
                 SliverFillRemaining(
                   child: EmptyStateWidget(

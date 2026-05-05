@@ -10,6 +10,7 @@ import '../../../focus/key_event_utils.dart';
 import '../../../focus/locked_hub_controller.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../media/media_item_types.dart';
+import '../../../mixins/mounted_set_state_mixin.dart';
 import '../../../models/livetv_channel.dart';
 import '../../../models/livetv_hub_result.dart';
 import '../../../providers/multi_server_provider.dart';
@@ -39,7 +40,7 @@ class WhatsOnTab extends StatefulWidget {
   State<WhatsOnTab> createState() => WhatsOnTabState();
 }
 
-class WhatsOnTabState extends State<WhatsOnTab> with LiveTvActionsMixin<WhatsOnTab> {
+class WhatsOnTabState extends State<WhatsOnTab> with LiveTvActionsMixin<WhatsOnTab>, MountedSetStateMixin {
   List<LiveTvHubResult> _hubs = [];
   bool _isLoading = true;
   Timer? _refreshTimer;
@@ -104,7 +105,7 @@ class WhatsOnTabState extends State<WhatsOnTab> with LiveTvActionsMixin<WhatsOnT
       });
     } catch (e) {
       appLogger.e('Failed to load live TV hubs', error: e);
-      if (mounted) setState(() => _isLoading = false);
+      setStateIfMounted(() => _isLoading = false);
     }
   }
 
@@ -223,7 +224,7 @@ class _LiveTvHubSection extends StatefulWidget {
   State<_LiveTvHubSection> createState() => _LiveTvHubSectionState();
 }
 
-class _LiveTvHubSectionState extends State<_LiveTvHubSection> {
+class _LiveTvHubSectionState extends State<_LiveTvHubSection> with MountedSetStateMixin {
   static const _longPressDuration = Duration(milliseconds: 500);
 
   late FocusNode _hubFocusNode;
@@ -271,7 +272,7 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> {
       _longPressTriggered = false;
     }
     // ignore: no-empty-block - setState triggers rebuild to update focus styling
-    if (mounted) setState(() {});
+    setStateIfMounted(() {});
   }
 
   void requestFocusAt(int index) {
@@ -283,7 +284,7 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> {
     _scrollToIndex(clamped);
     _hubFocusNode.requestFocus();
     // ignore: no-empty-block - setState triggers rebuild to update focus styling
-    if (mounted) setState(() {});
+    setStateIfMounted(() {});
     _scrollHubIntoView();
   }
 

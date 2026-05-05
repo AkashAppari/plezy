@@ -8,6 +8,7 @@ import '../media/media_server_client.dart';
 import '../providers/multi_server_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../services/media_list_playback_launcher.dart';
+import '../widgets/loading_indicator_box.dart';
 import '../utils/app_logger.dart';
 import '../utils/snackbar_helper.dart';
 import '../mixins/refreshable.dart';
@@ -124,7 +125,7 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
     }
 
     if (items.isEmpty && isLoading) {
-      return [const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))];
+      return [LoadingIndicatorBox.sliver];
     }
 
     if (items.isEmpty) {

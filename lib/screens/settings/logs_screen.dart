@@ -13,9 +13,11 @@ import '../../focus/focusable_action_bar.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
+import '../../mixins/mounted_set_state_mixin.dart';
 import '../../utils/dialogs.dart';
 import '../../main.dart' show gitCommit;
 import '../../utils/app_logger.dart';
+import '../../utils/formatters.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/desktop_app_bar.dart';
@@ -27,7 +29,7 @@ class LogsScreen extends StatefulWidget {
   State<LogsScreen> createState() => _LogsScreenState();
 }
 
-class _LogsScreenState extends State<LogsScreen> {
+class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
   List<LogEntry> _logs = [];
   String _deviceInfo = '';
   final ScrollController _scrollController = ScrollController();
@@ -64,7 +66,7 @@ class _LogsScreenState extends State<LogsScreen> {
       buffer.writeln('Linux ${info.versionId ?? info.id}');
     }
 
-    if (mounted) setState(() => _deviceInfo = buffer.toString().trimRight());
+    setStateIfMounted(() => _deviceInfo = buffer.toString().trimRight());
   }
 
   @override
@@ -80,10 +82,10 @@ class _LogsScreenState extends State<LogsScreen> {
   }
 
   String _formatTime(DateTime time) {
-    final hour = time.hour.toString().padLeft(2, '0');
-    final minute = time.minute.toString().padLeft(2, '0');
-    final second = time.second.toString().padLeft(2, '0');
-    final millisecond = time.millisecond.toString().padLeft(3, '0');
+    final hour = padNumber(time.hour, 2);
+    final minute = padNumber(time.minute, 2);
+    final second = padNumber(time.second, 2);
+    final millisecond = padNumber(time.millisecond, 3);
     return '$hour:$minute:$second.$millisecond';
   }
 

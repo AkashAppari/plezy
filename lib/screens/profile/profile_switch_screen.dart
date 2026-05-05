@@ -9,6 +9,7 @@ import '../../connection/connection_registry.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/media_backend.dart';
+import '../../mixins/mounted_set_state_mixin.dart';
 import '../../profiles/active_profile_binder.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/plex_home_service.dart';
@@ -47,7 +48,7 @@ class ProfileSwitchScreen extends StatefulWidget {
   State<ProfileSwitchScreen> createState() => _ProfileSwitchScreenState();
 }
 
-class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> {
+class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedSetStateMixin {
   bool _allowPop = false;
   final FocusNode _firstSelectableFocusNode = FocusNode();
   bool _focusRequested = false;
@@ -68,7 +69,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> {
     if (_storage == null) {
       unawaited(
         StorageService.getInstance().then((s) {
-          if (mounted) setState(() => _storage = s);
+          setStateIfMounted(() => _storage = s);
         }),
       );
     }
@@ -351,7 +352,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> {
       }
       navigator.pop(true);
     } finally {
-      if (mounted) setState(() => _switching = false);
+      setStateIfMounted(() => _switching = false);
     }
   }
 }

@@ -11,12 +11,13 @@ import '../utils/provider_extensions.dart';
 import '../widgets/focusable_media_card.dart';
 import '../widgets/media_grid_delegate.dart';
 import '../widgets/desktop_app_bar.dart';
+import '../widgets/loading_indicator_box.dart';
 import '../widgets/overlay_sheet.dart';
 import '../focus/focusable_action_bar.dart';
 import '../focus/key_event_utils.dart';
 import '../mixins/grid_focus_node_mixin.dart';
 import 'libraries/sort_bottom_sheet.dart';
-import 'libraries/state_messages.dart';
+import 'libraries/content_state_builder.dart';
 import '../mixins/refreshable.dart';
 import '../i18n/strings.g.dart';
 import 'focusable_detail_screen_mixin.dart';
@@ -290,15 +291,9 @@ class _HubDetailScreenState extends State<HubDetailScreen>
             slivers: [
               CustomAppBar(title: Text(widget.hub.title), pinned: true, actions: buildFocusableAppBarActions()),
               if (_errorMessage != null)
-                SliverFillRemaining(
-                  child: ErrorStateWidget(
-                    message: _errorMessage!,
-                    icon: Symbols.error_outline_rounded,
-                    onRetry: _loadMoreItems,
-                  ),
-                )
+                SliverErrorState(message: _errorMessage!, onRetry: _loadMoreItems)
               else if (_filteredItems.isEmpty && _isLoading)
-                const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+                LoadingIndicatorBox.sliver
               else if (_filteredItems.isEmpty)
                 SliverFillRemaining(child: Center(child: Text(t.hubDetail.noItemsFound)))
               else

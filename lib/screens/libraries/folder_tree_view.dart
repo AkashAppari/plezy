@@ -4,6 +4,7 @@ import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
 import '../../services/play_queue_launcher.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/error_message_utils.dart';
 import '../../utils/media_navigation_helper.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
@@ -85,9 +86,8 @@ class FolderTreeViewState extends State<FolderTreeView> {
     } catch (e) {
       if (!mounted) return;
 
-      appLogger.e('Failed to load root folders', error: e);
       setState(() {
-        _errorMessage = t.errors.failedToLoad(context: t.libraries.folders, error: e.toString());
+        _errorMessage = mapUnexpectedErrorToMessage(e, context: t.libraries.folders);
         _isLoadingRoot = false;
       });
     }
@@ -130,13 +130,13 @@ class FolderTreeViewState extends State<FolderTreeView> {
     } catch (e) {
       if (!mounted) return;
 
-      appLogger.e('Failed to load folder children', error: e);
+      final message = mapUnexpectedErrorToMessage(e, context: t.libraries.folders);
       setState(() {
         _loadingFolders.remove(folderKey);
       });
 
       if (mounted) {
-        showErrorSnackBar(context, t.errors.failedToLoad(context: t.libraries.folders, error: e.toString()));
+        showErrorSnackBar(context, message);
       }
     }
   }

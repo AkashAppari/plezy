@@ -14,6 +14,7 @@ import '../../focus/focusable_text_field.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
 import '../main_screen.dart';
+import '../../mixins/mounted_set_state_mixin.dart';
 import '../../mixins/refreshable.dart';
 import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/libraries_provider.dart';
@@ -57,7 +58,7 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
+class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, MountedSetStateMixin {
   late final FocusMemoryTracker _focusTracker;
 
   // Focus tracking keys
@@ -95,13 +96,13 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     _focusTracker = FocusMemoryTracker(
       onFocusChanged: () {
         // ignore: no-empty-block - setState triggers rebuild to update focus styling
-        if (mounted) setState(() {});
+        setStateIfMounted(() {});
       },
       debugLabelPrefix: 'settings',
     );
     if (_keyboardShortcutsSupported) {
       KeyboardShortcutsService.getInstance().then((s) {
-        if (mounted) setState(() => _keyboardService = s);
+        setStateIfMounted(() => _keyboardService = s);
       });
     }
   }

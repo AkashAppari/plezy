@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/media_server_client.dart';
+import '../../mixins/mounted_set_state_mixin.dart';
 import '../../models/livetv_channel.dart';
 import '../../models/livetv_program.dart';
 import '../../models/media_subscription.dart';
@@ -79,7 +80,7 @@ class _ProgramDetailsSheetContent extends StatefulWidget {
   State<_ProgramDetailsSheetContent> createState() => _ProgramDetailsSheetContentState();
 }
 
-class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent> {
+class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent> with MountedSetStateMixin {
   final List<FocusNode> _focusNodes = [];
   MediaSubscription? _existingSubscription;
   bool _checkedMapping = false;
@@ -115,7 +116,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
     final providerId = widget.program.providerIdentifier;
     final ratingKey = widget.program.ratingKey;
     if (client == null || providerId == null || providerId.isEmpty || ratingKey == null || ratingKey.isEmpty) {
-      if (mounted) setState(() => _checkedMapping = true);
+      setStateIfMounted(() => _checkedMapping = true);
       return;
     }
     try {
@@ -129,7 +130,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
     } catch (e) {
       // 403 (no DVR access) or transient — treat as unscheduled.
       appLogger.d('Subscription mapping check failed: $e');
-      if (mounted) setState(() => _checkedMapping = true);
+      setStateIfMounted(() => _checkedMapping = true);
     }
   }
 

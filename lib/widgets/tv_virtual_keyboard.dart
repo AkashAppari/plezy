@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../focus/dpad_navigator.dart';
 import '../i18n/strings.g.dart';
+import '../mixins/mounted_set_state_mixin.dart';
 import '../utils/platform_detector.dart';
 
 Future<void> showTvVirtualKeyboard({
@@ -85,7 +86,7 @@ class _TvVirtualKeyboardDialog extends StatefulWidget {
   State<_TvVirtualKeyboardDialog> createState() => _TvVirtualKeyboardDialogState();
 }
 
-class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> {
+class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with MountedSetStateMixin {
   static const double _keySize = 60;
   static const double _keyGap = 6;
   static const double _rowGap = 6;
@@ -115,7 +116,7 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> {
   }
 
   void _handleTextChanged() {
-    if (mounted) setState(() {});
+    setStateIfMounted(() {});
   }
 
   bool get _isNumberKeyboard {

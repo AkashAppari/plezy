@@ -85,6 +85,14 @@ class LogRedactionManager {
     _rebuildCombinedPattern();
   }
 
+  /// Convenience: register a server's URL and access token together.
+  /// Call this before any HTTP traffic so the very first probe URL doesn't
+  /// leak credentials verbatim.
+  static void registerServer(String? url, String? token) {
+    registerServerUrl(url);
+    registerToken(token);
+  }
+
   /// Register other sensitive values that need redaction.
   static void registerCustomValue(String? value) {
     final normalized = _normalize(value);

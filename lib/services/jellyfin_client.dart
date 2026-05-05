@@ -94,8 +94,7 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
     // leak the token verbatim. `LogRedactionManager.redact()` also has
     // pattern-based fallbacks for `api_key=`, `X-Emby-Token`, and the
     // `Authorization: MediaBrowser ... Token="..."` header.
-    LogRedactionManager.registerServerUrl(connection.baseUrl);
-    LogRedactionManager.registerToken(connection.accessToken);
+    LogRedactionManager.registerServer(connection.baseUrl, connection.accessToken);
     String version = '1.0';
     try {
       final pkg = await PackageInfo.fromPlatform();

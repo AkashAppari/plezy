@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
+import 'package:uuid/uuid.dart';
 
 import '../models/shader_preset.dart';
 import '../utils/app_logger.dart';
@@ -211,7 +212,7 @@ class ShaderAssetLoader {
   static Future<String> importCustomShader(String sourcePath) async {
     final customDir = await _getCustomShaderDirectory();
     final ext = path.extension(sourcePath);
-    final uuid = DateTime.now().millisecondsSinceEpoch.toRadixString(36);
+    final uuid = const Uuid().v4();
     final storedName = '$uuid$ext';
     final targetFile = File(path.join(customDir, storedName));
 

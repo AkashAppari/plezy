@@ -19,6 +19,7 @@ import 'profiles/active_profile_provider.dart';
 import 'profiles/profile.dart';
 import 'profiles/profile_connection_registry.dart';
 import 'profiles/profile_registry.dart';
+import 'mixins/mounted_set_state_mixin.dart';
 import 'profiles/plex_home_service.dart';
 import 'screens/main_screen.dart';
 import 'screens/auth_screen.dart';
@@ -991,7 +992,7 @@ class SetupScreen extends StatefulWidget {
   State<SetupScreen> createState() => _SetupScreenState();
 }
 
-class _SetupScreenState extends State<SetupScreen> {
+class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
   String _statusMessage = '';
 
   // Per-server connection status: serverId -> (name, connected?)
@@ -1004,7 +1005,7 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   void _setStatus(String message) {
-    if (mounted) setState(() => _statusMessage = message);
+    setStateIfMounted(() => _statusMessage = message);
   }
 
   Future<void> _loadSavedCredentials() async {

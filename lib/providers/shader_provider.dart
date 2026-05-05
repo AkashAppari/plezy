@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 
 import '../mixins/disposable_change_notifier_mixin.dart';
@@ -67,8 +68,7 @@ class ShaderProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   bool get isShaderEnabled => _currentPreset.type != ShaderPresetType.none;
 
   ShaderPreset? findPresetById(String id) {
-    return ShaderPreset.fromId(id) ??
-        _customPresets.cast<ShaderPreset?>().firstWhere((p) => p!.id == id, orElse: () => null);
+    return ShaderPreset.fromId(id) ?? _customPresets.firstWhereOrNull((p) => p.id == id);
   }
 
   Future<void> setPreset(ShaderPreset preset) async {

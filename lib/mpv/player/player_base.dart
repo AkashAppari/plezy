@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart' show protected;
 import 'package:flutter/services.dart';
 
@@ -267,12 +268,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
       case 'audio-device':
         if (value is String && value.isNotEmpty) {
-          final device =
-              _state.audioDevices.cast<AudioDevice?>().firstWhere(
-                (d) => d?.name == value,
-                orElse: () => AudioDevice(name: value),
-              ) ??
-              AudioDevice(name: value);
+          final device = _state.audioDevices.firstWhereOrNull((d) => d.name == value) ?? AudioDevice(name: value);
           _state = _state.copyWith(audioDevice: device);
           audioDeviceController.add(device);
         }
@@ -441,7 +437,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     AudioTrack? selectedTrack;
 
     if (id != null && id != 'no') {
-      selectedTrack = _state.tracks.audio.cast<AudioTrack?>().firstWhere((t) => t?.id == id, orElse: () => null);
+      selectedTrack = _state.tracks.audio.firstWhereOrNull((t) => t.id == id);
     }
 
     _state = _state.copyWith(track: _state.track.copyWith(audio: selectedTrack));
@@ -454,7 +450,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
     selectedTrack = (id == null || id == 'no')
         ? SubtitleTrack.off
-        : _state.tracks.subtitle.cast<SubtitleTrack?>().firstWhere((t) => t?.id == id, orElse: () => null);
+        : _state.tracks.subtitle.firstWhereOrNull((t) => t.id == id);
 
     _state = _state.copyWith(track: _state.track.copyWith(subtitle: selectedTrack));
     trackController.add(_state.track);
@@ -467,7 +463,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     if (id == null || id == 'no') {
       selectedTrack = null;
     } else {
-      selectedTrack = _state.tracks.subtitle.cast<SubtitleTrack?>().firstWhere((t) => t?.id == id, orElse: () => null);
+      selectedTrack = _state.tracks.subtitle.firstWhereOrNull((t) => t.id == id);
     }
 
     _state = _state.copyWith(track: _state.track.copyWith(secondarySubtitle: selectedTrack));

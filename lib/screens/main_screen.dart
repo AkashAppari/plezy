@@ -18,6 +18,7 @@ import '../utils/snackbar_helper.dart';
 import '../utils/update_dialog.dart';
 import '../utils/video_player_navigation.dart';
 import '../main.dart';
+import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/refreshable.dart';
 import '../widgets/overlay_sheet.dart';
 import '../mixins/tab_visibility_aware.dart';
@@ -96,7 +97,8 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener, WidgetsBindingObserver {
+class _MainScreenState extends State<MainScreen>
+    with RouteAware, WindowListener, WidgetsBindingObserver, MountedSetStateMixin {
   NavigationTabId _currentTab = NavigationTabId.discover;
   String? _selectedLibraryGlobalKey;
 
@@ -797,7 +799,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
         await serverManager.checkServerHealth();
         await serverManager.reconnectOfflineServers(forceRediscovery: true);
       } finally {
-        if (mounted) setState(() => _isReconnecting = false);
+        setStateIfMounted(() => _isReconnecting = false);
       }
     }());
   }

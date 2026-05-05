@@ -25,6 +25,7 @@ import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../widgets/hub_section.dart';
+import '../widgets/loading_indicator_box.dart';
 import 'profile/profile_switch_screen.dart';
 import '../connection/connection_registry.dart';
 import '../profiles/active_profile_provider.dart';
@@ -53,7 +54,7 @@ import '../utils/platform_detector.dart';
 import '../theme/mono_tokens.dart';
 import '../services/watch_next_service.dart';
 import 'auth_screen.dart';
-import 'libraries/state_messages.dart';
+import 'libraries/content_state_builder.dart';
 import 'main_screen.dart';
 import '../watch_together/watch_together.dart';
 import '../providers/companion_remote_provider.dart';
@@ -1173,15 +1174,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   );
                 },
               ),
-              if (_isLoading) const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
-              if (_errorMessage != null)
-                SliverFillRemaining(
-                  child: ErrorStateWidget(
-                    message: _errorMessage!,
-                    icon: Symbols.error_outline_rounded,
-                    onRetry: _loadContent,
-                  ),
-                ),
+              if (_isLoading) LoadingIndicatorBox.sliver,
+              if (_errorMessage != null) SliverErrorState(message: _errorMessage!, onRetry: _loadContent),
               if (!_isLoading && _errorMessage == null) ...[
                 // On Deck / Continue Watching
                 if (_onDeck.isNotEmpty)

@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/focus_memory_tracker.dart';
 import '../media/media_library.dart';
+import '../mixins/mounted_set_state_mixin.dart';
 import '../navigation/navigation_tabs.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
@@ -186,7 +187,7 @@ class SideNavigationRail extends StatefulWidget {
   State<SideNavigationRail> createState() => SideNavigationRailState();
 }
 
-class SideNavigationRailState extends State<SideNavigationRail> {
+class SideNavigationRailState extends State<SideNavigationRail> with MountedSetStateMixin {
   bool _librariesExpanded = true;
 
   bool _isHovered = false;
@@ -225,7 +226,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     _focusTracker = FocusMemoryTracker(
       onFocusChanged: () {
         // ignore: no-empty-block - setState triggers rebuild to update focus styling
-        if (mounted) setState(() {});
+        setStateIfMounted(() {});
       },
       debugLabelPrefix: 'nav',
     );

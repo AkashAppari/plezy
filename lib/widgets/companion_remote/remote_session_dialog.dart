@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../connection/connection_registry.dart';
 import '../../i18n/strings.g.dart';
+import '../../mixins/mounted_set_state_mixin.dart';
 import '../../profiles/active_plex_identity.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/plex_home_service.dart';
@@ -27,7 +28,7 @@ class RemoteSessionDialog extends StatefulWidget {
   }
 }
 
-class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
+class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedSetStateMixin {
   bool _isStarting = false;
   String? _errorMessage;
 
@@ -78,7 +79,7 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
         await provider.startHostServer();
       }
 
-      if (mounted) setState(() => _isStarting = false);
+      setStateIfMounted(() => _isStarting = false);
     } catch (e) {
       appLogger.e('Failed to start companion remote server', error: e);
       if (!mounted) return;

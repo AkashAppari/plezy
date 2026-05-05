@@ -7,6 +7,7 @@ import '../media/media_kind.dart';
 import '../services/plex_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
+import '../utils/formatters.dart';
 import '../utils/language_codes.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/snackbar_helper.dart';
@@ -269,8 +270,7 @@ class _PlexMetadataEditScreenState extends State<PlexMetadataEditScreen> {
 
     if (picked != null && mounted) {
       setState(() {
-        _originallyAvailableAt =
-            '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+        _originallyAvailableAt = '${picked.year}-${padNumber(picked.month, 2)}-${padNumber(picked.day, 2)}';
       });
     }
   }
@@ -456,10 +456,7 @@ class _PlexMetadataEditScreenState extends State<PlexMetadataEditScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return FocusedScrollScaffold(
-        title: Text(t.metadataEdit.screenTitle),
-        slivers: [const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))],
-      );
+      return FocusedScrollScaffold(title: Text(t.metadataEdit.screenTitle), slivers: [LoadingIndicatorBox.sliver]);
     }
 
     return FocusedScrollScaffold(
