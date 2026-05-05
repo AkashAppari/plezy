@@ -95,9 +95,7 @@ import UIKit
 
       // The sample buffer layer must be in a visible view hierarchy for
       // isPictureInPicturePossible to become true.
-      if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-        let window = windowScene.windows.first(where: { $0.isKeyWindow })
-      {
+      if let window = ExternalDisplayManager.mainApplicationWindow() {
         let view = UIView(frame: window.bounds)
         view.clipsToBounds = true
         view.isUserInteractionEnabled = false

@@ -6,6 +6,8 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
   private var containerView: UIView?
   private weak var window: UIWindow?
+  private var mainBlankView: UIView?
+  private var isVisible = false
 
   var isPipStarting = false
 
@@ -23,7 +25,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
     let layer = MpvMetalLayer()
     layer.frame = container.bounds
-    layer.contentsScale = UIScreen.main.nativeScale
+    layer.contentsScale = window.screen.nativeScale
     layer.framebufferOnly = true
     layer.backgroundColor = UIColor.black.cgColor
 
@@ -43,6 +45,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     }
 
     setupNotifications()
+    ExternalDisplayManager.shared.attach(core: self)
 
     isInitialized = true
     print("[MpvPlayerCore] Initialized successfully with MPV")
@@ -87,12 +90,10 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   func setVisible(_ visible: Bool) {
     guard let containerView else { return }
 
-    if visible {
-      containerView.removeFromSuperview()
-      window?.insertSubview(containerView, at: 0)
-    }
-
+    isVisible = visible
+    if visible { refreshExternalDisplayAttachment() }
     containerView.isHidden = !visible
+    if !visible { mainBlankView?.isHidden = true }
   }
 
   func updateFrame(_ frame: CGRect? = nil) {
@@ -101,16 +102,84 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     if let frame {
       containerView.frame = frame
       metalLayer.frame = containerView.bounds
+    } else if let superview = containerView.superview {
+      containerView.frame = superview.bounds
+      metalLayer.frame = containerView.bounds
     } else if let window {
       containerView.frame = window.bounds
       metalLayer.frame = containerView.bounds
     }
 
-    let scale = UIScreen.main.nativeScale
+    mainBlankView?.frame = window?.bounds ?? .zero
+
+    let screen = containerView.window?.screen ?? window?.screen ?? UIScreen.main
+    let scale = screen.nativeScale > 0 ? screen.nativeScale : screen.scale
+    metalLayer.contentsScale = scale
     metalLayer.drawableSize = CGSize(
       width: metalLayer.frame.width * scale,
       height: metalLayer.frame.height * scale
     )
+  }
+
+  func externalDisplayDidChange() {
+    refreshExternalDisplayAttachment()
+  }
+
+  private func refreshExternalDisplayAttachment() {
+    guard let containerView else { return }
+
+    let externalSuperview =
+      isVisible && !isPipActive && !isPipStarting
+      ? ExternalDisplayManager.shared.videoSuperview
+      : nil
+
+    if let externalSuperview {
+      moveContainerView(to: externalSuperview)
+      setMainBlankViewVisible(true)
+    } else if isVisible, let window {
+      moveContainerView(to: window)
+      setMainBlankViewVisible(false)
+    } else {
+      setMainBlankViewVisible(false)
+    }
+
+    containerView.isHidden = !isVisible
+    updateFrame()
+  }
+
+  private func moveContainerView(to superview: UIView) {
+    guard let containerView else { return }
+
+    if containerView.superview !== superview {
+      containerView.removeFromSuperview()
+    }
+    containerView.frame = superview.bounds
+    containerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+    superview.insertSubview(containerView, at: 0)
+  }
+
+  private func setMainBlankViewVisible(_ visible: Bool) {
+    guard visible, let window else {
+      mainBlankView?.removeFromSuperview()
+      mainBlankView = nil
+      return
+    }
+
+    let blankView = mainBlankView ?? UIView(frame: window.bounds)
+    blankView.backgroundColor = .black
+    blankView.isUserInteractionEnabled = false
+    blankView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+    blankView.frame = window.bounds
+
+    if blankView.superview !== window {
+      blankView.removeFromSuperview()
+      window.insertSubview(blankView, at: 0)
+    } else {
+      window.insertSubview(blankView, at: 0)
+    }
+
+    blankView.isHidden = false
+    mainBlankView = blankView
   }
 
   /// Nudge mpv to present the current paused frame after switching back from PiP.
@@ -138,12 +207,15 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
   func dispose() {
     NotificationCenter.default.removeObserver(self)
+    ExternalDisplayManager.shared.detach(core: self)
     disposeSharedState(destroySynchronously: false)
 
     metalLayer?.removeFromSuperlayer()
     metalLayer = nil
     containerView?.removeFromSuperview()
     containerView = nil
+    mainBlankView?.removeFromSuperview()
+    mainBlankView = nil
     isInitialized = false
     print("[MpvPlayerCore] Disposed")
   }

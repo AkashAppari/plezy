@@ -123,7 +123,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
   }
 
   private var isSceneActive: Bool {
-    UIApplication.shared.connectedScenes.contains { $0.activationState == .foregroundActive }
+    ExternalDisplayManager.hasActiveApplicationScene
   }
 
   private func restoreInlinePlayerAfterPip() {
@@ -362,12 +362,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
   // MARK: - Helpers
 
   private func findKeyWindow() -> UIWindow? {
-    guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-      let window = windowScene.windows.first(where: { $0.isKeyWindow })
-    else {
-      return nil
-    }
-    return window
+    ExternalDisplayManager.mainApplicationWindow()
   }
 }
 
