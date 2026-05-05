@@ -649,6 +649,16 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     positionUpdateRunnable = null
   }
 
+  private fun resetPlaybackProgress(startPositionMs: Long) {
+    lastPosition = startPositionMs
+    lastDuration = 0L
+    lastBufferedPosition = 0L
+    delegate?.onPropertyChange("time-pos", startPositionMs / 1000.0)
+    delegate?.onPropertyChange("duration", 0.0)
+    delegate?.onPropertyChange("demuxer-cache-time", 0.0)
+    delegate?.onPropertyChange("eof-reached", false)
+  }
+
   private fun emitSeekable(seekable: Boolean, force: Boolean = false) {
     if (!force && lastSeekable == seekable) return
     lastSeekable = seekable
@@ -1380,6 +1390,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     currentMediaUri = uri
     currentHeaders = headers
     currentMediaIsLive = isLive
+    resetPlaybackProgress(startPositionMs)
 
     // Apply auth/custom headers to the HTTP DataSource for this session
     httpDataSourceFactory?.setDefaultRequestProperties(
@@ -1530,7 +1541,16 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   }
 
   fun seekTo(positionMs: Long) {
-    exoPlayer?.seekTo(positionMs)
+    val player = exoPlayer ?: return
+    val durationMs = player.duration
+    val clampedPositionMs = if (!currentMediaIsLive && durationMs != C.TIME_UNSET && durationMs > 0L) {
+      positionMs.coerceIn(0L, durationMs)
+    } else {
+      positionMs.coerceAtLeast(0L)
+    }
+    player.seekTo(clampedPositionMs)
+    lastPosition = clampedPositionMs
+    delegate?.onPropertyChange("time-pos", clampedPositionMs / 1000.0)
   }
 
   fun setVolume(volume: Float) {

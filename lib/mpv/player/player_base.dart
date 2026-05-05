@@ -485,6 +485,23 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   }
 
   @protected
+  void resetPlaybackProgress(Duration position) {
+    _positionMs = position.inMilliseconds;
+    _state = _state.copyWith(
+      completed: false,
+      position: position,
+      duration: Duration.zero,
+      buffer: Duration.zero,
+      bufferRanges: const [],
+    );
+    completedController.add(false);
+    positionController.add(position);
+    durationController.add(Duration.zero);
+    bufferController.add(Duration.zero);
+    bufferRangesController.add(const []);
+  }
+
+  @protected
   Future<T?> invoke<T>(String method, [dynamic args]) async {
     if (_disposed) return null;
     return methodChannel.invokeMethod<T>(method, args);

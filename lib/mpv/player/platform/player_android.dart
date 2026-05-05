@@ -98,6 +98,8 @@ class PlayerAndroid extends PlayerBase {
   }) async {
     if (disposed) return;
     await _ensureInitialized();
+    final startPosition = media.start ?? Duration.zero;
+    resetPlaybackProgress(startPosition);
     setSeekable(false);
 
     // Show the video layer
@@ -106,7 +108,7 @@ class PlayerAndroid extends PlayerBase {
     await invoke('open', {
       'uri': media.uri,
       'headers': media.headers,
-      'startPositionMs': media.start?.inMilliseconds ?? 0,
+      'startPositionMs': startPosition.inMilliseconds,
       'autoPlay': play,
       'isLive': isLive,
       if (externalSubtitles != null && externalSubtitles.isNotEmpty)
