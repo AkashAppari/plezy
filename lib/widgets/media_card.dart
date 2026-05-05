@@ -661,13 +661,15 @@ Widget _buildPosterImage(
     final shouldBlur =
         hideSpoilers && item.shouldHideSpoiler && episodePosterMode == EpisodePosterMode.episodeThumbnail;
     posterUrl = item.posterThumb(mode: episodePosterMode, mixedHubContext: mixedHubContext);
+    final posterFallbackUrl = item.posterThumbFallback(mode: episodePosterMode, mixedHubContext: mixedHubContext);
+    final mediaClient = isOffline ? null : context.tryGetMediaClientWithFallback(item.serverId);
 
     Widget image;
 
     // Use thumb image type for 16:9 content (episodes, or movies in mixed hubs)
     if (item.usesWideAspectRatio(episodePosterMode, mixedHubContext: mixedHubContext)) {
       image = OptimizedMediaImage.thumb(
-        client: isOffline ? null : context.tryGetMediaClientWithFallback(item.serverId),
+        client: mediaClient,
         imagePath: posterUrl,
         width: knownWidth ?? double.infinity,
         height: knownHeight ?? double.infinity,
@@ -676,11 +678,20 @@ Widget _buildPosterImage(
       );
     } else {
       image = OptimizedMediaImage.poster(
-        client: isOffline ? null : context.tryGetMediaClientWithFallback(item.serverId),
+        client: mediaClient,
         imagePath: posterUrl,
         width: knownWidth ?? double.infinity,
         height: knownHeight ?? double.infinity,
         fit: BoxFit.cover,
+        errorWidget: posterFallbackUrl == null
+            ? null
+            : (_, _, _) => OptimizedMediaImage.poster(
+                client: mediaClient,
+                imagePath: posterFallbackUrl,
+                width: knownWidth ?? double.infinity,
+                height: knownHeight ?? double.infinity,
+                fit: BoxFit.cover,
+              ),
         localFilePath: localPosterPath,
       );
     }

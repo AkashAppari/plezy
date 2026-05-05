@@ -319,6 +319,9 @@ class OptimizedMediaImage extends StatelessWidget {
           _imageFailureCount = 0;
           _lastFailureLog = now;
         }
+        if (errorWidget != null) {
+          return errorWidget!(context, imageUrl, error);
+        }
         return _buildErrorWidget(context, error);
       },
       frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {

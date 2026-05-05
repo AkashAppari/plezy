@@ -3,6 +3,7 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_stream.dart';
 import 'package:plezy/services/jellyfin_mappers.dart';
+import 'package:plezy/services/settings_service.dart' show EpisodePosterMode;
 
 const _serverId = 'jf-machine-1';
 
@@ -121,6 +122,29 @@ void main() {
       expect(item.grandparentTitle, 'Breaking Bad');
       expect(item.grandparentThumbPath, '/Items/series-1/Images/Primary?tag=seriesPrimary');
       expect(item.grandparentArtPath, '/Items/series-1/Images/Backdrop/0');
+    });
+
+    test('episode season poster falls back to series poster when season image tag is absent', () {
+      final json = {
+        'Id': 'ep1',
+        'Name': 'Pilot',
+        'Type': 'Episode',
+        'SeriesId': 'series-1',
+        'SeriesName': 'Breaking Bad',
+        'SeriesPrimaryImageTag': 'seriesPrimary',
+        'SeasonId': 'season-1',
+        'SeasonName': 'Season 1',
+      };
+
+      final item = JellyfinMappers.mediaItem(json, serverId: _serverId, absolutizer: null)!;
+
+      expect(item.parentThumbPath, '/Items/season-1/Images/Primary');
+      expect(item.grandparentThumbPath, '/Items/series-1/Images/Primary?tag=seriesPrimary');
+      expect(item.posterThumb(mode: EpisodePosterMode.seasonPoster), '/Items/season-1/Images/Primary');
+      expect(
+        item.posterThumbFallback(mode: EpisodePosterMode.seasonPoster),
+        '/Items/series-1/Images/Primary?tag=seriesPrimary',
+      );
     });
 
     test('series viewedLeafCount derived from total - UnplayedItemCount', () {
