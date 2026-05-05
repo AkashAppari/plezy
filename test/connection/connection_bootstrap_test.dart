@@ -47,6 +47,14 @@ void main() {
   });
 
   group('ConnectionBootstrap.migrateLegacyPlexAccount', () {
+    test('run leaves fresh installs without a placeholder local profile', () async {
+      await bootstrap.run();
+
+      expect(await profileRegistry.list(), isEmpty);
+      expect(storage.getActiveProfileId(), isNull);
+      expect(storage.prefs.getBool('profile_migration_v1_done'), isTrue);
+    });
+
     test('returns null when no legacy Plex token is stored', () async {
       final result = await bootstrap.migrateLegacyPlexAccount();
       expect(result, isNull);

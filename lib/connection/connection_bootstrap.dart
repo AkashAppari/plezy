@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'package:uuid/uuid.dart';
-
 import '../models/plex/plex_home.dart';
 import '../models/plex/plex_home_user.dart';
 import '../profiles/profile.dart';
@@ -41,7 +39,6 @@ class ConnectionBootstrap {
   final Future<Map<String, dynamic>> Function(String accountToken) _plexUserInfoFetcher;
 
   static const String _keyProfileMigrationV1Done = 'profile_migration_v1_done';
-  static const String _ownerProfileIdPrefix = 'local-';
 
   /// Run all idempotent boot-time migrations. Best-effort — errors are
   /// logged but never thrown.
@@ -70,7 +67,6 @@ class ConnectionBootstrap {
           return;
         }
       }
-      await _ensureOwnerProfile();
       if (hadLegacyPlexToken) {
         await storage.clearLegacyPlexToken();
       }
@@ -269,25 +265,6 @@ class ConnectionBootstrap {
     if (copied) {
       await Future.wait([storage.prefs.remove('home_users_cache'), storage.prefs.remove('home_users_cache_expiry')]);
     }
-  }
-
-  /// Make sure fresh non-Plex installs always have at least one local profile.
-  /// Migrated Plex accounts select a virtual Plex Home profile instead.
-  Future<void> _ensureOwnerProfile() async {
-    final existing = await profileRegistry.list();
-    if (existing.isNotEmpty) return;
-    if (storage.getActiveProfileId() != null) return;
-
-    final owner = Profile(
-      id: '$_ownerProfileIdPrefix${const Uuid().v4()}',
-      kind: ProfileKind.local,
-      displayName: 'Default',
-      sortOrder: 0,
-      createdAt: DateTime.now(),
-    );
-    await profileRegistry.upsert(owner);
-    await storage.setActiveProfileId(owner.id);
-    appLogger.i('Migration: created placeholder Default profile (no Plex account on first launch)');
   }
 
   Future<PlexAccountConnection?> _firstPlexAccount(PlexAccountConnection? preferred) async {
