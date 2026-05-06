@@ -48,13 +48,6 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
 
       final didSwitch = await player!.setVideoFrameRate(fps, durationMs, extraDelayMs: delaySec * 1000);
 
-      // Set MPV video-sync mode for smoother playback when display is synced
-      try {
-        await player!.setProperty('video-sync', 'display-tempo');
-      } catch (e) {
-        appLogger.d('video-sync property unsupported', error: e);
-      }
-
       if (mounted && player != null) {
         await player!.play();
       }
@@ -79,7 +72,6 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
 
     try {
       await player!.clearVideoFrameRate();
-      await player!.setProperty('video-sync', 'audio');
       unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'Frame rate matching cleared', category: 'player')));
       appLogger.d('Frame rate matching: Cleared, restored default display mode');
     } catch (e) {

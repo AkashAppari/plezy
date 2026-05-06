@@ -378,12 +378,6 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           bool didSwitch = false;
           try {
             didSwitch = await player!.setVideoFrameRate(preKnownFps, durationMs, extraDelayMs: delaySec * 1000);
-            // MPV video-sync tuning (no-op on ExoPlayer).
-            try {
-              await player!.setProperty('video-sync', 'display-tempo');
-            } catch (e) {
-              appLogger.d('video-sync property unsupported on this player', error: e);
-            }
           } catch (e) {
             appLogger.w('Failed to apply pre-playback frame rate matching', error: e);
           }
