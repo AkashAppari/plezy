@@ -72,6 +72,7 @@ bool MpvPlayer::Initialize(HWND container, HWND flutter_window) {
 
   // Observe video-params/sig-peak for HDR detection
   mpv_observe_property(mpv_, 0, "video-params/sig-peak", MPV_FORMAT_DOUBLE);
+  mpv_observe_property(mpv_, 0, "current-ao", MPV_FORMAT_STRING);
 
   // Start event loop.
   StartEventLoop();
@@ -295,6 +296,12 @@ void MpvPlayer::SetEventCallback(EventCallback callback) {
   event_callback_ = std::move(callback);
 }
 
+void MpvPlayer::ReloadAudioOutput() {
+  if (audio_reload_pending_) return;
+  audio_reload_pending_ = true;
+  CommandAsync({"ao-reload"}, [this](int) { audio_reload_pending_ = false; });
+}
+
 void MpvPlayer::StartEventLoop() {
   running_ = true;
   event_thread_ = std::thread(&MpvPlayer::EventLoop, this);
@@ -399,18 +406,18 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
         UpdateHDRMode(sigPeak);
       }
 
-      // Audio recovery: when the device list changes and audio has fallen back
-      // to null output (e.g. after sleep/wake or device unplug), re-set
-      // audio-device to switch back to the real output.
+      if (strcmp(prop->name, "current-ao") == 0) {
+        const char* current_ao = nullptr;
+        if (prop->format == MPV_FORMAT_STRING && prop->data) {
+          current_ao = *static_cast<char**>(prop->data);
+        }
+        current_ao_is_null_ = current_ao && strcmp(current_ao, "null") == 0;
+      }
+
+      // Audio recovery for sleep/wake or unplugged devices.
       // Mirrors mpv's TOOLS/lua/ao-null-reload.lua for embedded libmpv.
-      if (strcmp(prop->name, "audio-device-list") == 0) {
-        GetPropertyAsync("current-ao", [this](int ao_error, const std::string& current_ao) {
-          if (ao_error < 0 || current_ao != "null") return;
-          GetPropertyAsync("audio-device", [this](int device_error, const std::string& device) {
-            if (device_error < 0 || device.empty()) return;
-            SetProperty("audio-device", device);
-          });
-        });
+      if (strcmp(prop->name, "audio-device-list") == 0 && current_ao_is_null_) {
+        ReloadAudioOutput();
       }
 
       SendPropertyChange(prop->name, &node);

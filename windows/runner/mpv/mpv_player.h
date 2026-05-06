@@ -79,6 +79,7 @@ class MpvPlayer {
   void HandleMpvEvent(mpv_event* event);
   void SendPropertyChange(const char* name, mpv_node* data);
   void SendEvent(const std::string& name, const flutter::EncodableMap& data = {});
+  void ReloadAudioOutput();
   uint64_t RegisterStatusRequest(StatusCallback callback);
   StatusCallback TakeStatusRequest(uint64_t request_id);
   uint64_t RegisterGetPropertyRequest(GetPropertyCallback callback);
@@ -95,6 +96,8 @@ class MpvPlayer {
   std::atomic<bool> running_{false};
   EventCallback event_callback_;
   std::mutex callback_mutex_;
+  bool current_ao_is_null_ = false;
+  bool audio_reload_pending_ = false;
 
   uint64_t next_reply_userdata_ = 1;
   std::map<std::string, uint64_t> observed_properties_;
