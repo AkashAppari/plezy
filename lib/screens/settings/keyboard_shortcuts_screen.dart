@@ -4,6 +4,7 @@ import '../../i18n/strings.g.dart';
 import '../../models/hotkey_model.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../utils/snackbar_helper.dart';
+import '../../focus/focusable_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import 'hotkey_recorder_widget.dart';
 
@@ -21,18 +22,21 @@ class KeyboardShortcutsScreen extends StatelessWidget {
         final actions = hotkeys.keys.toList();
         return FocusedScrollScaffold(
           title: Text(t.settings.keyboardShortcuts),
-          actions: [
-            TextButton(
-              onPressed: () async {
-                await keyboardService.resetToDefaults();
-                if (context.mounted) showSuccessSnackBar(context, t.settings.shortcutsReset);
-              },
-              child: Text(t.common.reset),
-            ),
-          ],
           slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: FocusableButton(
+                    onPressed: () => _resetShortcuts(context),
+                    child: TextButton(onPressed: () => _resetShortcuts(context), child: Text(t.common.reset)),
+                  ),
+                ),
+              ),
+            ),
             SliverPadding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final action = actions[index];
@@ -64,6 +68,11 @@ class KeyboardShortcutsScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _resetShortcuts(BuildContext context) async {
+    await keyboardService.resetToDefaults();
+    if (context.mounted) showSuccessSnackBar(context, t.settings.shortcutsReset);
   }
 
   void _editHotkey(BuildContext screenContext, String action, HotKey currentHotkey) {

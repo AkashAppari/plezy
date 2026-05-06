@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/dpad_navigator.dart';
+import '../../focus/focusable_button.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../media/media_sort.dart';
 import '../../utils/scroll_utils.dart';
@@ -107,7 +108,12 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
       children: [
         BottomSheetHeader(
           title: t.libraries.sortBy,
-          action: widget.onClear != null ? TextButton(onPressed: _handleClear, child: Text(t.common.clear)) : null,
+          action: widget.onClear != null
+              ? FocusableButton(
+                  onPressed: _handleClear,
+                  child: TextButton(onPressed: _handleClear, child: Text(t.common.clear)),
+                )
+              : null,
         ),
         Flexible(
           child: RadioGroup<MediaSort>(

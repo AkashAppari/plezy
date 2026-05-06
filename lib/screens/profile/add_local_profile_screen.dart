@@ -3,13 +3,14 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
 import '../../profiles/profile.dart';
 import '../../profiles/profile_registry.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
-import '../../widgets/desktop_app_bar.dart';
+import '../../widgets/focused_scroll_scaffold.dart';
 import '../settings/add_connection_screen.dart';
 import 'pin_entry_dialog.dart';
 import 'pin_status_row.dart';
@@ -30,8 +31,21 @@ class AddLocalProfileScreen extends StatefulWidget {
 
 class _AddLocalProfileScreenState extends State<AddLocalProfileScreen> with ControllerDisposerMixin {
   late final TextEditingController _nameController = createTextEditingController();
+  final _nameFocus = FocusNode(debugLabel: 'AddLocalProfile:Name');
+  final _setPinFocus = FocusNode(debugLabel: 'AddLocalProfile:SetPin');
+  final _continueFocus = FocusNode(debugLabel: 'AddLocalProfile:Continue');
+  final _cancelFocus = FocusNode(debugLabel: 'AddLocalProfile:Cancel');
   String? _pinHash;
   bool _saving = false;
+
+  @override
+  void dispose() {
+    _nameFocus.dispose();
+    _setPinFocus.dispose();
+    _continueFocus.dispose();
+    _cancelFocus.dispose();
+    super.dispose();
+  }
 
   Future<void> _setPin() async {
     final pin = await captureAndConfirmPin(
@@ -73,49 +87,72 @@ class _AddLocalProfileScreenState extends State<AddLocalProfileScreen> with Cont
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          ExcludeFocus(child: CustomAppBar(title: Text(t.profiles.newProfile), pinned: true)),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                Text(t.profiles.profileNameLabel, style: theme.textTheme.labelLarge),
-                const SizedBox(height: 8),
-                ProfileNameField(
-                  controller: _nameController,
-                  hintText: t.profiles.profileNameHint,
-                  onChanged: () => setState(() {}),
-                ),
-                const SizedBox(height: 24),
-                Text(t.profiles.pinProtectionOptional, style: theme.textTheme.labelLarge),
-                const SizedBox(height: 8),
-                Text(
-                  t.profiles.pinExplain,
-                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                ),
-                const SizedBox(height: 12),
-                if (_pinHash == null)
-                  OutlinedButton.icon(
+    return FocusedScrollScaffold(
+      title: Text(t.profiles.newProfile),
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              Text(t.profiles.profileNameLabel, style: theme.textTheme.labelLarge),
+              const SizedBox(height: 8),
+              ProfileNameField(
+                controller: _nameController,
+                focusNode: _nameFocus,
+                hintText: t.profiles.profileNameHint,
+                onChanged: () => setState(() {}),
+                onNavigateDown: () => (_pinHash == null ? _setPinFocus : _continueFocus).requestFocus(),
+              ),
+              const SizedBox(height: 24),
+              Text(t.profiles.pinProtectionOptional, style: theme.textTheme.labelLarge),
+              const SizedBox(height: 8),
+              Text(
+                t.profiles.pinExplain,
+                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 12),
+              if (_pinHash == null)
+                FocusableButton(
+                  focusNode: _setPinFocus,
+                  useBackgroundFocus: true,
+                  onPressed: _setPin,
+                  onNavigateUp: () => _nameFocus.requestFocus(),
+                  onNavigateDown: () => _continueFocus.requestFocus(),
+                  child: OutlinedButton.icon(
                     onPressed: _setPin,
                     icon: const AppIcon(Symbols.lock_outline_rounded, fill: 1),
                     label: Text(t.profiles.setPin),
-                  )
-                else
-                  PinStatusRow(onChange: _setPin, onRemove: _clearPin),
-                const SizedBox(height: 32),
-                FilledButton(
+                  ),
+                )
+              else
+                PinStatusRow(onChange: _setPin, onRemove: _clearPin),
+              const SizedBox(height: 32),
+              FocusableButton(
+                focusNode: _continueFocus,
+                useBackgroundFocus: true,
+                onPressed: _saving || _nameController.text.trim().isEmpty ? null : _saveAndContinue,
+                onNavigateUp: () => (_pinHash == null ? _setPinFocus : _nameFocus).requestFocus(),
+                onNavigateDown: () => _cancelFocus.requestFocus(),
+                child: FilledButton(
                   onPressed: _saving || _nameController.text.trim().isEmpty ? null : _saveAndContinue,
                   child: Text(t.profiles.continueButton),
                 ),
-                const SizedBox(height: 8),
-                TextButton(onPressed: _saving ? null : () => Navigator.of(context).pop(), child: Text(t.common.cancel)),
-              ]),
-            ),
+              ),
+              const SizedBox(height: 8),
+              FocusableButton(
+                focusNode: _cancelFocus,
+                useBackgroundFocus: true,
+                onPressed: _saving ? null : () => Navigator.of(context).pop(),
+                onNavigateUp: () => _continueFocus.requestFocus(),
+                child: TextButton(
+                  onPressed: _saving ? null : () => Navigator.of(context).pop(),
+                  child: Text(t.common.cancel),
+                ),
+              ),
+            ]),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

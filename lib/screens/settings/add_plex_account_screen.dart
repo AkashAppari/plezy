@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../../connection/connection.dart';
 import '../../connection/connection_registry.dart';
+import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../profiles/active_profile_binder.dart';
 import '../../profiles/active_profile_provider.dart';
@@ -17,7 +18,7 @@ import '../../services/plex_auth_service.dart';
 import '../../utils/app_logger.dart';
 import '../../media/media_backend.dart';
 import '../../widgets/backend_badge.dart';
-import '../../widgets/desktop_app_bar.dart';
+import '../../widgets/focused_scroll_scaffold.dart';
 import '../auth/plex_pin_auth_flow.dart';
 import '../profile/borrow_connection_screen.dart';
 import 'async_form_state_mixin.dart';
@@ -158,52 +159,58 @@ class _AddPlexAccountScreenState extends State<AddPlexAccountScreen> with AsyncF
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          ExcludeFocus(child: CustomAppBar(title: Text(t.addServer.addPlexTitle), pinned: true)),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-            sliver: SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(t.addServer.plexAuthIntro, style: theme.textTheme.bodyMedium),
-                  const SizedBox(height: 24),
-                  PlexPinAuthFlow(
-                    onTokenReceived: _onTokenReceived,
-                    initialButtonsBuilder: (context, browser, qr, busy) => Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        FilledButton.icon(
+    return FocusedScrollScaffold(
+      title: Text(t.addServer.addPlexTitle),
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          sliver: SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(t.addServer.plexAuthIntro, style: theme.textTheme.bodyMedium),
+                const SizedBox(height: 24),
+                PlexPinAuthFlow(
+                  onTokenReceived: _onTokenReceived,
+                  initialButtonsBuilder: (context, browser, qr, busy) => Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      FocusableButton(
+                        useBackgroundFocus: true,
+                        onPressed: busy || this.busy ? null : browser,
+                        child: FilledButton.icon(
                           onPressed: busy || this.busy ? null : browser,
                           icon: const BackendBadge(backend: MediaBackend.plex, size: 18),
                           label: Text(t.auth.signInWithPlex),
                         ),
-                        const SizedBox(height: 12),
-                        OutlinedButton.icon(
+                      ),
+                      const SizedBox(height: 12),
+                      FocusableButton(
+                        useBackgroundFocus: true,
+                        onPressed: busy || this.busy ? null : qr,
+                        child: OutlinedButton.icon(
                           onPressed: busy || this.busy ? null : qr,
                           icon: const AppIcon(Symbols.qr_code_rounded, fill: 1),
                           label: Text(t.auth.showQRCode),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  if (errorText != null) ...[
-                    const SizedBox(height: 16),
-                    Text(
-                      errorText!,
-                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                ),
+                if (errorText != null) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    errorText!,
+                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
-              ),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

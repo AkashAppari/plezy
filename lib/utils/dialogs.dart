@@ -214,6 +214,8 @@ Future<String?> showMultilineTextInputDialog(
 /// the save button.
 mixin _TextInputDialogStateMixin<T extends StatefulWidget> on State<T>, ControllerDisposerMixin<T> {
   late final TextEditingController _controller;
+  final _fieldFocusNode = FocusNode();
+  final _cancelFocusNode = FocusNode();
   final _saveFocusNode = FocusNode();
 
   String? get initialValue;
@@ -226,6 +228,8 @@ mixin _TextInputDialogStateMixin<T extends StatefulWidget> on State<T>, Controll
 
   @override
   void dispose() {
+    _fieldFocusNode.dispose();
+    _cancelFocusNode.dispose();
     _saveFocusNode.dispose();
     super.dispose();
   }
@@ -255,19 +259,29 @@ class _MultilineTextInputDialogState extends State<_MultilineTextInputDialog>
         width: 400,
         child: FocusableTextField(
           controller: _controller,
+          focusNode: _fieldFocusNode,
           autofocus: true,
           decoration: InputDecoration(labelText: widget.labelText),
           keyboardType: TextInputType.multiline,
           maxLines: 8,
           minLines: 3,
+          onNavigateDown: _saveFocusNode.requestFocus,
         ),
       ),
       actions: [
-        DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.cancel),
+        DialogActionButton(
+          focusNode: _cancelFocusNode,
+          onPressed: () => Navigator.pop(context),
+          onNavigateUp: _fieldFocusNode.requestFocus,
+          onNavigateRight: _saveFocusNode.requestFocus,
+          label: t.common.cancel,
+        ),
         DialogActionButton(
           onPressed: () => Navigator.pop(context, _controller.text),
           label: t.common.save,
           focusNode: _saveFocusNode,
+          onNavigateUp: _fieldFocusNode.requestFocus,
+          onNavigateLeft: _cancelFocusNode.requestFocus,
         ),
       ],
     );
@@ -317,16 +331,30 @@ class _TextInputDialogState extends State<_TextInputDialog>
       title: Text(widget.title),
       content: FocusableTextField(
         controller: _controller,
+        focusNode: _fieldFocusNode,
         autofocus: true,
         decoration: InputDecoration(labelText: widget.labelText, hintText: widget.hintText),
         keyboardType: widget.keyboardType,
         inputFormatters: widget.inputFormatters,
         textInputAction: TextInputAction.done,
+        onNavigateDown: _saveFocusNode.requestFocus,
         onSubmitted: (_) => _saveFocusNode.requestFocus(),
       ),
       actions: [
-        DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.cancel),
-        DialogActionButton(onPressed: _submit, label: widget.confirmText ?? t.common.save, focusNode: _saveFocusNode),
+        DialogActionButton(
+          focusNode: _cancelFocusNode,
+          onPressed: () => Navigator.pop(context),
+          onNavigateUp: _fieldFocusNode.requestFocus,
+          onNavigateRight: _saveFocusNode.requestFocus,
+          label: t.common.cancel,
+        ),
+        DialogActionButton(
+          onPressed: _submit,
+          label: widget.confirmText ?? t.common.save,
+          focusNode: _saveFocusNode,
+          onNavigateUp: _fieldFocusNode.requestFocus,
+          onNavigateLeft: _cancelFocusNode.requestFocus,
+        ),
       ],
     );
   }

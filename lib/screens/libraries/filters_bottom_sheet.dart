@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../../focus/focusable_button.dart';
 import '../../media/media_filter.dart';
 import '../../services/plex_client.dart';
 import '../../utils/scroll_utils.dart';
@@ -228,15 +229,23 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
           title: t.libraries.filters,
           leading: const AppIcon(Symbols.filter_alt_rounded, fill: 1),
           action: _tempSelectedFilters.isNotEmpty
-              ? TextButton.icon(
+              ? FocusableButton(
                   onPressed: () {
                     setState(() {
                       _tempSelectedFilters.clear();
                     });
                     _applyFilters();
                   },
-                  icon: const AppIcon(Symbols.clear_all_rounded, fill: 1),
-                  label: Text(t.libraries.clearAll),
+                  child: TextButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _tempSelectedFilters.clear();
+                      });
+                      _applyFilters();
+                    },
+                    icon: const AppIcon(Symbols.clear_all_rounded, fill: 1),
+                    label: Text(t.libraries.clearAll),
+                  ),
                 )
               : null,
         ),

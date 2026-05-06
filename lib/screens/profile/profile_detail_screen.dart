@@ -19,9 +19,11 @@ import '../../profiles/profile_registry.dart';
 import '../../profiles/profiles_view.dart';
 import '../../providers/download_provider.dart';
 import '../../utils/snackbar_helper.dart';
+import '../../focus/focusable_button.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/backend_badge.dart';
-import '../../widgets/desktop_app_bar.dart';
+import '../../widgets/focusable_popup_menu_button.dart';
+import '../../widgets/focused_scroll_scaffold.dart';
 import '../../utils/dialogs.dart';
 import '../settings/add_connection_screen.dart';
 import 'pin_entry_dialog.dart';
@@ -46,12 +48,27 @@ class ProfileDetailScreen extends StatefulWidget {
 
 class _ProfileDetailScreenState extends State<ProfileDetailScreen> with ControllerDisposerMixin {
   late final TextEditingController _nameController = createTextEditingController(text: widget.profile.displayName);
+  final _nameFocusNode = FocusNode(debugLabel: 'ProfileDetail:Name');
+  final _saveNameFocusNode = FocusNode(debugLabel: 'ProfileDetail:SaveName');
+  final _setPinFocusNode = FocusNode(debugLabel: 'ProfileDetail:SetPin');
+  final _addConnectionFocusNode = FocusNode(debugLabel: 'ProfileDetail:AddConnection');
+  final _deleteProfileFocusNode = FocusNode(debugLabel: 'ProfileDetail:DeleteProfile');
   late Profile _profile;
 
   @override
   void initState() {
     super.initState();
     _profile = widget.profile;
+  }
+
+  @override
+  void dispose() {
+    _nameFocusNode.dispose();
+    _saveNameFocusNode.dispose();
+    _setPinFocusNode.dispose();
+    _addConnectionFocusNode.dispose();
+    _deleteProfileFocusNode.dispose();
+    super.dispose();
   }
 
   Future<void> _saveName() async {
@@ -130,76 +147,96 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
     final theme = Theme.of(context);
     final isLocal = _profile.isLocal;
 
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          ExcludeFocus(child: CustomAppBar(title: Text(_profile.displayName), pinned: true)),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                Center(child: ProfileAvatar(profile: _profile, size: 96)),
-                const SizedBox(height: 24),
-                Text(t.profiles.profileNameLabel, style: theme.textTheme.labelLarge),
-                const SizedBox(height: 8),
-                if (isLocal)
-                  ProfileNameField(
-                    controller: _nameController,
-                    onChanged: () => setState(() {}),
-                    trailing: FilledButton(
+    return FocusedScrollScaffold(
+      title: Text(_profile.displayName),
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              Center(child: ProfileAvatar(profile: _profile, size: 96)),
+              const SizedBox(height: 24),
+              Text(t.profiles.profileNameLabel, style: theme.textTheme.labelLarge),
+              const SizedBox(height: 8),
+              if (isLocal)
+                ProfileNameField(
+                  controller: _nameController,
+                  focusNode: _nameFocusNode,
+                  onChanged: () => setState(() {}),
+                  onNavigateRight: _saveNameFocusNode.requestFocus,
+                  trailing: FocusableButton(
+                    focusNode: _saveNameFocusNode,
+                    onNavigateLeft: _nameFocusNode.requestFocus,
+                    onPressed:
+                        _nameController.text.trim().isEmpty || _nameController.text.trim() == _profile.displayName
+                        ? null
+                        : _saveName,
+                    child: FilledButton(
                       onPressed:
                           _nameController.text.trim().isEmpty || _nameController.text.trim() == _profile.displayName
                           ? null
                           : _saveName,
                       child: Text(t.common.save),
                     ),
-                  )
-                else
-                  Text(
-                    _profile.displayName,
-                    style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   ),
-                const SizedBox(height: 24),
-                Text(t.profiles.pinProtectionLabel, style: theme.textTheme.labelLarge),
-                const SizedBox(height: 8),
-                if (!isLocal)
-                  Text(
-                    _profile.plexProtected ? t.profiles.pinManagedByPlex : t.profiles.noPinSetEditOnPlex,
-                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                  )
-                else if (_profile.pinHash == null)
-                  OutlinedButton.icon(
+                )
+              else
+                Text(
+                  _profile.displayName,
+                  style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+              const SizedBox(height: 24),
+              Text(t.profiles.pinProtectionLabel, style: theme.textTheme.labelLarge),
+              const SizedBox(height: 8),
+              if (!isLocal)
+                Text(
+                  _profile.plexProtected ? t.profiles.pinManagedByPlex : t.profiles.noPinSetEditOnPlex,
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                )
+              else if (_profile.pinHash == null)
+                FocusableButton(
+                  focusNode: _setPinFocusNode,
+                  onPressed: _setPin,
+                  child: OutlinedButton.icon(
                     onPressed: _setPin,
                     icon: const AppIcon(Symbols.lock_outline_rounded, fill: 1),
                     label: Text(t.profiles.setPin),
-                  )
-                else
-                  PinStatusRow(onChange: _setPin, onRemove: _clearPin),
-                const SizedBox(height: 32),
-                Row(
-                  children: [
-                    Expanded(child: Text(t.profiles.connectionsLabel, style: theme.textTheme.labelLarge)),
-                    TextButton.icon(
+                  ),
+                )
+              else
+                PinStatusRow(onChange: _setPin, onRemove: _clearPin),
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  Expanded(child: Text(t.profiles.connectionsLabel, style: theme.textTheme.labelLarge)),
+                  FocusableButton(
+                    focusNode: _addConnectionFocusNode,
+                    onPressed: _addConnection,
+                    child: TextButton.icon(
                       onPressed: _addConnection,
                       icon: const AppIcon(Symbols.add_rounded, fill: 1),
                       label: Text(t.profiles.add),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                _ConnectionsList(profile: _profile, onRemove: _removeConnection),
-                const SizedBox(height: 24),
-                if (isLocal)
-                  OutlinedButton.icon(
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              _ConnectionsList(profile: _profile, onRemove: _removeConnection),
+              const SizedBox(height: 24),
+              if (isLocal)
+                FocusableButton(
+                  focusNode: _deleteProfileFocusNode,
+                  onPressed: _deleteProfile,
+                  child: OutlinedButton.icon(
                     onPressed: _deleteProfile,
                     icon: AppIcon(Symbols.delete_outline_rounded, fill: 1, color: theme.colorScheme.error),
                     label: Text(t.profiles.deleteProfileButton, style: TextStyle(color: theme.colorScheme.error)),
                   ),
-              ]),
-            ),
+                ),
+            ]),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -269,21 +306,19 @@ class _ConnectionsList extends StatelessWidget {
                             leading: BackendBadge(backend: conn.backend, size: 24),
                             title: Text(conn.displayLabel),
                             subtitle: _ConnectionSubtitle.build(conn: conn, pc: pc, homeCache: homeCache, theme: theme),
-                            trailing: PopupMenuButton<String>(
+                            trailing: FocusablePopupMenuButton<String>(
+                              icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
+                              tooltip: t.profiles.manage,
+                              onSelected: (value) {
+                                if (value == 'default') {
+                                  unawaited(pcRegistry.setDefault(profile.id, pc.connectionId));
+                                } else if (value == 'remove') {
+                                  unawaited(onRemove(pc, conn));
+                                }
+                              },
                               itemBuilder: (_) => [
-                                if (!pc.isDefault)
-                                  PopupMenuItem(
-                                    value: 'default',
-                                    onTap: () => WidgetsBinding.instance.addPostFrameCallback(
-                                      (_) => pcRegistry.setDefault(profile.id, pc.connectionId),
-                                    ),
-                                    child: Text(t.profiles.makeDefault),
-                                  ),
-                                PopupMenuItem(
-                                  value: 'remove',
-                                  onTap: () => WidgetsBinding.instance.addPostFrameCallback((_) => onRemove(pc, conn)),
-                                  child: Text(t.profiles.removeConnection),
-                                ),
+                                if (!pc.isDefault) PopupMenuItem(value: 'default', child: Text(t.profiles.makeDefault)),
+                                PopupMenuItem(value: 'remove', child: Text(t.profiles.removeConnection)),
                               ],
                             ),
                           ),

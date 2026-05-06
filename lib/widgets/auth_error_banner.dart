@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../i18n/strings.g.dart';
 import '../providers/multi_server_provider.dart';
 import '../screens/settings/add_connection_screen.dart';
+import '../focus/focusable_button.dart';
 import 'app_icon.dart';
 
 /// Top-of-app banner shown when one or more servers' tokens have been
@@ -53,13 +54,16 @@ class AuthErrorBanner extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              FilledButton.tonal(
-                style: FilledButton.styleFrom(
-                  backgroundColor: scheme.onErrorContainer,
-                  foregroundColor: scheme.errorContainer,
-                ),
+              FocusableButton(
                 onPressed: () => _openReauth(context),
-                child: Text(t.connections.signInAgain),
+                child: FilledButton.tonal(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: scheme.onErrorContainer,
+                    foregroundColor: scheme.errorContainer,
+                  ),
+                  onPressed: () => _openReauth(context),
+                  child: Text(t.connections.signInAgain),
+                ),
               ),
             ],
           ),

@@ -4,6 +4,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../i18n/strings.g.dart';
+import '../focus/focusable_button.dart';
 import '../services/trackers/oauth_proxy_client.dart';
 import '../utils/snackbar_helper.dart';
 import 'dialog_action_button.dart';
@@ -72,10 +73,13 @@ class OAuthProxyDialog extends StatelessWidget {
           const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
-            child: FilledButton.icon(
-              icon: const Icon(Icons.open_in_new),
-              label: Text(t.trackers.oauthProxy.openToSignIn(service: serviceName)),
+            child: FocusableButton(
               onPressed: _open,
+              child: FilledButton.icon(
+                icon: const Icon(Icons.open_in_new),
+                label: Text(t.trackers.oauthProxy.openToSignIn(service: serviceName)),
+                onPressed: _open,
+              ),
             ),
           ),
           const SizedBox(height: 16),

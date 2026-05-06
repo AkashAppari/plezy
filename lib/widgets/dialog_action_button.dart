@@ -13,6 +13,10 @@ class DialogActionButton extends StatelessWidget {
   final String label;
   final FocusNode? focusNode;
   final bool isPrimary;
+  final VoidCallback? onNavigateUp;
+  final VoidCallback? onNavigateDown;
+  final VoidCallback? onNavigateLeft;
+  final VoidCallback? onNavigateRight;
 
   const DialogActionButton({
     super.key,
@@ -20,6 +24,10 @@ class DialogActionButton extends StatelessWidget {
     required this.label,
     this.focusNode,
     this.isPrimary = false,
+    this.onNavigateUp,
+    this.onNavigateDown,
+    this.onNavigateLeft,
+    this.onNavigateRight,
   });
 
   @override
@@ -27,6 +35,11 @@ class DialogActionButton extends StatelessWidget {
     return FocusableButton(
       focusNode: focusNode,
       onPressed: onPressed,
+      useBackgroundFocus: isPrimary,
+      onNavigateUp: onNavigateUp,
+      onNavigateDown: onNavigateDown,
+      onNavigateLeft: onNavigateLeft,
+      onNavigateRight: onNavigateRight,
       child: isPrimary
           ? FilledButton(onPressed: onPressed, child: Text(label))
           : TextButton(onPressed: onPressed, child: Text(label)),

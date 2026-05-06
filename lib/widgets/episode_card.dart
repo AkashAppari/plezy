@@ -129,6 +129,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
             key: Key(widget.episode.id),
             borderRadius: BorderRadius.circular(FocusTheme.defaultBorderRadius),
             onTap: widget.onTap,
+            canRequestFocus: false,
             onTapDown: storeTapPosition,
             onLongPress: showContextMenuFromTap,
             onSecondaryTapDown: storeTapPosition,

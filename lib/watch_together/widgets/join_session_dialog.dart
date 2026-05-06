@@ -18,6 +18,17 @@ class JoinSessionDialog extends StatefulWidget {
 class _JoinSessionDialogState extends State<JoinSessionDialog> with ControllerDisposerMixin {
   final _formKey = GlobalKey<FormState>();
   late final _sessionIdController = createTextEditingController();
+  final _closeFocusNode = FocusNode(debugLabel: 'JoinSessionClose');
+  final _sessionIdFocusNode = FocusNode(debugLabel: 'JoinSessionCode');
+  final _joinFocusNode = FocusNode(debugLabel: 'JoinSessionSubmit');
+
+  @override
+  void dispose() {
+    _closeFocusNode.dispose();
+    _sessionIdFocusNode.dispose();
+    _joinFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,10 +51,13 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> with ControllerDi
                     const SizedBox(width: 12),
                     Expanded(child: Text(t.watchTogether.joinWatchSession, style: theme.textTheme.titleLarge)),
                     FocusableWrapper(
+                      focusNode: _closeFocusNode,
                       useBackgroundFocus: true,
                       disableScale: true,
                       borderRadius: 20,
+                      descendantsAreFocusable: false,
                       onSelect: () => Navigator.of(context).pop(),
+                      onNavigateDown: _sessionIdFocusNode.requestFocus,
                       child: IconButton(onPressed: () => Navigator.of(context).pop(), icon: const Icon(Symbols.close)),
                     ),
                   ],
@@ -53,6 +67,7 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> with ControllerDi
 
                 FocusableTextFormField(
                   controller: _sessionIdController,
+                  focusNode: _sessionIdFocusNode,
                   decoration: InputDecoration(
                     labelText: t.watchTogether.sessionCode,
                     hintText: t.watchTogether.enterCodeHint,
@@ -79,6 +94,8 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> with ControllerDi
                     }
                     return null;
                   },
+                  onNavigateUp: _closeFocusNode.requestFocus,
+                  onNavigateDown: _joinFocusNode.requestFocus,
                   onFieldSubmitted: (_) => _join(),
                   autofocus: true,
                 ),
@@ -93,7 +110,9 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> with ControllerDi
                 const SizedBox(height: 24),
 
                 FocusableButton(
+                  focusNode: _joinFocusNode,
                   onPressed: _join,
+                  onNavigateUp: _sessionIdFocusNode.requestFocus,
                   child: FilledButton.icon(
                     onPressed: _join,
                     icon: const Icon(Symbols.group_add),

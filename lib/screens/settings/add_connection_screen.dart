@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/media_backend.dart';
 import '../../profiles/profile.dart';
 import '../../widgets/backend_badge.dart';
-import '../../widgets/desktop_app_bar.dart';
+import '../../widgets/focused_scroll_scaffold.dart';
 import '../profile/borrow_connection_screen.dart';
 import 'add_jellyfin_screen.dart';
 import 'add_plex_account_screen.dart';
@@ -46,64 +47,57 @@ class AddConnectionScreen extends StatelessWidget {
         builder: (_) => AddJellyfinScreen(targetProfile: targetProfile),
       ),
     ];
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          ExcludeFocus(
-            child: CustomAppBar(
-              title: Text(
-                scoped
-                    ? t.addServer.addConnectionTitleScoped(name: targetProfile!.displayName)
-                    : t.addServer.addConnectionTitle,
-              ),
-              pinned: true,
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                Text(
-                  scoped ? t.addServer.addConnectionIntroScoped : t.addServer.addConnectionIntroGlobal,
-                  style: theme.textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 16),
-                for (var i = 0; i < options.length; i++) ...[
-                  if (i > 0) const SizedBox(height: 12),
-                  _BackendCard(
-                    leading: BackendBadge(backend: options[i].backend, size: 28),
-                    title: options[i].title,
-                    subtitle: options[i].subtitle,
-                    onTap: () async {
-                      final added = await Navigator.push<bool>(context, MaterialPageRoute(builder: options[i].builder));
-                      if (added == true && context.mounted) {
-                        Navigator.of(context).pop(true);
-                      }
-                    },
-                  ),
-                ],
-                if (scoped) ...[
-                  const SizedBox(height: 12),
-                  _BackendCard(
-                    leading: const AppIcon(Symbols.share_rounded, fill: 1, size: 28),
-                    title: t.addServer.borrowFromAnotherProfile,
-                    subtitle: t.addServer.borrowFromAnotherProfileSubtitle,
-                    onTap: () async {
-                      final added = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(builder: (_) => BorrowConnectionScreen(targetProfile: targetProfile!)),
-                      );
-                      if (added == true && context.mounted) {
-                        Navigator.of(context).pop(true);
-                      }
-                    },
-                  ),
-                ],
-              ]),
-            ),
-          ),
-        ],
+    return FocusedScrollScaffold(
+      title: Text(
+        scoped
+            ? t.addServer.addConnectionTitleScoped(name: targetProfile!.displayName)
+            : t.addServer.addConnectionTitle,
       ),
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              Text(
+                scoped ? t.addServer.addConnectionIntroScoped : t.addServer.addConnectionIntroGlobal,
+                style: theme.textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              for (var i = 0; i < options.length; i++) ...[
+                if (i > 0) const SizedBox(height: 12),
+                _BackendCard(
+                  leading: BackendBadge(backend: options[i].backend, size: 28),
+                  title: options[i].title,
+                  subtitle: options[i].subtitle,
+                  onTap: () async {
+                    final added = await Navigator.push<bool>(context, MaterialPageRoute(builder: options[i].builder));
+                    if (added == true && context.mounted) {
+                      Navigator.of(context).pop(true);
+                    }
+                  },
+                ),
+              ],
+              if (scoped) ...[
+                const SizedBox(height: 12),
+                _BackendCard(
+                  leading: const AppIcon(Symbols.share_rounded, fill: 1, size: 28),
+                  title: t.addServer.borrowFromAnotherProfile,
+                  subtitle: t.addServer.borrowFromAnotherProfileSubtitle,
+                  onTap: () async {
+                    final added = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(builder: (_) => BorrowConnectionScreen(targetProfile: targetProfile!)),
+                    );
+                    if (added == true && context.mounted) {
+                      Navigator.of(context).pop(true);
+                    }
+                  },
+                ),
+              ],
+            ]),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -128,35 +122,41 @@ class _BackendCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Material(
-      color: theme.colorScheme.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
+    return FocusableWrapper(
+      disableScale: true,
+      borderRadius: 12,
+      descendantsAreFocusable: false,
+      onSelect: onTap,
+      child: Material(
+        color: theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              leading,
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: theme.textTheme.titleMedium),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                leading,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: theme.textTheme.titleMedium),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-            ],
+                const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              ],
+            ),
           ),
         ),
       ),

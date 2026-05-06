@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../connection/connection.dart';
 import '../../exceptions/media_server_exceptions.dart';
+import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
@@ -21,7 +22,7 @@ import '../../services/jellyfin_auth_service.dart';
 import '../../services/storage_service.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/platform_detector.dart';
-import '../../widgets/desktop_app_bar.dart';
+import '../../widgets/focused_scroll_scaffold.dart';
 import '../profile/profile_switch_screen.dart';
 import 'async_form_state_mixin.dart';
 import 'connection_persistence.dart';
@@ -70,10 +71,16 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   late final _urlController = createTextEditingController();
   late final _usernameController = createTextEditingController();
   late final _passwordController = createTextEditingController();
+  final _urlFocus = FocusNode(debugLabel: 'AddJellyfin:Url');
+  final _findServerFocus = FocusNode(debugLabel: 'AddJellyfin:FindServer');
+  final _usernameFocus = FocusNode(debugLabel: 'AddJellyfin:Username');
   // Owned so the username field can advance focus on Enter; mobile keyboards
   // act on `textInputAction: next` automatically but TV remotes / hardware
   // keyboards need the explicit `onFieldSubmitted` handler below.
-  final _passwordFocus = FocusNode();
+  final _passwordFocus = FocusNode(debugLabel: 'AddJellyfin:Password');
+  final _signInFocus = FocusNode(debugLabel: 'AddJellyfin:SignIn');
+  final _quickConnectFocus = FocusNode(debugLabel: 'AddJellyfin:QuickConnect');
+  final _cancelQuickConnectFocus = FocusNode(debugLabel: 'AddJellyfin:CancelQuickConnect');
   final _formKey = GlobalKey<FormState>();
 
   JellyfinServerInfo? _serverInfo;
@@ -88,7 +95,13 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
     // setState after the widget is gone.
     _qcCancelled = true;
     _qcAttemptId++;
+    _urlFocus.dispose();
+    _findServerFocus.dispose();
+    _usernameFocus.dispose();
     _passwordFocus.dispose();
+    _signInFocus.dispose();
+    _quickConnectFocus.dispose();
+    _cancelQuickConnectFocus.dispose();
     super.dispose();
   }
 
@@ -308,21 +321,19 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          ExcludeFocus(child: CustomAppBar(title: Text(t.addServer.addJellyfinTitle), pinned: true)),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            sliver: SliverToBoxAdapter(
-              child: Form(
-                key: _formKey,
-                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: _buildBodyChildren(theme)),
-              ),
+    return FocusedScrollScaffold(
+      title: Text(t.addServer.addJellyfinTitle),
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          sliver: SliverToBoxAdapter(
+            child: Form(
+              key: _formKey,
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: _buildBodyChildren(theme)),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -341,11 +352,13 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
       const SizedBox(height: 16),
       FocusableTextFormField(
         controller: _urlController,
+        focusNode: _urlFocus,
         autofocus: true,
         keyboardType: TextInputType.url,
         autocorrect: false,
         enableSuggestions: false,
         enabled: !busy,
+        onNavigateDown: _serverInfo == null ? () => _findServerFocus.requestFocus() : null,
         textInputAction: TextInputAction.go,
         onFieldSubmitted: busy ? null : (_) => _probe(),
         decoration: InputDecoration(
@@ -356,10 +369,16 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
       ),
       if (_serverInfo == null) ...[
         const SizedBox(height: 16),
-        FilledButton.icon(
+        FocusableButton(
+          focusNode: _findServerFocus,
+          useBackgroundFocus: true,
           onPressed: busy ? null : _probe,
-          icon: busy ? const LoadingIndicatorBox() : const AppIcon(Symbols.travel_explore_rounded, fill: 1),
-          label: Text(t.addServer.findServer),
+          onNavigateUp: () => _urlFocus.requestFocus(),
+          child: FilledButton.icon(
+            onPressed: busy ? null : _probe,
+            icon: busy ? const LoadingIndicatorBox() : const AppIcon(Symbols.travel_explore_rounded, fill: 1),
+            label: Text(t.addServer.findServer),
+          ),
         ),
       ] else ...[
         const SizedBox(height: 16),
@@ -367,9 +386,11 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         const SizedBox(height: 16),
         FocusableTextFormField(
           controller: _usernameController,
+          focusNode: _usernameFocus,
           autocorrect: false,
           enableSuggestions: false,
           enabled: !busy,
+          onNavigateDown: () => _passwordFocus.requestFocus(),
           textInputAction: TextInputAction.next,
           onFieldSubmitted: busy ? null : (_) => _passwordFocus.requestFocus(),
           decoration: InputDecoration(
@@ -384,6 +405,8 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
           focusNode: _passwordFocus,
           obscureText: true,
           enabled: !busy,
+          onNavigateUp: () => _usernameFocus.requestFocus(),
+          onNavigateDown: () => _signInFocus.requestFocus(),
           textInputAction: TextInputAction.done,
           onFieldSubmitted: busy ? null : (_) => _signIn(),
           decoration: InputDecoration(
@@ -394,17 +417,30 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
           // require a value.
         ),
         const SizedBox(height: 16),
-        FilledButton.icon(
+        FocusableButton(
+          focusNode: _signInFocus,
+          useBackgroundFocus: true,
           onPressed: busy ? null : _signIn,
-          icon: busy ? const LoadingIndicatorBox() : const AppIcon(Symbols.login_rounded, fill: 1),
-          label: Text(t.addServer.signIn),
+          onNavigateUp: () => _passwordFocus.requestFocus(),
+          onNavigateDown: _quickConnectEnabled ? () => _quickConnectFocus.requestFocus() : null,
+          child: FilledButton.icon(
+            onPressed: busy ? null : _signIn,
+            icon: busy ? const LoadingIndicatorBox() : const AppIcon(Symbols.login_rounded, fill: 1),
+            label: Text(t.addServer.signIn),
+          ),
         ),
         if (_quickConnectEnabled) ...[
           const SizedBox(height: 12),
-          OutlinedButton.icon(
+          FocusableButton(
+            focusNode: _quickConnectFocus,
+            useBackgroundFocus: true,
             onPressed: busy ? null : _startQuickConnect,
-            icon: const AppIcon(Symbols.tap_and_play_rounded, fill: 1),
-            label: Text(t.auth.useQuickConnect),
+            onNavigateUp: () => _signInFocus.requestFocus(),
+            child: OutlinedButton.icon(
+              onPressed: busy ? null : _startQuickConnect,
+              icon: const AppIcon(Symbols.tap_and_play_rounded, fill: 1),
+              label: Text(t.auth.useQuickConnect),
+            ),
           ),
         ],
       ],
@@ -492,10 +528,15 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         ],
       ),
       const SizedBox(height: 20),
-      OutlinedButton.icon(
+      FocusableButton(
+        focusNode: _cancelQuickConnectFocus,
+        useBackgroundFocus: true,
         onPressed: _cancelQuickConnect,
-        icon: const AppIcon(Symbols.close_rounded, fill: 1),
-        label: Text(t.auth.quickConnectCancel),
+        child: OutlinedButton.icon(
+          onPressed: _cancelQuickConnect,
+          icon: const AppIcon(Symbols.close_rounded, fill: 1),
+          label: Text(t.auth.quickConnectCancel),
+        ),
       ),
     ];
   }

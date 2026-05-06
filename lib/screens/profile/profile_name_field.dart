@@ -6,20 +6,44 @@ import '../../focus/focusable_text_field.dart';
 /// the profile-detail rename row. Optional [trailing] slot for an inline Save
 /// button — pass `null` when the screen saves elsewhere (e.g. on Continue).
 class ProfileNameField extends StatelessWidget {
-  const ProfileNameField({super.key, required this.controller, this.hintText, this.trailing, this.onChanged});
+  const ProfileNameField({
+    super.key,
+    required this.controller,
+    this.focusNode,
+    this.hintText,
+    this.trailing,
+    this.onChanged,
+    this.autofocus = false,
+    this.onNavigateUp,
+    this.onNavigateDown,
+    this.onNavigateLeft,
+    this.onNavigateRight,
+  });
 
   final TextEditingController controller;
+  final FocusNode? focusNode;
   final String? hintText;
   final Widget? trailing;
   final VoidCallback? onChanged;
+  final bool autofocus;
+  final VoidCallback? onNavigateUp;
+  final VoidCallback? onNavigateDown;
+  final VoidCallback? onNavigateLeft;
+  final VoidCallback? onNavigateRight;
 
   @override
   Widget build(BuildContext context) {
     final field = FocusableTextField(
       controller: controller,
+      focusNode: focusNode,
+      autofocus: autofocus,
       textInputAction: TextInputAction.done,
       decoration: InputDecoration(hintText: hintText, border: const OutlineInputBorder()),
       onChanged: (_) => onChanged?.call(),
+      onNavigateUp: onNavigateUp ?? () => FocusScope.of(context).previousFocus(),
+      onNavigateDown: onNavigateDown ?? () => FocusScope.of(context).nextFocus(),
+      onNavigateLeft: onNavigateLeft,
+      onNavigateRight: onNavigateRight,
     );
     if (trailing == null) return field;
     return Row(

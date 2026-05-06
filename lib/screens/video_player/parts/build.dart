@@ -30,7 +30,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    FilledButton(
+                    FocusableButton(
                       autofocus: true,
                       onPressed: () {
                         final playerToDispose = player;
@@ -42,10 +42,28 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         });
                         unawaited(_initializePlayer());
                       },
-                      child: Text(t.common.retry),
+                      child: FilledButton(
+                        onPressed: () {
+                          final playerToDispose = player;
+                          player = null;
+                          if (playerToDispose != null) unawaited(playerToDispose.dispose());
+                          _setPlayerState(() {
+                            _playerInitializationError = null;
+                            _isPlayerInitialized = false;
+                          });
+                          unawaited(_initializePlayer());
+                        },
+                        child: Text(t.common.retry),
+                      ),
                     ),
                     const SizedBox(width: 12),
-                    OutlinedButton(onPressed: () => unawaited(_handleBackButton()), child: Text(t.common.back)),
+                    FocusableButton(
+                      onPressed: () => unawaited(_handleBackButton()),
+                      child: OutlinedButton(
+                        onPressed: () => unawaited(_handleBackButton()),
+                        child: Text(t.common.back),
+                      ),
+                    ),
                   ],
                 ),
               ],

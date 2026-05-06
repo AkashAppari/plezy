@@ -26,6 +26,7 @@ import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/backend_badge.dart';
+import '../../widgets/focusable_popup_menu_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../libraries/state_messages.dart';
 import '../auth_screen.dart';
@@ -50,7 +51,9 @@ class ProfileSwitchScreen extends StatefulWidget {
 
 class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedSetStateMixin {
   bool _allowPop = false;
-  final FocusNode _firstSelectableFocusNode = FocusNode();
+  final Map<String, FocusNode> _profileFocusNodes = {};
+  final Map<String, FocusNode> _profileMenuFocusNodes = {};
+  final Map<String, GlobalKey<PopupMenuButtonState<_TileAction>>> _profileMenuKeys = {};
   bool _focusRequested = false;
   bool _switching = false;
   Stream<ProfilesView>? _viewStream;
@@ -77,7 +80,12 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
 
   @override
   void dispose() {
-    _firstSelectableFocusNode.dispose();
+    for (final node in _profileFocusNodes.values) {
+      node.dispose();
+    }
+    for (final node in _profileMenuFocusNodes.values) {
+      node.dispose();
+    }
     super.dispose();
   }
 
@@ -95,6 +103,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
         initialData: ProfilesView.empty,
         builder: (context, snapshot) {
           final view = snapshot.data ?? ProfilesView.empty;
+          _pruneProfileFocusResources(view.profiles.map((p) => p.id).toSet());
           // `context.select` only rebuilds when `activeId` actually
           // changes. `context.watch` would rebuild on every provider
           // notification — combined with the stream, that doubles the
@@ -122,6 +131,9 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
                     sliver: SliverToBoxAdapter(
                       child: FocusableWrapper(
                         disableScale: true,
+                        borderRadius: 100,
+                        useBackgroundFocus: true,
+                        descendantsAreFocusable: false,
                         onSelect: _switching ? null : _addLocalProfile,
                         child: OutlinedButton.icon(
                           onPressed: _switching ? null : _addLocalProfile,
@@ -167,6 +179,40 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
     );
   }
 
+  FocusNode _profileFocusNode(Profile profile) {
+    return _profileFocusNodes.putIfAbsent(profile.id, () => FocusNode(debugLabel: 'ProfileTile:${profile.id}'));
+  }
+
+  FocusNode _profileMenuFocusNode(Profile profile) {
+    return _profileMenuFocusNodes.putIfAbsent(profile.id, () => FocusNode(debugLabel: 'ProfileActions:${profile.id}'));
+  }
+
+  GlobalKey<PopupMenuButtonState<_TileAction>> _profileMenuKey(Profile profile) {
+    return _profileMenuKeys.putIfAbsent(profile.id, () => GlobalKey<PopupMenuButtonState<_TileAction>>());
+  }
+
+  void _pruneProfileFocusResources(Set<String> activeIds) {
+    for (final id in _profileFocusNodes.keys.toList()) {
+      if (!activeIds.contains(id)) {
+        _profileFocusNodes.remove(id)?.dispose();
+      }
+    }
+    for (final id in _profileMenuFocusNodes.keys.toList()) {
+      if (!activeIds.contains(id)) {
+        _profileMenuFocusNodes.remove(id)?.dispose();
+      }
+    }
+    for (final id in _profileMenuKeys.keys.toList()) {
+      if (!activeIds.contains(id)) {
+        _profileMenuKeys.remove(id);
+      }
+    }
+  }
+
+  void _openProfileMenu(Profile profile) {
+    _profileMenuKeys[profile.id]?.currentState?.showButtonMenu();
+  }
+
   List<Widget> _buildSections(ProfilesView view, String? activeId) {
     return [_profileList(view.profiles, view, activeId, autofocusFirst: true)];
   }
@@ -177,11 +223,20 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
         final profile = profiles[index];
         final isActive = profile.id == activeId;
         final isFirstSelectable = autofocusFirst && index == 0;
+        final profileFocusNode = _profileFocusNode(profile);
+        final menuFocusNode = _profileMenuFocusNode(profile);
+        final menuKey = _profileMenuKey(profile);
+        final onManage = !widget.requireSelection ? () => _manageProfile(profile) : null;
+        final onDelete = profile.isLocal && !widget.requireSelection ? () => _deleteProfile(profile) : null;
+        final onSignOut = profile.isPlexHome && profile.parentConnectionId != null && !widget.requireSelection
+            ? () => _signOutPlexAccount(profile)
+            : null;
+        final hasMenu = onManage != null || onDelete != null || onSignOut != null;
 
         if (isFirstSelectable && !_focusRequested) {
           _focusRequested = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) _firstSelectableFocusNode.requestFocus();
+            if (mounted) profileFocusNode.requestFocus();
           });
         }
 
@@ -189,8 +244,11 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: FocusableWrapper(
             autofocus: isFirstSelectable,
-            focusNode: isFirstSelectable ? _firstSelectableFocusNode : null,
+            focusNode: profileFocusNode,
             disableScale: true,
+            enableLongPress: hasMenu,
+            onLongPress: hasMenu ? () => _openProfileMenu(profile) : null,
+            onNavigateRight: hasMenu ? () => menuFocusNode.requestFocus() : null,
             onSelect: _switching || (isActive && !widget.requireSelection) ? null : () => _switchTo(profile),
             child: Card(
               child: _ProfileTile(
@@ -201,11 +259,12 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
                 // Manage available for any profile — adding/removing
                 // borrowed connections is supported on plex_home too. Delete
                 // stays local-only (Plex Home users are owned by Plex).
-                onManage: !widget.requireSelection ? () => _manageProfile(profile) : null,
-                onDelete: profile.isLocal && !widget.requireSelection ? () => _deleteProfile(profile) : null,
-                onSignOut: profile.isPlexHome && profile.parentConnectionId != null && !widget.requireSelection
-                    ? () => _signOutPlexAccount(profile)
-                    : null,
+                onManage: onManage,
+                onDelete: onDelete,
+                onSignOut: onSignOut,
+                menuFocusNode: menuFocusNode,
+                menuKey: menuKey,
+                onMenuNavigateLeft: () => profileFocusNode.requestFocus(),
               ),
             ),
           ),
@@ -365,6 +424,9 @@ class _ProfileTile extends StatelessWidget {
   final VoidCallback? onManage;
   final VoidCallback? onDelete;
   final VoidCallback? onSignOut;
+  final FocusNode menuFocusNode;
+  final GlobalKey<PopupMenuButtonState<_TileAction>> menuKey;
+  final VoidCallback onMenuNavigateLeft;
 
   const _ProfileTile({
     required this.profile,
@@ -374,6 +436,9 @@ class _ProfileTile extends StatelessWidget {
     this.onManage,
     this.onDelete,
     this.onSignOut,
+    required this.menuFocusNode,
+    required this.menuKey,
+    required this.onMenuNavigateLeft,
   });
 
   @override
@@ -425,28 +490,15 @@ class _ProfileTile extends StatelessWidget {
               ),
             ),
             if (hasMenu)
-              PopupMenuButton<_TileAction>(
-                icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
-                tooltip: 'Profile actions',
-                itemBuilder: (_) => [
-                  if (onManage != null)
-                    PopupMenuItem(
-                      value: _TileAction.manage,
-                      onTap: () => WidgetsBinding.instance.addPostFrameCallback((_) => onManage?.call()),
-                      child: Text(t.profiles.manage),
-                    ),
-                  if (onDelete != null)
-                    PopupMenuItem(
-                      value: _TileAction.delete,
-                      onTap: () => WidgetsBinding.instance.addPostFrameCallback((_) => onDelete?.call()),
-                      child: Text(t.profiles.delete),
-                    ),
-                  if (onSignOut != null)
-                    PopupMenuItem(
-                      value: _TileAction.signOut,
-                      onTap: () => WidgetsBinding.instance.addPostFrameCallback((_) => onSignOut?.call()),
-                      child: Text(t.profiles.signOut),
-                    ),
+              _ProfileActionsButton(
+                menuKey: menuKey,
+                focusNode: menuFocusNode,
+                onNavigateLeft: onMenuNavigateLeft,
+                onSelected: _handleAction,
+                actions: [
+                  if (onManage != null) _TileAction.manage,
+                  if (onDelete != null) _TileAction.delete,
+                  if (onSignOut != null) _TileAction.signOut,
                 ],
               )
             else if (!isActive)
@@ -455,6 +507,62 @@ class _ProfileTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _handleAction(_TileAction action) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      switch (action) {
+        case _TileAction.manage:
+          onManage?.call();
+          break;
+        case _TileAction.delete:
+          onDelete?.call();
+          break;
+        case _TileAction.signOut:
+          onSignOut?.call();
+          break;
+      }
+    });
+  }
+}
+
+class _ProfileActionsButton extends StatelessWidget {
+  final GlobalKey<PopupMenuButtonState<_TileAction>> menuKey;
+  final FocusNode focusNode;
+  final VoidCallback onNavigateLeft;
+  final ValueChanged<_TileAction> onSelected;
+  final List<_TileAction> actions;
+
+  const _ProfileActionsButton({
+    required this.menuKey,
+    required this.focusNode,
+    required this.onNavigateLeft,
+    required this.onSelected,
+    required this.actions,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FocusablePopupMenuButton<_TileAction>(
+      menuKey: menuKey,
+      focusNode: focusNode,
+      semanticLabel: t.profiles.manage,
+      onNavigateLeft: onNavigateLeft,
+      icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
+      tooltip: t.profiles.manage,
+      onSelected: onSelected,
+      itemBuilder: (_) => [for (final action in actions) PopupMenuItem(value: action, child: Text(action.label))],
+    );
+  }
+}
+
+extension _TileActionLabel on _TileAction {
+  String get label {
+    return switch (this) {
+      _TileAction.manage => t.profiles.manage,
+      _TileAction.delete => t.profiles.delete,
+      _TileAction.signOut => t.profiles.signOut,
+    };
   }
 }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../focus/focusable_button.dart';
 import '../../widgets/app_icon.dart';
 
 /// "PIN set" pill + Change/Remove text buttons. Shown on profile creation
@@ -32,8 +33,14 @@ class PinStatusRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        TextButton(onPressed: onChange, child: const Text('Change')),
-        TextButton(onPressed: onRemove, child: const Text('Remove')),
+        FocusableButton(
+          onPressed: onChange,
+          child: TextButton(onPressed: onChange, child: const Text('Change')),
+        ),
+        FocusableButton(
+          onPressed: onRemove,
+          child: TextButton(onPressed: onRemove, child: const Text('Remove')),
+        ),
       ],
     );
   }

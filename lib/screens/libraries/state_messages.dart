@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../focus/focusable_button.dart';
+
 /// Base widget for displaying state messages (empty, error, etc.)
 /// Provides a consistent UI pattern for showing icons, messages, and actions
 class StateMessageWidget extends StatelessWidget {
@@ -84,10 +86,13 @@ class StateMessageWidget extends StatelessWidget {
             ],
             if (onAction != null && actionLabel != null) ...[
               const SizedBox(height: 24),
-              FilledButton.icon(
+              FocusableButton(
                 onPressed: onAction,
-                icon: AppIcon(actionIcon ?? Symbols.refresh_rounded, fill: 1),
-                label: Text(actionLabel!),
+                child: FilledButton.icon(
+                  onPressed: onAction,
+                  icon: AppIcon(actionIcon ?? Symbols.refresh_rounded, fill: 1),
+                  label: Text(actionLabel!),
+                ),
               ),
             ],
           ],

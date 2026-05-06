@@ -13,6 +13,7 @@ import '../../utils/snackbar_helper.dart';
 import '../../mixins/settings_effect_mixin.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/focusable_popup_menu_button.dart';
 import '../../widgets/settings_builder.dart';
 
 class MpvConfigScreen extends StatefulWidget {
@@ -209,7 +210,8 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
                 (preset) => ListTile(
                   leading: const AppIcon(Symbols.folder_rounded, fill: 1),
                   title: Text(preset.name),
-                  trailing: PopupMenuButton<String>(
+                  trailing: FocusablePopupMenuButton<String>(
+                    icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
                     onSelected: (value) {
                       if (value == 'load') {
                         _loadPreset(preset);

@@ -6,6 +6,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../focus/dpad_navigator.dart';
+import '../../../focus/focusable_button.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../mpv/mpv.dart';
 import '../../../i18n/strings.g.dart';
@@ -163,19 +164,25 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
     double size = 48,
     double iconSize = 28,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      onLongPressStart: (_) => onLongPressStart(),
-      onLongPressEnd: (_) => _stopLongPress(),
-      onLongPressCancel: _stopLongPress,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: const BorderRadius.all(Radius.circular(8)),
+    return FocusableWrapper(
+      onSelect: onTap,
+      borderRadius: 18,
+      autoScroll: false,
+      useBackgroundFocus: true,
+      child: GestureDetector(
+        onTap: onTap,
+        onLongPressStart: (_) => onLongPressStart(),
+        onLongPressEnd: (_) => _stopLongPress(),
+        onLongPressCancel: _stopLongPress,
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: const BorderRadius.all(Radius.circular(8)),
+          ),
+          child: Icon(icon, color: tokens(context).text, size: iconSize),
         ),
-        child: Icon(icon, color: tokens(context).text, size: iconSize),
       ),
     );
   }
@@ -358,11 +365,14 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
           ),
           const SizedBox(height: 24),
           // Reset button
-          ElevatedButton.icon(
+          FocusableButton(
             onPressed: _currentOffset != 0 ? _resetOffset : null,
-            icon: const AppIcon(Symbols.restart_alt_rounded, fill: 1),
-            label: Text(t.videoControls.resetToZero),
-            style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
+            child: ElevatedButton.icon(
+              onPressed: _currentOffset != 0 ? _resetOffset : null,
+              icon: const AppIcon(Symbols.restart_alt_rounded, fill: 1),
+              label: Text(t.videoControls.resetToZero),
+              style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
+            ),
           ),
         ],
       ),

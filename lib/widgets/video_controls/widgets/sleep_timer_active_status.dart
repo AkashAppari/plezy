@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../../../focus/focusable_button.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../utils/formatters.dart';
@@ -33,26 +34,37 @@ class SleepTimerActiveStatus extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              OutlinedButton.icon(
-                icon: const AppIcon(Symbols.add_rounded, fill: 1),
-                label: Text(t.videoControls.addTime(amount: "15", unit: " min")),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.onSurface,
-                  side: BorderSide(color: Theme.of(context).colorScheme.outline),
-                ),
+              FocusableButton(
                 onPressed: () {
                   sleepTimer.extendTimer(const Duration(minutes: 15));
                 },
+                child: OutlinedButton.icon(
+                  icon: const AppIcon(Symbols.add_rounded, fill: 1),
+                  label: Text(t.videoControls.addTime(amount: "15", unit: " min")),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.onSurface,
+                    side: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  ),
+                  onPressed: () {
+                    sleepTimer.extendTimer(const Duration(minutes: 15));
+                  },
+                ),
               ),
               const SizedBox(width: 12),
-              FilledButton.icon(
-                icon: const AppIcon(Symbols.cancel_rounded, fill: 1),
-                label: Text(t.common.cancel),
-                style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              FocusableButton(
                 onPressed: () {
                   sleepTimer.cancelTimer();
                   onCancel?.call();
                 },
+                child: FilledButton.icon(
+                  icon: const AppIcon(Symbols.cancel_rounded, fill: 1),
+                  label: Text(t.common.cancel),
+                  style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                  onPressed: () {
+                    sleepTimer.cancelTimer();
+                    onCancel?.call();
+                  },
+                ),
               ),
             ],
           ),

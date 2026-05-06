@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../connection/connection_registry.dart';
+import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
+import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
@@ -27,6 +29,9 @@ class DiscoveryView extends StatefulWidget {
 
 class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMixin, MountedSetStateMixin {
   late final _hostAddressController = createTextEditingController();
+  final _manualToggleFocusNode = FocusNode(debugLabel: 'CompanionManualToggle');
+  final _hostAddressFocusNode = FocusNode(debugLabel: 'CompanionHostAddress');
+  final _connectFocusNode = FocusNode(debugLabel: 'CompanionConnect');
   final _formKey = GlobalKey<FormState>();
   bool _isConnecting = false;
   String? _errorMessage;
@@ -111,6 +116,9 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
     _discoverySubscription?.cancel();
     _searchTimeout?.cancel();
     _provider.stopDiscovery();
+    _manualToggleFocusNode.dispose();
+    _hostAddressFocusNode.dispose();
+    _connectFocusNode.dispose();
     super.dispose();
   }
 
@@ -284,20 +292,35 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        InkWell(
-          onTap: () => setState(() => _showManualEntry = !_showManualEntry),
-          child: Row(
-            children: [
-              Icon(
-                _showManualEntry ? Icons.expand_less : Icons.expand_more,
-                color: Theme.of(context).colorScheme.primary,
+        FocusableWrapper(
+          focusNode: _manualToggleFocusNode,
+          useBackgroundFocus: true,
+          disableScale: true,
+          borderRadius: 8,
+          onSelect: () => setState(() => _showManualEntry = !_showManualEntry),
+          onNavigateDown: _showManualEntry ? _hostAddressFocusNode.requestFocus : null,
+          child: InkWell(
+            canRequestFocus: false,
+            borderRadius: const BorderRadius.all(Radius.circular(8)),
+            onTap: () => setState(() => _showManualEntry = !_showManualEntry),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Icon(
+                    _showManualEntry ? Icons.expand_less : Icons.expand_more,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    t.companionRemote.pairing.manualConnection,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.primary),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Text(
-                t.companionRemote.pairing.manualConnection,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.primary),
-              ),
-            ],
+            ),
           ),
         ),
         if (_showManualEntry) ...[
@@ -309,6 +332,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
               children: [
                 FocusableTextFormField(
                   controller: _hostAddressController,
+                  focusNode: _hostAddressFocusNode,
                   decoration: InputDecoration(
                     labelText: t.companionRemote.session.hostAddress,
                     hintText: t.companionRemote.pairing.hostAddressHint,
@@ -325,17 +349,29 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
                     return null;
                   },
                   enabled: !_isConnecting,
+                  onNavigateUp: _manualToggleFocusNode.requestFocus,
+                  onNavigateDown: _connectFocusNode.requestFocus,
                 ),
                 const SizedBox(height: 16),
-                FilledButton.icon(
+                FocusableButton(
+                  focusNode: _connectFocusNode,
+                  onNavigateUp: _hostAddressFocusNode.requestFocus,
                   onPressed: _isConnecting
                       ? null
                       : () {
                           if (!_formKey.currentState!.validate()) return;
                           _connect(() => _provider.connectToManualHost(_hostAddressController.text.trim()));
                         },
-                  icon: _isConnecting ? const LoadingIndicatorBox(size: 16) : const Icon(Icons.link),
-                  label: Text(_isConnecting ? t.companionRemote.pairing.connecting : t.common.connect),
+                  child: FilledButton.icon(
+                    onPressed: _isConnecting
+                        ? null
+                        : () {
+                            if (!_formKey.currentState!.validate()) return;
+                            _connect(() => _provider.connectToManualHost(_hostAddressController.text.trim()));
+                          },
+                    icon: _isConnecting ? const LoadingIndicatorBox(size: 16) : const Icon(Icons.link),
+                    label: Text(_isConnecting ? t.companionRemote.pairing.connecting : t.common.connect),
+                  ),
                 ),
               ],
             ),

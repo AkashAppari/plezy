@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/overlay_sheet.dart';
 import '../focus/dpad_navigator.dart';
+import '../focus/focusable_button.dart';
 import '../focus/input_mode_tracker.dart';
 import '../i18n/strings.g.dart';
 import '../utils/formatters.dart';
@@ -111,24 +112,38 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
             children: [
               if (widget.currentRating > 0)
                 Expanded(
-                  child: OutlinedButton(
+                  child: FocusableButton(
                     onPressed: () {
                       widget.onClear();
                       OverlaySheetController.closeAdaptive(context);
                     },
-                    child: Text(t.common.clear),
+                    child: OutlinedButton(
+                      onPressed: () {
+                        widget.onClear();
+                        OverlaySheetController.closeAdaptive(context);
+                      },
+                      child: Text(t.common.clear),
+                    ),
                   ),
                 ),
               if (widget.currentRating > 0) const SizedBox(width: 12),
               Expanded(
-                child: FilledButton(
+                child: FocusableButton(
                   onPressed: _selectedRating > 0
                       ? () {
                           widget.onRate(_selectedRating);
                           OverlaySheetController.closeAdaptive(context);
                         }
                       : null,
-                  child: Text(t.mediaMenu.rate),
+                  child: FilledButton(
+                    onPressed: _selectedRating > 0
+                        ? () {
+                            widget.onRate(_selectedRating);
+                            OverlaySheetController.closeAdaptive(context);
+                          }
+                        : null,
+                    child: Text(t.mediaMenu.rate),
+                  ),
                 ),
               ),
             ],

@@ -24,7 +24,7 @@ import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/backend_badge.dart';
 import '../../widgets/loading_indicator_box.dart';
-import '../../widgets/desktop_app_bar.dart';
+import '../../widgets/focused_scroll_scaffold.dart';
 import '../libraries/state_messages.dart';
 import 'pin_entry_dialog.dart';
 
@@ -156,57 +156,50 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: FutureBuilder<List<_BorrowCandidate>>(
-        future: _candidatesFuture,
-        builder: (context, snapshot) {
-          final candidates = snapshot.data ?? const <_BorrowCandidate>[];
-          return CustomScrollView(
-            slivers: [
-              ExcludeFocus(
-                child: CustomAppBar(
-                  title: Text(t.profiles.borrowAddTo(displayName: widget.targetProfile.displayName)),
-                  pinned: true,
-                ),
+    return FutureBuilder<List<_BorrowCandidate>>(
+      future: _candidatesFuture,
+      builder: (context, snapshot) {
+        final candidates = snapshot.data ?? const <_BorrowCandidate>[];
+        return FocusedScrollScaffold(
+          title: Text(t.profiles.borrowAddTo(displayName: widget.targetProfile.displayName)),
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              sliver: SliverToBoxAdapter(
+                child: Text(t.profiles.borrowExplain, style: Theme.of(context).textTheme.bodySmall),
               ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                sliver: SliverToBoxAdapter(
-                  child: Text(t.profiles.borrowExplain, style: Theme.of(context).textTheme.bodySmall),
+            ),
+            if (snapshot.connectionState != ConnectionState.done)
+              LoadingIndicatorBox.sliver
+            else if (candidates.isEmpty)
+              SliverFillRemaining(
+                child: EmptyStateWidget(
+                  message: t.profiles.borrowEmpty,
+                  subtitle: t.profiles.borrowEmptySubtitle,
+                  icon: Symbols.share_rounded,
+                  iconSize: 48,
                 ),
-              ),
-              if (snapshot.connectionState != ConnectionState.done)
-                LoadingIndicatorBox.sliver
-              else if (candidates.isEmpty)
-                SliverFillRemaining(
-                  child: EmptyStateWidget(
-                    message: t.profiles.borrowEmpty,
-                    subtitle: t.profiles.borrowEmptySubtitle,
-                    icon: Symbols.share_rounded,
-                    iconSize: 48,
-                  ),
-                )
-              else
-                SliverList(
-                  delegate: SliverChildBuilderDelegate((context, index) {
-                    final cand = candidates[index];
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      child: FocusableWrapper(
-                        autofocus: index == 0,
-                        disableScale: true,
-                        onSelect: _busy ? null : () => _borrow(cand),
-                        child: Card(
-                          child: _BorrowTile(candidate: cand, onTap: () => _borrow(cand)),
-                        ),
+              )
+            else
+              SliverList(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final cand = candidates[index];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    child: FocusableWrapper(
+                      autofocus: index == 0,
+                      disableScale: true,
+                      onSelect: _busy ? null : () => _borrow(cand),
+                      child: Card(
+                        child: _BorrowTile(candidate: cand, onTap: () => _borrow(cand)),
                       ),
-                    );
-                  }, childCount: candidates.length),
-                ),
-            ],
-          );
-        },
-      ),
+                    ),
+                  );
+                }, childCount: candidates.length),
+              ),
+          ],
+        );
+      },
     );
   }
 

@@ -17,6 +17,7 @@ import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import '../focus/focusable_button.dart';
 import '../focus/focusable_text_field.dart';
+import '../focus/key_event_utils.dart';
 import '../media/media_backend.dart';
 import '../utils/navigation_transitions.dart';
 import '../widgets/backend_badge.dart';
@@ -203,61 +204,65 @@ class _AuthScreenState extends State<AuthScreen> {
     // Use two-column layout on desktop, single column on mobile
     final isDesktop = MediaQuery.sizeOf(context).width > 700;
 
-    return Scaffold(
-      body: Center(
-        child: Container(
-          constraints: BoxConstraints(maxWidth: isDesktop ? 800 : 400),
-          padding: const EdgeInsets.all(24),
-          child: isDesktop
-              ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Image.asset('assets/plezy.png', width: 120, height: 120),
-                          const SizedBox(height: 24),
-                          Text(
-                            t.app.title,
-                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+    return Focus(
+      canRequestFocus: false,
+      onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
+      child: Scaffold(
+        body: Center(
+          child: Container(
+            constraints: BoxConstraints(maxWidth: isDesktop ? 800 : 400),
+            padding: const EdgeInsets.all(24),
+            child: isDesktop
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Image.asset('assets/plezy.png', width: 120, height: 120),
+                            const SizedBox(height: 24),
+                            Text(
+                              t.app.title,
+                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 48),
-                    Expanded(
-                      child: Center(
-                        child: SingleChildScrollView(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [_buildAuthBody()],
+                      const SizedBox(width: 48),
+                      Expanded(
+                        child: Center(
+                          child: SingleChildScrollView(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [_buildAuthBody()],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                )
-              : SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Image.asset('assets/plezy.png', width: 120, height: 120),
-                      const SizedBox(height: 24),
-                      Text(
-                        t.app.title,
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 48),
-                      _buildAuthBody(),
                     ],
+                  )
+                : SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Image.asset('assets/plezy.png', width: 120, height: 120),
+                        const SizedBox(height: 24),
+                        Text(
+                          t.app.title,
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 48),
+                        _buildAuthBody(),
+                      ],
+                    ),
                   ),
-                ),
+          ),
         ),
       ),
     );
@@ -322,17 +327,23 @@ class _AuthScreenState extends State<AuthScreen> {
             ),
           ],
         ] else ...[
-          ElevatedButton.icon(
+          FocusableButton(
             onPressed: busy ? null : startBrowser,
-            style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-            icon: const BackendBadge(backend: MediaBackend.plex, size: 18),
-            label: Text(t.auth.signInWithPlex),
+            child: ElevatedButton.icon(
+              onPressed: busy ? null : startBrowser,
+              style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+              icon: const BackendBadge(backend: MediaBackend.plex, size: 18),
+              label: Text(t.auth.signInWithPlex),
+            ),
           ),
           const SizedBox(height: 12),
-          OutlinedButton(
+          FocusableButton(
             onPressed: busy ? null : startQr,
-            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-            child: Text(t.auth.showQRCode),
+            child: OutlinedButton(
+              onPressed: busy ? null : startQr,
+              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+              child: Text(t.auth.showQRCode),
+            ),
           ),
         ],
         const SizedBox(height: 24),
@@ -363,21 +374,27 @@ class _AuthScreenState extends State<AuthScreen> {
             ),
           )
         else
-          OutlinedButton.icon(
+          FocusableButton(
             onPressed: _connectToJellyfin,
-            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-            icon: const BackendBadge(backend: MediaBackend.jellyfin, size: 18),
-            label: Text(t.auth.connectToJellyfin),
+            child: OutlinedButton.icon(
+              onPressed: _connectToJellyfin,
+              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+              icon: const BackendBadge(backend: MediaBackend.jellyfin, size: 18),
+              label: Text(t.auth.connectToJellyfin),
+            ),
           ),
         if (kDebugMode) ...[
           const SizedBox(height: 12),
-          OutlinedButton(
+          FocusableButton(
             onPressed: _handleDebugTap,
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
+            child: OutlinedButton(
+              onPressed: _handleDebugTap,
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
+              ),
+              child: const Text('Debug: Enter Plex Token', style: TextStyle(fontSize: 12)),
             ),
-            child: const Text('Debug: Enter Plex Token', style: TextStyle(fontSize: 12)),
           ),
         ],
         if (_errorMessage != null) ...[

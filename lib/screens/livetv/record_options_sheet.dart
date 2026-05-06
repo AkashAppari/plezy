@@ -509,6 +509,8 @@ class _IntSettingRowState extends State<_IntSettingRow> with ControllerDisposerM
             autofocus: widget.autofocus,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'-?\d*'))],
+            onNavigateUp: () => FocusScope.of(context).previousFocus(),
+            onNavigateDown: () => FocusScope.of(context).nextFocus(),
             onChanged: (text) {
               final parsed = int.tryParse(text);
               widget.onChanged(parsed);
@@ -571,6 +573,8 @@ class _TextSettingRowState extends State<_TextSettingRow> with ControllerDispose
           FocusableTextField(
             controller: _controller,
             autofocus: widget.autofocus,
+            onNavigateUp: () => FocusScope.of(context).previousFocus(),
+            onNavigateDown: () => FocusScope.of(context).nextFocus(),
             onChanged: (text) => widget.onChanged(text),
           ),
         ],

@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../focus/focusable_action_bar.dart';
+import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/live_tv_support.dart';
 import '../../media/media_server_client.dart';
@@ -606,10 +607,14 @@ class _LiveTvScreenState extends State<LiveTvScreen>
             const SizedBox(height: 16),
             Text(_error!, style: theme.textTheme.bodyLarge),
             const SizedBox(height: 16),
-            FilledButton.icon(
+            FocusableButton(
+              autofocus: true,
               onPressed: _loadChannels,
-              icon: const AppIcon(Symbols.refresh_rounded),
-              label: Text(t.common.retry),
+              child: FilledButton.icon(
+                onPressed: _loadChannels,
+                icon: const AppIcon(Symbols.refresh_rounded),
+                label: Text(t.common.retry),
+              ),
             ),
           ],
         ),

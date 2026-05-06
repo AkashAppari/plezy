@@ -1553,7 +1553,16 @@ class _CollectionSelectionDialog extends StatefulWidget {
 
 class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> with ControllerDisposerMixin {
   late final _filterController = createTextEditingController();
+  final _filterFocusNode = FocusNode(debugLabel: 'CollectionFilter');
+  final _firstCollectionFocusNode = FocusNode(debugLabel: 'CollectionFirstItem');
   late List<MediaItem> _filteredCollections = widget.collections;
+
+  @override
+  void dispose() {
+    _filterFocusNode.dispose();
+    _firstCollectionFocusNode.dispose();
+    super.dispose();
+  }
 
   void _onFilterChanged(String query) {
     final lower = query.toLowerCase();
@@ -1576,7 +1585,9 @@ class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> 
             if (widget.collections.length >= 10) ...[
               FocusableTextField(
                 controller: _filterController,
+                focusNode: _filterFocusNode,
                 autofocus: true,
+                onNavigateDown: _firstCollectionFocusNode.requestFocus,
                 decoration: pillInputDecoration(
                   context,
                   hintText: t.collections.searchCollections,
@@ -1592,7 +1603,9 @@ class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> 
                 itemCount: _filteredCollections.length + 1,
                 itemBuilder: (context, index) {
                   if (index == 0) {
-                    return ListTile(
+                    return FocusableListTile(
+                      focusNode: _firstCollectionFocusNode,
+                      autofocus: widget.collections.length < 10,
                       leading: const AppIcon(Symbols.add_rounded, fill: 1),
                       title: Text(t.common.createNew),
                       onTap: () => Navigator.pop(context, '_create_new'),
@@ -1600,7 +1613,7 @@ class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> 
                   }
 
                   final collection = _filteredCollections[index - 1];
-                  return ListTile(
+                  return FocusableListTile(
                     leading: const AppIcon(Symbols.collections_rounded, fill: 1),
                     title: Text(collection.title ?? ''),
                     subtitle: collection.childCount != null

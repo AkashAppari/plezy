@@ -301,6 +301,9 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
 
   Future<void> _renameRoom(RecentRoom room) async {
     final controller = TextEditingController(text: room.name ?? '');
+    final fieldFocusNode = FocusNode(debugLabel: 'WatchTogetherRenameField');
+    final cancelFocusNode = FocusNode(debugLabel: 'WatchTogetherRenameCancel');
+    final saveFocusNode = FocusNode(debugLabel: 'WatchTogetherRenameSave');
     String? name;
     try {
       name = await showDialog<String>(
@@ -309,18 +312,36 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
           title: Text(t.watchTogether.renameRoom),
           content: FocusableTextField(
             controller: controller,
+            focusNode: fieldFocusNode,
             autofocus: true,
             decoration: InputDecoration(hintText: room.code),
+            onNavigateDown: saveFocusNode.requestFocus,
             onSubmitted: (value) => Navigator.pop(context, value),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-            FilledButton(onPressed: () => Navigator.pop(context, controller.text), child: Text(t.common.save)),
+            DialogActionButton(
+              focusNode: cancelFocusNode,
+              onPressed: () => Navigator.pop(context),
+              onNavigateUp: fieldFocusNode.requestFocus,
+              onNavigateRight: saveFocusNode.requestFocus,
+              label: t.common.cancel,
+            ),
+            DialogActionButton(
+              focusNode: saveFocusNode,
+              onPressed: () => Navigator.pop(context, controller.text),
+              onNavigateUp: fieldFocusNode.requestFocus,
+              onNavigateLeft: cancelFocusNode.requestFocus,
+              isPrimary: true,
+              label: t.common.save,
+            ),
           ],
         ),
       );
     } finally {
       controller.dispose();
+      fieldFocusNode.dispose();
+      cancelFocusNode.dispose();
+      saveFocusNode.dispose();
     }
     if (name == null || !mounted) return;
 

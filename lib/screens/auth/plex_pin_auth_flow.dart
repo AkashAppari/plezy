@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../services/plex_auth_service.dart';
+import '../../focus/focusable_button.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/platform_detector.dart';
@@ -222,9 +223,15 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        FilledButton(onPressed: busy ? null : browser, child: Text(t.auth.signInWithPlex)),
+        FocusableButton(
+          onPressed: busy ? null : browser,
+          child: FilledButton(onPressed: busy ? null : browser, child: Text(t.auth.signInWithPlex)),
+        ),
         const SizedBox(height: 12),
-        OutlinedButton(onPressed: busy ? null : qr, child: Text(t.auth.showQRCode)),
+        FocusableButton(
+          onPressed: busy ? null : qr,
+          child: OutlinedButton(onPressed: busy ? null : qr, child: Text(t.auth.showQRCode)),
+        ),
       ],
     );
   }
@@ -251,10 +258,13 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
           ),
         ),
         const SizedBox(height: 24),
-        OutlinedButton(
+        FocusableButton(
           onPressed: _retry,
-          style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
-          child: Text(t.common.retry),
+          child: OutlinedButton(
+            onPressed: _retry,
+            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
+            child: Text(t.common.retry),
+          ),
         ),
         if (_errorMessage != null) ...[
           const SizedBox(height: 12),
@@ -280,10 +290,13 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
           style: const TextStyle(color: Colors.grey),
         ),
         const SizedBox(height: 16),
-        OutlinedButton(
+        FocusableButton(
           onPressed: _retry,
-          style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
-          child: Text(t.common.retry),
+          child: OutlinedButton(
+            onPressed: _retry,
+            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
+            child: Text(t.common.retry),
+          ),
         ),
         if (_errorMessage != null) ...[
           const SizedBox(height: 12),

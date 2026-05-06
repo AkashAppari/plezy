@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../focus/focusable_button.dart';
 import '../i18n/strings.g.dart';
 import '../models/trackers/device_code.dart';
 import '../utils/snackbar_helper.dart';
@@ -63,10 +64,13 @@ class DeviceCodeDialog extends StatelessWidget {
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            child: FilledButton.icon(
-              icon: const Icon(Icons.open_in_new),
-              label: Text(t.trackers.deviceCode.openToActivate(service: serviceName)),
+            child: FocusableButton(
               onPressed: _open,
+              child: FilledButton.icon(
+                icon: const Icon(Icons.open_in_new),
+                label: Text(t.trackers.deviceCode.openToActivate(service: serviceName)),
+                onPressed: _open,
+              ),
             ),
           ),
           const SizedBox(height: 16),
