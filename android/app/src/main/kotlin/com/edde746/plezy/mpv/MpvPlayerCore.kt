@@ -105,6 +105,29 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
     Log.d(TAG, "Created MPV placeholder surface")
   }
 
+  private fun currentDisplayFpsOverride(): String? {
+    val refreshRate = activity.display?.mode?.refreshRate ?: return null
+    if (refreshRate <= 0f) return null
+    return refreshRate.toString()
+  }
+
+  private fun updateDisplayFpsOverride(p: MpvPlayer, reason: String) {
+    val fps = currentDisplayFpsOverride()
+    if (fps == null) {
+      Log.d(TAG, "Skipping display-fps-override update ($reason): no display rate")
+      return
+    }
+
+    try {
+      runBlocking(Dispatchers.IO) {
+        p.setProperty("display-fps-override", fps)
+      }
+      Log.d(TAG, "Updated display-fps-override=$fps ($reason)")
+    } catch (e: Exception) {
+      Log.w(TAG, "Failed to update display-fps-override ($reason)", e)
+    }
+  }
+
   fun initialize(onResult: (Boolean) -> Unit) {
     if (isInitialized) {
       Log.d(TAG, "Already initialized")
@@ -207,12 +230,19 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
             onResult(false)
             return@launch
           }
+          val displayFpsOverride = currentDisplayFpsOverride()
           val p = MpvPlayer.create(activity.applicationContext) {
             setOption("vo", "gpu")
             setOption("gpu-context", "android")
             setOption("opengl-es", "yes")
             setOption("vd-lavc-film-grain", "cpu")
             setOption("ao", "audiotrack,opensles")
+            if (displayFpsOverride != null) {
+              setOption("display-fps-override", displayFpsOverride)
+            }
+          }
+          if (displayFpsOverride != null) {
+            Log.d(TAG, "Initial display-fps-override=$displayFpsOverride")
           }
 
           if (disposing) {
@@ -747,7 +777,10 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
       onComplete(false)
       return
     }
-    mgr.setVideoFrameRate(fps, videoDurationMs, surfaceView?.holder?.surface, extraDelayMs, onComplete)
+    mgr.setVideoFrameRate(fps, videoDurationMs, surfaceView?.holder?.surface, extraDelayMs) { switched ->
+      player?.let { updateDisplayFpsOverride(it, "frame rate switch, switched=$switched") }
+      onComplete(switched)
+    }
   }
 
   fun clearVideoFrameRate() {
