@@ -171,7 +171,10 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
   Widget buildFocusableInput(BuildContext context, Widget Function(bool usesTvKeyboard) builder) {
     final usesTvKeyboard = _hasTvKeyboard;
     return Focus(
-      canRequestFocus: enabled,
+      // This wrapper only intercepts key events bubbling from the input; the
+      // real TextField/TextFormField must remain the traversable focus target.
+      canRequestFocus: false,
+      skipTraversal: true,
       onKeyEvent: (node, event) => _handleKey(context, node, event),
       child: builder(usesTvKeyboard),
     );
