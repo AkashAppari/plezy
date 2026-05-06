@@ -277,6 +277,8 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String minutesUnit({required Object minutes}) => '${minutes} 分钟';
 	@override String get rememberTrackSelections => '记住每个剧集/电影的音轨选择';
 	@override String get rememberTrackSelectionsDescription => '在播放过程中更改音轨时自动保存音频和字幕语言偏好';
+	@override String get showChapterMarkersOnTimeline => '在进度条上显示章节标记';
+	@override String get showChapterMarkersOnTimelineDescription => '按章节边界分段显示进度条';
 	@override String get clickVideoTogglesPlayback => '点击视频可切换播放/暂停';
 	@override String get clickVideoTogglesPlaybackDescription => '如果启用此选项，点击视频播放器将播放或暂停视频。否则，点击将显示或隐藏播放控件';
 	@override String get videoPlayerControls => '视频播放器控制';
@@ -1890,6 +1892,8 @@ extension on TranslationsZh {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} 分钟',
 			'settings.rememberTrackSelections' => '记住每个剧集/电影的音轨选择',
 			'settings.rememberTrackSelectionsDescription' => '在播放过程中更改音轨时自动保存音频和字幕语言偏好',
+			'settings.showChapterMarkersOnTimeline' => '在进度条上显示章节标记',
+			'settings.showChapterMarkersOnTimelineDescription' => '按章节边界分段显示进度条',
 			'settings.clickVideoTogglesPlayback' => '点击视频可切换播放/暂停',
 			'settings.clickVideoTogglesPlaybackDescription' => '如果启用此选项，点击视频播放器将播放或暂停视频。否则，点击将显示或隐藏播放控件',
 			'settings.videoPlayerControls' => '视频播放器控制',
@@ -2260,10 +2264,10 @@ extension on TranslationsZh {
 			'profiles.pinManagedByPlex' => 'PIN 由 Plex 管理。在 plex.tv 上编辑。',
 			'profiles.noPinSetEditOnPlex' => '未设置 PIN。如需要求 PIN，请在 plex.tv 上编辑 Home 用户。',
 			'profiles.setPin' => '设置 PIN',
-			'profiles.connectionsLabel' => '连接',
-			'profiles.add' => '添加',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.connectionsLabel' => '连接',
+			'profiles.add' => '添加',
 			'profiles.deleteProfileButton' => '删除配置文件',
 			'profiles.noConnectionsHint' => '没有连接 — 添加一个以使用此配置文件。',
 			'profiles.plexHomeAccount' => 'Plex Home 账户',
@@ -2774,10 +2778,10 @@ extension on TranslationsZh {
 			'metadataEdit.episodeOrdering' => '剧集排列顺序',
 			'metadataEdit.tmdbAiring' => 'The Movie Database（播出顺序）',
 			'metadataEdit.tvdbAiring' => 'TheTVDB（播出顺序）',
-			'metadataEdit.tvdbAbsolute' => 'TheTVDB（绝对顺序）',
-			'metadataEdit.metadataLanguage' => '元数据语言',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.tvdbAbsolute' => 'TheTVDB（绝对顺序）',
+			'metadataEdit.metadataLanguage' => '元数据语言',
 			'metadataEdit.useOriginalTitle' => '使用原始标题',
 			'metadataEdit.preferredAudioLanguage' => '首选音频语言',
 			'metadataEdit.preferredSubtitleLanguage' => '首选字幕语言',

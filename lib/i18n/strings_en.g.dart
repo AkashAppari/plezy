@@ -559,6 +559,12 @@ class TranslationsSettingsEn {
 	/// en: 'Automatically save audio and subtitle language preferences when you change tracks during playback'
 	String get rememberTrackSelectionsDescription => 'Automatically save audio and subtitle language preferences when you change tracks during playback';
 
+	/// en: 'Show chapter markers on seek bar'
+	String get showChapterMarkersOnTimeline => 'Show chapter markers on seek bar';
+
+	/// en: 'Segment the seek bar at chapter boundaries'
+	String get showChapterMarkersOnTimelineDescription => 'Segment the seek bar at chapter boundaries';
+
 	/// en: 'Click on video to toggle play/pause'
 	String get clickVideoTogglesPlayback => 'Click on video to toggle play/pause';
 
@@ -4158,6 +4164,8 @@ extension on Translations {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutes',
 			'settings.rememberTrackSelections' => 'Remember track selections per show/movie',
 			'settings.rememberTrackSelectionsDescription' => 'Automatically save audio and subtitle language preferences when you change tracks during playback',
+			'settings.showChapterMarkersOnTimeline' => 'Show chapter markers on seek bar',
+			'settings.showChapterMarkersOnTimelineDescription' => 'Segment the seek bar at chapter boundaries',
 			'settings.clickVideoTogglesPlayback' => 'Click on video to toggle play/pause',
 			'settings.clickVideoTogglesPlaybackDescription' => 'If enabled, clicking on the video player will play/pause the video. Otherwise, clicking will show/hide the playback controls.',
 			'settings.videoPlayerControls' => 'Video Player Controls',
@@ -4528,10 +4536,10 @@ extension on Translations {
 			'profiles.pinManagedByPlex' => 'PIN managed by Plex. Edit on plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'No PIN set. To require one, edit the home user on plex.tv.',
 			'profiles.setPin' => 'Set PIN',
-			'profiles.connectionsLabel' => 'Connections',
-			'profiles.add' => 'Add',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.connectionsLabel' => 'Connections',
+			'profiles.add' => 'Add',
 			'profiles.deleteProfileButton' => 'Delete profile',
 			'profiles.noConnectionsHint' => 'No connections — add one to use this profile.',
 			'profiles.plexHomeAccount' => 'Plex Home account',
@@ -5042,10 +5050,10 @@ extension on Translations {
 			'metadataEdit.episodeOrdering' => 'Episode Ordering',
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Aired)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Aired)',
-			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolute)',
-			'metadataEdit.metadataLanguage' => 'Metadata Language',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolute)',
+			'metadataEdit.metadataLanguage' => 'Metadata Language',
 			'metadataEdit.useOriginalTitle' => 'Use Original Title',
 			'metadataEdit.preferredAudioLanguage' => 'Preferred Audio Language',
 			'metadataEdit.preferredSubtitleLanguage' => 'Preferred Subtitle Language',

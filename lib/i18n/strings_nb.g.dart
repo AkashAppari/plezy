@@ -277,6 +277,8 @@ class _TranslationsSettingsNb extends TranslationsSettingsEn {
 	@override String minutesUnit({required Object minutes}) => '${minutes} minutter';
 	@override String get rememberTrackSelections => 'Husk sporvalg per serie/film';
 	@override String get rememberTrackSelectionsDescription => 'Lagre automatisk lyd- og undertekstspråkpreferanser når du bytter spor under avspilling';
+	@override String get showChapterMarkersOnTimeline => 'Vis kapittelmarkører på tidslinjen';
+	@override String get showChapterMarkersOnTimelineDescription => 'Del tidslinjen ved kapittelgrenser';
 	@override String get clickVideoTogglesPlayback => 'Klikk på video for å veksle avspilling';
 	@override String get clickVideoTogglesPlaybackDescription => 'Hvis aktivert, vil klikk på videospilleren spille av/pause videoen. Ellers vil klikk vise/skjule avspillingskontrollene.';
 	@override String get videoPlayerControls => 'Videospillerkontroller';
@@ -1890,6 +1892,8 @@ extension on TranslationsNb {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutter',
 			'settings.rememberTrackSelections' => 'Husk sporvalg per serie/film',
 			'settings.rememberTrackSelectionsDescription' => 'Lagre automatisk lyd- og undertekstspråkpreferanser når du bytter spor under avspilling',
+			'settings.showChapterMarkersOnTimeline' => 'Vis kapittelmarkører på tidslinjen',
+			'settings.showChapterMarkersOnTimelineDescription' => 'Del tidslinjen ved kapittelgrenser',
 			'settings.clickVideoTogglesPlayback' => 'Klikk på video for å veksle avspilling',
 			'settings.clickVideoTogglesPlaybackDescription' => 'Hvis aktivert, vil klikk på videospilleren spille av/pause videoen. Ellers vil klikk vise/skjule avspillingskontrollene.',
 			'settings.videoPlayerControls' => 'Videospillerkontroller',
@@ -2260,10 +2264,10 @@ extension on TranslationsNb {
 			'profiles.pinManagedByPlex' => 'PIN administreres av Plex. Rediger på plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'Ingen PIN er satt. For å kreve én, rediger Home-brukeren på plex.tv.',
 			'profiles.setPin' => 'Sett PIN',
-			'profiles.connectionsLabel' => 'Tilkoblinger',
-			'profiles.add' => 'Legg til',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.connectionsLabel' => 'Tilkoblinger',
+			'profiles.add' => 'Legg til',
 			'profiles.deleteProfileButton' => 'Slett profil',
 			'profiles.noConnectionsHint' => 'Ingen tilkoblinger — legg til én for å bruke denne profilen.',
 			'profiles.plexHomeAccount' => 'Plex Home-konto',
@@ -2774,10 +2778,10 @@ extension on TranslationsNb {
 			'metadataEdit.episodeOrdering' => 'Episoderekkefølge',
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Sendt)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Sendt)',
-			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolutt)',
-			'metadataEdit.metadataLanguage' => 'Metadataspråk',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolutt)',
+			'metadataEdit.metadataLanguage' => 'Metadataspråk',
 			'metadataEdit.useOriginalTitle' => 'Bruk originaltittel',
 			'metadataEdit.preferredAudioLanguage' => 'Foretrukket lydspråk',
 			'metadataEdit.preferredSubtitleLanguage' => 'Foretrukket undertekstspråk',

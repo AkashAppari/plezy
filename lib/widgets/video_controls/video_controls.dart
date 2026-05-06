@@ -361,6 +361,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   bool _showLockIcon = false; // Whether to show the lock overlay icon
   Timer? _lockIconTimer;
   bool get _clickVideoTogglesPlayback => _settings.read(SettingsService.clickVideoTogglesPlayback);
+  bool get _showChapterMarkersOnTimeline => _settings.read(SettingsService.showChapterMarkersOnTimeline);
   bool _isContentStripVisible = false; // Whether the swipe-up content strip is showing
   int _trafficLightVisibilityGeneration = 0;
 
@@ -456,6 +457,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       SettingsService.showPerformanceOverlay,
       SettingsService.autoHidePerformanceOverlay,
       SettingsService.clickVideoTogglesPlayback,
+      SettingsService.showChapterMarkersOnTimeline,
     ]);
     _startHideTimer();
     _initKeyboardService();
@@ -678,6 +680,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                                 metadata: widget.metadata,
                                                 chapters: _chapters,
                                                 chaptersLoaded: _chaptersLoaded,
+                                                showChapterMarkersOnTimeline: _showChapterMarkersOnTimeline,
                                                 seekTimeSmall: _seekTimeSmall,
                                                 trackChapterControls: _buildTrackChapterControlsWidget(
                                                   hideChaptersAndQueue: hasStripContent,

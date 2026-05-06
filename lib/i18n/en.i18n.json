@@ -150,6 +150,8 @@
     "minutesUnit": "${minutes} minutes",
     "rememberTrackSelections": "Remember track selections per show/movie",
     "rememberTrackSelectionsDescription": "Automatically save audio and subtitle language preferences when you change tracks during playback",
+    "showChapterMarkersOnTimeline": "Show chapter markers on seek bar",
+    "showChapterMarkersOnTimelineDescription": "Segment the seek bar at chapter boundaries",
     "clickVideoTogglesPlayback": "Click on video to toggle play/pause",
     "clickVideoTogglesPlaybackDescription": "If enabled, clicking on the video player will play/pause the video. Otherwise, clicking will show/hide the playback controls.",
     "videoPlayerControls": "Video Player Controls",

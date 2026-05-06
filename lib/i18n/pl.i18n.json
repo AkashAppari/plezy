@@ -150,6 +150,8 @@
     "minutesUnit": "${minutes} minut",
     "rememberTrackSelections": "Zapamiętaj wybór ścieżek per serial/film",
     "rememberTrackSelectionsDescription": "Automatycznie zapisuj preferencje języka audio i napisów przy zmianie ścieżek podczas odtwarzania",
+    "showChapterMarkersOnTimeline": "Pokaż znaczniki rozdziałów na pasku przewijania",
+    "showChapterMarkersOnTimelineDescription": "Podziel pasek przewijania na granicach rozdziałów",
     "clickVideoTogglesPlayback": "Kliknięcie wideo przełącza odtwarzanie/pauzę",
     "clickVideoTogglesPlaybackDescription": "Gdy włączone, kliknięcie na odtwarzacz wideo odtwarza/wstrzymuje. W przeciwnym razie pokazuje/ukrywa kontrolki.",
     "videoPlayerControls": "Kontrolki odtwarzacza wideo",

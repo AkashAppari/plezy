@@ -150,6 +150,8 @@
     "minutesUnit": "${minutes} minutos",
     "rememberTrackSelections": "Recordar selección de pistas por serie/película",
     "rememberTrackSelectionsDescription": "Guardar automáticamente las preferencias de idioma de audio y subtítulos al cambiarlas durante la reproducción",
+    "showChapterMarkersOnTimeline": "Mostrar marcadores de capítulos en la barra de progreso",
+    "showChapterMarkersOnTimelineDescription": "Dividir la barra de progreso en los límites de capítulos",
     "clickVideoTogglesPlayback": "Clic en el video para reproducir/pausar",
     "clickVideoTogglesPlaybackDescription": "Si está habilitado, hacer clic en el reproductor de video reproducirá/pausará el video. De lo contrario, mostrará/ocultará los controles.",
     "videoPlayerControls": "Controles del Reproductor de Video",

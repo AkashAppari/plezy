@@ -150,6 +150,8 @@
     "minutesUnit": "${minutes} minutter",
     "rememberTrackSelections": "Husk sporvalg per serie/film",
     "rememberTrackSelectionsDescription": "Lagre automatisk lyd- og undertekstspråkpreferanser når du bytter spor under avspilling",
+    "showChapterMarkersOnTimeline": "Vis kapittelmarkører på tidslinjen",
+    "showChapterMarkersOnTimelineDescription": "Del tidslinjen ved kapittelgrenser",
     "clickVideoTogglesPlayback": "Klikk på video for å veksle avspilling",
     "clickVideoTogglesPlaybackDescription": "Hvis aktivert, vil klikk på videospilleren spille av/pause videoen. Ellers vil klikk vise/skjule avspillingskontrollene.",
     "videoPlayerControls": "Videospillerkontroller",

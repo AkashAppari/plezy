@@ -150,6 +150,8 @@
     "minutesUnit": "${minutes}分",
     "rememberTrackSelections": "番組/映画ごとにトラック選択を記憶",
     "rememberTrackSelectionsDescription": "再生中にトラックを変更すると、音声と字幕の言語設定を自動保存",
+    "showChapterMarkersOnTimeline": "シークバーにチャプターマーカーを表示",
+    "showChapterMarkersOnTimelineDescription": "チャプターの境界でシークバーを区切る",
     "clickVideoTogglesPlayback": "動画クリックで再生/一時停止を切替",
     "clickVideoTogglesPlaybackDescription": "有効にすると、動画プレーヤーをクリックで再生/一時停止。それ以外は再生コントロールの表示/非表示。",
     "videoPlayerControls": "動画プレーヤーコントロール",

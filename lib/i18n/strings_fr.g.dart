@@ -277,6 +277,8 @@ class _TranslationsSettingsFr extends TranslationsSettingsEn {
 	@override String minutesUnit({required Object minutes}) => '${minutes} minutes';
 	@override String get rememberTrackSelections => 'Mémoriser les sélections de pistes par émission/film';
 	@override String get rememberTrackSelectionsDescription => 'Enregistrer automatiquement les préférences linguistiques pour l\'audio et les sous-titres lorsque vous changez de piste pendant la lecture';
+	@override String get showChapterMarkersOnTimeline => 'Afficher les marqueurs de chapitres sur la barre de lecture';
+	@override String get showChapterMarkersOnTimelineDescription => 'Segmenter la barre de lecture aux limites des chapitres';
 	@override String get clickVideoTogglesPlayback => 'Cliquez sur la vidéo pour basculer entre lecture et pause.';
 	@override String get clickVideoTogglesPlaybackDescription => 'Si cette option est activée, cliquer sur le lecteur vidéo lancera ou mettra en pause la vidéo. Sinon, le clic affichera ou masquera les commandes de lecture.';
 	@override String get videoPlayerControls => 'Commandes du lecteur vidéo';
@@ -1890,6 +1892,8 @@ extension on TranslationsFr {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutes',
 			'settings.rememberTrackSelections' => 'Mémoriser les sélections de pistes par émission/film',
 			'settings.rememberTrackSelectionsDescription' => 'Enregistrer automatiquement les préférences linguistiques pour l\'audio et les sous-titres lorsque vous changez de piste pendant la lecture',
+			'settings.showChapterMarkersOnTimeline' => 'Afficher les marqueurs de chapitres sur la barre de lecture',
+			'settings.showChapterMarkersOnTimelineDescription' => 'Segmenter la barre de lecture aux limites des chapitres',
 			'settings.clickVideoTogglesPlayback' => 'Cliquez sur la vidéo pour basculer entre lecture et pause.',
 			'settings.clickVideoTogglesPlaybackDescription' => 'Si cette option est activée, cliquer sur le lecteur vidéo lancera ou mettra en pause la vidéo. Sinon, le clic affichera ou masquera les commandes de lecture.',
 			'settings.videoPlayerControls' => 'Commandes du lecteur vidéo',
@@ -2260,10 +2264,10 @@ extension on TranslationsFr {
 			'profiles.pinManagedByPlex' => 'PIN géré par Plex. Modifier sur plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'Aucun PIN défini. Pour en exiger un, modifiez l\'utilisateur Home sur plex.tv.',
 			'profiles.setPin' => 'Définir un PIN',
-			'profiles.connectionsLabel' => 'Connexions',
-			'profiles.add' => 'Ajouter',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.connectionsLabel' => 'Connexions',
+			'profiles.add' => 'Ajouter',
 			'profiles.deleteProfileButton' => 'Supprimer le profil',
 			'profiles.noConnectionsHint' => 'Aucune connexion — ajoutez-en une pour utiliser ce profil.',
 			'profiles.plexHomeAccount' => 'Compte Plex Home',
@@ -2774,10 +2778,10 @@ extension on TranslationsFr {
 			'metadataEdit.episodeOrdering' => 'Ordre des épisodes',
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Diffusion)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Diffusion)',
-			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolu)',
-			'metadataEdit.metadataLanguage' => 'Langue des métadonnées',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolu)',
+			'metadataEdit.metadataLanguage' => 'Langue des métadonnées',
 			'metadataEdit.useOriginalTitle' => 'Utiliser le titre original',
 			'metadataEdit.preferredAudioLanguage' => 'Langue audio préférée',
 			'metadataEdit.preferredSubtitleLanguage' => 'Langue de sous-titres préférée',

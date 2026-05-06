@@ -277,6 +277,8 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String minutesUnit({required Object minutes}) => '${minutes} минут';
 	@override String get rememberTrackSelections => 'Запоминать выбор дорожек для каждого сериала/фильма';
 	@override String get rememberTrackSelectionsDescription => 'Автоматически сохранять предпочтения языка аудио и субтитров при переключении дорожек во время воспроизведения';
+	@override String get showChapterMarkersOnTimeline => 'Показывать маркеры глав на шкале перемотки';
+	@override String get showChapterMarkersOnTimelineDescription => 'Разделять шкалу перемотки по границам глав';
 	@override String get clickVideoTogglesPlayback => 'Клик по видео для переключения воспроизведения/паузы';
 	@override String get clickVideoTogglesPlaybackDescription => 'Если включено, клик по видеоплееру воспроизводит/ставит на паузу. В противном случае показывает/скрывает элементы управления.';
 	@override String get videoPlayerControls => 'Элементы управления плеером';
@@ -1890,6 +1892,8 @@ extension on TranslationsRu {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} минут',
 			'settings.rememberTrackSelections' => 'Запоминать выбор дорожек для каждого сериала/фильма',
 			'settings.rememberTrackSelectionsDescription' => 'Автоматически сохранять предпочтения языка аудио и субтитров при переключении дорожек во время воспроизведения',
+			'settings.showChapterMarkersOnTimeline' => 'Показывать маркеры глав на шкале перемотки',
+			'settings.showChapterMarkersOnTimelineDescription' => 'Разделять шкалу перемотки по границам глав',
 			'settings.clickVideoTogglesPlayback' => 'Клик по видео для переключения воспроизведения/паузы',
 			'settings.clickVideoTogglesPlaybackDescription' => 'Если включено, клик по видеоплееру воспроизводит/ставит на паузу. В противном случае показывает/скрывает элементы управления.',
 			'settings.videoPlayerControls' => 'Элементы управления плеером',
@@ -2260,10 +2264,10 @@ extension on TranslationsRu {
 			'profiles.pinManagedByPlex' => 'PIN управляется Plex. Редактируйте на plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'PIN не установлен. Чтобы требовать его, отредактируйте пользователя Home на plex.tv.',
 			'profiles.setPin' => 'Установить PIN',
-			'profiles.connectionsLabel' => 'Соединения',
-			'profiles.add' => 'Добавить',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.connectionsLabel' => 'Соединения',
+			'profiles.add' => 'Добавить',
 			'profiles.deleteProfileButton' => 'Удалить профиль',
 			'profiles.noConnectionsHint' => 'Нет соединений — добавьте одно, чтобы использовать этот профиль.',
 			'profiles.plexHomeAccount' => 'Аккаунт Plex Home',
@@ -2774,10 +2778,10 @@ extension on TranslationsRu {
 			'metadataEdit.episodeOrdering' => 'Порядок эпизодов',
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Эфирный)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Эфирный)',
-			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Абсолютный)',
-			'metadataEdit.metadataLanguage' => 'Язык метаданных',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Абсолютный)',
+			'metadataEdit.metadataLanguage' => 'Язык метаданных',
 			'metadataEdit.useOriginalTitle' => 'Использовать оригинальное название',
 			'metadataEdit.preferredAudioLanguage' => 'Предпочитаемый язык аудио',
 			'metadataEdit.preferredSubtitleLanguage' => 'Предпочитаемый язык субтитров',

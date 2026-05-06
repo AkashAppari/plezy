@@ -31,6 +31,7 @@ class MobileVideoControls extends StatefulWidget {
   final MediaItem metadata;
   final List<MediaChapter> chapters;
   final bool chaptersLoaded;
+  final bool showChapterMarkersOnTimeline;
   final int seekTimeSmall;
   final Widget trackChapterControls;
   final Function(Duration) onSeek;
@@ -85,6 +86,7 @@ class MobileVideoControls extends StatefulWidget {
     required this.metadata,
     required this.chapters,
     required this.chaptersLoaded,
+    this.showChapterMarkersOnTimeline = true,
     required this.seekTimeSmall,
     required this.trackChapterControls,
     required this.onSeek,
@@ -421,6 +423,7 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
           player: widget.player,
           chapters: widget.chapters,
           chaptersLoaded: widget.chaptersLoaded,
+          showChapterMarkersOnTimeline: widget.showChapterMarkersOnTimeline,
           onSeek: widget.onSeek,
           onSeekEnd: widget.onSeekEnd,
           horizontalLayout: false,

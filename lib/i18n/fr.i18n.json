@@ -150,6 +150,8 @@
     "minutesUnit": "${minutes} minutes",
     "rememberTrackSelections": "Mémoriser les sélections de pistes par émission/film",
     "rememberTrackSelectionsDescription": "Enregistrer automatiquement les préférences linguistiques pour l'audio et les sous-titres lorsque vous changez de piste pendant la lecture",
+    "showChapterMarkersOnTimeline": "Afficher les marqueurs de chapitres sur la barre de lecture",
+    "showChapterMarkersOnTimelineDescription": "Segmenter la barre de lecture aux limites des chapitres",
     "clickVideoTogglesPlayback": "Cliquez sur la vidéo pour basculer entre lecture et pause.",
     "clickVideoTogglesPlaybackDescription": "Si cette option est activée, cliquer sur le lecteur vidéo lancera ou mettra en pause la vidéo. Sinon, le clic affichera ou masquera les commandes de lecture.",
     "videoPlayerControls": "Commandes du lecteur vidéo",

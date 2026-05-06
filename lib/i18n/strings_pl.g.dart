@@ -277,6 +277,8 @@ class _TranslationsSettingsPl extends TranslationsSettingsEn {
 	@override String minutesUnit({required Object minutes}) => '${minutes} minut';
 	@override String get rememberTrackSelections => 'Zapamiętaj wybór ścieżek per serial/film';
 	@override String get rememberTrackSelectionsDescription => 'Automatycznie zapisuj preferencje języka audio i napisów przy zmianie ścieżek podczas odtwarzania';
+	@override String get showChapterMarkersOnTimeline => 'Pokaż znaczniki rozdziałów na pasku przewijania';
+	@override String get showChapterMarkersOnTimelineDescription => 'Podziel pasek przewijania na granicach rozdziałów';
 	@override String get clickVideoTogglesPlayback => 'Kliknięcie wideo przełącza odtwarzanie/pauzę';
 	@override String get clickVideoTogglesPlaybackDescription => 'Gdy włączone, kliknięcie na odtwarzacz wideo odtwarza/wstrzymuje. W przeciwnym razie pokazuje/ukrywa kontrolki.';
 	@override String get videoPlayerControls => 'Kontrolki odtwarzacza wideo';
@@ -1890,6 +1892,8 @@ extension on TranslationsPl {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minut',
 			'settings.rememberTrackSelections' => 'Zapamiętaj wybór ścieżek per serial/film',
 			'settings.rememberTrackSelectionsDescription' => 'Automatycznie zapisuj preferencje języka audio i napisów przy zmianie ścieżek podczas odtwarzania',
+			'settings.showChapterMarkersOnTimeline' => 'Pokaż znaczniki rozdziałów na pasku przewijania',
+			'settings.showChapterMarkersOnTimelineDescription' => 'Podziel pasek przewijania na granicach rozdziałów',
 			'settings.clickVideoTogglesPlayback' => 'Kliknięcie wideo przełącza odtwarzanie/pauzę',
 			'settings.clickVideoTogglesPlaybackDescription' => 'Gdy włączone, kliknięcie na odtwarzacz wideo odtwarza/wstrzymuje. W przeciwnym razie pokazuje/ukrywa kontrolki.',
 			'settings.videoPlayerControls' => 'Kontrolki odtwarzacza wideo',
@@ -2260,10 +2264,10 @@ extension on TranslationsPl {
 			'profiles.pinManagedByPlex' => 'PIN zarządzany przez Plex. Edytuj na plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'Nie ustawiono PIN-u. Aby go wymagać, edytuj użytkownika Home na plex.tv.',
 			'profiles.setPin' => 'Ustaw PIN',
-			'profiles.connectionsLabel' => 'Połączenia',
-			'profiles.add' => 'Dodaj',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.connectionsLabel' => 'Połączenia',
+			'profiles.add' => 'Dodaj',
 			'profiles.deleteProfileButton' => 'Usuń profil',
 			'profiles.noConnectionsHint' => 'Brak połączeń — dodaj jedno, aby używać tego profilu.',
 			'profiles.plexHomeAccount' => 'Konto Plex Home',
@@ -2774,10 +2778,10 @@ extension on TranslationsPl {
 			'metadataEdit.episodeOrdering' => 'Kolejność odcinków',
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Emisja)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Emisja)',
-			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolutna)',
-			'metadataEdit.metadataLanguage' => 'Język metadanych',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolutna)',
+			'metadataEdit.metadataLanguage' => 'Język metadanych',
 			'metadataEdit.useOriginalTitle' => 'Użyj oryginalnego tytułu',
 			'metadataEdit.preferredAudioLanguage' => 'Preferowany język audio',
 			'metadataEdit.preferredSubtitleLanguage' => 'Preferowany język napisów',

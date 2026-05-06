@@ -36,6 +36,7 @@ class DesktopVideoControls extends StatefulWidget {
   final VoidCallback? onPrevious;
   final List<MediaChapter> chapters;
   final bool chaptersLoaded;
+  final bool showChapterMarkersOnTimeline;
   final int seekTimeSmall;
   final VoidCallback onSeekToPreviousChapter;
   final VoidCallback onSeekToNextChapter;
@@ -107,6 +108,7 @@ class DesktopVideoControls extends StatefulWidget {
     this.onPrevious,
     required this.chapters,
     required this.chaptersLoaded,
+    this.showChapterMarkersOnTimeline = true,
     required this.seekTimeSmall,
     required this.onSeekToPreviousChapter,
     required this.onSeekToNextChapter,
@@ -699,6 +701,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
               player: widget.player,
               chapters: widget.chapters,
               chaptersLoaded: widget.chaptersLoaded,
+              showChapterMarkersOnTimeline: widget.showChapterMarkersOnTimeline,
               onSeek: widget.onSeek,
               onSeekEnd: widget.onSeekEnd,
               horizontalLayout: true,

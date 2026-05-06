@@ -277,6 +277,8 @@ class _TranslationsSettingsDa extends TranslationsSettingsEn {
 	@override String minutesUnit({required Object minutes}) => '${minutes} minutter';
 	@override String get rememberTrackSelections => 'Husk sporvalg per serie/film';
 	@override String get rememberTrackSelectionsDescription => 'Gem automatisk lyd- og undertekstsprogpræferencer når du skifter spor under afspilning';
+	@override String get showChapterMarkersOnTimeline => 'Vis kapitelmarkører på tidslinjen';
+	@override String get showChapterMarkersOnTimelineDescription => 'Opdel tidslinjen ved kapitelgrænser';
 	@override String get clickVideoTogglesPlayback => 'Klik på video skifter afspil/pause';
 	@override String get clickVideoTogglesPlaybackDescription => 'Når aktiveret, afspiller/pauser klik på videoen. Ellers vises/skjules betjeningselementer.';
 	@override String get videoPlayerControls => 'Videoafspillerkontroller';
@@ -1890,6 +1892,8 @@ extension on TranslationsDa {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutter',
 			'settings.rememberTrackSelections' => 'Husk sporvalg per serie/film',
 			'settings.rememberTrackSelectionsDescription' => 'Gem automatisk lyd- og undertekstsprogpræferencer når du skifter spor under afspilning',
+			'settings.showChapterMarkersOnTimeline' => 'Vis kapitelmarkører på tidslinjen',
+			'settings.showChapterMarkersOnTimelineDescription' => 'Opdel tidslinjen ved kapitelgrænser',
 			'settings.clickVideoTogglesPlayback' => 'Klik på video skifter afspil/pause',
 			'settings.clickVideoTogglesPlaybackDescription' => 'Når aktiveret, afspiller/pauser klik på videoen. Ellers vises/skjules betjeningselementer.',
 			'settings.videoPlayerControls' => 'Videoafspillerkontroller',
@@ -2260,10 +2264,10 @@ extension on TranslationsDa {
 			'profiles.pinManagedByPlex' => 'PIN administreres af Plex. Rediger på plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'Ingen PIN-kode angivet. For at kræve en, redigér Home-brugeren på plex.tv.',
 			'profiles.setPin' => 'Angiv PIN',
-			'profiles.connectionsLabel' => 'Forbindelser',
-			'profiles.add' => 'Tilføj',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.connectionsLabel' => 'Forbindelser',
+			'profiles.add' => 'Tilføj',
 			'profiles.deleteProfileButton' => 'Slet profil',
 			'profiles.noConnectionsHint' => 'Ingen forbindelser — tilføj en for at bruge denne profil.',
 			'profiles.plexHomeAccount' => 'Plex Home-konto',
@@ -2774,10 +2778,10 @@ extension on TranslationsDa {
 			'metadataEdit.episodeOrdering' => 'Episoderækkefølge',
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Sendt)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Sendt)',
-			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolut)',
-			'metadataEdit.metadataLanguage' => 'Metadatasprog',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolut)',
+			'metadataEdit.metadataLanguage' => 'Metadatasprog',
 			'metadataEdit.useOriginalTitle' => 'Brug originaltitel',
 			'metadataEdit.preferredAudioLanguage' => 'Foretrukket lydsprog',
 			'metadataEdit.preferredSubtitleLanguage' => 'Foretrukket undertekstsprog',

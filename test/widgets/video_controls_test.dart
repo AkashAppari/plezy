@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/media/media_version.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
+import 'package:plezy/widgets/video_controls/painters/buffer_range_painter.dart';
 import 'package:plezy/widgets/video_controls/widgets/mobile_skip_zones.dart';
 import 'package:plezy/widgets/video_controls/widgets/timeline_slider.dart';
 
@@ -110,6 +111,33 @@ void main() {
 
       expect(keyEvents, 1);
       expect(seekEvents, 0);
+    });
+
+    testWidgets('does not pass chapters to painter when timeline markers are hidden', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 400,
+              child: TimelineSlider(
+                position: const Duration(minutes: 1),
+                duration: const Duration(minutes: 10),
+                chapters: [MediaChapter(id: 1, startTimeOffset: 300000)],
+                chaptersLoaded: true,
+                showChapterMarkersOnTimeline: false,
+                onSeek: (_) {},
+                onSeekEnd: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final customPaint = tester.widget<CustomPaint>(
+        find.byWidgetPredicate((widget) => widget is CustomPaint && widget.painter is BufferRangePainter),
+      );
+
+      expect((customPaint.painter! as BufferRangePainter).chapters, isEmpty);
     });
   });
 }

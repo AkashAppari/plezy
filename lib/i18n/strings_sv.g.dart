@@ -277,6 +277,8 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String minutesUnit({required Object minutes}) => '${minutes} minuter';
 	@override String get rememberTrackSelections => 'Kom ihåg spårval per serie/film';
 	@override String get rememberTrackSelectionsDescription => 'Spara automatiskt ljud- och undertextspråkpreferenser när du ändrar spår under uppspelning';
+	@override String get showChapterMarkersOnTimeline => 'Visa kapitelmarkörer på tidslinjen';
+	@override String get showChapterMarkersOnTimelineDescription => 'Dela upp tidslinjen vid kapitelgränser';
 	@override String get clickVideoTogglesPlayback => 'Klicka på videon för att växla mellan spela upp och pausa.';
 	@override String get clickVideoTogglesPlaybackDescription => 'Om detta är aktiverat kommer ett klick på videospelaren att starta eller pausa videon. Annars visas eller döljs uppspelningskontrollerna när du klickar.';
 	@override String get videoPlayerControls => 'Videospelar-kontroller';
@@ -1890,6 +1892,8 @@ extension on TranslationsSv {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minuter',
 			'settings.rememberTrackSelections' => 'Kom ihåg spårval per serie/film',
 			'settings.rememberTrackSelectionsDescription' => 'Spara automatiskt ljud- och undertextspråkpreferenser när du ändrar spår under uppspelning',
+			'settings.showChapterMarkersOnTimeline' => 'Visa kapitelmarkörer på tidslinjen',
+			'settings.showChapterMarkersOnTimelineDescription' => 'Dela upp tidslinjen vid kapitelgränser',
 			'settings.clickVideoTogglesPlayback' => 'Klicka på videon för att växla mellan spela upp och pausa.',
 			'settings.clickVideoTogglesPlaybackDescription' => 'Om detta är aktiverat kommer ett klick på videospelaren att starta eller pausa videon. Annars visas eller döljs uppspelningskontrollerna när du klickar.',
 			'settings.videoPlayerControls' => 'Videospelar-kontroller',
@@ -2260,10 +2264,10 @@ extension on TranslationsSv {
 			'profiles.pinManagedByPlex' => 'PIN hanteras av Plex. Redigera på plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'Ingen PIN angiven. För att kräva en, redigera Home-användaren på plex.tv.',
 			'profiles.setPin' => 'Ange PIN',
-			'profiles.connectionsLabel' => 'Anslutningar',
-			'profiles.add' => 'Lägg till',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.connectionsLabel' => 'Anslutningar',
+			'profiles.add' => 'Lägg till',
 			'profiles.deleteProfileButton' => 'Ta bort profil',
 			'profiles.noConnectionsHint' => 'Inga anslutningar — lägg till en för att använda den här profilen.',
 			'profiles.plexHomeAccount' => 'Plex Home-konto',
@@ -2774,10 +2778,10 @@ extension on TranslationsSv {
 			'metadataEdit.episodeOrdering' => 'Avsnittsordning',
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Sändning)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Sändning)',
-			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolut)',
-			'metadataEdit.metadataLanguage' => 'Metadataspråk',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolut)',
+			'metadataEdit.metadataLanguage' => 'Metadataspråk',
 			'metadataEdit.useOriginalTitle' => 'Använd originaltitel',
 			'metadataEdit.preferredAudioLanguage' => 'Föredraget ljudspråk',
 			'metadataEdit.preferredSubtitleLanguage' => 'Föredraget undertextspråk',

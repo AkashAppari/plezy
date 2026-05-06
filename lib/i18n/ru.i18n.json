@@ -150,6 +150,8 @@
     "minutesUnit": "${minutes} минут",
     "rememberTrackSelections": "Запоминать выбор дорожек для каждого сериала/фильма",
     "rememberTrackSelectionsDescription": "Автоматически сохранять предпочтения языка аудио и субтитров при переключении дорожек во время воспроизведения",
+    "showChapterMarkersOnTimeline": "Показывать маркеры глав на шкале перемотки",
+    "showChapterMarkersOnTimelineDescription": "Разделять шкалу перемотки по границам глав",
     "clickVideoTogglesPlayback": "Клик по видео для переключения воспроизведения/паузы",
     "clickVideoTogglesPlaybackDescription": "Если включено, клик по видеоплееру воспроизводит/ставит на паузу. В противном случае показывает/скрывает элементы управления.",
     "videoPlayerControls": "Элементы управления плеером",

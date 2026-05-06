@@ -20,6 +20,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         onPrevious: widget.onPrevious,
         chapters: _chapters,
         chaptersLoaded: _chaptersLoaded,
+        showChapterMarkersOnTimeline: _showChapterMarkersOnTimeline,
         seekTimeSmall: _seekTimeSmall,
         onSeekToPreviousChapter: _seekToPreviousChapter,
         onSeekToNextChapter: _seekToNextChapter,

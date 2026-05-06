@@ -146,6 +146,12 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
           title: t.settings.rememberTrackSelections,
           subtitle: t.settings.rememberTrackSelectionsDescription,
         ),
+        SettingSwitchTile(
+          pref: SettingsService.showChapterMarkersOnTimeline,
+          icon: Symbols.bookmarks_rounded,
+          title: t.settings.showChapterMarkersOnTimeline,
+          subtitle: t.settings.showChapterMarkersOnTimelineDescription,
+        ),
         if (!isMobile)
           SettingSwitchTile(
             pref: SettingsService.clickVideoTogglesPlayback,

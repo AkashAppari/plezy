@@ -277,6 +277,8 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String minutesUnit({required Object minutes}) => '${minutes}分';
 	@override String get rememberTrackSelections => '番組/映画ごとにトラック選択を記憶';
 	@override String get rememberTrackSelectionsDescription => '再生中にトラックを変更すると、音声と字幕の言語設定を自動保存';
+	@override String get showChapterMarkersOnTimeline => 'シークバーにチャプターマーカーを表示';
+	@override String get showChapterMarkersOnTimelineDescription => 'チャプターの境界でシークバーを区切る';
 	@override String get clickVideoTogglesPlayback => '動画クリックで再生/一時停止を切替';
 	@override String get clickVideoTogglesPlaybackDescription => '有効にすると、動画プレーヤーをクリックで再生/一時停止。それ以外は再生コントロールの表示/非表示。';
 	@override String get videoPlayerControls => '動画プレーヤーコントロール';
@@ -1890,6 +1892,8 @@ extension on TranslationsJa {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes}分',
 			'settings.rememberTrackSelections' => '番組/映画ごとにトラック選択を記憶',
 			'settings.rememberTrackSelectionsDescription' => '再生中にトラックを変更すると、音声と字幕の言語設定を自動保存',
+			'settings.showChapterMarkersOnTimeline' => 'シークバーにチャプターマーカーを表示',
+			'settings.showChapterMarkersOnTimelineDescription' => 'チャプターの境界でシークバーを区切る',
 			'settings.clickVideoTogglesPlayback' => '動画クリックで再生/一時停止を切替',
 			'settings.clickVideoTogglesPlaybackDescription' => '有効にすると、動画プレーヤーをクリックで再生/一時停止。それ以外は再生コントロールの表示/非表示。',
 			'settings.videoPlayerControls' => '動画プレーヤーコントロール',
@@ -2260,10 +2264,10 @@ extension on TranslationsJa {
 			'profiles.pinManagedByPlex' => 'PINはPlexで管理されています。plex.tvで編集してください。',
 			'profiles.noPinSetEditOnPlex' => 'PINが設定されていません。要求するには、plex.tvでHomeユーザーを編集してください。',
 			'profiles.setPin' => 'PINを設定',
-			'profiles.connectionsLabel' => '接続',
-			'profiles.add' => '追加',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.connectionsLabel' => '接続',
+			'profiles.add' => '追加',
 			'profiles.deleteProfileButton' => 'プロファイルを削除',
 			'profiles.noConnectionsHint' => '接続がありません — このプロファイルを使うには1つ追加してください。',
 			'profiles.plexHomeAccount' => 'Plex Homeアカウント',
@@ -2774,10 +2778,10 @@ extension on TranslationsJa {
 			'metadataEdit.episodeOrdering' => 'エピソードの順序',
 			'metadataEdit.tmdbAiring' => 'The Movie Database（放送順）',
 			'metadataEdit.tvdbAiring' => 'TheTVDB（放送順）',
-			'metadataEdit.tvdbAbsolute' => 'TheTVDB（絶対順）',
-			'metadataEdit.metadataLanguage' => 'メタデータの言語',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.tvdbAbsolute' => 'TheTVDB（絶対順）',
+			'metadataEdit.metadataLanguage' => 'メタデータの言語',
 			'metadataEdit.useOriginalTitle' => '原題を使用',
 			'metadataEdit.preferredAudioLanguage' => '優先音声言語',
 			'metadataEdit.preferredSubtitleLanguage' => '優先字幕言語',

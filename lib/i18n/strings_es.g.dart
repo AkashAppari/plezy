@@ -277,6 +277,8 @@ class _TranslationsSettingsEs extends TranslationsSettingsEn {
 	@override String minutesUnit({required Object minutes}) => '${minutes} minutos';
 	@override String get rememberTrackSelections => 'Recordar selección de pistas por serie/película';
 	@override String get rememberTrackSelectionsDescription => 'Guardar automáticamente las preferencias de idioma de audio y subtítulos al cambiarlas durante la reproducción';
+	@override String get showChapterMarkersOnTimeline => 'Mostrar marcadores de capítulos en la barra de progreso';
+	@override String get showChapterMarkersOnTimelineDescription => 'Dividir la barra de progreso en los límites de capítulos';
 	@override String get clickVideoTogglesPlayback => 'Clic en el video para reproducir/pausar';
 	@override String get clickVideoTogglesPlaybackDescription => 'Si está habilitado, hacer clic en el reproductor de video reproducirá/pausará el video. De lo contrario, mostrará/ocultará los controles.';
 	@override String get videoPlayerControls => 'Controles del Reproductor de Video';
@@ -1890,6 +1892,8 @@ extension on TranslationsEs {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutos',
 			'settings.rememberTrackSelections' => 'Recordar selección de pistas por serie/película',
 			'settings.rememberTrackSelectionsDescription' => 'Guardar automáticamente las preferencias de idioma de audio y subtítulos al cambiarlas durante la reproducción',
+			'settings.showChapterMarkersOnTimeline' => 'Mostrar marcadores de capítulos en la barra de progreso',
+			'settings.showChapterMarkersOnTimelineDescription' => 'Dividir la barra de progreso en los límites de capítulos',
 			'settings.clickVideoTogglesPlayback' => 'Clic en el video para reproducir/pausar',
 			'settings.clickVideoTogglesPlaybackDescription' => 'Si está habilitado, hacer clic en el reproductor de video reproducirá/pausará el video. De lo contrario, mostrará/ocultará los controles.',
 			'settings.videoPlayerControls' => 'Controles del Reproductor de Video',
@@ -2260,10 +2264,10 @@ extension on TranslationsEs {
 			'profiles.pinManagedByPlex' => 'PIN gestionado por Plex. Edita en plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'Sin PIN establecido. Para requerir uno, edita el usuario Home en plex.tv.',
 			'profiles.setPin' => 'Establecer PIN',
-			'profiles.connectionsLabel' => 'Conexiones',
-			'profiles.add' => 'Añadir',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.connectionsLabel' => 'Conexiones',
+			'profiles.add' => 'Añadir',
 			'profiles.deleteProfileButton' => 'Eliminar perfil',
 			'profiles.noConnectionsHint' => 'Sin conexiones — añade una para usar este perfil.',
 			'profiles.plexHomeAccount' => 'Cuenta Plex Home',
@@ -2774,10 +2778,10 @@ extension on TranslationsEs {
 			'metadataEdit.episodeOrdering' => 'Orden de episodios',
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Emisión)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Emisión)',
-			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absoluto)',
-			'metadataEdit.metadataLanguage' => 'Idioma de metadatos',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absoluto)',
+			'metadataEdit.metadataLanguage' => 'Idioma de metadatos',
 			'metadataEdit.useOriginalTitle' => 'Usar título original',
 			'metadataEdit.preferredAudioLanguage' => 'Idioma de audio preferido',
 			'metadataEdit.preferredSubtitleLanguage' => 'Idioma de subtítulos preferido',

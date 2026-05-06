@@ -277,6 +277,8 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String minutesUnit({required Object minutes}) => '${minutes}분';
 	@override String get rememberTrackSelections => '에피소드/영화별 트랙 선택 기억';
 	@override String get rememberTrackSelectionsDescription => '재생 중 트랙을 변경할 때 오디오 및 자막 언어 설정을 자동으로 저장합니다';
+	@override String get showChapterMarkersOnTimeline => '탐색 막대에 챕터 마커 표시';
+	@override String get showChapterMarkersOnTimelineDescription => '챕터 경계에서 탐색 막대 구분';
 	@override String get clickVideoTogglesPlayback => '비디오를 클릭하여 재생/일시정지를 전환하세요.';
 	@override String get clickVideoTogglesPlaybackDescription => '이 옵션이 활성화되어 있으면 비디오 플레이어를 클릭할 때 재생 또는 일시정지가 됩니다. 그렇지 않으면 클릭 시 재생 컨트롤이 표시되거나 숨겨집니다.';
 	@override String get videoPlayerControls => '비디오 플레이어 컨트롤';
@@ -1890,6 +1892,8 @@ extension on TranslationsKo {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes}분',
 			'settings.rememberTrackSelections' => '에피소드/영화별 트랙 선택 기억',
 			'settings.rememberTrackSelectionsDescription' => '재생 중 트랙을 변경할 때 오디오 및 자막 언어 설정을 자동으로 저장합니다',
+			'settings.showChapterMarkersOnTimeline' => '탐색 막대에 챕터 마커 표시',
+			'settings.showChapterMarkersOnTimelineDescription' => '챕터 경계에서 탐색 막대 구분',
 			'settings.clickVideoTogglesPlayback' => '비디오를 클릭하여 재생/일시정지를 전환하세요.',
 			'settings.clickVideoTogglesPlaybackDescription' => '이 옵션이 활성화되어 있으면 비디오 플레이어를 클릭할 때 재생 또는 일시정지가 됩니다. 그렇지 않으면 클릭 시 재생 컨트롤이 표시되거나 숨겨집니다.',
 			'settings.videoPlayerControls' => '비디오 플레이어 컨트롤',
@@ -2260,10 +2264,10 @@ extension on TranslationsKo {
 			'profiles.pinManagedByPlex' => 'PIN은 Plex에서 관리됩니다. plex.tv에서 편집하세요.',
 			'profiles.noPinSetEditOnPlex' => '설정된 PIN이 없습니다. 요구하려면 plex.tv에서 Home 사용자를 편집하세요.',
 			'profiles.setPin' => 'PIN 설정',
-			'profiles.connectionsLabel' => '연결',
-			'profiles.add' => '추가',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.connectionsLabel' => '연결',
+			'profiles.add' => '추가',
 			'profiles.deleteProfileButton' => '프로필 삭제',
 			'profiles.noConnectionsHint' => '연결이 없습니다 — 이 프로필을 사용하려면 하나 추가하세요.',
 			'profiles.plexHomeAccount' => 'Plex Home 계정',
@@ -2774,10 +2778,10 @@ extension on TranslationsKo {
 			'metadataEdit.episodeOrdering' => '에피소드 순서',
 			'metadataEdit.tmdbAiring' => 'The Movie Database (방영순)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (방영순)',
-			'metadataEdit.tvdbAbsolute' => 'TheTVDB (절대순)',
-			'metadataEdit.metadataLanguage' => '메타데이터 언어',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.tvdbAbsolute' => 'TheTVDB (절대순)',
+			'metadataEdit.metadataLanguage' => '메타데이터 언어',
 			'metadataEdit.useOriginalTitle' => '원제 사용',
 			'metadataEdit.preferredAudioLanguage' => '선호 오디오 언어',
 			'metadataEdit.preferredSubtitleLanguage' => '선호 자막 언어',
