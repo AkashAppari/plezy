@@ -341,6 +341,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
       const SizedBox(height: 16),
       FocusableTextFormField(
         controller: _urlController,
+        autofocus: true,
         keyboardType: TextInputType.url,
         autocorrect: false,
         enableSuggestions: false,

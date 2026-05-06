@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/screens/settings/add_jellyfin_screen.dart';
@@ -11,6 +12,15 @@ Profile _profile(String id) => Profile(
 );
 
 void main() {
+  testWidgets('autofocuses the server URL field', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: AddJellyfinScreen()));
+    await tester.pump();
+
+    final field = tester.widget<TextField>(find.byType(TextField));
+
+    expect(field.autofocus, isTrue);
+  });
+
   group('Jellyfin profile binding decisions', () {
     test('creates a local profile only on true first-run with no profiles', () {
       expect(shouldCreateLocalJellyfinProfile(targetProfile: null, activeProfile: null, hasProfiles: false), isTrue);
