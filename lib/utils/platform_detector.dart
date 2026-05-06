@@ -31,6 +31,7 @@ AndroidTvFeatureDetection detectAndroidTvFromSystemFeatures(Iterable<String> fea
 /// Service for detecting if the app is running on Android TV or Apple TV.
 class TvDetectionService {
   static TvDetectionService? _instance;
+  static bool? _debugAppleTVOverride;
   bool _detected = false;
   bool _forceTv = false;
   bool _isTV = false;
@@ -122,10 +123,15 @@ class TvDetectionService {
   }
 
   /// Synchronous access after initialization (returns false if not initialized)
-  static bool isTVSync() => _instance?._isTV ?? false;
+  static bool isTVSync() => _debugAppleTVOverride ?? _instance?._isTV ?? false;
 
   /// Synchronous Apple TV check (returns false if not initialized or not tvOS).
-  static bool isAppleTVSync() => _instance?._isAppleTV ?? false;
+  static bool isAppleTVSync() => _debugAppleTVOverride ?? _instance?._isAppleTV ?? false;
+
+  @visibleForTesting
+  static void debugSetAppleTVOverride(bool? value) {
+    _debugAppleTVOverride = value;
+  }
 
   static List<String> tvDetectionReasonsSync() => _instance?._effectiveDetectionReasons ?? const [];
 

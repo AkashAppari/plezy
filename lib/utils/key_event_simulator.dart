@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -17,6 +19,7 @@ void simulateKeyPress(LogicalKeyboardKey logicalKey) {
       physicalKey: physicalKey,
       logicalKey: logicalKey,
       timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
+      deviceType: ui.KeyEventDeviceType.directionalPad,
     );
 
     FocusNode? node = focusNode;
@@ -33,6 +36,7 @@ void simulateKeyPress(LogicalKeyboardKey logicalKey) {
       physicalKey: physicalKey,
       logicalKey: logicalKey,
       timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
+      deviceType: ui.KeyEventDeviceType.directionalPad,
     );
 
     node = focusNode;

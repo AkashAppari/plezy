@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -430,6 +431,7 @@ class GamepadService with WindowListener {
         physicalKey: _getPhysicalKey(logicalKey),
         logicalKey: logicalKey,
         timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
+        deviceType: ui.KeyEventDeviceType.gamepad,
       ),
     );
   }
@@ -440,6 +442,7 @@ class GamepadService with WindowListener {
         physicalKey: _getPhysicalKey(logicalKey),
         logicalKey: logicalKey,
         timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
+        deviceType: ui.KeyEventDeviceType.gamepad,
       ),
     );
   }

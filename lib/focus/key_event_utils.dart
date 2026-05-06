@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../utils/platform_detector.dart';
 import 'dpad_navigator.dart';
 
 /// Handles back key events by popping the current route.
@@ -58,6 +59,13 @@ KeyEventResult handleBackKeyAction(KeyEvent event, VoidCallback onBack) {
 
   // Check if this BACK event should be suppressed (e.g., after modal closed)
   if (BackKeyUpSuppressor.consumeIfSuppressed(event)) {
+    return KeyEventResult.handled;
+  }
+
+  if (PlatformDetector.isAppleTV() && event.isPhysicalKeyboardEvent && event is KeyDownEvent) {
+    BackKeyCoordinator.markHandled();
+    BackKeyUpSuppressor.suppressBackUntilKeyUp();
+    onBack();
     return KeyEventResult.handled;
   }
 

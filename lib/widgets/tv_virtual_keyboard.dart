@@ -227,7 +227,16 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
         return KeyEventResult.handled;
       }
 
-      if (key.isSelectKey) {
+      if (event.isPhysicalKeyboardEnter) {
+        if (_isMultiline) {
+          _insert('\n');
+        } else if (event is KeyDownEvent) {
+          _submit();
+        }
+        return KeyEventResult.handled;
+      }
+
+      if (event.isTvSelectEvent) {
         _activate(_rows[_row][_column]);
         return KeyEventResult.handled;
       }

@@ -15,6 +15,14 @@ KeyEventResult _handleInputKey({
   required bool enabled,
   required VoidCallback openKeyboard,
   required KeyEvent event,
+  TextInputType? keyboardType,
+  TextInputAction? textInputAction,
+  List<TextInputFormatter>? inputFormatters,
+  ValueChanged<String>? onChanged,
+  ValueChanged<String>? onSubmitted,
+  VoidCallback? onEditingComplete,
+  int? maxLength,
+  int? maxLines,
   VoidCallback? onSelect,
   VoidCallback? onBack,
   VoidCallback? onNavigateLeft,
@@ -24,9 +32,25 @@ KeyEventResult _handleInputKey({
 }) {
   final key = event.logicalKey;
 
-  if (usesTvKeyboard && enabled && key.isSelectKey) {
+  if (usesTvKeyboard && enabled && event.isTvSelectEvent) {
     if (event is KeyDownEvent) openKeyboard();
     return KeyEventResult.handled;
+  }
+
+  if (usesTvKeyboard && enabled && event.isPhysicalKeyboardEvent) {
+    final result = _handleTvHardwareKeyboardKey(
+      controller: controller,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      inputFormatters: inputFormatters,
+      onChanged: onChanged,
+      onSubmitted: onSubmitted,
+      onEditingComplete: onEditingComplete,
+      maxLength: maxLength,
+      maxLines: maxLines,
+      event: event,
+    );
+    if (result != KeyEventResult.ignored) return result;
   }
 
   if (onBack != null && key.isBackKey) {
@@ -67,6 +91,279 @@ KeyEventResult _handleInputKey({
   }
 
   return KeyEventResult.ignored;
+}
+
+KeyEventResult _handleTvHardwareKeyboardKey({
+  required TextEditingController controller,
+  required KeyEvent event,
+  TextInputType? keyboardType,
+  TextInputAction? textInputAction,
+  List<TextInputFormatter>? inputFormatters,
+  ValueChanged<String>? onChanged,
+  ValueChanged<String>? onSubmitted,
+  VoidCallback? onEditingComplete,
+  int? maxLength,
+  int? maxLines,
+}) {
+  final key = event.logicalKey;
+
+  if (event.isPhysicalKeyboardEnter) {
+    if (event is KeyDownEvent) {
+      if (_isMultilineTextInput(keyboardType: keyboardType, maxLines: maxLines)) {
+        _insertText(
+          controller: controller,
+          text: '\n',
+          inputFormatters: inputFormatters,
+          maxLength: maxLength,
+          onChanged: onChanged,
+        );
+      } else {
+        _submitTextInput(
+          controller: controller,
+          textInputAction: textInputAction,
+          onSubmitted: onSubmitted,
+          onEditingComplete: onEditingComplete,
+        );
+      }
+    }
+    return KeyEventResult.handled;
+  }
+
+  if (!event.isActionable) return KeyEventResult.ignored;
+
+  if (key == LogicalKeyboardKey.backspace) {
+    _backspace(controller: controller, inputFormatters: inputFormatters, maxLength: maxLength, onChanged: onChanged);
+    return KeyEventResult.handled;
+  }
+  if (key == LogicalKeyboardKey.delete) {
+    _deleteForward(
+      controller: controller,
+      inputFormatters: inputFormatters,
+      maxLength: maxLength,
+      onChanged: onChanged,
+    );
+    return KeyEventResult.handled;
+  }
+
+  if (key.isLeftKey || key.isRightKey) {
+    return _moveCaretHorizontally(controller, key.isLeftKey ? -1 : 1);
+  }
+
+  final character = event.character;
+  if (character != null && character.isNotEmpty && !key.isNavigationKey && !_isControlCharacter(character)) {
+    _insertText(
+      controller: controller,
+      text: character,
+      inputFormatters: inputFormatters,
+      maxLength: maxLength,
+      onChanged: onChanged,
+    );
+    return KeyEventResult.handled;
+  }
+
+  return KeyEventResult.ignored;
+}
+
+bool _isMultilineTextInput({TextInputType? keyboardType, int? maxLines}) {
+  return keyboardType?.index == TextInputType.multiline.index || (maxLines != null && maxLines != 1);
+}
+
+bool _isControlCharacter(String text) {
+  return text.runes.every((codeUnit) => codeUnit < 0x20 || codeUnit == 0x7f);
+}
+
+KeyEventResult _moveCaretHorizontally(TextEditingController controller, int delta) {
+  final value = controller.value;
+  final selection = value.selection;
+  if (!selection.isValid) {
+    controller.selection = TextSelection.collapsed(offset: value.text.length);
+    return KeyEventResult.handled;
+  }
+
+  if (!selection.isCollapsed) {
+    final offset = delta < 0
+        ? (selection.start < selection.end ? selection.start : selection.end)
+        : (selection.start > selection.end ? selection.start : selection.end);
+    controller.selection = TextSelection.collapsed(offset: offset);
+    return KeyEventResult.handled;
+  }
+
+  final nextOffset = selection.extentOffset + delta;
+  if (nextOffset < 0 || nextOffset > value.text.length) return KeyEventResult.ignored;
+  controller.selection = TextSelection.collapsed(offset: nextOffset);
+  return KeyEventResult.handled;
+}
+
+void _submitTextInput({
+  required TextEditingController controller,
+  required TextInputAction? textInputAction,
+  ValueChanged<String>? onSubmitted,
+  VoidCallback? onEditingComplete,
+}) {
+  if (onEditingComplete != null) {
+    onEditingComplete();
+  } else {
+    _defaultEditingComplete(textInputAction);
+  }
+  onSubmitted?.call(controller.text);
+}
+
+void _defaultEditingComplete(TextInputAction? textInputAction) {
+  final focus = FocusManager.instance.primaryFocus;
+  switch (textInputAction) {
+    case TextInputAction.next:
+      focus?.nextFocus();
+    case TextInputAction.previous:
+      focus?.previousFocus();
+    default:
+      focus?.unfocus();
+  }
+}
+
+void _insertText({
+  required TextEditingController controller,
+  required String text,
+  List<TextInputFormatter>? inputFormatters,
+  int? maxLength,
+  ValueChanged<String>? onChanged,
+}) {
+  final value = controller.value;
+  final selection = value.selection;
+  final start = selection.isValid
+      ? (selection.start < selection.end ? selection.start : selection.end)
+      : value.text.length;
+  final end = selection.isValid
+      ? (selection.start > selection.end ? selection.start : selection.end)
+      : value.text.length;
+  final newText = value.text.replaceRange(start, end, text);
+  _replaceTextValue(
+    controller: controller,
+    nextValue: value.copyWith(
+      text: newText,
+      selection: TextSelection.collapsed(offset: start + text.length),
+      composing: TextRange.empty,
+    ),
+    inputFormatters: inputFormatters,
+    maxLength: maxLength,
+    onChanged: onChanged,
+  );
+}
+
+void _backspace({
+  required TextEditingController controller,
+  List<TextInputFormatter>? inputFormatters,
+  int? maxLength,
+  ValueChanged<String>? onChanged,
+}) {
+  final value = controller.value;
+  final selection = value.selection;
+  final start = selection.isValid
+      ? (selection.start < selection.end ? selection.start : selection.end)
+      : value.text.length;
+  final end = selection.isValid
+      ? (selection.start > selection.end ? selection.start : selection.end)
+      : value.text.length;
+  if (start != end) {
+    _replaceTextRange(
+      controller,
+      start,
+      end,
+      inputFormatters: inputFormatters,
+      maxLength: maxLength,
+      onChanged: onChanged,
+    );
+    return;
+  }
+  if (start == 0) return;
+  _replaceTextRange(
+    controller,
+    start - 1,
+    start,
+    inputFormatters: inputFormatters,
+    maxLength: maxLength,
+    onChanged: onChanged,
+  );
+}
+
+void _deleteForward({
+  required TextEditingController controller,
+  List<TextInputFormatter>? inputFormatters,
+  int? maxLength,
+  ValueChanged<String>? onChanged,
+}) {
+  final value = controller.value;
+  final selection = value.selection;
+  final start = selection.isValid
+      ? (selection.start < selection.end ? selection.start : selection.end)
+      : value.text.length;
+  final end = selection.isValid
+      ? (selection.start > selection.end ? selection.start : selection.end)
+      : value.text.length;
+  if (start != end) {
+    _replaceTextRange(
+      controller,
+      start,
+      end,
+      inputFormatters: inputFormatters,
+      maxLength: maxLength,
+      onChanged: onChanged,
+    );
+    return;
+  }
+  if (start >= value.text.length) return;
+  _replaceTextRange(
+    controller,
+    start,
+    start + 1,
+    inputFormatters: inputFormatters,
+    maxLength: maxLength,
+    onChanged: onChanged,
+  );
+}
+
+void _replaceTextRange(
+  TextEditingController controller,
+  int start,
+  int end, {
+  List<TextInputFormatter>? inputFormatters,
+  int? maxLength,
+  ValueChanged<String>? onChanged,
+}) {
+  final value = controller.value;
+  _replaceTextValue(
+    controller: controller,
+    nextValue: value.copyWith(
+      text: value.text.replaceRange(start, end, ''),
+      selection: TextSelection.collapsed(offset: start),
+      composing: TextRange.empty,
+    ),
+    inputFormatters: inputFormatters,
+    maxLength: maxLength,
+    onChanged: onChanged,
+  );
+}
+
+void _replaceTextValue({
+  required TextEditingController controller,
+  required TextEditingValue nextValue,
+  List<TextInputFormatter>? inputFormatters,
+  int? maxLength,
+  ValueChanged<String>? onChanged,
+}) {
+  final previousValue = controller.value;
+  var formattedValue = nextValue;
+  final formatters = [
+    ...?inputFormatters,
+    if (maxLength != null && maxLength > 0) LengthLimitingTextInputFormatter(maxLength),
+  ];
+  for (final formatter in formatters) {
+    formattedValue = formatter.formatEditUpdate(previousValue, formattedValue);
+  }
+
+  controller.value = formattedValue;
+  if (formattedValue.text != previousValue.text) {
+    onChanged?.call(formattedValue.text);
+  }
 }
 
 abstract class _FocusableTextInputBase extends StatelessWidget {
@@ -159,6 +456,14 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
       enabled: enabled,
       openKeyboard: () => _showTvKeyboard(context),
       event: event,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      inputFormatters: inputFormatters,
+      onChanged: onChanged,
+      onSubmitted: onSubmitted,
+      onEditingComplete: onEditingComplete,
+      maxLength: maxLength,
+      maxLines: maxLines,
       onSelect: onSelect,
       onBack: onBack,
       onNavigateLeft: onNavigateLeft,

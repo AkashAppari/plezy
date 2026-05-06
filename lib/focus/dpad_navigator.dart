@@ -1,7 +1,24 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/services.dart';
 
 extension KeyEventActionable on KeyEvent {
   bool get isActionable => this is KeyDownEvent || this is KeyRepeatEvent;
+  bool get isPhysicalKeyboardEvent => deviceType == ui.KeyEventDeviceType.keyboard;
+  bool get isPhysicalKeyboardEnter =>
+      deviceType == ui.KeyEventDeviceType.keyboard &&
+      (logicalKey == LogicalKeyboardKey.enter ||
+          logicalKey == LogicalKeyboardKey.numpadEnter ||
+          logicalKey == LogicalKeyboardKey.select);
+
+  bool get isTvSelectEvent {
+    if (isPhysicalKeyboardEvent) return false;
+    if (logicalKey == LogicalKeyboardKey.select || logicalKey == LogicalKeyboardKey.gameButtonA) return true;
+    if (logicalKey == LogicalKeyboardKey.enter || logicalKey == LogicalKeyboardKey.numpadEnter) {
+      return deviceType != ui.KeyEventDeviceType.keyboard;
+    }
+    return false;
+  }
 }
 
 final _dpadDirectionKeys = {
