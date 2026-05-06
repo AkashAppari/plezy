@@ -280,6 +280,7 @@ class _AuthScreenState extends State<AuthScreen> {
     }
     return PlexPinAuthFlow(
       onTokenReceived: _connectToAllServersAndNavigate,
+      autoStartQrOnTV: false,
       initialButtonsBuilder: _buildInitialButtons,
     );
   }
@@ -298,7 +299,15 @@ class _AuthScreenState extends State<AuthScreen> {
             child: ElevatedButton(
               onPressed: busy ? null : startQr,
               style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-              child: Text(t.auth.showQRCode),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const BackendBadge(backend: MediaBackend.plex, size: 18),
+                  const SizedBox(width: 8),
+                  Text(t.auth.signInWithPlex),
+                ],
+              ),
             ),
           ),
           if (!isAppleTV) ...[
