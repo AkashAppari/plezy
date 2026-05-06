@@ -4,6 +4,7 @@ import android.app.AppOpsManager
 import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
@@ -37,6 +38,7 @@ class MainActivity : FlutterActivity() {
   private val PIP_CHANNEL = "com.plezy/pip"
   private val EXTERNAL_PLAYER_CHANNEL = "com.plezy/external_player"
   private val THEME_CHANNEL = "com.plezy/theme"
+  private val DEVICE_CHANNEL = "com.plezy/device"
   private var watchNextPlugin: WatchNextPlugin? = null
 
   // Auto PiP state
@@ -44,7 +46,40 @@ class MainActivity : FlutterActivity() {
   private var autoPipWidth: Int = 16
   private var autoPipHeight: Int = 9
 
-  private fun isAndroidTvDevice(): Boolean = packageManager.hasSystemFeature("android.software.leanback")
+  private fun isAndroidTvDevice(): Boolean = getAndroidTvDetection()["isTv"] as Boolean
+
+  private fun getAndroidTvDetection(): Map<String, Any> {
+    val pm = packageManager
+    val uiModeType = resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK
+    val isTelevisionUiMode = uiModeType == Configuration.UI_MODE_TYPE_TELEVISION
+
+    @Suppress("DEPRECATION")
+    val hasTelevisionFeature = pm.hasSystemFeature(PackageManager.FEATURE_TELEVISION)
+    val hasLeanback = pm.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+    val hasFireTvFeature = pm.hasSystemFeature("amazon.hardware.fire_tv")
+    val hasTouchscreen = pm.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN)
+    val hasFakeTouch = pm.hasSystemFeature(PackageManager.FEATURE_FAKETOUCH)
+
+    val reasons = mutableListOf<String>()
+    if (isTelevisionUiMode) reasons.add("ui_mode_television")
+    if (hasTelevisionFeature) reasons.add("television_feature")
+    if (hasLeanback) reasons.add("leanback")
+    if (hasFireTvFeature) reasons.add("fire_tv")
+    if (!hasTouchscreen) reasons.add("no_touchscreen")
+
+    return mapOf(
+      "isTv" to reasons.isNotEmpty(),
+      "reasons" to reasons,
+      "isTelevisionUiMode" to isTelevisionUiMode,
+      "hasTelevisionFeature" to hasTelevisionFeature,
+      "hasLeanback" to hasLeanback,
+      "hasFireTvFeature" to hasFireTvFeature,
+      "hasTouchscreen" to hasTouchscreen,
+      "hasFakeTouch" to hasFakeTouch,
+      "manufacturer" to Build.MANUFACTURER,
+      "model" to Build.MODEL
+    )
+  }
 
   override fun onCreate(savedInstanceState: Bundle?) {
     // Apply persisted theme color to the window background before anything
@@ -130,7 +165,7 @@ class MainActivity : FlutterActivity() {
 
   private fun shouldDisableImpeller(): Boolean {
     // Android TV devices — weaker GPUs, less Impeller testing
-    if (packageManager.hasSystemFeature("android.software.leanback")) return true
+    if (isAndroidTvDevice()) return true
     // Google Tensor SoC (Mali GPU) — Pixel 6+
     // SOC_MODEL may return marketing name ("Tensor G2") or internal ID ("GS201")
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -163,6 +198,13 @@ class MainActivity : FlutterActivity() {
     super.configureFlutterEngine(flutterEngine)
     flutterEngine.plugins.add(MpvPlayerPlugin())
     flutterEngine.plugins.add(ExoPlayerPlugin())
+
+    MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DEVICE_CHANNEL).setMethodCallHandler { call, result ->
+      when (call.method) {
+        "getTvDetection" -> result.success(getAndroidTvDetection())
+        else -> result.notImplemented()
+      }
+    }
 
     // External player: open local video files with proper content:// URIs
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, EXTERNAL_PLAYER_CHANNEL).setMethodCallHandler { call, result ->
