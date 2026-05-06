@@ -157,7 +157,7 @@ class DownloadsScreenState extends State<DownloadsScreen> with TickerProviderSta
                 onNavigateDown: _focusCurrentTab,
                 actions: [
                   FocusableAction(
-                    icon: Symbols.sync_rounded,
+                    icon: Symbols.rule_settings,
                     tooltip: t.downloads.activeSyncRules,
                     onPressed: () =>
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncRulesScreen())),

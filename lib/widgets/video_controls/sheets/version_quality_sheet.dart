@@ -92,7 +92,7 @@ class VersionQualitySheet extends StatelessWidget {
       body = qualityColumn;
     }
 
-    return BaseVideoControlSheet(title: title, icon: Symbols.high_quality_rounded, child: body);
+    return BaseVideoControlSheet(title: title, icon: Symbols.video_settings_rounded, child: body);
   }
 
   int? _sourceBitrateKbps() {

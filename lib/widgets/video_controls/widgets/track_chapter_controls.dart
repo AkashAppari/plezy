@@ -355,7 +355,7 @@ class TrackChapterControls extends StatelessWidget {
           buttons.add(
             _buildTrackButton(
               buttonIndex: currentIndex,
-              icon: Symbols.high_quality_rounded,
+              icon: Symbols.video_settings_rounded,
               tooltip: buttonLabel,
               semanticLabel: buttonLabel,
               tracks: tracks,
