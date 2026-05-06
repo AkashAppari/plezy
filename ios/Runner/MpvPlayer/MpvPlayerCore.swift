@@ -45,7 +45,9 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     }
 
     setupNotifications()
-    ExternalDisplayManager.shared.attach(core: self)
+    #if os(iOS)
+      ExternalDisplayManager.shared.attach(core: self)
+    #endif
 
     isInitialized = true
     print("[MpvPlayerCore] Initialized successfully with MPV")
@@ -128,10 +130,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   private func refreshExternalDisplayAttachment() {
     guard let containerView else { return }
 
-    let externalSuperview =
-      isVisible && !isPipActive && !isPipStarting
-      ? ExternalDisplayManager.shared.videoSuperview
-      : nil
+    let externalSuperview = externalVideoSuperview
 
     if let externalSuperview {
       moveContainerView(to: externalSuperview)
@@ -145,6 +144,16 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
     containerView.isHidden = !isVisible
     updateFrame()
+  }
+
+  private var externalVideoSuperview: UIView? {
+    #if os(iOS)
+      isVisible && !isPipActive && !isPipStarting
+        ? ExternalDisplayManager.shared.videoSuperview
+        : nil
+    #else
+      nil
+    #endif
   }
 
   private func moveContainerView(to superview: UIView) {
@@ -207,7 +216,9 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
   func dispose() {
     NotificationCenter.default.removeObserver(self)
-    ExternalDisplayManager.shared.detach(core: self)
+    #if os(iOS)
+      ExternalDisplayManager.shared.detach(core: self)
+    #endif
     disposeSharedState(destroySynchronously: false)
 
     metalLayer?.removeFromSuperlayer()

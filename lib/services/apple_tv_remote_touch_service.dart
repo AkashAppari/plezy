@@ -5,11 +5,14 @@ import '../utils/app_logger.dart';
 import '../utils/key_event_simulator.dart' as key_sim;
 import 'gamepad_service.dart';
 
+enum _SwipeAxis { horizontal, vertical }
+
 /// Bridges tvOS touch-surface events from Apple's iOS Remote app into the
 /// focus-tree key events Plezy already handles for D-pad navigation.
 class AppleTvRemoteTouchService {
   static const String _channelName = 'flutter/gamepadtouchevent';
   static const double defaultSwipeThreshold = 180;
+  static const double defaultAxisSwitchDominanceRatio = 1.5;
   static const Duration defaultSwipeRepeatInterval = Duration(milliseconds: 140);
   static const Duration defaultClickAfterDirectionSuppression = Duration(milliseconds: 220);
 
@@ -21,14 +24,18 @@ class AppleTvRemoteTouchService {
   final DateTime Function() _now;
   final GamepadDuplicateInputGuard _duplicateInputGuard;
   final double swipeThreshold;
+  final double axisSwitchDominanceRatio;
   final Duration swipeRepeatInterval;
   final Duration clickAfterDirectionSuppression;
 
   bool _listening = false;
   bool _nativeKeyHandlerRegistered = false;
   bool _touchActive = false;
+  double _startX = 0;
+  double _startY = 0;
   double _anchorX = 0;
   double _anchorY = 0;
+  _SwipeAxis? _lastSwipeAxis;
   DateTime? _lastSwipeAt;
   DateTime? _lastDirectionalInputAt;
   DateTime? _lastSyntheticSelectAt;
@@ -41,9 +48,11 @@ class AppleTvRemoteTouchService {
     GamepadDuplicateInputGuard? duplicateInputGuard,
     Duration duplicateSuppressionWindow = GamepadDuplicateInputGuard.defaultSuppressionWindow,
     this.swipeThreshold = defaultSwipeThreshold,
+    this.axisSwitchDominanceRatio = defaultAxisSwitchDominanceRatio,
     this.swipeRepeatInterval = defaultSwipeRepeatInterval,
     this.clickAfterDirectionSuppression = defaultClickAfterDirectionSuppression,
-  }) : _channel = channel ?? const BasicMessageChannel<dynamic>(_channelName, JSONMessageCodec()),
+  }) : assert(axisSwitchDominanceRatio >= 1),
+       _channel = channel ?? const BasicMessageChannel<dynamic>(_channelName, JSONMessageCodec()),
        _simulateKeyPress = simulateKeyPress ?? key_sim.simulateKeyPress,
        _scheduleFrame = scheduleFrame ?? key_sim.scheduleFrameIfIdle,
        _now = now ?? DateTime.now,
@@ -132,8 +141,11 @@ class AppleTvRemoteTouchService {
 
   void _startTouch(double x, double y) {
     _touchActive = true;
+    _startX = x;
+    _startY = y;
     _anchorX = x;
     _anchorY = y;
+    _lastSwipeAxis = null;
     _lastSwipeAt = null;
   }
 
@@ -145,7 +157,8 @@ class AppleTvRemoteTouchService {
 
     final deltaX = _anchorX - x;
     final deltaY = _anchorY - y;
-    if (deltaX.abs() < swipeThreshold && deltaY.abs() < swipeThreshold) return;
+    final axis = _resolveSwipeAxis(x: x, y: y, deltaX: deltaX, deltaY: deltaY);
+    if (axis == null) return;
 
     final now = _now();
     final lastSwipeAt = _lastSwipeAt;
@@ -157,14 +170,47 @@ class AppleTvRemoteTouchService {
       return;
     }
 
-    final logicalKey = deltaX.abs() >= deltaY.abs()
+    final logicalKey = axis == _SwipeAxis.horizontal
         ? (deltaX >= 0 ? LogicalKeyboardKey.arrowLeft : LogicalKeyboardKey.arrowRight)
         : (deltaY >= 0 ? LogicalKeyboardKey.arrowUp : LogicalKeyboardKey.arrowDown);
 
     _emitKey(logicalKey, source: 'swipe', detail: 'dx=${_formatDouble(deltaX)} dy=${_formatDouble(deltaY)}');
     _anchorX = x;
     _anchorY = y;
+    _lastSwipeAxis = axis;
     _lastSwipeAt = now;
+  }
+
+  _SwipeAxis? _resolveSwipeAxis({
+    required double x,
+    required double y,
+    required double deltaX,
+    required double deltaY,
+  }) {
+    final absX = deltaX.abs();
+    final absY = deltaY.abs();
+    if (absX < swipeThreshold && absY < swipeThreshold) return null;
+
+    final candidate = absX >= absY ? _SwipeAxis.horizontal : _SwipeAxis.vertical;
+    final lastAxis = _lastSwipeAxis;
+    if (lastAxis == null || candidate == lastAxis) return candidate;
+
+    final totalX = (_startX - x).abs();
+    final totalY = (_startY - y).abs();
+    final candidateTotal = _axisDistance(candidate, totalX, totalY);
+    final lastAxisTotal = _axisDistance(lastAxis, totalX, totalY);
+    final candidateSegment = _axisDistance(candidate, absX, absY);
+    final lastAxisSegment = _axisDistance(lastAxis, absX, absY);
+    if (candidateTotal >= lastAxisTotal * axisSwitchDominanceRatio &&
+        candidateSegment >= lastAxisSegment * axisSwitchDominanceRatio) {
+      return candidate;
+    }
+
+    return lastAxisSegment >= swipeThreshold ? lastAxis : null;
+  }
+
+  double _axisDistance(_SwipeAxis axis, double horizontal, double vertical) {
+    return axis == _SwipeAxis.horizontal ? horizontal : vertical;
   }
 
   void _emitSelect() {
@@ -210,6 +256,7 @@ class AppleTvRemoteTouchService {
 
   void _resetTouch() {
     _touchActive = false;
+    _lastSwipeAxis = null;
     _lastSwipeAt = null;
   }
 

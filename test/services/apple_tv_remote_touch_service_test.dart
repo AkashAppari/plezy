@@ -30,6 +30,66 @@ void main() {
       expect(harness.keys, [LogicalKeyboardKey.arrowUp]);
     });
 
+    test('keeps horizontal axis through non-decisive vertical drift', () async {
+      final harness = _Harness();
+
+      await harness.send('started', x: 500, y: 500);
+      await harness.send('move', x: 380, y: 500);
+
+      harness.advance(const Duration(milliseconds: 141));
+      await harness.send('move', x: 380, y: 370);
+
+      expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+    });
+
+    test('continues horizontal swipes when drift is slightly vertical-dominant', () async {
+      final harness = _Harness();
+
+      await harness.send('started', x: 500, y: 500);
+      await harness.send('move', x: 380, y: 500);
+
+      harness.advance(const Duration(milliseconds: 141));
+      await harness.send('move', x: 260, y: 370);
+
+      expect(harness.keys, [LogicalKeyboardKey.arrowLeft, LogicalKeyboardKey.arrowLeft]);
+    });
+
+    test('continues reversed horizontal swipes when drift is only slightly vertical-dominant', () async {
+      final harness = _Harness();
+
+      await harness.send('started', x: 500, y: 500);
+      await harness.send('move', x: 380, y: 500);
+
+      harness.advance(const Duration(milliseconds: 141));
+      await harness.send('move', x: 500, y: 370);
+
+      expect(harness.keys, [LogicalKeyboardKey.arrowLeft, LogicalKeyboardKey.arrowRight]);
+    });
+
+    test('switches axis when the new direction clearly dominates the gesture', () async {
+      final harness = _Harness();
+
+      await harness.send('started', x: 500, y: 500);
+      await harness.send('move', x: 380, y: 500);
+
+      harness.advance(const Duration(milliseconds: 141));
+      await harness.send('move', x: 380, y: 300);
+
+      expect(harness.keys, [LogicalKeyboardKey.arrowLeft, LogicalKeyboardKey.arrowUp]);
+    });
+
+    test('resets swipe axis hysteresis between touches', () async {
+      final harness = _Harness();
+
+      await harness.send('started', x: 500, y: 500);
+      await harness.send('move', x: 380, y: 500);
+      await harness.send('ended', x: 380, y: 500);
+      await harness.send('started', x: 500, y: 500);
+      await harness.send('move', x: 500, y: 380);
+
+      expect(harness.keys, [LogicalKeyboardKey.arrowLeft, LogicalKeyboardKey.arrowUp]);
+    });
+
     test('short touch without a click event does not emit select', () async {
       final harness = _Harness();
 
