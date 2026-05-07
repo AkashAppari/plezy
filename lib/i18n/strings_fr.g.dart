@@ -158,9 +158,6 @@ class _TranslationsCommonFr extends TranslationsCommonEn {
 	@override String get mute => 'Muet';
 	@override String get ok => 'OK';
 	@override String get reconnect => 'Reconnecter';
-	@override String get exitConfirmTitle => 'Quitter l\'application ?';
-	@override String get exitConfirmMessage => 'Êtes-vous sûr de vouloir quitter ?';
-	@override String get dontAskAgain => 'Ne plus demander';
 	@override String get exit => 'Quitter';
 	@override String get viewAll => 'Tout afficher';
 	@override String get checkingNetwork => 'Vérification du réseau...';
@@ -171,6 +168,7 @@ class _TranslationsCommonFr extends TranslationsCommonEn {
 	@override String get loading => 'Chargement...';
 	@override String get fullscreen => 'Plein écran';
 	@override String get exitFullscreen => 'Quitter le plein écran';
+	@override String get pressBackAgainToExit => 'Appuyez à nouveau sur retour pour quitter';
 }
 
 // Path: screens
@@ -379,8 +377,6 @@ class _TranslationsSettingsFr extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => 'Utiliser le tunnelage vidéo accéléré par matériel. Désactiver si vous voyez un écran noir avec du son sur du contenu HDR';
 	@override String get requireProfileSelectionOnOpen => 'Demander le profil à l\'ouverture';
 	@override String get requireProfileSelectionOnOpenDescription => 'Afficher la sélection de profil à chaque ouverture de l\'application';
-	@override String get confirmExitOnBack => 'Confirmer avant de quitter';
-	@override String get confirmExitOnBackDescription => 'Afficher une boîte de dialogue de confirmation en appuyant sur retour pour quitter';
 	@override String get forceTvMode => 'Forcer le mode TV';
 	@override String get forceTvModeDescription => 'Utiliser la mise en page TV quelle que soit la détection automatique. Utile sur les appareils Android TV qui ne signalent pas la fonctionnalité leanback. Redémarre l\'application lors du changement.';
 	@override String get startInFullscreen => 'Démarrer en plein écran';
@@ -1800,9 +1796,6 @@ extension on TranslationsFr {
 			'common.mute' => 'Muet',
 			'common.ok' => 'OK',
 			'common.reconnect' => 'Reconnecter',
-			'common.exitConfirmTitle' => 'Quitter l\'application ?',
-			'common.exitConfirmMessage' => 'Êtes-vous sûr de vouloir quitter ?',
-			'common.dontAskAgain' => 'Ne plus demander',
 			'common.exit' => 'Quitter',
 			'common.viewAll' => 'Tout afficher',
 			'common.checkingNetwork' => 'Vérification du réseau...',
@@ -1813,6 +1806,7 @@ extension on TranslationsFr {
 			'common.loading' => 'Chargement...',
 			'common.fullscreen' => 'Plein écran',
 			'common.exitFullscreen' => 'Quitter le plein écran',
+			'common.pressBackAgainToExit' => 'Appuyez à nouveau sur retour pour quitter',
 			'screens.licenses' => 'Licences',
 			'screens.switchProfile' => 'Changer de profil',
 			'screens.subtitleStyling' => 'Configuration des sous-titres',
@@ -1994,8 +1988,6 @@ extension on TranslationsFr {
 			'settings.tunneledPlaybackDescription' => 'Utiliser le tunnelage vidéo accéléré par matériel. Désactiver si vous voyez un écran noir avec du son sur du contenu HDR',
 			'settings.requireProfileSelectionOnOpen' => 'Demander le profil à l\'ouverture',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Afficher la sélection de profil à chaque ouverture de l\'application',
-			'settings.confirmExitOnBack' => 'Confirmer avant de quitter',
-			'settings.confirmExitOnBackDescription' => 'Afficher une boîte de dialogue de confirmation en appuyant sur retour pour quitter',
 			'settings.forceTvMode' => 'Forcer le mode TV',
 			'settings.forceTvModeDescription' => 'Utiliser la mise en page TV quelle que soit la détection automatique. Utile sur les appareils Android TV qui ne signalent pas la fonctionnalité leanback. Redémarre l\'application lors du changement.',
 			'settings.startInFullscreen' => 'Démarrer en plein écran',
@@ -2264,12 +2256,12 @@ extension on TranslationsFr {
 			'profiles.pinManagedByPlex' => 'PIN géré par Plex. Modifier sur plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'Aucun PIN défini. Pour en exiger un, modifiez l\'utilisateur Home sur plex.tv.',
 			'profiles.setPin' => 'Définir un PIN',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.connectionsLabel' => 'Connexions',
 			'profiles.add' => 'Ajouter',
 			'profiles.deleteProfileButton' => 'Supprimer le profil',
 			'profiles.noConnectionsHint' => 'Aucune connexion — ajoutez-en une pour utiliser ce profil.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.plexHomeAccount' => 'Compte Plex Home',
 			'profiles.connectionDefault' => 'Par défaut',
 			'profiles.makeDefault' => 'Définir par défaut',
@@ -2778,12 +2770,12 @@ extension on TranslationsFr {
 			'metadataEdit.episodeOrdering' => 'Ordre des épisodes',
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Diffusion)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Diffusion)',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolu)',
 			'metadataEdit.metadataLanguage' => 'Langue des métadonnées',
 			'metadataEdit.useOriginalTitle' => 'Utiliser le titre original',
 			'metadataEdit.preferredAudioLanguage' => 'Langue audio préférée',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.preferredSubtitleLanguage' => 'Langue de sous-titres préférée',
 			'metadataEdit.subtitleMode' => 'Sélection automatique des sous-titres',
 			'metadataEdit.manuallySelected' => 'Sélectionné manuellement',

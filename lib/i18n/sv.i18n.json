@@ -52,9 +52,6 @@
     "mute": "Ljud av",
     "ok": "OK",
     "reconnect": "Återanslut",
-    "exitConfirmTitle": "Avsluta appen?",
-    "exitConfirmMessage": "Är du säker på att du vill avsluta?",
-    "dontAskAgain": "Fråga inte igen",
     "exit": "Avsluta",
     "viewAll": "Visa alla",
     "checkingNetwork": "Kontrollerar nätverk...",
@@ -64,7 +61,8 @@
     "startingOfflineMode": "Startar offlineläge...",
     "loading": "Laddar...",
     "fullscreen": "Helskärm",
-    "exitFullscreen": "Avsluta helskärm"
+    "exitFullscreen": "Avsluta helskärm",
+    "pressBackAgainToExit": "Tryck bakåt igen för att avsluta"
   },
   "screens": {
     "licenses": "Licenser",
@@ -252,8 +250,6 @@
     "tunneledPlaybackDescription": "Använd hårdvaruaccelererad videotunnling. Inaktivera om du ser en svart skärm med ljud vid HDR-innehåll",
     "requireProfileSelectionOnOpen": "Fråga efter profil vid appstart",
     "requireProfileSelectionOnOpenDescription": "Visa profilval varje gång appen öppnas",
-    "confirmExitOnBack": "Bekräfta innan avslut",
-    "confirmExitOnBackDescription": "Visa en bekräftelsedialog när du trycker tillbaka för att avsluta appen",
     "forceTvMode": "Tvinga TV-läge",
     "forceTvModeDescription": "Använd TV-layouten oavsett automatisk identifiering. Användbart på Android TV-enheter som inte rapporterar leanback-funktionen. Startar om appen vid ändring.",
     "startInFullscreen": "Starta i helskärm",

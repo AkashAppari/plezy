@@ -52,9 +52,6 @@
     "mute": "Silencio",
     "ok": "OK",
     "reconnect": "Reconectar",
-    "exitConfirmTitle": "¿Salir de la app?",
-    "exitConfirmMessage": "¿Estás seguro de que quieres salir?",
-    "dontAskAgain": "No volver a preguntar",
     "exit": "Salir",
     "viewAll": "Ver todo",
     "checkingNetwork": "Comprobando red...",
@@ -64,7 +61,8 @@
     "startingOfflineMode": "Iniciando modo sin conexión...",
     "loading": "Cargando...",
     "fullscreen": "Pantalla completa",
-    "exitFullscreen": "Salir de pantalla completa"
+    "exitFullscreen": "Salir de pantalla completa",
+    "pressBackAgainToExit": "Presiona atrás otra vez para salir"
   },
   "screens": {
     "licenses": "Licencias",
@@ -252,8 +250,6 @@
     "tunneledPlaybackDescription": "Usar tunelización de video acelerada por hardware. Desactivar si ves una pantalla negra con audio en contenido HDR",
     "requireProfileSelectionOnOpen": "Pedir perfil al abrir la app",
     "requireProfileSelectionOnOpenDescription": "Mostrar selección de perfil cada vez que se abre la aplicación",
-    "confirmExitOnBack": "Confirmar antes de salir",
-    "confirmExitOnBackDescription": "Mostrar un diálogo de confirmación al presionar atrás para salir de la app",
     "forceTvMode": "Forzar modo TV",
     "forceTvModeDescription": "Usar el diseño de TV independientemente de la detección automática. Útil en dispositivos Android TV que no informan la característica leanback. Reinicia la app al cambiar.",
     "startInFullscreen": "Iniciar en pantalla completa",

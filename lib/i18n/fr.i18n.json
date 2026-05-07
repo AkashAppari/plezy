@@ -52,9 +52,6 @@
     "mute": "Muet",
     "ok": "OK",
     "reconnect": "Reconnecter",
-    "exitConfirmTitle": "Quitter l'application ?",
-    "exitConfirmMessage": "Êtes-vous sûr de vouloir quitter ?",
-    "dontAskAgain": "Ne plus demander",
     "exit": "Quitter",
     "viewAll": "Tout afficher",
     "checkingNetwork": "Vérification du réseau...",
@@ -64,7 +61,8 @@
     "startingOfflineMode": "Démarrage en mode hors-ligne...",
     "loading": "Chargement...",
     "fullscreen": "Plein écran",
-    "exitFullscreen": "Quitter le plein écran"
+    "exitFullscreen": "Quitter le plein écran",
+    "pressBackAgainToExit": "Appuyez à nouveau sur retour pour quitter"
   },
   "screens": {
     "licenses": "Licences",
@@ -252,8 +250,6 @@
     "tunneledPlaybackDescription": "Utiliser le tunnelage vidéo accéléré par matériel. Désactiver si vous voyez un écran noir avec du son sur du contenu HDR",
     "requireProfileSelectionOnOpen": "Demander le profil à l'ouverture",
     "requireProfileSelectionOnOpenDescription": "Afficher la sélection de profil à chaque ouverture de l'application",
-    "confirmExitOnBack": "Confirmer avant de quitter",
-    "confirmExitOnBackDescription": "Afficher une boîte de dialogue de confirmation en appuyant sur retour pour quitter",
     "forceTvMode": "Forcer le mode TV",
     "forceTvModeDescription": "Utiliser la mise en page TV quelle que soit la détection automatique. Utile sur les appareils Android TV qui ne signalent pas la fonctionnalité leanback. Redémarre l'application lors du changement.",
     "startInFullscreen": "Démarrer en plein écran",

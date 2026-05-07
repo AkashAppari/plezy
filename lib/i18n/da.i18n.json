@@ -52,9 +52,6 @@
     "mute": "Lydløs",
     "ok": "OK",
     "reconnect": "Genopret forbindelse",
-    "exitConfirmTitle": "Luk app?",
-    "exitConfirmMessage": "Er du sikker på, at du vil afslutte?",
-    "dontAskAgain": "Spørg ikke igen",
     "exit": "Afslut",
     "viewAll": "Vis alle",
     "checkingNetwork": "Tjekker netværk...",
@@ -64,7 +61,8 @@
     "startingOfflineMode": "Starter offlinetilstand...",
     "loading": "Indlæser...",
     "fullscreen": "Fuldskærm",
-    "exitFullscreen": "Forlad fuldskærm"
+    "exitFullscreen": "Forlad fuldskærm",
+    "pressBackAgainToExit": "Tryk tilbage igen for at afslutte"
   },
   "screens": {
     "licenses": "Licenser",
@@ -252,8 +250,6 @@
     "tunneledPlaybackDescription": "Brug hardwareaccelereret videotunneling. Deaktiver hvis du ser sort skærm med lyd på HDR-indhold",
     "requireProfileSelectionOnOpen": "Spørg om profil ved åbning",
     "requireProfileSelectionOnOpenDescription": "Vis profilvalg hver gang appen åbnes",
-    "confirmExitOnBack": "Bekræft før lukning",
-    "confirmExitOnBackDescription": "Vis bekræftelsesdialog ved tryk på tilbage for at lukke appen",
     "forceTvMode": "Gennemtving TV-tilstand",
     "forceTvModeDescription": "Brug TV-layoutet uanset automatisk registrering. Nyttigt på Android TV-enheder, der ikke rapporterer leanback-funktionen. Genstarter appen ved ændring.",
     "startInFullscreen": "Start i fuldskærm",

@@ -158,9 +158,6 @@ class _TranslationsCommonEs extends TranslationsCommonEn {
 	@override String get mute => 'Silencio';
 	@override String get ok => 'OK';
 	@override String get reconnect => 'Reconectar';
-	@override String get exitConfirmTitle => '¿Salir de la app?';
-	@override String get exitConfirmMessage => '¿Estás seguro de que quieres salir?';
-	@override String get dontAskAgain => 'No volver a preguntar';
 	@override String get exit => 'Salir';
 	@override String get viewAll => 'Ver todo';
 	@override String get checkingNetwork => 'Comprobando red...';
@@ -171,6 +168,7 @@ class _TranslationsCommonEs extends TranslationsCommonEn {
 	@override String get loading => 'Cargando...';
 	@override String get fullscreen => 'Pantalla completa';
 	@override String get exitFullscreen => 'Salir de pantalla completa';
+	@override String get pressBackAgainToExit => 'Presiona atrás otra vez para salir';
 }
 
 // Path: screens
@@ -379,8 +377,6 @@ class _TranslationsSettingsEs extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => 'Usar tunelización de video acelerada por hardware. Desactivar si ves una pantalla negra con audio en contenido HDR';
 	@override String get requireProfileSelectionOnOpen => 'Pedir perfil al abrir la app';
 	@override String get requireProfileSelectionOnOpenDescription => 'Mostrar selección de perfil cada vez que se abre la aplicación';
-	@override String get confirmExitOnBack => 'Confirmar antes de salir';
-	@override String get confirmExitOnBackDescription => 'Mostrar un diálogo de confirmación al presionar atrás para salir de la app';
 	@override String get forceTvMode => 'Forzar modo TV';
 	@override String get forceTvModeDescription => 'Usar el diseño de TV independientemente de la detección automática. Útil en dispositivos Android TV que no informan la característica leanback. Reinicia la app al cambiar.';
 	@override String get startInFullscreen => 'Iniciar en pantalla completa';
@@ -1800,9 +1796,6 @@ extension on TranslationsEs {
 			'common.mute' => 'Silencio',
 			'common.ok' => 'OK',
 			'common.reconnect' => 'Reconectar',
-			'common.exitConfirmTitle' => '¿Salir de la app?',
-			'common.exitConfirmMessage' => '¿Estás seguro de que quieres salir?',
-			'common.dontAskAgain' => 'No volver a preguntar',
 			'common.exit' => 'Salir',
 			'common.viewAll' => 'Ver todo',
 			'common.checkingNetwork' => 'Comprobando red...',
@@ -1813,6 +1806,7 @@ extension on TranslationsEs {
 			'common.loading' => 'Cargando...',
 			'common.fullscreen' => 'Pantalla completa',
 			'common.exitFullscreen' => 'Salir de pantalla completa',
+			'common.pressBackAgainToExit' => 'Presiona atrás otra vez para salir',
 			'screens.licenses' => 'Licencias',
 			'screens.switchProfile' => 'Cambiar Perfil',
 			'screens.subtitleStyling' => 'Estilo de Subtítulos',
@@ -1994,8 +1988,6 @@ extension on TranslationsEs {
 			'settings.tunneledPlaybackDescription' => 'Usar tunelización de video acelerada por hardware. Desactivar si ves una pantalla negra con audio en contenido HDR',
 			'settings.requireProfileSelectionOnOpen' => 'Pedir perfil al abrir la app',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Mostrar selección de perfil cada vez que se abre la aplicación',
-			'settings.confirmExitOnBack' => 'Confirmar antes de salir',
-			'settings.confirmExitOnBackDescription' => 'Mostrar un diálogo de confirmación al presionar atrás para salir de la app',
 			'settings.forceTvMode' => 'Forzar modo TV',
 			'settings.forceTvModeDescription' => 'Usar el diseño de TV independientemente de la detección automática. Útil en dispositivos Android TV que no informan la característica leanback. Reinicia la app al cambiar.',
 			'settings.startInFullscreen' => 'Iniciar en pantalla completa',
@@ -2264,12 +2256,12 @@ extension on TranslationsEs {
 			'profiles.pinManagedByPlex' => 'PIN gestionado por Plex. Edita en plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'Sin PIN establecido. Para requerir uno, edita el usuario Home en plex.tv.',
 			'profiles.setPin' => 'Establecer PIN',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.connectionsLabel' => 'Conexiones',
 			'profiles.add' => 'Añadir',
 			'profiles.deleteProfileButton' => 'Eliminar perfil',
 			'profiles.noConnectionsHint' => 'Sin conexiones — añade una para usar este perfil.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.plexHomeAccount' => 'Cuenta Plex Home',
 			'profiles.connectionDefault' => 'Predeterminada',
 			'profiles.makeDefault' => 'Establecer como predeterminada',
@@ -2778,12 +2770,12 @@ extension on TranslationsEs {
 			'metadataEdit.episodeOrdering' => 'Orden de episodios',
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Emisión)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Emisión)',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absoluto)',
 			'metadataEdit.metadataLanguage' => 'Idioma de metadatos',
 			'metadataEdit.useOriginalTitle' => 'Usar título original',
 			'metadataEdit.preferredAudioLanguage' => 'Idioma de audio preferido',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.preferredSubtitleLanguage' => 'Idioma de subtítulos preferido',
 			'metadataEdit.subtitleMode' => 'Selección automática de subtítulos',
 			'metadataEdit.manuallySelected' => 'Seleccionado manualmente',

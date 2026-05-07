@@ -52,9 +52,6 @@
     "mute": "Stumm",
     "ok": "OK",
     "reconnect": "Erneut verbinden",
-    "exitConfirmTitle": "App beenden?",
-    "exitConfirmMessage": "Möchtest du die App wirklich beenden?",
-    "dontAskAgain": "Nicht erneut fragen",
     "exit": "Beenden",
     "viewAll": "Alle anzeigen",
     "checkingNetwork": "Netzwerk wird geprüft...",
@@ -64,7 +61,8 @@
     "startingOfflineMode": "Offlinemodus wird gestartet...",
     "loading": "Laden...",
     "fullscreen": "Vollbild",
-    "exitFullscreen": "Vollbild verlassen"
+    "exitFullscreen": "Vollbild verlassen",
+    "pressBackAgainToExit": "Erneut Zurück drücken zum Beenden"
   },
   "screens": {
     "licenses": "Lizenzen",
@@ -252,8 +250,6 @@
     "tunneledPlaybackDescription": "Hardware-beschleunigte Video-Tunnelierung verwenden. Deaktivieren, wenn bei HDR-Inhalten ein schwarzer Bildschirm mit Ton erscheint",
     "requireProfileSelectionOnOpen": "Profil beim Öffnen abfragen",
     "requireProfileSelectionOnOpenDescription": "Profilauswahl bei jedem Öffnen der App anzeigen",
-    "confirmExitOnBack": "Vor dem Beenden bestätigen",
-    "confirmExitOnBackDescription": "Bestätigungsdialog anzeigen, wenn Zurück zum Beenden der App gedrückt wird",
     "forceTvMode": "TV-Modus erzwingen",
     "forceTvModeDescription": "TV-Layout unabhängig von der automatischen Erkennung verwenden. Nützlich für Android-TV-Geräte, die das Leanback-Feature nicht melden. Startet die App bei Änderung neu.",
     "startInFullscreen": "Im Vollbildmodus starten",

@@ -39,6 +39,7 @@ class MainActivity : FlutterActivity() {
   private val EXTERNAL_PLAYER_CHANNEL = "com.plezy/external_player"
   private val THEME_CHANNEL = "com.plezy/theme"
   private val DEVICE_CHANNEL = "com.plezy/device"
+  private val APP_EXIT_CHANNEL = "com.plezy/app_exit"
   private var watchNextPlugin: WatchNextPlugin? = null
 
   // Auto PiP state
@@ -202,6 +203,18 @@ class MainActivity : FlutterActivity() {
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DEVICE_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {
         "getTvDetection" -> result.success(getAndroidTvDetection())
+        else -> result.notImplemented()
+      }
+    }
+
+    MethodChannel(flutterEngine.dartExecutor.binaryMessenger, APP_EXIT_CHANNEL).setMethodCallHandler { call, result ->
+      when (call.method) {
+        "requestExit" -> {
+          result.success(true)
+          window.decorView.post {
+            finishAndRemoveTask()
+          }
+        }
         else -> result.notImplemented()
       }
     }

@@ -158,9 +158,6 @@ class _TranslationsCommonKo extends TranslationsCommonEn {
 	@override String get mute => '음소거';
 	@override String get ok => '확인';
 	@override String get reconnect => '다시 연결';
-	@override String get exitConfirmTitle => '앱을 종료하시겠습니까?';
-	@override String get exitConfirmMessage => '정말 종료하시겠습니까?';
-	@override String get dontAskAgain => '다시 묻지 않기';
 	@override String get exit => '종료';
 	@override String get viewAll => '모두 보기';
 	@override String get checkingNetwork => '네트워크 확인 중...';
@@ -171,6 +168,7 @@ class _TranslationsCommonKo extends TranslationsCommonEn {
 	@override String get loading => '로딩 중...';
 	@override String get fullscreen => '전체화면';
 	@override String get exitFullscreen => '전체화면 종료';
+	@override String get pressBackAgainToExit => '한 번 더 누르면 종료됩니다';
 }
 
 // Path: screens
@@ -379,8 +377,6 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => '하드웨어 가속 비디오 터널링을 사용합니다. HDR 콘텐츠에서 소리만 나고 검은 화면이 보이면 비활성화하세요';
 	@override String get requireProfileSelectionOnOpen => '앱 실행 시 프로필 선택';
 	@override String get requireProfileSelectionOnOpenDescription => '앱을 열 때마다 프로필 선택 화면을 표시합니다';
-	@override String get confirmExitOnBack => '종료 전 확인';
-	@override String get confirmExitOnBackDescription => '뒤로 버튼을 눌러 앱을 종료할 때 확인 대화상자를 표시합니다';
 	@override String get forceTvMode => 'TV 모드 강제 사용';
 	@override String get forceTvModeDescription => '자동 감지와 관계없이 TV 레이아웃을 사용합니다. leanback 기능을 보고하지 않는 Android TV 기기에 유용합니다. 변경 시 앱이 다시 시작됩니다.';
 	@override String get startInFullscreen => '전체화면으로 시작';
@@ -1800,9 +1796,6 @@ extension on TranslationsKo {
 			'common.mute' => '음소거',
 			'common.ok' => '확인',
 			'common.reconnect' => '다시 연결',
-			'common.exitConfirmTitle' => '앱을 종료하시겠습니까?',
-			'common.exitConfirmMessage' => '정말 종료하시겠습니까?',
-			'common.dontAskAgain' => '다시 묻지 않기',
 			'common.exit' => '종료',
 			'common.viewAll' => '모두 보기',
 			'common.checkingNetwork' => '네트워크 확인 중...',
@@ -1813,6 +1806,7 @@ extension on TranslationsKo {
 			'common.loading' => '로딩 중...',
 			'common.fullscreen' => '전체화면',
 			'common.exitFullscreen' => '전체화면 종료',
+			'common.pressBackAgainToExit' => '한 번 더 누르면 종료됩니다',
 			'screens.licenses' => '라이선스',
 			'screens.switchProfile' => '프로필 전환',
 			'screens.subtitleStyling' => '자막 스타일 설정',
@@ -1994,8 +1988,6 @@ extension on TranslationsKo {
 			'settings.tunneledPlaybackDescription' => '하드웨어 가속 비디오 터널링을 사용합니다. HDR 콘텐츠에서 소리만 나고 검은 화면이 보이면 비활성화하세요',
 			'settings.requireProfileSelectionOnOpen' => '앱 실행 시 프로필 선택',
 			'settings.requireProfileSelectionOnOpenDescription' => '앱을 열 때마다 프로필 선택 화면을 표시합니다',
-			'settings.confirmExitOnBack' => '종료 전 확인',
-			'settings.confirmExitOnBackDescription' => '뒤로 버튼을 눌러 앱을 종료할 때 확인 대화상자를 표시합니다',
 			'settings.forceTvMode' => 'TV 모드 강제 사용',
 			'settings.forceTvModeDescription' => '자동 감지와 관계없이 TV 레이아웃을 사용합니다. leanback 기능을 보고하지 않는 Android TV 기기에 유용합니다. 변경 시 앱이 다시 시작됩니다.',
 			'settings.startInFullscreen' => '전체화면으로 시작',
@@ -2264,12 +2256,12 @@ extension on TranslationsKo {
 			'profiles.pinManagedByPlex' => 'PIN은 Plex에서 관리됩니다. plex.tv에서 편집하세요.',
 			'profiles.noPinSetEditOnPlex' => '설정된 PIN이 없습니다. 요구하려면 plex.tv에서 Home 사용자를 편집하세요.',
 			'profiles.setPin' => 'PIN 설정',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.connectionsLabel' => '연결',
 			'profiles.add' => '추가',
 			'profiles.deleteProfileButton' => '프로필 삭제',
 			'profiles.noConnectionsHint' => '연결이 없습니다 — 이 프로필을 사용하려면 하나 추가하세요.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.plexHomeAccount' => 'Plex Home 계정',
 			'profiles.connectionDefault' => '기본값',
 			'profiles.makeDefault' => '기본값으로 설정',
@@ -2778,12 +2770,12 @@ extension on TranslationsKo {
 			'metadataEdit.episodeOrdering' => '에피소드 순서',
 			'metadataEdit.tmdbAiring' => 'The Movie Database (방영순)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (방영순)',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (절대순)',
 			'metadataEdit.metadataLanguage' => '메타데이터 언어',
 			'metadataEdit.useOriginalTitle' => '원제 사용',
 			'metadataEdit.preferredAudioLanguage' => '선호 오디오 언어',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.preferredSubtitleLanguage' => '선호 자막 언어',
 			'metadataEdit.subtitleMode' => '자막 자동 선택 모드',
 			'metadataEdit.manuallySelected' => '수동 선택',

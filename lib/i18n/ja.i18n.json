@@ -52,9 +52,6 @@
     "mute": "ミュート",
     "ok": "OK",
     "reconnect": "再接続",
-    "exitConfirmTitle": "アプリを終了しますか？",
-    "exitConfirmMessage": "終了してもよろしいですか？",
-    "dontAskAgain": "次回から表示しない",
     "exit": "終了",
     "viewAll": "すべて表示",
     "checkingNetwork": "ネットワークを確認中...",
@@ -64,7 +61,8 @@
     "startingOfflineMode": "オフラインモードを開始中...",
     "loading": "読み込み中...",
     "fullscreen": "フルスクリーン",
-    "exitFullscreen": "フルスクリーンを終了"
+    "exitFullscreen": "フルスクリーンを終了",
+    "pressBackAgainToExit": "もう一度押すと終了します"
   },
   "screens": {
     "licenses": "ライセンス",
@@ -252,8 +250,6 @@
     "tunneledPlaybackDescription": "ハードウェアアクセラレーションされたビデオトンネリングを使用。HDRコンテンツで音声のみで画面が黒くなる場合は無効にしてください",
     "requireProfileSelectionOnOpen": "アプリ起動時にプロフィールを確認",
     "requireProfileSelectionOnOpenDescription": "アプリを開くたびにプロフィール選択を表示",
-    "confirmExitOnBack": "終了前に確認",
-    "confirmExitOnBackDescription": "戻るボタンでアプリを終了する際に確認ダイアログを表示",
     "forceTvMode": "TVモードを強制",
     "forceTvModeDescription": "自動検出に関係なくTVレイアウトを使用します。leanback機能を報告しないAndroid TVデバイスで便利です。変更するとアプリが再起動されます。",
     "startInFullscreen": "全画面表示で起動",

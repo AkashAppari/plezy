@@ -158,9 +158,6 @@ class _TranslationsCommonIt extends TranslationsCommonEn {
 	@override String get mute => 'Muto';
 	@override String get ok => 'OK';
 	@override String get reconnect => 'Riconnetti';
-	@override String get exitConfirmTitle => 'Uscire dall\'app?';
-	@override String get exitConfirmMessage => 'Sei sicuro di voler uscire?';
-	@override String get dontAskAgain => 'Non chiedere più';
 	@override String get exit => 'Esci';
 	@override String get viewAll => 'Mostra tutto';
 	@override String get checkingNetwork => 'Verifica rete...';
@@ -171,6 +168,7 @@ class _TranslationsCommonIt extends TranslationsCommonEn {
 	@override String get loading => 'Caricamento...';
 	@override String get fullscreen => 'Schermo intero';
 	@override String get exitFullscreen => 'Esci da schermo intero';
+	@override String get pressBackAgainToExit => 'Premi di nuovo indietro per uscire';
 }
 
 // Path: screens
@@ -379,8 +377,6 @@ class _TranslationsSettingsIt extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => 'Usa il tunneling video accelerato dall\'hardware. Disattiva se vedi uno schermo nero con audio su contenuti HDR';
 	@override String get requireProfileSelectionOnOpen => 'Chiedi profilo all\'apertura';
 	@override String get requireProfileSelectionOnOpenDescription => 'Mostra la selezione del profilo ogni volta che l\'app viene aperta';
-	@override String get confirmExitOnBack => 'Conferma prima di uscire';
-	@override String get confirmExitOnBackDescription => 'Mostra una finestra di conferma quando si preme indietro per uscire dall\'app';
 	@override String get forceTvMode => 'Forza modalità TV';
 	@override String get forceTvModeDescription => 'Usa il layout TV indipendentemente dal rilevamento automatico. Utile sui dispositivi Android TV che non segnalano la funzionalità leanback. Riavvia l\'app al cambiamento.';
 	@override String get startInFullscreen => 'Avvia a schermo intero';
@@ -1800,9 +1796,6 @@ extension on TranslationsIt {
 			'common.mute' => 'Muto',
 			'common.ok' => 'OK',
 			'common.reconnect' => 'Riconnetti',
-			'common.exitConfirmTitle' => 'Uscire dall\'app?',
-			'common.exitConfirmMessage' => 'Sei sicuro di voler uscire?',
-			'common.dontAskAgain' => 'Non chiedere più',
 			'common.exit' => 'Esci',
 			'common.viewAll' => 'Mostra tutto',
 			'common.checkingNetwork' => 'Verifica rete...',
@@ -1813,6 +1806,7 @@ extension on TranslationsIt {
 			'common.loading' => 'Caricamento...',
 			'common.fullscreen' => 'Schermo intero',
 			'common.exitFullscreen' => 'Esci da schermo intero',
+			'common.pressBackAgainToExit' => 'Premi di nuovo indietro per uscire',
 			'screens.licenses' => 'Licenze',
 			'screens.switchProfile' => 'Cambia profilo',
 			'screens.subtitleStyling' => 'Stile sottotitoli',
@@ -1994,8 +1988,6 @@ extension on TranslationsIt {
 			'settings.tunneledPlaybackDescription' => 'Usa il tunneling video accelerato dall\'hardware. Disattiva se vedi uno schermo nero con audio su contenuti HDR',
 			'settings.requireProfileSelectionOnOpen' => 'Chiedi profilo all\'apertura',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Mostra la selezione del profilo ogni volta che l\'app viene aperta',
-			'settings.confirmExitOnBack' => 'Conferma prima di uscire',
-			'settings.confirmExitOnBackDescription' => 'Mostra una finestra di conferma quando si preme indietro per uscire dall\'app',
 			'settings.forceTvMode' => 'Forza modalità TV',
 			'settings.forceTvModeDescription' => 'Usa il layout TV indipendentemente dal rilevamento automatico. Utile sui dispositivi Android TV che non segnalano la funzionalità leanback. Riavvia l\'app al cambiamento.',
 			'settings.startInFullscreen' => 'Avvia a schermo intero',
@@ -2264,12 +2256,12 @@ extension on TranslationsIt {
 			'profiles.pinManagedByPlex' => 'PIN gestito da Plex. Modifica su plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'Nessun PIN impostato. Per richiederne uno, modifica l\'utente Home su plex.tv.',
 			'profiles.setPin' => 'Imposta PIN',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.connectionsLabel' => 'Connessioni',
 			'profiles.add' => 'Aggiungi',
 			'profiles.deleteProfileButton' => 'Elimina profilo',
 			'profiles.noConnectionsHint' => 'Nessuna connessione — aggiungine una per usare questo profilo.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.plexHomeAccount' => 'Account Plex Home',
 			'profiles.connectionDefault' => 'Predefinita',
 			'profiles.makeDefault' => 'Imposta come predefinita',
@@ -2778,12 +2770,12 @@ extension on TranslationsIt {
 			'metadataEdit.episodeOrdering' => 'Ordine episodi',
 			'metadataEdit.tmdbAiring' => 'The Movie Database (In onda)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (In onda)',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Assoluto)',
 			'metadataEdit.metadataLanguage' => 'Lingua metadati',
 			'metadataEdit.useOriginalTitle' => 'Usa titolo originale',
 			'metadataEdit.preferredAudioLanguage' => 'Lingua audio preferita',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.preferredSubtitleLanguage' => 'Lingua sottotitoli preferita',
 			'metadataEdit.subtitleMode' => 'Selezione automatica sottotitoli',
 			'metadataEdit.manuallySelected' => 'Selezionato manualmente',

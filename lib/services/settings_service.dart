@@ -325,7 +325,6 @@ class SettingsService extends BaseSharedPreferencesService {
   static const globalShaderPreset = StringPref('global_shader_preset', defaultValue: 'none');
   static const requireProfileSelectionOnOpen = BoolPref('require_profile_selection_on_open');
   static const useExternalPlayer = BoolPref('use_external_player');
-  static const confirmExitOnBack = BoolPref('confirm_exit_on_back', defaultValue: true);
   static const forceTvMode = BoolPref('force_tv_mode');
   static const ambientLighting = BoolPref('ambient_lighting');
   static const audioPassthrough = BoolPref('audio_passthrough');
@@ -692,7 +691,6 @@ class SettingsService extends BaseSharedPreferencesService {
     globalShaderPreset,
     requireProfileSelectionOnOpen,
     useExternalPlayer,
-    confirmExitOnBack,
     forceTvMode,
     ambientLighting,
     audioPassthrough,

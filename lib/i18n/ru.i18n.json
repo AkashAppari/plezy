@@ -52,9 +52,6 @@
     "mute": "Без звука",
     "ok": "OK",
     "reconnect": "Переподключить",
-    "exitConfirmTitle": "Выйти из приложения?",
-    "exitConfirmMessage": "Вы уверены, что хотите выйти?",
-    "dontAskAgain": "Больше не спрашивать",
     "exit": "Выход",
     "viewAll": "Показать все",
     "checkingNetwork": "Проверка сети...",
@@ -64,7 +61,8 @@
     "startingOfflineMode": "Запуск автономного режима...",
     "loading": "Загрузка...",
     "fullscreen": "Полноэкранный режим",
-    "exitFullscreen": "Выйти из полноэкранного режима"
+    "exitFullscreen": "Выйти из полноэкранного режима",
+    "pressBackAgainToExit": "Нажмите ещё раз для выхода"
   },
   "screens": {
     "licenses": "Лицензии",
@@ -252,8 +250,6 @@
     "tunneledPlaybackDescription": "Использовать аппаратный видеотуннелинг. Отключите, если видите чёрный экран со звуком при HDR-контенте",
     "requireProfileSelectionOnOpen": "Запрашивать профиль при запуске",
     "requireProfileSelectionOnOpenDescription": "Показывать выбор профиля при каждом открытии приложения",
-    "confirmExitOnBack": "Подтверждать выход",
-    "confirmExitOnBackDescription": "Показывать диалог подтверждения при нажатии «назад» для выхода из приложения",
     "forceTvMode": "Принудительный режим ТВ",
     "forceTvModeDescription": "Использовать макет ТВ независимо от автоматического определения. Полезно на устройствах Android TV, которые не сообщают о функции leanback. Приложение перезапустится при изменении.",
     "startInFullscreen": "Запускать в полноэкранном режиме",

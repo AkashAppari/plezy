@@ -158,9 +158,6 @@ class _TranslationsCommonJa extends TranslationsCommonEn {
 	@override String get mute => 'ミュート';
 	@override String get ok => 'OK';
 	@override String get reconnect => '再接続';
-	@override String get exitConfirmTitle => 'アプリを終了しますか？';
-	@override String get exitConfirmMessage => '終了してもよろしいですか？';
-	@override String get dontAskAgain => '次回から表示しない';
 	@override String get exit => '終了';
 	@override String get viewAll => 'すべて表示';
 	@override String get checkingNetwork => 'ネットワークを確認中...';
@@ -171,6 +168,7 @@ class _TranslationsCommonJa extends TranslationsCommonEn {
 	@override String get loading => '読み込み中...';
 	@override String get fullscreen => 'フルスクリーン';
 	@override String get exitFullscreen => 'フルスクリーンを終了';
+	@override String get pressBackAgainToExit => 'もう一度押すと終了します';
 }
 
 // Path: screens
@@ -379,8 +377,6 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => 'ハードウェアアクセラレーションされたビデオトンネリングを使用。HDRコンテンツで音声のみで画面が黒くなる場合は無効にしてください';
 	@override String get requireProfileSelectionOnOpen => 'アプリ起動時にプロフィールを確認';
 	@override String get requireProfileSelectionOnOpenDescription => 'アプリを開くたびにプロフィール選択を表示';
-	@override String get confirmExitOnBack => '終了前に確認';
-	@override String get confirmExitOnBackDescription => '戻るボタンでアプリを終了する際に確認ダイアログを表示';
 	@override String get forceTvMode => 'TVモードを強制';
 	@override String get forceTvModeDescription => '自動検出に関係なくTVレイアウトを使用します。leanback機能を報告しないAndroid TVデバイスで便利です。変更するとアプリが再起動されます。';
 	@override String get startInFullscreen => '全画面表示で起動';
@@ -1800,9 +1796,6 @@ extension on TranslationsJa {
 			'common.mute' => 'ミュート',
 			'common.ok' => 'OK',
 			'common.reconnect' => '再接続',
-			'common.exitConfirmTitle' => 'アプリを終了しますか？',
-			'common.exitConfirmMessage' => '終了してもよろしいですか？',
-			'common.dontAskAgain' => '次回から表示しない',
 			'common.exit' => '終了',
 			'common.viewAll' => 'すべて表示',
 			'common.checkingNetwork' => 'ネットワークを確認中...',
@@ -1813,6 +1806,7 @@ extension on TranslationsJa {
 			'common.loading' => '読み込み中...',
 			'common.fullscreen' => 'フルスクリーン',
 			'common.exitFullscreen' => 'フルスクリーンを終了',
+			'common.pressBackAgainToExit' => 'もう一度押すと終了します',
 			'screens.licenses' => 'ライセンス',
 			'screens.switchProfile' => 'プロフィール切替',
 			'screens.subtitleStyling' => '字幕スタイル',
@@ -1994,8 +1988,6 @@ extension on TranslationsJa {
 			'settings.tunneledPlaybackDescription' => 'ハードウェアアクセラレーションされたビデオトンネリングを使用。HDRコンテンツで音声のみで画面が黒くなる場合は無効にしてください',
 			'settings.requireProfileSelectionOnOpen' => 'アプリ起動時にプロフィールを確認',
 			'settings.requireProfileSelectionOnOpenDescription' => 'アプリを開くたびにプロフィール選択を表示',
-			'settings.confirmExitOnBack' => '終了前に確認',
-			'settings.confirmExitOnBackDescription' => '戻るボタンでアプリを終了する際に確認ダイアログを表示',
 			'settings.forceTvMode' => 'TVモードを強制',
 			'settings.forceTvModeDescription' => '自動検出に関係なくTVレイアウトを使用します。leanback機能を報告しないAndroid TVデバイスで便利です。変更するとアプリが再起動されます。',
 			'settings.startInFullscreen' => '全画面表示で起動',
@@ -2264,12 +2256,12 @@ extension on TranslationsJa {
 			'profiles.pinManagedByPlex' => 'PINはPlexで管理されています。plex.tvで編集してください。',
 			'profiles.noPinSetEditOnPlex' => 'PINが設定されていません。要求するには、plex.tvでHomeユーザーを編集してください。',
 			'profiles.setPin' => 'PINを設定',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.connectionsLabel' => '接続',
 			'profiles.add' => '追加',
 			'profiles.deleteProfileButton' => 'プロファイルを削除',
 			'profiles.noConnectionsHint' => '接続がありません — このプロファイルを使うには1つ追加してください。',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.plexHomeAccount' => 'Plex Homeアカウント',
 			'profiles.connectionDefault' => 'デフォルト',
 			'profiles.makeDefault' => 'デフォルトに設定',
@@ -2778,12 +2770,12 @@ extension on TranslationsJa {
 			'metadataEdit.episodeOrdering' => 'エピソードの順序',
 			'metadataEdit.tmdbAiring' => 'The Movie Database（放送順）',
 			'metadataEdit.tvdbAiring' => 'TheTVDB（放送順）',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB（絶対順）',
 			'metadataEdit.metadataLanguage' => 'メタデータの言語',
 			'metadataEdit.useOriginalTitle' => '原題を使用',
 			'metadataEdit.preferredAudioLanguage' => '優先音声言語',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.preferredSubtitleLanguage' => '優先字幕言語',
 			'metadataEdit.subtitleMode' => '字幕自動選択モード',
 			'metadataEdit.manuallySelected' => '手動選択',

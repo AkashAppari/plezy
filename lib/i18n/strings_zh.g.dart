@@ -158,9 +158,6 @@ class _TranslationsCommonZh extends TranslationsCommonEn {
 	@override String get mute => '静音';
 	@override String get ok => '确定';
 	@override String get reconnect => '重新连接';
-	@override String get exitConfirmTitle => '退出应用？';
-	@override String get exitConfirmMessage => '确定要退出吗？';
-	@override String get dontAskAgain => '不再询问';
 	@override String get exit => '退出';
 	@override String get viewAll => '查看全部';
 	@override String get checkingNetwork => '正在检查网络...';
@@ -171,6 +168,7 @@ class _TranslationsCommonZh extends TranslationsCommonEn {
 	@override String get loading => '加载中...';
 	@override String get fullscreen => '全屏';
 	@override String get exitFullscreen => '退出全屏';
+	@override String get pressBackAgainToExit => '再按一次返回退出';
 }
 
 // Path: screens
@@ -379,8 +377,6 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => '使用硬件加速视频通道。如果在 HDR 内容上看到黑屏但有声音，请禁用此选项';
 	@override String get requireProfileSelectionOnOpen => '打开应用时询问配置文件';
 	@override String get requireProfileSelectionOnOpenDescription => '每次打开应用时显示配置文件选择';
-	@override String get confirmExitOnBack => '退出前确认';
-	@override String get confirmExitOnBackDescription => '按返回键退出应用时显示确认对话框';
 	@override String get forceTvMode => '强制 TV 模式';
 	@override String get forceTvModeDescription => '无论自动检测结果如何都使用 TV 布局。适用于未报告 leanback 功能的 Android TV 设备。更改后将重启应用。';
 	@override String get startInFullscreen => '以全屏模式启动';
@@ -1800,9 +1796,6 @@ extension on TranslationsZh {
 			'common.mute' => '静音',
 			'common.ok' => '确定',
 			'common.reconnect' => '重新连接',
-			'common.exitConfirmTitle' => '退出应用？',
-			'common.exitConfirmMessage' => '确定要退出吗？',
-			'common.dontAskAgain' => '不再询问',
 			'common.exit' => '退出',
 			'common.viewAll' => '查看全部',
 			'common.checkingNetwork' => '正在检查网络...',
@@ -1813,6 +1806,7 @@ extension on TranslationsZh {
 			'common.loading' => '加载中...',
 			'common.fullscreen' => '全屏',
 			'common.exitFullscreen' => '退出全屏',
+			'common.pressBackAgainToExit' => '再按一次返回退出',
 			'screens.licenses' => '许可证',
 			'screens.switchProfile' => '切换用户',
 			'screens.subtitleStyling' => '字幕样式',
@@ -1994,8 +1988,6 @@ extension on TranslationsZh {
 			'settings.tunneledPlaybackDescription' => '使用硬件加速视频通道。如果在 HDR 内容上看到黑屏但有声音，请禁用此选项',
 			'settings.requireProfileSelectionOnOpen' => '打开应用时询问配置文件',
 			'settings.requireProfileSelectionOnOpenDescription' => '每次打开应用时显示配置文件选择',
-			'settings.confirmExitOnBack' => '退出前确认',
-			'settings.confirmExitOnBackDescription' => '按返回键退出应用时显示确认对话框',
 			'settings.forceTvMode' => '强制 TV 模式',
 			'settings.forceTvModeDescription' => '无论自动检测结果如何都使用 TV 布局。适用于未报告 leanback 功能的 Android TV 设备。更改后将重启应用。',
 			'settings.startInFullscreen' => '以全屏模式启动',
@@ -2264,12 +2256,12 @@ extension on TranslationsZh {
 			'profiles.pinManagedByPlex' => 'PIN 由 Plex 管理。在 plex.tv 上编辑。',
 			'profiles.noPinSetEditOnPlex' => '未设置 PIN。如需要求 PIN，请在 plex.tv 上编辑 Home 用户。',
 			'profiles.setPin' => '设置 PIN',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.connectionsLabel' => '连接',
 			'profiles.add' => '添加',
 			'profiles.deleteProfileButton' => '删除配置文件',
 			'profiles.noConnectionsHint' => '没有连接 — 添加一个以使用此配置文件。',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.plexHomeAccount' => 'Plex Home 账户',
 			'profiles.connectionDefault' => '默认',
 			'profiles.makeDefault' => '设为默认',
@@ -2778,12 +2770,12 @@ extension on TranslationsZh {
 			'metadataEdit.episodeOrdering' => '剧集排列顺序',
 			'metadataEdit.tmdbAiring' => 'The Movie Database（播出顺序）',
 			'metadataEdit.tvdbAiring' => 'TheTVDB（播出顺序）',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB（绝对顺序）',
 			'metadataEdit.metadataLanguage' => '元数据语言',
 			'metadataEdit.useOriginalTitle' => '使用原始标题',
 			'metadataEdit.preferredAudioLanguage' => '首选音频语言',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.preferredSubtitleLanguage' => '首选字幕语言',
 			'metadataEdit.subtitleMode' => '自动选择字幕模式',
 			'metadataEdit.manuallySelected' => '手动选择',

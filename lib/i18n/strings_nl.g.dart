@@ -158,9 +158,6 @@ class _TranslationsCommonNl extends TranslationsCommonEn {
 	@override String get mute => 'Dempen';
 	@override String get ok => 'OK';
 	@override String get reconnect => 'Opnieuw verbinden';
-	@override String get exitConfirmTitle => 'App afsluiten?';
-	@override String get exitConfirmMessage => 'Weet je zeker dat je wilt afsluiten?';
-	@override String get dontAskAgain => 'Niet meer vragen';
 	@override String get exit => 'Afsluiten';
 	@override String get viewAll => 'Alles weergeven';
 	@override String get checkingNetwork => 'Netwerk controleren...';
@@ -171,6 +168,7 @@ class _TranslationsCommonNl extends TranslationsCommonEn {
 	@override String get loading => 'Laden...';
 	@override String get fullscreen => 'Volledig scherm';
 	@override String get exitFullscreen => 'Volledig scherm verlaten';
+	@override String get pressBackAgainToExit => 'Druk nogmaals op terug om af te sluiten';
 }
 
 // Path: screens
@@ -379,8 +377,6 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => 'Gebruik hardwareversnelde videotunneling. Schakel uit als je een zwart scherm met geluid ziet bij HDR-content';
 	@override String get requireProfileSelectionOnOpen => 'Vraag om profiel bij openen';
 	@override String get requireProfileSelectionOnOpenDescription => 'Toon profielselectie telkens wanneer de app wordt geopend';
-	@override String get confirmExitOnBack => 'Bevestigen voor afsluiten';
-	@override String get confirmExitOnBackDescription => 'Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten';
 	@override String get forceTvMode => 'TV-modus forceren';
 	@override String get forceTvModeDescription => 'Gebruik de TV-indeling ongeacht automatische detectie. Handig op Android TV-apparaten die de leanback-functie niet melden. Start de app opnieuw bij wijziging.';
 	@override String get startInFullscreen => 'Starten in volledig scherm';
@@ -1800,9 +1796,6 @@ extension on TranslationsNl {
 			'common.mute' => 'Dempen',
 			'common.ok' => 'OK',
 			'common.reconnect' => 'Opnieuw verbinden',
-			'common.exitConfirmTitle' => 'App afsluiten?',
-			'common.exitConfirmMessage' => 'Weet je zeker dat je wilt afsluiten?',
-			'common.dontAskAgain' => 'Niet meer vragen',
 			'common.exit' => 'Afsluiten',
 			'common.viewAll' => 'Alles weergeven',
 			'common.checkingNetwork' => 'Netwerk controleren...',
@@ -1813,6 +1806,7 @@ extension on TranslationsNl {
 			'common.loading' => 'Laden...',
 			'common.fullscreen' => 'Volledig scherm',
 			'common.exitFullscreen' => 'Volledig scherm verlaten',
+			'common.pressBackAgainToExit' => 'Druk nogmaals op terug om af te sluiten',
 			'screens.licenses' => 'Licenties',
 			'screens.switchProfile' => 'Wissel van profiel',
 			'screens.subtitleStyling' => 'Ondertitel opmaak',
@@ -1994,8 +1988,6 @@ extension on TranslationsNl {
 			'settings.tunneledPlaybackDescription' => 'Gebruik hardwareversnelde videotunneling. Schakel uit als je een zwart scherm met geluid ziet bij HDR-content',
 			'settings.requireProfileSelectionOnOpen' => 'Vraag om profiel bij openen',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Toon profielselectie telkens wanneer de app wordt geopend',
-			'settings.confirmExitOnBack' => 'Bevestigen voor afsluiten',
-			'settings.confirmExitOnBackDescription' => 'Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten',
 			'settings.forceTvMode' => 'TV-modus forceren',
 			'settings.forceTvModeDescription' => 'Gebruik de TV-indeling ongeacht automatische detectie. Handig op Android TV-apparaten die de leanback-functie niet melden. Start de app opnieuw bij wijziging.',
 			'settings.startInFullscreen' => 'Starten in volledig scherm',
@@ -2264,12 +2256,12 @@ extension on TranslationsNl {
 			'profiles.pinManagedByPlex' => 'PIN wordt beheerd door Plex. Bewerk op plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'Geen PIN ingesteld. Bewerk de Home-gebruiker op plex.tv om er één te vereisen.',
 			'profiles.setPin' => 'PIN instellen',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.connectionsLabel' => 'Verbindingen',
 			'profiles.add' => 'Toevoegen',
 			'profiles.deleteProfileButton' => 'Profiel verwijderen',
 			'profiles.noConnectionsHint' => 'Geen verbindingen — voeg er één toe om dit profiel te gebruiken.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.plexHomeAccount' => 'Plex Home-account',
 			'profiles.connectionDefault' => 'Standaard',
 			'profiles.makeDefault' => 'Als standaard instellen',
@@ -2778,12 +2770,12 @@ extension on TranslationsNl {
 			'metadataEdit.episodeOrdering' => 'Afleveringsvolgorde',
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Uitgezonden)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Uitgezonden)',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absoluut)',
 			'metadataEdit.metadataLanguage' => 'Metadatataal',
 			'metadataEdit.useOriginalTitle' => 'Oorspronkelijke titel gebruiken',
 			'metadataEdit.preferredAudioLanguage' => 'Voorkeurstaal audio',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.preferredSubtitleLanguage' => 'Voorkeurstaal ondertiteling',
 			'metadataEdit.subtitleMode' => 'Automatische ondertitelselectie',
 			'metadataEdit.manuallySelected' => 'Handmatig geselecteerd',

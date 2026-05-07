@@ -52,9 +52,6 @@
     "mute": "음소거",
     "ok": "확인",
     "reconnect": "다시 연결",
-    "exitConfirmTitle": "앱을 종료하시겠습니까?",
-    "exitConfirmMessage": "정말 종료하시겠습니까?",
-    "dontAskAgain": "다시 묻지 않기",
     "exit": "종료",
     "viewAll": "모두 보기",
     "checkingNetwork": "네트워크 확인 중...",
@@ -64,7 +61,8 @@
     "startingOfflineMode": "오프라인 모드 시작 중...",
     "loading": "로딩 중...",
     "fullscreen": "전체화면",
-    "exitFullscreen": "전체화면 종료"
+    "exitFullscreen": "전체화면 종료",
+    "pressBackAgainToExit": "한 번 더 누르면 종료됩니다"
   },
   "screens": {
     "licenses": "라이선스",
@@ -252,8 +250,6 @@
     "tunneledPlaybackDescription": "하드웨어 가속 비디오 터널링을 사용합니다. HDR 콘텐츠에서 소리만 나고 검은 화면이 보이면 비활성화하세요",
     "requireProfileSelectionOnOpen": "앱 실행 시 프로필 선택",
     "requireProfileSelectionOnOpenDescription": "앱을 열 때마다 프로필 선택 화면을 표시합니다",
-    "confirmExitOnBack": "종료 전 확인",
-    "confirmExitOnBackDescription": "뒤로 버튼을 눌러 앱을 종료할 때 확인 대화상자를 표시합니다",
     "forceTvMode": "TV 모드 강제 사용",
     "forceTvModeDescription": "자동 감지와 관계없이 TV 레이아웃을 사용합니다. leanback 기능을 보고하지 않는 Android TV 기기에 유용합니다. 변경 시 앱이 다시 시작됩니다.",
     "startInFullscreen": "전체화면으로 시작",

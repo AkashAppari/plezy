@@ -158,9 +158,6 @@ class _TranslationsCommonRu extends TranslationsCommonEn {
 	@override String get mute => 'Без звука';
 	@override String get ok => 'OK';
 	@override String get reconnect => 'Переподключить';
-	@override String get exitConfirmTitle => 'Выйти из приложения?';
-	@override String get exitConfirmMessage => 'Вы уверены, что хотите выйти?';
-	@override String get dontAskAgain => 'Больше не спрашивать';
 	@override String get exit => 'Выход';
 	@override String get viewAll => 'Показать все';
 	@override String get checkingNetwork => 'Проверка сети...';
@@ -171,6 +168,7 @@ class _TranslationsCommonRu extends TranslationsCommonEn {
 	@override String get loading => 'Загрузка...';
 	@override String get fullscreen => 'Полноэкранный режим';
 	@override String get exitFullscreen => 'Выйти из полноэкранного режима';
+	@override String get pressBackAgainToExit => 'Нажмите ещё раз для выхода';
 }
 
 // Path: screens
@@ -379,8 +377,6 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => 'Использовать аппаратный видеотуннелинг. Отключите, если видите чёрный экран со звуком при HDR-контенте';
 	@override String get requireProfileSelectionOnOpen => 'Запрашивать профиль при запуске';
 	@override String get requireProfileSelectionOnOpenDescription => 'Показывать выбор профиля при каждом открытии приложения';
-	@override String get confirmExitOnBack => 'Подтверждать выход';
-	@override String get confirmExitOnBackDescription => 'Показывать диалог подтверждения при нажатии «назад» для выхода из приложения';
 	@override String get forceTvMode => 'Принудительный режим ТВ';
 	@override String get forceTvModeDescription => 'Использовать макет ТВ независимо от автоматического определения. Полезно на устройствах Android TV, которые не сообщают о функции leanback. Приложение перезапустится при изменении.';
 	@override String get startInFullscreen => 'Запускать в полноэкранном режиме';
@@ -1800,9 +1796,6 @@ extension on TranslationsRu {
 			'common.mute' => 'Без звука',
 			'common.ok' => 'OK',
 			'common.reconnect' => 'Переподключить',
-			'common.exitConfirmTitle' => 'Выйти из приложения?',
-			'common.exitConfirmMessage' => 'Вы уверены, что хотите выйти?',
-			'common.dontAskAgain' => 'Больше не спрашивать',
 			'common.exit' => 'Выход',
 			'common.viewAll' => 'Показать все',
 			'common.checkingNetwork' => 'Проверка сети...',
@@ -1813,6 +1806,7 @@ extension on TranslationsRu {
 			'common.loading' => 'Загрузка...',
 			'common.fullscreen' => 'Полноэкранный режим',
 			'common.exitFullscreen' => 'Выйти из полноэкранного режима',
+			'common.pressBackAgainToExit' => 'Нажмите ещё раз для выхода',
 			'screens.licenses' => 'Лицензии',
 			'screens.switchProfile' => 'Сменить профиль',
 			'screens.subtitleStyling' => 'Стиль субтитров',
@@ -1994,8 +1988,6 @@ extension on TranslationsRu {
 			'settings.tunneledPlaybackDescription' => 'Использовать аппаратный видеотуннелинг. Отключите, если видите чёрный экран со звуком при HDR-контенте',
 			'settings.requireProfileSelectionOnOpen' => 'Запрашивать профиль при запуске',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Показывать выбор профиля при каждом открытии приложения',
-			'settings.confirmExitOnBack' => 'Подтверждать выход',
-			'settings.confirmExitOnBackDescription' => 'Показывать диалог подтверждения при нажатии «назад» для выхода из приложения',
 			'settings.forceTvMode' => 'Принудительный режим ТВ',
 			'settings.forceTvModeDescription' => 'Использовать макет ТВ независимо от автоматического определения. Полезно на устройствах Android TV, которые не сообщают о функции leanback. Приложение перезапустится при изменении.',
 			'settings.startInFullscreen' => 'Запускать в полноэкранном режиме',
@@ -2264,12 +2256,12 @@ extension on TranslationsRu {
 			'profiles.pinManagedByPlex' => 'PIN управляется Plex. Редактируйте на plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'PIN не установлен. Чтобы требовать его, отредактируйте пользователя Home на plex.tv.',
 			'profiles.setPin' => 'Установить PIN',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.connectionsLabel' => 'Соединения',
 			'profiles.add' => 'Добавить',
 			'profiles.deleteProfileButton' => 'Удалить профиль',
 			'profiles.noConnectionsHint' => 'Нет соединений — добавьте одно, чтобы использовать этот профиль.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.plexHomeAccount' => 'Аккаунт Plex Home',
 			'profiles.connectionDefault' => 'По умолчанию',
 			'profiles.makeDefault' => 'Сделать по умолчанию',
@@ -2778,12 +2770,12 @@ extension on TranslationsRu {
 			'metadataEdit.episodeOrdering' => 'Порядок эпизодов',
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Эфирный)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Эфирный)',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Абсолютный)',
 			'metadataEdit.metadataLanguage' => 'Язык метаданных',
 			'metadataEdit.useOriginalTitle' => 'Использовать оригинальное название',
 			'metadataEdit.preferredAudioLanguage' => 'Предпочитаемый язык аудио',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.preferredSubtitleLanguage' => 'Предпочитаемый язык субтитров',
 			'metadataEdit.subtitleMode' => 'Автовыбор субтитров',
 			'metadataEdit.manuallySelected' => 'Выбор вручную',

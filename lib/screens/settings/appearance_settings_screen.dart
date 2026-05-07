@@ -130,13 +130,6 @@ class AppearanceSettingsScreen extends StatelessWidget {
           subtitle: t.settings.hideSpoilersDescription,
         ),
         _requireProfileSelection(),
-        if (PlatformDetector.isTV())
-          SettingSwitchTile(
-            pref: SettingsService.confirmExitOnBack,
-            icon: Symbols.exit_to_app_rounded,
-            title: t.settings.confirmExitOnBack,
-            subtitle: t.settings.confirmExitOnBackDescription,
-          ),
         SettingSwitchTile(
           pref: SettingsService.autoHidePerformanceOverlay,
           icon: Symbols.speed_rounded,

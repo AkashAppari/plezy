@@ -91,64 +91,6 @@ Future<void> showServerLimitDialog(BuildContext context) async {
   );
 }
 
-/// Shows a confirmation dialog with an optional checkbox (e.g. "Don't ask again").
-/// Returns a record with [confirmed] and [checked] booleans.
-Future<({bool confirmed, bool checked})> showConfirmDialogWithCheckbox(
-  BuildContext context, {
-  required String title,
-  required String message,
-  required String confirmText,
-  required String checkboxLabel,
-  String? cancelText,
-}) async {
-  var checked = false;
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (dialogContext) {
-      return StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            title: Text(title),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(message),
-                const SizedBox(height: 12),
-                CheckboxListTile(
-                  value: checked,
-                  onChanged: (v) => setDialogState(() => checked = v ?? false),
-                  title: Text(checkboxLabel),
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  dense: true,
-                ),
-              ],
-            ),
-            actions: [
-              FocusableButton(
-                autofocus: true,
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: TextButton(
-                  onPressed: () => Navigator.pop(dialogContext, false),
-                  style: TextButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
-                  child: Text(cancelText ?? t.common.cancel),
-                ),
-              ),
-              FocusableButton(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                child: FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(confirmText)),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-
-  return (confirmed: confirmed ?? false, checked: checked);
-}
-
 /// Shows a delete confirmation dialog.
 /// Convenience wrapper around [showConfirmDialog] with destructive styling.
 Future<bool> showDeleteConfirmation(

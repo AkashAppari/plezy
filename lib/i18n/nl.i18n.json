@@ -52,9 +52,6 @@
     "mute": "Dempen",
     "ok": "OK",
     "reconnect": "Opnieuw verbinden",
-    "exitConfirmTitle": "App afsluiten?",
-    "exitConfirmMessage": "Weet je zeker dat je wilt afsluiten?",
-    "dontAskAgain": "Niet meer vragen",
     "exit": "Afsluiten",
     "viewAll": "Alles weergeven",
     "checkingNetwork": "Netwerk controleren...",
@@ -64,7 +61,8 @@
     "startingOfflineMode": "Offlinemodus starten...",
     "loading": "Laden...",
     "fullscreen": "Volledig scherm",
-    "exitFullscreen": "Volledig scherm verlaten"
+    "exitFullscreen": "Volledig scherm verlaten",
+    "pressBackAgainToExit": "Druk nogmaals op terug om af te sluiten"
   },
   "screens": {
     "licenses": "Licenties",
@@ -252,8 +250,6 @@
     "tunneledPlaybackDescription": "Gebruik hardwareversnelde videotunneling. Schakel uit als je een zwart scherm met geluid ziet bij HDR-content",
     "requireProfileSelectionOnOpen": "Vraag om profiel bij openen",
     "requireProfileSelectionOnOpenDescription": "Toon profielselectie telkens wanneer de app wordt geopend",
-    "confirmExitOnBack": "Bevestigen voor afsluiten",
-    "confirmExitOnBackDescription": "Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten",
     "forceTvMode": "TV-modus forceren",
     "forceTvModeDescription": "Gebruik de TV-indeling ongeacht automatische detectie. Handig op Android TV-apparaten die de leanback-functie niet melden. Start de app opnieuw bij wijziging.",
     "startInFullscreen": "Starten in volledig scherm",

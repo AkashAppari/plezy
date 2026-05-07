@@ -256,15 +256,6 @@ class TranslationsCommonEn {
 	/// en: 'Reconnect'
 	String get reconnect => 'Reconnect';
 
-	/// en: 'Exit app?'
-	String get exitConfirmTitle => 'Exit app?';
-
-	/// en: 'Are you sure you want to exit?'
-	String get exitConfirmMessage => 'Are you sure you want to exit?';
-
-	/// en: 'Don't ask again'
-	String get dontAskAgain => 'Don\'t ask again';
-
 	/// en: 'Exit'
 	String get exit => 'Exit';
 
@@ -294,6 +285,9 @@ class TranslationsCommonEn {
 
 	/// en: 'Exit fullscreen'
 	String get exitFullscreen => 'Exit fullscreen';
+
+	/// en: 'Press back again to exit'
+	String get pressBackAgainToExit => 'Press back again to exit';
 }
 
 // Path: screens
@@ -864,12 +858,6 @@ class TranslationsSettingsEn {
 
 	/// en: 'Show profile selection every time the app is opened'
 	String get requireProfileSelectionOnOpenDescription => 'Show profile selection every time the app is opened';
-
-	/// en: 'Confirm before exiting'
-	String get confirmExitOnBack => 'Confirm before exiting';
-
-	/// en: 'Show a confirmation dialog when pressing back to exit the app'
-	String get confirmExitOnBackDescription => 'Show a confirmation dialog when pressing back to exit the app';
 
 	/// en: 'Force TV mode'
 	String get forceTvMode => 'Force TV mode';
@@ -4072,9 +4060,6 @@ extension on Translations {
 			'common.mute' => 'Mute',
 			'common.ok' => 'OK',
 			'common.reconnect' => 'Reconnect',
-			'common.exitConfirmTitle' => 'Exit app?',
-			'common.exitConfirmMessage' => 'Are you sure you want to exit?',
-			'common.dontAskAgain' => 'Don\'t ask again',
 			'common.exit' => 'Exit',
 			'common.viewAll' => 'View All',
 			'common.checkingNetwork' => 'Checking network...',
@@ -4085,6 +4070,7 @@ extension on Translations {
 			'common.loading' => 'Loading...',
 			'common.fullscreen' => 'Fullscreen',
 			'common.exitFullscreen' => 'Exit fullscreen',
+			'common.pressBackAgainToExit' => 'Press back again to exit',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Switch Profile',
 			'screens.subtitleStyling' => 'Subtitle Styling',
@@ -4266,8 +4252,6 @@ extension on Translations {
 			'settings.tunneledPlaybackDescription' => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content',
 			'settings.requireProfileSelectionOnOpen' => 'Ask for profile on app open',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Show profile selection every time the app is opened',
-			'settings.confirmExitOnBack' => 'Confirm before exiting',
-			'settings.confirmExitOnBackDescription' => 'Show a confirmation dialog when pressing back to exit the app',
 			'settings.forceTvMode' => 'Force TV mode',
 			'settings.forceTvModeDescription' => 'Use the TV layout regardless of auto-detection. Useful on Android TV devices that don\'t report the leanback feature. Restarts the app on change.',
 			'settings.startInFullscreen' => 'Start in fullscreen',
@@ -4536,12 +4520,12 @@ extension on Translations {
 			'profiles.pinManagedByPlex' => 'PIN managed by Plex. Edit on plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'No PIN set. To require one, edit the home user on plex.tv.',
 			'profiles.setPin' => 'Set PIN',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.connectionsLabel' => 'Connections',
 			'profiles.add' => 'Add',
 			'profiles.deleteProfileButton' => 'Delete profile',
 			'profiles.noConnectionsHint' => 'No connections — add one to use this profile.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.plexHomeAccount' => 'Plex Home account',
 			'profiles.connectionDefault' => 'Default',
 			'profiles.makeDefault' => 'Make default',
@@ -5050,12 +5034,12 @@ extension on Translations {
 			'metadataEdit.episodeOrdering' => 'Episode Ordering',
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Aired)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Aired)',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolute)',
 			'metadataEdit.metadataLanguage' => 'Metadata Language',
 			'metadataEdit.useOriginalTitle' => 'Use Original Title',
 			'metadataEdit.preferredAudioLanguage' => 'Preferred Audio Language',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.preferredSubtitleLanguage' => 'Preferred Subtitle Language',
 			'metadataEdit.subtitleMode' => 'Auto-Select Subtitle Mode',
 			'metadataEdit.manuallySelected' => 'Manually selected',

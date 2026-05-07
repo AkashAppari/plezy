@@ -158,9 +158,6 @@ class _TranslationsCommonPl extends TranslationsCommonEn {
 	@override String get mute => 'Wycisz';
 	@override String get ok => 'OK';
 	@override String get reconnect => 'Połącz ponownie';
-	@override String get exitConfirmTitle => 'Zamknąć aplikację?';
-	@override String get exitConfirmMessage => 'Czy na pewno chcesz wyjść?';
-	@override String get dontAskAgain => 'Nie pytaj ponownie';
 	@override String get exit => 'Wyjdź';
 	@override String get viewAll => 'Pokaż wszystko';
 	@override String get checkingNetwork => 'Sprawdzanie sieci...';
@@ -171,6 +168,7 @@ class _TranslationsCommonPl extends TranslationsCommonEn {
 	@override String get loading => 'Ładowanie...';
 	@override String get fullscreen => 'Pełny ekran';
 	@override String get exitFullscreen => 'Wyjdź z pełnego ekranu';
+	@override String get pressBackAgainToExit => 'Naciśnij wstecz ponownie, aby wyjść';
 }
 
 // Path: screens
@@ -379,8 +377,6 @@ class _TranslationsSettingsPl extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => 'Użyj sprzętowo przyspieszonego tunelowania wideo. Wyłącz, jeśli widzisz czarny ekran z dźwiękiem przy treściach HDR';
 	@override String get requireProfileSelectionOnOpen => 'Pytaj o profil przy otwarciu aplikacji';
 	@override String get requireProfileSelectionOnOpenDescription => 'Pokaż wybór profilu za każdym razem, gdy aplikacja jest otwierana';
-	@override String get confirmExitOnBack => 'Potwierdź przed wyjściem';
-	@override String get confirmExitOnBackDescription => 'Pokaż dialog potwierdzenia przy naciśnięciu wstecz, aby wyjść z aplikacji';
 	@override String get forceTvMode => 'Wymuś tryb TV';
 	@override String get forceTvModeDescription => 'Użyj układu TV niezależnie od automatycznego wykrywania. Przydatne na urządzeniach Android TV, które nie zgłaszają funkcji leanback. Po zmianie aplikacja zostanie zrestartowana.';
 	@override String get startInFullscreen => 'Uruchom na pełnym ekranie';
@@ -1800,9 +1796,6 @@ extension on TranslationsPl {
 			'common.mute' => 'Wycisz',
 			'common.ok' => 'OK',
 			'common.reconnect' => 'Połącz ponownie',
-			'common.exitConfirmTitle' => 'Zamknąć aplikację?',
-			'common.exitConfirmMessage' => 'Czy na pewno chcesz wyjść?',
-			'common.dontAskAgain' => 'Nie pytaj ponownie',
 			'common.exit' => 'Wyjdź',
 			'common.viewAll' => 'Pokaż wszystko',
 			'common.checkingNetwork' => 'Sprawdzanie sieci...',
@@ -1813,6 +1806,7 @@ extension on TranslationsPl {
 			'common.loading' => 'Ładowanie...',
 			'common.fullscreen' => 'Pełny ekran',
 			'common.exitFullscreen' => 'Wyjdź z pełnego ekranu',
+			'common.pressBackAgainToExit' => 'Naciśnij wstecz ponownie, aby wyjść',
 			'screens.licenses' => 'Licencje',
 			'screens.switchProfile' => 'Zmień profil',
 			'screens.subtitleStyling' => 'Styl napisów',
@@ -1994,8 +1988,6 @@ extension on TranslationsPl {
 			'settings.tunneledPlaybackDescription' => 'Użyj sprzętowo przyspieszonego tunelowania wideo. Wyłącz, jeśli widzisz czarny ekran z dźwiękiem przy treściach HDR',
 			'settings.requireProfileSelectionOnOpen' => 'Pytaj o profil przy otwarciu aplikacji',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Pokaż wybór profilu za każdym razem, gdy aplikacja jest otwierana',
-			'settings.confirmExitOnBack' => 'Potwierdź przed wyjściem',
-			'settings.confirmExitOnBackDescription' => 'Pokaż dialog potwierdzenia przy naciśnięciu wstecz, aby wyjść z aplikacji',
 			'settings.forceTvMode' => 'Wymuś tryb TV',
 			'settings.forceTvModeDescription' => 'Użyj układu TV niezależnie od automatycznego wykrywania. Przydatne na urządzeniach Android TV, które nie zgłaszają funkcji leanback. Po zmianie aplikacja zostanie zrestartowana.',
 			'settings.startInFullscreen' => 'Uruchom na pełnym ekranie',
@@ -2264,12 +2256,12 @@ extension on TranslationsPl {
 			'profiles.pinManagedByPlex' => 'PIN zarządzany przez Plex. Edytuj na plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'Nie ustawiono PIN-u. Aby go wymagać, edytuj użytkownika Home na plex.tv.',
 			'profiles.setPin' => 'Ustaw PIN',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.connectionsLabel' => 'Połączenia',
 			'profiles.add' => 'Dodaj',
 			'profiles.deleteProfileButton' => 'Usuń profil',
 			'profiles.noConnectionsHint' => 'Brak połączeń — dodaj jedno, aby używać tego profilu.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.plexHomeAccount' => 'Konto Plex Home',
 			'profiles.connectionDefault' => 'Domyślne',
 			'profiles.makeDefault' => 'Ustaw jako domyślne',
@@ -2778,12 +2770,12 @@ extension on TranslationsPl {
 			'metadataEdit.episodeOrdering' => 'Kolejność odcinków',
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Emisja)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Emisja)',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolutna)',
 			'metadataEdit.metadataLanguage' => 'Język metadanych',
 			'metadataEdit.useOriginalTitle' => 'Użyj oryginalnego tytułu',
 			'metadataEdit.preferredAudioLanguage' => 'Preferowany język audio',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.preferredSubtitleLanguage' => 'Preferowany język napisów',
 			'metadataEdit.subtitleMode' => 'Tryb automatycznego wyboru napisów',
 			'metadataEdit.manuallySelected' => 'Wybrany ręcznie',

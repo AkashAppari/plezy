@@ -158,9 +158,6 @@ class _TranslationsCommonDa extends TranslationsCommonEn {
 	@override String get mute => 'Lydløs';
 	@override String get ok => 'OK';
 	@override String get reconnect => 'Genopret forbindelse';
-	@override String get exitConfirmTitle => 'Luk app?';
-	@override String get exitConfirmMessage => 'Er du sikker på, at du vil afslutte?';
-	@override String get dontAskAgain => 'Spørg ikke igen';
 	@override String get exit => 'Afslut';
 	@override String get viewAll => 'Vis alle';
 	@override String get checkingNetwork => 'Tjekker netværk...';
@@ -171,6 +168,7 @@ class _TranslationsCommonDa extends TranslationsCommonEn {
 	@override String get loading => 'Indlæser...';
 	@override String get fullscreen => 'Fuldskærm';
 	@override String get exitFullscreen => 'Forlad fuldskærm';
+	@override String get pressBackAgainToExit => 'Tryk tilbage igen for at afslutte';
 }
 
 // Path: screens
@@ -379,8 +377,6 @@ class _TranslationsSettingsDa extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => 'Brug hardwareaccelereret videotunneling. Deaktiver hvis du ser sort skærm med lyd på HDR-indhold';
 	@override String get requireProfileSelectionOnOpen => 'Spørg om profil ved åbning';
 	@override String get requireProfileSelectionOnOpenDescription => 'Vis profilvalg hver gang appen åbnes';
-	@override String get confirmExitOnBack => 'Bekræft før lukning';
-	@override String get confirmExitOnBackDescription => 'Vis bekræftelsesdialog ved tryk på tilbage for at lukke appen';
 	@override String get forceTvMode => 'Gennemtving TV-tilstand';
 	@override String get forceTvModeDescription => 'Brug TV-layoutet uanset automatisk registrering. Nyttigt på Android TV-enheder, der ikke rapporterer leanback-funktionen. Genstarter appen ved ændring.';
 	@override String get startInFullscreen => 'Start i fuldskærm';
@@ -1800,9 +1796,6 @@ extension on TranslationsDa {
 			'common.mute' => 'Lydløs',
 			'common.ok' => 'OK',
 			'common.reconnect' => 'Genopret forbindelse',
-			'common.exitConfirmTitle' => 'Luk app?',
-			'common.exitConfirmMessage' => 'Er du sikker på, at du vil afslutte?',
-			'common.dontAskAgain' => 'Spørg ikke igen',
 			'common.exit' => 'Afslut',
 			'common.viewAll' => 'Vis alle',
 			'common.checkingNetwork' => 'Tjekker netværk...',
@@ -1813,6 +1806,7 @@ extension on TranslationsDa {
 			'common.loading' => 'Indlæser...',
 			'common.fullscreen' => 'Fuldskærm',
 			'common.exitFullscreen' => 'Forlad fuldskærm',
+			'common.pressBackAgainToExit' => 'Tryk tilbage igen for at afslutte',
 			'screens.licenses' => 'Licenser',
 			'screens.switchProfile' => 'Skift profil',
 			'screens.subtitleStyling' => 'Undertekststil',
@@ -1994,8 +1988,6 @@ extension on TranslationsDa {
 			'settings.tunneledPlaybackDescription' => 'Brug hardwareaccelereret videotunneling. Deaktiver hvis du ser sort skærm med lyd på HDR-indhold',
 			'settings.requireProfileSelectionOnOpen' => 'Spørg om profil ved åbning',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Vis profilvalg hver gang appen åbnes',
-			'settings.confirmExitOnBack' => 'Bekræft før lukning',
-			'settings.confirmExitOnBackDescription' => 'Vis bekræftelsesdialog ved tryk på tilbage for at lukke appen',
 			'settings.forceTvMode' => 'Gennemtving TV-tilstand',
 			'settings.forceTvModeDescription' => 'Brug TV-layoutet uanset automatisk registrering. Nyttigt på Android TV-enheder, der ikke rapporterer leanback-funktionen. Genstarter appen ved ændring.',
 			'settings.startInFullscreen' => 'Start i fuldskærm',
@@ -2264,12 +2256,12 @@ extension on TranslationsDa {
 			'profiles.pinManagedByPlex' => 'PIN administreres af Plex. Rediger på plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'Ingen PIN-kode angivet. For at kræve en, redigér Home-brugeren på plex.tv.',
 			'profiles.setPin' => 'Angiv PIN',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.connectionsLabel' => 'Forbindelser',
 			'profiles.add' => 'Tilføj',
 			'profiles.deleteProfileButton' => 'Slet profil',
 			'profiles.noConnectionsHint' => 'Ingen forbindelser — tilføj en for at bruge denne profil.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.plexHomeAccount' => 'Plex Home-konto',
 			'profiles.connectionDefault' => 'Standard',
 			'profiles.makeDefault' => 'Gør til standard',
@@ -2778,12 +2770,12 @@ extension on TranslationsDa {
 			'metadataEdit.episodeOrdering' => 'Episoderækkefølge',
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Sendt)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Sendt)',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolut)',
 			'metadataEdit.metadataLanguage' => 'Metadatasprog',
 			'metadataEdit.useOriginalTitle' => 'Brug originaltitel',
 			'metadataEdit.preferredAudioLanguage' => 'Foretrukket lydsprog',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.preferredSubtitleLanguage' => 'Foretrukket undertekstsprog',
 			'metadataEdit.subtitleMode' => 'Auto-vælg underteksttilstand',
 			'metadataEdit.manuallySelected' => 'Manuelt valgt',

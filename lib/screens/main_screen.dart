@@ -3,15 +3,15 @@ import 'dart:io' show Platform, exit;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'
-    show HardwareKeyboard, KeyDownEvent, KeyUpEvent, LogicalKeyboardKey, SystemNavigator;
+    show HardwareKeyboard, KeyDownEvent, KeyRepeatEvent, KeyUpEvent, LogicalKeyboardKey;
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import '../i18n/strings.g.dart';
+import '../services/app_exit_service.dart';
 import '../services/update_service.dart';
 import '../utils/app_logger.dart';
 import '../widgets/auth_error_banner.dart';
-import '../utils/dialogs.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
@@ -181,6 +181,8 @@ class _MainScreenState extends State<MainScreen>
   /// fallback fires the screens render their normal "no servers" state and
   /// the user can pull-to-refresh / open settings.
   static const _startupSettleFallback = Duration(seconds: 15);
+  static const _backExitWindow = Duration(seconds: 3);
+  DateTime? _lastBackPressAt;
 
   @override
   void initState() {
@@ -894,6 +896,60 @@ class _MainScreenState extends State<MainScreen>
   /// so BackKeySuppressorObserver misses them and they leak into _handleBackKey.
   bool _suppressBackAfterPop = false;
 
+  KeyEventResult _handleMainBack({bool allowTvSystemExit = false}) {
+    final tabs = _getVisibleTabs(_isOffline);
+    if (tabs.isEmpty) return KeyEventResult.handled;
+
+    final homeTab = tabs.first.id;
+    if (_currentTab != homeTab) {
+      _selectTab(homeTab);
+      _lastBackPressAt = null;
+      return KeyEventResult.handled;
+    }
+
+    final now = DateTime.now();
+    final lastBackPressAt = _lastBackPressAt;
+    if (lastBackPressAt != null && now.difference(lastBackPressAt) < _backExitWindow) {
+      _lastBackPressAt = null;
+      if (allowTvSystemExit && PlatformDetector.isAppleTV()) return KeyEventResult.skipRemainingHandlers;
+      unawaited(AppExitService.requestExit());
+      return KeyEventResult.handled;
+    }
+
+    _lastBackPressAt = now;
+    showMainSnackBar(t.common.pressBackAgainToExit, duration: _backExitWindow);
+    return KeyEventResult.handled;
+  }
+
+  KeyEventResult _handleMainBackKeyAction(KeyEvent event) {
+    if (!event.logicalKey.isBackKey) return KeyEventResult.ignored;
+
+    if (BackKeyUpSuppressor.consumeIfSuppressed(event)) {
+      return KeyEventResult.handled;
+    }
+
+    if (PlatformDetector.isAppleTV() && event is KeyDownEvent) {
+      final result = _handleMainBack(allowTvSystemExit: true);
+      if (result == KeyEventResult.handled) {
+        BackKeyCoordinator.markHandled();
+        BackKeyUpSuppressor.suppressBackUntilKeyUp();
+      }
+      return result;
+    }
+
+    if (event is KeyUpEvent) {
+      final result = _handleMainBack(allowTvSystemExit: PlatformDetector.isAppleTV());
+      if (result == KeyEventResult.handled) {
+        BackKeyCoordinator.markHandled();
+      }
+      return result;
+    }
+    if (event is KeyDownEvent || event is KeyRepeatEvent) {
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   KeyEventResult _handleBackKey(KeyEvent event) {
     if (ModalRoute.of(context)?.isCurrent != true) {
       return KeyEventResult.ignored;
@@ -909,26 +965,7 @@ class _MainScreenState extends State<MainScreen>
       return handleBackKeyAction(event, _focusSidebar);
     }
 
-    // Sidebar focused → exit app
-    return handleBackKeyAction(event, () async {
-      if (PlatformDetector.isTV()) {
-        final settings = await SettingsService.getInstance();
-        if (settings.read(SettingsService.confirmExitOnBack) && mounted) {
-          final result = await showConfirmDialogWithCheckbox(
-            context,
-            title: t.common.exitConfirmTitle,
-            message: t.common.exitConfirmMessage,
-            confirmText: t.common.exit,
-            checkboxLabel: t.common.dontAskAgain,
-          );
-          if (result.checked) {
-            await settings.write(SettingsService.confirmExitOnBack, false);
-          }
-          if (!result.confirmed) return;
-        }
-      }
-      unawaited(SystemNavigator.pop());
-    });
+    return _handleMainBackKeyAction(event);
   }
 
   /// F11 toggles OS fullscreen from anywhere in the main UI. The in-player
@@ -1245,71 +1282,78 @@ class _MainScreenState extends State<MainScreen>
       );
     }
 
-    return OverlaySheetHost(
-      child: ScaffoldMessenger(
-        key: mainScaffoldMessengerKey,
-        child: Scaffold(
-          body: _buildTickerAwareStack(),
-          bottomNavigationBar: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Reconnect bar when offline
-              if (_isOffline)
-                Material(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  child: InkWell(
-                    onTap: _isReconnecting ? null : _triggerReconnect,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          if (_isReconnecting)
-                            SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleMainBack();
+      },
+      child: OverlaySheetHost(
+        child: ScaffoldMessenger(
+          key: mainScaffoldMessengerKey,
+          child: Scaffold(
+            body: _buildTickerAwareStack(),
+            bottomNavigationBar: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Reconnect bar when offline
+                if (_isOffline)
+                  Material(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    child: InkWell(
+                      onTap: _isReconnecting ? null : _triggerReconnect,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (_isReconnecting)
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              )
+                            else
+                              Icon(Symbols.wifi_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
+                            const SizedBox(width: 8),
+                            Text(
+                              t.common.reconnect,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
                                 color: Theme.of(context).colorScheme.primary,
                               ),
-                            )
-                          else
-                            Icon(Symbols.wifi_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
-                          const SizedBox(width: 8),
-                          Text(
-                            t.common.reconnect,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: Theme.of(context).colorScheme.primary,
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
+                SettingValueBuilder<bool>(
+                  pref: SettingsService.showNavBarLabels,
+                  builder: (context, showNavBarLabels, _) {
+                    final hideLabels = !showNavBarLabels;
+                    return NavigationBarTheme(
+                      data: NavigationBarTheme.of(context).copyWith(height: hideLabels ? 56 : null),
+                      child: NavigationBar(
+                        selectedIndex: _currentIndex,
+                        onDestinationSelected: (i) {
+                          final tabs = _getVisibleTabs(_isOffline);
+                          if (i >= 0 && i < tabs.length) _selectTab(tabs[i].id);
+                        },
+                        labelBehavior: hideLabels
+                            ? NavigationDestinationLabelBehavior.alwaysHide
+                            : NavigationDestinationLabelBehavior.alwaysShow,
+                        destinations: _buildNavDestinations(_isOffline),
+                      ),
+                    );
+                  },
                 ),
-              SettingValueBuilder<bool>(
-                pref: SettingsService.showNavBarLabels,
-                builder: (context, showNavBarLabels, _) {
-                  final hideLabels = !showNavBarLabels;
-                  return NavigationBarTheme(
-                    data: NavigationBarTheme.of(context).copyWith(height: hideLabels ? 56 : null),
-                    child: NavigationBar(
-                      selectedIndex: _currentIndex,
-                      onDestinationSelected: (i) {
-                        final tabs = _getVisibleTabs(_isOffline);
-                        if (i >= 0 && i < tabs.length) _selectTab(tabs[i].id);
-                      },
-                      labelBehavior: hideLabels
-                          ? NavigationDestinationLabelBehavior.alwaysHide
-                          : NavigationDestinationLabelBehavior.alwaysShow,
-                      destinations: _buildNavDestinations(_isOffline),
-                    ),
-                  );
-                },
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

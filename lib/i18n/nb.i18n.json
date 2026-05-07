@@ -52,9 +52,6 @@
     "mute": "Demp",
     "ok": "OK",
     "reconnect": "Koble til på nytt",
-    "exitConfirmTitle": "Avslutte appen?",
-    "exitConfirmMessage": "Er du sikker på at du vil avslutte?",
-    "dontAskAgain": "Ikke spør igjen",
     "exit": "Avslutt",
     "viewAll": "Vis alle",
     "checkingNetwork": "Sjekker nettverk...",
@@ -64,7 +61,8 @@
     "startingOfflineMode": "Starter frakoblet modus...",
     "loading": "Laster...",
     "fullscreen": "Fullskjerm",
-    "exitFullscreen": "Avslutt fullskjerm"
+    "exitFullscreen": "Avslutt fullskjerm",
+    "pressBackAgainToExit": "Trykk tilbake igjen for å avslutte"
   },
   "screens": {
     "licenses": "Lisenser",
@@ -252,8 +250,6 @@
     "tunneledPlaybackDescription": "Bruk maskinvareakselerert videotunnelering. Deaktiver hvis du ser svart skjerm med lyd på HDR-innhold",
     "requireProfileSelectionOnOpen": "Spør om profil ved appåpning",
     "requireProfileSelectionOnOpenDescription": "Vis profilvalg hver gang appen åpnes",
-    "confirmExitOnBack": "Bekreft før avslutning",
-    "confirmExitOnBackDescription": "Vis en bekreftelsesdialog når du trykker tilbake for å avslutte appen",
     "forceTvMode": "Tving TV-modus",
     "forceTvModeDescription": "Bruk TV-oppsettet uavhengig av automatisk gjenkjenning. Nyttig på Android TV-enheter som ikke rapporterer leanback-funksjonen. Starter appen på nytt ved endring.",
     "startInFullscreen": "Start i fullskjerm",

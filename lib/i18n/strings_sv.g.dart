@@ -158,9 +158,6 @@ class _TranslationsCommonSv extends TranslationsCommonEn {
 	@override String get mute => 'Ljud av';
 	@override String get ok => 'OK';
 	@override String get reconnect => 'Återanslut';
-	@override String get exitConfirmTitle => 'Avsluta appen?';
-	@override String get exitConfirmMessage => 'Är du säker på att du vill avsluta?';
-	@override String get dontAskAgain => 'Fråga inte igen';
 	@override String get exit => 'Avsluta';
 	@override String get viewAll => 'Visa alla';
 	@override String get checkingNetwork => 'Kontrollerar nätverk...';
@@ -171,6 +168,7 @@ class _TranslationsCommonSv extends TranslationsCommonEn {
 	@override String get loading => 'Laddar...';
 	@override String get fullscreen => 'Helskärm';
 	@override String get exitFullscreen => 'Avsluta helskärm';
+	@override String get pressBackAgainToExit => 'Tryck bakåt igen för att avsluta';
 }
 
 // Path: screens
@@ -379,8 +377,6 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => 'Använd hårdvaruaccelererad videotunnling. Inaktivera om du ser en svart skärm med ljud vid HDR-innehåll';
 	@override String get requireProfileSelectionOnOpen => 'Fråga efter profil vid appstart';
 	@override String get requireProfileSelectionOnOpenDescription => 'Visa profilval varje gång appen öppnas';
-	@override String get confirmExitOnBack => 'Bekräfta innan avslut';
-	@override String get confirmExitOnBackDescription => 'Visa en bekräftelsedialog när du trycker tillbaka för att avsluta appen';
 	@override String get forceTvMode => 'Tvinga TV-läge';
 	@override String get forceTvModeDescription => 'Använd TV-layouten oavsett automatisk identifiering. Användbart på Android TV-enheter som inte rapporterar leanback-funktionen. Startar om appen vid ändring.';
 	@override String get startInFullscreen => 'Starta i helskärm';
@@ -1800,9 +1796,6 @@ extension on TranslationsSv {
 			'common.mute' => 'Ljud av',
 			'common.ok' => 'OK',
 			'common.reconnect' => 'Återanslut',
-			'common.exitConfirmTitle' => 'Avsluta appen?',
-			'common.exitConfirmMessage' => 'Är du säker på att du vill avsluta?',
-			'common.dontAskAgain' => 'Fråga inte igen',
 			'common.exit' => 'Avsluta',
 			'common.viewAll' => 'Visa alla',
 			'common.checkingNetwork' => 'Kontrollerar nätverk...',
@@ -1813,6 +1806,7 @@ extension on TranslationsSv {
 			'common.loading' => 'Laddar...',
 			'common.fullscreen' => 'Helskärm',
 			'common.exitFullscreen' => 'Avsluta helskärm',
+			'common.pressBackAgainToExit' => 'Tryck bakåt igen för att avsluta',
 			'screens.licenses' => 'Licenser',
 			'screens.switchProfile' => 'Byt profil',
 			'screens.subtitleStyling' => 'Undertext-styling',
@@ -1994,8 +1988,6 @@ extension on TranslationsSv {
 			'settings.tunneledPlaybackDescription' => 'Använd hårdvaruaccelererad videotunnling. Inaktivera om du ser en svart skärm med ljud vid HDR-innehåll',
 			'settings.requireProfileSelectionOnOpen' => 'Fråga efter profil vid appstart',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Visa profilval varje gång appen öppnas',
-			'settings.confirmExitOnBack' => 'Bekräfta innan avslut',
-			'settings.confirmExitOnBackDescription' => 'Visa en bekräftelsedialog när du trycker tillbaka för att avsluta appen',
 			'settings.forceTvMode' => 'Tvinga TV-läge',
 			'settings.forceTvModeDescription' => 'Använd TV-layouten oavsett automatisk identifiering. Användbart på Android TV-enheter som inte rapporterar leanback-funktionen. Startar om appen vid ändring.',
 			'settings.startInFullscreen' => 'Starta i helskärm',
@@ -2264,12 +2256,12 @@ extension on TranslationsSv {
 			'profiles.pinManagedByPlex' => 'PIN hanteras av Plex. Redigera på plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'Ingen PIN angiven. För att kräva en, redigera Home-användaren på plex.tv.',
 			'profiles.setPin' => 'Ange PIN',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.connectionsLabel' => 'Anslutningar',
 			'profiles.add' => 'Lägg till',
 			'profiles.deleteProfileButton' => 'Ta bort profil',
 			'profiles.noConnectionsHint' => 'Inga anslutningar — lägg till en för att använda den här profilen.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.plexHomeAccount' => 'Plex Home-konto',
 			'profiles.connectionDefault' => 'Standard',
 			'profiles.makeDefault' => 'Gör till standard',
@@ -2778,12 +2770,12 @@ extension on TranslationsSv {
 			'metadataEdit.episodeOrdering' => 'Avsnittsordning',
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Sändning)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Sändning)',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolut)',
 			'metadataEdit.metadataLanguage' => 'Metadataspråk',
 			'metadataEdit.useOriginalTitle' => 'Använd originaltitel',
 			'metadataEdit.preferredAudioLanguage' => 'Föredraget ljudspråk',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.preferredSubtitleLanguage' => 'Föredraget undertextspråk',
 			'metadataEdit.subtitleMode' => 'Automatiskt val av undertexter',
 			'metadataEdit.manuallySelected' => 'Manuellt vald',

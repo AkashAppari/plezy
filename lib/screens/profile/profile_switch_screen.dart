@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
@@ -20,6 +19,7 @@ import '../../profiles/profile_connection.dart';
 import '../../profiles/profile_connection_registry.dart';
 import '../../profiles/profile_registry.dart';
 import '../../profiles/profiles_view.dart';
+import '../../services/app_exit_service.dart';
 import '../../services/storage_service.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
@@ -95,7 +95,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
       canPop: !widget.requireSelection || _allowPop,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop && widget.requireSelection) {
-          SystemNavigator.pop();
+          unawaited(AppExitService.requestExit());
         }
       },
       child: StreamBuilder<ProfilesView>(
@@ -114,7 +114,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
               FocusedScrollScaffold(
                 title: Text(t.screens.switchProfile),
                 automaticallyImplyLeading: !widget.requireSelection,
-                onBackPressed: widget.requireSelection ? () => SystemNavigator.pop() : null,
+                onBackPressed: widget.requireSelection ? () => unawaited(AppExitService.requestExit()) : null,
                 slivers: [
                   if (view.profiles.isEmpty)
                     SliverFillRemaining(

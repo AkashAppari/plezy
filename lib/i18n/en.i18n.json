@@ -52,9 +52,6 @@
     "mute": "Mute",
     "ok": "OK",
     "reconnect": "Reconnect",
-    "exitConfirmTitle": "Exit app?",
-    "exitConfirmMessage": "Are you sure you want to exit?",
-    "dontAskAgain": "Don't ask again",
     "exit": "Exit",
     "viewAll": "View All",
     "checkingNetwork": "Checking network...",
@@ -64,7 +61,8 @@
     "startingOfflineMode": "Starting offline mode...",
     "loading": "Loading...",
     "fullscreen": "Fullscreen",
-    "exitFullscreen": "Exit fullscreen"
+    "exitFullscreen": "Exit fullscreen",
+    "pressBackAgainToExit": "Press back again to exit"
   },
   "screens": {
     "licenses": "Licenses",
@@ -252,8 +250,6 @@
     "tunneledPlaybackDescription": "Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content",
     "requireProfileSelectionOnOpen": "Ask for profile on app open",
     "requireProfileSelectionOnOpenDescription": "Show profile selection every time the app is opened",
-    "confirmExitOnBack": "Confirm before exiting",
-    "confirmExitOnBackDescription": "Show a confirmation dialog when pressing back to exit the app",
     "forceTvMode": "Force TV mode",
     "forceTvModeDescription": "Use the TV layout regardless of auto-detection. Useful on Android TV devices that don't report the leanback feature. Restarts the app on change.",
     "startInFullscreen": "Start in fullscreen",
