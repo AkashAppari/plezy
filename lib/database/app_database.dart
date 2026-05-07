@@ -129,14 +129,20 @@ class AppDatabase extends _$AppDatabase {
           );
 
           await m.createTable(connections);
-          await m.create(idxConnectionsKind);
+          await _ignoreAlreadyExists('Index idx_connections_kind', () => m.create(idxConnectionsKind));
 
           await m.createTable(profiles);
-          await m.create(idxProfilesKind);
+          await _ignoreAlreadyExists('Index idx_profiles_kind', () => m.create(idxProfilesKind));
 
           await m.createTable(profileConnections);
-          await m.create(idxProfileConnectionsConnectionId);
-          await m.create(idxProfileConnectionsProfileId);
+          await _ignoreAlreadyExists(
+            'Index idx_profile_connections_connection_id',
+            () => m.create(idxProfileConnectionsConnectionId),
+          );
+          await _ignoreAlreadyExists(
+            'Index idx_profile_connections_profile_id',
+            () => m.create(idxProfileConnectionsProfileId),
+          );
 
           await _ignoreAlreadyExists('DownloadOwners table', () => m.createTable(downloadOwners));
           await _ignoreAlreadyExists('Index idx_download_owners_profile', () => m.create(idxDownloadOwnersProfile));
@@ -190,7 +196,10 @@ class AppDatabase extends _$AppDatabase {
               )
           ''');
 
-          await m.create(idxOfflineWatchProgressServer);
+          await _ignoreAlreadyExists(
+            'Index idx_offline_watch_progress_server',
+            () => m.create(idxOfflineWatchProgressServer),
+          );
           await _ignoreAlreadyExists('Index idx_sync_rules_profile', () => m.create(idxSyncRulesProfile));
           await _ignoreAlreadyExists(
             'Index idx_offline_watch_progress_profile',
