@@ -11,6 +11,10 @@ class MediaServerTimeouts {
   /// while Plex wakes idle disks, but should not block forever.
   static const homeHubAttemptTimeouts = [Duration(seconds: 10), Duration(seconds: 5), Duration(milliseconds: 2500)];
 
+  /// Retry budget for per-library home hub rows (`/hubs/sections/{id}`). These
+  /// can be slower than the top-level home hub call on remote Plex servers.
+  static const libraryHubAttemptTimeouts = [Duration(seconds: 10), Duration(seconds: 8), Duration(seconds: 5)];
+
   /// Timeout for probing a cached/preferred endpoint before falling back to
   /// the full candidate race (used in [PlexServer.findBestWorkingConnection]).
   static const preferredEndpointProbe = Duration(milliseconds: 1500);

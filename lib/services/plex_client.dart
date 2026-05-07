@@ -1542,10 +1542,16 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
   /// Returns a list of recommendation hubs like "Trending Movies", "Top in Genre", etc.
   Future<List<PlexHubDto>> _getLibraryHubs(String sectionId, {int limit = 10}) async {
     try {
-      final response = await _getWithFailover(
-        '/hubs/sections/$sectionId',
-        queryParameters: {'count': limit, 'includeGuids': 1},
-        allowEndpointFailover: false,
+      final response = await retryTransientMediaServerCall(
+        operation: 'Plex library hubs',
+        attemptTimeouts: MediaServerTimeouts.libraryHubAttemptTimeouts,
+        call: (timeout, abort) => _getWithFailover(
+          '/hubs/sections/$sectionId',
+          queryParameters: {'count': limit, 'includeGuids': 1},
+          timeout: timeout,
+          abort: abort,
+          allowEndpointFailover: false,
+        ),
       );
       final sid = serverId;
       final sname = serverName;

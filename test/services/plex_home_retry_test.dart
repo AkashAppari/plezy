@@ -94,6 +94,42 @@ void main() {
       expect(client.config.baseUrl, primary);
       expect(httpClient.requests.map((r) => r.url.origin), everyElement(primary));
     });
+
+    test('fetchLibraryHubs retries transient failures without switching Plex endpoints', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      addTearDown(db.close);
+
+      const primary = 'http://primary:32400';
+      const fallback = 'http://fallback:32400';
+      final httpClient = _SequenceClient([
+        (_) async => throw TimeoutException('queued behind image downloads'),
+        (_) async => _jsonResponse(_globalHubsPayload()),
+      ]);
+      final client = PlexClient.forTesting(
+        config: PlexConfig(
+          baseUrl: primary,
+          token: 'token',
+          clientIdentifier: 'client-id',
+          product: 'Plezy',
+          version: 'test',
+        ),
+        serverId: 'server-id',
+        serverName: 'Server',
+        httpClient: httpClient,
+        prioritizedEndpoints: const [primary, fallback],
+      );
+      addTearDown(client.close);
+
+      final hubs = await client.fetchLibraryHubs('4', libraryName: 'Movies', limit: 12);
+
+      expect(hubs, hasLength(1));
+      expect(client.config.baseUrl, primary);
+      expect(httpClient.requests, hasLength(2));
+      expect(httpClient.requests.map((r) => r.url.origin), everyElement(primary));
+      expect(httpClient.requests.map((r) => r.url.path), everyElement('/hubs/sections/4'));
+      expect(httpClient.requests.map((r) => r.url.queryParameters['count']), everyElement('12'));
+    });
   });
 }
 

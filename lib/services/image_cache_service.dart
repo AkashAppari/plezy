@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 
 import '../utils/media_server_http_client.dart';
 
+final _artworkHttpClient = MediaServerHttpClient(usePlexApiClient: true);
+
 /// Shared cache manager for media-server image artwork. Used for both Plex and
 /// Jellyfin artwork (the class name predates Jellyfin support — it's
 /// backend-neutral).
@@ -13,7 +15,8 @@ import '../utils/media_server_http_client.dart';
 /// Uses the platform-native HTTP client so iOS/macOS (CupertinoClient) and
 /// Android (CronetClient) benefit from HTTP/2 connection multiplexing —
 /// many concurrent image downloads over a single connection instead of
-/// being limited to a handful of HTTP/1.1 connections.
+/// being limited to a handful of HTTP/1.1 connections. On Linux this uses the
+/// same finite-connection tuning as Plex API traffic.
 class PlexImageCacheManager extends ce_cache.DefaultCacheManager {
   static final PlexImageCacheManager instance = PlexImageCacheManager._();
 
@@ -21,7 +24,7 @@ class PlexImageCacheManager extends ce_cache.DefaultCacheManager {
     : super(
         stalePeriod: const Duration(days: 14),
         maxNrOfCacheObjects: 3000,
-        httpClientFactory: () => _SharedHttpClient(httpClient.inner),
+        httpClientFactory: () => _SharedHttpClient(_artworkHttpClient.inner),
       );
 }
 
