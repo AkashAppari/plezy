@@ -47,6 +47,9 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
       }
 
       final didSwitch = await player!.setVideoFrameRate(fps, durationMs, extraDelayMs: delaySec * 1000);
+      if (didSwitch) {
+        await _refreshAndroidMpvDecoderAfterFrameRateSwitch();
+      }
 
       if (mounted && player != null) {
         await player!.play();
@@ -63,6 +66,20 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
       appLogger.d('Frame rate matching: Set display to ${fps}fps (duration: ${durationMs}ms, switched=$didSwitch)');
     } catch (e) {
       appLogger.w('Failed to apply frame rate matching', error: e);
+    }
+  }
+
+  Future<void> _refreshAndroidMpvDecoderAfterFrameRateSwitch() async {
+    final p = player;
+    if (!mounted || !Platform.isAndroid || p == null || p is PlayerAndroid) return;
+
+    final positionMs = p.state.position.inMilliseconds;
+    final targetMs = positionMs <= 0 ? 1 : positionMs;
+    try {
+      await p.command(['seek', (targetMs / 1000.0).toStringAsFixed(3), 'absolute+exact']);
+      appLogger.d('Frame rate matching: refreshed Android MPV decoder at ${targetMs}ms');
+    } catch (e) {
+      appLogger.w('Failed to refresh Android MPV decoder after frame rate switch', error: e);
     }
   }
 
