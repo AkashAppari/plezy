@@ -150,6 +150,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   override func updateEDRMode(sigPeak: Double) {
     guard let videoLayer else { return }
 
+    let hdrEnabled = self.hdrEnabled
     var currentHeadroom: CGFloat = 1.0
     var potentialHeadroom: CGFloat = 1.0
     if let screen = window?.screen ?? NSScreen.main {

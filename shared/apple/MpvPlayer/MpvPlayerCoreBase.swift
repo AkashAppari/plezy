@@ -42,8 +42,18 @@ class MpvPlayerCoreBase: NSObject {
   var isDisposing = false
   var isPipActive = false
   var isBackgrounded = false
-  var hdrEnabled = true
-  var lastSigPeak = 0.0
+  private var cachedHDREnabled = true
+  private var cachedLastSigPeak = 0.0
+  var hdrEnabled: Bool {
+    cacheLock.lock()
+    defer { cacheLock.unlock() }
+    return cachedHDREnabled
+  }
+  var lastSigPeak: Double {
+    cacheLock.lock()
+    defer { cacheLock.unlock() }
+    return cachedLastSigPeak
+  }
 
   /// Properties that must still flow to Dart while backgrounded (state-critical).
   private static let criticalProperties: Set<String> = [
@@ -149,7 +159,10 @@ class MpvPlayerCoreBase: NSObject {
   ) {
     #if targetEnvironment(simulator)
       if name == "hwdec" {
-        completion(.success(()))
+        if value != "no" {
+          print("[MpvPlayerCore] Simulator does not support hardware decoding; forcing hwdec=no")
+        }
+        setRawStringPropertyAsync(name, value: "no", completion: completion)
         return
       }
     #endif
@@ -195,8 +208,8 @@ class MpvPlayerCoreBase: NSObject {
 
   func setHDREnabled(_ enabled: Bool, completion: ((Result<Void, Error>) -> Void)? = nil) {
     cacheLock.lock()
-    hdrEnabled = enabled
-    let sigPeak = lastSigPeak
+    cachedHDREnabled = enabled
+    let sigPeak = cachedLastSigPeak
     cacheLock.unlock()
 
     print("[MpvPlayerCore] HDR enabled: \(enabled)")
@@ -361,16 +374,18 @@ class MpvPlayerCoreBase: NSObject {
   }
 
   private func updateVideoGravityIfNeeded(name: String, value: String) {
+    let gravity: AVLayerVideoGravity
+    cacheLock.lock()
     switch name {
     case "panscan":
       currentPanscan = Double(value) ?? 0
     case "video-aspect-override":
       aspectOverrideActive = value != "no" && value != "-1" && value != "0"
     default:
+      cacheLock.unlock()
       return
     }
 
-    let gravity: AVLayerVideoGravity
     if aspectOverrideActive {
       gravity = .resize
     } else if currentPanscan > 0 {
@@ -378,6 +393,7 @@ class MpvPlayerCoreBase: NSObject {
     } else {
       gravity = .resizeAspect
     }
+    cacheLock.unlock()
 
     DispatchQueue.main.async { [weak self] in
       self?.videoLayer?.videoGravity = gravity
@@ -599,7 +615,7 @@ class MpvPlayerCoreBase: NSObject {
 
     if name == "video-params/sig-peak", let sigPeak = value as? Double {
       cacheLock.lock()
-      lastSigPeak = sigPeak
+      cachedLastSigPeak = sigPeak
       cacheLock.unlock()
       DispatchQueue.main.async {
         self.updateEDRMode(sigPeak: sigPeak)

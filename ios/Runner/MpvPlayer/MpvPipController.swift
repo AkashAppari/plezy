@@ -27,13 +27,11 @@ import UIKit
     func setup(with layer: CALayer, containerView: UIView) {}
     func setAutoStart(_ enabled: Bool) {}
     func warmLayer(currentTime: Double, isPlaying: Bool) {}
-    func pushBlankFrame(width: Int32 = 1920, height: Int32 = 1080) {}
     func startPip(waitForFrame: Bool = true, completion: @escaping (Bool) -> Void) {
       completion(false)
     }
     func stopPip() {}
     func invalidatePlaybackState() {}
-    func flushLayer() {}
     func syncTimebase(currentTime: Double, isPlaying: Bool) {}
     func teardown() {}
   }
@@ -110,11 +108,6 @@ import UIKit
     func setAutoStart(_ enabled: Bool) {
       guard #available(iOS 14.2, *) else { return }
       pipController?.canStartPictureInPictureAutomaticallyFromInline = enabled
-    }
-
-    /// vo_avfoundation renders into the inline display layer, so PiP reuses
-    /// the current video frame instead of pushing synthetic buffers here.
-    func pushBlankFrame(width: Int32 = 1920, height: Int32 = 1080) {
     }
 
     /// Sync the layer's controlTimebase with the actual playback position.
@@ -208,9 +201,6 @@ import UIKit
       delegateHelper = nil
     }
 
-    /// PiP shares the inline display layer, so cleanup must not flush it.
-    func flushLayer() {
-    }
   }
 
   // MARK: - PiP Delegate Helper (iOS 15+)

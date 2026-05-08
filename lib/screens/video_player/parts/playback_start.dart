@@ -335,7 +335,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           if (_autoPipEnabled) {
             PipService.onAutoPipEntering = () {
               _setAndroidAutoPipTransitionInFlight(true, reason: 'native_auto_pip_entering');
-              _videoFilterManager?.enterPipMode();
+              _preparePipFiltersForEntry();
             };
             if (player!.state.playing) {
               unawaited(_videoPIPManager!.updateAutoPipState(isPlaying: true));

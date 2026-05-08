@@ -1,55 +1,6 @@
 part of '../../video_player_screen.dart';
 
-extension _VideoPlayerPipShaderMethods on VideoPlayerScreenState {
-  /// Initialize VideoFilterManager and VideoPIPManager if not already set up.
-  /// Called from both live TV and VOD playback paths.
-  Future<void> _initVideoFilterAndPip() async {
-    if (player == null || _videoFilterManager != null) return;
-    final settings = await SettingsService.getInstance();
-    _videoFilterManager = VideoFilterManager(
-      player: player!,
-      availableVersions: _availableVersions,
-      selectedMediaIndex: widget.selectedMediaIndex,
-      initialBoxFitMode: settings.read(SettingsService.defaultBoxFitMode),
-      onBoxFitModeChanged: (mode) => settings.write(SettingsService.defaultBoxFitMode, mode),
-    );
-    _videoFilterManager!.updateVideoFilter();
-
-    _videoPIPManager = VideoPIPManager(player: player!);
-    _videoPIPManager!.onBeforeEnterPip = () {
-      _videoFilterManager?.enterPipMode();
-    };
-    _videoPIPManager!.isPipActive.addListener(_onPipStateChanged);
-  }
-
-  Future<void> _togglePIPMode() async {
-    final result = await _videoPIPManager?.togglePIP();
-    if (result != null && !result.$1 && mounted) {
-      showErrorSnackBar(context, result.$2 ?? t.videoControls.pipFailed);
-    }
-  }
-
-  /// Handle PiP state changes to restore video scaling when exiting PiP
-  void _onPipStateChanged() {
-    final isInPip = _videoPIPManager?.isPipActive.value ?? PipService().isPipActive.value;
-    _setAndroidAutoPipTransitionInFlight(false, reason: 'pip_state_changed');
-    _recordLifecycleState('pip_state_changed', action: isInPip ? 'entered' : 'exited');
-
-    if (_videoPIPManager == null || _videoFilterManager == null) return;
-
-    if (isInPip) {
-      _videoFilterManager!.enterPipMode();
-    } else {
-      final restoreAmbient = _videoFilterManager!.hadAmbientLightingBeforePip;
-      _videoFilterManager!.exitPipMode();
-      // Restore ambient lighting if it was active before PiP
-      if (restoreAmbient) {
-        _videoFilterManager!.clearPipAmbientLightingFlag();
-        _restoreAmbientLighting();
-      }
-    }
-  }
-
+extension _VideoPlayerShaderMethods on VideoPlayerScreenState {
   /// Apply the saved shader preset on playback start.
   /// Reads directly from SettingsService (synchronous SharedPreferences) to
   /// avoid a race with ShaderProvider's async initialization.

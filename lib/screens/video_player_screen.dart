@@ -85,7 +85,8 @@ part 'video_player/parts/errors.dart';
 part 'video_player/parts/lifecycle.dart';
 part 'video_player/parts/live_tv.dart';
 part 'video_player/parts/media_controls.dart';
-part 'video_player/parts/pip_shader.dart';
+part 'video_player/parts/pip.dart';
+part 'video_player/parts/shader.dart';
 part 'video_player/parts/playback_prompts.dart';
 part 'video_player/parts/playback_services.dart';
 part 'video_player/parts/playback_start.dart';
@@ -340,6 +341,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _hiddenForBackground = false;
   bool _autoPipEnabled = false;
   bool _androidAutoPipTransitionInFlight = false;
+  bool _pipFiltersPrepared = false;
   bool _resumeLiveTimelineOnResume = false;
   int _rewindOnResume = 0;
   Future<void> _lifecycleTransition = Future<void>.value();

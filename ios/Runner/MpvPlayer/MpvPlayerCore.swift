@@ -162,6 +162,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   override func updateEDRMode(sigPeak: Double) {
     guard let videoLayer else { return }
 
+    let hdrEnabled = self.hdrEnabled
     var edrHeadroom: CGFloat = 1.0
     #if os(iOS)
       if #available(iOS 17.0, *) {
