@@ -1,3 +1,4 @@
+import AVFoundation
 import AVKit
 import UIKit
 
@@ -22,11 +23,7 @@ import UIKit
     weak var delegate: MpvPipDelegate?
     var isPipActive: Bool { false }
     var autoStartEnabled: Bool { false }
-    var layerPointer: UnsafeMutableRawPointer {
-      // Return a dummy non-null pointer — layerPointer is handed to mpv for
-      // rendering into PiP, which never activates on tvOS.
-      UnsafeMutableRawPointer(bitPattern: 0x1)!
-    }
+    init(sampleBufferDisplayLayer: AVSampleBufferDisplayLayer) { super.init() }
     func setup(with layer: CALayer, containerView: UIView) {}
     func setAutoStart(_ enabled: Bool) {}
     func warmLayer(currentTime: Double, isPlaying: Bool) {}
@@ -67,18 +64,13 @@ import UIKit
     // MARK: - Properties
 
     private var pipController: AVPictureInPictureController?
-    private let sampleBufferLayer = AVSampleBufferDisplayLayer()
-    private var containerView: UIView?
+    private weak var sampleBufferLayer: AVSampleBufferDisplayLayer?
     weak var delegate: MpvPipDelegate?
-
-    /// Pointer to the sample buffer layer for passing to mpv as `wid`
-    var layerPointer: UnsafeMutableRawPointer {
-      Unmanaged.passUnretained(sampleBufferLayer).toOpaque()
-    }
 
     // MARK: - Initialization
 
-    override init() {
+    init(sampleBufferDisplayLayer: AVSampleBufferDisplayLayer) {
+      self.sampleBufferLayer = sampleBufferDisplayLayer
       super.init()
       setup()
     }
@@ -93,18 +85,6 @@ import UIKit
         print("[MpvPipController] Failed to configure audio session: \(error)")
       }
 
-      // The sample buffer layer must be in a visible view hierarchy for
-      // isPictureInPicturePossible to become true.
-      if let window = ExternalDisplayManager.mainApplicationWindow() {
-        let view = UIView(frame: window.bounds)
-        view.clipsToBounds = true
-        view.isUserInteractionEnabled = false
-        sampleBufferLayer.frame = view.bounds
-        view.layer.addSublayer(sampleBufferLayer)
-        window.addSubview(view)
-        containerView = view
-      }
-
       createPipController()
     }
 
@@ -112,7 +92,7 @@ import UIKit
     private var delegateHelper: AnyObject?
 
     private func createPipController() {
-      guard #available(iOS 15.0, *) else { return }
+      guard #available(iOS 15.0, *), let sampleBufferLayer else { return }
       let helper = PipDelegateHelper(controller: self)
       let contentSource = AVPictureInPictureController.ContentSource(
         sampleBufferDisplayLayer: sampleBufferLayer,
@@ -132,82 +112,23 @@ import UIKit
       pipController?.canStartPictureInPictureAutomaticallyFromInline = enabled
     }
 
-    /// Push a black frame to the sample buffer layer so PiP has content
-    /// to display immediately (before vo_pip decodes the first real frame).
+    /// vo_avfoundation renders into the inline display layer, so PiP reuses
+    /// the current video frame instead of pushing synthetic buffers here.
     func pushBlankFrame(width: Int32 = 1920, height: Int32 = 1080) {
-      var pixelBuffer: CVPixelBuffer?
-      let attrs: [String: Any] = [
-        kCVPixelBufferIOSurfacePropertiesKey as String: [:]
-      ]
-      let status = CVPixelBufferCreate(
-        kCFAllocatorDefault, Int(width), Int(height),
-        kCVPixelFormatType_32BGRA, attrs as CFDictionary, &pixelBuffer
-      )
-      guard status == kCVReturnSuccess, let pb = pixelBuffer else { return }
-
-      // Fill with black
-      CVPixelBufferLockBaseAddress(pb, [])
-      if let base = CVPixelBufferGetBaseAddress(pb) {
-        memset(base, 0, CVPixelBufferGetDataSize(pb))
-      }
-      CVPixelBufferUnlockBaseAddress(pb, [])
-
-      // Use current timebase time for PTS (if available) so the frame isn't stale
-      let pts: CMTime
-      if let tb = sampleBufferLayer.controlTimebase {
-        pts = CMTimebaseGetTime(tb)
-      } else {
-        pts = CMTime(value: 0, timescale: 30)
-      }
-
-      var timing = CMSampleTimingInfo(
-        duration: CMTime(value: 1, timescale: 30),
-        presentationTimeStamp: pts,
-        decodeTimeStamp: .invalid
-      )
-
-      // Create format description and sample buffer
-      var formatDesc: CMVideoFormatDescription?
-      CMVideoFormatDescriptionCreateForImageBuffer(
-        allocator: kCFAllocatorDefault,
-        imageBuffer: pb,
-        formatDescriptionOut: &formatDesc
-      )
-      guard let fmt = formatDesc else { return }
-
-      var sampleBuffer: CMSampleBuffer?
-      CMSampleBufferCreateReadyWithImageBuffer(
-        allocator: kCFAllocatorDefault,
-        imageBuffer: pb,
-        formatDescription: fmt,
-        sampleTiming: &timing,
-        sampleBufferOut: &sampleBuffer
-      )
-      guard let sb = sampleBuffer else { return }
-
-      // Set DisplayImmediately so it shows regardless of timebase timing
-      if let attachments = CMSampleBufferGetSampleAttachmentsArray(
-        sb, createIfNecessary: true) as? [NSMutableDictionary],
-        let dict = attachments.first
-      {
-        dict[kCMSampleAttachmentKey_DisplayImmediately] = true
-      }
-
-      sampleBufferLayer.enqueue(sb)
     }
 
     /// Sync the layer's controlTimebase with the actual playback position.
     /// This makes the PiP progress bar show the correct time.
     func syncTimebase(currentTime: Double, isPlaying: Bool) {
-      guard let timebase = sampleBufferLayer.controlTimebase else { return }
+      guard let timebase = sampleBufferLayer?.controlTimebase else { return }
       let cmTime = CMTime(seconds: currentTime, preferredTimescale: 1000)
       CMTimebaseSetTime(timebase, time: cmTime)
       CMTimebaseSetRate(timebase, rate: isPlaying ? 1.0 : 0.0)
     }
 
-    /// Ensure the layer has a timebase and blank frame so the system considers
-    /// PiP possible (required for canStartPictureInPictureAutomaticallyFromInline).
+    /// Ensure the layer has a timebase so the PiP progress UI can follow mpv.
     func warmLayer(currentTime: Double, isPlaying: Bool) {
+      guard let sampleBufferLayer else { return }
       if sampleBufferLayer.controlTimebase == nil {
         var timebase: CMTimebase?
         CMTimebaseCreateWithSourceClock(
@@ -220,7 +141,6 @@ import UIKit
         }
       }
       syncTimebase(currentTime: currentTime, isPlaying: isPlaying)
-      pushBlankFrame()
     }
 
     // MARK: - Public API
@@ -241,19 +161,19 @@ import UIKit
       var attempts = 0
       func tryStart() {
         let possible = pipController.isPictureInPicturePossible
-        let hasTimebase = sampleBufferLayer.controlTimebase != nil
+        let hasTimebase = self.sampleBufferLayer?.controlTimebase != nil
 
         let hasFrame: Bool
         if !waitForFrame {
           hasFrame = true  // Skip frame check for auto-PiP
         } else if #available(iOS 17.4, *) {
-          hasFrame = sampleBufferLayer.isReadyForDisplay
+          hasFrame = self.sampleBufferLayer?.isReadyForDisplay ?? false
         } else {
           hasFrame = true
         }
 
         if possible && hasTimebase && hasFrame {
-          print("[MpvPipController] vo_pip ready after \(attempts) retries, starting PiP")
+          print("[MpvPipController] vo_avfoundation ready after \(attempts) retries, starting PiP")
           pipController.startPictureInPicture()
           completion(true)
         } else if attempts < 40 {
@@ -278,9 +198,7 @@ import UIKit
       pipController?.invalidatePlaybackState()
     }
 
-    /// Fully tear down PiP — removes the container view from the window and
-    /// destroys the AVPictureInPictureController so the system can no longer
-    /// trigger auto-PiP after the player is disposed.
+    /// Fully tear down PiP without touching the shared inline display layer.
     func teardown() {
       pipController?.stopPictureInPicture()
       if #available(iOS 14.2, *) {
@@ -288,16 +206,10 @@ import UIKit
       }
       pipController = nil
       delegateHelper = nil
-      sampleBufferLayer.flushAndRemoveImage()
-      sampleBufferLayer.controlTimebase = nil
-      sampleBufferLayer.removeFromSuperlayer()
-      containerView?.removeFromSuperview()
-      containerView = nil
     }
 
-    /// Flush enqueued sample buffers from the layer to free video frame memory
+    /// PiP shares the inline display layer, so cleanup must not flush it.
     func flushLayer() {
-      sampleBufferLayer.flushAndRemoveImage()
     }
   }
 

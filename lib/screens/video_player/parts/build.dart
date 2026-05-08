@@ -212,7 +212,9 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         onLiveSeek: _captureBuffer != null ? _seekLivePosition : null,
                         onJumpToLive: _captureBuffer != null && !_isAtLiveEdge ? _jumpToLiveEdge : null,
                         isAmbientLightingEnabled: _ambientLightingService?.isEnabled ?? false,
-                        onToggleAmbientLighting: _toggleAmbientLighting,
+                        onToggleAmbientLighting: _ambientLightingService?.isSupported == true
+                            ? _toggleAmbientLighting
+                            : null,
                         toastController: _toastController,
                       ),
                     );

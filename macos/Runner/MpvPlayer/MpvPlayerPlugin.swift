@@ -158,8 +158,8 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     }
   }
 
-  /// Enter PiP by moving the Metal rendering layer to a PiP window.
-  /// No VO switching — mpv keeps rendering to the same Metal layer.
+  /// Enter PiP by moving the AVFoundation video layer to a PiP window.
+  /// No VO switching — mpv keeps rendering to the same layer.
   private func enterPip(manual: Bool, result: FlutterResult? = nil) {
     guard let playerCore = playerCore else {
       result?([
@@ -167,7 +167,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       ])
       return
     }
-    guard let metalLayer = playerCore.videoLayer else {
+    guard let videoLayer = playerCore.videoLayer else {
       result?(["success": false, "errorCode": "failed", "errorMessage": "No video layer"])
       return
     }
@@ -191,7 +191,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     enteredPipViaAuto = !manual
     playerCore.isPipActive = true
 
-    pip.startPip(metalLayer: metalLayer, window: window, aspectRatio: aspectRatio)
+    pip.startPip(videoLayer: videoLayer, window: window, aspectRatio: aspectRatio)
     pipChannel?.invokeMethod("onPipChanged", arguments: true)
     result?(["success": true])
   }
@@ -353,11 +353,11 @@ extension MpvPlayerPlugin: MpvPipDelegate {
     playerCore?.isPipActive = false
     enteredPipViaAuto = false
 
-    // Detach the Metal layer from the PiP wrapper view
+    // Detach the video layer from the PiP wrapper view
     pipController?.detachLayer()
 
-    // Re-attach the Metal layer to the main window
-    playerCore?.reattachMetalLayer()
+    // Re-attach the video layer to the main window
+    playerCore?.reattachVideoLayer()
 
     // Force a redraw if paused (prevents black frame after PiP exit)
     if playerCore?.isPaused == true {

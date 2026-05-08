@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import '../models/shader_preset.dart';
 import '../mpv/player/player.dart';
 import '../utils/app_logger.dart';
@@ -20,8 +22,10 @@ class ShaderService {
 
   ShaderPreset get currentPreset => _currentPreset;
 
+  static bool get isPlatformSupported => !Platform.isIOS && !Platform.isMacOS;
+
   /// Check if the player is MPV (shaders are MPV-only)
-  bool get isSupported => _player.playerType == 'mpv';
+  bool get isSupported => _player.playerType == 'mpv' && isPlatformSupported;
 
   /// Apply a shader preset to the video player.
   ///

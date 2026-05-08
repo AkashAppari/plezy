@@ -96,9 +96,10 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
 
   // MARK: - PiP
 
-  private func ensurePipController() -> MpvPipController {
+  private func ensurePipController() -> MpvPipController? {
     if let existing = pipController { return existing }
-    let controller = MpvPipController()
+    guard let layer = playerCore?.sampleBufferDisplayLayer else { return nil }
+    let controller = MpvPipController(sampleBufferDisplayLayer: layer)
     controller.delegate = self
     pipController = controller
     return controller
@@ -158,7 +159,10 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
         if let args = call.arguments as? [String: Any], let ready = args["ready"] as? Bool {
           self.autoPipEnabled = ready
           if ready {
-            let pip = self.ensurePipController()
+            guard let pip = self.ensurePipController() else {
+              result(nil)
+              return
+            }
             pip.setAutoStart(true)
             // Warm the layer so the system considers PiP possible
             if let pc = self.playerCore {
@@ -175,16 +179,14 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     }
   }
 
-  /// Switch to PiP VO and prepare the sample buffer layer for PiP display.
+  /// Prepare the shared AVFoundation display layer for PiP display.
   /// Returns the MpvPipController on success, nil on failure.
   @discardableResult
-  private func switchToPipAndPrepare() -> MpvPipController? {
+  private func preparePip() -> MpvPipController? {
     guard let playerCore = playerCore else { return nil }
-    let pip = ensurePipController()
-    guard playerCore.switchToPipVO(layerPtr: pip.layerPointer) else { return nil }
+    guard let pip = ensurePipController() else { return nil }
     pendingInlineRestoreAfterPip = false
     playerCore.isPipStarting = true
-    pip.pushBlankFrame()
     pip.syncTimebase(currentTime: playerCore.timePos, isPlaying: !playerCore.isPaused)
     pip.invalidatePlaybackState()
     return pip
@@ -205,10 +207,10 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       ])
       return
     }
-    guard let pip = switchToPipAndPrepare() else {
+    guard let pip = preparePip() else {
       result?([
-        "success": false, "errorCode": "vo_switch_failed",
-        "errorMessage": "Failed to switch VO",
+        "success": false, "errorCode": "pip_prepare_failed",
+        "errorMessage": "Failed to prepare PiP",
       ])
       return
     }
@@ -232,15 +234,13 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     playerCore?.isPipActive = false
     isManualPipRequest = false
     stopPipTimebaseSync()
-    pipController?.flushLayer()
-    let restoredInlineVO = playerCore?.switchToGpuNextVO() ?? false
     if pause {
       playerCore?.setPropertyAsync("pause", value: "yes") { [weak self] _ in
         self?.pipController?.invalidatePlaybackState()
         self?.syncPipTimebase()
       }
     }
-    pendingInlineRestoreAfterPip = restoredInlineVO
+    pendingInlineRestoreAfterPip = true
     if pendingInlineRestoreAfterPip {
       if isSceneActive {
         restoreInlinePlayerAfterPip()
@@ -393,11 +393,11 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
 extension MpvPlayerPlugin: MpvPipDelegate {
 
   func pipWillStart() {
-    // If PiP was system-initiated (not via our enterPip), switch VO now
+    // If PiP was system-initiated (not via our enterPip), prepare the shared layer now.
     guard let playerCore = playerCore, !playerCore.isPipStarting else { return }
-    print("[MpvPlayerPlugin] System-initiated PiP detected, switching VO")
-    if switchToPipAndPrepare() == nil {
-      print("[MpvPlayerPlugin] VO switch failed for system-initiated PiP")
+    print("[MpvPlayerPlugin] System-initiated PiP detected, preparing shared layer")
+    if preparePip() == nil {
+      print("[MpvPlayerPlugin] PiP preparation failed for system-initiated PiP")
       pipController?.stopPip()
     }
   }

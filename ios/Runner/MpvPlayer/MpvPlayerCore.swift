@@ -1,7 +1,7 @@
-import Libmpv
+import AVFoundation
 import UIKit
 
-/// Core MPV player using Metal rendering for iOS.
+/// Core MPV player using AVFoundation sample-buffer rendering for iOS/tvOS.
 class MpvPlayerCore: MpvPlayerCoreBase {
 
   private var containerView: UIView?
@@ -23,15 +23,15 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     container.backgroundColor = .clear
     container.isUserInteractionEnabled = false
 
-    let layer = MpvMetalLayer()
+    let layer = MpvVideoLayer()
     layer.frame = container.bounds
     layer.contentsScale = window.screen.nativeScale
-    layer.framebufferOnly = true
     layer.backgroundColor = UIColor.black.cgColor
+    layer.videoGravity = .resizeAspect
 
     container.layer.addSublayer(layer)
     containerView = container
-    metalLayer = layer
+    videoLayer = layer
 
     window.insertSubview(container, at: 0)
 
@@ -39,7 +39,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       print("[MpvPlayerCore] Failed to setup MPV")
       layer.removeFromSuperlayer()
       container.removeFromSuperview()
-      metalLayer = nil
+      videoLayer = nil
       containerView = nil
       return false
     }
@@ -54,40 +54,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     return true
   }
 
-  func switchToPipVO(layerPtr: UnsafeMutableRawPointer) -> Bool {
-    guard mpv != nil else { return false }
-
-    print("[MpvPlayerCore] Switching to pip VO for PiP")
-
-    metalLayer?.removeFromSuperlayer()
-
-    setProperty("vid", value: "no")
-    setInt64PropertyAsync("wid", value: Int64(Int(bitPattern: layerPtr))) { _ in }
-    setProperty("vo", value: "pip")
-    setProperty("vid", value: "auto")
-
-    print("[MpvPlayerCore] Switched to pip VO successfully")
-    return true
-  }
-
-  func switchToGpuNextVO() -> Bool {
-    guard mpv != nil, let metalLayer else { return false }
-
-    print("[MpvPlayerCore] Switching back to gpu-next VO")
-
-    setProperty("vid", value: "no")
-    setInt64PropertyAsync("wid", value: Int64(Int(bitPattern: Unmanaged.passUnretained(metalLayer).toOpaque()))) { _ in
-    }
-    applyGpuNextOptions()
-    setProperty("vid", value: "auto")
-
-    if metalLayer.superlayer == nil, let containerView {
-      containerView.layer.addSublayer(metalLayer)
-    }
-
-    print("[MpvPlayerCore] Switched back to gpu-next VO successfully")
-    return true
-  }
+  var sampleBufferDisplayLayer: MpvVideoLayer? { videoLayer }
 
   func setVisible(_ visible: Bool) {
     guard let containerView else { return }
@@ -99,28 +66,24 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   func updateFrame(_ frame: CGRect? = nil) {
-    guard let metalLayer, let containerView else { return }
+    guard let videoLayer, let containerView else { return }
 
     if let frame {
       containerView.frame = frame
-      metalLayer.frame = containerView.bounds
+      videoLayer.frame = containerView.bounds
     } else if let superview = containerView.superview {
       containerView.frame = superview.bounds
-      metalLayer.frame = containerView.bounds
+      videoLayer.frame = containerView.bounds
     } else if let window {
       containerView.frame = window.bounds
-      metalLayer.frame = containerView.bounds
+      videoLayer.frame = containerView.bounds
     }
 
     mainBlankView?.frame = window?.bounds ?? .zero
 
     let screen = containerView.window?.screen ?? window?.screen ?? UIScreen.main
     let scale = screen.nativeScale > 0 ? screen.nativeScale : screen.scale
-    metalLayer.contentsScale = scale
-    metalLayer.drawableSize = CGSize(
-      width: metalLayer.frame.width * scale,
-      height: metalLayer.frame.height * scale
-    )
+    videoLayer.contentsScale = scale
   }
 
   func externalDisplayDidChange() {
@@ -191,20 +154,19 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     mainBlankView = blankView
   }
 
-  /// Nudge mpv to present the current paused frame after switching back from PiP.
+  /// Nudge mpv to present the current paused frame after leaving PiP.
   func forceDraw() {
     command(["seek", "0", "relative+exact"])
   }
 
   override func updateEDRMode(sigPeak: Double) {
-    guard let metalLayer else { return }
+    guard let videoLayer else { return }
 
     var edrHeadroom: CGFloat = 1.0
     #if os(iOS)
-      if #available(iOS 16.0, *) {
+      if #available(iOS 17.0, *) {
         edrHeadroom = containerView?.window?.screen.potentialEDRHeadroom ?? 1.0
-        metalLayer.wantsExtendedDynamicRangeContent =
-          hdrEnabled && sigPeak > 1.0 && edrHeadroom > 1.0
+        videoLayer.wantsExtendedDynamicRangeContent = hdrEnabled && sigPeak > 1.0 && edrHeadroom > 1.0
       }
     #endif
 
@@ -221,8 +183,8 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     #endif
     disposeSharedState(destroySynchronously: false)
 
-    metalLayer?.removeFromSuperlayer()
-    metalLayer = nil
+    videoLayer?.removeFromSuperlayer()
+    videoLayer = nil
     containerView?.removeFromSuperview()
     containerView = nil
     mainBlankView?.removeFromSuperview()

@@ -37,8 +37,9 @@ extension _VideoPlayerPipShaderMethods on VideoPlayerScreenState {
 
     if (_videoPIPManager == null || _videoFilterManager == null) return;
 
-    // Only handle exit - entry is handled by onBeforeEnterPip callback
-    if (!isInPip) {
+    if (isInPip) {
+      _videoFilterManager!.enterPipMode();
+    } else {
       final restoreAmbient = _videoFilterManager!.hadAmbientLightingBeforePip;
       _videoFilterManager!.exitPipMode();
       // Restore ambient lighting if it was active before PiP
