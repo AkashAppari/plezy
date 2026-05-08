@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -59,6 +60,14 @@ class _MenuAction {
   final Color? foregroundColor;
 
   _MenuAction({required this.value, required this.icon, required this.label, this.hoverColor, this.foregroundColor});
+}
+
+Color _destructiveMenuForeground(BuildContext context) {
+  final colorScheme = Theme.of(context).colorScheme;
+  if (colorScheme.brightness != Brightness.dark) return colorScheme.error;
+
+  final error = HSLColor.fromColor(colorScheme.error);
+  return error.withLightness(error.lightness < 0.72 ? 0.72 : error.lightness).toColor();
 }
 
 bool isAdminActionAllowedForMediaItem({
@@ -446,7 +455,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             icon: Symbols.delete_forever_rounded,
             label: t.mediaMenu.deleteFromServer,
             hoverColor: Theme.of(context).colorScheme.error,
-            foregroundColor: Theme.of(context).colorScheme.error,
+            foregroundColor: _destructiveMenuForeground(context),
           ),
         );
       }
@@ -478,11 +487,40 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         position = renderBox.localToGlobal(Offset.zero, ancestor: overlay);
       }
 
-      selected = await showDialog<String>(
+      selected = await showGeneralDialog<String>(
         context: context,
+        barrierDismissible: true,
+        barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
         barrierColor: Colors.transparent,
-        builder: (dialogContext) =>
+        transitionDuration: const Duration(milliseconds: 120),
+        pageBuilder: (dialogContext, _, _) =>
             _FocusablePopupMenu(actions: menuActions, position: position, focusFirstItem: openedFromKeyboard),
+        transitionBuilder: (dialogContext, animation, _, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          );
+          final screenSize = MediaQuery.sizeOf(dialogContext);
+          final alignment = Alignment(
+            screenSize.width <= 0 ? 0 : ((position.dx / screenSize.width) * 2 - 1).clamp(-1.0, 1.0).toDouble(),
+            screenSize.height <= 0 ? 0 : ((position.dy / screenSize.height) * 2 - 1).clamp(-1.0, 1.0).toDouble(),
+          );
+
+          return FadeTransition(
+            opacity: curved,
+            child: AnimatedBuilder(
+              animation: curved,
+              child: child,
+              builder: (context, child) => Transform.scale(
+                scale: 0.96 + curved.value * 0.04,
+                alignment: alignment,
+                transformHitTests: false,
+                child: child,
+              ),
+            ),
+          );
+        },
       );
     }
 
@@ -1741,28 +1779,21 @@ class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
     final screenSize = MediaQuery.sizeOf(context);
     const menuWidth = 220.0;
 
-    // Clamp menu position to stay within screen bounds
+    // Treat the requested origin as the menu center, then clamp to screen bounds.
     const edgePadding = 8.0;
-    final left = widget.position.dx.clamp(edgePadding, screenSize.width - menuWidth - edgePadding);
-
     final estimatedHeight = widget.actions.length * 48.0 + 16;
-    final spaceBelow = screenSize.height - widget.position.dy - edgePadding;
-    final spaceAbove = widget.position.dy - edgePadding;
+    final maxLeft = screenSize.width - menuWidth - edgePadding;
+    final left = (widget.position.dx - menuWidth / 2)
+        .clamp(edgePadding, maxLeft < edgePadding ? edgePadding : maxLeft)
+        .toDouble();
 
-    // Place menu above the click point if it doesn't fit below and there's more room above
-    final double top;
-    final double maxHeight;
-    if (estimatedHeight <= spaceBelow) {
-      top = widget.position.dy;
-      maxHeight = spaceBelow;
-    } else if (spaceAbove > spaceBelow) {
-      final menuHeight = estimatedHeight.clamp(0.0, spaceAbove);
-      top = widget.position.dy - menuHeight;
-      maxHeight = menuHeight;
-    } else {
-      top = widget.position.dy;
-      maxHeight = spaceBelow;
-    }
+    final availableHeight = screenSize.height - edgePadding * 2;
+    final menuHeight = availableHeight <= 0 ? 0.0 : estimatedHeight.clamp(0.0, availableHeight).toDouble();
+    final maxTop = screenSize.height - menuHeight - edgePadding;
+    final top = (widget.position.dy - menuHeight / 2)
+        .clamp(edgePadding, maxTop < edgePadding ? edgePadding : maxTop)
+        .toDouble();
+    final maxHeight = menuHeight;
 
     return FocusScope(
       // When opened via mouse, don't autofocus any item — let hover handle highlights.
@@ -1780,54 +1811,62 @@ class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
           }
           return KeyEventResult.ignored;
         },
-        child: Stack(
-          children: [
-            // Barrier to close menu when clicking outside
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: () => Navigator.pop(context),
-                behavior: HitTestBehavior.opaque,
-                child: const ColoredBox(color: Colors.transparent),
-              ),
-            ),
-            // Menu
-            Positioned(
-              left: left,
-              top: top,
-              child: Material(
-                elevation: 8,
-                color: Color.alphaBlend(
-                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
-                  Theme.of(context).colorScheme.surface,
+        child: Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (event) {
+            if ((event.buttons & kSecondaryMouseButton) != 0) {
+              Navigator.pop(context);
+            }
+          },
+          child: Stack(
+            children: [
+              // Barrier to close menu when clicking outside
+              Positioned.fill(
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  behavior: HitTestBehavior.opaque,
+                  child: const ColoredBox(color: Colors.transparent),
                 ),
-                borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                clipBehavior: Clip.antiAlias,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minWidth: menuWidth, maxWidth: menuWidth, maxHeight: maxHeight),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: widget.actions.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final action = entry.value;
-                        return FocusableListTile(
-                          key: ValueKey(action.value),
-                          focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
-                          leading: AppIcon(action.icon, fill: 1, size: 20),
-                          title: Text(action.label),
-                          onTap: () => Navigator.pop(context, action.value),
-                          hoverColor: action.hoverColor,
-                          textColor: action.foregroundColor,
-                          iconColor: action.foregroundColor,
-                        );
-                      }).toList(),
+              ),
+              // Menu
+              Positioned(
+                left: left,
+                top: top,
+                child: Material(
+                  elevation: 8,
+                  color: Color.alphaBlend(
+                    Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                    Theme.of(context).colorScheme.surface,
+                  ),
+                  borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                  clipBehavior: Clip.antiAlias,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minWidth: menuWidth, maxWidth: menuWidth, maxHeight: maxHeight),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: widget.actions.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final action = entry.value;
+                          return FocusableListTile(
+                            key: ValueKey(action.value),
+                            focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
+                            leading: AppIcon(action.icon, fill: 1, size: 20),
+                            title: Text(action.label),
+                            onTap: () => Navigator.pop(context, action.value),
+                            hoverColor: action.hoverColor,
+                            textColor: action.foregroundColor,
+                            iconColor: action.foregroundColor,
+                          );
+                        }).toList(),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
