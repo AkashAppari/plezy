@@ -201,13 +201,20 @@ abstract class MediaServerClient {
   Future<List<MediaItem>> fetchContinueWatching({int count = 20});
 
   /// Curated home-screen hubs across all libraries (Plex Discover; Jellyfin
-  /// synthesizes `Latest` + `Resume` + `NextUp`).
-  Future<List<MediaHub>> fetchGlobalHubs({int limit = 10});
+  /// synthesizes `Latest` plus optional `Resume` + `NextUp`).
+  Future<List<MediaHub>> fetchGlobalHubs({int limit = 10, bool includePlaybackHubs = true});
 
   /// Hubs scoped to a single library section. [libraryName] is baked into
   /// the title of synthetic hubs (Jellyfin) so per-library "Recently Added"
   /// / "Next Up" hubs aren't all identically named on the home screen.
-  Future<List<MediaHub>> fetchLibraryHubs(String libraryId, {required String libraryName, int limit = 10});
+  /// [includePlaybackHubs] lets surfaces that already render Continue
+  /// Watching skip duplicate playback rows.
+  Future<List<MediaHub>> fetchLibraryHubs(
+    String libraryId, {
+    required String libraryName,
+    int limit = 10,
+    bool includePlaybackHubs = true,
+  });
 
   /// "More like this" recommendations for [id].
   Future<List<MediaHub>> fetchRelatedHubs(String id, {int count = 10});

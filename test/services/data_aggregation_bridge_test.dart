@@ -1,8 +1,28 @@
+import 'dart:convert';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:plezy/connection/connection.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
+import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
+
+JellyfinConnection _conn() => JellyfinConnection(
+  id: 'srv-1/user-1',
+  baseUrl: 'https://jf.example.com',
+  serverName: 'Home',
+  serverMachineId: 'srv-1',
+  userId: 'user-1',
+  userName: 'edde',
+  accessToken: 'tok-abc',
+  deviceId: 'dev-xyz',
+  createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+);
+
+http.Response _json(Object body) => http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'});
 
 /// Smoke tests for the surviving cross-server aggregation surface on
 /// [DataAggregationService]. Single-server passthroughs were removed in
@@ -33,6 +53,63 @@ void main() {
     test('searchAcrossServers and getOnDeckFromAllServers return empty when no clients', () async {
       expect(await service.searchAcrossServers('hello'), isEmpty);
       expect(await service.getOnDeckFromAllServers(), isEmpty);
+    });
+
+    test('per-library hubs skip playback rows and fetch in bounded batches', () async {
+      final captured = <Uri>[];
+      var activeLatest = 0;
+      var maxActiveLatest = 0;
+
+      final client = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          captured.add(req.url);
+          if (req.url.path == '/Users/user-1/Views') {
+            return _json({
+              'Items': [
+                {'Id': 'lib-1', 'Name': 'Lib 1', 'CollectionType': 'movies'},
+                {'Id': 'lib-2', 'Name': 'Lib 2', 'CollectionType': 'movies'},
+                {'Id': 'lib-3', 'Name': 'Lib 3', 'CollectionType': 'tvshows'},
+                {'Id': 'lib-4', 'Name': 'Lib 4', 'CollectionType': 'tvshows'},
+              ],
+            });
+          }
+          if (req.url.path == '/Users/user-1/Items/Latest') {
+            activeLatest++;
+            if (activeLatest > maxActiveLatest) maxActiveLatest = activeLatest;
+            try {
+              await Future<void>.delayed(const Duration(milliseconds: 10));
+              final parentId = req.url.queryParameters['ParentId']!;
+              return _json({
+                'Items': [
+                  {'Id': 'item-$parentId', 'Type': 'Movie', 'Name': 'Latest $parentId', 'ParentLibraryId': parentId},
+                ],
+              });
+            } finally {
+              activeLatest--;
+            }
+          }
+          return http.Response('unexpected request', 500);
+        }),
+      );
+      addTearDown(client.close);
+      manager.debugRegisterJellyfinClientForTesting(client);
+
+      final hubs = await service.getHubsFromAllServers(useGlobalHubs: false, includePlaybackHubs: false);
+
+      expect(hubs.map((h) => h.identifier), [
+        'library.lib-1.recent',
+        'library.lib-2.recent',
+        'library.lib-3.recent',
+        'library.lib-4.recent',
+      ]);
+      expect(hubs.map((h) => h.items.single.id), ['item-lib-1', 'item-lib-2', 'item-lib-3', 'item-lib-4']);
+      expect(maxActiveLatest, lessThanOrEqualTo(3));
+      expect(captured.where((uri) => uri.path == '/UserItems/Resume' || uri.path == '/Shows/NextUp'), isEmpty);
+      expect(
+        captured.where((uri) => uri.path == '/Users/user-1/Items/Latest').map((uri) => uri.queryParameters['ParentId']),
+        ['lib-1', 'lib-2', 'lib-3', 'lib-4'],
+      );
     });
   });
 }

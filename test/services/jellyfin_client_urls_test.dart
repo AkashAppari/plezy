@@ -950,6 +950,17 @@ void main() {
       expect(nextUp.queryParameters['ImageTypeLimit'], '1');
       expect(nextUp.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
     });
+
+    test('can skip global playback hubs', () async {
+      final client = buildClient();
+      addTearDown(client.close);
+
+      await client.fetchGlobalHubs(limit: 12, includePlaybackHubs: false);
+
+      expect(captured.map((uri) => uri.path), ['/Users/user-1/Items/Latest']);
+      expect(captured.single.queryParameters['IncludeItemTypes'], 'Movie,Series,Episode');
+      expect(captured.single.queryParameters['Limit'], '12');
+    });
   });
 
   group('JellyfinClient.fetchLibraryHubs URL builders', () {
@@ -979,6 +990,17 @@ void main() {
       expect(nextUp.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
       expect(nextUp.queryParameters['ImageTypeLimit'], '1');
       expect(nextUp.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
+    });
+
+    test('can skip library playback hubs', () async {
+      final client = buildClient();
+      addTearDown(client.close);
+
+      await client.fetchLibraryHubs('lib-99', libraryName: 'Movies', limit: 12, includePlaybackHubs: false);
+
+      expect(captured.map((uri) => uri.path), ['/Users/user-1/Items/Latest']);
+      expect(captured.single.queryParameters['ParentId'], 'lib-99');
+      expect(captured.single.queryParameters['Limit'], '12');
     });
   });
 

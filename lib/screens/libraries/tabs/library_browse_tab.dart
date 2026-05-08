@@ -1253,13 +1253,16 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
     final client = getMediaClientForLibrary();
     final devicePixelRatio = MediaImageHelper.effectiveDevicePixelRatio(context);
+    final episodePosterMode = context.settingsRead(SettingsService.episodePosterMode);
 
     for (var i = 0; i < items.length; i++) {
       final index = startIndex + i;
       if (index < firstVisible || index > prefetchEnd) continue;
 
-      final thumb = items[i].thumbPath;
+      final item = items[i];
+      final thumb = item.posterThumb(mode: episodePosterMode);
       if (thumb == null || thumb.isEmpty) continue;
+      final imageType = item.usesWideAspectRatio(episodePosterMode) ? ImageType.thumb : ImageType.poster;
 
       final imageUrl = MediaImageHelper.getOptimizedImageUrl(
         client: client,
@@ -1267,8 +1270,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         maxWidth: itemWidth,
         maxHeight: itemHeight,
         devicePixelRatio: devicePixelRatio,
-        enableTranscoding: MediaImageHelper.shouldTranscode(thumb),
-        imageType: ImageType.poster,
+        imageType: imageType,
       );
       if (imageUrl.isEmpty) continue;
 
@@ -1277,7 +1279,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       final (_, memHeight) = MediaImageHelper.getMemCacheDimensions(
         displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
         displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
-        imageType: ImageType.poster,
+        imageType: imageType,
       );
 
       precacheImage(

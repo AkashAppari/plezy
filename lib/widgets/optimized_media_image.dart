@@ -280,7 +280,7 @@ class OptimizedMediaImage extends StatelessWidget {
       maxWidth: effectiveWidth,
       maxHeight: effectiveHeight,
       devicePixelRatio: devicePixelRatio,
-      enableTranscoding: enableTranscoding && MediaImageHelper.shouldTranscode(imagePath),
+      enableTranscoding: enableTranscoding,
       imageType: imageType,
     );
 

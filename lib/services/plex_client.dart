@@ -3037,13 +3037,18 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
   }
 
   @override
-  Future<List<MediaHub>> fetchGlobalHubs({int limit = 10}) async {
+  Future<List<MediaHub>> fetchGlobalHubs({int limit = 10, bool includePlaybackHubs = true}) async {
     final hubs = await _getGlobalHubs(limit: limit);
     return hubs.map((h) => PlexMappers.mediaHub(h)).toList();
   }
 
   @override
-  Future<List<MediaHub>> fetchLibraryHubs(String libraryId, {required String libraryName, int limit = 10}) async {
+  Future<List<MediaHub>> fetchLibraryHubs(
+    String libraryId, {
+    required String libraryName,
+    int limit = 10,
+    bool includePlaybackHubs = true,
+  }) async {
     // libraryName is unused: Plex's /hubs/sections/{id} returns hubs already
     // titled per-library (e.g. "Recently Added in Movies").
     final hubs = await _getLibraryHubs(libraryId, limit: limit);

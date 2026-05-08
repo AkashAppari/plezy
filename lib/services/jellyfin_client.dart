@@ -1091,17 +1091,34 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
   }
 
   @override
-  Future<List<MediaHub>> fetchGlobalHubs({int limit = 10}) async {
+  Future<List<MediaHub>> fetchGlobalHubs({int limit = 10, bool includePlaybackHubs = true}) async {
     // Jellyfin doesn't expose a single "hubs" endpoint, so we synthesise the
-    // home rows from three separate calls. The richer Plex Discover surface
+    // home rows from Latest plus optional playback rows. The richer Plex Discover surface
     // is intentionally left untranslated — see ServerCapabilities.richHubs.
+    final latestFuture = _safeFetchItemsArray('/Users/${_segment(connection.userId)}/Items/Latest', {
+      'Limit': limit.toString(),
+      'Fields': _browseFields,
+      'IncludeItemTypes': 'Movie,Series,Episode',
+      ...jellyfinImageQueryParameters,
+    });
+
+    if (!includePlaybackHubs) {
+      final latest = await latestFuture;
+      return [
+        JellyfinMappers.syntheticHub(
+          mapItem: _mapItem,
+          identifier: 'home.recent',
+          title: t.discover.recentlyAdded,
+          type: 'mixed',
+          items: latest,
+          serverId: serverId,
+          serverName: serverName,
+        ),
+      ].where((h) => h.items.isNotEmpty).toList();
+    }
+
     final results = await Future.wait([
-      _safeFetchItemsArray('/Users/${_segment(connection.userId)}/Items/Latest', {
-        'Limit': limit.toString(),
-        'Fields': _browseFields,
-        'IncludeItemTypes': 'Movie,Series,Episode',
-        ...jellyfinImageQueryParameters,
-      }),
+      latestFuture,
       _safeFetchItemsArray('/UserItems/Resume', {
         'userId': connection.userId,
         'Limit': limit.toString(),
@@ -1152,7 +1169,12 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
   }
 
   @override
-  Future<List<MediaHub>> fetchLibraryHubs(String libraryId, {required String libraryName, int limit = 10}) async {
+  Future<List<MediaHub>> fetchLibraryHubs(
+    String libraryId, {
+    required String libraryName,
+    int limit = 10,
+    bool includePlaybackHubs = true,
+  }) async {
     // Mirror the Jellyfin web client's per-library "Suggestions" tab:
     // Continue Watching + Next Up (TV libraries) + Recently Added.
     //
@@ -1160,13 +1182,30 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
     // We probe the library kind first to decide whether to ask for NextUp
     // — querying it for a movie library is harmless (returns []), but
     // skipping the request keeps the wire chatter tighter.
+    final latestFuture = _safeFetchItemsArray('/Users/${_segment(connection.userId)}/Items/Latest', {
+      'Limit': limit.toString(),
+      'ParentId': libraryId,
+      'Fields': _browseFields,
+      ...jellyfinImageQueryParameters,
+    });
+
+    if (!includePlaybackHubs) {
+      final latest = await latestFuture;
+      return [
+        JellyfinMappers.syntheticHub(
+          mapItem: _mapItem,
+          identifier: 'library.$libraryId.recent',
+          title: t.discover.recentlyAddedIn(library: libraryName),
+          type: 'mixed',
+          items: latest,
+          serverId: serverId,
+          serverName: serverName,
+        ),
+      ].where((h) => h.items.isNotEmpty).toList();
+    }
+
     final results = await Future.wait([
-      _safeFetchItemsArray('/Users/${_segment(connection.userId)}/Items/Latest', {
-        'Limit': limit.toString(),
-        'ParentId': libraryId,
-        'Fields': _browseFields,
-        ...jellyfinImageQueryParameters,
-      }),
+      latestFuture,
       _safeFetchItemsArray('/UserItems/Resume', {
         'userId': connection.userId,
         'ParentId': libraryId,

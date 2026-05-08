@@ -129,22 +129,27 @@ class MediaImageHelper {
 
     if (basePath.startsWith('http://') || basePath.startsWith('https://')) {
       // Self-contained Jellyfin URLs already carry their own auth
-      // (`api_key=...`). Append `MaxWidth/MaxHeight` so we still get DPR
+      // (`api_key=...`). Append `maxWidth/maxHeight` so we still get DPR
       // scaling and cache-bucket rounding — Jellyfin's image endpoint
       // honours those query params.
       if (basePath.contains('api_key=')) {
         if (!enableTranscoding) return basePath;
-        if (basePath.contains('MaxWidth=') || basePath.contains('maxWidth=') || basePath.contains('Width=')) {
-          return basePath;
-        }
         final (width, height) = calculateOptimalDimensions(
           maxWidth: maxWidth,
           maxHeight: maxHeight,
           devicePixelRatio: devicePixelRatio,
           imageType: imageType,
         );
-        final separator = basePath.contains('?') ? '&' : '?';
-        return '$basePath${separator}MaxWidth=$width&MaxHeight=$height';
+        final uri = Uri.parse(basePath);
+        final params = Map<String, String>.from(uri.queryParameters);
+        final lowerKeys = params.keys.map((k) => k.toLowerCase()).toSet();
+        if (!lowerKeys.contains('maxwidth') && !lowerKeys.contains('width')) {
+          params['maxWidth'] = '$width';
+        }
+        if (!lowerKeys.contains('maxheight') && !lowerKeys.contains('height')) {
+          params['maxHeight'] = '$height';
+        }
+        return uri.replace(queryParameters: params).toString();
       }
 
       // EPG / external URL — proxy through the server's transcoder. Plex

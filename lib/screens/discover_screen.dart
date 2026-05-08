@@ -519,6 +519,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       final hubsFuture = multiServerProvider.aggregationService.getHubsFromAllServers(
         hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
         useGlobalHubs: context.settingsRead(SettingsService.useGlobalHubs),
+        includePlaybackHubs: false,
       );
 
       // Wait for OnDeck to complete and show it immediately

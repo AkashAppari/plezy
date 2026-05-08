@@ -95,6 +95,7 @@ class DataAggregationService {
     int? limit,
     Set<String>? hiddenLibraryKeys,
     bool useGlobalHubs = true,
+    bool includePlaybackHubs = true,
   }) async {
     final clients = _serverManager.onlineClients;
     if (clients.isEmpty) {
@@ -111,8 +112,13 @@ class DataAggregationService {
       final client = entry.value;
       try {
         final hubs = useGlobalHubs
-            ? await client.fetchGlobalHubs(limit: limit ?? 10)
-            : await _fetchLibraryHubsForClient(client, limit: limit ?? 10, hiddenLibraryKeys: hiddenLibraryKeys);
+            ? await client.fetchGlobalHubs(limit: limit ?? 10, includePlaybackHubs: includePlaybackHubs)
+            : await _fetchLibraryHubsForClient(
+                client,
+                limit: limit ?? 10,
+                hiddenLibraryKeys: hiddenLibraryKeys,
+                includePlaybackHubs: includePlaybackHubs,
+              );
         return _postProcessHubs(
           hubs,
           serverId: serverId,
@@ -141,6 +147,7 @@ class DataAggregationService {
     MediaServerClient client, {
     required int limit,
     Set<String>? hiddenLibraryKeys,
+    required bool includePlaybackHubs,
   }) async {
     final libs = await client.fetchLibraries();
     final visible = libs.where((l) {
@@ -148,10 +155,32 @@ class DataAggregationService {
       if (l.hidden) return false;
       if (hiddenLibraryKeys != null && hiddenLibraryKeys.contains(l.globalKey)) return false;
       return true;
-    });
-    final futures = visible.map((l) => client.fetchLibraryHubs(l.id, libraryName: l.title, limit: limit));
-    final results = await Future.wait(futures);
-    return [for (final list in results) ...list];
+    }).toList();
+
+    const concurrency = 3;
+    final all = <MediaHub>[];
+    for (var start = 0; start < visible.length; start += concurrency) {
+      final batch = visible.skip(start).take(concurrency);
+      final results = await Future.wait(
+        batch.map((l) async {
+          try {
+            return await client.fetchLibraryHubs(
+              l.id,
+              libraryName: l.title,
+              limit: limit,
+              includePlaybackHubs: includePlaybackHubs,
+            );
+          } catch (e, st) {
+            appLogger.e('Failed to fetch library hubs for ${l.globalKey}', error: e, stackTrace: st);
+            return <MediaHub>[];
+          }
+        }),
+      );
+      for (final list in results) {
+        all.addAll(list);
+      }
+    }
+    return all;
   }
 
   /// Filter hidden-library items, optionally split multi-library "Recently
