@@ -104,6 +104,8 @@ class PlayerNative extends PlayerBase {
   }) async {
     if (disposed) return;
     await _ensureInitialized();
+    final startPosition = media.start ?? Duration.zero;
+    resetPlaybackProgress(startPosition);
     setSeekable(false);
 
     await setVisible(true);
@@ -114,8 +116,8 @@ class PlayerNative extends PlayerBase {
     }
 
     // 'start' must be set before loadfile.
-    if (media.start != null && media.start!.inSeconds > 0) {
-      await setProperty('start', media.start!.inSeconds.toString());
+    if (startPosition.inSeconds > 0) {
+      await setProperty('start', (startPosition.inMilliseconds / 1000.0).toString());
     } else {
       await setProperty('start', 'none');
     }

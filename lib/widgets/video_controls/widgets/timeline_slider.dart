@@ -139,6 +139,11 @@ class _TimelineSliderState extends State<TimelineSlider> {
         // Calculate the actual track width by subtracting the thumb padding on each side
         final trackWidth = sliderWidth - 2 * _sliderPadding;
         final durationMs = widget.duration.inMilliseconds;
+        final max = durationMs > 0 ? durationMs.toDouble() : 0.0;
+        final displayValue = max > 0
+            ? (_dragValue ?? widget.position.inMilliseconds.toDouble()).clamp(0.0, max).toDouble()
+            : 0.0;
+        final displayPosition = Duration(milliseconds: displayValue.toInt());
 
         // Resolve tooltip position (drag takes priority over hover)
         Widget? tooltip;
@@ -146,9 +151,9 @@ class _TimelineSliderState extends State<TimelineSlider> {
           if (_dragValue != null) {
             // Convert drag value (ms) to a 0..1 fraction, then map to pixel
             // position on the track (offset by padding to align with the slider)
-            final fraction = (_dragValue! / durationMs).clamp(0.0, 1.0);
+            final fraction = (displayValue / durationMs).clamp(0.0, 1.0);
             final px = _sliderPadding + fraction * trackWidth;
-            tooltip = _buildTooltip(sliderWidth, px, Duration(milliseconds: _dragValue!.toInt()));
+            tooltip = _buildTooltip(sliderWidth, px, displayPosition);
           } else if (_mousePosition != null) {
             // Convert mouse pixel position to a 0..1 fraction of the track
             // (subtract padding to get position relative to track start),
@@ -160,9 +165,9 @@ class _TimelineSliderState extends State<TimelineSlider> {
             // Preview thumbnail at the current playback position while the
             // user holds a dpad/keyboard direction. The decoder lags behind
             // rapid seeks, so the BIF thumbnail is the only live feedback.
-            final fraction = (widget.position.inMilliseconds / durationMs).clamp(0.0, 1.0);
+            final fraction = (displayValue / durationMs).clamp(0.0, 1.0);
             final px = _sliderPadding + fraction * trackWidth;
-            tooltip = _buildTooltip(sliderWidth, px, widget.position);
+            tooltip = _buildTooltip(sliderWidth, px, displayPosition);
           }
         }
 
@@ -205,9 +210,9 @@ class _TimelineSliderState extends State<TimelineSlider> {
                   label: t.videoControls.timelineSlider,
                   slider: true,
                   child: Slider(
-                    value: widget.duration.inMilliseconds > 0 ? widget.position.inMilliseconds.toDouble() : 0.0,
+                    value: displayValue,
                     min: 0.0,
-                    max: widget.duration.inMilliseconds.toDouble(),
+                    max: max,
                     onChanged: (value) {
                       setState(() => _dragValue = value);
                       widget.onSeek(Duration(milliseconds: value.toInt()));

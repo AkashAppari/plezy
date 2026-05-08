@@ -57,7 +57,7 @@ class MpvPlayerCoreBase: NSObject {
 
   /// Properties that must still flow to Dart while backgrounded (state-critical).
   private static let criticalProperties: Set<String> = [
-    "pause", "eof-reached", "paused-for-cache",
+    "pause", "eof-reached", "paused-for-cache", "time-pos", "duration", "seekable",
   ]
 
   private static let internalSigPeakObserverId: UInt64 = UInt64.max - 1

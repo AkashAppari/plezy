@@ -139,5 +139,55 @@ void main() {
 
       expect((customPaint.painter! as BufferRangePainter).chapters, isEmpty);
     });
+
+    testWidgets('clamps stale position beyond duration before building slider', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 400,
+              child: TimelineSlider(
+                position: const Duration(minutes: 12),
+                duration: const Duration(minutes: 10),
+                chapters: const [],
+                chaptersLoaded: true,
+                onSeek: (_) {},
+                onSeekEnd: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final slider = tester.widget<Slider>(find.byType(Slider));
+
+      expect(slider.value, const Duration(minutes: 10).inMilliseconds.toDouble());
+      expect(slider.max, const Duration(minutes: 10).inMilliseconds.toDouble());
+    });
+
+    testWidgets('clamps stale position when duration is unknown', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 400,
+              child: TimelineSlider(
+                position: const Duration(minutes: 12),
+                duration: Duration.zero,
+                chapters: const [],
+                chaptersLoaded: true,
+                onSeek: (_) {},
+                onSeekEnd: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final slider = tester.widget<Slider>(find.byType(Slider));
+
+      expect(slider.value, 0.0);
+      expect(slider.max, 0.0);
+    });
   });
 }
