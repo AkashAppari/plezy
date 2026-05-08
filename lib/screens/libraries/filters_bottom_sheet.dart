@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/focusable_button.dart';
+import '../../focus/input_mode_tracker.dart';
 import '../../media/media_filter.dart';
 import '../../services/plex_client.dart';
 import '../../utils/scroll_utils.dart';
-import '../../widgets/app_bar_back_button.dart';
-import '../../widgets/bottom_sheet_header.dart';
+import '../../widgets/bottom_sheet_page_scaffold.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../../utils/provider_extensions.dart';
@@ -111,6 +111,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
         _filterValues = values;
         _isLoadingValues = false;
       });
+      _requestInitialFocus();
       // Scroll to selected value if any
       final selectedValue = _tempSelectedFilters[filter.filter];
       if (selectedValue != null) {
@@ -126,6 +127,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
         _filterValues = [];
         _isLoadingValues = false;
       });
+      _requestInitialFocus();
     }
   }
 
@@ -134,6 +136,26 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
       _currentFilter = null;
       _filterValues = [];
     });
+    _requestInitialFocus();
+  }
+
+  void _requestInitialFocus() {
+    if (!InputModeTracker.isKeyboardMode(context)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_initialFocusNode.context != null) {
+        _initialFocusNode.requestFocus();
+      } else {
+        OverlaySheetController.maybeOf(context)?.refocus();
+      }
+    });
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _tempSelectedFilters.clear();
+    });
+    _applyFilters();
   }
 
   void _applyFilters() {
@@ -155,164 +177,141 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    if (_currentFilter != null) {
-      // Show filter options view
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header with back button
-          BottomSheetHeader(
-            title: _currentFilter!.title,
-            leading: AppBarBackButton(style: BackButtonStyle.plain, onPressed: _goBack),
-          ),
-
-          // Filter options list
-          if (_isLoadingValues)
-            const SizedBox(height: 120, child: Center(child: CircularProgressIndicator()))
-          else
-            Flexible(
-              child: ListView.builder(
-                controller: _valuesScrollController,
-                primary: false,
-                shrinkWrap: true,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                itemCount: _filterValues.length + 1,
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    final isSelected = !_tempSelectedFilters.containsKey(_currentFilter!.filter);
-                    return FocusableListTile(
-                      key: _valuesFirstItemKey,
-                      focusNode: _initialFocusNode,
-                      title: Text(t.libraries.all),
-                      selected: isSelected,
-                      onTap: () {
-                        setState(() {
-                          _tempSelectedFilters.remove(_currentFilter!.filter);
-                        });
-                        _applyFilters();
-                      },
-                    );
-                  }
-
-                  final value = _filterValues[index - 1];
-                  final filterValue = _extractFilterValue(value.key, _currentFilter!.filter);
-                  final isSelected = _tempSelectedFilters[_currentFilter!.filter] == filterValue;
-
-                  return FocusableListTile(
-                    title: Text(value.title),
-                    selected: isSelected,
-                    onTap: () {
-                      setState(() {
-                        _tempSelectedFilters[_currentFilter!.filter] = filterValue;
-                        // Cache the display name for this filter value
-                        if (_filterDisplayNames.length > _maxCachedDisplayNames) {
-                          _filterDisplayNames.clear();
-                        }
-                        _filterDisplayNames[_cacheKey(_currentFilter!.filter, filterValue)] = value.title;
-                      });
-                      _applyFilters();
-                    },
-                  );
-                },
+    final currentFilter = _currentFilter;
+    return BottomSheetPageScaffold(
+      title: currentFilter?.title ?? t.libraries.filters,
+      icon: Symbols.filter_alt_rounded,
+      onBack: currentFilter != null ? _goBack : null,
+      action: currentFilter == null && _tempSelectedFilters.isNotEmpty
+          ? FocusableButton(
+              onPressed: _clearFilters,
+              child: TextButton.icon(
+                onPressed: _clearFilters,
+                icon: const AppIcon(Symbols.clear_all_rounded, fill: 1),
+                label: Text(t.libraries.clearAll),
               ),
-            ),
-        ],
+            )
+          : null,
+      child: currentFilter != null ? _buildFilterValuesView(currentFilter) : _buildFiltersView(),
+    );
+  }
+
+  Widget _buildFilterValuesView(MediaFilter filter) {
+    if (_isLoadingValues) {
+      return Focus(
+        autofocus: InputModeTracker.isKeyboardMode(context),
+        child: const Center(child: CircularProgressIndicator()),
       );
     }
 
-    // Show main filters view
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Header
-        BottomSheetHeader(
-          title: t.libraries.filters,
-          leading: const AppIcon(Symbols.filter_alt_rounded, fill: 1),
-          action: _tempSelectedFilters.isNotEmpty
-              ? FocusableButton(
-                  onPressed: () {
-                    setState(() {
-                      _tempSelectedFilters.clear();
-                    });
-                    _applyFilters();
-                  },
-                  child: TextButton.icon(
-                    onPressed: () {
-                      setState(() {
-                        _tempSelectedFilters.clear();
-                      });
-                      _applyFilters();
-                    },
-                    icon: const AppIcon(Symbols.clear_all_rounded, fill: 1),
-                    label: Text(t.libraries.clearAll),
-                  ),
-                )
-              : null,
-        ),
-
-        // All Filters (boolean toggles first, then regular filters)
-        Flexible(
-          child: ListView.builder(
-            primary: false,
-            shrinkWrap: true,
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: _sortedFilters.length,
-            itemBuilder: (context, index) {
-              final filter = _sortedFilters[index];
-
-              // Handle boolean filters as switches (unwatched, inProgress, unmatched, hdr, etc.)
-              if (_isBooleanFilter(filter)) {
-                final isActive =
-                    _tempSelectedFilters.containsKey(filter.filter) && _tempSelectedFilters[filter.filter] == '1';
-                return FocusableSwitchListTile(
-                  focusNode: index == 0 ? _initialFocusNode : null,
-                  value: isActive,
-                  onChanged: (value) {
-                    setState(() {
-                      if (value) {
-                        _tempSelectedFilters[filter.filter] = '1';
-                      } else {
-                        _tempSelectedFilters.remove(filter.filter);
-                      }
-                    });
-                    _applyFilters();
-                  },
-                  title: Text(filter.title),
-                );
-              }
-
-              // Regular navigable filters - show selected value instead of checkmark
-              final selectedValue = _tempSelectedFilters[filter.filter];
-              String? displayValue;
-              if (selectedValue != null) {
-                // Try to get the cached display name, fall back to the value itself
-                displayValue = _filterDisplayNames[_cacheKey(filter.filter, selectedValue)] ?? selectedValue;
-              }
-
-              return FocusableListTile(
-                focusNode: index == 0 ? _initialFocusNode : null,
-                title: Text(filter.title),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (displayValue != null)
-                      Flexible(
-                        child: Text(
-                          displayValue,
-                          style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w500),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    if (displayValue != null) const SizedBox(width: 8),
-                    const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-                  ],
-                ),
-                onTap: () => _loadFilterValues(filter),
-              );
+    final autofocusFirst = InputModeTracker.isKeyboardMode(context);
+    return ListView.builder(
+      controller: _valuesScrollController,
+      primary: false,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      itemCount: _filterValues.length + 1,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          final isSelected = !_tempSelectedFilters.containsKey(filter.filter);
+          return FocusableListTile(
+            key: _valuesFirstItemKey,
+            focusNode: _initialFocusNode,
+            autofocus: autofocusFirst,
+            title: Text(t.libraries.all),
+            selected: isSelected,
+            onTap: () {
+              setState(() {
+                _tempSelectedFilters.remove(filter.filter);
+              });
+              _applyFilters();
             },
+          );
+        }
+
+        final value = _filterValues[index - 1];
+        final filterValue = _extractFilterValue(value.key, filter.filter);
+        final isSelected = _tempSelectedFilters[filter.filter] == filterValue;
+
+        return FocusableListTile(
+          title: Text(value.title),
+          selected: isSelected,
+          onTap: () {
+            setState(() {
+              _tempSelectedFilters[filter.filter] = filterValue;
+              // Cache the display name for this filter value.
+              if (_filterDisplayNames.length > _maxCachedDisplayNames) {
+                _filterDisplayNames.clear();
+              }
+              _filterDisplayNames[_cacheKey(filter.filter, filterValue)] = value.title;
+            });
+            _applyFilters();
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildFiltersView() {
+    final autofocusFirst = InputModeTracker.isKeyboardMode(context);
+    return ListView.builder(
+      primary: false,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      itemCount: _sortedFilters.length,
+      itemBuilder: (context, index) {
+        final filter = _sortedFilters[index];
+
+        // Handle boolean filters as switches (unwatched, inProgress, unmatched, hdr, etc.)
+        if (_isBooleanFilter(filter)) {
+          final isActive =
+              _tempSelectedFilters.containsKey(filter.filter) && _tempSelectedFilters[filter.filter] == '1';
+          return FocusableSwitchListTile(
+            focusNode: index == 0 ? _initialFocusNode : null,
+            autofocus: index == 0 && autofocusFirst,
+            value: isActive,
+            onChanged: (value) {
+              setState(() {
+                if (value) {
+                  _tempSelectedFilters[filter.filter] = '1';
+                } else {
+                  _tempSelectedFilters.remove(filter.filter);
+                }
+              });
+              _applyFilters();
+            },
+            title: Text(filter.title),
+          );
+        }
+
+        // Regular navigable filters - show selected value instead of checkmark
+        final selectedValue = _tempSelectedFilters[filter.filter];
+        String? displayValue;
+        if (selectedValue != null) {
+          // Try to get the cached display name, fall back to the value itself
+          displayValue = _filterDisplayNames[_cacheKey(filter.filter, selectedValue)] ?? selectedValue;
+        }
+
+        return FocusableListTile(
+          focusNode: index == 0 ? _initialFocusNode : null,
+          autofocus: index == 0 && autofocusFirst,
+          title: Text(filter.title),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (displayValue != null)
+                Flexible(
+                  child: Text(
+                    displayValue,
+                    style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w500),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              if (displayValue != null) const SizedBox(width: 8),
+              const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+            ],
           ),
-        ),
-      ],
+          onTap: () => _loadFilterValues(filter),
+        );
+      },
     );
   }
 }
