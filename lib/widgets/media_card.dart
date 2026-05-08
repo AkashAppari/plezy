@@ -27,6 +27,20 @@ import 'media_progress_bar.dart';
 import 'media_card_list_layout.dart';
 import 'optimized_media_image.dart';
 
+const _failedPosterUrlCacheLimit = 512;
+final _failedPosterUrls = <String>{};
+
+bool _hasFailedPosterUrl(String? url) => url != null && _failedPosterUrls.contains(url);
+
+void _rememberFailedPosterUrl(String? url) {
+  if (url == null || url.isEmpty) return;
+  _failedPosterUrls.remove(url);
+  _failedPosterUrls.add(url);
+  if (_failedPosterUrls.length > _failedPosterUrlCacheLimit) {
+    _failedPosterUrls.remove(_failedPosterUrls.first);
+  }
+}
+
 class MediaCard extends StatefulWidget {
   /// Either a [MediaItem] or a [MediaPlaylist]. Typed as [Object] because Dart
   /// has no nominal union type — runtime `is` checks select the variant.
@@ -644,8 +658,10 @@ Widget _buildPosterImage(
     final hideSpoilers = SettingsService.instanceOrNull!.read(SettingsService.hideSpoilers);
     final shouldBlur =
         hideSpoilers && item.shouldHideSpoiler && episodePosterMode == EpisodePosterMode.episodeThumbnail;
-    posterUrl = item.posterThumb(mode: episodePosterMode, mixedHubContext: mixedHubContext);
+    final primaryPosterUrl = item.posterThumb(mode: episodePosterMode, mixedHubContext: mixedHubContext);
     final posterFallbackUrl = item.posterThumbFallback(mode: episodePosterMode, mixedHubContext: mixedHubContext);
+    final useRememberedFallback = posterFallbackUrl != null && _hasFailedPosterUrl(primaryPosterUrl);
+    posterUrl = useRememberedFallback ? posterFallbackUrl : primaryPosterUrl;
     final mediaClient = isOffline ? null : context.tryGetMediaClientWithFallback(item.serverId);
 
     Widget image;
@@ -667,15 +683,18 @@ Widget _buildPosterImage(
         width: knownWidth ?? double.infinity,
         height: knownHeight ?? double.infinity,
         fit: BoxFit.cover,
-        errorWidget: posterFallbackUrl == null
+        errorWidget: posterFallbackUrl == null || useRememberedFallback
             ? null
-            : (_, _, _) => OptimizedMediaImage.poster(
-                client: mediaClient,
-                imagePath: posterFallbackUrl,
-                width: knownWidth ?? double.infinity,
-                height: knownHeight ?? double.infinity,
-                fit: BoxFit.cover,
-              ),
+            : (_, _, _) {
+                _rememberFailedPosterUrl(primaryPosterUrl);
+                return OptimizedMediaImage.poster(
+                  client: mediaClient,
+                  imagePath: posterFallbackUrl,
+                  width: knownWidth ?? double.infinity,
+                  height: knownHeight ?? double.infinity,
+                  fit: BoxFit.cover,
+                );
+              },
         localFilePath: localPosterPath,
       );
     }
