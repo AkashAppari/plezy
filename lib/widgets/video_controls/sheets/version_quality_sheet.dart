@@ -9,15 +9,19 @@ import '../../../utils/quality_preset_labels.dart';
 import '../../../utils/scroll_utils.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
-import 'base_video_control_sheet.dart';
 import 'sheet_column_header.dart';
 
-/// Combined sheet for selecting the media [version] (left) and transcode
+String versionQualityPickerTitle({required bool showVersions, required bool showQuality}) {
+  return showQuality
+      ? (showVersions ? t.videoControls.versionQualityButton : t.videoControls.qualityColumnHeader)
+      : t.videoControls.versionColumnHeader;
+}
+
+/// Combined picker for selecting the media [version] (left) and transcode
 /// [quality] preset (right). The version column is hidden when there is only
 /// one version so the quality list gets the full width. If the server doesn't
-/// support video transcoding, only [TranscodeQualityPreset.original] is
-/// enabled in the quality column.
-class VersionQualitySheet extends StatelessWidget {
+/// support video transcoding, the quality column is hidden entirely.
+class VersionQualityPicker extends StatelessWidget {
   final List<MediaVersion> availableVersions;
   final int selectedMediaIndex;
   final TranscodeQualityPreset selectedQualityPreset;
@@ -26,7 +30,7 @@ class VersionQualitySheet extends StatelessWidget {
   final ValueChanged<int> onVersionSelected;
   final ValueChanged<TranscodeQualityPreset> onQualitySelected;
 
-  const VersionQualitySheet({
+  const VersionQualityPicker({
     super.key,
     required this.availableVersions,
     required this.selectedMediaIndex,
@@ -40,14 +44,7 @@ class VersionQualitySheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final showVersions = availableVersions.length > 1;
-    // Quality presets only do something useful when the server can transcode
-    // — otherwise non-Original options are disabled and the column degenerates
-    // into a single tappable row. Hide it entirely in that case so the
-    // versions list (when present) gets the full sheet.
     final showQuality = serverSupportsTranscoding;
-    final title = showQuality
-        ? (showVersions ? t.videoControls.versionQualityButton : t.videoControls.qualityColumnHeader)
-        : t.videoControls.versionColumnHeader;
 
     final qualityColumn = FocusTraversalGroup(
       child: _QualityColumn(
@@ -76,9 +73,8 @@ class VersionQualitySheet extends StatelessWidget {
       ),
     );
 
-    final Widget body;
     if (showVersions && showQuality) {
-      body = Row(
+      return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(child: versionColumn),
@@ -87,12 +83,10 @@ class VersionQualitySheet extends StatelessWidget {
         ],
       );
     } else if (showVersions) {
-      body = versionColumn;
+      return versionColumn;
     } else {
-      body = qualityColumn;
+      return qualityColumn;
     }
-
-    return BaseVideoControlSheet(title: title, icon: Symbols.video_settings_rounded, child: body);
   }
 
   int? _sourceBitrateKbps() {

@@ -12,6 +12,8 @@ import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 
 import '../../../models/shader_preset.dart';
+import '../../../models/transcode_quality_preset.dart';
+import '../../../media/media_version.dart';
 import '../../../mpv/mpv.dart';
 import '../../../providers/shader_provider.dart';
 import '../../../services/file_picker_service.dart';
@@ -22,6 +24,7 @@ import '../../../focus/focusable_wrapper.dart';
 import '../../../utils/dialogs.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/platform_detector.dart';
+import '../../../utils/quality_preset_labels.dart';
 import '../../../utils/snackbar_helper.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../widgets/focusable_list_tile.dart';
@@ -30,8 +33,9 @@ import '../widgets/sync_offset_control.dart';
 import '../widgets/sleep_timer_content.dart';
 import '../../../i18n/strings.g.dart';
 import 'base_video_control_sheet.dart';
+import 'version_quality_sheet.dart';
 
-enum _SettingsView { menu, speed, sleep, audioSync, subtitleSync, audioDevice, shader, dvConversion }
+enum _SettingsView { menu, speed, versionQuality, sleep, audioSync, subtitleSync, audioDevice, shader, dvConversion }
 
 class _SettingsMenuItem extends StatelessWidget {
   final IconData icon;
@@ -118,6 +122,15 @@ class VideoSettingsSheet extends StatefulWidget {
   /// Whether this is a live TV stream (hides speed settings).
   final bool isLive;
 
+  /// Available media versions and quality controls shown inside playback settings.
+  final List<MediaVersion> availableVersions;
+  final int selectedMediaIndex;
+  final TranscodeQualityPreset selectedQualityPreset;
+  final bool serverSupportsTranscoding;
+  final int? sourceDurationMs;
+  final ValueChanged<int>? onVersionSelected;
+  final ValueChanged<TranscodeQualityPreset>? onQualitySelected;
+
   /// Optional shader service for MPV shader control
   final ShaderService? shaderService;
 
@@ -146,6 +159,13 @@ class VideoSettingsSheet extends StatefulWidget {
     required this.subtitleSyncOffset,
     this.canControl = true,
     this.isLive = false,
+    this.availableVersions = const [],
+    this.selectedMediaIndex = 0,
+    this.selectedQualityPreset = TranscodeQualityPreset.original,
+    this.serverSupportsTranscoding = false,
+    this.sourceDurationMs,
+    this.onVersionSelected,
+    this.onQualitySelected,
     this.shaderService,
     this.onShaderChanged,
     this.isAmbientLightingEnabled = false,
@@ -266,6 +286,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return t.videoSettings.playbackSettings;
       case _SettingsView.speed:
         return t.videoSettings.playbackSpeed;
+      case _SettingsView.versionQuality:
+        return _versionQualityTitle();
       case _SettingsView.sleep:
         return t.videoSettings.sleepTimer;
       case _SettingsView.audioSync:
@@ -287,6 +309,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return Symbols.tune_rounded;
       case _SettingsView.speed:
         return Symbols.speed_rounded;
+      case _SettingsView.versionQuality:
+        return Symbols.art_track;
       case _SettingsView.sleep:
         return Symbols.bedtime_rounded;
       case _SettingsView.audioSync:
@@ -327,6 +351,33 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     return 'Active (${formatDurationWithSeconds(remaining)})';
   }
 
+  bool get _hasVersionQuality {
+    return (widget.availableVersions.length > 1 || widget.serverSupportsTranscoding) &&
+        (widget.onVersionSelected != null || widget.onQualitySelected != null);
+  }
+
+  String _versionQualityTitle() {
+    return versionQualityPickerTitle(
+      showVersions: widget.availableVersions.length > 1,
+      showQuality: widget.serverSupportsTranscoding,
+    );
+  }
+
+  String _versionQualityValueText() {
+    final values = <String>[];
+    if (widget.availableVersions.length > 1) values.add(_selectedVersionLabel());
+    if (widget.serverSupportsTranscoding) values.add(qualityPresetLabel(widget.selectedQualityPreset));
+    return values.join(' / ');
+  }
+
+  String _selectedVersionLabel() {
+    final index = widget.selectedMediaIndex;
+    if (index >= 0 && index < widget.availableVersions.length) {
+      return widget.availableVersions[index].displayLabel;
+    }
+    return t.videoControls.versionColumnHeader;
+  }
+
   Widget _buildMenuView() {
     final sleepTimer = SleepTimerService();
     final isDesktop = PlatformDetector.isDesktop(context);
@@ -347,6 +398,15 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                 onTap: () => _navigateTo(_SettingsView.speed),
               );
             },
+          ),
+
+        if (_hasVersionQuality)
+          _SettingsMenuItem(
+            icon: Symbols.art_track,
+            title: _versionQualityTitle(),
+            valueText: _versionQualityValueText(),
+            allowValueOverflow: true,
+            onTap: () => _navigateTo(_SettingsView.versionQuality),
           ),
 
         // Sleep Timer
@@ -574,6 +634,18 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       player: widget.player,
       sleepTimer: sleepTimer,
       onCancel: () => OverlaySheetController.of(context).close(),
+    );
+  }
+
+  Widget _buildVersionQualityView() {
+    return VersionQualityPicker(
+      availableVersions: widget.availableVersions,
+      selectedMediaIndex: widget.selectedMediaIndex,
+      selectedQualityPreset: widget.selectedQualityPreset,
+      serverSupportsTranscoding: widget.serverSupportsTranscoding,
+      sourceDurationMs: widget.sourceDurationMs,
+      onVersionSelected: (index) => widget.onVersionSelected?.call(index),
+      onQualitySelected: (preset) => widget.onQualitySelected?.call(preset),
     );
   }
 
@@ -833,6 +905,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             return _buildMenuView();
           case _SettingsView.speed:
             return _buildSpeedView();
+          case _SettingsView.versionQuality:
+            return _buildVersionQualityView();
           case _SettingsView.sleep:
             return _buildSleepView();
           case _SettingsView.audioSync:
