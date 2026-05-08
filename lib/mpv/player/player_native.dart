@@ -156,7 +156,7 @@ class PlayerNative extends PlayerBase {
 
   @override
   Future<void> seek(Duration position) async {
-    await runSeek(() => command(['seek', (position.inMilliseconds / 1000.0).toString(), 'absolute']));
+    await runSeek(position, () => command(['seek', (position.inMilliseconds / 1000.0).toString(), 'absolute']));
   }
 
   @override

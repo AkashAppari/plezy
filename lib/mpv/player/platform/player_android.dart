@@ -138,7 +138,7 @@ class PlayerAndroid extends PlayerBase {
 
   @override
   Future<void> seek(Duration position) async {
-    await runSeek(() => invoke('seek', {'positionMs': position.inMilliseconds}));
+    await runSeek(position, () => invoke('seek', {'positionMs': position.inMilliseconds}));
   }
 
   @override

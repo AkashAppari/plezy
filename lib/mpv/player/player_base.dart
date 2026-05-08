@@ -585,17 +585,41 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     }
   }
 
+  void _setPlaybackPosition(Duration position) {
+    _positionMs = position.inMilliseconds;
+    _state = _state.copyWith(position: position);
+    positionController.add(position);
+  }
+
   /// Run a backend-specific seek call, swallowing the common "not ready" errors
   /// the native channel throws when the engine was torn down mid-seek.
   @protected
-  Future<void> runSeek(Future<void> Function() seekFn) async {
+  Future<void> runSeek(Duration position, Future<void> Function() seekFn) async {
+    if (_disposed) return;
+
+    final previousPosition = Duration(milliseconds: _positionMs);
+    _setPlaybackPosition(position);
+
+    void rollbackPosition() {
+      // Avoid overwriting a newer native position update if one arrived while
+      // the platform seek was in flight.
+      if (_positionMs == position.inMilliseconds) {
+        _setPlaybackPosition(previousPosition);
+      }
+    }
+
     try {
       await seekFn();
     } on PlatformException catch (e) {
       if (e.code == 'COMMAND_FAILED' || e.code == 'NOT_INITIALIZED') {
+        rollbackPosition();
         appLogger.w('Seek failed (${e.code}), player not ready');
         return;
       }
+      rollbackPosition();
+      rethrow;
+    } catch (_) {
+      rollbackPosition();
       rethrow;
     }
   }
