@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../focus/key_event_utils.dart';
 import '../../media/library_first_character.dart';
 import 'alpha_jump_helper.dart';
 
@@ -143,6 +144,13 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
   }
 
   KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
+    final selectResult = handleOneShotSelect(event, () {
+      if (_highlightedIndex < _displayed.length) {
+        _jumpToLetter(_displayed[_highlightedIndex]);
+      }
+    });
+    if (selectResult != KeyEventResult.ignored) return selectResult;
+
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
       return KeyEventResult.ignored;
     }
@@ -171,7 +179,6 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
       widget.onBack?.call();
       return KeyEventResult.handled;
     }
-
     return KeyEventResult.ignored;
   }
 

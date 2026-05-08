@@ -24,6 +24,7 @@ import '../theme/mono_tokens.dart';
 import '../i18n/strings.g.dart';
 import 'media_context_menu.dart';
 import 'media_progress_bar.dart';
+import 'media_card_list_layout.dart';
 import 'optimized_media_image.dart';
 
 class MediaCard extends StatefulWidget {
@@ -341,34 +342,17 @@ class _MediaCardList extends StatelessWidget {
     this.showServerName = false,
   });
 
-  double _basePosterWidth() {
-    return 70 + LibraryDensity.factor(density) * 50; // 70–120
+  bool _usesWideAspectRatio() {
+    if (item is! MediaItem) return false;
+    final mode = SettingsService.instanceOrNull!.read(SettingsService.episodePosterMode);
+    return (item as MediaItem).usesWideAspectRatio(mode);
   }
 
-  double _posterWidth(BuildContext context) {
-    final base = _basePosterWidth();
-    // For episodes with thumbnail mode, use wider width to maintain reasonable thumbnail size
-    if (item is MediaItem) {
-      final mode = SettingsService.instanceOrNull!.read(SettingsService.episodePosterMode);
-      if ((item as MediaItem).usesWideAspectRatio(mode)) {
-        return base * 1.6; // Wider for 16:9 thumbnails
-      }
-    }
-    return base;
-  }
+  double _posterWidth(BuildContext context) =>
+      MediaCardListLayout.posterWidth(density: density, usesWideAspectRatio: _usesWideAspectRatio());
 
-  double _posterHeight(BuildContext context) {
-    final base = _basePosterWidth();
-    // For episodes with thumbnail mode, use 16:9 aspect ratio
-    if (item is MediaItem) {
-      final mode = SettingsService.instanceOrNull!.read(SettingsService.episodePosterMode);
-      if ((item as MediaItem).usesWideAspectRatio(mode)) {
-        // 16:9: height = width * 9/16 = base * 1.6 * 9/16 = base * 0.9
-        return base * 0.9;
-      }
-    }
-    return base * 1.5; // Default 2:3 aspect ratio
-  }
+  double _posterHeight(BuildContext context) =>
+      MediaCardListLayout.posterHeight(density: density, usesWideAspectRatio: _usesWideAspectRatio());
 
   double get _titleFontSize => 13 + LibraryDensity.factor(density) * 3; // 13–16
 
