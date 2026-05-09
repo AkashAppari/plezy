@@ -232,8 +232,9 @@ abstract class MediaServerClient {
   Future<void> markWatched(MediaItem item);
   Future<void> markUnwatched(MediaItem item);
 
-  /// Hide an item from Continue Watching without changing its watched
-  /// status.
+  /// Hide an item from Continue Watching without changing watched status or
+  /// progress. Only call when [capabilities.continueWatchingRemoval] is true;
+  /// unsupported backends throw [UnsupportedError].
   Future<void> removeFromContinueWatching(MediaItem item);
 
   /// Rate the item on a 0–10 scale. Backends without numeric ratings

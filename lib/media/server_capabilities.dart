@@ -60,6 +60,10 @@ class ServerCapabilities {
   /// only a binary like/dislike, so star sliders should be hidden.
   final bool numericUserRating;
 
+  /// Hide an item from Continue Watching without changing watch state or
+  /// playback progress. Plex exposes this directly; Jellyfin does not.
+  final bool continueWatchingRemoval;
+
   /// External subtitle search/marketplace (Plex `/library/metadata/{id}/subtitles`).
   /// Hides the "Search subtitles" affordance when false.
   final bool externalSubtitleSearch;
@@ -113,6 +117,7 @@ class ServerCapabilities {
     this.serverSideSync = false,
     this.richHubs = false,
     this.numericUserRating = false,
+    this.continueWatchingRemoval = false,
     this.externalSubtitleSearch = false,
     this.trackPreferencePersistence = false,
     this.endpointFailover = false,
@@ -135,6 +140,7 @@ class ServerCapabilities {
     serverSideSync: true,
     richHubs: true,
     numericUserRating: true,
+    continueWatchingRemoval: true,
     externalSubtitleSearch: true,
     trackPreferencePersistence: true,
     endpointFailover: true,
@@ -185,6 +191,7 @@ class ServerCapabilities {
     bool? serverSideSync,
     bool? richHubs,
     bool? numericUserRating,
+    bool? continueWatchingRemoval,
     bool? externalSubtitleSearch,
     bool? trackPreferencePersistence,
     bool? endpointFailover,
@@ -205,6 +212,7 @@ class ServerCapabilities {
       serverSideSync: serverSideSync ?? this.serverSideSync,
       richHubs: richHubs ?? this.richHubs,
       numericUserRating: numericUserRating ?? this.numericUserRating,
+      continueWatchingRemoval: continueWatchingRemoval ?? this.continueWatchingRemoval,
       externalSubtitleSearch: externalSubtitleSearch ?? this.externalSubtitleSearch,
       trackPreferencePersistence: trackPreferencePersistence ?? this.trackPreferencePersistence,
       endpointFailover: endpointFailover ?? this.endpointFailover,

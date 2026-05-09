@@ -211,11 +211,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       activeProfile: activeProfile,
     );
 
-    // Backend capabilities — used to gate the "Play Version" item below.
-    // Reads the same `capabilities.videoTranscoding` flag the in-player
-    // sheet uses so the two surfaces never disagree about what's offered.
+    // Backend capabilities gate menu items so we don't expose actions the
+    // active server cannot perform.
     final mediaClient = _itemServerId != null ? multiServerProvider.getClientForServer(_itemServerId!) : null;
     final canTranscode = mediaClient?.capabilities.videoTranscoding ?? false;
+    final canRemoveFromContinueWatching = mediaClient?.capabilities.continueWatchingRemoval ?? false;
 
     final menuActions = <_MenuAction>[];
 
@@ -271,7 +271,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
-      if (widget.isInContinueWatching) {
+      if (widget.isInContinueWatching && canRemoveFromContinueWatching) {
         menuActions.add(
           _MenuAction(
             value: 'remove_from_continue_watching',

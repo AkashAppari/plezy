@@ -1358,12 +1358,7 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
 
   @override
   Future<void> removeFromContinueWatching(MediaItem item) async {
-    // Jellyfin uses a `Hide` endpoint to remove items from Continue Watching.
-    final response = await _http.post(
-      '/UserItems/${_segment(item.id)}/HideFromResume',
-      queryParameters: {'userId': connection.userId, 'Hide': 'true'},
-    );
-    throwIfHttpError(response);
+    throw UnsupportedError('Jellyfin does not support removing items from Continue Watching.');
   }
 
   @override
