@@ -31,7 +31,7 @@ class MediaServerTimeouts {
   /// default 10s connect budget is too tight on Fire-TV cold starts.
   static const tune = Duration(seconds: 30);
 
-  static const plexTvConnect = Duration(seconds: 5);
+  static const plexTvConnect = Duration(seconds: 15);
 
   static const plexTvReceive = Duration(seconds: 10);
 
