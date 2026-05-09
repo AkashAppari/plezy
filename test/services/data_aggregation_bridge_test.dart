@@ -111,5 +111,53 @@ void main() {
         ['lib-1', 'lib-2', 'lib-3', 'lib-4'],
       );
     });
+
+    test('global home layout falls back to per-library hubs for Jellyfin', () async {
+      final captured = <Uri>[];
+
+      final client = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          captured.add(req.url);
+          if (req.url.path == '/Users/user-1/Views') {
+            return _json({
+              'Items': [
+                {'Id': 'movies', 'Name': 'Movies', 'CollectionType': 'movies'},
+                {'Id': 'shows', 'Name': 'Shows', 'CollectionType': 'tvshows'},
+              ],
+            });
+          }
+          if (req.url.path == '/Users/user-1/Items/Latest') {
+            final parentId = req.url.queryParameters['ParentId'];
+            return switch (parentId) {
+              'movies' => _json({
+                'Items': [
+                  {'Id': 'movie-1', 'Type': 'Movie', 'Name': 'Latest Movie', 'ParentLibraryId': 'movies'},
+                ],
+              }),
+              'shows' => _json({
+                'Items': [
+                  {'Id': 'show-1', 'Type': 'Series', 'Name': 'Latest Show', 'ParentLibraryId': 'shows'},
+                ],
+              }),
+              _ => http.Response('mixed latest should not be requested', 500),
+            };
+          }
+          return http.Response('unexpected request', 500);
+        }),
+      );
+      addTearDown(client.close);
+      manager.debugRegisterJellyfinClientForTesting(client);
+
+      final hubs = await service.getHubsFromAllServers(useGlobalHubs: true, includePlaybackHubs: false);
+
+      expect(hubs.map((h) => h.identifier), ['library.movies.recent', 'library.shows.recent']);
+      expect(hubs.map((h) => h.items.single.id), ['movie-1', 'show-1']);
+      expect(captured.where((uri) => uri.path == '/Users/user-1/Views'), hasLength(1));
+      expect(
+        captured.where((uri) => uri.path == '/Users/user-1/Items/Latest').map((uri) => uri.queryParameters['ParentId']),
+        ['movies', 'shows'],
+      );
+    });
   });
 }

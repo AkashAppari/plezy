@@ -87,10 +87,10 @@ class DataAggregationService {
   }
 
   /// Fetch recommendation hubs from all servers as neutral [MediaHub]s.
-  /// When useGlobalHubs is true (default), uses the global /hubs endpoint
-  /// to get the true home page hubs like "Recently Added Movies", "Recently
-  /// Added TV"; when false, uses per-library hubs from
-  /// /hubs/sections/{sectionId}.
+  /// When useGlobalHubs is true (default), rich-hub backends use the global
+  /// /hubs endpoint to get true home page hubs like "Recently Added Movies".
+  /// Backends without rich home hubs fall back to per-library hubs so one
+  /// capped "Latest" response cannot hide whole library types.
   Future<List<MediaHub>> getHubsFromAllServers({
     int? limit,
     Set<String>? hiddenLibraryKeys,
@@ -111,20 +111,23 @@ class DataAggregationService {
       final serverId = entry.key;
       final client = entry.value;
       try {
-        final hubs = useGlobalHubs
+        final serverLibraries = libraries?[serverId];
+        final shouldUseGlobalHubs = useGlobalHubs && client.capabilities.richHubs;
+        final hubs = shouldUseGlobalHubs
             ? await client.fetchGlobalHubs(limit: limit ?? 10, includePlaybackHubs: includePlaybackHubs)
             : await _fetchLibraryHubsForClient(
                 client,
                 limit: limit ?? 10,
                 hiddenLibraryKeys: hiddenLibraryKeys,
                 includePlaybackHubs: includePlaybackHubs,
+                libraries: useGlobalHubs ? serverLibraries : null,
               );
         return _postProcessHubs(
           hubs,
           serverId: serverId,
           hiddenLibraryKeys: hiddenLibraryKeys,
-          libraries: libraries?[serverId],
-          splitRecentlyAdded: useGlobalHubs,
+          libraries: serverLibraries,
+          splitRecentlyAdded: shouldUseGlobalHubs,
         );
       } catch (e, stackTrace) {
         appLogger.e('Failed to fetch hubs from server $serverId', error: e, stackTrace: stackTrace);
@@ -148,8 +151,9 @@ class DataAggregationService {
     required int limit,
     Set<String>? hiddenLibraryKeys,
     required bool includePlaybackHubs,
+    List<MediaLibrary>? libraries,
   }) async {
-    final libs = await client.fetchLibraries();
+    final libs = libraries ?? await client.fetchLibraries();
     final visible = libs.where((l) {
       if (l.kind != MediaKind.movie && l.kind != MediaKind.show) return false;
       if (l.hidden) return false;
