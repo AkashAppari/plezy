@@ -22,7 +22,7 @@ platform :android do
     git_commit = `git rev-parse --short HEAD`.strip
 
     # Build the Flutter app
-    sh("cd #{ENV['PWD']}/.. && flutter build appbundle --dart-define=ENABLE_IN_APP_REVIEW=true --dart-define=ENABLE_SENTRY=true --dart-define=GIT_COMMIT=#{git_commit} --dart-define=SENTRY_ENVIRONMENT=play-store --obfuscate --split-debug-info=debug-info/android-aab")
+    sh("cd #{ENV['PWD']}/.. && flutter build appbundle --dart-define=ENABLE_SENTRY=true --dart-define=GIT_COMMIT=#{git_commit} --dart-define=SENTRY_ENVIRONMENT=play-store --obfuscate --split-debug-info=debug-info/android-aab")
     sh("cd #{ENV['PWD']}/.. && ./scripts/upload-symbols.sh android-aab")
 
     upload_to_play_store(

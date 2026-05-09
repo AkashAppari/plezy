@@ -11,8 +11,6 @@ PODS:
   - file_picker (0.0.1):
     - Flutter
   - Flutter (1.0.0)
-  - in_app_review (2.0.0):
-    - Flutter
   - os_media_controls (0.0.1):
     - Flutter
   - package_info_plus (0.4.5):
@@ -64,7 +62,6 @@ DEPENDENCIES:
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - Flutter (from `Flutter`)
-  - in_app_review (from `.symlinks/plugins/in_app_review/ios`)
   - os_media_controls (from `.symlinks/plugins/os_media_controls/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - sentry_flutter (from `.symlinks/plugins/sentry_flutter/ios`)
@@ -92,8 +89,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/file_picker/ios"
   Flutter:
     :path: Flutter
-  in_app_review:
-    :path: ".symlinks/plugins/in_app_review/ios"
   os_media_controls:
     :path: ".symlinks/plugins/os_media_controls/ios"
   package_info_plus:
@@ -118,7 +113,6 @@ SPEC CHECKSUMS:
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
   file_picker: 8fc6fe5e42585a217d44d22f79ec046cb8d81140
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  in_app_review: 7dd1ea365263f834b8464673f9df72c80c17c937
   os_media_controls: 94cc278f5802b82b2d6373003aeb511f96718b27
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
   Sentry: d587a8fe91ca13503ecd69a1905f3e8a0fcf61be

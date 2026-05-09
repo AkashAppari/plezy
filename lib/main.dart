@@ -56,7 +56,6 @@ import 'watch_together/providers/watch_together_provider.dart';
 import 'services/multi_server_manager.dart';
 import 'services/offline_watch_sync_service.dart';
 import 'services/data_aggregation_service.dart';
-import 'services/in_app_review_service.dart';
 import 'services/server_registry.dart';
 import 'services/download_manager_service.dart';
 import 'services/pip_service.dart';
@@ -469,9 +468,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         return AppExitResponse.exit;
       },
     );
-
-    // Start in-app review session tracking
-    InAppReviewService.instance.startSession();
   }
 
   @override
@@ -584,10 +580,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
       case AppLifecycleState.resumed:
-        // App came back to foreground - trigger sync check and start new session
+        // App came back to foreground - trigger sync check
         _offlineWatchSyncService.onAppResumed();
         TraktSyncService.instance.flushQueue();
-        InAppReviewService.instance.startSession();
         // Re-probe servers — mobile OS may have dropped TCP connections during doze/sleep.
         // On desktop, resumed fires on every window focus (alt-tab), so apply a cooldown
         // to avoid piling up network probes from rapid alt-tabbing.
@@ -610,7 +605,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // Closing here would kill the Drift isolate channel while services
         // (sync, downloads, cache) still hold references to the executor.
         // SQLite WAL mode handles process death; desktop uses onExitRequested.
-        InAppReviewService.instance.endSession();
         if (PlatformDetector.isDesktopOS()) {
           if (ProcessInfo.currentRss > 1024 * 1024 * 1024) {
             // 1GB

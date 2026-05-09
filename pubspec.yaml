@@ -50,7 +50,6 @@ dependencies:
   saf_stream: ^2.0.0
   material_symbols_icons: ^4.2906.0
   web_socket_channel: ^3.0.1
-  in_app_review: ^2.0.11
   dart_discord_presence: ^1.2.0
   flutter_svg: ^2.2.3
   background_downloader:
