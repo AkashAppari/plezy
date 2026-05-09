@@ -67,6 +67,11 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
     return (_rangeStart + (fraction * range).round()).clamp(_rangeStart, _rangeEnd);
   }
 
+  double _widthOf(BuildContext context) {
+    final renderObject = context.findRenderObject();
+    return renderObject is RenderBox ? renderObject.size.width : 0.0;
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<Duration>(
@@ -127,20 +132,17 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
       autoScroll: false,
       useBackgroundFocus: true,
       disableScale: true,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
+      child: Builder(
+        builder: (context) {
           return GestureDetector(
             onHorizontalDragStart: widget.enabled ? _onDragStart : null,
-            onHorizontalDragUpdate: widget.enabled ? (details) => _onDragUpdate(details, width) : null,
+            onHorizontalDragUpdate: widget.enabled ? (details) => _onDragUpdate(details, _widthOf(context)) : null,
             onHorizontalDragEnd: widget.enabled ? _onDragEnd : null,
-            onTapUp: widget.enabled ? (details) => _onTap(details, width) : null,
+            onTapUp: widget.enabled ? (details) => _onTap(details, _widthOf(context)) : null,
             child: SizedBox(
+              width: double.infinity,
               height: 24,
-              child: CustomPaint(
-                size: Size(width, 24),
-                painter: _LiveTimelinePainter(positionFraction: positionFraction),
-              ),
+              child: CustomPaint(painter: _LiveTimelinePainter(positionFraction: positionFraction)),
             ),
           );
         },

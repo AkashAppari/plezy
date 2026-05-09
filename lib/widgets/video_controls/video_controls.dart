@@ -635,10 +635,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                         child: AnimatedOpacity(
                           opacity: (_showControls || _forceShowControls) ? 1.0 : 0.0,
                           duration: const Duration(milliseconds: 200),
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
+                          child: Builder(
+                            builder: (context) {
                               return GestureDetector(
-                                onTapUp: (details) => _handleControlsOverlayTap(details, constraints),
+                                onTapUp: (details) => _handleControlsOverlayTap(details, _sizeOf(context)),
                                 onLongPressStart: (_) => _handleLongPressStart(),
                                 onLongPressEnd: (_) => _handleLongPressEnd(),
                                 onLongPressCancel: _handleLongPressCancel,

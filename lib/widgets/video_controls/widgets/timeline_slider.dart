@@ -132,6 +132,35 @@ class _TimelineSliderState extends State<TimelineSlider> {
     });
   }
 
+  double _sliderWidthOf(BuildContext context) {
+    final renderObject = context.findRenderObject();
+    return renderObject is RenderBox ? renderObject.size.width : 0.0;
+  }
+
+  Widget? _buildActiveTooltip(double sliderWidth, int durationMs, double displayValue, Duration displayPosition) {
+    if (durationMs <= 0 || sliderWidth <= 0) return null;
+
+    final trackWidth = sliderWidth - 2 * _sliderPadding;
+    if (_dragValue != null) {
+      final fraction = (displayValue / durationMs).clamp(0.0, 1.0);
+      final px = _sliderPadding + fraction * trackWidth;
+      return _buildTooltip(sliderWidth, px, displayPosition);
+    }
+
+    if (_mousePosition != null) {
+      final time = Duration(milliseconds: _hoverTimeMs ?? 0);
+      return _buildTooltip(sliderWidth, _mousePosition!, time, frame: _hoverFrame);
+    }
+
+    if (widget.showKeyRepeatThumbnail && widget.thumbnailDataBuilder != null) {
+      final fraction = (displayValue / durationMs).clamp(0.0, 1.0);
+      final px = _sliderPadding + fraction * trackWidth;
+      return _buildTooltip(sliderWidth, px, displayPosition);
+    }
+
+    return null;
+  }
+
   Widget _buildTooltip(double sliderWidth, double pixelX, Duration time, {ScrubFrame? frame}) {
     final resolvedFrame = frame ?? widget.thumbnailDataBuilder?.call(time);
     final hasThumbnail = resolvedFrame != null;
@@ -189,125 +218,115 @@ class _TimelineSliderState extends State<TimelineSlider> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final sliderWidth = constraints.maxWidth;
-        // Calculate the actual track width by subtracting the thumb padding on each side
-        final trackWidth = sliderWidth - 2 * _sliderPadding;
-        final durationMs = widget.duration.inMilliseconds;
-        final max = durationMs > 0 ? durationMs.toDouble() : 0.0;
-        final displayValue = max > 0
-            ? (_dragValue ?? widget.position.inMilliseconds.toDouble()).clamp(0.0, max).toDouble()
-            : 0.0;
-        final displayPosition = Duration(milliseconds: displayValue.toInt());
+    final durationMs = widget.duration.inMilliseconds;
+    final max = durationMs > 0 ? durationMs.toDouble() : 0.0;
+    final displayValue = max > 0
+        ? (_dragValue ?? widget.position.inMilliseconds.toDouble()).clamp(0.0, max).toDouble()
+        : 0.0;
+    final displayPosition = Duration(milliseconds: displayValue.toInt());
+    final hasTooltip =
+        durationMs > 0 &&
+        (_dragValue != null ||
+            _mousePosition != null ||
+            (widget.showKeyRepeatThumbnail && widget.thumbnailDataBuilder != null));
 
-        // Resolve tooltip position (drag takes priority over hover)
-        Widget? tooltip;
-        if (durationMs > 0) {
-          if (_dragValue != null) {
-            // Convert drag value (ms) to a 0..1 fraction, then map to pixel
-            // position on the track (offset by padding to align with the slider)
-            final fraction = (displayValue / durationMs).clamp(0.0, 1.0);
-            final px = _sliderPadding + fraction * trackWidth;
-            tooltip = _buildTooltip(sliderWidth, px, displayPosition);
-          } else if (_mousePosition != null) {
-            final time = Duration(milliseconds: _hoverTimeMs ?? 0);
-            tooltip = _buildTooltip(sliderWidth, _mousePosition!, time, frame: _hoverFrame);
-          } else if (widget.showKeyRepeatThumbnail && widget.thumbnailDataBuilder != null) {
-            // Preview thumbnail at the current playback position while the
-            // user holds a dpad/keyboard direction. The decoder lags behind
-            // rapid seeks, so the BIF thumbnail is the only live feedback.
-            final fraction = (displayValue / durationMs).clamp(0.0, 1.0);
-            final px = _sliderPadding + fraction * trackWidth;
-            tooltip = _buildTooltip(sliderWidth, px, displayPosition);
-          }
-        }
-
-        Widget slider = Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.center,
-          children: [
-            // Buffer range + segmented background track (with chapter gaps)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: _sliderPadding),
-                  child: CustomPaint(
-                    painter: BufferRangePainter(
-                      ranges: widget.bufferRanges,
-                      duration: widget.duration,
-                      chapters: widget.chaptersLoaded && widget.showChapterMarkersOnTimeline
-                          ? widget.chapters
-                          : const [],
-                    ),
+    Widget buildSlider(Widget? tooltip) {
+      return Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          // Buffer range + segmented background track (with chapter gaps)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: _sliderPadding),
+                child: CustomPaint(
+                  painter: BufferRangePainter(
+                    ranges: widget.bufferRanges,
+                    duration: widget.duration,
+                    chapters: widget.chaptersLoaded && widget.showChapterMarkersOnTimeline ? widget.chapters : const [],
                   ),
                 ),
               ),
             ),
-            // Slider - use IgnorePointer to block interaction while preserving visual style
-            IgnorePointer(
-              ignoring: !widget.enabled,
-              child: SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  trackHeight: 8,
-                  trackGap: 0,
-                  padding: EdgeInsets.zero,
-                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 0),
-                  tickMarkShape: SliderTickMarkShape.noTickMark,
-                  thumbSize: WidgetStatePropertyAll(
-                    (!InputModeTracker.isKeyboardMode(context) || _isFocused) ? const Size(4, 20) : Size.zero,
-                  ),
+          ),
+          // Slider - use IgnorePointer to block interaction while preserving visual style
+          IgnorePointer(
+            ignoring: !widget.enabled,
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 8,
+                trackGap: 0,
+                padding: EdgeInsets.zero,
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 0),
+                tickMarkShape: SliderTickMarkShape.noTickMark,
+                thumbSize: WidgetStatePropertyAll(
+                  (!InputModeTracker.isKeyboardMode(context) || _isFocused) ? const Size(4, 20) : Size.zero,
                 ),
-                child: Semantics(
-                  label: t.videoControls.timelineSlider,
-                  slider: true,
-                  child: Slider(
-                    value: displayValue,
-                    min: 0.0,
-                    max: max,
-                    onChanged: (value) {
-                      setState(() => _dragValue = value);
-                      widget.onSeek(Duration(milliseconds: value.toInt()));
-                    },
-                    onChangeEnd: (value) {
-                      setState(() => _dragValue = null);
-                      widget.onSeekEnd(Duration(milliseconds: value.toInt()));
-                    },
-                    activeColor: Colors.white,
-                    inactiveColor: Colors.transparent,
-                  ),
+              ),
+              child: Semantics(
+                label: t.videoControls.timelineSlider,
+                slider: true,
+                child: Slider(
+                  value: displayValue,
+                  min: 0.0,
+                  max: max,
+                  onChanged: (value) {
+                    setState(() => _dragValue = value);
+                    widget.onSeek(Duration(milliseconds: value.toInt()));
+                  },
+                  onChangeEnd: (value) {
+                    setState(() => _dragValue = null);
+                    widget.onSeekEnd(Duration(milliseconds: value.toInt()));
+                  },
+                  activeColor: Colors.white,
+                  inactiveColor: Colors.transparent,
                 ),
               ),
             ),
-            ?tooltip,
-          ],
-        );
+          ),
+          ?tooltip,
+        ],
+      );
+    }
 
-        // Wrap with FocusableWrapper when focusNode is provided
-        if (widget.focusNode != null) {
-          slider = FocusableWrapper(
-            focusNode: widget.focusNode,
-            onKeyEvent: widget.enabled ? widget.onKeyEvent : null,
-            onFocusChange: (hasFocus) {
-              setState(() => _isFocused = hasFocus);
-              widget.onFocusChange?.call(hasFocus);
+    Widget slider = hasTooltip
+        ? LayoutBuilder(
+            builder: (context, constraints) {
+              final tooltip = _buildActiveTooltip(constraints.maxWidth, durationMs, displayValue, displayPosition);
+              return buildSlider(tooltip);
             },
-            borderRadius: 8,
-            autoScroll: false,
-            disableScale: true,
-            focusColor: Colors.transparent,
-            semanticLabel: t.videoControls.timelineSlider,
-            descendantsAreFocusable: false,
-            child: slider,
-          );
-        }
+          )
+        : buildSlider(null);
 
-        return MouseRegion(
-          onHover: (event) => _updateHoverPosition(event.localPosition.dx, trackWidth, durationMs),
-          onExit: (_) => _clearHoverPosition(),
-          child: slider,
-        );
-      },
+    // Wrap with FocusableWrapper when focusNode is provided
+    if (widget.focusNode != null) {
+      slider = FocusableWrapper(
+        focusNode: widget.focusNode,
+        onKeyEvent: widget.enabled ? widget.onKeyEvent : null,
+        onFocusChange: (hasFocus) {
+          setState(() => _isFocused = hasFocus);
+          widget.onFocusChange?.call(hasFocus);
+        },
+        borderRadius: 8,
+        autoScroll: false,
+        disableScale: true,
+        focusColor: Colors.transparent,
+        semanticLabel: t.videoControls.timelineSlider,
+        descendantsAreFocusable: false,
+        child: slider,
+      );
+    }
+
+    return Builder(
+      builder: (context) => MouseRegion(
+        onHover: (event) {
+          final trackWidth = _sliderWidthOf(context) - 2 * _sliderPadding;
+          _updateHoverPosition(event.localPosition.dx, trackWidth, durationMs);
+        },
+        onExit: (_) => _clearHoverPosition(),
+        child: slider,
+      ),
     );
   }
 }

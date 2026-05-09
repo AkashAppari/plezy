@@ -154,6 +154,11 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     }
   }
 
+  Size _sizeOf(BuildContext context) {
+    final renderObject = context.findRenderObject();
+    return renderObject is RenderBox ? renderObject.size : Size.zero;
+  }
+
   /// Handle stacking skip - add to accumulated skip when feedback is active
   Future<void> _handleStackingSkip({required bool isForward}) async {
     if (!widget.canControl) return;
@@ -215,7 +220,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   }
 
   /// Handle tap on controls overlay - route to skip zones or toggle controls
-  void _handleControlsOverlayTap(TapUpDetails details, BoxConstraints constraints) {
+  void _handleControlsOverlayTap(TapUpDetails details, Size size) {
     final isMobile = PlatformDetector.isMobile(context);
 
     if (!isMobile) {
@@ -243,8 +248,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
       return;
     }
 
-    final width = constraints.maxWidth;
-    final skipZone = mobileSkipZoneForTap(position: details.localPosition, size: Size(width, constraints.maxHeight));
+    final skipZone = mobileSkipZoneForTap(position: details.localPosition, size: size);
     if (skipZone != null) {
       _handleTapInSkipZone(isForward: skipZone);
       return;
