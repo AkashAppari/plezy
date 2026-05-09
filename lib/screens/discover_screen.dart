@@ -26,6 +26,7 @@ import '../providers/libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/loading_indicator_box.dart';
+import '../widgets/profile_switching_overlay.dart';
 import 'profile/profile_switch_screen.dart';
 import '../connection/connection_registry.dart';
 import '../profiles/active_profile_provider.dart';
@@ -116,6 +117,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   List<MediaHub> _hubs = [];
   bool _isLoading = true;
   bool _areHubsLoading = true;
+  bool _switchingProfile = false;
   String? _errorMessage;
   final PageController _heroController = PageController();
   final ScrollController _scrollController = ScrollController();
@@ -898,8 +900,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final profiles = activeProvider.profiles;
 
     return FocusableAction(
-      onPressed: () => _showUserMenu(context),
+      onPressed: _switchingProfile ? null : () => _showUserMenu(context),
       child: PopupMenuButton<String>(
+        enabled: !_switchingProfile,
         icon: active != null
             ? ProfileAvatar(profile: active, size: 32)
             : const AppIcon(Symbols.account_circle_rounded, fill: 1, size: 32, color: Colors.white),
@@ -955,6 +958,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   Future<void> _handleUserMenuAction(BuildContext context, String value) async {
+    if (_switchingProfile) return;
     if (value == 'logout') {
       unawaited(_handleLogout());
       return;
@@ -968,12 +972,25 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       final active = context.read<ActiveProfileProvider>();
       final target = active.profiles.where((p) => p.id == id).firstOrNull;
       if (target == null) return;
-      await activateProfileWithPin(context, target);
+      await _switchProfileFromMenu(target);
+    }
+  }
+
+  Future<void> _switchProfileFromMenu(Profile profile) async {
+    if (_switchingProfile) return;
+    setState(() => _switchingProfile = true);
+    try {
+      await switchProfileFromUi(context, profile);
+    } finally {
+      if (mounted) {
+        setState(() => _switchingProfile = false);
+      }
     }
   }
 
   /// Show user menu programmatically (for D-pad select)
   void _showUserMenu(BuildContext context) {
+    if (_switchingProfile) return;
     final actionBar = _actionBarKey.currentState;
     if (actionBar == null) return;
     final lastNode = actionBar.getFocusNode(actionBar.widget.actions.length - 1);
@@ -1295,6 +1312,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           // initial/tab-switch focus lands on content (hero/hubs), not the toolbar.
           // Toolbar buttons are still reachable via explicit UP from hero section.
           Positioned(top: 0, left: 0, right: 0, child: ExcludeFocusTraversal(child: _buildOverlaidAppBar())),
+          if (_switchingProfile) const ProfileSwitchingOverlay(),
         ],
       ),
     );

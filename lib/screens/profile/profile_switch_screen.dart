@@ -28,6 +28,7 @@ import '../../widgets/app_icon.dart';
 import '../../widgets/backend_badge.dart';
 import '../../widgets/focusable_popup_menu_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/profile_switching_overlay.dart';
 import '../libraries/state_messages.dart';
 import '../auth_screen.dart';
 import 'add_local_profile_screen.dart';
@@ -145,33 +146,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
                   ),
                 ],
               ),
-              // Modal busy overlay so users see the switch is in flight.
-              // Without this the screen visually freezes for a few seconds
-              // while the binder fetches user tokens and rebuilds servers.
-              // `Positioned.fill` is required: a non-positioned `ColoredBox`
-              // sizes itself to its child (just the Card+Center), leaving
-              // the rest of the screen un-dimmed and tappable.
-              if (_switching)
-                Positioned.fill(
-                  child: ColoredBox(
-                    color: Colors.black54,
-                    child: Center(
-                      child: Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const SizedBox(width: 56, height: 56, child: CircularProgressIndicator()),
-                              const SizedBox(height: 16),
-                              Text(t.profiles.switchingProfile),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+              if (_switching) const ProfileSwitchingOverlay(),
             ],
           );
         },
@@ -384,28 +359,8 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
     setState(() => _switching = true);
     try {
       final navigator = Navigator.of(context);
-      final activeProvider = context.read<ActiveProfileProvider>();
-      final ok = await activateProfileWithPin(context, profile);
-      if (!mounted) return;
-      if (!ok) {
-        if (context.mounted) {
-          showErrorSnackBar(context, t.errors.failedToSwitchProfile(displayName: profile.displayName));
-        }
-        return;
-      }
-      // Stay on the picker while the binder mints the per-user token,
-      // fetches servers, and pushes them into MultiServerManager. The
-      // PIN dialog (if any) overlays the picker via the root navigator,
-      // so popping early would briefly expose the previous profile's
-      // empty-state screen behind the dialog.
-      final bound = await activeProvider.awaitBindingSettle();
-      if (!mounted) return;
-      if (!bound) {
-        if (context.mounted) {
-          showErrorSnackBar(context, t.errors.failedToSwitchProfile(displayName: profile.displayName));
-        }
-        return;
-      }
+      final switched = await switchProfileFromUi(context, profile);
+      if (!mounted || !switched) return;
       if (widget.requireSelection) {
         setState(() => _allowPop = true);
       }

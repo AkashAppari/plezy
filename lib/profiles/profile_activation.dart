@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 
 import '../connection/connection.dart';
 import '../connection/connection_registry.dart';
+import '../i18n/strings.g.dart';
 import '../screens/profile/pin_entry_dialog.dart';
 import '../services/plex_auth_service.dart';
+import '../utils/snackbar_helper.dart';
 import 'active_profile_binder.dart';
 import 'active_profile_provider.dart';
 import 'plex_home_switch.dart';
@@ -55,6 +57,27 @@ Future<bool> activateProfileWithPin(BuildContext context, Profile profile) async
     }
     errorMessage = 'Incorrect PIN. Please try again.';
   }
+}
+
+/// Activate [profile] from a UI surface, then wait until the active profile's
+/// server/token binding has settled. Shows the standard switch failure message
+/// for both activation and binding failures.
+Future<bool> switchProfileFromUi(BuildContext context, Profile profile) async {
+  final activeProvider = context.read<ActiveProfileProvider>();
+  final ok = await activateProfileWithPin(context, profile);
+  if (!context.mounted) return false;
+  if (!ok) {
+    showErrorSnackBar(context, t.errors.failedToSwitchProfile(displayName: profile.displayName));
+    return false;
+  }
+
+  final bound = await activeProvider.awaitBindingSettle();
+  if (!context.mounted) return false;
+  if (!bound) {
+    showErrorSnackBar(context, t.errors.failedToSwitchProfile(displayName: profile.displayName));
+    return false;
+  }
+  return true;
 }
 
 /// Validate [profile]'s PIN with Plex via `/home/users/{uuid}/switch`. On
