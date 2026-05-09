@@ -617,7 +617,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           onSelect: activate,
           borderRadius: 100,
           disableScale: true,
-          focusColor: Colors.transparent,
+          useBackgroundFocus: true,
           onKeyEvent: (_, event) {
             if (!event.isActionable) return KeyEventResult.ignored;
             final key = event.logicalKey;
