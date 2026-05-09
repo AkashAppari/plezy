@@ -256,13 +256,31 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     }
   }
 
-  void _handleItemRefresh(String ratingKey) {
-    setState(() {
-      final index = _items.indexWhere((item) => item.id == ratingKey);
-      if (index != -1) {
-        appLogger.d('Item refresh requested for: $ratingKey');
-      }
-    });
+  Future<void> _handleItemRefresh(String ratingKey) async {
+    final itemIndex = _items.indexWhere((item) => item.id == ratingKey);
+    final filteredIndex = _filteredItems.indexWhere((item) => item.id == ratingKey);
+    final existing = itemIndex != -1
+        ? _items[itemIndex]
+        : filteredIndex != -1
+        ? _filteredItems[filteredIndex]
+        : null;
+    if (existing == null) return;
+    final serverId = existing.serverId ?? widget.hub.serverId;
+    if (serverId == null) return;
+
+    try {
+      final updated = await context.tryGetMediaClientForServer(serverId)?.fetchItem(ratingKey);
+      if (updated == null || !mounted) return;
+      setState(() {
+        final currentItemIndex = _items.indexWhere((item) => item.id == ratingKey);
+        if (currentItemIndex != -1) _items[currentItemIndex] = updated;
+        final currentFilteredIndex = _filteredItems.indexWhere((item) => item.id == ratingKey);
+        if (currentFilteredIndex != -1) _filteredItems[currentFilteredIndex] = updated;
+      });
+      if (_selectedSort != null) _applySort();
+    } catch (e) {
+      appLogger.d('Item refresh skipped for: $ratingKey', error: e);
+    }
   }
 
   @override

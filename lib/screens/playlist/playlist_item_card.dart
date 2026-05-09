@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
 import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
 import '../../mixins/context_menu_tap_mixin.dart';
+import '../../providers/watch_state_overlay_provider.dart';
 import '../../utils/formatters.dart';
 import '../../utils/provider_extensions.dart';
 import '../../i18n/strings.g.dart';
@@ -44,8 +46,20 @@ class PlaylistItemCard extends StatefulWidget {
 }
 
 class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTapMixin<PlaylistItemCard> {
+  MediaItem _effectiveItem(BuildContext context) {
+    try {
+      final patch = context.select<WatchStateOverlayProvider, WatchStateOverlayPatch?>(
+        (provider) => provider.patchForGlobalKey(widget.item.globalKey),
+      );
+      return WatchStateOverlayProvider.applyPatch(widget.item, patch);
+    } on ProviderNotFoundException {
+      return widget.item;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final item = _effectiveItem(context);
     final colorScheme = Theme.of(context).colorScheme;
 
     // Determine if row is focused (main content area)
@@ -71,7 +85,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
 
     return MediaContextMenu(
       key: contextMenuKey,
-      item: widget.item,
+      item: item,
       onRefresh: widget.onRefresh,
       onTap: widget.onTap,
       child: Card(
@@ -118,7 +132,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
                   ),
 
                 // Poster thumbnail
-                _buildPosterImage(context),
+                _buildPosterImage(context, item),
 
                 const SizedBox(width: 12),
 
@@ -130,7 +144,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
                     children: [
                       // Title
                       Text(
-                        widget.item.displayTitle,
+                        item.displayTitle,
                         style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -140,19 +154,19 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
 
                       // Subtitle (episode info or type)
                       Text(
-                        _buildSubtitle(),
+                        _buildSubtitle(item),
                         style: TextStyle(fontSize: 13, color: Colors.grey[400]),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
 
                       // Progress indicator if partially watched
-                      if (widget.item.viewOffsetMs != null && widget.item.durationMs != null)
+                      if (item.viewOffsetMs != null && item.durationMs != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 6),
                           child: MediaProgressBar(
-                            viewOffset: widget.item.viewOffsetMs!,
-                            duration: widget.item.durationMs!,
+                            viewOffset: item.viewOffsetMs!,
+                            duration: item.durationMs!,
                             minHeight: 3,
                           ),
                         ),
@@ -163,9 +177,9 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
                 const SizedBox(width: 12),
 
                 // Duration
-                if (widget.item.durationMs != null)
+                if (item.durationMs != null)
                   Text(
-                    formatDurationTextual(widget.item.durationMs!),
+                    formatDurationTextual(item.durationMs!),
                     style: TextStyle(fontSize: 13, color: Colors.grey[400]),
                   ),
 
@@ -194,14 +208,14 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
     );
   }
 
-  Widget _buildPosterImage(BuildContext context) {
-    final posterUrl = widget.item.posterThumb();
+  Widget _buildPosterImage(BuildContext context, MediaItem item) {
+    final posterUrl = item.posterThumb();
     return ClipRRect(
       borderRadius: const BorderRadius.all(Radius.circular(6)),
       child: OptimizedMediaImage.poster(
         // Backend-neutral lookup so Jellyfin items render via their own
         // image transcoder; null falls through to the placeholder below.
-        client: context.tryGetMediaClientWithFallback(widget.item.serverId),
+        client: context.tryGetMediaClientWithFallback(item.serverId),
         imagePath: posterUrl,
         width: 60,
         height: 90,
@@ -221,21 +235,21 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
     );
   }
 
-  String _buildSubtitle() {
-    final kind = widget.item.kind;
+  String _buildSubtitle(MediaItem item) {
+    final kind = item.kind;
 
     if (kind == MediaKind.episode) {
       // For episodes, show "S#E# - Episode Title"
-      final season = widget.item.parentIndex;
-      final episode = widget.item.index;
+      final season = item.parentIndex;
+      final episode = item.index;
       if (season != null && episode != null) {
-        return 'S${season}E$episode${widget.item.displaySubtitle != null ? ' - ${widget.item.displaySubtitle}' : ''}';
+        return 'S${season}E$episode${item.displaySubtitle != null ? ' - ${item.displaySubtitle}' : ''}';
       }
-      return widget.item.displaySubtitle ?? t.discover.tvShow;
+      return item.displaySubtitle ?? t.discover.tvShow;
     } else if (kind == MediaKind.movie) {
       // For movies, show year and edition (edition is Plex-only; null elsewhere)
-      final year = widget.item.year?.toString();
-      final edition = widget.item.editionTitle;
+      final year = item.year?.toString();
+      final edition = item.editionTitle;
       if (year != null && edition != null) {
         return '$year · $edition';
       }

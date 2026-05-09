@@ -34,7 +34,6 @@ import '../utils/media_image_helper.dart';
 import '../services/plex_client.dart';
 import '../media/media_server_client.dart';
 import '../services/media_list_playback_launcher.dart';
-import '../services/offline_watch_sync_service.dart';
 import '../utils/content_utils.dart';
 import '../utils/rating_utils.dart';
 import '../models/download_models.dart';
@@ -192,41 +191,61 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   @override
   void onWatchStateChanged(WatchStateEvent event) {
+    _watchStateChanged = true;
     final epIndex = _episodes.indexWhere((e) => e.id == event.itemId);
 
-    if (event.changeType == WatchStateChangeType.progressUpdate && event.viewOffset != null) {
-      _patchLocalProgress(event.itemId, event.viewOffset!, epIndex: epIndex);
-    } else {
-      _localProgressById.remove(event.itemId);
+    if (event.changeType == WatchStateChangeType.removedFromContinueWatching) {
+      return;
     }
 
+    if (event.changeType == WatchStateChangeType.progressUpdate) {
+      if (event.viewOffset != null) {
+        _patchLocalProgress(event.itemId, event.viewOffset!, epIndex: epIndex);
+      }
+      if (event.isNowWatched != true) return;
+    }
+
+    _localProgressById.remove(event.itemId);
+    _patchWatchedStateFromEvent(
+      event,
+      epIndex: epIndex,
+      clearWatchedProgress: !widget.isOffline || event.changeType == WatchStateChangeType.progressUpdate,
+    );
+
     if (widget.isOffline) {
-      // Offline: skip network refetch — patch the affected episode (or
-      // the show metadata) in-memory using the local watch flag the event
-      // already carries. The sync service drains queued actions to the
-      // server when the device reconnects.
-      if (epIndex != -1 && event.isNowWatched != null) {
-        setStateIfMounted(() {
-          final updated = _episodes[epIndex].copyWith(
-            viewCount: event.isNowWatched! ? 1 : 0,
-            viewOffsetMs: event.isNowWatched! ? _episodes[epIndex].viewOffsetMs : 0,
-          );
-          _episodes[epIndex] = updated;
-          _syncEpisodeToCache(epIndex, updated);
-        });
-      } else if (event.itemId == _metadata.id) {
-        unawaited(_updateWatchStateOffline());
+      if (_metadata.isShow) {
+        unawaited(_loadOfflineOnDeckEpisode());
       }
       return;
     }
 
-    // Online: re-fetch the affected row so server-derived counters
-    // (parent leafCounts, lastViewedAt) refresh too.
-    if (epIndex != -1) {
-      _updateEpisodeWatchState(event.itemId);
-    } else {
-      _refreshWatchState();
-    }
+    // Online: refresh server-derived counters and on-deck state. A watched
+    // episode can change the hero play target even when the episode row itself
+    // was already visible and patched locally.
+    unawaited(_refreshWatchState());
+  }
+
+  void _patchWatchedStateFromEvent(WatchStateEvent event, {required int epIndex, required bool clearWatchedProgress}) {
+    final isWatched = event.isNowWatched;
+    if (isWatched == null) return;
+    final viewOffsetMs = isWatched && !clearWatchedProgress ? null : 0;
+    setStateIfMounted(() {
+      final base = _fullMetadata ?? widget.metadata;
+      if (base.id == event.itemId) {
+        _fullMetadata = base.copyWith(viewCount: isWatched ? 1 : 0, viewOffsetMs: viewOffsetMs);
+      }
+
+      final onDeckEpisode = _onDeckEpisode;
+      if (onDeckEpisode != null && onDeckEpisode.id == event.itemId) {
+        _onDeckEpisode = onDeckEpisode.copyWith(viewCount: isWatched ? 1 : 0, viewOffsetMs: viewOffsetMs);
+      }
+
+      if (epIndex != -1) {
+        final updated = _episodes[epIndex].copyWith(viewCount: isWatched ? 1 : 0, viewOffsetMs: viewOffsetMs);
+        _episodes[epIndex] = updated;
+        _syncEpisodeToCache(epIndex, updated);
+      }
+    });
   }
 
   void _patchLocalProgress(String itemId, int viewOffset, {int? epIndex}) {
@@ -377,9 +396,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       if (metadata != null) {
         setStateIfMounted(() {
           _fullMetadata = _applyLocalProgress(metadata.copyWith(serverId: serverId, serverName: serverName));
-          if (onDeckEpisode != null) {
-            _onDeckEpisode = _applyLocalProgress(onDeckEpisode.copyWith(serverId: serverId, serverName: serverName));
-          }
+          _onDeckEpisode = onDeckEpisode == null
+              ? null
+              : _applyLocalProgress(onDeckEpisode.copyWith(serverId: serverId, serverName: serverName));
         });
       }
 
@@ -400,30 +419,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       }
     } catch (e) {
       appLogger.d('Watch-state refresh failed', error: e);
-    }
-  }
-
-  /// Update a single episode's watch state without refetching everything.
-  /// Backend-neutral so Jellyfin items refresh in place when their
-  /// watched flag changes (the previous Plex-only path no-op'd for
-  /// Jellyfin and left the row stale).
-  Future<void> _updateEpisodeWatchState(String ratingKey) async {
-    final mediaClient = _getMediaClientForMetadata(context);
-    if (mediaClient == null) return;
-    try {
-      final refreshed = await mediaClient.fetchItem(ratingKey);
-      if (refreshed != null) {
-        setStateIfMounted(() {
-          final i = _episodes.indexWhere((e) => e.id == ratingKey);
-          if (i != -1) {
-            final updated = _applyLocalProgress(refreshed);
-            _episodes[i] = updated;
-            _syncEpisodeToCache(i, updated);
-          }
-        });
-      }
-    } catch (e) {
-      appLogger.d('Episode cache sync skipped', error: e);
     }
   }
 
@@ -2009,32 +2004,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final offlineWatchProvider = context.read<OfflineWatchProvider>();
     final nextEpisode = await offlineWatchProvider.getNextUnwatchedEpisode(_metadata.id);
 
+    setStateIfMounted(() {
+      _onDeckEpisode = nextEpisode == null ? null : _applyLocalProgress(nextEpisode);
+    });
+
     if (nextEpisode != null) {
-      setStateIfMounted(() {
-        _onDeckEpisode = _applyLocalProgress(nextEpisode);
-      });
       appLogger.d('Offline OnDeck: S${nextEpisode.parentIndex}E${nextEpisode.index} - ${nextEpisode.title}');
     }
-  }
-
-  /// Offline: patch the in-memory metadata so the UI reflects a queued
-  /// watch/unwatch action immediately. The sync service holds the truth
-  /// for offline state and will reconcile with the server on reconnect,
-  /// so we don't need to round-trip through the per-backend cache here.
-  Future<void> _updateWatchStateOffline() async {
-    final serverId = _metadata.serverId;
-    if (serverId == null) return;
-    final localStatus = await context.read<OfflineWatchSyncService>().getLocalWatchStatus('$serverId:${_metadata.id}');
-    if (localStatus == null) return;
-    setStateIfMounted(() {
-      final base = _fullMetadata ?? _metadata;
-      _fullMetadata = base.copyWith(
-        viewCount: localStatus ? 1 : 0,
-        // Reset the resume position when transitioning to unwatched, mirroring
-        // the previous Plex cache-mutation behavior.
-        viewOffsetMs: localStatus ? base.viewOffsetMs : 0,
-      );
-    });
   }
 
   Future<void> _playFirstEpisode() async {

@@ -98,13 +98,9 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
 
   @override
   void updateItemInLists(String itemId, MediaItem updatedItem) {
-    if (mounted) {
-      setState(() {
-        final index = items.indexWhere((it) => it.id == itemId);
-        if (index != -1) {
-          items[index] = updatedItem;
-        }
-      });
+    final index = items.indexWhere((it) => it.id == itemId);
+    if (index != -1) {
+      items[index] = updatedItem;
     }
   }
 

@@ -11,6 +11,7 @@ import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
 import '../mixins/context_menu_tap_mixin.dart';
 import '../providers/download_provider.dart';
+import '../providers/watch_state_overlay_provider.dart';
 import '../services/download_storage_service.dart';
 import '../services/settings_service.dart';
 import 'settings_builder.dart';
@@ -82,12 +83,33 @@ class MediaCard extends StatefulWidget {
 class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard> {
   /// Public method to trigger tap action (for keyboard/gamepad SELECT)
   void handleTap() {
-    _handleTap(context);
+    _handleTap(context, _effectiveItemForAction(context));
   }
 
-  String _buildSemanticLabel() {
+  Object _effectiveItem(BuildContext context) {
     final item = widget.item;
+    if (item is! MediaItem) return item;
+    try {
+      final patch = context.select<WatchStateOverlayProvider, WatchStateOverlayPatch?>(
+        (provider) => provider.patchForGlobalKey(item.globalKey),
+      );
+      return WatchStateOverlayProvider.applyPatch(item, patch);
+    } on ProviderNotFoundException {
+      return item;
+    }
+  }
 
+  Object _effectiveItemForAction(BuildContext context) {
+    final item = widget.item;
+    if (item is! MediaItem) return item;
+    try {
+      return context.read<WatchStateOverlayProvider>().apply(item);
+    } on ProviderNotFoundException {
+      return item;
+    }
+  }
+
+  String _buildSemanticLabel(Object item) {
     // Playlists don't expose kind, so build a simple localized label and exit early
     if (item is MediaPlaylist) {
       final count = item.leafCount;
@@ -132,7 +154,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
     return baseLabel;
   }
 
-  void _handleTap(BuildContext context) async {
+  void _handleTap(BuildContext context, Object item) async {
     // Ignore taps while context menu is open to avoid double-activating
     if (contextMenuKey.currentState?.isContextMenuOpen == true) {
       return;
@@ -140,7 +162,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
 
     final result = await navigateToMediaItem(
       context,
-      widget.item,
+      item,
       onRefresh: widget.onRefresh,
       isOffline: widget.isOffline,
       playDirectly: widget.isInContinueWatching,
@@ -161,11 +183,10 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
   }
 
   /// Get the local poster path for offline mode
-  String? _getLocalPosterPath(BuildContext context) {
+  String? _getLocalPosterPath(BuildContext context, Object item) {
     if (!widget.isOffline) return null;
-    if (widget.item is! MediaItem) return null;
+    if (item is! MediaItem) return null;
 
-    final item = widget.item as MediaItem;
     if (item.serverId == null) return null;
 
     final downloadProvider = context.read<DownloadProvider>();
@@ -192,6 +213,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
   }
 
   Widget _buildContent(BuildContext context) {
+    final item = _effectiveItem(context);
     final ViewMode viewMode;
     if (widget.forceListMode) {
       viewMode = ViewMode.list;
@@ -201,15 +223,15 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
       viewMode = SettingsService.instanceOrNull!.read(SettingsService.viewMode);
     }
 
-    final semanticLabel = _buildSemanticLabel();
-    final localPosterPath = _getLocalPosterPath(context);
+    final semanticLabel = _buildSemanticLabel(item);
+    final localPosterPath = _getLocalPosterPath(context, item);
 
     final cardWidget = viewMode == ViewMode.grid
-        ? _buildGridCard(context, semanticLabel, localPosterPath)
+        ? _buildGridCard(context, item, semanticLabel, localPosterPath)
         : _MediaCardList(
-            item: widget.item,
+            item: item,
             semanticLabel: semanticLabel,
-            onTap: () => _handleTap(context),
+            onTap: () => _handleTap(context, item),
             onTapDown: storeTapPosition,
             onLongPress: showContextMenuFromTap,
             onSecondaryTapDown: storeTapPosition,
@@ -224,11 +246,11 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
     // programmatic context menu access; gesture callbacks are on InkWell directly.
     return MediaContextMenu(
       key: contextMenuKey,
-      item: widget.item,
+      item: item,
       onRefresh: widget.onRefresh,
       onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
       onListRefresh: widget.onListRefresh,
-      onTap: () => _handleTap(context),
+      onTap: () => _handleTap(context, item),
       isInContinueWatching: widget.isInContinueWatching,
       collectionId: widget.collectionId,
       child: cardWidget,
@@ -237,8 +259,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
 
   /// Grid layout — inlined from former _MediaCardGrid, _PosterOverlay, and
   /// flattened Column. Semantics removed (InkWell provides button semantics).
-  Widget _buildGridCard(BuildContext context, String semanticLabel, String? localPosterPath) {
-    final item = widget.item;
+  Widget _buildGridCard(BuildContext context, Object item, String semanticLabel, String? localPosterPath) {
     // Compute actual poster dimensions from card dimensions
     final posterWidth = widget.width != null ? widget.width! - 6 : null; // 3px padding each side
     final posterHeight = widget.height;
@@ -247,7 +268,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
       width: widget.width,
       child: InkWell(
         canRequestFocus: false,
-        onTap: () => _handleTap(context),
+        onTap: () => _handleTap(context, item),
         onTapDown: storeTapPosition,
         onLongPress: showContextMenuFromTap,
         onSecondaryTapDown: storeTapPosition,

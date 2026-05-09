@@ -180,6 +180,7 @@ class _SearchScreenState extends State<SearchScreen>
             forceListMode: true,
             disableScale: true,
             focusNode: index == 0 ? _firstResultFocusNode : null,
+            onRefresh: updateItem,
             onListRefresh: () => updateItem(item.id),
             onNavigateLeft: _navigateToSidebar,
             onNavigateUp: index == 0 ? focusSearchInput : null,

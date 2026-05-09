@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -5,7 +7,10 @@ import '../../../i18n/strings.g.dart';
 import '../../../media/media_hub.dart';
 import '../../../media/media_item.dart';
 import '../../../mixins/item_updatable.dart';
+import '../../../mixins/watch_state_aware.dart';
+import '../../../utils/global_key_utils.dart';
 import '../../../utils/provider_extensions.dart';
+import '../../../utils/watch_state_notifier.dart';
 import '../../../widgets/hub_section.dart';
 import '../../main_screen.dart';
 import 'base_library_tab.dart';
@@ -26,12 +31,44 @@ class LibraryRecommendedTab extends BaseLibraryTab<MediaHub> {
   State<LibraryRecommendedTab> createState() => _LibraryRecommendedTabState();
 }
 
-class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryRecommendedTab> with ItemUpdatable {
+class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryRecommendedTab>
+    with ItemUpdatable, WatchStateAware {
   /// GlobalKeys for each hub section to enable vertical navigation
   final List<GlobalKey<HubSectionState>> _hubKeys = [];
 
   @override
   String? get itemServerId => widget.library.serverId;
+
+  @override
+  String? get watchStateServerId => widget.library.serverId;
+
+  @override
+  Set<String>? get watchedIds {
+    final keys = <String>{};
+    for (final hub in items) {
+      for (final item in hub.items) {
+        keys.add(item.id);
+        if (item.parentId != null) keys.add(item.parentId!);
+        if (item.grandparentId != null) keys.add(item.grandparentId!);
+      }
+    }
+    return keys;
+  }
+
+  @override
+  Set<String>? get watchedGlobalKeys {
+    final keys = <String>{};
+    for (final hub in items) {
+      for (final item in hub.items) {
+        final serverId = item.serverId ?? widget.library.serverId;
+        if (serverId == null) return null;
+        keys.add(buildGlobalKey(serverId, item.id));
+        if (item.parentId != null) keys.add(buildGlobalKey(serverId, item.parentId!));
+        if (item.grandparentId != null) keys.add(buildGlobalKey(serverId, item.grandparentId!));
+      }
+    }
+    return keys;
+  }
 
   @override
   void updateItemInLists(String itemId, MediaItem updatedItem) {
@@ -46,6 +83,43 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
         items[i] = hub.copyWith(items: newItems);
       }
     }
+  }
+
+  @override
+  void onWatchStateChanged(WatchStateEvent event) {
+    if (event.changeType == WatchStateChangeType.progressUpdate) return;
+
+    if (event.changeType == WatchStateChangeType.removedFromContinueWatching) {
+      _removeContinueWatchingItem(event.itemId);
+      unawaited(loadItems());
+      return;
+    }
+
+    final affectedIds = {event.itemId, ...event.parentChain};
+    final refreshIds = <String>{};
+    for (final hub in items) {
+      for (final item in hub.items) {
+        if (affectedIds.contains(item.id)) {
+          refreshIds.add(item.id);
+        }
+      }
+    }
+    for (final itemId in refreshIds) {
+      unawaited(updateItem(itemId));
+    }
+  }
+
+  void _removeContinueWatchingItem(String itemId) {
+    setState(() {
+      for (var i = 0; i < items.length; i++) {
+        final hub = items[i];
+        if (!_isContinueWatchingHub(hub)) continue;
+        final newItems = hub.items.where((item) => item.id != itemId).toList();
+        if (newItems.length != hub.items.length) {
+          items[i] = hub.copyWith(items: newItems, size: newItems.length);
+        }
+      }
+    });
   }
 
   @override

@@ -58,6 +58,9 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
   );
 
   @override
+  String? get itemServerId => widget.serverId;
+
+  @override
   String get title => widget.actorName;
 
   @override

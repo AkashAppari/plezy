@@ -174,8 +174,6 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
                 context,
                 isWatched ? t.messages.markedAsUnwatchedOffline : t.messages.markedAsWatchedOffline,
               );
-              unawaited(_updateWatchStateOffline());
-              unawaited(_loadOfflineOnDeckEpisode());
             }
           } else {
             // Online mode: dispatch via the right backend's neutral method so

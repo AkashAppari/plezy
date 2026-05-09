@@ -39,6 +39,9 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
   MediaItem get mediaItem => widget.collection;
 
   @override
+  String? get itemServerId => widget.collection.serverId;
+
+  @override
   String get title => widget.collection.title!;
 
   @override

@@ -69,6 +69,10 @@ class PlaybackProgressTracker {
   /// Whether the final stopped progress event was already emitted locally.
   bool _stopProgressNotified = false;
 
+  Duration? _lastProgressNotifiedPosition;
+
+  static const Duration _progressNotifyDelta = Duration(seconds: 30);
+
   final PlaybackReportSession? _reportSession;
 
   PlaybackProgressTracker({
@@ -165,16 +169,23 @@ class PlaybackProgressTracker {
       if (isOffline) {
         // Queue progress update for later sync
         await _sendOfflineProgress(position, duration);
+        _notifyProgressIfNeeded(position, duration, force: state == 'stopped');
       } else if (state == 'stopped') {
         // Stopped must complete before disposal
-        await _sendOnlineProgress(state, position, duration);
+        final accepted = await _sendOnlineProgress(state, position, duration);
         _resetBackoff();
+        if (accepted) {
+          _notifyProgressIfNeeded(position, duration, force: true);
+        }
       } else {
         // Fire-and-forget for playing/paused — avoid blocking the Dart event loop
         unawaited(
           _sendOnlineProgress(state, position, duration)
-              .then((_) {
+              .then((accepted) {
                 _resetBackoff();
+                if (accepted) {
+                  _notifyProgressIfNeeded(position, duration);
+                }
               })
               .catchError((Object e) {
                 _consecutiveFailures++;
@@ -186,18 +197,6 @@ class PlaybackProgressTracker {
                   error: e,
                 );
               }),
-        );
-      }
-
-      // Emit watch state event on stop for UI updates across screens.
-      // Skip if already scrobbled — markWatched already emitted a watched event.
-      if (state == 'stopped' && position.inMilliseconds > 0 && !_scrobbled && !_stopProgressNotified) {
-        _stopProgressNotified = true;
-        WatchStateNotifier().notifyProgress(
-          item: metadata,
-          viewOffset: position.inMilliseconds,
-          duration: duration.inMilliseconds,
-          watchedThreshold: client?.watchedThreshold ?? 0.9,
         );
       }
     } catch (e) {
@@ -222,12 +221,32 @@ class PlaybackProgressTracker {
     }
   }
 
+  void _notifyProgressIfNeeded(Duration position, Duration duration, {bool force = false}) {
+    if (_scrobbled) return;
+    if (position.inMilliseconds <= 0 || duration.inMilliseconds <= 0) return;
+    if (force) {
+      if (_stopProgressNotified) return;
+      _stopProgressNotified = true;
+    } else {
+      final last = _lastProgressNotifiedPosition;
+      if (last != null && (position - last).abs() < _progressNotifyDelta) return;
+    }
+
+    _lastProgressNotifiedPosition = position;
+    WatchStateNotifier().notifyProgress(
+      item: metadata,
+      viewOffset: position.inMilliseconds,
+      duration: duration.inMilliseconds,
+      watchedThreshold: client?.watchedThreshold ?? 0.9,
+    );
+  }
+
   /// Send progress update to the active server through the unified
   /// [MediaServerClient.reportPlayback*] surface.
-  Future<void> _sendOnlineProgress(String state, Duration position, Duration duration) async {
+  Future<bool> _sendOnlineProgress(String state, Duration position, Duration duration) async {
     final c = client;
     final session = _reportSession;
-    if (c == null || session == null) return;
+    if (c == null || session == null) return false;
 
     final accepted = await session.report(
       PlaybackReportSnapshot(
@@ -243,6 +262,7 @@ class PlaybackProgressTracker {
     if (accepted) {
       await _maybeScrobble(c, position, duration);
     }
+    return accepted;
   }
 
   PlaybackStreamSelection _currentStreamSelectionForStopped() {

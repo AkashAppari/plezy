@@ -4,7 +4,7 @@ import 'base_notifier.dart';
 import 'global_key_utils.dart';
 import 'hierarchical_event_mixin.dart';
 
-enum WatchStateChangeType { watched, unwatched, progressUpdate }
+enum WatchStateChangeType { watched, unwatched, progressUpdate, removedFromContinueWatching }
 
 /// Event representing a watch state change with parent chain for hierarchical invalidation
 class WatchStateEvent with HierarchicalEventMixin {
@@ -128,6 +128,20 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
         mediaType: item.kind.id,
         viewOffset: viewOffset,
         isNowWatched: isNowWatched,
+        librarySectionID: item.libraryId,
+      ),
+    );
+  }
+
+  /// Helper to emit a Continue Watching removal event.
+  void notifyRemovedFromContinueWatching({required MediaItem item}) {
+    notify(
+      WatchStateEvent(
+        itemId: item.id,
+        serverId: item.serverId ?? '',
+        changeType: WatchStateChangeType.removedFromContinueWatching,
+        parentChain: item.parentChain,
+        mediaType: item.kind.id,
         librarySectionID: item.libraryId,
       ),
     );

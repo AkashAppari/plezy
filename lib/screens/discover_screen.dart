@@ -164,8 +164,20 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   @override
   void onWatchStateChanged(WatchStateEvent event) {
+    if (event.changeType == WatchStateChangeType.removedFromContinueWatching) {
+      _removeContinueWatchingItem(event.itemId);
+      unawaited(_refreshContinueWatching());
+      return;
+    }
+
     // Refresh continue watching when any relevant item changes
-    _refreshContinueWatching();
+    unawaited(_refreshContinueWatching());
+  }
+
+  void _removeContinueWatchingItem(String itemId) {
+    setState(() {
+      _onDeck.removeWhere((item) => item.id == itemId);
+    });
   }
 
   // Track initial load so we can focus hero when content first appears

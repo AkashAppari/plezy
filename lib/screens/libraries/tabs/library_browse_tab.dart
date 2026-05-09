@@ -46,11 +46,13 @@ import '../../../services/storage_service.dart';
 import '../../../services/settings_service.dart';
 import '../../../mixins/grid_focus_node_mixin.dart';
 import '../../../mixins/item_updatable.dart';
+import '../../../mixins/watch_state_aware.dart';
 import '../../../mixins/deletion_aware.dart';
 import '../../../mixins/paginated_item_loader.dart';
 import '../../../widgets/skeleton_media_card.dart';
 import '../../../utils/deletion_notifier.dart';
 import '../../../utils/global_key_utils.dart';
+import '../../../utils/watch_state_notifier.dart';
 import '../../../utils/platform_detector.dart';
 import '../../../i18n/strings.g.dart';
 import '../../main_screen.dart';
@@ -81,7 +83,13 @@ class LibraryBrowseTab extends BaseLibraryTab<MediaItem> {
 }
 
 class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrowseTab>
-    with ItemUpdatable, LibraryTabFocusMixin, GridFocusNodeMixin, DeletionAware, PaginatedItemLoader<LibraryBrowseTab> {
+    with
+        ItemUpdatable,
+        LibraryTabFocusMixin,
+        GridFocusNodeMixin,
+        WatchStateAware,
+        DeletionAware,
+        PaginatedItemLoader<LibraryBrowseTab> {
   @override
   String? get itemServerId => widget.library.serverId;
 
@@ -90,6 +98,25 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
   @override
   String? get deletionServerId => widget.library.serverId;
+
+  @override
+  String? get watchStateServerId => widget.library.serverId;
+
+  @override
+  Set<String>? get watchedIds => loadedItems.values.map((e) => e.id).toSet();
+
+  @override
+  Set<String>? get watchedGlobalKeys {
+    if (loadedItems.isEmpty) return <String>{};
+
+    final keys = <String>{};
+    for (final item in loadedItems.values) {
+      final serverId = item.serverId ?? widget.library.serverId;
+      if (serverId == null) return null;
+      keys.add(_toGlobalKey(item.id, serverId: serverId));
+    }
+    return keys;
+  }
 
   @override
   Set<String>? get deletionIds => loadedItems.values.map((e) => e.id).toSet();
@@ -105,6 +132,21 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       keys.add(_toGlobalKey(item.id, serverId: serverId));
     }
     return keys;
+  }
+
+  @override
+  void onWatchStateChanged(WatchStateEvent event) {
+    if (event.changeType == WatchStateChangeType.progressUpdate ||
+        event.changeType == WatchStateChangeType.removedFromContinueWatching) {
+      return;
+    }
+
+    final affectedIds = {event.itemId, ...event.parentChain};
+    for (final item in loadedItems.values) {
+      if (affectedIds.contains(item.id)) {
+        unawaited(updateItem(item.id));
+      }
+    }
   }
 
   @override
@@ -154,14 +196,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
   @override
   void updateItemInLists(String itemId, MediaItem updatedMetadata) {
-    setState(() {
-      for (final entry in loadedItems.entries) {
-        if (entry.value.id == itemId) {
-          loadedItems[entry.key] = updatedMetadata;
-          break;
-        }
+    for (final entry in loadedItems.entries) {
+      if (entry.value.id == itemId) {
+        loadedItems[entry.key] = updatedMetadata;
+        break;
       }
-    });
+    }
   }
 
   // Browse-specific state (not in base class)

@@ -48,6 +48,7 @@ import 'providers/playback_state_provider.dart';
 import 'providers/download_provider.dart';
 import 'providers/offline_mode_provider.dart';
 import 'providers/offline_watch_provider.dart';
+import 'providers/watch_state_overlay_provider.dart';
 import 'providers/companion_remote_provider.dart';
 import 'providers/shader_provider.dart';
 import 'utils/snackbar_helper.dart';
@@ -705,6 +706,14 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           create: (context) => DownloadProvider(downloadManager: _downloadManager, database: _appDatabase),
           update: (context, activeProfile, previous) {
             final provider = previous ?? DownloadProvider(downloadManager: _downloadManager, database: _appDatabase);
+            provider.setActiveProfileId(activeProfile.activeId);
+            return provider;
+          },
+        ),
+        ChangeNotifierProxyProvider<ActiveProfileProvider, WatchStateOverlayProvider>(
+          create: (_) => WatchStateOverlayProvider(),
+          update: (_, activeProfile, previous) {
+            final provider = previous ?? WatchStateOverlayProvider();
             provider.setActiveProfileId(activeProfile.activeId);
             return provider;
           },

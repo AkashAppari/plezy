@@ -8,6 +8,7 @@ import '../focus/focusable_wrapper.dart';
 import '../mixins/context_menu_tap_mixin.dart';
 import '../models/download_models.dart';
 import '../providers/download_provider.dart';
+import '../providers/watch_state_overlay_provider.dart';
 import 'package:provider/provider.dart';
 
 import '../services/settings_service.dart';
@@ -56,7 +57,18 @@ class EpisodeCard extends StatefulWidget {
 }
 
 class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<EpisodeCard> {
-  Widget _buildEpisodeMetaRow(BuildContext context) {
+  MediaItem _effectiveEpisode(BuildContext context) {
+    try {
+      final patch = context.select<WatchStateOverlayProvider, WatchStateOverlayPatch?>(
+        (provider) => provider.patchForGlobalKey(widget.episode.globalKey),
+      );
+      return WatchStateOverlayProvider.applyPatch(widget.episode, patch);
+    } on ProviderNotFoundException {
+      return widget.episode;
+    }
+  }
+
+  Widget _buildEpisodeMetaRow(BuildContext context, MediaItem episode) {
     final mutedStyle = Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12);
     final dot = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6),
@@ -64,13 +76,13 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
     );
     return Row(
       children: [
-        if (widget.episode.durationMs != null)
-          Text(formatDurationTimestamp(Duration(milliseconds: widget.episode.durationMs!)), style: mutedStyle),
-        if (widget.episode.originallyAvailableAt != null) ...[
+        if (episode.durationMs != null)
+          Text(formatDurationTimestamp(Duration(milliseconds: episode.durationMs!)), style: mutedStyle),
+        if (episode.originallyAvailableAt != null) ...[
           dot,
-          Text(formatFullDate(widget.episode.originallyAvailableAt!), style: mutedStyle),
+          Text(formatFullDate(episode.originallyAvailableAt!), style: mutedStyle),
         ],
-        if (widget.episode.userRating != null && widget.episode.userRating! > 0) ...[
+        if (episode.userRating != null && episode.userRating! > 0) ...[
           dot,
           const Padding(
             padding: EdgeInsets.only(top: 2),
@@ -78,9 +90,9 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
           ),
           const SizedBox(width: 2),
           Text(
-            (widget.episode.userRating! / 2) == (widget.episode.userRating! / 2).truncateToDouble()
-                ? '${(widget.episode.userRating! / 2).toInt()}'
-                : formatRating(widget.episode.userRating! / 2),
+            (episode.userRating! / 2) == (episode.userRating! / 2).truncateToDouble()
+                ? '${(episode.userRating! / 2).toInt()}'
+                : formatRating(episode.userRating! / 2),
             style: mutedStyle,
           ),
         ],
@@ -97,17 +109,15 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
   }
 
   Widget _buildContent(BuildContext context, {required bool hideSpoilers}) {
-    final shouldBlur = hideSpoilers && widget.episode.shouldHideSpoiler;
+    final episode = _effectiveEpisode(context);
+    final shouldBlur = hideSpoilers && episode.shouldHideSpoiler;
 
     // Hide progress when offline (not tracked)
     final hasProgress =
-        !widget.isOffline &&
-        widget.episode.viewOffsetMs != null &&
-        widget.episode.durationMs != null &&
-        widget.episode.viewOffsetMs! > 0;
-    final progress = hasProgress ? widget.episode.viewOffsetMs! / widget.episode.durationMs! : 0.0;
+        !widget.isOffline && episode.viewOffsetMs != null && episode.durationMs != null && episode.viewOffsetMs! > 0;
+    final progress = hasProgress ? episode.viewOffsetMs! / episode.durationMs! : 0.0;
 
-    final hasActiveProgress = hasProgress && widget.episode.viewOffsetMs! < widget.episode.durationMs!;
+    final hasActiveProgress = hasProgress && episode.viewOffsetMs! < episode.durationMs!;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
@@ -121,12 +131,12 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
         disableScale: true,
         child: MediaContextMenu(
           key: contextMenuKey,
-          item: widget.episode,
+          item: episode,
           onRefresh: widget.onRefresh,
           onListRefresh: widget.onListRefresh,
           onTap: widget.onTap,
           child: InkWell(
-            key: Key(widget.episode.id),
+            key: Key(episode.id),
             borderRadius: BorderRadius.circular(FocusTheme.defaultBorderRadius),
             onTap: widget.onTap,
             canRequestFocus: false,
@@ -156,10 +166,10 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                                 ? ClipRect(
                                     child: ImageFiltered(
                                       imageFilter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                                      child: _buildEpisodeThumbnail(),
+                                      child: _buildEpisodeThumbnail(episode),
                                     ),
                                   )
-                                : _buildEpisodeThumbnail(),
+                                : _buildEpisodeThumbnail(episode),
                           ),
                         ),
 
@@ -209,7 +219,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                             ),
                           ),
 
-                        if (widget.episode.isWatched && !hasActiveProgress)
+                        if (episode.isWatched && !hasActiveProgress)
                           Positioned(
                             top: 4,
                             right: 4,
@@ -234,15 +244,13 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Selector<DownloadProvider, _DownloadSlice>(
-                          selector: (_, p) => _DownloadSlice.from(
-                            p.getProgress(widget.episode.globalKey),
-                            p.isQueueing(widget.episode.globalKey),
-                          ),
+                          selector: (_, p) =>
+                              _DownloadSlice.from(p.getProgress(episode.globalKey), p.isQueueing(episode.globalKey)),
                           builder: (context, slice, _) {
                             Widget? downloadStatusIcon;
 
                             // Only show download status in online mode
-                            if (!widget.isOffline && widget.episode.serverId != null) {
+                            if (!widget.isOffline && episode.serverId != null) {
                               final status = slice.status;
                               final mutedBase = tokens(context).textMuted;
 
@@ -263,7 +271,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
 
                             return Row(
                               children: [
-                                if (widget.episode.index != null)
+                                if (episode.index != null)
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                                     decoration: BoxDecoration(
@@ -271,7 +279,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                                       borderRadius: const BorderRadius.all(Radius.circular(3)),
                                     ),
                                     child: Text(
-                                      'E${widget.episode.index}',
+                                      'E${episode.index}',
                                       style: TextStyle(
                                         color: Theme.of(context).colorScheme.onPrimaryContainer,
                                         fontSize: 11,
@@ -283,7 +291,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    widget.episode.title!,
+                                    episode.title!,
                                     style: Theme.of(
                                       context,
                                     ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
@@ -296,11 +304,11 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                           },
                         ),
 
-                        if (!shouldBlur && widget.episode.summary != null && widget.episode.summary!.isNotEmpty) ...[
+                        if (!shouldBlur && episode.summary != null && episode.summary!.isNotEmpty) ...[
                           const SizedBox(height: 6),
                           if (PlatformDetector.isTV())
                             Text(
-                              widget.episode.summary!,
+                              episode.summary!,
                               style: Theme.of(
                                 context,
                               ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, height: 1.3),
@@ -309,7 +317,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                             )
                           else
                             CollapsibleText(
-                              text: widget.episode.summary!,
+                              text: episode.summary!,
                               maxLines: 3,
                               small: true,
                               style: Theme.of(
@@ -319,7 +327,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                         ],
 
                         const SizedBox(height: 8),
-                        _buildEpisodeMetaRow(context),
+                        _buildEpisodeMetaRow(context, episode),
                       ],
                     ),
                   ),
@@ -332,7 +340,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
     );
   }
 
-  Widget _buildEpisodeThumbnail() {
+  Widget _buildEpisodeThumbnail(MediaItem episode) {
     if (widget.isOffline && widget.localPosterPath != null) {
       return OptimizedMediaImage.thumb(
         client: null,
@@ -343,10 +351,10 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
             const PlaceholderContainer(child: AppIcon(Symbols.movie_rounded, fill: 1, size: 32)),
       );
     }
-    if (widget.episode.thumbPath != null) {
+    if (episode.thumbPath != null) {
       return OptimizedMediaImage.thumb(
         client: widget.client,
-        imagePath: widget.episode.thumbPath,
+        imagePath: episode.thumbPath,
         filterQuality: FilterQuality.medium,
         fit: BoxFit.cover,
         placeholder: (context, url) => const PlaceholderContainer(),

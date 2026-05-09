@@ -44,6 +44,9 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   Object get mediaItem => widget.playlist;
 
   @override
+  String? get itemServerId => widget.playlist.serverId;
+
+  @override
   String get title => widget.playlist.title;
 
   @override

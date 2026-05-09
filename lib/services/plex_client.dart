@@ -3068,7 +3068,10 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
   Future<void> markUnwatched(MediaItem item) => markAsUnwatched(item.id, item: item);
 
   @override
-  Future<void> removeFromContinueWatching(MediaItem item) => removeFromOnDeck(item.id);
+  Future<void> removeFromContinueWatching(MediaItem item) async {
+    await removeFromOnDeck(item.id);
+    WatchStateNotifier().notifyRemovedFromContinueWatching(item: item);
+  }
 
   /// Rate a media item (0.0-10.0 scale, where each integer = half a star).
   /// Pass `-1` to clear an existing rating. Throws [MediaServerHttpException]

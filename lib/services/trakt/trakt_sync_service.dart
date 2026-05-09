@@ -109,7 +109,7 @@ class TraktSyncService {
 
   Future<void> _onWatchStateEvent(WatchStateEvent event) async {
     if (!_canPush) return;
-    if (event.changeType == WatchStateChangeType.progressUpdate) return;
+    if (event.changeType != WatchStateChangeType.watched && event.changeType != WatchStateChangeType.unwatched) return;
 
     final kind = TraktMediaKind.tryFromMediaKindId(event.mediaType);
     if (kind == null) return;
