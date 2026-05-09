@@ -20,6 +20,36 @@ class WindowDelegate: NSObject, NSWindowDelegate {
     channel?.invokeMethod(method, arguments: nil)
   }
 
+  func syncWindowChrome() {
+    guard let window = window else { return }
+    if window.styleMask.contains(.fullScreen) {
+      applyFullScreenChrome(to: window)
+    } else {
+      applyWindowedChrome(to: window)
+    }
+  }
+
+  private func applyFullScreenChrome(to window: NSWindow) {
+    window.toolbar = nil
+    window.titleVisibility = .visible
+    window.titlebarAppearsTransparent = false
+    WindowUtilsPlugin.setTrafficLightsVisible(true, window: window)
+    WindowUtilsPlugin.setTrafficLightPositions(custom: false, window: window)
+  }
+
+  private func applyWindowedChrome(to window: NSWindow) {
+    window.titleVisibility = .hidden
+    window.titlebarAppearsTransparent = true
+    window.styleMask.insert(.fullSizeContentView)
+
+    if window.toolbar == nil, let flutterVC = window.contentViewController {
+      window.toolbar = ForwardingToolbar(flutterViewController: flutterVC)
+    }
+
+    WindowUtilsPlugin.setTrafficLightsVisible(true, window: window)
+    WindowUtilsPlugin.setTrafficLightPositions(custom: true, window: window)
+  }
+
   // MARK: - NSWindowDelegate
 
   func window(
@@ -31,13 +61,7 @@ class WindowDelegate: NSObject, NSWindowDelegate {
 
   func windowWillEnterFullScreen(_ notification: Notification) {
     guard let window = window else { return }
-    // Remove toolbar before entering fullscreen
-    window.toolbar = nil
-    // Show title and make titlebar opaque for native fullscreen look
-    window.titleVisibility = .visible
-    window.titlebarAppearsTransparent = false
-    // Reset traffic light positions to default
-    WindowUtilsPlugin.setTrafficLightPositions(custom: false, window: window)
+    applyFullScreenChrome(to: window)
     // Notify Dart for state management only
     emit("windowWillEnterFullScreen")
   }
@@ -56,13 +80,7 @@ class WindowDelegate: NSObject, NSWindowDelegate {
 
   func windowDidExitFullScreen(_ notification: Notification) {
     guard let window = window else { return }
-    // Restore toolbar
-    if let flutterVC = window.contentViewController {
-      let toolbar = ForwardingToolbar(flutterViewController: flutterVC)
-      window.toolbar = toolbar
-    }
-    // Restore custom traffic light positions
-    WindowUtilsPlugin.setTrafficLightPositions(custom: true, window: window)
+    applyWindowedChrome(to: window)
     emit("windowDidExitFullScreen")
   }
 }

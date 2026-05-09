@@ -88,18 +88,29 @@ class WindowUtilsPlugin: NSObject, FlutterPlugin {
 
   static func setWindow(_ window: NSWindow) {
     instance?.window = window
+    instance?.windowDelegate?.window = window
   }
 
-  /// Apply custom traffic light positions. Called by MainFlutterWindow on startup.
-  static func setInitialTrafficLightPositions() {
+  static func installWindowDelegate() {
     guard let instance = instance, let window = instance.window else { return }
-    instance.applyTrafficLightPositions(custom: true, window: window)
+    instance.installWindowDelegate(window: window)
+  }
+
+  static func syncWindowChrome() {
+    guard let instance = instance else { return }
+    instance.syncWindowChrome()
   }
 
   /// Apply traffic light positions. Called by WindowDelegate during fullscreen transitions.
   static func setTrafficLightPositions(custom: Bool, window: NSWindow) {
     guard let instance = instance else { return }
     instance.applyTrafficLightPositions(custom: custom, window: window)
+  }
+
+  static func setTrafficLightsVisible(_ visible: Bool, window: NSWindow) {
+    for buttonType in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
+      window.standardWindowButton(buttonType)?.isHidden = !visible
+    }
   }
 
   private func applyTrafficLightPositions(custom: Bool, window: NSWindow) {
@@ -130,9 +141,11 @@ class WindowUtilsPlugin: NSObject, FlutterPlugin {
     case "setTrafficLightsVisible":
       let args = call.arguments as? [String: Any]
       let visible = args?["visible"] as? Bool ?? true
-      for buttonType in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
-        window.standardWindowButton(buttonType)?.isHidden = !visible
-      }
+      WindowUtilsPlugin.setTrafficLightsVisible(visible, window: window)
+      result(nil)
+
+    case "syncWindowChrome":
+      syncWindowChrome()
       result(nil)
 
     case "enterFullscreen":
@@ -159,12 +172,30 @@ class WindowUtilsPlugin: NSObject, FlutterPlugin {
     self.window = window
 
     if enableWindowDelegate {
-      let delegate = WindowDelegate()
-      delegate.channel = channel
-      delegate.window = window
-      windowDelegate = delegate
-      window.delegate = delegate
+      installWindowDelegate(window: window)
     }
+
+    windowDelegate?.syncWindowChrome()
+  }
+
+  private func installWindowDelegate(window: NSWindow) {
+    let delegate = windowDelegate ?? WindowDelegate()
+    delegate.channel = channel
+    delegate.window = window
+    windowDelegate = delegate
+    window.delegate = delegate
+  }
+
+  private func syncWindowChrome() {
+    guard let window = window else { return }
+    if windowDelegate == nil {
+      installWindowDelegate(window: window)
+    } else {
+      windowDelegate?.channel = channel
+      windowDelegate?.window = window
+      window.delegate = windowDelegate
+    }
+    windowDelegate?.syncWindowChrome()
   }
 
   private func withButton(

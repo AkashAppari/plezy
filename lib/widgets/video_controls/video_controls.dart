@@ -470,6 +470,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     _checkPipSupport();
     // Add window listener for tracking fullscreen state (for button icon)
     if (PlatformDetector.isDesktopOS()) {
+      if (Platform.isMacOS) {
+        _isFullscreen = FullscreenStateManager().isFullscreen;
+        FullscreenStateManager().addListener(_onFullscreenStateChanged);
+      }
       windowManager.addListener(this);
       _initAlwaysOnTopState();
     }
@@ -530,11 +534,21 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       }
     }
     if (Platform.isMacOS) {
+      FullscreenStateManager().removeListener(_onFullscreenStateChanged);
       _pipService.isPipActive.removeListener(_onMacPipChanged);
       _trafficLightVisibilityGeneration++;
       unawaited(MacOSWindowService.setTrafficLightsVisible(true));
     }
     super.dispose();
+  }
+
+  void _onFullscreenStateChanged() {
+    final isFullscreen = FullscreenStateManager().isFullscreen;
+    if (!mounted || _isFullscreen == isFullscreen) return;
+    setState(() {
+      _isFullscreen = isFullscreen;
+    });
+    _updateTrafficLightVisibility();
   }
 
   @override

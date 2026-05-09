@@ -167,7 +167,11 @@ Future<void> _bootstrapApp() async {
   final futures = <Future<void>>[];
 
   if (PlatformDetector.isDesktopOS()) {
-    futures.add(windowManager.ensureInitialized());
+    if (Platform.isMacOS) {
+      futures.add(windowManager.ensureInitialized().then((_) => MacOSWindowService.setupCustomTitlebar()));
+    } else {
+      futures.add(windowManager.ensureInitialized());
+    }
   }
 
   // Initialize TV detection (Android leanback or Apple TV) and PiP on Android.
@@ -177,8 +181,6 @@ Future<void> _bootstrapApp() async {
   if (Platform.isAndroid) {
     PipService();
   }
-
-  futures.add(MacOSWindowService.setupCustomTitlebar());
 
   // Hook Windows native fullscreen callback (no-op elsewhere).
   NativeWindowService.initialize();

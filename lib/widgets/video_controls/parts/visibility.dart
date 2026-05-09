@@ -256,7 +256,7 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     // When maximized or fullscreen, always keep traffic lights visible so the
     // user can reach them without the controls-hide-on-mouse-leave race.
     // In normal windowed mode, toggle with controls as before.
-    final isMaximizedOrFullscreen = await windowManager.isMaximized() || await windowManager.isFullScreen();
+    final isMaximizedOrFullscreen = await windowManager.isMaximized() || await MacOSWindowService.isFullscreen();
     if (!mounted || generation != _trafficLightVisibilityGeneration) return;
     final visible = isMaximizedOrFullscreen || _forceShowControls ? true : _showControls;
     await MacOSWindowService.setTrafficLightsVisible(visible);

@@ -31,14 +31,14 @@ class MainFlutterWindow: NSWindow {
     WindowUtilsPlugin.register(
       with: flutterViewController.registrar(forPlugin: "WindowUtilsPlugin"))
     WindowUtilsPlugin.setWindow(self)
-
-    // Set custom traffic light positions using centralized values from plugin
-    WindowUtilsPlugin.setInitialTrafficLightPositions()
+    WindowUtilsPlugin.installWindowDelegate()
+    WindowUtilsPlugin.syncWindowChrome()
 
     RegisterGeneratedPlugins(registry: flutterViewController)
 
     // Enable window position/size persistence
     self.setFrameAutosaveName("com.edde746.plezy.MainWindow")
+    WindowUtilsPlugin.syncWindowChrome()
 
     super.awakeFromNib()
   }

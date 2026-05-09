@@ -29,7 +29,7 @@ class FullscreenStateManager extends ChangeNotifier with WindowListener {
   /// Toggle fullscreen state, handling maximized-to-fullscreen transition on Windows/Linux
   Future<void> toggleFullscreen() async {
     if (Platform.isMacOS) {
-      final isCurrentlyFullscreen = await windowManager.isFullScreen();
+      final isCurrentlyFullscreen = await MacOSWindowService.isFullscreen();
       if (isCurrentlyFullscreen) {
         await MacOSWindowService.exitFullscreen();
       } else {
