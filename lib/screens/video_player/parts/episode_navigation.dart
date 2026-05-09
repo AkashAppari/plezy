@@ -2,6 +2,7 @@ part of '../../video_player_screen.dart';
 
 extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
   Future<void> _playNext() async {
+    if (!mounted) return;
     if (_nextEpisode == null || _isLoadingNext) return;
 
     _autoPlayTimer?.cancel();

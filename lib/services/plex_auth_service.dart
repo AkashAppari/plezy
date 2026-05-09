@@ -1,7 +1,9 @@
 import 'dart:async';
-import 'dart:io' show InternetAddress, InternetAddressType;
+import 'dart:io' show InternetAddress, InternetAddressType, Platform;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'storage_service.dart';
 import 'plex_client.dart';
+import '../exceptions/media_server_exceptions.dart';
 import '../models/plex/plex_user_profile.dart';
 import '../models/plex/plex_home.dart';
 import '../models/user_switch_response.dart';
@@ -47,8 +49,10 @@ class PlexAuthService {
 
   final MediaServerHttpClient _http;
   final String _clientIdentifier;
+  final String _appVersion;
+  final String _platformVersion;
 
-  PlexAuthService._(this._http, this._clientIdentifier);
+  PlexAuthService._(this._http, this._clientIdentifier, this._appVersion, this._platformVersion);
 
   /// Close the underlying HTTP client. Call when the service is short-lived
   /// (created for a single API call) to avoid leaking sockets.
@@ -61,7 +65,8 @@ class PlexAuthService {
       receiveTimeout: MediaServerTimeouts.plexTvReceive,
     );
     final clientIdentifier = await storage.getOrCreateClientIdentifier();
-    return PlexAuthService._(http, clientIdentifier);
+    final packageInfo = await PackageInfo.fromPlatform();
+    return PlexAuthService._(http, clientIdentifier, packageInfo.version, Platform.operatingSystemVersion);
   }
 
   String get clientIdentifier => _clientIdentifier;
@@ -92,12 +97,11 @@ class PlexAuthService {
 
   /// Verify if a plex.tv token is valid
   Future<bool> verifyToken(String authToken) async {
-    try {
-      final response = await _getUser(authToken);
-      return response.statusCode == 200;
-    } catch (e) {
-      return false;
-    }
+    final response = await _getUser(authToken);
+    if (response.statusCode == 200) return true;
+    if (response.statusCode == 401 || response.statusCode == 403) return false;
+    _checkStatus(response);
+    return false;
   }
 
   /// Create a PIN for authentication
@@ -124,18 +128,22 @@ class PlexAuthService {
 
   /// Poll the PIN to check if it has been claimed
   Future<String?> checkPin(int pinId) async {
-    try {
-      final response = await _http.get(
-        '$_plexApiBase/pins/$pinId',
-        headers: _getCommonHeaders(),
-        timeout: MediaServerTimeouts.plexTvReceive,
-      );
+    final response = await _http.get(
+      '$_plexApiBase/pins/$pinId',
+      headers: _getCommonHeaders(),
+      timeout: MediaServerTimeouts.plexTvReceive,
+    );
 
-      final data = response.data as Map<String, dynamic>;
-      return data['authToken'] as String?;
-    } catch (e) {
-      return null;
+    if (response.statusCode == 404 || response.statusCode == 410) {
+      throw const MediaServerPinExpiredException();
     }
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      throw MediaServerAuthException('Plex PIN check rejected', statusCode: response.statusCode);
+    }
+    _checkStatus(response);
+
+    final data = response.data as Map<String, dynamic>;
+    return data['authToken'] as String?;
   }
 
   /// Poll the PIN until it's claimed or timeout.
@@ -221,10 +229,10 @@ class PlexAuthService {
       'includeSettings': '1',
       'includeSharedSettings': '1',
       'X-Plex-Product': _appName,
-      'X-Plex-Version': '1.1.0',
+      'X-Plex-Version': _appVersion,
       'X-Plex-Client-Identifier': _clientIdentifier,
       'X-Plex-Platform': 'Flutter',
-      'X-Plex-Platform-Version': '3.8.1',
+      'X-Plex-Platform-Version': _platformVersion,
       'X-Plex-Token': currentToken,
       'X-Plex-Language': 'en',
       'pin': ?pin,

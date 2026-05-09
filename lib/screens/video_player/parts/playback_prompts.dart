@@ -33,6 +33,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       final isKeyboardMode = PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context);
 
       final settings = await SettingsService.getInstance();
+      if (!mounted) return;
       final autoPlayEnabled = settings.read(SettingsService.autoPlayNextEpisode);
 
       if (skipAutoPlayCountdown && autoPlayEnabled) {
@@ -40,7 +41,6 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
         return;
       }
 
-      if (!mounted) return;
       _setPlayerState(() {
         _showPlayNextDialog = true;
         _autoPlayCountdown = autoPlayEnabled ? 5 : -1;

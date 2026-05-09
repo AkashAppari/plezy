@@ -478,6 +478,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     _memoryCheckTimer?.cancel();
     _appLifecycleListener.dispose();
     _downloadManager.dispose();
+    _serverManager.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

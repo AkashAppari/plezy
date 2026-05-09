@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../exceptions/media_server_exceptions.dart';
 import '../../i18n/strings.g.dart';
 import '../../services/plex_auth_service.dart';
 import '../../focus/focusable_button.dart';
@@ -173,9 +174,18 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
       setState(() {
         _isPolling = false;
         _qrAuthUrl = null;
-        _errorMessage = e.toString();
+        _errorMessage = _authErrorMessage(e);
       });
     }
+  }
+
+  String _authErrorMessage(Object error) {
+    if (error is MediaServerPinExpiredException) return t.addServer.pinExpired;
+    if (error is MediaServerAuthException) return error.message;
+    if (error is MediaServerHttpException) {
+      return t.addServer.couldNotReachServer(error: error.message.isEmpty ? error.toString() : error.message);
+    }
+    return error.toString();
   }
 
   bool _isCurrentAttempt(int attemptId) => mounted && attemptId == _attemptId;

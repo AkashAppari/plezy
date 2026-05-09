@@ -75,6 +75,13 @@ class _LibraryContentResult {
   const _LibraryContentResult({required this.items, required this.totalSize});
 }
 
+class _LibrarySectionDetails {
+  final List<MediaFilter> filters;
+  final List<MediaSort> sorts;
+
+  const _LibrarySectionDetails({required this.filters, required this.sorts});
+}
+
 /// Process hub response in an isolate.
 /// Top-level function so it can be passed to [Isolate.run].
 List<PlexHubDto> _processHubResponse(
@@ -181,6 +188,8 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
 
   /// Server-level preferences fetched from /:/prefs
   Map<String, dynamic> _serverPrefs = {};
+
+  final Map<String, Future<_LibrarySectionDetails>> _librarySectionDetails = {};
 
   /// Get all fetched server preferences
   Map<String, dynamic> get serverPrefs => Map.unmodifiable(_serverPrefs);
@@ -1422,8 +1431,52 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
   /// Get available filters for a library section
   Future<List<MediaFilter>> getLibraryFilters(String sectionId) async {
     if (sectionId == 'shared') return [];
-    final response = await _getWithFailover('/library/sections/$sectionId/filters');
-    return _extractDirectoryList(response, MediaFilter.fromJson);
+    final details = await _getLibrarySectionDetails(sectionId);
+    return details.filters;
+  }
+
+  Future<_LibrarySectionDetails> _getLibrarySectionDetails(String sectionId) {
+    return _librarySectionDetails.putIfAbsent(sectionId, () async {
+      try {
+        final response = await _getWithFailover('/library/sections/$sectionId', queryParameters: {'includeDetails': 1});
+        return _extractLibrarySectionDetails(response);
+      } catch (_) {
+        _librarySectionDetails.remove(sectionId)?.ignore();
+        rethrow;
+      }
+    });
+  }
+
+  _LibrarySectionDetails _extractLibrarySectionDetails(MediaServerResponse response) {
+    final container = _getMediaContainer(response);
+    if (container == null) return const _LibrarySectionDetails(filters: [], sorts: []);
+    return _LibrarySectionDetails(
+      filters: _extractFirstNestedList(container, 'Filter', MediaFilter.fromJson),
+      sorts: _extractFirstNestedList(container, 'Sort', MediaSort.fromJson),
+    );
+  }
+
+  List<T> _extractFirstNestedList<T>(
+    Map<String, dynamic> container,
+    String key,
+    T Function(Map<String, dynamic>) fromJson,
+  ) {
+    final direct = _parseRawList(container[key], fromJson);
+    if (direct.isNotEmpty) return direct;
+
+    final directories = container['Directory'];
+    if (directories is! List) return [];
+    for (final directory in directories) {
+      if (directory is! Map) continue;
+      final parsed = _parseRawList(directory[key], fromJson);
+      if (parsed.isNotEmpty) return parsed;
+    }
+    return [];
+  }
+
+  List<T> _parseRawList<T>(Object? raw, T Function(Map<String, dynamic>) fromJson) {
+    if (raw is! List) return [];
+    return raw.whereType<Map>().map((json) => fromJson(Map<String, dynamic>.from(json))).toList();
   }
 
   /// Get first characters (alphabet index) for a library section
@@ -1480,11 +1533,7 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
       ];
     }
     try {
-      // Use the dedicated sorts endpoint
-      final response = await _getWithFailover('/library/sections/$sectionId/sorts');
-
-      // Parse the Directory array (not Sort array) per the API spec
-      final sorts = _extractDirectoryList(response, MediaSort.fromJson);
+      final sorts = (await _getLibrarySectionDetails(sectionId)).sorts;
 
       if (sorts.isNotEmpty) {
         return sorts;

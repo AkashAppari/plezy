@@ -261,7 +261,6 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   @override
   void dispose() {
     _statusSubscription?.cancel();
-    _serverManager.dispose();
     super.dispose();
   }
 }

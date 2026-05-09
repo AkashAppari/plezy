@@ -849,6 +849,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       int? lastObservedPositionMs;
       _positionSubscription = player!.streams.position.listen((position) {
+        final currentPlayer = player;
+        if (currentPlayer == null) return;
+
         // Fallback for cases where playbackRestart doesn't fire (observed on
         // some offline Android playback flows). Prevents a permanent loading
         // spinner. Checking `position > 0` was broken for resume playback —
@@ -868,7 +871,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           lastObservedPositionMs = position.inMilliseconds;
         }
 
-        final duration = player!.state.duration;
+        final duration = currentPlayer.state.duration;
         if (duration.inMilliseconds > 0 &&
             position.inMilliseconds >= duration.inMilliseconds - 1000 &&
             !_showPlayNextDialog &&
@@ -1061,7 +1064,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       player!.abandonAudioFocus();
     }
 
-    _setWakelock(false);
+    unawaited(_setWakelock(false));
     appLogger.d('Wakelock disabled');
 
     // Restore system UI and orientation preferences (skip if navigating to another video)
@@ -1204,6 +1207,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (!_isReplacingWithVideo) {
         await _restoreWindowsDisplayMode();
       }
+      await _positionSubscription?.cancel();
+      _positionSubscription = null;
       await player?.dispose();
     } catch (e) {
       appLogger.d('Error disposing player before navigation', error: e);

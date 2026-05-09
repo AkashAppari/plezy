@@ -31,6 +31,12 @@ class MediaServerAuthException extends MediaServerException {
   const MediaServerAuthException(super.message, {this.statusCode});
 }
 
+/// Auth polling reached a terminal server-side expiry/rejection state before
+/// the user completed the external sign-in flow.
+class MediaServerPinExpiredException extends MediaServerAuthException {
+  const MediaServerPinExpiredException() : super('PIN expired before sign-in');
+}
+
 /// HTTP transport / non-2xx errors. Carries the status code (when known),
 /// the parsed response body, and the originating URI so callers can log
 /// useful diagnostics. Both Plex and Jellyfin route their HTTP failures

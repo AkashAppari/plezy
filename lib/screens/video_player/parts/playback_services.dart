@@ -199,7 +199,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       return;
     }
 
-    _setWakelock(isPlaying);
+    unawaited(_setWakelock(isPlaying));
 
     if (isPlaying) {
       // Force a texture refresh on resume to unstick stale frames
