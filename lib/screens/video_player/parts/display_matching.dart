@@ -48,7 +48,7 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
 
       final didSwitch = await player!.setVideoFrameRate(fps, durationMs, extraDelayMs: delaySec * 1000);
       if (didSwitch) {
-        await _refreshAndroidMpvDecoderAfterFrameRateSwitch();
+        await _refreshAndroidMpvDecoderAfterFrameRateSwitch(reason: 'post-first-frame display switch');
       }
 
       if (mounted && player != null) {
@@ -69,17 +69,23 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
     }
   }
 
-  Future<void> _refreshAndroidMpvDecoderAfterFrameRateSwitch() async {
+  Future<void> _refreshAndroidMpvDecoderAfterFrameRateSwitch({
+    required String reason,
+    Duration? fallbackPosition,
+  }) async {
     final p = player;
     if (!mounted || !Platform.isAndroid || p == null || p is PlayerAndroid) return;
 
     final positionMs = p.state.position.inMilliseconds;
-    final targetMs = positionMs <= 0 ? 1 : positionMs;
+    final fallbackMs = fallbackPosition?.inMilliseconds ?? 0;
+    final targetMs = positionMs > 0 ? positionMs : (fallbackMs > 0 ? fallbackMs : 1);
     try {
+      appLogger.d('Frame rate matching: refreshing Android MPV decoder ($reason, target=${targetMs}ms)');
       await p.command(['seek', (targetMs / 1000.0).toStringAsFixed(3), 'absolute+exact']);
-      appLogger.d('Frame rate matching: refreshed Android MPV decoder at ${targetMs}ms');
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      appLogger.d('Frame rate matching: refreshed Android MPV decoder ($reason, target=${targetMs}ms)');
     } catch (e) {
-      appLogger.w('Failed to refresh Android MPV decoder after frame rate switch', error: e);
+      appLogger.w('Failed to refresh Android MPV decoder after frame rate switch ($reason)', error: e);
     }
   }
 

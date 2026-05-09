@@ -180,7 +180,10 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       final isExoPlayer = player is PlayerAndroid;
       final isAndroidMpv = Platform.isAndroid && !isExoPlayer;
       var didPreLoadFrameRateSwitch = false;
-      var shouldPauseForFrameRateSwitch = willAutoSwitch;
+      var needsPostOpenFrameRateSwitch = willAutoSwitch;
+      var needsAndroidMpvStartupRefresh = false;
+      final hasExternalSubs = result.externalSubtitles.isNotEmpty;
+      Future<void>? androidMpvStartupReady;
 
       // MPV on Android can decode and present its first paused frame before a
       // post-open display switch settles. Switch first when metadata already
@@ -193,7 +196,10 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           _suppressMediaPauseDuringFrameRateSwitch = false;
         });
         try {
-          appLogger.d('Frame rate matching: pre-load MPV switch to ${preKnownFps}fps');
+          appLogger.d(
+            'Frame rate matching: pre-load MPV switch to ${preKnownFps}fps '
+            '(duration: ${durationMs}ms, delay=${delaySec}s)',
+          );
           didPreLoadFrameRateSwitch = await player!.setVideoFrameRate(
             preKnownFps,
             durationMs,
@@ -201,16 +207,21 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           );
           if (didPreLoadFrameRateSwitch) {
             _frameRateMatchingApplied = true;
-            shouldPauseForFrameRateSwitch = false;
+            needsPostOpenFrameRateSwitch = false;
+            needsAndroidMpvStartupRefresh = true;
           }
           appLogger.d(
             'Frame rate matching: pre-load MPV switch complete '
-            '(switched=$didPreLoadFrameRateSwitch, delay=${delaySec}s)',
+            '(switched=$didPreLoadFrameRateSwitch, delay=${delaySec}s, '
+            'startupRefresh=$needsAndroidMpvStartupRefresh)',
           );
         } catch (e) {
           appLogger.w('Failed to apply pre-load MPV frame rate matching', error: e);
         }
       }
+
+      final shouldHoldPlaybackStart = needsPostOpenFrameRateSwitch || needsAndroidMpvStartupRefresh;
+      Duration? resumePosition;
 
       // Open video through Player
       if (result.videoUrl != null) {
@@ -236,7 +247,6 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         // Pass resume position if available.
         // In offline mode, prefer locally tracked progress over the cached server value
         // since the user may have watched further since downloading.
-        Duration? resumePosition;
         if (_isOfflinePlayback) {
           final globalKey = _currentMetadata.globalKey;
           final localOffset = await offlineWatchService.getLocalViewOffset(globalKey);
@@ -260,8 +270,16 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           );
         }
 
-        final hasExternalSubs = result.externalSubtitles.isNotEmpty;
-        final shouldAutoPlay = !shouldPauseForFrameRateSwitch && (isExoPlayer || !hasExternalSubs);
+        final shouldAutoPlay = !shouldHoldPlaybackStart && (isExoPlayer || !hasExternalSubs);
+        if (needsAndroidMpvStartupRefresh) {
+          appLogger.d('Frame rate matching: opening Android MPV paused for startup decoder refresh');
+          androidMpvStartupReady = player!.streams.playbackRestart.first.timeout(
+            const Duration(seconds: 8),
+            onTimeout: () {
+              appLogger.w('Timed out waiting for Android MPV startup frame before decoder refresh');
+            },
+          );
+        }
 
         // ExoPlayer: attach external subs at open time so it discovers
         // them in a single prepare() — no media reload needed for selection.
@@ -378,6 +396,16 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         // Store external subtitles for re-use after backend fallback
         _trackManager!.cacheExternalSubtitles(result.externalSubtitles);
 
+        Future<void> resumeAfterStartupGate(String reason) async {
+          if (!mounted || player == null) return;
+          appLogger.d('Frame rate matching: resuming playback after $reason');
+          if (player is! PlayerAndroid && hasExternalSubs) {
+            await _trackManager!.resumeAfterSubtitleLoad();
+          } else {
+            await player!.play();
+          }
+        }
+
         // MPV with external subs: add after open via sub-add,
         // opened paused to avoid race condition (issue #226)
         if (player is! PlayerAndroid && result.externalSubtitles.isNotEmpty) {
@@ -387,9 +415,9 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           try {
             await _trackManager!.addExternalSubtitles(result.externalSubtitles);
           } finally {
-            // When the post-open refresh-rate block below owns the resume,
+            // When a startup gate below owns the resume,
             // skip this one to avoid a double-play.
-            if (!shouldPauseForFrameRateSwitch) {
+            if (!shouldHoldPlaybackStart) {
               await _trackManager!.resumeAfterSubtitleLoad();
             }
           }
@@ -402,7 +430,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         // Fallback refresh-rate path. The player was opened paused;
         // setVideoFrameRate awaits the real display-change event (+ settle +
         // user delay) before returning, then we start playback.
-        if (shouldPauseForFrameRateSwitch && mounted && player != null) {
+        if (needsPostOpenFrameRateSwitch && mounted && player != null) {
           _frameRateMatchingApplied = true;
           final delaySec = settingsService.read(SettingsService.displaySwitchDelay);
           final durationMs = _currentMetadata.durationMs ?? player!.state.duration.inMilliseconds;
@@ -414,7 +442,10 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           try {
             didSwitch = await player!.setVideoFrameRate(preKnownFps!, durationMs, extraDelayMs: delaySec * 1000);
             if (didSwitch) {
-              await _refreshAndroidMpvDecoderAfterFrameRateSwitch();
+              await _refreshAndroidMpvDecoderAfterFrameRateSwitch(
+                reason: 'post-open frame rate switch',
+                fallbackPosition: resumePosition,
+              );
             }
           } catch (e) {
             appLogger.w('Failed to apply pre-playback frame rate matching', error: e);
@@ -423,18 +454,31 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           // Always resume — either the switch completed and we want to play,
           // or no switch was needed and we need to start playback now that the
           // preparation gate has been cleared.
-          if (mounted && player != null) {
-            if (player is! PlayerAndroid && result.externalSubtitles.isNotEmpty) {
-              await _trackManager!.resumeAfterSubtitleLoad();
-            } else {
-              await player!.play();
-            }
-          }
+          await resumeAfterStartupGate('post-open frame rate switch');
 
           unawaited(
             Sentry.addBreadcrumb(
               Breadcrumb(
                 message: 'Pre-playback frame rate: ${preKnownFps}fps, switched=$didSwitch, delay=${delaySec}s',
+                category: 'player',
+              ),
+            ),
+          );
+        } else if (needsAndroidMpvStartupRefresh && mounted && player != null) {
+          appLogger.d('Frame rate matching: waiting for Android MPV startup frame before decoder refresh');
+          await androidMpvStartupReady;
+          if (mounted && player != null) {
+            await _refreshAndroidMpvDecoderAfterFrameRateSwitch(
+              reason: 'pre-load frame rate startup',
+              fallbackPosition: resumePosition,
+            );
+            await resumeAfterStartupGate('startup decoder refresh');
+          }
+
+          unawaited(
+            Sentry.addBreadcrumb(
+              Breadcrumb(
+                message: 'Android MPV startup decoder refresh after pre-load frame-rate switch',
                 category: 'player',
               ),
             ),

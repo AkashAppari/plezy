@@ -693,13 +693,20 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
     p.observeProperty(name, fmt)
   }
 
-  fun command(args: Array<String>) {
-    if (!isInitialized || disposing || args.isEmpty()) return
+  fun command(args: Array<String>, onComplete: ((Boolean) -> Unit)? = null) {
+    if (!isInitialized || disposing || args.isEmpty() || !scope.isActive) {
+      onComplete?.invoke(false)
+      return
+    }
     scope.launch {
+      var success = false
       try {
         player?.command(*args)
+        success = true
       } catch (e: Exception) {
         Log.w(TAG, "command failed", e)
+      } finally {
+        onComplete?.invoke(success)
       }
     }
   }

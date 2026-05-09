@@ -271,8 +271,14 @@ class MpvPlayerPlugin :
       return
     }
 
-    playerCore?.command(args.toTypedArray())
-    result.success(null)
+    val core = playerCore
+    if (core == null) {
+      result.success(null)
+      return
+    }
+    core.command(args.toTypedArray()) {
+      result.success(null)
+    }
   }
 
   private fun handleSetVisible(call: MethodCall, result: MethodChannel.Result) {
