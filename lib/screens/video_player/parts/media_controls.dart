@@ -1,7 +1,78 @@
 part of '../../video_player_screen.dart';
 
 extension _VideoPlayerMediaControlsMethods on VideoPlayerScreenState {
+  bool get _shouldSuspendMediaControlsForTvBackground =>
+      Platform.isAndroid && PlatformDetector.isTV() && !_shouldSkipForPip;
+
+  Future<void> _suspendMediaControlsForTvBackground(String reason) async {
+    if (!_shouldSuspendMediaControlsForTvBackground) return;
+
+    _mediaControlsManager?.suspendUpdates();
+    if (!_mediaControlsSuspendedForTvBackground) {
+      _mediaControlsSuspendedForTvBackground = true;
+      _recordLifecycleState('media_controls', action: 'suspended:$reason');
+    }
+
+    await _mediaControlsManager?.clear();
+  }
+
+  void _resumeMediaControlsAfterTvBackground(String reason) {
+    if (!_mediaControlsSuspendedForTvBackground) return;
+
+    _mediaControlsSuspendedForTvBackground = false;
+    _mediaControlsManager?.resumeUpdates();
+    _recordLifecycleState('media_controls', action: 'resumed:$reason');
+  }
+
+  bool _consumePendingTvBackgroundMediaControlResume() {
+    final shouldResume = _resumeFromSuspendedMediaControlOnForeground;
+    _resumeFromSuspendedMediaControlOnForeground = false;
+    _tvBackgroundMediaControlResumeTimer?.cancel();
+    _tvBackgroundMediaControlResumeTimer = null;
+    return shouldResume;
+  }
+
+  Future<void> _requestForegroundResumeFromSuspendedMediaControl(String eventLabel) async {
+    if (!_mediaControlsSuspendedForTvBackground) return;
+
+    _resumeFromSuspendedMediaControlOnForeground = true;
+    _tvBackgroundMediaControlResumeTimer?.cancel();
+    _tvBackgroundMediaControlResumeTimer = Timer(const Duration(seconds: 8), () {
+      _tvBackgroundMediaControlResumeTimer = null;
+      if (!mounted || !_mediaControlsSuspendedForTvBackground) return;
+      _resumeFromSuspendedMediaControlOnForeground = false;
+      appLogger.d('Media control: deferred TV foreground resume expired before app resumed');
+      unawaited(
+        Sentry.addBreadcrumb(
+          Breadcrumb(
+            message: 'TV media control foreground resume expired',
+            category: 'player.media_controls',
+            data: {'event': eventLabel},
+          ),
+        ),
+      );
+    });
+
+    unawaited(
+      Sentry.addBreadcrumb(
+        Breadcrumb(
+          message: 'TV media control requested foreground resume',
+          category: 'player.media_controls',
+          data: {'event': eventLabel},
+        ),
+      ),
+    );
+
+    final foregrounded = await AppForegroundService.requestForeground();
+    appLogger.d('Media control: requested app foreground for $eventLabel (success=$foregrounded)');
+    if (!foregrounded && mounted && _mediaControlsSuspendedForTvBackground) {
+      _consumePendingTvBackgroundMediaControlResume();
+    }
+  }
+
   Future<void> _syncMediaControlsAvailability() async {
+    if (_mediaControlsSuspendedForTvBackground) return;
+
     final manager = _mediaControlsManager;
     final currentPlayer = player;
     if (!mounted || manager == null || currentPlayer == null) return;
@@ -28,6 +99,8 @@ extension _VideoPlayerMediaControlsMethods on VideoPlayerScreenState {
   Future<void> _restoreMediaControlsAfterResume() async {
     if (!_isPlayerInitialized || !mounted) return;
 
+    final resumeRequestedByMediaControl = _consumePendingTvBackgroundMediaControlResume();
+
     unawaited(_setWakelock(player?.state.isActive ?? false));
 
     final manager = _mediaControlsManager;
@@ -44,13 +117,17 @@ extension _VideoPlayerMediaControlsMethods on VideoPlayerScreenState {
 
     if (!mounted || currentPlayer != player || currentPlayer == null) return;
 
-    if (_wasPlayingBeforeInactive) {
+    final wasPlayingBeforeInactive = _wasPlayingBeforeInactive;
+    if (wasPlayingBeforeInactive || resumeRequestedByMediaControl) {
+      final resumeReason = resumeRequestedByMediaControl
+          ? 'TV media control foreground request'
+          : 'returning from inactive state';
       try {
         await _seekBackForRewind(currentPlayer);
         await currentPlayer.play();
-        appLogger.d('Video resumed after returning from inactive state');
+        appLogger.d('Video resumed after $resumeReason');
       } catch (e) {
-        appLogger.w('Failed to resume playback after returning from inactive state', error: e);
+        appLogger.w('Failed to resume playback after $resumeReason', error: e);
       } finally {
         _wasPlayingBeforeInactive = false;
       }
@@ -62,6 +139,7 @@ extension _VideoPlayerMediaControlsMethods on VideoPlayerScreenState {
 
   /// Wrapper method to update media controls playback state
   void _updateMediaControlsPlaybackState() {
+    if (_mediaControlsSuspendedForTvBackground) return;
     if (player == null) return;
 
     _mediaControlsManager?.updatePlaybackState(

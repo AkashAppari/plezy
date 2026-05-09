@@ -40,6 +40,7 @@ import '../services/discord_rpc_service.dart';
 import '../services/trackers/tracker_coordinator.dart';
 import '../services/trakt/trakt_scrobble_service.dart';
 import '../services/episode_navigation_service.dart';
+import '../services/app_foreground_service.dart';
 import '../services/media_controls_manager.dart';
 import '../services/playback_initialization_service.dart';
 import '../services/playback_progress_tracker.dart';
@@ -339,6 +340,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   // App lifecycle state tracking
   bool _wasPlayingBeforeInactive = false;
   bool _hiddenForBackground = false;
+  bool _mediaControlsSuspendedForTvBackground = false;
+  bool _resumeFromSuspendedMediaControlOnForeground = false;
   bool _autoPipEnabled = false;
   bool _androidAutoPipTransitionInFlight = false;
   bool _pipFiltersPrepared = false;
@@ -347,6 +350,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Future<void> _lifecycleTransition = Future<void>.value();
   String _playerBackendLabel = 'unknown';
   Future<void>? _stoppedProgressFuture;
+  Timer? _tvBackgroundMediaControlResumeTimer;
 
   /// Whether to skip lifecycle actions because PiP is active or about to start.
   /// Apple auto-PiP is system-initiated during the background transition, and
@@ -513,8 +517,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           break;
         }
         // We don't support background playback
-        _mediaControlsManager?.clear();
-        _setWakelock(false);
+        if (_shouldSuspendMediaControlsForTvBackground) {
+          unawaited(_suspendMediaControlsForTvBackground('paused'));
+        } else {
+          unawaited(_mediaControlsManager?.clear());
+        }
+        unawaited(_setWakelock(false));
         _recordLifecycleState('paused', action: 'backgrounded');
         break;
       case AppLifecycleState.resumed:
@@ -1014,6 +1022,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _serverStatusSubscription?.cancel();
 
     _autoPlayTimer?.cancel();
+    _tvBackgroundMediaControlResumeTimer?.cancel();
 
     _stillWatchingTimer?.cancel();
 

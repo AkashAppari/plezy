@@ -10,6 +10,7 @@
     <!-- PIP and media session foreground service permissions -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
+    <uses-permission android:name="android.permission.REORDER_TASKS"/>
 
     <!-- Background download notifications and foreground service -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>

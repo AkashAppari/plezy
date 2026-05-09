@@ -1,5 +1,6 @@
 package com.edde746.plezy
 
+import android.app.ActivityManager
 import android.app.AppOpsManager
 import android.app.PictureInPictureParams
 import android.content.Context
@@ -40,6 +41,7 @@ class MainActivity : FlutterActivity() {
   private val THEME_CHANNEL = "com.plezy/theme"
   private val DEVICE_CHANNEL = "com.plezy/device"
   private val APP_EXIT_CHANNEL = "com.plezy/app_exit"
+  private val APP_FOREGROUND_CHANNEL = "com.plezy/app_foreground"
   private var watchNextPlugin: WatchNextPlugin? = null
 
   // Auto PiP state
@@ -219,6 +221,13 @@ class MainActivity : FlutterActivity() {
       }
     }
 
+    MethodChannel(flutterEngine.dartExecutor.binaryMessenger, APP_FOREGROUND_CHANNEL).setMethodCallHandler { call, result ->
+      when (call.method) {
+        "requestForeground" -> result.success(requestForeground())
+        else -> result.notImplemented()
+      }
+    }
+
     // External player: open local video files with proper content:// URIs
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, EXTERNAL_PLAYER_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {
@@ -361,6 +370,31 @@ class MainActivity : FlutterActivity() {
         }
         else -> result.notImplemented()
       }
+    }
+  }
+
+  private fun requestForeground(): Boolean = try {
+    val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    activityManager.moveTaskToFront(taskId, 0)
+    true
+  } catch (e: Exception) {
+    Log.w(TAG, "Failed to move task to foreground", e)
+    try {
+      val launchIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
+        addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+        addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+      }
+      if (launchIntent != null) {
+        startActivity(launchIntent)
+        true
+      } else {
+        false
+      }
+    } catch (launchError: Exception) {
+      Log.w(TAG, "Failed to start foreground activity", launchError)
+      false
     }
   }
 

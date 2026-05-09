@@ -89,6 +89,17 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     // Set up media control event handling
     _mediaControlSubscription = _mediaControlsManager!.controlEvents.listen((event) {
       final currentPlayer = player;
+      if (_mediaControlsSuspendedForTvBackground) {
+        final eventLabel = event.runtimeType.toString();
+        if (currentPlayer != null && (event is PlayEvent || event is TogglePlayPauseEvent)) {
+          appLogger.d('Media control: $eventLabel received while Android TV background-suspended');
+          unawaited(_requestForegroundResumeFromSuspendedMediaControl(eventLabel));
+        } else {
+          appLogger.d('Media control: $eventLabel ignored while Android TV background-suspended');
+        }
+        return;
+      }
+
       if (currentPlayer == null && event is! NextTrackEvent && event is! PreviousTrackEvent) return;
 
       if (event is PlayEvent) {
@@ -175,6 +186,19 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   }
 
   void _onPlayingStateChanged(bool isPlaying) {
+    if (isPlaying && _mediaControlsSuspendedForTvBackground) {
+      appLogger.w('Playback started while Android TV background media controls are suspended; pausing');
+      Sentry.addBreadcrumb(
+        Breadcrumb(message: 'Blocked TV background playback start', category: 'player.media_controls'),
+      );
+      final currentPlayer = player;
+      if (currentPlayer != null) {
+        unawaited(currentPlayer.pause());
+      }
+      unawaited(_setWakelock(false));
+      return;
+    }
+
     _setWakelock(isPlaying);
 
     if (isPlaying) {

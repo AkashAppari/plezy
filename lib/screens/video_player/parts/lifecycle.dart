@@ -26,6 +26,8 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       'pipActive': pipActive,
       'pipTransitionInFlight': _androidAutoPipTransitionInFlight,
       'hiddenForBackground': _hiddenForBackground,
+      'mediaControlsSuspendedForTvBackground': _mediaControlsSuspendedForTvBackground,
+      'pendingForegroundMediaResume': _resumeFromSuspendedMediaControlOnForeground,
       'backend': _playerBackendLabel,
     };
     if (action != null) {
@@ -44,6 +46,8 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       ' pipActive=$pipActive'
       ' pipTransitionInFlight=$_androidAutoPipTransitionInFlight'
       ' hiddenForBackground=$_hiddenForBackground'
+      ' mediaControlsSuspendedForTvBackground=$_mediaControlsSuspendedForTvBackground'
+      ' pendingForegroundMediaResume=$_resumeFromSuspendedMediaControlOnForeground'
       ' backend=$_playerBackendLabel',
     );
   }
@@ -105,6 +109,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     _suspendLiveTimelineForBackground();
 
     if (isTv) {
+      await _suspendMediaControlsForTvBackground('hidden');
       _recordLifecycleState('hidden', action: 'tv_background_pause_only');
       return;
     }
@@ -138,6 +143,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
 
     // Restore media controls and wakelock when app is resumed.
     if (_isPlayerInitialized && mounted) {
+      _resumeMediaControlsAfterTvBackground('app_resumed');
       await _restoreMediaControlsAfterResume();
     }
 
