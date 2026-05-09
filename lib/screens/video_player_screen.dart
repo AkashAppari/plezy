@@ -363,6 +363,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   VideoPIPManager? _videoPIPManager;
   ShaderService? _shaderService;
   AmbientLightingService? _ambientLightingService;
+  Size? _lastVideoLayoutSize;
+  Size? _pendingVideoLayoutSize;
+  Player? _lastVideoLayoutPlayer;
+  bool _videoLayoutUpdateScheduled = false;
   final EpisodeNavigationService _episodeNavigation = EpisodeNavigationService();
 
   WatchTogetherProvider? _watchTogetherProvider;

@@ -163,6 +163,11 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
 
   /// Show controls in response to pointer activity (mouse/trackpad movement).
   void _showControlsFromPointerActivity() {
+    final nowMs = _pointerActivityStopwatch.elapsedMilliseconds;
+    final shouldThrottle = _showControls && nowMs - _lastPointerActivityMs < 120;
+    if (shouldThrottle) return;
+    _lastPointerActivityMs = nowMs;
+
     if (!_showControls) {
       _setControlsState(() {
         _showControls = true;

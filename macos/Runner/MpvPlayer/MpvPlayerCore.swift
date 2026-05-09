@@ -144,7 +144,6 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     }
     updateEDRMode(sigPeak: lastSigPeak)
 
-    print("[MpvPlayerCore] updateFrame: \(videoLayer.frame)")
   }
 
   override func updateEDRMode(sigPeak: Double) {
@@ -172,9 +171,6 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       videoLayer.wantsExtendedDynamicRangeContent = shouldEnableEDR
     }
 
-    print(
-      "[MpvPlayerCore] EDR mode: \(shouldEnableEDR) (hdrEnabled: \(hdrEnabled), sigPeak: \(sigPeak), currentHeadroom: \(currentHeadroom), potentialHeadroom: \(potentialHeadroom), contentHeadroom: \(shouldEnableEDR ? contentHeadroom : 0))"
-    )
   }
 
   func dispose() {

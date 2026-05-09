@@ -411,6 +411,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   bool _subtitlesVisible = true;
   // Skip marker button focus node (for TV D-pad navigation)
   late final FocusNode _skipMarkerFocusNode;
+  final ValueNotifier<bool> _fallbackHasFirstFrame = ValueNotifier<bool>(true);
+  final Stopwatch _pointerActivityStopwatch = Stopwatch()..start();
+  int _lastPointerActivityMs = -1000;
   double? _rateBeforeLongPress;
   bool _showSpeedIndicator = false;
   StreamSubscription<double>? _rateSubscription;
@@ -514,6 +517,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     _rateSubscription?.cancel();
     _focusNode.dispose();
     _skipMarkerFocusNode.dispose();
+    _fallbackHasFirstFrame.dispose();
     // Restore original rate if long-press was active when disposed
     if (_isLongPressing && _rateBeforeLongPress != null) {
       widget.player.setRate(_rateBeforeLongPress!);
@@ -590,7 +594,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
           onKeyEvent: (node, event) => _handleControlsKeyEvent(event, isMobile),
           child: Listener(
             behavior: HitTestBehavior.translucent,
-            onPointerHover: (_) => _showControlsFromPointerActivity(),
             onPointerSignal: _handlePointerSignal,
             child: MouseRegion(
               cursor: (_showControls || _forceShowControls) ? SystemMouseCursors.basic : SystemMouseCursors.none,
@@ -641,7 +644,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                 onLongPressCancel: _handleLongPressCancel,
                                 behavior: HitTestBehavior.deferToChild,
                                 child: ValueListenableBuilder<bool>(
-                                  valueListenable: widget.hasFirstFrame ?? ValueNotifier(true),
+                                  valueListenable: widget.hasFirstFrame ?? _fallbackHasFirstFrame,
                                   builder: (context, hasFrame, child) {
                                     return Container(
                                       decoration: BoxDecoration(
