@@ -190,9 +190,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
       case 'volume':
         if (value is num) {
-          final volume = value.toDouble();
-          _state = _state.copyWith(volume: volume);
-          volumeController.add(volume);
+          setVolumeState(value.toDouble());
         }
         break;
 
@@ -475,6 +473,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     const empty = Tracks();
     _state = _state.copyWith(tracks: empty, track: const TrackSelection());
     tracksController.add(empty);
+  }
+
+  @protected
+  void setVolumeState(double volume) {
+    if (_state.volume == volume) return;
+    _state = _state.copyWith(volume: volume);
+    volumeController.add(volume);
   }
 
   @protected

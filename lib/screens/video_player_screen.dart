@@ -719,7 +719,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       await player!.setProperty('volume-max', maxVolume.toString());
 
       final savedVolume = settingsService.read(SettingsService.volume).clamp(0.0, maxVolume.toDouble());
-      unawaited(player!.setVolume(savedVolume));
+      await player!.setVolume(savedVolume);
 
       if (mounted) {
         setState(() {

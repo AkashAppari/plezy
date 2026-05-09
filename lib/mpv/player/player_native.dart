@@ -187,6 +187,7 @@ class PlayerNative extends PlayerBase {
   @override
   Future<void> setVolume(double volume) async {
     await setProperty('volume', volume.toString());
+    if (!disposed) setVolumeState(volume);
   }
 
   @override

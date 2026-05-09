@@ -159,6 +159,7 @@ class PlayerAndroid extends PlayerBase {
   @override
   Future<void> setVolume(double volume) async {
     await invoke('setVolume', {'volume': volume});
+    if (!disposed) setVolumeState(volume);
   }
 
   @override
