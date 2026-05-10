@@ -79,11 +79,25 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
     final positionMs = p.state.position.inMilliseconds;
     final fallbackMs = fallbackPosition?.inMilliseconds ?? 0;
     final targetMs = positionMs > 0 ? positionMs : (fallbackMs > 0 ? fallbackMs : 1);
+    // Subscribe before the seek so the broadcast event isn't dropped when
+    // the restart fires synchronously fast.
+    var timedOut = false;
+    final restartFuture = p.streams.playbackRestart.first.timeout(
+      const Duration(milliseconds: 2500),
+      onTimeout: () {
+        timedOut = true;
+      },
+    );
+    final sw = Stopwatch()..start();
     try {
       appLogger.d('Frame rate matching: refreshing Android MPV decoder ($reason, target=${targetMs}ms)');
       await p.command(['seek', (targetMs / 1000.0).toStringAsFixed(3), 'absolute+exact']);
-      await Future<void>.delayed(const Duration(milliseconds: 150));
-      appLogger.d('Frame rate matching: refreshed Android MPV decoder ($reason, target=${targetMs}ms)');
+      await restartFuture;
+      appLogger.d(
+        'Frame rate matching: refreshed Android MPV decoder '
+        '($reason, target=${targetMs}ms, waited=${sw.elapsedMilliseconds}ms, '
+        'gate=${timedOut ? 'timeout' : 'playback-restart'})',
+      );
     } catch (e) {
       appLogger.w('Failed to refresh Android MPV decoder after frame rate switch ($reason)', error: e);
     }
