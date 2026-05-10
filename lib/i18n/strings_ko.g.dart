@@ -108,16 +108,16 @@ class _TranslationsAuthKo extends TranslationsAuthEn {
 	@override String get authenticate => '인증';
 	@override String get authenticationTimeout => '인증 시간이 초과되었습니다. 다시 시도해 주세요.';
 	@override String get scanQRToSignIn => 'QR 코드를 스캔하여 로그인';
-	@override String get waitingForAuth => '인증 대기 중... 브라우저에서 로그인을 완료해 주세요.';
+	@override String get waitingForAuth => '인증 대기 중...\n브라우저에서 로그인하세요.';
 	@override String get useBrowser => '브라우저 사용';
 	@override String get or => '또는';
 	@override String get connectToJellyfin => 'Jellyfin에 연결';
 	@override String get useQuickConnect => 'Quick Connect 사용';
 	@override String get quickConnectCode => 'Quick Connect 코드';
-	@override String get quickConnectInstructions => '웹 브라우저에서 Jellyfin 서버를 열어 로그인한 뒤 사용자 메뉴에서 Quick Connect를 선택하세요. 이 코드를 입력해 로그인을 승인하세요.';
+	@override String get quickConnectInstructions => 'Jellyfin에서 Quick Connect를 열고 이 코드를 입력하세요.';
 	@override String get quickConnectWaiting => '승인 대기 중…';
 	@override String get quickConnectCancel => '취소';
-	@override String get quickConnectExpired => '승인되기 전에 Quick Connect 코드가 만료되었습니다. 다시 시도하세요.';
+	@override String get quickConnectExpired => 'Quick Connect가 만료되었습니다. 다시 시도하세요.';
 }
 
 // Path: common
@@ -239,21 +239,21 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get listView => '목록 보기';
 	@override String get showHeroSection => '주요 추천 영역 표시';
 	@override String get useGlobalHubs => '홈 레이아웃 사용';
-	@override String get useGlobalHubsDescription => '공식 클라이언트처럼 홈페이지 허브를 표시합니다. 끄면 라이브러리별 추천을 표시합니다.';
+	@override String get useGlobalHubsDescription => '통합 홈 허브를 표시합니다. 끄면 라이브러리 추천을 사용합니다.';
 	@override String get showServerNameOnHubs => '허브에 서버 이름 표시';
-	@override String get showServerNameOnHubsDescription => '허브 제목에 항상 서버 이름을 표시합니다. 끄면 중복된 허브 이름에만 표시됩니다.';
+	@override String get showServerNameOnHubsDescription => '허브 제목에 항상 서버 이름을 표시합니다.';
 	@override String get groupLibrariesByServer => '서버별로 라이브러리 그룹화';
-	@override String get groupLibrariesByServerDescription => '여러 서버에 연결된 경우 사이드바에 각 미디어 서버의 헤더를 표시합니다.';
+	@override String get groupLibrariesByServerDescription => '사이드바 라이브러리를 미디어 서버별로 그룹화합니다.';
 	@override String get alwaysKeepSidebarOpen => '사이드바 항상 열어두기';
 	@override String get alwaysKeepSidebarOpenDescription => '사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다';
 	@override String get showUnwatchedCount => '미시청 수 표시';
 	@override String get showUnwatchedCountDescription => '시리즈 및 시즌에 미시청 에피소드 수 표시';
 	@override String get showEpisodeNumberOnCards => '카드에 에피소드 번호 표시';
-	@override String get showEpisodeNumberOnCardsDescription => '에피소드 카드에 시즌과 함께 에피소드 번호(예: S2 E3)를 표시합니다';
+	@override String get showEpisodeNumberOnCardsDescription => '에피소드 카드에 시즌 및 에피소드 번호 표시';
 	@override String get showSeasonPostersOnTabs => '탭에 시즌 포스터 표시';
-	@override String get showSeasonPostersOnTabsDescription => '프로그램 상세 페이지의 각 시즌 탭 위에 해당 시즌의 포스터를 표시합니다';
+	@override String get showSeasonPostersOnTabsDescription => '각 시즌 포스터를 탭 위에 표시';
 	@override String get hideSpoilers => '미시청 에피소드 스포일러 숨기기';
-	@override String get hideSpoilersDescription => '아직 시청하지 않은 에피소드의 썸네일을 흐리게 하고 설명을 숨깁니다';
+	@override String get hideSpoilersDescription => '시청하지 않은 에피소드의 썸네일과 설명을 흐리게 처리';
 	@override String get playerBackend => '플레이어 백엔드';
 	@override String get exoPlayer => 'ExoPlayer (권장)';
 	@override String get mpv => 'mpv';
@@ -262,7 +262,7 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get bufferSize => '버퍼 크기';
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
 	@override String get bufferSizeAuto => '자동 (권장)';
-	@override String bufferSizeWarning({required Object heap, required Object size}) => '기기 메모리가 ${heap}MB입니다. ${size}MB 버퍼는 재생 문제를 일으킬 수 있습니다.';
+	@override String bufferSizeWarning({required Object heap, required Object size}) => '${heap}MB 메모리를 사용할 수 있습니다. ${size}MB 버퍼는 재생에 영향을 줄 수 있습니다.';
 	@override String get defaultQualityTitle => '기본 화질';
 	@override String get defaultQualityDescription => '재생 시작 시 사용됩니다. 낮은 값은 대역폭을 줄입니다.';
 	@override String get subtitleStyling => '자막 스타일';
@@ -274,18 +274,18 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get defaultSleepTimer => '기본 취침 타이머';
 	@override String minutesUnit({required Object minutes}) => '${minutes}분';
 	@override String get rememberTrackSelections => '에피소드/영화별 트랙 선택 기억';
-	@override String get rememberTrackSelectionsDescription => '재생 중 트랙을 변경할 때 오디오 및 자막 언어 설정을 자동으로 저장합니다';
+	@override String get rememberTrackSelectionsDescription => '제목별 오디오 및 자막 선택 기억';
 	@override String get showChapterMarkersOnTimeline => '탐색 막대에 챕터 마커 표시';
 	@override String get showChapterMarkersOnTimelineDescription => '챕터 경계에서 탐색 막대 구분';
 	@override String get clickVideoTogglesPlayback => '비디오를 클릭하여 재생/일시정지를 전환하세요.';
-	@override String get clickVideoTogglesPlaybackDescription => '이 옵션이 활성화되어 있으면 비디오 플레이어를 클릭할 때 재생 또는 일시정지가 됩니다. 그렇지 않으면 클릭 시 재생 컨트롤이 표시되거나 숨겨집니다.';
+	@override String get clickVideoTogglesPlaybackDescription => '컨트롤 표시 대신 동영상 클릭으로 재생/일시정지합니다.';
 	@override String get videoPlayerControls => '비디오 플레이어 컨트롤';
 	@override String get keyboardShortcuts => '키보드 단축키';
 	@override String get keyboardShortcutsDescription => '사용자 정의 키보드 단축키';
 	@override String get videoPlayerNavigation => '비디오 플레이어 탐색';
 	@override String get videoPlayerNavigationDescription => '방향 키를 사용하여 비디오 플레이어 컨트롤 탐색';
 	@override String get watchTogetherRelay => '함께 보기 릴레이';
-	@override String get watchTogetherRelayDescription => '함께 보기에 사용할 사용자 지정 릴레이 서버를 설정합니다. 모든 참가자가 동일한 서버를 사용해야 합니다.';
+	@override String get watchTogetherRelayDescription => '사용자 지정 릴레이를 설정합니다. 모두 같은 서버를 사용해야 합니다.';
 	@override String get watchTogetherRelayHint => 'https://my-relay.example.com';
 	@override String get crashReporting => '충돌 보고';
 	@override String get crashReportingDescription => '앱 개선을 위해 충돌 보고서 전송';
@@ -294,10 +294,10 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get viewLogs => '로그 보기';
 	@override String get viewLogsDescription => '애플리케이션 로그 확인';
 	@override String get clearCache => '캐시 삭제';
-	@override String get clearCacheDescription => '모든 캐시된 이미지와 데이터를 지웁니다. 캐시를 지우면 애플리케이션 콘텐츠 로딩 속도가 느려질 수 있습니다.';
+	@override String get clearCacheDescription => '캐시된 이미지와 데이터를 지웁니다. 콘텐츠 로드가 느려질 수 있습니다.';
 	@override String get clearCacheSuccess => '캐시 삭제 성공';
 	@override String get resetSettings => '설정 재설정';
-	@override String get resetSettingsDescription => '모든 설정을 기본값으로 재설정합니다. 이 작업은 되돌릴 수 없습니다.';
+	@override String get resetSettingsDescription => '기본 설정으로 복원합니다. 되돌릴 수 없습니다.';
 	@override String get resetSettingsSuccess => '설정 재설정 성공';
 	@override String get backup => '백업';
 	@override String get exportSettings => '설정 내보내기';
@@ -318,7 +318,7 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get updateAvailable => '사용 가능한 업데이트 있음';
 	@override String get checkForUpdates => '업데이트 확인';
 	@override String get autoCheckUpdatesOnStartup => '시작 시 자동으로 업데이트 확인';
-	@override String get autoCheckUpdatesOnStartupDescription => '시작 시 새 버전이 있으면 알림 표시';
+	@override String get autoCheckUpdatesOnStartupDescription => '실행 시 업데이트가 있으면 알림';
 	@override String get validationErrorEnterNumber => '유효한 숫자를 입력하세요';
 	@override String validationErrorDuration({required Object min, required Object max, required Object unit}) => '기간은 ${min}과 ${max} ${unit} 사이여야 합니다';
 	@override String shortcutAlreadyAssigned({required Object action}) => '단축키가 이미 ${action}에 할당 되었습니다';
@@ -329,7 +329,7 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get autoSkipCredits => '자동으로 엔딩 건너뛰기';
 	@override String get autoSkipCreditsDescription => '엔딩 크레딧 자동 건너뛰기 후 다음 에피소드 재생';
 	@override String get forceSkipMarkerFallback => '대체 마커 강제 사용';
-	@override String get forceSkipMarkerFallbackDescription => 'Plex가 기본 마커를 제공하더라도 건너뛰기 마커에 챕터 제목 패턴 사용';
+	@override String get forceSkipMarkerFallbackDescription => 'Plex에 마커가 있어도 챕터 제목 패턴 사용';
 	@override String get autoSkipDelay => '자동 건너뛰기 지연';
 	@override String autoSkipDelayDescription({required Object seconds}) => '자동 건너뛰기 전 ${seconds} 초 대기';
 	@override String get introPattern => '인트로 마커 패턴';
@@ -351,8 +351,8 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get downloadOnWifiOnly => 'WiFi 연결 시에만 다운로드';
 	@override String get downloadOnWifiOnlyDescription => '셀룰러 데이터 사용 시 다운로드 불가';
 	@override String get autoRemoveWatchedDownloads => '시청한 다운로드 자동 삭제';
-	@override String get autoRemoveWatchedDownloadsDescription => '시청 완료로 표시된 에피소드와 영화의 다운로드를 자동으로 삭제';
-	@override String get cellularDownloadBlocked => '셀룰러 데이터에서 다운로드가 차단 되었습니다. WiFi에 연결하거나 설정을 변경하세요.';
+	@override String get autoRemoveWatchedDownloadsDescription => '시청한 다운로드 자동 삭제';
+	@override String get cellularDownloadBlocked => '셀룰러에서는 다운로드가 차단됩니다. WiFi를 사용하거나 설정을 변경하세요.';
 	@override String get maxVolume => '최대 볼륨';
 	@override String get maxVolumeDescription => '조용한 미디어를 위해 100% 이상의 볼륨 허용';
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
@@ -365,20 +365,20 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get companionRemoteServer => '컴패니언 리모트 서버';
 	@override String get companionRemoteServerDescription => '네트워크의 모바일 기기가 이 앱을 제어할 수 있도록 허용';
 	@override String get autoPip => '자동 PIP 모드';
-	@override String get autoPipDescription => '재생 중 앱을 나갈 때 자동으로 PIP 모드로 전환';
+	@override String get autoPipDescription => '재생 중 앱을 떠나면 화면 속 화면으로 전환';
 	@override String get matchContentFrameRate => '콘텐츠 프레임 레이트 맞춤';
-	@override String get matchContentFrameRateDescription => '비디오 콘텐츠에 맞게 디스플레이 주사율을 조정하여 떨림을 줄이고 배터리를 절약합니다';
+	@override String get matchContentFrameRateDescription => '디스플레이 새로 고침 빈도를 동영상 콘텐츠에 맞춤';
 	@override String get matchRefreshRate => '주사율 맞춤';
-	@override String get matchRefreshRateDescription => '전체 화면에서 비디오 콘텐츠에 맞게 디스플레이 주사율을 전환합니다';
+	@override String get matchRefreshRateDescription => '전체 화면에서 디스플레이 새로 고침 빈도 맞춤';
 	@override String get matchDynamicRange => '다이나믹 레인지 맞춤';
-	@override String get matchDynamicRangeDescription => 'HDR 콘텐츠에 대해 자동으로 HDR을 활성화하고 플레이어를 나갈 때 SDR로 복원합니다';
+	@override String get matchDynamicRangeDescription => 'HDR 콘텐츠에서는 HDR로 전환한 뒤 SDR로 되돌림';
 	@override String get displaySwitchDelay => '디스플레이 전환 지연';
 	@override String get tunneledPlayback => '터널 재생';
-	@override String get tunneledPlaybackDescription => '하드웨어 가속 비디오 터널링을 사용합니다. HDR 콘텐츠에서 소리만 나고 검은 화면이 보이면 비활성화하세요';
+	@override String get tunneledPlaybackDescription => '비디오 터널링을 사용합니다. HDR 재생 시 검은 화면이 보이면 비활성화하세요.';
 	@override String get requireProfileSelectionOnOpen => '앱 실행 시 프로필 선택';
 	@override String get requireProfileSelectionOnOpenDescription => '앱을 열 때마다 프로필 선택 화면을 표시합니다';
 	@override String get forceTvMode => 'TV 모드 강제 사용';
-	@override String get forceTvModeDescription => '자동 감지와 관계없이 TV 레이아웃을 사용합니다. leanback 기능을 보고하지 않는 Android TV 기기에 유용합니다. 변경 시 앱이 다시 시작됩니다.';
+	@override String get forceTvModeDescription => 'TV 레이아웃을 강제합니다. 자동 감지되지 않는 기기용입니다. 재시작이 필요합니다.';
 	@override String get startInFullscreen => '전체화면으로 시작';
 	@override String get startInFullscreenDescription => '실행 시 Plezy를 전체화면 모드로 엽니다';
 	@override String get autoHidePerformanceOverlay => '성능 오버레이 자동 숨기기';
@@ -472,7 +472,7 @@ class _TranslationsMediaMenuKo extends TranslationsMediaMenuEn {
 	@override String get shufflePlay => '무작위 재생';
 	@override String get fileInfo => '파일 정보';
 	@override String get deleteFromServer => '서버에서 삭제';
-	@override String get confirmDelete => '이 미디어와 파일이 서버에서 영구적으로 삭제됩니다. 이 작업은 취소할 수 없습니다.';
+	@override String get confirmDelete => '이 미디어와 해당 파일을 서버에서 삭제할까요?';
 	@override String get deleteMultipleWarning => '모든 에피소드와 파일이 포함됩니다.';
 	@override String get mediaDeletedSuccessfully => '미디어 항목이 성공적으로 삭제되었습니다';
 	@override String get mediaFailedToDelete => '미디어 항목 삭제 실패';
@@ -643,7 +643,7 @@ class _TranslationsMessagesKo extends TranslationsMessagesEn {
 	@override String failedPlayback({required Object action, required Object error}) => '${action}을(를) 수행할 수 없습니다: ${error}';
 	@override String get switchingToCompatiblePlayer => '호환되는 플레이어로 전환 중...';
 	@override String get serverLimitTitle => '재생 실패';
-	@override String get serverLimitBody => '서버에서 오류를 반환했습니다 (HTTP 500). 일반적으로 이는 서버 소유자가 대역폭 또는 트랜스코딩 제한을 설정하여 세션을 거부하고 있다는 의미입니다. 클라이언트에서 할 수 있는 일은 없습니다 — 서버 소유자가 설정을 조정해야 합니다.';
+	@override String get serverLimitBody => '서버 오류(HTTP 500). 대역폭/트랜스코딩 제한으로 세션이 거부된 것 같습니다. 소유자에게 조정을 요청하세요.';
 	@override String get logsUploaded => '로그 업로드 완료';
 	@override String get logsUploadFailed => '로그 업로드 실패';
 	@override String get logId => '로그 ID';
@@ -714,13 +714,13 @@ class _TranslationsProfilesKo extends TranslationsProfilesEn {
 	@override String get addPlezyProfile => 'Plezy 프로필 추가';
 	@override String get switchingProfile => '프로필 전환 중…';
 	@override String get deleteThisProfileTitle => '이 프로필을 삭제하시겠습니까?';
-	@override String deleteThisProfileMessage({required Object displayName}) => '${displayName} 이(가) 제거됩니다. 연결 자체는 영향을 받지 않습니다.';
+	@override String deleteThisProfileMessage({required Object displayName}) => '${displayName}을(를) 제거합니다. 연결에는 영향이 없습니다.';
 	@override String get active => '활성';
 	@override String get manage => '관리';
 	@override String get delete => '삭제';
 	@override String get signOut => '로그아웃';
 	@override String get signOutPlexTitle => 'Plex에서 로그아웃하시겠습니까?';
-	@override String signOutPlexMessage({required Object displayName}) => '${displayName} 및 이 계정의 모든 Plex Home 사용자가 이 기기에서 제거됩니다. 언제든지 다시 로그인할 수 있습니다.';
+	@override String signOutPlexMessage({required Object displayName}) => '${displayName} 및 모든 Plex Home 사용자를 제거할까요? 언제든 다시 로그인할 수 있습니다.';
 	@override String get signedOutPlex => 'Plex에서 로그아웃되었습니다.';
 	@override String get signOutFailed => '로그아웃에 실패했습니다.';
 	@override String get sectionTitle => '프로필';
@@ -728,9 +728,9 @@ class _TranslationsProfilesKo extends TranslationsProfilesEn {
 	@override String summaryMultipleWithActive({required Object count, required Object activeName}) => '${count}개 프로필 · 활성: ${activeName}';
 	@override String summaryMultiple({required Object count}) => '${count}개 프로필';
 	@override String get removeConnectionTitle => '연결을 제거하시겠습니까?';
-	@override String removeConnectionMessage({required Object displayName, required Object connectionLabel}) => '${displayName}이(가) ${connectionLabel}에 대한 액세스를 잃게 됩니다. 연결 자체는 다른 프로필에서 계속 사용할 수 있습니다.';
+	@override String removeConnectionMessage({required Object displayName, required Object connectionLabel}) => '${displayName}의 ${connectionLabel} 접근 권한을 제거합니다. 다른 프로필에는 유지됩니다.';
 	@override String get deleteProfileTitle => '프로필을 삭제하시겠습니까?';
-	@override String deleteProfileMessage({required Object displayName}) => '이 기기에서 ${displayName}과(와) 모든 연결이 제거됩니다. 기본 Plex/Jellyfin 서버에는 영향을 주지 않습니다.';
+	@override String deleteProfileMessage({required Object displayName}) => '${displayName} 및 해당 연결을 제거합니다. 서버는 계속 사용할 수 있습니다.';
 	@override String get profileNameLabel => '프로필 이름';
 	@override String get pinProtectionLabel => 'PIN 보호';
 	@override String get pinManagedByPlex => 'PIN은 Plex에서 관리됩니다. plex.tv에서 편집하세요.';
@@ -745,13 +745,13 @@ class _TranslationsProfilesKo extends TranslationsProfilesEn {
 	@override String get makeDefault => '기본값으로 설정';
 	@override String get removeConnection => '제거';
 	@override String borrowAddTo({required Object displayName}) => '${displayName}에 추가';
-	@override String get borrowExplain => '다른 프로필에서 연결을 빌립니다. PIN 보호된 원본 프로필은 공유 전에 PIN을 요구합니다.';
+	@override String get borrowExplain => '다른 프로필의 연결을 빌립니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.';
 	@override String get borrowEmpty => '아직 빌릴 것이 없습니다.';
-	@override String get borrowEmptySubtitle => '먼저 다른 프로필에 Plex 계정 또는 Jellyfin 서버를 연결한 다음 여기로 돌아오세요.';
+	@override String get borrowEmptySubtitle => '먼저 다른 프로필에 Plex 또는 Jellyfin을 연결하세요.';
 	@override String get newProfile => '새 프로필';
 	@override String get profileNameHint => '예: 손님, 어린이, 가족실';
 	@override String get pinProtectionOptional => 'PIN 보호 (선택 사항)';
-	@override String get pinExplain => '이 프로필로 전환하려면 4자리 PIN이 필요합니다. 부드러운 장벽 — 앱 데이터를 지울 수 있는 사람은 우회할 수 있습니다.';
+	@override String get pinExplain => '프로필 전환에는 4자리 PIN이 필요합니다.';
 	@override String get continueButton => '계속';
 	@override String get pinsDontMatch => 'PIN이 일치하지 않습니다';
 }
@@ -766,7 +766,7 @@ class _TranslationsConnectionsKo extends TranslationsConnectionsEn {
 	@override String get sectionTitle => '연결';
 	@override String get addConnection => '연결 추가';
 	@override String get addConnectionSubtitleNoProfile => 'Plex로 로그인하거나 Jellyfin 서버에 연결';
-	@override String addConnectionSubtitleScoped({required Object displayName}) => '${displayName} 에 추가 — Plex 계정, Jellyfin 서버 또는 다른 프로필에서 빌리기';
+	@override String addConnectionSubtitleScoped({required Object displayName}) => '${displayName}에 추가: Plex, Jellyfin 또는 다른 프로필 연결';
 	@override String sessionExpiredOne({required Object name}) => '${name} 의 세션이 만료되었습니다';
 	@override String sessionExpiredMany({required Object count}) => '${count} 개의 서버에서 세션이 만료되었습니다';
 	@override String get signInAgain => '다시 로그인';
@@ -894,7 +894,7 @@ class _TranslationsServerSelectionKo extends TranslationsServerSelectionEn {
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get allServerConnectionsFailed => '어떤 서버에도 연결할 수 없습니다. 네트워크를 확인하고 다시 시도하세요.';
+	@override String get allServerConnectionsFailed => '서버에 연결할 수 없습니다. 네트워크를 확인하세요.';
 	@override String noServersFoundForAccount({required Object username, required Object email}) => '${username} (${email})의 서버를 찾을 수 없습니다.';
 	@override String failedToLoadServers({required Object error}) => '서버를 로드할 수 없습니다: ${error}';
 }
@@ -1029,7 +1029,7 @@ class _TranslationsCollectionsKo extends TranslationsCollectionsEn {
 	@override String get empty => '컬렉션이 비어 있습니다';
 	@override String get unknownLibrarySection => '삭제할 수 없습니다: 알 수 없는 미디어 라이브러리 섹션입니다';
 	@override String get deleteCollection => '컬렉션 삭제';
-	@override String deleteConfirm({required Object title}) => '"${title}"을(를) 삭제 하시겠습니까? 이 작업은 되돌릴 수 없습니다.';
+	@override String deleteConfirm({required Object title}) => '"${title}"을(를) 삭제할까요? 되돌릴 수 없습니다.';
 	@override String get deleted => '컬렉션 삭제됨';
 	@override String get deleteFailed => '컬렉션 삭제 실패';
 	@override String deleteFailedWithError({required Object error}) => '컬렉션 삭제 실패: ${error}';
@@ -1127,11 +1127,11 @@ class _TranslationsWatchTogetherKo extends TranslationsWatchTogetherEn {
 	@override String get pasteFromClipboard => '클립보드에서 붙여넣기';
 	@override String get pleaseEnterCode => '세션 코드를 입력하세요';
 	@override String get codeMustBe5Chars => '세션 코드는 반드시 5자리여야 합니다';
-	@override String get joinInstructions => '호스트가 공유한 세션 코드를 입력하여 시청 세션에 참여하세요.';
+	@override String get joinInstructions => '참여하려면 호스트의 세션 코드를 입력하세요.';
 	@override String get failedToCreate => '세션 생성 실패';
 	@override String get failedToJoin => '세션 참여 실패';
 	@override String get sessionCodeCopied => '세션 코드가 클립보드에 복사되었습니다';
-	@override String get relayUnreachable => '릴레이 서버에 연결할 수 없습니다. 인터넷 제공업체가 연결을 차단하고 있을 수 있습니다. 시도해 볼 수 있지만 함께 보기가 작동하지 않을 수 있습니다.';
+	@override String get relayUnreachable => '릴레이 서버에 연결할 수 없습니다. ISP 차단으로 Watch Together가 작동하지 않을 수 있습니다.';
 	@override String get reconnectingToHost => '호스트에 재연결 중...';
 	@override String get currentPlayback => '현재 재생';
 	@override String get joinCurrentPlayback => '현재 재생 참여';
@@ -1168,10 +1168,10 @@ class _TranslationsDownloadsKo extends TranslationsDownloadsEn {
 	@override String get deleteDownload => '다운로드 삭제';
 	@override String get retryDownload => '다운로드 재시도';
 	@override String get downloadQueued => '다운로드 대기 중';
-	@override String get serverErrorBitrate => '서버 오류 — 파일이 원격 스트리밍 비트레이트 제한을 초과할 수 있습니다';
+	@override String get serverErrorBitrate => '서버 오류: 파일이 원격 비트레이트 제한을 초과할 수 있습니다';
 	@override String episodesQueued({required Object count}) => '${count} 에피소드가 다운로드 대기열에 추가 되었습니다';
 	@override String get downloadDeleted => '다운로드 삭제됨';
-	@override String deleteConfirm({required Object title}) => '"${title}"를 삭제 하시겠습니까? 다운로드한 파일이 기기에서 삭제됩니다.';
+	@override String deleteConfirm({required Object title}) => '이 기기에서 "${title}"을(를) 삭제할까요?';
 	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => '${title} 삭제 중... (${current}/${total})';
 	@override String get deleting => '삭제 중...';
 	@override String get queuedTooltip => '대기 중';
@@ -1281,7 +1281,7 @@ class _TranslationsExternalPlayerKo extends TranslationsExternalPlayerEn {
 	// Translations
 	@override String get title => '외부 플레이어';
 	@override String get useExternalPlayer => '외부 플레이어 사용';
-	@override String get useExternalPlayerDescription => '내장 플레이어 대신 외부 앱에서 동영상 열기';
+	@override String get useExternalPlayerDescription => '동영상을 다른 앱에서 열기';
 	@override String get selectPlayer => '플레이어 선택';
 	@override String get customPlayers => '사용자 정의 플레이어';
 	@override String get systemDefault => '시스템 기본값';
@@ -1389,7 +1389,7 @@ class _TranslationsMatchScreenKo extends TranslationsMatchScreenEn {
 	@override String get match => '일치...';
 	@override String get fixMatch => '일치 수정...';
 	@override String get unmatch => '일치 해제';
-	@override String get unmatchConfirm => '이 항목의 현재 일치를 해제하시겠습니까? 다시 일치시킬 때까지 Plex는 일치되지 않은 것으로 처리합니다.';
+	@override String get unmatchConfirm => '이 매칭을 지울까요? 다시 매칭될 때까지 Plex에서는 미매칭으로 처리됩니다.';
 	@override String get unmatchSuccess => '일치 해제됨';
 	@override String get unmatchFailed => '일치 해제에 실패했습니다';
 	@override String get matchApplied => '일치 적용됨';
@@ -1423,7 +1423,7 @@ class _TranslationsTraktKo extends TranslationsTraktEn {
 	@override String get connected => '연결됨';
 	@override String connectedAs({required Object username}) => '@${username}(으)로 연결됨';
 	@override String get disconnectConfirm => 'Trakt 계정 연결을 끊으시겠습니까?';
-	@override String get disconnectConfirmBody => 'Plezy가 Trakt로 재생 이벤트를 보내지 않습니다. 언제든지 다시 연결할 수 있습니다.';
+	@override String get disconnectConfirmBody => 'Plezy가 Trakt로 이벤트 전송을 중지합니다. 언제든 다시 연결할 수 있습니다.';
 	@override String get scrobble => '실시간 스크로블';
 	@override String get scrobbleDescription => '재생 중 재생, 일시정지, 정지 이벤트를 Trakt로 전송합니다.';
 	@override String get watchedSync => '시청 상태 동기화';
@@ -1438,13 +1438,13 @@ class _TranslationsTrackersKo extends TranslationsTrackersEn {
 
 	// Translations
 	@override String get title => '트래커';
-	@override String get hubSubtitle => '시청 진행률을 Trakt 및 기타 서비스와 동기화하세요.';
+	@override String get hubSubtitle => '시청 진행률을 Trakt 및 다른 서비스와 동기화합니다.';
 	@override String get notConnected => '연결되지 않음';
 	@override String connectedAs({required Object username}) => '@${username} 로 연결됨';
 	@override String get scrobble => '진행률 자동 추적';
 	@override String get scrobbleDescription => '에피소드나 영화를 시청하면 목록을 업데이트합니다.';
 	@override String disconnectConfirm({required Object service}) => '${service} 연결을 해제하시겠습니까?';
-	@override String disconnectConfirmBody({required Object service}) => 'Plezy가 ${service} 목록 업데이트를 중지합니다. 언제든지 다시 연결할 수 있습니다.';
+	@override String disconnectConfirmBody({required Object service}) => 'Plezy가 ${service} 업데이트를 중지합니다. 언제든 다시 연결할 수 있습니다.';
 	@override String connectFailed({required Object service}) => '${service}에 연결할 수 없습니다. 다시 시도하세요.';
 	@override late final _TranslationsTrackersServicesKo services = _TranslationsTrackersServicesKo._(_root);
 	@override late final _TranslationsTrackersDeviceCodeKo deviceCode = _TranslationsTrackersDeviceCodeKo._(_root);
@@ -1460,7 +1460,7 @@ class _TranslationsAddServerKo extends TranslationsAddServerEn {
 
 	// Translations
 	@override String get addJellyfinTitle => 'Jellyfin 서버 추가';
-	@override String get jellyfinUrlIntro => 'Jellyfin 서버 URL을 입력하세요 — 예: `https://jellyfin.example.com`. 이후에 로그인할 수 있습니다.';
+	@override String get jellyfinUrlIntro => '서버 URL을 입력하세요. 예: `https://jellyfin.example.com`.';
 	@override String get serverUrl => '서버 URL';
 	@override String get findServer => '서버 찾기';
 	@override String get username => '사용자 이름';
@@ -1472,25 +1472,25 @@ class _TranslationsAddServerKo extends TranslationsAddServerEn {
 	@override String signInFailed({required Object error}) => '로그인 실패: ${error}';
 	@override String quickConnectFailed({required Object error}) => 'Quick Connect 실패: ${error}';
 	@override String get addPlexTitle => 'Plex로 로그인';
-	@override String get plexAuthIntro => 'Plex에 로그인할 방법을 선택하세요. 브라우저 플로우는 plex.tv를 열어 연결을 확인하며, QR 옵션은 TV나 원격 장치에 편리합니다.';
+	@override String get plexAuthIntro => '브라우저 또는 QR 코드로 로그인하세요.';
 	@override String get plexQRPrompt => '이 QR 코드를 스캔하여 로그인하세요.';
 	@override String get waitingForPlexConfirmation => 'plex.tv에서 로그인을 확인하는 중…';
 	@override String get pinExpired => '로그인 전에 PIN이 만료되었습니다. 다시 시도하세요.';
-	@override String get duplicatePlexAccount => '이 기기는 이미 Plex 계정에 로그인되어 있습니다. 계정을 변경하려면 설정에서 로그아웃하세요.';
+	@override String get duplicatePlexAccount => '이미 Plex에 로그인되어 있습니다. 계정을 전환하려면 로그아웃하세요.';
 	@override String failedToRegisterAccount({required Object error}) => '계정 등록 실패: ${error}';
 	@override String get enterJellyfinUrlError => 'Jellyfin 서버 URL을 입력하세요';
 	@override String get addConnectionTitle => '연결 추가';
 	@override String addConnectionTitleScoped({required Object name}) => '${name}에 추가';
-	@override String get addConnectionIntroGlobal => '다른 미디어 서버를 추가하세요. Plex 계정과 Jellyfin 서버를 함께 사용할 수 있으며, 연결된 모든 백엔드의 항목이 홈 화면에 함께 표시됩니다.';
+	@override String get addConnectionIntroGlobal => '다른 미디어 서버를 추가합니다. Plex와 Jellyfin이 홈에 함께 표시됩니다.';
 	@override String get addConnectionIntroScoped => '새 서버를 추가하거나 다른 프로필에서 빌리세요.';
 	@override String get signInWithPlexCard => 'Plex로 로그인';
-	@override String get signInWithPlexCardSubtitle => '이 기기를 Plex 계정으로 인증합니다. 계정과 공유된 서버가 자동으로 함께 추가됩니다.';
-	@override String get signInWithPlexCardSubtitleScoped => '새 Plex 계정을 인증합니다. 해당 Home 사용자가 프로필로 표시됩니다.';
+	@override String get signInWithPlexCardSubtitle => '이 기기를 승인합니다. 공유 서버가 추가됩니다.';
+	@override String get signInWithPlexCardSubtitleScoped => 'Plex 계정을 승인합니다. Home 사용자는 프로필이 됩니다.';
 	@override String get connectToJellyfinCard => 'Jellyfin에 연결';
-	@override String get connectToJellyfinCardSubtitle => 'Jellyfin 서버 URL을 입력하고 사용자 이름 + 비밀번호로 로그인하세요 (Quick Connect는 곧 지원 예정).';
+	@override String get connectToJellyfinCardSubtitle => '서버 URL, 사용자 이름, 비밀번호를 입력하세요.';
 	@override String connectToJellyfinCardSubtitleScoped({required Object name}) => 'Jellyfin 서버에 로그인합니다. ${name}에 연결됩니다.';
 	@override String get borrowFromAnotherProfile => '다른 프로필에서 빌리기';
-	@override String get borrowFromAnotherProfileSubtitle => '이미 다른 프로필에 연결된 연결을 재사용합니다. PIN으로 보호된 소스 프로필은 PIN을 요청합니다.';
+	@override String get borrowFromAnotherProfileSubtitle => '다른 프로필의 연결을 재사용합니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.';
 }
 
 // Path: hotkeys.actions
@@ -1532,7 +1532,7 @@ class _TranslationsVideoControlsPipErrorsKo extends TranslationsVideoControlsPip
 	// Translations
 	@override String get androidVersion => 'Android 8.0 이상이 필요합니다';
 	@override String get iosVersion => 'iOS 15.0 이상이 필요합니다';
-	@override String get permissionDisabled => '화면 속 화면 권한이 비활성화되어 있습니다. 설정 > 앱 > Plezy > 화면 속 화면에서 활성화하세요';
+	@override String get permissionDisabled => '화면 속 화면이 비활성화되어 있습니다. 시스템 설정에서 활성화하세요.';
 	@override String get notSupported => '이 기기는 화면 속 화면 모드를 지원하지 않습니다';
 	@override String get voSwitchFailed => '화면 속 화면을 위한 비디오 출력 전환에 실패했습니다';
 	@override String get failed => '화면 속 화면 모드를 시작할 수 없습니다';
@@ -1612,7 +1612,7 @@ class _TranslationsCompanionRemoteSessionKo extends TranslationsCompanionRemoteS
 	@override String get connected => '연결됨';
 	@override String get serverRunning => '원격 서버 활성';
 	@override String get serverStopped => '원격 서버 중지됨';
-	@override String get serverRunningDescription => '네트워크의 모바일 기기가 이 앱을 검색하고 연결할 수 있습니다';
+	@override String get serverRunningDescription => '네트워크의 모바일 기기가 이 앱에 연결할 수 있습니다';
 	@override String get serverStoppedDescription => '모바일 기기의 연결을 허용하려면 서버를 시작하세요';
 	@override String get usePhoneToControl => '모바일 기기로 이 앱을 제어하세요';
 	@override String get startServer => '서버 시작';
@@ -1627,20 +1627,20 @@ class _TranslationsCompanionRemotePairingKo extends TranslationsCompanionRemoteP
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get discoveryDescription => '같은 Plex 계정으로 Plezy를 실행 중인 네트워크의 기기가 자동으로 표시됩니다';
+	@override String get discoveryDescription => '같은 Plex 계정의 Plezy 기기가 여기에 표시됩니다';
 	@override String get hostAddressHint => '192.168.1.100:48632';
 	@override String get connecting => '연결 중...';
 	@override String get searchingForDevices => '기기 검색 중...';
 	@override String get noDevicesFound => '네트워크에서 기기를 찾을 수 없습니다';
-	@override String get noDevicesHint => '데스크톱에서 Plezy가 열려 있고 두 기기가 같은 WiFi 네트워크에 있는지 확인하세요';
+	@override String get noDevicesHint => '데스크톱에서 Plezy를 열고 같은 WiFi를 사용하세요';
 	@override String get availableDevices => '사용 가능한 기기';
 	@override String get manualConnection => '수동 연결';
-	@override String get cryptoInitFailed => '보안 연결을 초기화할 수 없습니다. Plex 계정에 로그인되어 있는지 확인하세요.';
+	@override String get cryptoInitFailed => '보안 연결을 시작할 수 없습니다. 먼저 Plex에 로그인하세요.';
 	@override String get validationHostRequired => '호스트 주소를 입력하세요';
 	@override String get validationHostFormat => '형식은 IP:포트여야 합니다 (예: 192.168.1.100:48632)';
-	@override String get connectionTimedOut => '연결 시간이 초과되었습니다. 두 기기가 같은 네트워크에 있는지 확인하세요.';
+	@override String get connectionTimedOut => '연결 시간이 초과되었습니다. 두 기기에서 같은 네트워크를 사용하세요.';
 	@override String get sessionNotFound => '기기를 찾을 수 없습니다. 호스트에서 Plezy가 실행 중인지 확인하세요.';
-	@override String get authFailed => '인증에 실패했습니다. 두 기기가 같은 Plex 계정을 사용하는지 확인하세요.';
+	@override String get authFailed => '인증에 실패했습니다. 두 기기 모두 같은 Plex 계정이 필요합니다.';
 	@override String failedToConnect({required Object error}) => '연결 실패: ${error}';
 }
 
@@ -1714,7 +1714,7 @@ class _TranslationsTrackersOauthProxyKo extends TranslationsTrackersOauthProxyEn
 
 	// Translations
 	@override String title({required Object service}) => '${service}에 로그인';
-	@override String get body => '휴대전화로 이 QR 코드를 스캔하거나 아래 URL을 브라우저가 있는 기기에서 여세요.';
+	@override String get body => '이 QR 코드를 스캔하거나 아무 기기에서 URL을 여세요.';
 	@override String openToSignIn({required Object service}) => '로그인하려면 ${service} 열기';
 	@override String get urlCopied => 'URL이 복사되었습니다';
 }
@@ -1755,16 +1755,16 @@ extension on TranslationsKo {
 			'auth.authenticate' => '인증',
 			'auth.authenticationTimeout' => '인증 시간이 초과되었습니다. 다시 시도해 주세요.',
 			'auth.scanQRToSignIn' => 'QR 코드를 스캔하여 로그인',
-			'auth.waitingForAuth' => '인증 대기 중... 브라우저에서 로그인을 완료해 주세요.',
+			'auth.waitingForAuth' => '인증 대기 중...\n브라우저에서 로그인하세요.',
 			'auth.useBrowser' => '브라우저 사용',
 			'auth.or' => '또는',
 			'auth.connectToJellyfin' => 'Jellyfin에 연결',
 			'auth.useQuickConnect' => 'Quick Connect 사용',
 			'auth.quickConnectCode' => 'Quick Connect 코드',
-			'auth.quickConnectInstructions' => '웹 브라우저에서 Jellyfin 서버를 열어 로그인한 뒤 사용자 메뉴에서 Quick Connect를 선택하세요. 이 코드를 입력해 로그인을 승인하세요.',
+			'auth.quickConnectInstructions' => 'Jellyfin에서 Quick Connect를 열고 이 코드를 입력하세요.',
 			'auth.quickConnectWaiting' => '승인 대기 중…',
 			'auth.quickConnectCancel' => '취소',
-			'auth.quickConnectExpired' => '승인되기 전에 Quick Connect 코드가 만료되었습니다. 다시 시도하세요.',
+			'auth.quickConnectExpired' => 'Quick Connect가 만료되었습니다. 다시 시도하세요.',
 			'common.cancel' => '취소',
 			'common.save' => '저장',
 			'common.close' => '닫기',
@@ -1850,21 +1850,21 @@ extension on TranslationsKo {
 			'settings.listView' => '목록 보기',
 			'settings.showHeroSection' => '주요 추천 영역 표시',
 			'settings.useGlobalHubs' => '홈 레이아웃 사용',
-			'settings.useGlobalHubsDescription' => '공식 클라이언트처럼 홈페이지 허브를 표시합니다. 끄면 라이브러리별 추천을 표시합니다.',
+			'settings.useGlobalHubsDescription' => '통합 홈 허브를 표시합니다. 끄면 라이브러리 추천을 사용합니다.',
 			'settings.showServerNameOnHubs' => '허브에 서버 이름 표시',
-			'settings.showServerNameOnHubsDescription' => '허브 제목에 항상 서버 이름을 표시합니다. 끄면 중복된 허브 이름에만 표시됩니다.',
+			'settings.showServerNameOnHubsDescription' => '허브 제목에 항상 서버 이름을 표시합니다.',
 			'settings.groupLibrariesByServer' => '서버별로 라이브러리 그룹화',
-			'settings.groupLibrariesByServerDescription' => '여러 서버에 연결된 경우 사이드바에 각 미디어 서버의 헤더를 표시합니다.',
+			'settings.groupLibrariesByServerDescription' => '사이드바 라이브러리를 미디어 서버별로 그룹화합니다.',
 			'settings.alwaysKeepSidebarOpen' => '사이드바 항상 열어두기',
 			'settings.alwaysKeepSidebarOpenDescription' => '사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다',
 			'settings.showUnwatchedCount' => '미시청 수 표시',
 			'settings.showUnwatchedCountDescription' => '시리즈 및 시즌에 미시청 에피소드 수 표시',
 			'settings.showEpisodeNumberOnCards' => '카드에 에피소드 번호 표시',
-			'settings.showEpisodeNumberOnCardsDescription' => '에피소드 카드에 시즌과 함께 에피소드 번호(예: S2 E3)를 표시합니다',
+			'settings.showEpisodeNumberOnCardsDescription' => '에피소드 카드에 시즌 및 에피소드 번호 표시',
 			'settings.showSeasonPostersOnTabs' => '탭에 시즌 포스터 표시',
-			'settings.showSeasonPostersOnTabsDescription' => '프로그램 상세 페이지의 각 시즌 탭 위에 해당 시즌의 포스터를 표시합니다',
+			'settings.showSeasonPostersOnTabsDescription' => '각 시즌 포스터를 탭 위에 표시',
 			'settings.hideSpoilers' => '미시청 에피소드 스포일러 숨기기',
-			'settings.hideSpoilersDescription' => '아직 시청하지 않은 에피소드의 썸네일을 흐리게 하고 설명을 숨깁니다',
+			'settings.hideSpoilersDescription' => '시청하지 않은 에피소드의 썸네일과 설명을 흐리게 처리',
 			'settings.playerBackend' => '플레이어 백엔드',
 			'settings.exoPlayer' => 'ExoPlayer (권장)',
 			'settings.mpv' => 'mpv',
@@ -1873,7 +1873,7 @@ extension on TranslationsKo {
 			'settings.bufferSize' => '버퍼 크기',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
 			'settings.bufferSizeAuto' => '자동 (권장)',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '기기 메모리가 ${heap}MB입니다. ${size}MB 버퍼는 재생 문제를 일으킬 수 있습니다.',
+			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '${heap}MB 메모리를 사용할 수 있습니다. ${size}MB 버퍼는 재생에 영향을 줄 수 있습니다.',
 			'settings.defaultQualityTitle' => '기본 화질',
 			'settings.defaultQualityDescription' => '재생 시작 시 사용됩니다. 낮은 값은 대역폭을 줄입니다.',
 			'settings.subtitleStyling' => '자막 스타일',
@@ -1885,18 +1885,18 @@ extension on TranslationsKo {
 			'settings.defaultSleepTimer' => '기본 취침 타이머',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes}분',
 			'settings.rememberTrackSelections' => '에피소드/영화별 트랙 선택 기억',
-			'settings.rememberTrackSelectionsDescription' => '재생 중 트랙을 변경할 때 오디오 및 자막 언어 설정을 자동으로 저장합니다',
+			'settings.rememberTrackSelectionsDescription' => '제목별 오디오 및 자막 선택 기억',
 			'settings.showChapterMarkersOnTimeline' => '탐색 막대에 챕터 마커 표시',
 			'settings.showChapterMarkersOnTimelineDescription' => '챕터 경계에서 탐색 막대 구분',
 			'settings.clickVideoTogglesPlayback' => '비디오를 클릭하여 재생/일시정지를 전환하세요.',
-			'settings.clickVideoTogglesPlaybackDescription' => '이 옵션이 활성화되어 있으면 비디오 플레이어를 클릭할 때 재생 또는 일시정지가 됩니다. 그렇지 않으면 클릭 시 재생 컨트롤이 표시되거나 숨겨집니다.',
+			'settings.clickVideoTogglesPlaybackDescription' => '컨트롤 표시 대신 동영상 클릭으로 재생/일시정지합니다.',
 			'settings.videoPlayerControls' => '비디오 플레이어 컨트롤',
 			'settings.keyboardShortcuts' => '키보드 단축키',
 			'settings.keyboardShortcutsDescription' => '사용자 정의 키보드 단축키',
 			'settings.videoPlayerNavigation' => '비디오 플레이어 탐색',
 			'settings.videoPlayerNavigationDescription' => '방향 키를 사용하여 비디오 플레이어 컨트롤 탐색',
 			'settings.watchTogetherRelay' => '함께 보기 릴레이',
-			'settings.watchTogetherRelayDescription' => '함께 보기에 사용할 사용자 지정 릴레이 서버를 설정합니다. 모든 참가자가 동일한 서버를 사용해야 합니다.',
+			'settings.watchTogetherRelayDescription' => '사용자 지정 릴레이를 설정합니다. 모두 같은 서버를 사용해야 합니다.',
 			'settings.watchTogetherRelayHint' => 'https://my-relay.example.com',
 			'settings.crashReporting' => '충돌 보고',
 			'settings.crashReportingDescription' => '앱 개선을 위해 충돌 보고서 전송',
@@ -1905,10 +1905,10 @@ extension on TranslationsKo {
 			'settings.viewLogs' => '로그 보기',
 			'settings.viewLogsDescription' => '애플리케이션 로그 확인',
 			'settings.clearCache' => '캐시 삭제',
-			'settings.clearCacheDescription' => '모든 캐시된 이미지와 데이터를 지웁니다. 캐시를 지우면 애플리케이션 콘텐츠 로딩 속도가 느려질 수 있습니다.',
+			'settings.clearCacheDescription' => '캐시된 이미지와 데이터를 지웁니다. 콘텐츠 로드가 느려질 수 있습니다.',
 			'settings.clearCacheSuccess' => '캐시 삭제 성공',
 			'settings.resetSettings' => '설정 재설정',
-			'settings.resetSettingsDescription' => '모든 설정을 기본값으로 재설정합니다. 이 작업은 되돌릴 수 없습니다.',
+			'settings.resetSettingsDescription' => '기본 설정으로 복원합니다. 되돌릴 수 없습니다.',
 			'settings.resetSettingsSuccess' => '설정 재설정 성공',
 			'settings.backup' => '백업',
 			'settings.exportSettings' => '설정 내보내기',
@@ -1929,7 +1929,7 @@ extension on TranslationsKo {
 			'settings.updateAvailable' => '사용 가능한 업데이트 있음',
 			'settings.checkForUpdates' => '업데이트 확인',
 			'settings.autoCheckUpdatesOnStartup' => '시작 시 자동으로 업데이트 확인',
-			'settings.autoCheckUpdatesOnStartupDescription' => '시작 시 새 버전이 있으면 알림 표시',
+			'settings.autoCheckUpdatesOnStartupDescription' => '실행 시 업데이트가 있으면 알림',
 			'settings.validationErrorEnterNumber' => '유효한 숫자를 입력하세요',
 			'settings.validationErrorDuration' => ({required Object min, required Object max, required Object unit}) => '기간은 ${min}과 ${max} ${unit} 사이여야 합니다',
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => '단축키가 이미 ${action}에 할당 되었습니다',
@@ -1940,7 +1940,7 @@ extension on TranslationsKo {
 			'settings.autoSkipCredits' => '자동으로 엔딩 건너뛰기',
 			'settings.autoSkipCreditsDescription' => '엔딩 크레딧 자동 건너뛰기 후 다음 에피소드 재생',
 			'settings.forceSkipMarkerFallback' => '대체 마커 강제 사용',
-			'settings.forceSkipMarkerFallbackDescription' => 'Plex가 기본 마커를 제공하더라도 건너뛰기 마커에 챕터 제목 패턴 사용',
+			'settings.forceSkipMarkerFallbackDescription' => 'Plex에 마커가 있어도 챕터 제목 패턴 사용',
 			'settings.autoSkipDelay' => '자동 건너뛰기 지연',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => '자동 건너뛰기 전 ${seconds} 초 대기',
 			'settings.introPattern' => '인트로 마커 패턴',
@@ -1962,8 +1962,8 @@ extension on TranslationsKo {
 			'settings.downloadOnWifiOnly' => 'WiFi 연결 시에만 다운로드',
 			'settings.downloadOnWifiOnlyDescription' => '셀룰러 데이터 사용 시 다운로드 불가',
 			'settings.autoRemoveWatchedDownloads' => '시청한 다운로드 자동 삭제',
-			'settings.autoRemoveWatchedDownloadsDescription' => '시청 완료로 표시된 에피소드와 영화의 다운로드를 자동으로 삭제',
-			'settings.cellularDownloadBlocked' => '셀룰러 데이터에서 다운로드가 차단 되었습니다. WiFi에 연결하거나 설정을 변경하세요.',
+			'settings.autoRemoveWatchedDownloadsDescription' => '시청한 다운로드 자동 삭제',
+			'settings.cellularDownloadBlocked' => '셀룰러에서는 다운로드가 차단됩니다. WiFi를 사용하거나 설정을 변경하세요.',
 			'settings.maxVolume' => '최대 볼륨',
 			'settings.maxVolumeDescription' => '조용한 미디어를 위해 100% 이상의 볼륨 허용',
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
@@ -1976,20 +1976,20 @@ extension on TranslationsKo {
 			'settings.companionRemoteServer' => '컴패니언 리모트 서버',
 			'settings.companionRemoteServerDescription' => '네트워크의 모바일 기기가 이 앱을 제어할 수 있도록 허용',
 			'settings.autoPip' => '자동 PIP 모드',
-			'settings.autoPipDescription' => '재생 중 앱을 나갈 때 자동으로 PIP 모드로 전환',
+			'settings.autoPipDescription' => '재생 중 앱을 떠나면 화면 속 화면으로 전환',
 			'settings.matchContentFrameRate' => '콘텐츠 프레임 레이트 맞춤',
-			'settings.matchContentFrameRateDescription' => '비디오 콘텐츠에 맞게 디스플레이 주사율을 조정하여 떨림을 줄이고 배터리를 절약합니다',
+			'settings.matchContentFrameRateDescription' => '디스플레이 새로 고침 빈도를 동영상 콘텐츠에 맞춤',
 			'settings.matchRefreshRate' => '주사율 맞춤',
-			'settings.matchRefreshRateDescription' => '전체 화면에서 비디오 콘텐츠에 맞게 디스플레이 주사율을 전환합니다',
+			'settings.matchRefreshRateDescription' => '전체 화면에서 디스플레이 새로 고침 빈도 맞춤',
 			'settings.matchDynamicRange' => '다이나믹 레인지 맞춤',
-			'settings.matchDynamicRangeDescription' => 'HDR 콘텐츠에 대해 자동으로 HDR을 활성화하고 플레이어를 나갈 때 SDR로 복원합니다',
+			'settings.matchDynamicRangeDescription' => 'HDR 콘텐츠에서는 HDR로 전환한 뒤 SDR로 되돌림',
 			'settings.displaySwitchDelay' => '디스플레이 전환 지연',
 			'settings.tunneledPlayback' => '터널 재생',
-			'settings.tunneledPlaybackDescription' => '하드웨어 가속 비디오 터널링을 사용합니다. HDR 콘텐츠에서 소리만 나고 검은 화면이 보이면 비활성화하세요',
+			'settings.tunneledPlaybackDescription' => '비디오 터널링을 사용합니다. HDR 재생 시 검은 화면이 보이면 비활성화하세요.',
 			'settings.requireProfileSelectionOnOpen' => '앱 실행 시 프로필 선택',
 			'settings.requireProfileSelectionOnOpenDescription' => '앱을 열 때마다 프로필 선택 화면을 표시합니다',
 			'settings.forceTvMode' => 'TV 모드 강제 사용',
-			'settings.forceTvModeDescription' => '자동 감지와 관계없이 TV 레이아웃을 사용합니다. leanback 기능을 보고하지 않는 Android TV 기기에 유용합니다. 변경 시 앱이 다시 시작됩니다.',
+			'settings.forceTvModeDescription' => 'TV 레이아웃을 강제합니다. 자동 감지되지 않는 기기용입니다. 재시작이 필요합니다.',
 			'settings.startInFullscreen' => '전체화면으로 시작',
 			'settings.startInFullscreenDescription' => '실행 시 Plezy를 전체화면 모드로 엽니다',
 			'settings.autoHidePerformanceOverlay' => '성능 오버레이 자동 숨기기',
@@ -2067,7 +2067,7 @@ extension on TranslationsKo {
 			'mediaMenu.shufflePlay' => '무작위 재생',
 			'mediaMenu.fileInfo' => '파일 정보',
 			'mediaMenu.deleteFromServer' => '서버에서 삭제',
-			'mediaMenu.confirmDelete' => '이 미디어와 파일이 서버에서 영구적으로 삭제됩니다. 이 작업은 취소할 수 없습니다.',
+			'mediaMenu.confirmDelete' => '이 미디어와 해당 파일을 서버에서 삭제할까요?',
 			'mediaMenu.deleteMultipleWarning' => '모든 에피소드와 파일이 포함됩니다.',
 			'mediaMenu.mediaDeletedSuccessfully' => '미디어 항목이 성공적으로 삭제되었습니다',
 			'mediaMenu.mediaFailedToDelete' => '미디어 항목 삭제 실패',
@@ -2144,7 +2144,7 @@ extension on TranslationsKo {
 			'videoControls.pipFailed' => '화면 속 화면 모드를 시작할 수 없습니다',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0 이상이 필요합니다',
 			'videoControls.pipErrors.iosVersion' => 'iOS 15.0 이상이 필요합니다',
-			'videoControls.pipErrors.permissionDisabled' => '화면 속 화면 권한이 비활성화되어 있습니다. 설정 > 앱 > Plezy > 화면 속 화면에서 활성화하세요',
+			'videoControls.pipErrors.permissionDisabled' => '화면 속 화면이 비활성화되어 있습니다. 시스템 설정에서 활성화하세요.',
 			'videoControls.pipErrors.notSupported' => '이 기기는 화면 속 화면 모드를 지원하지 않습니다',
 			'videoControls.pipErrors.voSwitchFailed' => '화면 속 화면을 위한 비디오 출력 전환에 실패했습니다',
 			'videoControls.pipErrors.failed' => '화면 속 화면 모드를 시작할 수 없습니다',
@@ -2199,7 +2199,7 @@ extension on TranslationsKo {
 			'messages.failedPlayback' => ({required Object action, required Object error}) => '${action}을(를) 수행할 수 없습니다: ${error}',
 			'messages.switchingToCompatiblePlayer' => '호환되는 플레이어로 전환 중...',
 			'messages.serverLimitTitle' => '재생 실패',
-			'messages.serverLimitBody' => '서버에서 오류를 반환했습니다 (HTTP 500). 일반적으로 이는 서버 소유자가 대역폭 또는 트랜스코딩 제한을 설정하여 세션을 거부하고 있다는 의미입니다. 클라이언트에서 할 수 있는 일은 없습니다 — 서버 소유자가 설정을 조정해야 합니다.',
+			'messages.serverLimitBody' => '서버 오류(HTTP 500). 대역폭/트랜스코딩 제한으로 세션이 거부된 것 같습니다. 소유자에게 조정을 요청하세요.',
 			'messages.logsUploaded' => '로그 업로드 완료',
 			'messages.logsUploadFailed' => '로그 업로드 실패',
 			'messages.logId' => '로그 ID',
@@ -2234,13 +2234,13 @@ extension on TranslationsKo {
 			'profiles.addPlezyProfile' => 'Plezy 프로필 추가',
 			'profiles.switchingProfile' => '프로필 전환 중…',
 			'profiles.deleteThisProfileTitle' => '이 프로필을 삭제하시겠습니까?',
-			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => '${displayName} 이(가) 제거됩니다. 연결 자체는 영향을 받지 않습니다.',
+			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => '${displayName}을(를) 제거합니다. 연결에는 영향이 없습니다.',
 			'profiles.active' => '활성',
 			'profiles.manage' => '관리',
 			'profiles.delete' => '삭제',
 			'profiles.signOut' => '로그아웃',
 			'profiles.signOutPlexTitle' => 'Plex에서 로그아웃하시겠습니까?',
-			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName} 및 이 계정의 모든 Plex Home 사용자가 이 기기에서 제거됩니다. 언제든지 다시 로그인할 수 있습니다.',
+			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName} 및 모든 Plex Home 사용자를 제거할까요? 언제든 다시 로그인할 수 있습니다.',
 			'profiles.signedOutPlex' => 'Plex에서 로그아웃되었습니다.',
 			'profiles.signOutFailed' => '로그아웃에 실패했습니다.',
 			'profiles.sectionTitle' => '프로필',
@@ -2248,9 +2248,9 @@ extension on TranslationsKo {
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count}개 프로필 · 활성: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count}개 프로필',
 			'profiles.removeConnectionTitle' => '연결을 제거하시겠습니까?',
-			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => '${displayName}이(가) ${connectionLabel}에 대한 액세스를 잃게 됩니다. 연결 자체는 다른 프로필에서 계속 사용할 수 있습니다.',
+			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => '${displayName}의 ${connectionLabel} 접근 권한을 제거합니다. 다른 프로필에는 유지됩니다.',
 			'profiles.deleteProfileTitle' => '프로필을 삭제하시겠습니까?',
-			'profiles.deleteProfileMessage' => ({required Object displayName}) => '이 기기에서 ${displayName}과(와) 모든 연결이 제거됩니다. 기본 Plex/Jellyfin 서버에는 영향을 주지 않습니다.',
+			'profiles.deleteProfileMessage' => ({required Object displayName}) => '${displayName} 및 해당 연결을 제거합니다. 서버는 계속 사용할 수 있습니다.',
 			'profiles.profileNameLabel' => '프로필 이름',
 			'profiles.pinProtectionLabel' => 'PIN 보호',
 			'profiles.pinManagedByPlex' => 'PIN은 Plex에서 관리됩니다. plex.tv에서 편집하세요.',
@@ -2267,19 +2267,19 @@ extension on TranslationsKo {
 			'profiles.makeDefault' => '기본값으로 설정',
 			'profiles.removeConnection' => '제거',
 			'profiles.borrowAddTo' => ({required Object displayName}) => '${displayName}에 추가',
-			'profiles.borrowExplain' => '다른 프로필에서 연결을 빌립니다. PIN 보호된 원본 프로필은 공유 전에 PIN을 요구합니다.',
+			'profiles.borrowExplain' => '다른 프로필의 연결을 빌립니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.',
 			'profiles.borrowEmpty' => '아직 빌릴 것이 없습니다.',
-			'profiles.borrowEmptySubtitle' => '먼저 다른 프로필에 Plex 계정 또는 Jellyfin 서버를 연결한 다음 여기로 돌아오세요.',
+			'profiles.borrowEmptySubtitle' => '먼저 다른 프로필에 Plex 또는 Jellyfin을 연결하세요.',
 			'profiles.newProfile' => '새 프로필',
 			'profiles.profileNameHint' => '예: 손님, 어린이, 가족실',
 			'profiles.pinProtectionOptional' => 'PIN 보호 (선택 사항)',
-			'profiles.pinExplain' => '이 프로필로 전환하려면 4자리 PIN이 필요합니다. 부드러운 장벽 — 앱 데이터를 지울 수 있는 사람은 우회할 수 있습니다.',
+			'profiles.pinExplain' => '프로필 전환에는 4자리 PIN이 필요합니다.',
 			'profiles.continueButton' => '계속',
 			'profiles.pinsDontMatch' => 'PIN이 일치하지 않습니다',
 			'connections.sectionTitle' => '연결',
 			'connections.addConnection' => '연결 추가',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex로 로그인하거나 Jellyfin 서버에 연결',
-			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} 에 추가 — Plex 계정, Jellyfin 서버 또는 다른 프로필에서 빌리기',
+			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName}에 추가: Plex, Jellyfin 또는 다른 프로필 연결',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} 의 세션이 만료되었습니다',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} 개의 서버에서 세션이 만료되었습니다',
 			'connections.signInAgain' => '다시 로그인',
@@ -2382,7 +2382,7 @@ extension on TranslationsKo {
 			'about.versionLabel' => ({required Object version}) => '버전 ${version}',
 			'about.appDescription' => '아름다운 Flutter용 Plex 및 Jellyfin 클라이언트',
 			'about.viewLicensesDescription' => '타사 라이브러리 라이선스 보기',
-			'serverSelection.allServerConnectionsFailed' => '어떤 서버에도 연결할 수 없습니다. 네트워크를 확인하고 다시 시도하세요.',
+			'serverSelection.allServerConnectionsFailed' => '서버에 연결할 수 없습니다. 네트워크를 확인하세요.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email})의 서버를 찾을 수 없습니다.',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => '서버를 로드할 수 없습니다: ${error}',
 			'hubDetail.title' => '제목',
@@ -2463,7 +2463,7 @@ extension on TranslationsKo {
 			'collections.empty' => '컬렉션이 비어 있습니다',
 			'collections.unknownLibrarySection' => '삭제할 수 없습니다: 알 수 없는 미디어 라이브러리 섹션입니다',
 			'collections.deleteCollection' => '컬렉션 삭제',
-			'collections.deleteConfirm' => ({required Object title}) => '"${title}"을(를) 삭제 하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+			'collections.deleteConfirm' => ({required Object title}) => '"${title}"을(를) 삭제할까요? 되돌릴 수 없습니다.',
 			'collections.deleted' => '컬렉션 삭제됨',
 			'collections.deleteFailed' => '컬렉션 삭제 실패',
 			'collections.deleteFailedWithError' => ({required Object error}) => '컬렉션 삭제 실패: ${error}',
@@ -2543,11 +2543,11 @@ extension on TranslationsKo {
 			'watchTogether.pasteFromClipboard' => '클립보드에서 붙여넣기',
 			'watchTogether.pleaseEnterCode' => '세션 코드를 입력하세요',
 			'watchTogether.codeMustBe5Chars' => '세션 코드는 반드시 5자리여야 합니다',
-			'watchTogether.joinInstructions' => '호스트가 공유한 세션 코드를 입력하여 시청 세션에 참여하세요.',
+			'watchTogether.joinInstructions' => '참여하려면 호스트의 세션 코드를 입력하세요.',
 			'watchTogether.failedToCreate' => '세션 생성 실패',
 			'watchTogether.failedToJoin' => '세션 참여 실패',
 			'watchTogether.sessionCodeCopied' => '세션 코드가 클립보드에 복사되었습니다',
-			'watchTogether.relayUnreachable' => '릴레이 서버에 연결할 수 없습니다. 인터넷 제공업체가 연결을 차단하고 있을 수 있습니다. 시도해 볼 수 있지만 함께 보기가 작동하지 않을 수 있습니다.',
+			'watchTogether.relayUnreachable' => '릴레이 서버에 연결할 수 없습니다. ISP 차단으로 Watch Together가 작동하지 않을 수 있습니다.',
 			'watchTogether.reconnectingToHost' => '호스트에 재연결 중...',
 			'watchTogether.currentPlayback' => '현재 재생',
 			'watchTogether.joinCurrentPlayback' => '현재 재생 참여',
@@ -2575,10 +2575,10 @@ extension on TranslationsKo {
 			'downloads.deleteDownload' => '다운로드 삭제',
 			'downloads.retryDownload' => '다운로드 재시도',
 			'downloads.downloadQueued' => '다운로드 대기 중',
-			'downloads.serverErrorBitrate' => '서버 오류 — 파일이 원격 스트리밍 비트레이트 제한을 초과할 수 있습니다',
+			'downloads.serverErrorBitrate' => '서버 오류: 파일이 원격 비트레이트 제한을 초과할 수 있습니다',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} 에피소드가 다운로드 대기열에 추가 되었습니다',
 			'downloads.downloadDeleted' => '다운로드 삭제됨',
-			'downloads.deleteConfirm' => ({required Object title}) => '"${title}"를 삭제 하시겠습니까? 다운로드한 파일이 기기에서 삭제됩니다.',
+			'downloads.deleteConfirm' => ({required Object title}) => '이 기기에서 "${title}"을(를) 삭제할까요?',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => '${title} 삭제 중... (${current}/${total})',
 			'downloads.deleting' => '삭제 중...',
 			'downloads.queuedTooltip' => '대기 중',
@@ -2643,26 +2643,26 @@ extension on TranslationsKo {
 			'companionRemote.session.connected' => '연결됨',
 			'companionRemote.session.serverRunning' => '원격 서버 활성',
 			'companionRemote.session.serverStopped' => '원격 서버 중지됨',
-			'companionRemote.session.serverRunningDescription' => '네트워크의 모바일 기기가 이 앱을 검색하고 연결할 수 있습니다',
+			'companionRemote.session.serverRunningDescription' => '네트워크의 모바일 기기가 이 앱에 연결할 수 있습니다',
 			'companionRemote.session.serverStoppedDescription' => '모바일 기기의 연결을 허용하려면 서버를 시작하세요',
 			'companionRemote.session.usePhoneToControl' => '모바일 기기로 이 앱을 제어하세요',
 			'companionRemote.session.startServer' => '서버 시작',
 			'companionRemote.session.stopServer' => '서버 중지',
 			'companionRemote.session.minimize' => '최소화',
-			'companionRemote.pairing.discoveryDescription' => '같은 Plex 계정으로 Plezy를 실행 중인 네트워크의 기기가 자동으로 표시됩니다',
+			'companionRemote.pairing.discoveryDescription' => '같은 Plex 계정의 Plezy 기기가 여기에 표시됩니다',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => '연결 중...',
 			'companionRemote.pairing.searchingForDevices' => '기기 검색 중...',
 			'companionRemote.pairing.noDevicesFound' => '네트워크에서 기기를 찾을 수 없습니다',
-			'companionRemote.pairing.noDevicesHint' => '데스크톱에서 Plezy가 열려 있고 두 기기가 같은 WiFi 네트워크에 있는지 확인하세요',
+			'companionRemote.pairing.noDevicesHint' => '데스크톱에서 Plezy를 열고 같은 WiFi를 사용하세요',
 			'companionRemote.pairing.availableDevices' => '사용 가능한 기기',
 			'companionRemote.pairing.manualConnection' => '수동 연결',
-			'companionRemote.pairing.cryptoInitFailed' => '보안 연결을 초기화할 수 없습니다. Plex 계정에 로그인되어 있는지 확인하세요.',
+			'companionRemote.pairing.cryptoInitFailed' => '보안 연결을 시작할 수 없습니다. 먼저 Plex에 로그인하세요.',
 			'companionRemote.pairing.validationHostRequired' => '호스트 주소를 입력하세요',
 			'companionRemote.pairing.validationHostFormat' => '형식은 IP:포트여야 합니다 (예: 192.168.1.100:48632)',
-			'companionRemote.pairing.connectionTimedOut' => '연결 시간이 초과되었습니다. 두 기기가 같은 네트워크에 있는지 확인하세요.',
+			'companionRemote.pairing.connectionTimedOut' => '연결 시간이 초과되었습니다. 두 기기에서 같은 네트워크를 사용하세요.',
 			'companionRemote.pairing.sessionNotFound' => '기기를 찾을 수 없습니다. 호스트에서 Plezy가 실행 중인지 확인하세요.',
-			'companionRemote.pairing.authFailed' => '인증에 실패했습니다. 두 기기가 같은 Plex 계정을 사용하는지 확인하세요.',
+			'companionRemote.pairing.authFailed' => '인증에 실패했습니다. 두 기기 모두 같은 Plex 계정이 필요합니다.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '연결 실패: ${error}',
 			'companionRemote.remote.disconnectConfirm' => '원격 세션 연결을 해제하시겠습니까?',
 			'companionRemote.remote.reconnecting' => '재연결 중...',
@@ -2703,7 +2703,7 @@ extension on TranslationsKo {
 			'videoSettings.audioNormalization' => '음량 정규화',
 			'externalPlayer.title' => '외부 플레이어',
 			'externalPlayer.useExternalPlayer' => '외부 플레이어 사용',
-			'externalPlayer.useExternalPlayerDescription' => '내장 플레이어 대신 외부 앱에서 동영상 열기',
+			'externalPlayer.useExternalPlayerDescription' => '동영상을 다른 앱에서 열기',
 			'externalPlayer.selectPlayer' => '플레이어 선택',
 			'externalPlayer.customPlayers' => '사용자 정의 플레이어',
 			'externalPlayer.systemDefault' => '시스템 기본값',
@@ -2795,7 +2795,7 @@ extension on TranslationsKo {
 			'matchScreen.match' => '일치...',
 			'matchScreen.fixMatch' => '일치 수정...',
 			'matchScreen.unmatch' => '일치 해제',
-			'matchScreen.unmatchConfirm' => '이 항목의 현재 일치를 해제하시겠습니까? 다시 일치시킬 때까지 Plex는 일치되지 않은 것으로 처리합니다.',
+			'matchScreen.unmatchConfirm' => '이 매칭을 지울까요? 다시 매칭될 때까지 Plex에서는 미매칭으로 처리됩니다.',
 			'matchScreen.unmatchSuccess' => '일치 해제됨',
 			'matchScreen.unmatchFailed' => '일치 해제에 실패했습니다',
 			'matchScreen.matchApplied' => '일치 적용됨',
@@ -2811,19 +2811,19 @@ extension on TranslationsKo {
 			'trakt.connected' => '연결됨',
 			'trakt.connectedAs' => ({required Object username}) => '@${username}(으)로 연결됨',
 			'trakt.disconnectConfirm' => 'Trakt 계정 연결을 끊으시겠습니까?',
-			'trakt.disconnectConfirmBody' => 'Plezy가 Trakt로 재생 이벤트를 보내지 않습니다. 언제든지 다시 연결할 수 있습니다.',
+			'trakt.disconnectConfirmBody' => 'Plezy가 Trakt로 이벤트 전송을 중지합니다. 언제든 다시 연결할 수 있습니다.',
 			'trakt.scrobble' => '실시간 스크로블',
 			'trakt.scrobbleDescription' => '재생 중 재생, 일시정지, 정지 이벤트를 Trakt로 전송합니다.',
 			'trakt.watchedSync' => '시청 상태 동기화',
 			'trakt.watchedSyncDescription' => 'Plezy에서 시청 완료로 표시한 항목이 Trakt에도 시청 완료로 표시됩니다.',
 			'trackers.title' => '트래커',
-			'trackers.hubSubtitle' => '시청 진행률을 Trakt 및 기타 서비스와 동기화하세요.',
+			'trackers.hubSubtitle' => '시청 진행률을 Trakt 및 다른 서비스와 동기화합니다.',
 			'trackers.notConnected' => '연결되지 않음',
 			'trackers.connectedAs' => ({required Object username}) => '@${username} 로 연결됨',
 			'trackers.scrobble' => '진행률 자동 추적',
 			'trackers.scrobbleDescription' => '에피소드나 영화를 시청하면 목록을 업데이트합니다.',
 			'trackers.disconnectConfirm' => ({required Object service}) => '${service} 연결을 해제하시겠습니까?',
-			'trackers.disconnectConfirmBody' => ({required Object service}) => 'Plezy가 ${service} 목록 업데이트를 중지합니다. 언제든지 다시 연결할 수 있습니다.',
+			'trackers.disconnectConfirmBody' => ({required Object service}) => 'Plezy가 ${service} 업데이트를 중지합니다. 언제든 다시 연결할 수 있습니다.',
 			'trackers.connectFailed' => ({required Object service}) => '${service}에 연결할 수 없습니다. 다시 시도하세요.',
 			'trackers.services.mal' => 'MyAnimeList',
 			'trackers.services.anilist' => 'AniList',
@@ -2834,7 +2834,7 @@ extension on TranslationsKo {
 			'trackers.deviceCode.waitingForAuthorization' => '인증을 기다리는 중…',
 			'trackers.deviceCode.codeCopied' => '코드가 복사되었습니다',
 			'trackers.oauthProxy.title' => ({required Object service}) => '${service}에 로그인',
-			'trackers.oauthProxy.body' => '휴대전화로 이 QR 코드를 스캔하거나 아래 URL을 브라우저가 있는 기기에서 여세요.',
+			'trackers.oauthProxy.body' => '이 QR 코드를 스캔하거나 아무 기기에서 URL을 여세요.',
 			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => '로그인하려면 ${service} 열기',
 			'trackers.oauthProxy.urlCopied' => 'URL이 복사되었습니다',
 			'trackers.libraryFilter.title' => '라이브러리 필터',
@@ -2850,7 +2850,7 @@ extension on TranslationsKo {
 			'trackers.libraryFilter.libraries' => '라이브러리',
 			'trackers.libraryFilter.noLibraries' => '사용 가능한 라이브러리가 없습니다',
 			'addServer.addJellyfinTitle' => 'Jellyfin 서버 추가',
-			'addServer.jellyfinUrlIntro' => 'Jellyfin 서버 URL을 입력하세요 — 예: `https://jellyfin.example.com`. 이후에 로그인할 수 있습니다.',
+			'addServer.jellyfinUrlIntro' => '서버 URL을 입력하세요. 예: `https://jellyfin.example.com`.',
 			'addServer.serverUrl' => '서버 URL',
 			'addServer.findServer' => '서버 찾기',
 			'addServer.username' => '사용자 이름',
@@ -2862,25 +2862,25 @@ extension on TranslationsKo {
 			'addServer.signInFailed' => ({required Object error}) => '로그인 실패: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect 실패: ${error}',
 			'addServer.addPlexTitle' => 'Plex로 로그인',
-			'addServer.plexAuthIntro' => 'Plex에 로그인할 방법을 선택하세요. 브라우저 플로우는 plex.tv를 열어 연결을 확인하며, QR 옵션은 TV나 원격 장치에 편리합니다.',
+			'addServer.plexAuthIntro' => '브라우저 또는 QR 코드로 로그인하세요.',
 			'addServer.plexQRPrompt' => '이 QR 코드를 스캔하여 로그인하세요.',
 			'addServer.waitingForPlexConfirmation' => 'plex.tv에서 로그인을 확인하는 중…',
 			'addServer.pinExpired' => '로그인 전에 PIN이 만료되었습니다. 다시 시도하세요.',
-			'addServer.duplicatePlexAccount' => '이 기기는 이미 Plex 계정에 로그인되어 있습니다. 계정을 변경하려면 설정에서 로그아웃하세요.',
+			'addServer.duplicatePlexAccount' => '이미 Plex에 로그인되어 있습니다. 계정을 전환하려면 로그아웃하세요.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => '계정 등록 실패: ${error}',
 			'addServer.enterJellyfinUrlError' => 'Jellyfin 서버 URL을 입력하세요',
 			'addServer.addConnectionTitle' => '연결 추가',
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => '${name}에 추가',
-			'addServer.addConnectionIntroGlobal' => '다른 미디어 서버를 추가하세요. Plex 계정과 Jellyfin 서버를 함께 사용할 수 있으며, 연결된 모든 백엔드의 항목이 홈 화면에 함께 표시됩니다.',
+			'addServer.addConnectionIntroGlobal' => '다른 미디어 서버를 추가합니다. Plex와 Jellyfin이 홈에 함께 표시됩니다.',
 			'addServer.addConnectionIntroScoped' => '새 서버를 추가하거나 다른 프로필에서 빌리세요.',
 			'addServer.signInWithPlexCard' => 'Plex로 로그인',
-			'addServer.signInWithPlexCardSubtitle' => '이 기기를 Plex 계정으로 인증합니다. 계정과 공유된 서버가 자동으로 함께 추가됩니다.',
-			'addServer.signInWithPlexCardSubtitleScoped' => '새 Plex 계정을 인증합니다. 해당 Home 사용자가 프로필로 표시됩니다.',
+			'addServer.signInWithPlexCardSubtitle' => '이 기기를 승인합니다. 공유 서버가 추가됩니다.',
+			'addServer.signInWithPlexCardSubtitleScoped' => 'Plex 계정을 승인합니다. Home 사용자는 프로필이 됩니다.',
 			'addServer.connectToJellyfinCard' => 'Jellyfin에 연결',
-			'addServer.connectToJellyfinCardSubtitle' => 'Jellyfin 서버 URL을 입력하고 사용자 이름 + 비밀번호로 로그인하세요 (Quick Connect는 곧 지원 예정).',
+			'addServer.connectToJellyfinCardSubtitle' => '서버 URL, 사용자 이름, 비밀번호를 입력하세요.',
 			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => 'Jellyfin 서버에 로그인합니다. ${name}에 연결됩니다.',
 			'addServer.borrowFromAnotherProfile' => '다른 프로필에서 빌리기',
-			'addServer.borrowFromAnotherProfileSubtitle' => '이미 다른 프로필에 연결된 연결을 재사용합니다. PIN으로 보호된 소스 프로필은 PIN을 요청합니다.',
+			'addServer.borrowFromAnotherProfileSubtitle' => '다른 프로필의 연결을 재사용합니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.',
 			_ => null,
 		};
 	}
