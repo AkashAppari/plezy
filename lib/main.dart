@@ -385,6 +385,11 @@ void _registerShaderLicenses() {
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 
+@visibleForTesting
+bool shouldEnterOfflineModeAfterStartupBind({required bool bindingSucceeded, required bool hasOnlineServers}) {
+  return !bindingSucceeded && !hasOnlineServers;
+}
+
 /// Top-level PIN prompt used by [ActiveProfileBinder] when it runs above the
 /// per-screen widget tree. Routes through [rootNavigatorKey] so the dialog
 /// renders correctly whether the binder fires from the splash, MainScreen,
@@ -1127,7 +1132,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     // Reading the binder here is enough — the Provider is `lazy: false` so
     // it has already constructed the binder and called `start()` during
     // MultiProvider build. We just need to wait for it.
-    context.read<ActiveProfileBinder>();
+    final binder = context.read<ActiveProfileBinder>();
     final downloadProvider = context.read<DownloadProvider>();
 
     // Wait for the active profile to load from disk so the binder has a
@@ -1160,19 +1165,38 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
         settings.read(SettingsService.requireProfileSelectionOnOpen) && activeProfile.hasMultipleProfiles;
     final shouldPrompt = hasNoActive || requireOnOpen;
 
+    var bindingSucceeded = activeProfile.lastBindingSucceeded;
     if (shouldPrompt) {
       await Navigator.of(
         context,
       ).push(MaterialPageRoute(builder: (_) => const ProfileSwitchScreen(requireSelection: true)));
       if (!mounted) return;
+      bindingSucceeded = activeProfile.active != null && activeProfile.lastBindingSucceeded;
     } else {
       // Now wait for the binder to settle. This is the Plex/Jellyfin server
       // race: per-server status flips on the splash list as each client comes
       // online, and we don't push MainScreen until they're all done (success
       // or fail). Eliminates the "Failed to load discover content: No servers
       // available" race the old eager-navigate flow caused.
-      await activeProfile.awaitBindingSettle();
+      bindingSucceeded = await activeProfile.awaitBindingSettle();
       if (!mounted) return;
+      if (!bindingSucceeded) {
+        appLogger.w('Setup: initial profile bind failed; retrying once before entering main screen');
+        await binder.rebindActive();
+        if (!mounted) return;
+        bindingSucceeded = activeProfile.lastBindingSucceeded;
+      }
+    }
+
+    if (shouldEnterOfflineModeAfterStartupBind(
+      bindingSucceeded: bindingSucceeded,
+      hasOnlineServers: _serverManagerFromContext().onlineServerIds.isNotEmpty,
+    )) {
+      appLogger.w('Setup: no servers online after startup bind; starting offline mode');
+      await downloadProvider.ensureInitialized();
+      if (!mounted) return;
+      unawaited(Navigator.pushReplacement(context, fadeRoute(const MainScreen(isOfflineMode: true))));
+      return;
     }
 
     // Repopulate metadata for downloaded items now that per-backend caches

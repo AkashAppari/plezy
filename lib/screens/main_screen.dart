@@ -83,6 +83,16 @@ class MainScreenFocusScope extends InheritedWidget {
   }
 }
 
+@visibleForTesting
+bool shouldRetryActiveProfileBindAfterReconnect({
+  required bool hasActiveProfile,
+  required bool hasVisibleConnectedServers,
+  required bool hasManagerOnlineServers,
+  required bool hasKnownOfflineServers,
+}) {
+  return hasActiveProfile && !hasVisibleConnectedServers && (hasManagerOnlineServers || !hasKnownOfflineServers);
+}
+
 class MainScreen extends StatefulWidget {
   final bool isOfflineMode;
 
@@ -576,16 +586,20 @@ class _MainScreenState extends State<MainScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    // Listen for offline/online transitions to refresh navigation & screens
-    // Note: We don't call _handleOfflineStatusChanged() immediately because
-    // widget.isOfflineMode (from SetupScreen navigation) is authoritative for
-    // initial state. The provider may not yet have received the server status
-    // update due to initialization timing. The listener handles runtime changes.
+    // Listen for offline/online transitions to refresh navigation & screens.
+    // `widget.isOfflineMode` stays authoritative when SetupScreen explicitly
+    // routed here offline, but if the provider already observed a failed bind
+    // before this listener attached, mirror that missed state after build.
     final provider = context.read<OfflineModeProvider?>();
     if (provider != null && provider != _offlineModeProvider) {
       _offlineModeProvider?.removeListener(_handleOfflineStatusChanged);
       _offlineModeProvider = provider;
       _offlineModeProvider!.addListener(_handleOfflineStatusChanged);
+      if (!widget.isOfflineMode && !_isOffline && provider.isOffline) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _handleOfflineStatusChanged();
+        });
+      }
     }
 
     // Listen for Live TV / DVR availability changes
@@ -793,13 +807,25 @@ class _MainScreenState extends State<MainScreen>
     if (_isReconnecting) return;
     setState(() => _isReconnecting = true);
 
-    final serverManager = context.read<MultiServerProvider>().serverManager;
+    final multiServerProvider = context.read<MultiServerProvider>();
+    final serverManager = multiServerProvider.serverManager;
+    final activeProfile = context.read<ActiveProfileProvider>();
+    final binder = context.read<ActiveProfileBinder>();
     unawaited(() async {
       try {
         // Health check first so stale "online" servers get marked offline before
         // we snapshot the offline list for reconnection.
         await serverManager.checkServerHealth();
         await serverManager.reconnectOfflineServers(forceRediscovery: true);
+        if (!mounted) return;
+        if (shouldRetryActiveProfileBindAfterReconnect(
+          hasActiveProfile: activeProfile.active != null,
+          hasVisibleConnectedServers: multiServerProvider.hasConnectedServers,
+          hasManagerOnlineServers: serverManager.onlineServerIds.isNotEmpty,
+          hasKnownOfflineServers: serverManager.offlineServerIds.isNotEmpty,
+        )) {
+          await binder.rebindActive();
+        }
       } finally {
         setStateIfMounted(() => _isReconnecting = false);
       }
