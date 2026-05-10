@@ -119,7 +119,6 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     }
     appLogger.d('UserProfileProvider: initializing');
     try {
-      _authService = await PlexAuthService.create();
       _storageService = await StorageService.getInstance();
 
       try {
@@ -141,10 +140,7 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// Fetch the user's profile settings from the API. Best-effort: failures
   /// leave [profileSettings] unchanged (cached or null).
   Future<void> refreshProfileSettings() async {
-    if (_authService == null || _storageService == null) {
-      _authService = await PlexAuthService.create();
-      _storageService = await StorageService.getInstance();
-    }
+    _storageService ??= await StorageService.getInstance();
 
     // Wait for the binder to finish wiring up the active profile so we
     // read the freshly-minted user-token rather than racing the cache.
@@ -173,6 +169,7 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     }
 
     try {
+      _authService ??= await PlexAuthService.create();
       final profile = await _authService!.getUserProfile(userToken);
       _profileSettings = profile;
       safeNotifyListeners();
