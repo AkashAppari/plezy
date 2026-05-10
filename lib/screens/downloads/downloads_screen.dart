@@ -9,6 +9,7 @@ import '../../services/settings_service.dart';
 import '../../widgets/settings_builder.dart';
 import '../../utils/global_key_utils.dart';
 import '../../mixins/tab_navigation_mixin.dart';
+import '../../mixins/refreshable.dart';
 import '../../utils/grid_size_calculator.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/desktop_app_bar.dart';
@@ -28,7 +29,8 @@ class DownloadsScreen extends StatefulWidget {
   State<DownloadsScreen> createState() => DownloadsScreenState();
 }
 
-class DownloadsScreenState extends State<DownloadsScreen> with TickerProviderStateMixin, TabNavigationMixin {
+class DownloadsScreenState extends State<DownloadsScreen>
+    with TickerProviderStateMixin, TabNavigationMixin, FocusableTab {
   // Focus nodes for tab chips
   final _queueTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_queue');
   final _tvShowsTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_tv_shows');
@@ -59,6 +61,15 @@ class DownloadsScreenState extends State<DownloadsScreen> with TickerProviderSta
     if (!tabController.indexIsChanging) {
       super.onTabChanged();
     }
+  }
+
+  @override
+  void focusActiveTabIfReady() {
+    suppressAutoFocus = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      getTabChipFocusNode(tabController.index).requestFocus();
+    });
   }
 
   /// Focus the first item in the currently active tab
@@ -111,7 +122,7 @@ class DownloadsScreenState extends State<DownloadsScreen> with TickerProviderSta
               });
               getTabChipFocusNode(newIndex).requestFocus();
             }
-          : null,
+          : () => _actionBarKey.currentState?.requestFocusOnFirst(),
       onNavigateDown: _focusCurrentTab,
       onBack: onTabBarBack,
     );

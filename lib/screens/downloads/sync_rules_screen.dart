@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../connection/connection.dart';
 import '../../connection/connection_registry.dart';
 import '../../database/app_database.dart';
+import '../../focus/focusable_wrapper.dart';
+import '../../focus/input_mode_tracker.dart';
 import '../../media/media_item.dart';
 import '../../providers/download_provider.dart';
 import '../../providers/multi_server_provider.dart';
@@ -11,7 +13,6 @@ import '../../services/sync_rule_executor.dart';
 import '../../utils/content_utils.dart';
 import '../../utils/download_utils.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
-import '../../widgets/focusable_list_tile.dart';
 import '../libraries/state_messages.dart';
 import '../../i18n/strings.g.dart';
 
@@ -31,6 +32,7 @@ class SyncRulesScreen extends StatelessWidget {
           initialData: const [],
           builder: (context, snapshot) {
             final connections = snapshot.data ?? const <Connection>[];
+            final autofocusFirstRule = InputModeTracker.isKeyboardMode(context);
             return FocusedScrollScaffold(
               title: Text(t.downloads.activeSyncRules),
               slivers: [
@@ -49,7 +51,7 @@ class SyncRulesScreen extends StatelessWidget {
                         downloadProvider: downloadProvider,
                         multiServerProvider: multiServerProvider,
                         connections: connections,
-                        autofocus: index == 0,
+                        autofocus: autofocusFirstRule && index == 0,
                       );
                     }, childCount: syncRules.length),
                   ),
@@ -69,7 +71,7 @@ class _RuleServerInfo {
   const _RuleServerInfo({required this.label, required this.isKnown});
 }
 
-class _SyncRuleTile extends StatelessWidget {
+class _SyncRuleTile extends StatefulWidget {
   final SyncRuleItem rule;
   final Map<String, MediaItem> metadata;
   final DownloadProvider downloadProvider;
@@ -85,6 +87,27 @@ class _SyncRuleTile extends StatelessWidget {
     required this.connections,
     this.autofocus = false,
   });
+
+  @override
+  State<_SyncRuleTile> createState() => _SyncRuleTileState();
+}
+
+class _SyncRuleTileState extends State<_SyncRuleTile> {
+  final _rowFocusNode = FocusNode(debugLabel: 'sync_rule_row');
+  final _switchFocusNode = FocusNode(debugLabel: 'sync_rule_switch');
+
+  SyncRuleItem get rule => widget.rule;
+  Map<String, MediaItem> get metadata => widget.metadata;
+  DownloadProvider get downloadProvider => widget.downloadProvider;
+  MultiServerProvider get multiServerProvider => widget.multiServerProvider;
+  List<Connection> get connections => widget.connections;
+
+  @override
+  void dispose() {
+    _rowFocusNode.dispose();
+    _switchFocusNode.dispose();
+    super.dispose();
+  }
 
   IconData _leadingIcon() {
     switch (rule.targetType) {
@@ -164,38 +187,172 @@ class _SyncRuleTile extends StatelessWidget {
         downloadProvider: downloadProvider,
         globalKey: rule.globalKey,
         currentCount: rule.episodeCount,
+        displayTitle: _title(),
       );
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
+  String _title() {
     final publicGlobalKey = '${rule.serverId}:${rule.ratingKey}';
     final meta = metadata[rule.globalKey] ?? metadata[publicGlobalKey];
-    final title = meta?.title ?? rule.ratingKey;
+    return meta?.title ?? rule.ratingKey;
+  }
+
+  Future<void> _removeRule(BuildContext context) async {
+    await removeSyncRuleAndSnack(
+      context,
+      downloadProvider: downloadProvider,
+      globalKey: rule.globalKey,
+      displayTitle: _title(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final title = _title();
     final serverInfo = _serverLabelForRule();
     final serverLine = t.downloads.syncRuleServerContext(
       server: serverInfo.label,
       status: _serverStatusForRule(serverInfo),
     );
 
-    return FocusableListTile(
-      autofocus: autofocus,
-      leading: Icon(_leadingIcon(), color: rule.enabled ? Colors.teal : null, size: 20),
-      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+    return _SwipeRevealDeleteAction(
+      onDelete: () => _removeRule(context),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        child: FocusableWrapper(
+          autofocus: widget.autofocus,
+          focusNode: _rowFocusNode,
+          disableScale: true,
+          useBackgroundFocus: true,
+          borderRadius: 12,
+          onSelect: () => _onTap(context),
+          onNavigateRight: () => _switchFocusNode.requestFocus(),
+          child: ListTile(
+            dense: true,
+            visualDensity: const VisualDensity(vertical: -3),
+            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+            leading: Icon(_leadingIcon(), color: rule.enabled ? Colors.teal : null, size: 20),
+            title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(_subtitle(), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(serverLine, maxLines: 1, overflow: TextOverflow.ellipsis),
+              ],
+            ),
+            trailing: FocusableWrapper(
+              focusNode: _switchFocusNode,
+              disableScale: true,
+              useBackgroundFocus: true,
+              descendantsAreFocusable: false,
+              borderRadius: 20,
+              onSelect: () => downloadProvider.setSyncRuleEnabled(rule.globalKey, !rule.enabled),
+              onNavigateLeft: () => _rowFocusNode.requestFocus(),
+              child: Switch(
+                value: rule.enabled,
+                onChanged: (value) => downloadProvider.setSyncRuleEnabled(rule.globalKey, value),
+              ),
+            ),
+            onTap: () => _onTap(context),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SwipeRevealDeleteAction extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onDelete;
+
+  const _SwipeRevealDeleteAction({required this.child, required this.onDelete});
+
+  @override
+  State<_SwipeRevealDeleteAction> createState() => _SwipeRevealDeleteActionState();
+}
+
+class _SwipeRevealDeleteActionState extends State<_SwipeRevealDeleteAction> {
+  static const double _deleteWidth = 88;
+  double _dragExtent = 0;
+
+  void _handleDragUpdate(DragUpdateDetails details) {
+    setState(() {
+      _dragExtent = (_dragExtent - details.delta.dx).clamp(0, _deleteWidth);
+    });
+  }
+
+  void _handleDragEnd(DragEndDetails details) {
+    final shouldOpen =
+        _dragExtent > _deleteWidth / 2 || details.primaryVelocity != null && details.primaryVelocity! < -500;
+    setState(() => _dragExtent = shouldOpen ? _deleteWidth : 0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    return ClipRect(
+      child: Stack(
         children: [
-          Text(_subtitle(), maxLines: 1, overflow: TextOverflow.ellipsis),
-          Text(serverLine, maxLines: 1, overflow: TextOverflow.ellipsis),
+          if (_dragExtent > 0)
+            Positioned.fill(
+              right: 8,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: SizedBox(
+                  width: _deleteWidth,
+                  child: ExcludeFocus(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Material(
+                        color: colorScheme.error,
+                        borderRadius: BorderRadius.circular(12),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          key: const ValueKey('sync_rule_swipe_delete'),
+                          onTap: widget.onDelete,
+                          child: Tooltip(
+                            message: t.downloads.removeSyncRule,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Symbols.delete_rounded, color: colorScheme.onError, size: 20),
+                                const SizedBox(height: 2),
+                                Text(
+                                  t.common.delete,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: colorScheme.onError,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onHorizontalDragUpdate: _handleDragUpdate,
+            onHorizontalDragEnd: _handleDragEnd,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              curve: Curves.easeOutCubic,
+              transform: Matrix4.translationValues(-_dragExtent, 0, 0),
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: theme.scaffoldBackgroundColor),
+                child: widget.child,
+              ),
+            ),
+          ),
         ],
       ),
-      trailing: Switch(
-        value: rule.enabled,
-        onChanged: (value) => downloadProvider.setSyncRuleEnabled(rule.globalKey, value),
-      ),
-      onTap: () => _onTap(context),
     );
   }
 }

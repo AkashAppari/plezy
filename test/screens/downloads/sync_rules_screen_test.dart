@@ -1,11 +1,13 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
@@ -123,7 +125,7 @@ void main() {
     );
   }
 
-  Future<void> pumpScreen(WidgetTester tester) async {
+  Future<void> pumpScreen(WidgetTester tester, {bool keyboardMode = false}) async {
     downloadProvider.debugSeedState(
       metadata: {
         'plex-srv:show-1': _show('plex-srv', 'show-1', 'Plex Show'),
@@ -133,18 +135,39 @@ void main() {
       },
     );
 
+    Widget buildScreen() => MultiProvider(
+      providers: [
+        Provider<ConnectionRegistry>.value(value: connectionRegistry),
+        ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
+        ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider!),
+      ],
+      child: const MaterialApp(home: SyncRulesScreen()),
+    );
+
+    if (!keyboardMode) {
+      await tester.pumpWidget(buildScreen());
+      await tester.pump();
+      return;
+    }
+
+    final showScreen = ValueNotifier(false);
+    addTearDown(showScreen.dispose);
     await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          Provider<ConnectionRegistry>.value(value: connectionRegistry),
-          ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
-          ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider!),
-        ],
-        child: const MaterialApp(home: SyncRulesScreen()),
+      InputModeTracker(
+        child: ValueListenableBuilder<bool>(
+          valueListenable: showScreen,
+          builder: (context, show, _) => show ? buildScreen() : const MaterialApp(home: SizedBox.shrink()),
+        ),
       ),
     );
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump();
+    showScreen.value = true;
+    await tester.pumpAndSettle();
   }
+
+  String? primaryFocusLabel() => FocusManager.instance.primaryFocus?.debugLabel;
 
   testWidgets('shows server context and active-profile availability for device sync rules', (tester) async {
     connections.add(
@@ -191,5 +214,82 @@ void main() {
     expect(find.text('Server: Auth Jellyfin • Sign in required'), findsOneWidget);
     expect(find.text('Unknown Show'), findsOneWidget);
     expect(find.text('Server: unknown-srv • Unknown server'), findsOneWidget);
+  });
+
+  testWidgets('removes orphaned sync rules from the sync rules screen', (tester) async {
+    multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    await insertRule('orphan-srv', '76672');
+
+    await pumpScreen(tester);
+
+    expect(find.text('76672'), findsOneWidget);
+
+    await tester.drag(find.text('76672'), const Offset(-140, 0));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('sync_rule_swipe_delete')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Stop syncing "76672"? Downloaded episodes will be kept.'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Remove sync rule'));
+    await tester.pumpAndSettle();
+
+    expect(downloadProvider.syncRules, isEmpty);
+    expect(find.text('76672'), findsNothing);
+    expect(find.text('No sync rules'), findsOneWidget);
+  });
+
+  testWidgets('does not autofocus the first sync rule in pointer mode', (tester) async {
+    multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    await insertRule('orphan-srv', '76672');
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    await pumpScreen(tester);
+    await tester.pumpAndSettle();
+
+    expect(primaryFocusLabel(), isNot('sync_rule_row'));
+  });
+
+  testWidgets('keyboard navigation reaches and toggles the sync rule switch', (tester) async {
+    multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    await insertRule('orphan-srv', '76672');
+
+    await pumpScreen(tester, keyboardMode: true);
+
+    expect(primaryFocusLabel(), 'sync_rule_row');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(primaryFocusLabel(), 'sync_rule_switch');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    expect(downloadProvider.syncRules.values.single.enabled, isFalse);
+  });
+
+  testWidgets('setting sync rule count to zero removes the rule', (tester) async {
+    multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    await insertRule('orphan-srv', '76672');
+
+    await pumpScreen(tester, keyboardMode: true);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), '0');
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Stop syncing "76672"? Downloaded episodes will be kept.'), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    expect(downloadProvider.syncRules, isEmpty);
+    expect(find.text('No sync rules'), findsOneWidget);
   });
 }

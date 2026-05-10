@@ -258,7 +258,12 @@ Future<DownloadResult?> showCollectionDownloadOptionsAndQueue(
   downloadProvider: downloadProvider,
 );
 
-Future<int?> _showEpisodeCountDialog(BuildContext context, {String? title, String? hintText}) async {
+Future<int?> _showEpisodeCountDialog(
+  BuildContext context, {
+  String? title,
+  String? hintText,
+  bool allowZero = false,
+}) async {
   final result = await showTextInputDialog(
     context,
     title: title ?? t.downloads.howManyEpisodes,
@@ -269,7 +274,7 @@ Future<int?> _showEpisodeCountDialog(BuildContext context, {String? title, Strin
     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
     validator: (text) {
       final n = int.tryParse(text);
-      if (n == null || n <= 0) return '';
+      if (n == null || n < 0 || (!allowZero && n == 0)) return '';
       return null;
     },
   );
@@ -283,13 +288,28 @@ Future<bool> editSyncRuleCount(
   required DownloadProvider downloadProvider,
   required String globalKey,
   required int currentCount,
+  String? displayTitle,
 }) async {
   final count = await _showEpisodeCountDialog(
     context,
     title: t.downloads.editEpisodeCount,
     hintText: currentCount.toString(),
+    allowZero: true,
   );
   if (count == null || !context.mounted) return false;
+
+  if (count == 0) {
+    final removed = await confirmAndRemoveSyncRule(
+      context,
+      downloadProvider: downloadProvider,
+      globalKey: globalKey,
+      displayTitle: displayTitle ?? globalKey,
+    );
+    if (removed && context.mounted) {
+      showSuccessSnackBar(context, t.downloads.syncRuleRemoved);
+    }
+    return false;
+  }
 
   await downloadProvider.updateSyncRuleCount(globalKey, count);
   return true;
@@ -351,6 +371,7 @@ Future<void> manageSyncRule(
   BuildContext context, {
   required DownloadProvider downloadProvider,
   required String globalKey,
+  String? displayTitle,
 }) async {
   final rule = downloadProvider.getSyncRule(globalKey);
   if (rule == null) return;
@@ -369,6 +390,7 @@ Future<void> manageSyncRule(
       downloadProvider: downloadProvider,
       globalKey: globalKey,
       currentCount: rule.episodeCount,
+      displayTitle: displayTitle ?? rule.ratingKey,
     );
   }
   if (updated && context.mounted) {

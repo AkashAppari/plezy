@@ -903,6 +903,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           downloadProvider: downloadProvider,
           globalKey: ruleKey,
           currentCount: syncRule.episodeCount,
+          displayTitle: metadata.displayTitle,
         );
         if (updated && context.mounted) {
           showSuccessSnackBar(context, t.downloads.syncRuleUpdated);

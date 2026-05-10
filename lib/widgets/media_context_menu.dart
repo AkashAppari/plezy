@@ -1444,8 +1444,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     _ => '',
   };
 
-  Future<void> _handleManageSyncRule(BuildContext context) =>
-      manageSyncRule(context, downloadProvider: context.read<DownloadProvider>(), globalKey: _itemSyncRuleKey(context));
+  Future<void> _handleManageSyncRule(BuildContext context) => manageSyncRule(
+    context,
+    downloadProvider: context.read<DownloadProvider>(),
+    globalKey: _itemSyncRuleKey(context),
+    displayTitle: _itemDisplayTitle(),
+  );
 
   /// Fire-and-forget: if a sync rule exists for the target list, run it now so
   /// newly-added items download immediately instead of waiting for the next
