@@ -4,7 +4,6 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../focus/dpad_navigator.dart';
 import '../../focus/focus_theme.dart';
-import '../../focus/input_mode_tracker.dart';
 import '../../focus/key_event_utils.dart';
 import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
@@ -28,7 +27,6 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
   late Animation<double> _shakeAnimation;
   final _pinInputKey = GlobalKey<_TvPinInputState>();
   final _cancelFocusNode = FocusNode(debugLabel: 'PinCancelButton');
-  final _submitFocusNode = FocusNode(debugLabel: 'PinSubmitButton');
 
   @override
   void initState() {
@@ -54,7 +52,6 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
   void dispose() {
     _shakeController.dispose();
     _cancelFocusNode.dispose();
-    _submitFocusNode.dispose();
     super.dispose();
   }
 
@@ -66,16 +63,8 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
     Navigator.of(context).pop(null);
   }
 
-  void _focusPinDigit(int index) {
-    _pinInputKey.currentState?._requestDigitFocus(index);
-  }
-
-  void _focusSubmit() {
-    _submitFocusNode.requestFocus();
-  }
-
-  void _focusCancel() {
-    _cancelFocusNode.requestFocus();
+  void _focusPinInput() {
+    _pinInputKey.currentState?._requestInputFocus();
   }
 
   @override
@@ -89,56 +78,85 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
       builder: (context, child) {
         return Transform.translate(offset: Offset(_shakeAnimation.value, 0), child: child);
       },
-      child: AlertDialog(
-        title: Row(
-          children: [
-            AppIcon(Symbols.lock_outline_rounded, fill: 1, size: 24, color: theme.colorScheme.primary),
-            const SizedBox(width: 12),
-            Expanded(child: Text(widget.userName, overflow: TextOverflow.ellipsis)),
+      child: isMobile ? _buildMobileDialog(theme) : _buildTvDialog(theme),
+    );
+  }
+
+  Widget _buildMobileDialog(ThemeData theme) {
+    return AlertDialog(
+      title: _buildTitle(theme),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _TvPinInput(
+            key: _pinInputKey,
+            onSubmit: _submit,
+            onCancel: _cancel,
+            hasError: widget.errorMessage != null,
+            isMobile: true,
+          ),
+          if (widget.errorMessage != null) ...[
+            const SizedBox(height: 12),
+            Text(widget.errorMessage!, style: TextStyle(color: theme.colorScheme.error, fontSize: 12), maxLines: 2),
           ],
+        ],
+      ),
+      actions: [
+        FocusableButton(
+          focusNode: _cancelFocusNode,
+          onPressed: _cancel,
+          onNavigateUp: _focusPinInput,
+          onBack: _cancel,
+          child: TextButton(onPressed: _cancel, child: Text(t.common.cancel)),
         ),
-        content: Column(
+      ],
+    );
+  }
+
+  Widget _buildTvDialog(ThemeData theme) {
+    final colorScheme = theme.colorScheme;
+
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 56, vertical: 32),
+      backgroundColor: Colors.transparent,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 320),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: colorScheme.surface.withValues(alpha: 0.96),
+          borderRadius: BorderRadius.circular(28),
+        ),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            _buildTitle(theme),
+            const SizedBox(height: 12),
             _TvPinInput(
               key: _pinInputKey,
               onSubmit: _submit,
               onCancel: _cancel,
               hasError: widget.errorMessage != null,
-              isMobile: isMobile,
-              isTV: isTV,
-              onMoveToSubmit: isMobile ? null : _focusSubmit,
+              isMobile: false,
             ),
             if (widget.errorMessage != null) ...[
               const SizedBox(height: 12),
-              Text(widget.errorMessage!, style: TextStyle(color: theme.colorScheme.error, fontSize: 12), maxLines: 2),
+              Text(widget.errorMessage!, style: TextStyle(color: colorScheme.error, fontSize: 12), maxLines: 2),
             ],
           ],
         ),
-        actions: [
-          FocusableButton(
-            focusNode: _cancelFocusNode,
-            onPressed: _cancel,
-            onNavigateRight: isMobile ? null : _focusSubmit,
-            onNavigateUp: () => _focusPinDigit(0),
-            onBack: _cancel,
-            child: TextButton(onPressed: _cancel, child: Text(t.common.cancel)),
-          ),
-          if (!isMobile)
-            FocusableButton(
-              focusNode: _submitFocusNode,
-              onPressed: () => _pinInputKey.currentState?._trySubmit(),
-              onNavigateLeft: _focusCancel,
-              onNavigateUp: () => _focusPinDigit(3),
-              onBack: _cancel,
-              child: FilledButton(
-                onPressed: () => _pinInputKey.currentState?._trySubmit(),
-                child: Text(t.common.submit),
-              ),
-            ),
-        ],
       ),
+    );
+  }
+
+  Widget _buildTitle(ThemeData theme) {
+    return Row(
+      children: [
+        AppIcon(Symbols.lock_outline_rounded, fill: 1, size: 24, color: theme.colorScheme.primary),
+        const SizedBox(width: 12),
+        Expanded(child: Text(widget.userName, overflow: TextOverflow.ellipsis)),
+      ],
     );
   }
 }
@@ -148,8 +166,6 @@ class _TvPinInput extends StatefulWidget {
   final VoidCallback onCancel;
   final bool hasError;
   final bool isMobile;
-  final bool isTV;
-  final VoidCallback? onMoveToSubmit;
 
   const _TvPinInput({
     super.key,
@@ -157,8 +173,6 @@ class _TvPinInput extends StatefulWidget {
     required this.onCancel,
     required this.hasError,
     required this.isMobile,
-    required this.isTV,
-    this.onMoveToSubmit,
   });
 
   @override
@@ -166,52 +180,78 @@ class _TvPinInput extends StatefulWidget {
 }
 
 class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
+  static const _keySize = 60.0;
+  static const _keyGap = 6.0;
+  static const _rowGap = 6.0;
+  static const _keypadColumns = 3;
+  static const _rows = <List<_PinKey>>[
+    [_PinKey.digit(1), _PinKey.digit(2), _PinKey.digit(3)],
+    [_PinKey.digit(4), _PinKey.digit(5), _PinKey.digit(6)],
+    [_PinKey.digit(7), _PinKey.digit(8), _PinKey.digit(9)],
+    [_PinKey.close(), _PinKey.digit(0), _PinKey.backspace()],
+  ];
+
   final List<int?> _digits = [null, null, null, null];
   int _activeIndex = 0;
-  bool _isFocused = false;
+  int _row = 0;
+  int _column = 0;
 
-  // Hidden text fields for mobile keyboard input
-  final List<FocusNode> _mobileFocusNodes = List.generate(4, (_) => FocusNode());
-  late final List<TextEditingController> _mobileControllers = List.generate(4, (_) => createTextEditingController());
-
-  // Main focus node for TV/desktop keyboard handling
-  late final FocusNode _focusNode;
+  // Keep a single mobile text input client so iOS does not hide/show the
+  // software keyboard while advancing between visual PIN boxes.
+  final FocusNode _mobileFocusNode = FocusNode(debugLabel: 'PinInputMobile');
+  late final TextEditingController _mobileController = createTextEditingController();
+  final FocusNode _keypadFocusNode = FocusNode(debugLabel: 'PinKeypad');
 
   @override
   void initState() {
     super.initState();
-    _focusNode = FocusNode(debugLabel: 'PinInput');
+    _mobileFocusNode.addListener(_handleMobileFocusChanged);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       if (widget.hasError) _reset();
       if (widget.isMobile) {
-        _mobileFocusNodes.first.requestFocus();
+        _requestMobileKeyboardFocus();
       } else {
-        _focusNode.requestFocus();
+        _requestKeypadFocus();
       }
     });
   }
 
   @override
   void dispose() {
-    _focusNode.dispose();
-    for (final node in _mobileFocusNodes) {
-      node.dispose();
-    }
+    _keypadFocusNode.dispose();
+    _mobileFocusNode.removeListener(_handleMobileFocusChanged);
+    _mobileFocusNode.dispose();
     super.dispose();
+  }
+
+  void _handleMobileFocusChanged() {
+    if (mounted) setState(() {});
   }
 
   void _reset() {
     setState(() {
       for (int i = 0; i < 4; i++) {
         _digits[i] = null;
-        if (widget.isMobile) _mobileControllers[i].clear();
       }
+      if (widget.isMobile) _mobileController.clear();
       _activeIndex = 0;
     });
     if (widget.isMobile) {
-      _mobileFocusNodes.first.requestFocus();
+      _requestMobileKeyboardFocus();
+    } else {
+      _row = 0;
+      _column = 0;
+      _requestKeypadFocus();
     }
+  }
+
+  int get _pinLength {
+    for (int i = 0; i < _digits.length; i++) {
+      if (_digits[i] == null) return i;
+    }
+    return _digits.length;
   }
 
   String? _getPin() {
@@ -224,22 +264,64 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
     if (pin != null) widget.onSubmit(pin);
   }
 
-  void _requestDigitFocus(int index) {
-    final nextIndex = index < 0 ? 0 : (index > 3 ? 3 : index);
-    setState(() => _activeIndex = nextIndex);
-    _focusNode.requestFocus();
+  void _requestInputFocus() {
+    if (widget.isMobile) {
+      _requestMobileKeyboardFocus();
+    } else {
+      _requestKeypadFocus();
+    }
   }
 
-  void _incrementDigit() {
+  void _requestKeypadFocus() {
+    if (widget.isMobile) return;
+    _keypadFocusNode.requestFocus();
+  }
+
+  void _requestMobileKeyboardFocus() {
+    _mobileFocusNode.requestFocus();
+    final offset = _mobileController.text.length;
+    _mobileController.selection = TextSelection.collapsed(offset: offset);
+  }
+
+  void _setPinFromString(String pin) {
     setState(() {
-      _digits[_activeIndex] = ((_digits[_activeIndex] ?? -1) + 1) % 10;
+      for (int i = 0; i < 4; i++) {
+        _digits[i] = i < pin.length ? int.parse(pin[i]) : null;
+      }
+      _activeIndex = pin.length >= 4 ? 3 : pin.length;
+    });
+
+    if (pin.length == 4) _submitWhenCompleteAfterFrame();
+  }
+
+  void _appendDigit(int digit) {
+    final length = _pinLength;
+    if (length >= _digits.length) return;
+
+    setState(() {
+      _digits[length] = digit;
+      final nextLength = length + 1;
+      _activeIndex = nextLength >= _digits.length ? _digits.length - 1 : nextLength;
+    });
+
+    if (length + 1 == _digits.length) _submitWhenCompleteAfterFrame();
+  }
+
+  void _deleteLastDigit() {
+    final length = _pinLength;
+    if (length == 0) return;
+
+    setState(() {
+      _digits[length - 1] = null;
+      _activeIndex = length - 1;
     });
   }
 
-  void _decrementDigit() {
-    setState(() {
-      final current = _digits[_activeIndex] ?? 0;
-      _digits[_activeIndex] = (current - 1 + 10) % 10;
+  void _submitWhenCompleteAfterFrame() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final pin = _getPin();
+      if (pin != null) widget.onSubmit(pin);
     });
   }
 
@@ -267,136 +349,176 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
     LogicalKeyboardKey.numpad9: 9,
   };
 
-  KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
+  KeyEventResult _handleKey(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
 
-    // Back / escape → cancel
     final backResult = handleBackKeyAction(event, widget.onCancel);
     if (backResult != KeyEventResult.ignored) return backResult;
 
-    final selectResult = handleOneShotSelect(event, _trySubmit);
-    if (selectResult != KeyEventResult.ignored) return selectResult;
-
-    if (event is KeyDownEvent) {
-      // Number key input (desktop only, TV uses d-pad)
-      if (!widget.isTV) {
-        final digit = _digitKeyMap[key];
-        if (digit != null) {
-          setState(() {
-            _digits[_activeIndex] = digit;
-            if (_activeIndex < 3) _activeIndex++;
-          });
-          return KeyEventResult.handled;
-        }
-      }
-
-      // Backspace → clear and move left
-      if (key == LogicalKeyboardKey.backspace) {
-        setState(() {
-          if (_digits[_activeIndex] != null) {
-            _digits[_activeIndex] = null;
-          } else if (_activeIndex > 0) {
-            _activeIndex--;
-            _digits[_activeIndex] = null;
-          }
-        });
+    if (event is KeyDownEvent || event is KeyRepeatEvent) {
+      if (key == LogicalKeyboardKey.backspace || key == LogicalKeyboardKey.delete) {
+        _deleteLastDigit();
         return KeyEventResult.handled;
       }
-    }
 
-    if (event.isActionable) {
-      // Up arrow → increment digit
+      if (event.isPhysicalKeyboardEnter) {
+        _trySubmit();
+        return KeyEventResult.handled;
+      }
+
+      if (event.isTvSelectEvent) {
+        _activate(_rows[_row][_column]);
+        return KeyEventResult.handled;
+      }
+
       if (key.isUpKey) {
-        _incrementDigit();
+        _moveVertical(-1);
         return KeyEventResult.handled;
       }
-
-      // Down arrow → decrement digit
       if (key.isDownKey) {
-        _decrementDigit();
+        _moveVertical(1);
         return KeyEventResult.handled;
       }
-
-      // Left arrow → move active index left
       if (key.isLeftKey) {
-        if (_activeIndex > 0) {
-          setState(() => _activeIndex--);
-        }
+        _moveHorizontal(-1);
+        return KeyEventResult.handled;
+      }
+      if (key.isRightKey) {
+        _moveHorizontal(1);
         return KeyEventResult.handled;
       }
 
-      // Right arrow → move active index right or advance to submit button
-      if (key.isRightKey) {
-        if (_activeIndex < 3) {
-          setState(() => _activeIndex++);
-          return KeyEventResult.handled;
-        }
-        widget.onMoveToSubmit?.call();
+      if (event is! KeyDownEvent) return KeyEventResult.handled;
+
+      final digit = _digitKeyMap[key];
+      if (digit != null) {
+        _appendDigit(digit);
         return KeyEventResult.handled;
       }
     }
 
-    return KeyEventResult.ignored;
+    return KeyEventResult.handled;
   }
 
-  void _onMobileDigitChanged(int index, String value) {
-    if (value.isEmpty) {
-      // Backspace
-      setState(() => _digits[index] = null);
-      if (index > 0) {
-        _mobileFocusNodes[index - 1].requestFocus();
-        setState(() => _activeIndex = index - 1);
-      }
-      return;
+  void _onMobilePinChanged(String value) {
+    final digitsOnly = value.replaceAll(RegExp(r'\D'), '');
+    final pin = digitsOnly.length > 4 ? digitsOnly.substring(0, 4) : digitsOnly;
+    if (pin != value) {
+      _mobileController.value = TextEditingValue(
+        text: pin,
+        selection: TextSelection.collapsed(offset: pin.length),
+      );
     }
 
-    // Take only the last character (handles paste/overwrite)
-    final digit = int.tryParse(value[value.length - 1]);
-    if (digit == null) {
-      _mobileControllers[index].clear();
-      return;
-    }
+    _setPinFromString(pin);
+  }
 
+  void _activate(_PinKey key) {
+    switch (key.type) {
+      case _PinKeyType.digit:
+        _appendDigit(key.digit!);
+        return;
+      case _PinKeyType.backspace:
+        _deleteLastDigit();
+        return;
+      case _PinKeyType.close:
+        widget.onCancel();
+        return;
+    }
+  }
+
+  void _moveHorizontal(int delta) {
     setState(() {
-      _digits[index] = digit;
-      _activeIndex = index;
-      _mobileControllers[index].text = digit.toString();
-      _mobileControllers[index].selection = const TextSelection.collapsed(offset: 1);
+      _column = (_column + delta).clamp(0, _keypadColumns - 1).toInt();
     });
+  }
 
-    if (index < 3) {
-      _mobileFocusNodes[index + 1].requestFocus();
-      setState(() => _activeIndex = index + 1);
-    } else {
-      // 4th digit entered → auto-submit
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final pin = _getPin();
-        if (pin != null) widget.onSubmit(pin);
-      });
-    }
+  void _moveVertical(int delta) {
+    setState(() {
+      _row = (_row + delta).clamp(0, _rows.length - 1).toInt();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
-    final showArrows = (widget.isTV || isKeyboardMode) && !widget.isMobile;
-
     if (widget.isMobile) {
       return _buildMobileLayout(context);
     }
 
-    return Focus(
-      focusNode: _focusNode,
-      autofocus: true,
-      onFocusChange: (hasFocus) {
-        setState(() => _isFocused = hasFocus);
-      },
-      onKeyEvent: _handleKeyEvent,
-      child: _buildDigitRow(context, showArrows: showArrows),
+    return Focus(focusNode: _keypadFocusNode, onKeyEvent: _handleKey, child: _buildKeypadLayout(context));
+  }
+
+  Widget _buildKeypadLayout(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [_buildDigitRow(context, obscureDigits: true), const SizedBox(height: 18), _buildKeypad(context)],
     );
   }
 
-  Widget _buildDigitRow(BuildContext _, {required bool showArrows}) {
+  Widget _buildKeypad(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (int row = 0; row < _rows.length; row++) ...[
+          if (row > 0) const SizedBox(height: _rowGap),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (int col = 0; col < _keypadColumns; col++) ...[
+                if (col > 0) const SizedBox(width: _keyGap),
+                _buildKey(context, _rows[row][col], row, col),
+              ],
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildKey(BuildContext context, _PinKey key, int row, int column) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final selected = row == _row && column == _column;
+    final background = selected ? colorScheme.primary : colorScheme.surfaceContainerHighest.withValues(alpha: 0.88);
+    final foreground = selected ? colorScheme.onPrimary : colorScheme.onSurface;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _row = row;
+          _column = column;
+        });
+        _activate(key);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        width: _keySize,
+        height: _keySize,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: _buildKeyContent(context, key, foreground),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildKeyContent(BuildContext context, _PinKey key, Color foreground) {
+    final icon = key.icon;
+    if (icon != null) return Icon(icon, color: foreground, size: 30);
+
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Text(
+        key.label,
+        maxLines: 1,
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(color: foreground, fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+
+  Widget _buildDigitRow(BuildContext _, {bool obscureDigits = false}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -405,8 +527,8 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
           if (i > 0) const SizedBox(width: 10),
           _DigitBox(
             digit: _digits[i],
-            isActive: _isFocused && _activeIndex == i,
-            showArrows: showArrows && _isFocused && _activeIndex == i,
+            isActive: (widget.isMobile ? _mobileFocusNode.hasFocus : true) && _activeIndex == i,
+            obscureDigit: obscureDigits,
           ),
         ],
       ],
@@ -414,37 +536,44 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
   }
 
   Widget _buildMobileLayout(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        for (int i = 0; i < 4; i++) ...[
-          if (i > 0) const SizedBox(width: 10),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _requestMobileKeyboardFocus,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
           SizedBox(
-            width: 52,
-            height: 60,
-            child: TextField(
-              controller: _mobileControllers[i],
-              focusNode: _mobileFocusNodes[i],
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              maxLength: 2, // allow overwrite
-              obscureText: true,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-              decoration: const InputDecoration(
-                counterText: '',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(FocusTheme.defaultBorderRadius)),
+            width: 222,
+            height: 56,
+            child: IgnorePointer(
+              child: TextField(
+                controller: _mobileController,
+                focusNode: _mobileFocusNode,
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.done,
+                textAlign: TextAlign.center,
+                maxLength: 4,
+                obscureText: true,
+                autocorrect: false,
+                enableSuggestions: false,
+                enableInteractiveSelection: false,
+                showCursor: false,
+                cursorColor: Colors.transparent,
+                style: const TextStyle(color: Colors.transparent, fontSize: 1, height: 1),
+                decoration: const InputDecoration(
+                  counterText: '',
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
                 ),
-                contentPadding: EdgeInsets.symmetric(vertical: 14),
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4)],
+                onChanged: _onMobilePinChanged,
+                onSubmitted: (_) => _trySubmit(),
               ),
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              onChanged: (value) => _onMobileDigitChanged(i, value),
-              onSubmitted: (_) => _trySubmit(),
             ),
           ),
+          _buildDigitRow(context, obscureDigits: true),
         ],
-      ],
+      ),
     );
   }
 }
@@ -452,9 +581,9 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
 class _DigitBox extends StatelessWidget {
   final int? digit;
   final bool isActive;
-  final bool showArrows;
+  final bool obscureDigit;
 
-  const _DigitBox({required this.digit, required this.isActive, required this.showArrows});
+  const _DigitBox({required this.digit, required this.isActive, this.obscureDigit = false});
 
   @override
   Widget build(BuildContext context) {
@@ -464,14 +593,6 @@ class _DigitBox extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Up chevron
-        SizedBox(
-          height: 20,
-          child: showArrows
-              ? AppIcon(Symbols.keyboard_arrow_up_rounded, size: 20, color: theme.colorScheme.onSurfaceVariant)
-              : null,
-        ),
-        // Digit box
         AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           width: 48,
@@ -488,7 +609,7 @@ class _DigitBox extends StatelessWidget {
             color: isActive ? focusColor.withValues(alpha: 0.08) : Colors.transparent,
           ),
           child: Text(
-            digit != null ? (isActive ? digit.toString() : '•') : '–',
+            digit != null ? (obscureDigit || !isActive ? '•' : digit.toString()) : '–',
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
               color: digit != null
@@ -497,15 +618,41 @@ class _DigitBox extends StatelessWidget {
             ),
           ),
         ),
-        // Down chevron
-        SizedBox(
-          height: 20,
-          child: showArrows
-              ? AppIcon(Symbols.keyboard_arrow_down_rounded, size: 20, color: theme.colorScheme.onSurfaceVariant)
-              : null,
-        ),
       ],
     );
+  }
+}
+
+enum _PinKeyType { digit, backspace, close }
+
+class _PinKey {
+  final _PinKeyType type;
+  final int? digit;
+
+  const _PinKey.digit(this.digit) : type = _PinKeyType.digit;
+  const _PinKey.backspace() : type = _PinKeyType.backspace, digit = null;
+  const _PinKey.close() : type = _PinKeyType.close, digit = null;
+
+  String get label {
+    switch (type) {
+      case _PinKeyType.digit:
+        return digit.toString();
+      case _PinKeyType.backspace:
+        return 'Del';
+      case _PinKeyType.close:
+        return t.common.cancel;
+    }
+  }
+
+  IconData? get icon {
+    switch (type) {
+      case _PinKeyType.digit:
+        return null;
+      case _PinKeyType.backspace:
+        return Icons.backspace_outlined;
+      case _PinKeyType.close:
+        return Icons.close_rounded;
+    }
   }
 }
 
