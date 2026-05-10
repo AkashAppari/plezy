@@ -5,8 +5,11 @@ class MainFlutterWindow: NSWindow {
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
 
-    // Enable transparency for Metal layer behind Flutter
-    self.backgroundColor = NSColor.clear
+    // Keep the window itself opaque so WindowServer does not have to blend the
+    // whole video window with the desktop every frame. Flutter stays clear so
+    // the native video layer behind it remains visible.
+    self.isOpaque = true
+    self.backgroundColor = NSColor.black
     flutterViewController.backgroundColor = NSColor.clear
 
     let windowFrame = self.frame

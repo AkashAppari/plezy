@@ -14,7 +14,35 @@ protocol MpvPlayerDelegate: AnyObject {
   func onEvent(name: String, data: [String: Any]?)
 }
 
-class MpvVideoLayer: AVSampleBufferDisplayLayer {}
+#if os(macOS)
+  // Workaround for MoltenVK problems that cause flicker.
+  // https://github.com/mpv-player/mpv/pull/13651
+  class MpvMetalLayer: CAMetalLayer {
+    override var drawableSize: CGSize {
+      get { super.drawableSize }
+      set {
+        if newValue == .zero || (Int(newValue.width) > 1 && Int(newValue.height) > 1) {
+          super.drawableSize = newValue
+        }
+      }
+    }
+
+    override var wantsExtendedDynamicRangeContent: Bool {
+      get { super.wantsExtendedDynamicRangeContent }
+      set {
+        if Thread.isMainThread {
+          super.wantsExtendedDynamicRangeContent = newValue
+        } else {
+          DispatchQueue.main.async {
+            super.wantsExtendedDynamicRangeContent = newValue
+          }
+        }
+      }
+    }
+  }
+#else
+  class MpvVideoLayer: AVSampleBufferDisplayLayer {}
+#endif
 
 /// Safely convert a C string to Swift String with UTF-8 validation.
 /// Falls back to Latin-1 decoding if the bytes are not valid UTF-8.
@@ -36,7 +64,11 @@ func safeString(_ cstr: UnsafePointer<CChar>) -> String {
 class MpvPlayerCoreBase: NSObject {
   weak var delegate: MpvPlayerDelegate?
 
-  var videoLayer: MpvVideoLayer?
+  #if os(macOS)
+    var metalLayer: MpvMetalLayer?
+  #else
+    var videoLayer: MpvVideoLayer?
+  #endif
   var mpv: OpaquePointer?
   var isInitialized = false
   var isDisposing = false
@@ -100,7 +132,11 @@ class MpvPlayerCoreBase: NSObject {
   func updateEDRMode(sigPeak: Double) {}
 
   func setupMpv() -> Bool {
-    guard let videoLayer else { return false }
+    #if os(macOS)
+      guard let renderLayer = metalLayer else { return false }
+    #else
+      guard let renderLayer = videoLayer else { return false }
+    #endif
 
     mpv = mpv_create()
     guard let mpv else {
@@ -114,7 +150,7 @@ class MpvPlayerCoreBase: NSObject {
       checkError(mpv_request_log_messages(mpv, "warn"))
     #endif
 
-    var layer = Int64(Int(bitPattern: Unmanaged.passUnretained(videoLayer).toOpaque()))
+    var layer = Int64(Int(bitPattern: Unmanaged.passUnretained(renderLayer).toOpaque()))
     checkError(mpv_set_option(mpv, "wid", MPV_FORMAT_INT64, &layer))
     applySharedMpvOptions()
     configurePlatformMpvOptions()
@@ -167,8 +203,8 @@ class MpvPlayerCoreBase: NSObject {
       }
     #endif
 
-    if isAvFoundationManagedProperty(name) {
-      print("[MpvPlayerCore] Ignoring managed AVFoundation property: \(name)=\(value)")
+    if isManagedRendererProperty(name) {
+      print("[MpvPlayerCore] Ignoring managed renderer property: \(name)=\(value)")
       completion(.success(()))
       return
     }
@@ -356,48 +392,60 @@ class MpvPlayerCoreBase: NSObject {
 
   private func applySharedMpvOptions() {
     guard let mpv else { return }
-    checkError(mpv_set_option_string(mpv, "vo", "avfoundation"))
-    #if targetEnvironment(simulator)
-      checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "no"))
-      checkError(mpv_set_option_string(mpv, "hwdec", "no"))
-    #else
-      checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "yes"))
+    #if os(macOS)
+      checkError(mpv_set_option_string(mpv, "vo", "gpu-next"))
+      checkError(mpv_set_option_string(mpv, "gpu-api", "vulkan"))
+      checkError(mpv_set_option_string(mpv, "gpu-context", "moltenvk"))
       checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
+    #else
+      checkError(mpv_set_option_string(mpv, "vo", "avfoundation"))
+      #if targetEnvironment(simulator)
+        checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "no"))
+        checkError(mpv_set_option_string(mpv, "hwdec", "no"))
+      #else
+        checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "yes"))
+        checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
+      #endif
     #endif
     checkError(mpv_set_option_string(mpv, "hwdec-codecs", "all"))
     checkError(mpv_set_option_string(mpv, "hwdec-software-fallback", "yes"))
     checkError(mpv_set_option_string(mpv, "target-colorspace-hint", "yes"))
   }
 
-  private func isAvFoundationManagedProperty(_ name: String) -> Bool {
+  private func isManagedRendererProperty(_ name: String) -> Bool {
     name == "vo" || name == "wid" || name == "gpu-api" || name == "gpu-context"
+      || name == "avfoundation-composite-osd"
   }
 
   private func updateVideoGravityIfNeeded(name: String, value: String) {
-    let gravity: AVLayerVideoGravity
-    cacheLock.lock()
-    switch name {
-    case "panscan":
-      currentPanscan = Double(value) ?? 0
-    case "video-aspect-override":
-      aspectOverrideActive = value != "no" && value != "-1" && value != "0"
-    default:
-      cacheLock.unlock()
+    #if os(macOS)
       return
-    }
+    #else
+      let gravity: AVLayerVideoGravity
+      cacheLock.lock()
+      switch name {
+      case "panscan":
+        currentPanscan = Double(value) ?? 0
+      case "video-aspect-override":
+        aspectOverrideActive = value != "no" && value != "-1" && value != "0"
+      default:
+        cacheLock.unlock()
+        return
+      }
 
-    if aspectOverrideActive {
-      gravity = .resize
-    } else if currentPanscan > 0 {
-      gravity = .resizeAspectFill
-    } else {
-      gravity = .resizeAspect
-    }
-    cacheLock.unlock()
+      if aspectOverrideActive {
+        gravity = .resize
+      } else if currentPanscan > 0 {
+        gravity = .resizeAspectFill
+      } else {
+        gravity = .resizeAspect
+      }
+      cacheLock.unlock()
 
-    DispatchQueue.main.async { [weak self] in
-      self?.videoLayer?.videoGravity = gravity
-    }
+      DispatchQueue.main.async { [weak self] in
+        self?.videoLayer?.videoGravity = gravity
+      }
+    #endif
   }
 
   private func cancelPendingRequests() {

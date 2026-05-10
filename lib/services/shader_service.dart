@@ -22,7 +22,7 @@ class ShaderService {
 
   ShaderPreset get currentPreset => _currentPreset;
 
-  static bool get isPlatformSupported => !Platform.isIOS && !Platform.isMacOS;
+  static bool get isPlatformSupported => !Platform.isIOS;
 
   /// Check if the player is MPV (shaders are MPV-only)
   bool get isSupported => _player.playerType == 'mpv' && isPlatformSupported;

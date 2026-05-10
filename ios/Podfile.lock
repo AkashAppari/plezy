@@ -11,7 +11,7 @@ PODS:
   - file_picker (0.0.1):
     - Flutter
   - Flutter (1.0.0)
-  - os_media_controls (0.0.1):
+  - os_media_controls (0.2.1):
     - Flutter
   - package_info_plus (0.4.5):
     - Flutter
@@ -113,7 +113,7 @@ SPEC CHECKSUMS:
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
   file_picker: 8fc6fe5e42585a217d44d22f79ec046cb8d81140
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  os_media_controls: 94cc278f5802b82b2d6373003aeb511f96718b27
+  os_media_controls: 3b06fe2dc0977dfa94f9c1dd73df7a55022d202f
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
   Sentry: d587a8fe91ca13503ecd69a1905f3e8a0fcf61be
   sentry_flutter: 31101687061fb85211ebab09ce6eb8db4e9ba74f

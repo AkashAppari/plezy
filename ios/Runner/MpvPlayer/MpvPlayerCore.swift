@@ -1,4 +1,5 @@
 import AVFoundation
+import QuartzCore
 import UIKit
 
 /// Core MPV player using AVFoundation sample-buffer rendering for iOS/tvOS.
@@ -20,12 +21,13 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     self.window = window
 
     let container = UIView(frame: window.bounds)
-    container.backgroundColor = .clear
+    container.backgroundColor = .black
     container.isUserInteractionEnabled = false
 
     let layer = MpvVideoLayer()
     layer.frame = container.bounds
     layer.contentsScale = window.screen.nativeScale
+    layer.isOpaque = true
     layer.backgroundColor = UIColor.black.cgColor
     layer.videoGravity = .resizeAspect
 
@@ -57,33 +59,35 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   var sampleBufferDisplayLayer: MpvVideoLayer? { videoLayer }
 
   func setVisible(_ visible: Bool) {
-    guard let containerView else { return }
+    guard containerView != nil else { return }
 
     isVisible = visible
     if visible { refreshExternalDisplayAttachment() }
-    containerView.isHidden = !visible
+    setContainerHidden(!visible)
     if !visible { mainBlankView?.isHidden = true }
   }
 
   func updateFrame(_ frame: CGRect? = nil) {
     guard let videoLayer, let containerView else { return }
 
-    if let frame {
-      containerView.frame = frame
-      videoLayer.frame = containerView.bounds
-    } else if let superview = containerView.superview {
-      containerView.frame = superview.bounds
-      videoLayer.frame = containerView.bounds
-    } else if let window {
-      containerView.frame = window.bounds
-      videoLayer.frame = containerView.bounds
+    withoutLayerAnimations {
+      if let frame {
+        containerView.frame = frame
+        videoLayer.frame = containerView.bounds
+      } else if let superview = containerView.superview {
+        containerView.frame = superview.bounds
+        videoLayer.frame = containerView.bounds
+      } else if let window {
+        containerView.frame = window.bounds
+        videoLayer.frame = containerView.bounds
+      }
+
+      mainBlankView?.frame = window?.bounds ?? .zero
+
+      let screen = containerView.window?.screen ?? window?.screen ?? UIScreen.main
+      let scale = screen.nativeScale > 0 ? screen.nativeScale : screen.scale
+      videoLayer.contentsScale = scale
     }
-
-    mainBlankView?.frame = window?.bounds ?? .zero
-
-    let screen = containerView.window?.screen ?? window?.screen ?? UIScreen.main
-    let scale = screen.nativeScale > 0 ? screen.nativeScale : screen.scale
-    videoLayer.contentsScale = scale
   }
 
   func externalDisplayDidChange() {
@@ -105,7 +109,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       setMainBlankViewVisible(false)
     }
 
-    containerView.isHidden = !isVisible
+    setContainerHidden(!isVisible)
     updateFrame()
   }
 
@@ -122,12 +126,17 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   private func moveContainerView(to superview: UIView) {
     guard let containerView else { return }
 
-    if containerView.superview !== superview {
-      containerView.removeFromSuperview()
+    withoutLayerAnimations {
+      if containerView.superview !== superview {
+        containerView.removeFromSuperview()
+        superview.insertSubview(containerView, at: 0)
+      } else if superview.subviews.first !== containerView {
+        superview.insertSubview(containerView, at: 0)
+      }
+
+      containerView.frame = superview.bounds
+      containerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
     }
-    containerView.frame = superview.bounds
-    containerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-    superview.insertSubview(containerView, at: 0)
   }
 
   private func setMainBlankViewVisible(_ visible: Bool) {
@@ -138,20 +147,35 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     }
 
     let blankView = mainBlankView ?? UIView(frame: window.bounds)
-    blankView.backgroundColor = .black
-    blankView.isUserInteractionEnabled = false
-    blankView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-    blankView.frame = window.bounds
+    withoutLayerAnimations {
+      blankView.backgroundColor = .black
+      blankView.isUserInteractionEnabled = false
+      blankView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+      blankView.frame = window.bounds
 
-    if blankView.superview !== window {
-      blankView.removeFromSuperview()
-      window.insertSubview(blankView, at: 0)
-    } else {
-      window.insertSubview(blankView, at: 0)
+      if blankView.superview !== window {
+        blankView.removeFromSuperview()
+        window.insertSubview(blankView, at: 0)
+      } else if window.subviews.first !== blankView {
+        window.insertSubview(blankView, at: 0)
+      }
+
+      blankView.isHidden = false
     }
-
-    blankView.isHidden = false
     mainBlankView = blankView
+  }
+
+  private func setContainerHidden(_ hidden: Bool) {
+    withoutLayerAnimations {
+      containerView?.isHidden = hidden
+    }
+  }
+
+  private func withoutLayerAnimations(_ updates: () -> Void) {
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    updates()
+    CATransaction.commit()
   }
 
   /// Nudge mpv to present the current paused frame after leaving PiP.
@@ -167,7 +191,10 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     #if os(iOS)
       if #available(iOS 17.0, *) {
         edrHeadroom = containerView?.window?.screen.potentialEDRHeadroom ?? 1.0
-        videoLayer.wantsExtendedDynamicRangeContent = hdrEnabled && sigPeak > 1.0 && edrHeadroom > 1.0
+        withoutLayerAnimations {
+          videoLayer.wantsExtendedDynamicRangeContent =
+            hdrEnabled && sigPeak > 1.0 && edrHeadroom > 1.0
+        }
       }
     #endif
 

@@ -27,7 +27,7 @@ class AmbientLightingService {
   AmbientLightingService(this._player);
 
   bool get isEnabled => _enabled;
-  bool get isSupported => _player.playerType == 'mpv' && !Platform.isIOS && !Platform.isMacOS;
+  bool get isSupported => _player.playerType == 'mpv' && !Platform.isIOS;
 
   /// Enable ambient lighting effect.
   ///

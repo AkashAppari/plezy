@@ -1,8 +1,8 @@
-import AVFoundation
 import Cocoa
 import Libmpv
+import QuartzCore
 
-/// Core MPV player using AVFoundation sample-buffer rendering.
+/// Core MPV player using Metal rendering on macOS.
 class MpvPlayerCore: MpvPlayerCoreBase {
 
   private weak var window: NSWindow?
@@ -23,28 +23,33 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
     self.window = window
 
-    let layer = MpvVideoLayer()
+    let layer = MpvMetalLayer()
     layer.frame = contentView.bounds
     if let screen = window.screen ?? NSScreen.main {
       layer.contentsScale = screen.backingScaleFactor
     }
+    layer.framebufferOnly = true
     layer.isOpaque = true
     layer.backgroundColor = NSColor.black.cgColor
     layer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
-    layer.videoGravity = .resizeAspect
 
-    videoLayer = layer
-    updateEDRMode(sigPeak: lastSigPeak)
+    metalLayer = layer
 
     contentView.wantsLayer = true
-    contentView.layer?.addSublayer(layer)
+    guard let contentLayer = contentView.layer else {
+      print("[MpvPlayerCore] No content layer")
+      metalLayer = nil
+      return false
+    }
+    attachMetalLayer(to: contentLayer, frame: contentView.bounds)
+    updateEDRMode(sigPeak: lastSigPeak)
 
-    print("[MpvPlayerCore] Video layer added, frame: \(layer.frame)")
+    print("[MpvPlayerCore] Metal layer added, frame: \(layer.frame)")
 
     guard setupMpv() else {
       print("[MpvPlayerCore] Failed to setup MPV")
       layer.removeFromSuperlayer()
-      videoLayer = nil
+      metalLayer = nil
       return false
     }
 
@@ -75,23 +80,18 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
   override func configurePlatformMpvOptions() {
     guard let mpv else { return }
-    checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "no"))
     checkError(mpv_set_option_string(mpv, "ao", "avfoundation,coreaudio"))
   }
 
-  func reattachVideoLayer() {
-    guard let videoLayer, let contentView = window?.contentView else { return }
+  func reattachMetalLayer() {
+    guard let contentView = window?.contentView else { return }
 
-    if videoLayer.superlayer == nil {
-      contentView.wantsLayer = true
-      contentView.layer?.insertSublayer(videoLayer, at: 0)
-      videoLayer.frame = contentView.bounds
-      if let screen = window?.screen ?? NSScreen.main {
-        videoLayer.contentsScale = screen.backingScaleFactor
-      }
+    contentView.wantsLayer = true
+    if let contentLayer = contentView.layer {
+      attachMetalLayer(to: contentLayer, frame: contentView.bounds)
     }
 
-    print("[MpvPlayerCore] Video layer reattached to window")
+    print("[MpvPlayerCore] Metal layer reattached to window")
   }
 
   func forceDraw() {
@@ -102,22 +102,24 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   private var pausedState = true
 
   func setVisible(_ visible: Bool) {
-    guard let videoLayer, !isPipActive else { return }
+    guard metalLayer != nil, !isPipActive else { return }
 
     isVisible = visible
     isBackgrounded = !visible
 
     if visible {
-      videoLayer.removeFromSuperlayer()
-      if let superlayer = window?.contentView?.layer {
-        superlayer.insertSublayer(videoLayer, at: 0)
+      if let contentView = window?.contentView {
+        contentView.wantsLayer = true
+        if let superlayer = contentView.layer {
+          attachMetalLayer(to: superlayer, frame: contentView.bounds)
+        }
       }
       beginPlaybackActivity()
     } else {
       endPlaybackActivity()
     }
 
-    videoLayer.isHidden = !visible
+    setMetalLayerHidden(!visible)
     print("[MpvPlayerCore] setVisible(\(visible))")
   }
 
@@ -131,46 +133,41 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   func updateFrame(_ frame: CGRect? = nil) {
-    guard let videoLayer, !isPipActive else { return }
+    guard let metalLayer, !isPipActive else { return }
 
+    let targetFrame: CGRect
     if let frame {
-      videoLayer.frame = frame
+      targetFrame = frame
     } else if let contentView = window?.contentView {
-      videoLayer.frame = contentView.bounds
+      targetFrame = contentView.bounds
+    } else {
+      return
     }
 
-    if let screen = window?.screen ?? NSScreen.main {
-      videoLayer.contentsScale = screen.backingScaleFactor
+    withoutLayerAnimations {
+      metalLayer.frame = targetFrame
+      updateDrawableSize(for: metalLayer)
     }
     updateEDRMode(sigPeak: lastSigPeak)
-
   }
 
   override func updateEDRMode(sigPeak: Double) {
-    guard let videoLayer else { return }
+    guard let metalLayer else { return }
 
     let hdrEnabled = self.hdrEnabled
-    var currentHeadroom: CGFloat = 1.0
     var potentialHeadroom: CGFloat = 1.0
     if let screen = window?.screen ?? NSScreen.main {
-      currentHeadroom = screen.maximumExtendedDynamicRangeColorComponentValue
       potentialHeadroom = screen.maximumPotentialExtendedDynamicRangeColorComponentValue
     }
 
-    let signalHeadroom = CGFloat(max(sigPeak, 1.0))
-    let contentHeadroom = min(signalHeadroom, potentialHeadroom)
     let shouldEnableEDR = hdrEnabled && sigPeak > 1.0 && potentialHeadroom > 1.0
-    if #available(macOS 26.0, *) {
-      videoLayer.preferredDynamicRange = shouldEnableEDR ? .high : .standard
-      videoLayer.contentsHeadroom = shouldEnableEDR ? contentHeadroom : 0
-    }
-    if #available(macOS 15.0, *) {
-      videoLayer.toneMapMode = shouldEnableEDR ? .ifSupported : .automatic
-    }
-    if #available(macOS 14.0, *) {
-      videoLayer.wantsExtendedDynamicRangeContent = shouldEnableEDR
+    withoutLayerAnimations {
+      metalLayer.wantsExtendedDynamicRangeContent = shouldEnableEDR
     }
 
+    print(
+      "[MpvPlayerCore] EDR mode: \(shouldEnableEDR) (hdrEnabled: \(hdrEnabled), sigPeak: \(sigPeak), potentialHeadroom: \(potentialHeadroom))"
+    )
   }
 
   func dispose() {
@@ -181,8 +178,8 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     NotificationCenter.default.removeObserver(self)
     disposeSharedState(destroySynchronously: false)
 
-    videoLayer?.removeFromSuperlayer()
-    videoLayer = nil
+    metalLayer?.removeFromSuperlayer()
+    metalLayer = nil
     isInitialized = false
     print("[MpvPlayerCore] Disposed")
   }
@@ -202,19 +199,19 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   @objc private func windowOcclusionDidChange(_ notification: Notification) {
-    guard let videoLayer, mpv != nil, !isPipActive else { return }
+    guard metalLayer != nil, mpv != nil, !isPipActive else { return }
 
     let windowVisible = window?.occlusionState.contains(.visible) ?? true
     if !windowVisible && !layerHiddenForOcclusion {
-      print("[MpvPlayerCore] Window occluded - hiding video layer")
-      videoLayer.isHidden = true
+      print("[MpvPlayerCore] Window occluded - hiding Metal layer")
+      setMetalLayerHidden(true)
       layerHiddenForOcclusion = true
       isBackgrounded = true
       endPlaybackActivity()
     } else if windowVisible && layerHiddenForOcclusion {
-      print("[MpvPlayerCore] Window visible - showing video layer")
+      print("[MpvPlayerCore] Window visible - showing Metal layer")
       layerHiddenForOcclusion = false
-      videoLayer.isHidden = false
+      setMetalLayerHidden(!isVisible)
       isBackgrounded = false
       if !pausedState {
         beginPlaybackActivity()
@@ -236,5 +233,47 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     ProcessInfo.processInfo.endActivity(playbackActivity)
     self.playbackActivity = nil
     print("[MpvPlayerCore] Ended playback activity assertion")
+  }
+
+  private func attachMetalLayer(to superlayer: CALayer, frame: CGRect) {
+    guard let metalLayer else { return }
+
+    withoutLayerAnimations {
+      superlayer.backgroundColor = NSColor.black.cgColor
+      superlayer.isOpaque = true
+
+      let needsReorder = superlayer.sublayers?.first !== metalLayer
+      if metalLayer.superlayer !== superlayer || needsReorder {
+        metalLayer.removeFromSuperlayer()
+        superlayer.insertSublayer(metalLayer, at: 0)
+      }
+
+      metalLayer.frame = frame
+      updateDrawableSize(for: metalLayer)
+    }
+  }
+
+  private func updateDrawableSize(for metalLayer: CAMetalLayer) {
+    if let screen = window?.screen ?? NSScreen.main {
+      let scale = screen.backingScaleFactor
+      metalLayer.contentsScale = scale
+      metalLayer.drawableSize = CGSize(
+        width: metalLayer.frame.width * scale,
+        height: metalLayer.frame.height * scale
+      )
+    }
+  }
+
+  private func setMetalLayerHidden(_ hidden: Bool) {
+    withoutLayerAnimations {
+      metalLayer?.isHidden = hidden
+    }
+  }
+
+  private func withoutLayerAnimations(_ updates: () -> Void) {
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    updates()
+    CATransaction.commit()
   }
 }

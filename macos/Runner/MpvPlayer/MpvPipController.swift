@@ -1,4 +1,5 @@
 import Cocoa
+import QuartzCore
 
 /// Delegate to notify the plugin of PiP lifecycle events
 protocol MpvPipDelegate: AnyObject {
@@ -13,8 +14,8 @@ protocol MpvPipDelegate: AnyObject {
 }
 
 /// Encapsulates macOS Picture-in-Picture using the private PIP.framework (PIPViewController).
-/// This approach wraps the existing video layer in PiP — no VO switching needed.
-/// mpv continues rendering to its AVFoundation display layer throughout PiP.
+/// This approach wraps the existing Metal rendering layer in PiP — no VO switching needed.
+/// mpv continues rendering to its CAMetalLayer throughout PiP.
 class MpvPipController: NSObject, PIPViewControllerDelegate {
 
   // MARK: - Properties
@@ -39,18 +40,22 @@ class MpvPipController: NSObject, PIPViewControllerDelegate {
 
   static var isSupported: Bool { true }
 
-  /// Enter PiP by wrapping the given video layer in a view and presenting it.
+  /// Enter PiP by wrapping the given Metal layer in a view and presenting it.
   /// The layer continues receiving mpv frames — no VO switch needed.
-  func startPip(videoLayer: CALayer, window: NSWindow, aspectRatio: NSSize) {
+  func startPip(metalLayer: CAMetalLayer, window: NSWindow, aspectRatio: NSSize) {
     guard !isActive else { return }
 
     sourceWindow = window
 
-    // Create a layer-hosting wrapper view for the video layer.
+    // Create a layer-hosting wrapper view for the Metal layer.
     // PIPViewController resizes the view (and its root layer) as the PiP window resizes.
     let videoView = NSView(frame: NSRect(origin: .zero, size: aspectRatio))
     videoView.wantsLayer = true
-    videoView.layer = videoLayer
+    videoView.layer = metalLayer
+
+    // Reset drawableSize to zero so it auto-derives from the layer's bounds.
+    // Without this, the explicit main-window drawableSize persists in PiP.
+    metalLayer.drawableSize = .zero
 
     // Create a view controller for PIPViewController
     let vc = NSViewController()
@@ -92,16 +97,16 @@ class MpvPipController: NSObject, PIPViewControllerDelegate {
     autoPipEnabled = enabled
   }
 
-  /// Clean up after PiP closes — detaches the video layer from the wrapper view
+  /// Clean up after PiP closes — detaches the Metal layer from the wrapper view
   /// so MpvPlayerCore can re-add it to the main window.
-  /// Returns the layer that was hosted in PiP.
+  /// Returns the Metal layer that was hosted in PiP.
   @discardableResult
-  func detachLayer() -> CALayer? {
-    let videoLayer = pipVideoView?.layer
+  func detachLayer() -> CAMetalLayer? {
+    let metalLayer = pipVideoView?.layer as? CAMetalLayer
     pipVideoView?.layer = CALayer()  // detach before removing
     pipVideoView = nil
     pipVideoVC = nil
-    return videoLayer
+    return metalLayer
   }
 
   // MARK: - PIPViewControllerDelegate
