@@ -145,6 +145,8 @@ PlexMetadataDto _$PlexMetadataDtoFromJson(Map<String, dynamic> json) =>
       primaryExtraKey: json['primaryExtraKey'] as String?,
       clearLogo: json['clearLogo'] as String?,
       backgroundSquare: json['backgroundSquare'] as String?,
+      skipChildren: flexibleBoolNullable(json['skipChildren']),
+      flattenSeasons: flexibleInt(json['flattenSeasons']),
     );
 
 Map<String, dynamic> _$PlexMetadataDtoToJson(PlexMetadataDto instance) =>
@@ -201,4 +203,6 @@ Map<String, dynamic> _$PlexMetadataDtoToJson(PlexMetadataDto instance) =>
       'primaryExtraKey': ?instance.primaryExtraKey,
       'clearLogo': ?instance.clearLogo,
       'backgroundSquare': ?instance.backgroundSquare,
+      'skipChildren': ?instance.skipChildren,
+      'flattenSeasons': ?instance.flattenSeasons,
     };

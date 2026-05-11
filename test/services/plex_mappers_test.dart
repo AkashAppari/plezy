@@ -140,6 +140,23 @@ void main() {
       expect(item.isWatched, isTrue);
     });
 
+    test('show preserves Plex season display flags in raw metadata', () {
+      final json = {
+        'ratingKey': '500',
+        'key': '/library/metadata/500',
+        'type': 'show',
+        'title': 'Breaking Bad',
+        'skipChildren': '1',
+        'flattenSeasons': '1',
+      };
+
+      final item = PlexMappers.mediaItemFromJson(json, serverId: _serverId);
+
+      expect(item.raw, containsPair('key', '/library/metadata/500'));
+      expect(item.raw, containsPair('skipChildren', true));
+      expect(item.raw, containsPair('flattenSeasons', 1));
+    });
+
     test('season carries parent (show) reference', () {
       final json = {
         'ratingKey': '510',

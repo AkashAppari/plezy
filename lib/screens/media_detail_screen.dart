@@ -23,6 +23,7 @@ import '../exceptions/media_server_exceptions.dart';
 import '../media/media_backend.dart';
 import '../media/media_hub.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/plex_season_display.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
@@ -1083,17 +1084,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           .map((season) => season.copyWith(serverId: serverId, serverName: _metadata.serverName ?? season.serverName))
           .toList();
 
-      // Plex's flattenSeasons modes: 1 = always, 2 = single-season only.
-      // Jellyfin falls through to "flatten when there's a single season".
+      // Plex can override the library season mode per show; Jellyfin falls
+      // through to "flatten when there's a single season".
       bool shouldShowEpisodesDirectly;
       if (client is PlexClient) {
-        const flattenSeasonsAlways = 1;
-        const flattenSeasonsSingleSeason = 2;
-        final flattenSeasons = int.tryParse(prefs['flattenSeasons']?.toString() ?? '');
-        final isAlways = flattenSeasons == flattenSeasonsAlways;
-        final isSingleSeason = flattenSeasons == flattenSeasonsSingleSeason;
-        shouldShowEpisodesDirectly =
-            isAlways || seasonsWithServerId.isEmpty || (isSingleSeason && seasonsWithServerId.length == 1);
+        shouldShowEpisodesDirectly = shouldShowPlexEpisodesDirectly(
+          show: _metadata,
+          seasons: seasonsWithServerId,
+          libraryPrefs: prefs,
+        );
       } else {
         shouldShowEpisodesDirectly = seasonsWithServerId.length <= 1;
       }

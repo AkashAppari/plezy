@@ -465,6 +465,10 @@ class PlexMetadataDto {
   final String? serverName;
   final String? clearLogo;
   final String? backgroundSquare;
+  @JsonKey(fromJson: flexibleBoolNullable)
+  final bool? skipChildren;
+  @JsonKey(fromJson: flexibleInt)
+  final int? flattenSeasons;
 
   const PlexMetadataDto({
     required this.ratingKey,
@@ -532,6 +536,8 @@ class PlexMetadataDto {
     this.serverName,
     this.clearLogo,
     this.backgroundSquare,
+    this.skipChildren,
+    this.flattenSeasons,
   });
 
   factory PlexMetadataDto.fromJson(Map<String, dynamic> rawJson) {
@@ -659,6 +665,8 @@ class PlexMetadataDto {
     String? serverName,
     String? clearLogo,
     String? backgroundSquare,
+    bool? skipChildren,
+    int? flattenSeasons,
   }) {
     return PlexMetadataDto(
       ratingKey: ratingKey ?? this.ratingKey,
@@ -726,8 +734,18 @@ class PlexMetadataDto {
       serverName: serverName ?? this.serverName,
       clearLogo: clearLogo ?? this.clearLogo,
       backgroundSquare: backgroundSquare ?? this.backgroundSquare,
+      skipChildren: skipChildren ?? this.skipChildren,
+      flattenSeasons: flattenSeasons ?? this.flattenSeasons,
     );
   }
+}
+
+Map<String, Object?>? _rawMetadata(PlexMetadataDto dto) {
+  final raw = <String, Object?>{};
+  if (dto.key != null) raw['key'] = dto.key;
+  if (dto.skipChildren != null) raw['skipChildren'] = dto.skipChildren;
+  if (dto.flattenSeasons != null) raw['flattenSeasons'] = dto.flattenSeasons;
+  return raw.isEmpty ? null : raw;
 }
 
 /// Pure JSON/DTO→neutral-type mappers for Plex. Mirrors [JellyfinMappers].
@@ -827,7 +845,7 @@ class PlexMappers {
       extraType: dto.extraType,
       serverId: dto.serverId,
       serverName: dto.serverName,
-      raw: dto.key != null ? {'key': dto.key} : null,
+      raw: _rawMetadata(dto),
     );
   }
 
