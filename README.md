@@ -3,7 +3,7 @@
   Plezy
 </h1>
 
-A modern Plex client for desktop and mobile. Built with Flutter for native performance and a clean interface.
+A modern client for Plex and Jellyfin on desktop and mobile. Built with Flutter for native performance and a clean interface.
 
 <p align="center">
   <img src="assets/screenshots/macos-home.png" alt="Plezy macOS Home Screen" width="800" />
@@ -39,7 +39,7 @@ A modern Plex client for desktop and mobile. Built with Flutter for native perfo
 
 ### <img src="assets/readme_icons/browse.svg" height="20" alt="" align="center" /> Browse & Discover
 - Libraries, collections, and playlists
-- Discover hub — On Deck, trending, and personalized recommendations
+- Discover hub — Continue Watching, Next Up, trending, and recommendations
 - Cross-server search
 - Filtering, sorting, and alphabetical jump navigation
 - Extras — trailers, deleted scenes, behind-the-scenes
@@ -49,10 +49,10 @@ A modern Plex client for desktop and mobile. Built with Flutter for native perfo
 - HDR and Dolby Vision (not Linux)
 - Full ASS/SSA subtitles with customizable styling
 - Online subtitle search & download
-- Audio & subtitle preferences synced with Plex profile
+- Audio & subtitle preferences synced with your server profile
 - Progress sync and resume
 - Auto-play next episode with skip intro / skip credits
-- Chapter navigation with BIF thumbnail scrub previews
+- Chapter navigation with thumbnail scrub previews
 - Playback speed, audio sync offset, sleep timer
 - Ambient lighting and GLSL shader presets
 - Picture-in-Picture on Android, iOS, and macOS
@@ -60,10 +60,9 @@ A modern Plex client for desktop and mobile. Built with Flutter for native perfo
 - External player launch (VLC, MX Player, etc.)
 
 ### <img src="assets/readme_icons/live-tv.svg" height="20" alt="" align="center" /> Live TV & DVR
-- EPG guide grid
-- Channel tuning with favorites
-- DVR recording rules and scheduled recordings
-- Multi-server DVR support
+- Live TV channel browsing with favorites
+- Plex DVR support with EPG guide, recording rules, and scheduled recordings
+- Multi-server Live TV support where available
 
 ### <img src="assets/readme_icons/downloads.svg" height="20" alt="" align="center" /> Downloads & Offline
 - Download media for offline viewing
@@ -76,7 +75,7 @@ A modern Plex client for desktop and mobile. Built with Flutter for native perfo
 - Real-time play / pause / seek sync
 
 ### <img src="assets/readme_icons/integrations.svg" height="20" alt="" align="center" /> Integrations
-- Discord Rich Presence
+- Discord Rich Presence for Plex
 - Trakt scrobbling
 - Plezy Remote — control desktop and TV from mobile
 - Android TV Watch Next row
@@ -84,14 +83,14 @@ A modern Plex client for desktop and mobile. Built with Flutter for native perfo
 ### <img src="assets/readme_icons/customization.svg" height="20" alt="" align="center" /> Platform & Customization
 - Desktop, mobile, and TV — full D-pad, keyboard, and gamepad support
 - Customizable keyboard shortcuts on desktop
-- In-app metadata and artwork editing
+- Plex metadata and artwork editing
 - Localized in 14 languages
 
 ## Building from Source
 
 ### Prerequisites
 - Flutter SDK 3.8.1+
-- A Plex account with server access
+- A Plex account or Jellyfin server with user credentials
 
 ### Setup
 
@@ -114,5 +113,5 @@ dart run build_runner build --delete-conflicting-outputs
 ## Acknowledgments
 
 - Built with [Flutter](https://flutter.dev)
-- Designed for [Plex Media Server](https://www.plex.tv)
+- Supports [Plex Media Server](https://www.plex.tv) and [Jellyfin](https://jellyfin.org)
 - Playback powered by [mpv](https://mpv.io) via [MPVKit](https://github.com/mpvkit/MPVKit) and [libmpv-android](https://github.com/jarnedemeulemeester/libmpv-android)

@@ -4,7 +4,7 @@ cask "plezy" do
 
   url "https://github.com/edde746/plezy/releases/download/#{version}/plezy-macos.dmg"
   name "Plezy"
-  desc "Modern Plex client built with Flutter"
+  desc "Modern Plex and Jellyfin client built with Flutter"
   homepage "https://github.com/edde746/plezy"
 
   livecheck do
