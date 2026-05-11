@@ -27,7 +27,7 @@ void main() {
     expect(find.byType(Dialog), findsNothing);
   });
 
-  testWidgets('keyboard-mapped select submits without inserting highlighted key', (tester) async {
+  testWidgets('engine-synthesized select activates highlighted key', (tester) async {
     final controller = TextEditingController(text: 'query');
     String? submitted;
     addTearDown(controller.dispose);
@@ -37,9 +37,9 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.select);
     await tester.pumpAndSettle();
 
-    expect(controller.text, 'query');
-    expect(submitted, 'query');
-    expect(find.byType(Dialog), findsNothing);
+    expect(controller.text, 'query1');
+    expect(submitted, isNull);
+    expect(find.byType(Dialog), findsOneWidget);
   });
 
   testWidgets('directional pad enter activates highlighted key', (tester) async {
