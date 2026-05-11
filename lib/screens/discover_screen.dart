@@ -526,13 +526,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       // stores neutral MediaLibrary objects.
 
       // Start OnDeck and hubs fetch in parallel
+      final useGlobalHubs = context.settingsRead(SettingsService.useGlobalHubs);
       final onDeckFuture = multiServerProvider.aggregationService.getOnDeckFromAllServers(
         limit: 20,
         hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
       );
       final hubsFuture = multiServerProvider.aggregationService.getHubsFromAllServers(
         hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
-        useGlobalHubs: context.settingsRead(SettingsService.useGlobalHubs),
+        useGlobalHubs: useGlobalHubs,
         includePlaybackHubs: false,
       );
 
@@ -597,7 +598,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
       // Sort hubs by the user's library order
       final libraryOrder = context.read<LibrariesProvider>().libraries;
-      if (libraryOrder.isNotEmpty) {
+      if (!useGlobalHubs && libraryOrder.isNotEmpty) {
         final orderMap = <String, int>{};
         for (var i = 0; i < libraryOrder.length; i++) {
           orderMap[libraryOrder[i].globalKey] = i;

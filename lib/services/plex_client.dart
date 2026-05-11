@@ -182,6 +182,12 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
   /// Libraries parsed from /media/providers (includes individually shared items)
   List<PlexLibraryDto> _providerLibraries = const [];
 
+  /// Home hub endpoint advertised by /media/providers (usually /hubs).
+  String? _providerHomeHubKey;
+
+  /// Promoted home hub endpoint advertised by /media/providers (usually /hubs/promoted).
+  String? _providerPromotedHubKey;
+
   /// EPG providers parsed from /media/providers
   @override
   List<({String identifier, String gridEndpoint})> _providerEpg = const [];
@@ -222,6 +228,7 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
     Future<void> Function(String newBaseUrl)? onEndpointChanged,
     VoidCallback? onAllEndpointsExhausted,
     bool? seedTranscoderVideoSupport,
+    http.Client? httpClient,
   }) async {
     final client = PlexClient._(
       config,
@@ -230,6 +237,7 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
       prioritizedEndpoints: prioritizedEndpoints,
       onEndpointChanged: onEndpointChanged,
       onAllEndpointsExhausted: onAllEndpointsExhausted,
+      httpClient: httpClient,
     );
     if (seedTranscoderVideoSupport != null) {
       client._serverTranscoderCached = seedTranscoderVideoSupport;
@@ -282,6 +290,8 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
     required http.Client httpClient,
     List<String>? prioritizedEndpoints,
     List<({String identifier, String gridEndpoint})> epgProviders = const [],
+    String? homeHubKey,
+    String? promotedHubKey,
   }) {
     final client = PlexClient._(
       config,
@@ -292,6 +302,8 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
     );
     client._providerLibraries = const [];
     client._providerEpg = epgProviders;
+    client._providerHomeHubKey = homeHubKey;
+    client._providerPromotedHubKey = promotedHubKey;
     return client;
   }
 
@@ -384,6 +396,8 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
       if (container == null) {
         _providerLibraries = [];
         _providerEpg = [];
+        _providerHomeHubKey = null;
+        _providerPromotedHubKey = null;
         return;
       }
 
@@ -391,11 +405,15 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
       if (providers == null) {
         _providerLibraries = [];
         _providerEpg = [];
+        _providerHomeHubKey = null;
+        _providerPromotedHubKey = null;
         return;
       }
 
       final libraries = <PlexLibraryDto>[];
       final epg = <({String identifier, String gridEndpoint})>[];
+      String? homeHubKey;
+      String? promotedHubKey;
 
       for (final provider in providers) {
         if (provider is! Map) continue;
@@ -409,6 +427,11 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
         if (identifier == 'com.plexapp.plugins.library') {
           for (final feature in features) {
             if (feature is! Map) continue;
+
+            if (feature['type'] == 'promoted') {
+              promotedHubKey ??= feature['key'] as String?;
+            }
+
             if (feature['type'] != 'content') continue;
 
             final directories = feature['Directory'] as List?;
@@ -420,7 +443,10 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
 
                 // Skip entries without id (Home hub) and playlists
                 final id = dir['id']?.toString();
-                if (id == null) continue;
+                if (id == null) {
+                  homeHubKey ??= dir['hubKey'] as String?;
+                  continue;
+                }
                 if (dir['type'] == 'playlist') continue;
 
                 final isNumericId = int.tryParse(id) != null;
@@ -463,11 +489,15 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
 
       _providerLibraries = libraries;
       _providerEpg = epg;
+      _providerHomeHubKey = homeHubKey;
+      _providerPromotedHubKey = promotedHubKey;
       appLogger.d('Media providers: ${libraries.length} libraries, ${epg.length} EPG provider(s)');
     } catch (e) {
       appLogger.w('Failed to fetch /media/providers, will fall back to /library/sections', error: e);
       _providerLibraries = [];
       _providerEpg = [];
+      _providerHomeHubKey = null;
+      _providerPromotedHubKey = null;
     }
   }
 
@@ -1617,11 +1647,12 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
   /// This matches the official Plex client's home page layout.
   Future<List<PlexHubDto>> _getGlobalHubs({int limit = 10}) async {
     try {
+      final hubKey = _providerPromotedHubKey ?? _providerHomeHubKey ?? '/hubs';
       final response = await retryTransientMediaServerCall(
         operation: 'Plex global hubs',
         attemptTimeouts: MediaServerTimeouts.homeHubAttemptTimeouts,
         call: (timeout, abort) => _getWithFailover(
-          '/hubs',
+          hubKey,
           queryParameters: {'count': limit, 'includeGuids': 1},
           timeout: timeout,
           abort: abort,
