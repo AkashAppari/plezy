@@ -179,16 +179,17 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           preKnownFps > 0;
       final isExoPlayer = player is PlayerAndroid;
       final isAndroidMpv = Platform.isAndroid && !isExoPlayer;
+      final needsAndroidMpvFrameRateStartup = willAutoSwitch && isAndroidMpv && result.videoUrl != null;
       var didPreLoadFrameRateSwitch = false;
-      var needsPostOpenFrameRateSwitch = willAutoSwitch;
-      var needsAndroidMpvStartupRefresh = false;
+      var needsPostOpenFrameRateSwitch = willAutoSwitch && !needsAndroidMpvFrameRateStartup;
+      var needsAndroidMpvStartupRefresh = needsAndroidMpvFrameRateStartup;
       final hasExternalSubs = result.externalSubtitles.isNotEmpty;
-      Future<void>? androidMpvStartupReady;
+      Future<bool>? androidMpvStartupReady;
 
       // MPV on Android can decode and present its first paused frame before a
       // post-open display switch settles. Switch first when metadata already
       // gives us the FPS so MediaCodec starts after the display mode change.
-      if (willAutoSwitch && isAndroidMpv && result.videoUrl != null) {
+      if (needsAndroidMpvFrameRateStartup) {
         final delaySec = settingsService.read(SettingsService.displaySwitchDelay);
         final durationMs = _currentMetadata.durationMs ?? player!.state.duration.inMilliseconds;
         _suppressMediaPauseDuringFrameRateSwitch = true;
@@ -207,8 +208,6 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           );
           if (didPreLoadFrameRateSwitch) {
             _frameRateMatchingApplied = true;
-            needsPostOpenFrameRateSwitch = false;
-            needsAndroidMpvStartupRefresh = true;
           }
           appLogger.d(
             'Frame rate matching: pre-load MPV switch complete '
@@ -217,6 +216,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           );
         } catch (e) {
           appLogger.w('Failed to apply pre-load MPV frame rate matching', error: e);
+          needsPostOpenFrameRateSwitch = true;
+          needsAndroidMpvStartupRefresh = false;
         }
       }
 
@@ -229,7 +230,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         _hasFirstFrame.value = false;
         _frameRateRetries = 0;
         _frameRateMatchingApplied = false;
-        if (didPreLoadFrameRateSwitch) {
+        if (didPreLoadFrameRateSwitch || needsAndroidMpvFrameRateStartup) {
           _frameRateMatchingApplied = true;
         }
 
@@ -272,13 +273,16 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
 
         final shouldAutoPlay = !shouldHoldPlaybackStart && (isExoPlayer || !hasExternalSubs);
         if (needsAndroidMpvStartupRefresh) {
-          appLogger.d('Frame rate matching: opening Android MPV paused for startup decoder refresh');
-          androidMpvStartupReady = player!.streams.playbackRestart.first.timeout(
-            const Duration(seconds: 8),
-            onTimeout: () {
-              appLogger.w('Timed out waiting for Android MPV startup frame before decoder refresh');
-            },
-          );
+          appLogger.d('Frame rate matching: opening Android MPV paused for startup buffer flush');
+          androidMpvStartupReady = player!.streams.playbackRestart.first
+              .then((_) => true)
+              .timeout(
+                const Duration(seconds: 15),
+                onTimeout: () {
+                  appLogger.w('Timed out waiting for Android MPV startup frame before buffer flush');
+                  return false;
+                },
+              );
         }
 
         // ExoPlayer: attach external subs at open time so it discovers
@@ -442,10 +446,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           try {
             didSwitch = await player!.setVideoFrameRate(preKnownFps!, durationMs, extraDelayMs: delaySec * 1000);
             if (didSwitch) {
-              await _refreshAndroidMpvDecoderAfterFrameRateSwitch(
-                reason: 'post-open frame rate switch',
-                fallbackPosition: resumePosition,
-              );
+              await _refreshAndroidMpvDecoderAfterFrameRateSwitch(reason: 'post-open frame rate switch');
             }
           } catch (e) {
             appLogger.w('Failed to apply pre-playback frame rate matching', error: e);
@@ -465,20 +466,23 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
             ),
           );
         } else if (needsAndroidMpvStartupRefresh && mounted && player != null) {
-          appLogger.d('Frame rate matching: waiting for Android MPV startup frame before decoder refresh');
-          await androidMpvStartupReady;
+          appLogger.d('Frame rate matching: waiting for Android MPV startup frame before buffer flush');
+          final startupReady = androidMpvStartupReady == null ? false : await androidMpvStartupReady;
           if (mounted && player != null) {
-            await _refreshAndroidMpvDecoderAfterFrameRateSwitch(
-              reason: 'pre-load frame rate startup',
-              fallbackPosition: resumePosition,
-            );
-            await resumeAfterStartupGate('startup decoder refresh');
+            if (startupReady) {
+              await Future<void>.delayed(const Duration(milliseconds: 100));
+              await _refreshAndroidMpvDecoderAfterFrameRateSwitch(reason: 'pre-load frame rate startup');
+              await resumeAfterStartupGate('startup buffer flush');
+            } else {
+              appLogger.w('Frame rate matching: skipping Android MPV buffer flush because startup frame timed out');
+              await resumeAfterStartupGate('startup frame timeout');
+            }
           }
 
           unawaited(
             Sentry.addBreadcrumb(
               Breadcrumb(
-                message: 'Android MPV startup decoder refresh after pre-load frame-rate switch',
+                message: 'Android MPV startup buffer flush after pre-load frame-rate switch',
                 category: 'player',
               ),
             ),

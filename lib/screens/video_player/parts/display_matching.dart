@@ -69,37 +69,31 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
     }
   }
 
-  Future<void> _refreshAndroidMpvDecoderAfterFrameRateSwitch({
-    required String reason,
-    Duration? fallbackPosition,
-  }) async {
+  Future<void> _refreshAndroidMpvDecoderAfterFrameRateSwitch({required String reason}) async {
     final p = player;
     if (!mounted || !Platform.isAndroid || p == null || p is PlayerAndroid) return;
 
-    final positionMs = p.state.position.inMilliseconds;
-    final fallbackMs = fallbackPosition?.inMilliseconds ?? 0;
-    final targetMs = positionMs > 0 ? positionMs : (fallbackMs > 0 ? fallbackMs : 1);
-    // Subscribe before the seek so the broadcast event isn't dropped when
+    // Subscribe before flushing so the broadcast event isn't dropped when
     // the restart fires synchronously fast.
     var timedOut = false;
     final restartFuture = p.streams.playbackRestart.first.timeout(
-      const Duration(milliseconds: 2500),
+      const Duration(seconds: 4),
       onTimeout: () {
         timedOut = true;
       },
     );
     final sw = Stopwatch()..start();
     try {
-      appLogger.d('Frame rate matching: refreshing Android MPV decoder ($reason, target=${targetMs}ms)');
-      await p.command(['seek', (targetMs / 1000.0).toStringAsFixed(3), 'absolute+exact']);
+      appLogger.d('Frame rate matching: flushing Android MPV buffers ($reason, command=drop-buffers)');
+      await p.command(['drop-buffers']);
       await restartFuture;
       appLogger.d(
-        'Frame rate matching: refreshed Android MPV decoder '
-        '($reason, target=${targetMs}ms, waited=${sw.elapsedMilliseconds}ms, '
+        'Frame rate matching: flushed Android MPV buffers '
+        '($reason, waited=${sw.elapsedMilliseconds}ms, '
         'gate=${timedOut ? 'timeout' : 'playback-restart'})',
       );
     } catch (e) {
-      appLogger.w('Failed to refresh Android MPV decoder after frame rate switch ($reason)', error: e);
+      appLogger.w('Failed to flush Android MPV buffers after frame rate switch ($reason)', error: e);
     }
   }
 
