@@ -1134,6 +1134,85 @@ void main() {
     });
   });
 
+  group('JellyfinClient.fetchCollections', () {
+    test('uses boxsets view instead of selected media library parent', () async {
+      final requests = <Uri>[];
+      final mock = MockClient((req) async {
+        requests.add(req.url);
+        if (req.url.path == '/Users/user-1/Views') {
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                {'Id': 'lib-movies', 'Name': 'Movies', 'CollectionType': 'movies'},
+                {'Id': 'lib-boxsets', 'Name': 'Collections', 'CollectionType': 'boxsets'},
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        if (req.url.path == '/Items') {
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                {'Id': 'collection-1', 'Name': 'Collection 1', 'Type': 'BoxSet'},
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        return http.Response('not found', 404);
+      });
+      final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+      addTearDown(client.close);
+
+      final collections = await client.fetchCollections('lib-movies');
+
+      expect(collections.map((c) => c.id).toList(), ['collection-1']);
+      expect(collections.single.kind, MediaKind.collection);
+      expect(requests.map((u) => u.path).toList(), ['/Users/user-1/Views', '/Items']);
+      final itemsRequest = requests.singleWhere((u) => u.path == '/Items');
+      expect(itemsRequest.queryParameters['ParentId'], 'lib-boxsets');
+      expect(itemsRequest.queryParameters['ParentId'], isNot('lib-movies'));
+      expect(itemsRequest.queryParameters['IncludeItemTypes'], 'BoxSet');
+      expect(itemsRequest.queryParameters['Recursive'], 'true');
+      expect(itemsRequest.queryParameters['SortBy'], 'SortName');
+      expect(itemsRequest.queryParameters['SortOrder'], 'Ascending');
+    });
+
+    test('falls back to global BoxSet query when boxsets view is missing', () async {
+      Uri? itemsRequest;
+      final mock = MockClient((req) async {
+        if (req.url.path == '/Users/user-1/Views') {
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                {'Id': 'lib-movies', 'Name': 'Movies', 'CollectionType': 'movies'},
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        if (req.url.path == '/Items') {
+          itemsRequest = req.url;
+          return http.Response(jsonEncode({'Items': []}), 200, headers: {'content-type': 'application/json'});
+        }
+        return http.Response('not found', 404);
+      });
+      final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+      addTearDown(client.close);
+
+      await client.fetchCollections('lib-movies');
+
+      expect(itemsRequest, isNotNull);
+      expect(itemsRequest!.queryParameters.containsKey('ParentId'), isFalse);
+      expect(itemsRequest!.queryParameters['IncludeItemTypes'], 'BoxSet');
+      expect(itemsRequest!.queryParameters['Recursive'], 'true');
+    });
+  });
+
   group('JellyfinClient.fetchLibraries view filtering', () {
     test('drops boxsets and playlists views — they surface as per-library tabs instead', () async {
       // Jellyfin's `/Users/{userId}/Views` returns the user's collection

@@ -8,8 +8,8 @@ import '../adaptive_media_grid.dart';
 import 'base_library_tab.dart';
 import 'library_grid_tab_state.dart';
 
-/// Collections tab for library screen
-/// Shows collections for the current library
+/// Collections tab for library screen.
+/// Plex scopes collections to the library; Jellyfin exposes a shared BoxSets root.
 class LibraryCollectionsTab extends BaseLibraryTab<MediaItem> {
   const LibraryCollectionsTab({
     super.key,

@@ -8,19 +8,35 @@ mixin _JellyfinCollectionMethods on MediaServerCacheMixin {
 
   @override
   Future<List<MediaItem>> fetchCollections(String libraryId) async {
+    // Jellyfin keeps BoxSets under a dedicated top-level view, not under each
+    // movie/show library. Query that root to avoid recursively scanning media.
+    final boxSetsViewId = await _fetchBoxSetsViewId();
     final response = await _http.get(
       '/Items',
       queryParameters: {
         'userId': connection.userId,
-        'ParentId': libraryId,
+        'ParentId': ?boxSetsViewId,
         'IncludeItemTypes': 'BoxSet',
         'Recursive': 'true',
+        'SortBy': 'SortName',
+        'SortOrder': 'Ascending',
         'Fields': _browseFields,
         ...jellyfinImageQueryParameters,
       },
     );
     throwIfHttpError(response);
     return _mapItems(_itemsArray(response.data));
+  }
+
+  Future<String?> _fetchBoxSetsViewId() async {
+    final response = await _http.get('/Users/${_segment(connection.userId)}/Views');
+    throwIfHttpError(response);
+    for (final view in _itemsArray(response.data)) {
+      final collectionType = (view['CollectionType'] as String?)?.toLowerCase();
+      final id = view['Id'] as String?;
+      if (collectionType == 'boxsets' && id != null && id.isNotEmpty) return id;
+    }
+    return null;
   }
 
   /// Jellyfin has no pagination knob for collection children, so the first
