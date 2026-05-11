@@ -594,7 +594,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final isNumeric = mediaClient?.capabilities.numericUserRating ?? true;
     final hasRating = metadata.userRating != null && metadata.userRating! > 0;
     final starValue = hasRating ? metadata.userRating! / 2.0 : 0.0;
-    final activate = isNumeric ? () => _showRatingDialog(metadata, starValue) : () => _toggleLike(metadata);
 
     final iconData = isNumeric ? Symbols.star_rounded : Symbols.thumb_up_rounded;
     final activeIconColor = isNumeric ? Colors.amber : Colors.teal;
@@ -606,6 +605,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return ListenableBuilder(
       listenable: _ratingChipFocusNode,
       builder: (context, _) {
+        final activate = isNumeric
+            ? () => _showRatingDialog(context, metadata, starValue)
+            : () => _toggleLike(metadata);
         final colorScheme = Theme.of(context).colorScheme;
         final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
         final showFocus = _ratingChipFocusNode.hasFocus && isKeyboardMode;
@@ -680,9 +682,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
   }
 
-  void _showRatingDialog(MediaItem metadata, double currentStarValue) {
-    showModalBottomSheet(
-      context: context,
+  void _showRatingDialog(BuildContext sheetContext, MediaItem metadata, double currentStarValue) {
+    OverlaySheetController.showAdaptive(
+      sheetContext,
       builder: (context) => RatingBottomSheet(
         currentRating: currentStarValue,
         onRate: (stars) async {

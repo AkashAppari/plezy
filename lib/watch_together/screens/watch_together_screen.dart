@@ -19,6 +19,7 @@ import '../../utils/snackbar_helper.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../utils/video_player_navigation.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/overlay_sheet.dart';
 import '../models/watch_session.dart';
 import '../providers/watch_together_provider.dart';
 import '../services/recent_rooms_service.dart';
@@ -402,8 +403,8 @@ class _RecentRoomTile extends StatelessWidget {
   }
 
   void _showActions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
+    OverlaySheetController.showAdaptive(
+      context,
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -412,7 +413,7 @@ class _RecentRoomTile extends StatelessWidget {
               leading: const Icon(Symbols.edit_rounded),
               title: Text(t.watchTogether.renameRoom),
               onTap: () {
-                Navigator.pop(context);
+                OverlaySheetController.closeAdaptive(context);
                 onRename();
               },
             ),
@@ -420,7 +421,7 @@ class _RecentRoomTile extends StatelessWidget {
               leading: Icon(Symbols.delete_rounded, color: Theme.of(context).colorScheme.error),
               title: Text(t.watchTogether.removeRoom, style: TextStyle(color: Theme.of(context).colorScheme.error)),
               onTap: () {
-                Navigator.pop(context);
+                OverlaySheetController.closeAdaptive(context);
                 onRemove();
               },
             ),
