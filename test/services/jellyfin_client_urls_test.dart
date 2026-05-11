@@ -362,6 +362,9 @@ void main() {
       expect(profile.containsKey('MaxStaticBitrate'), isFalse);
       expect(profile.containsKey('MusicStreamingTranscodingBitrate'), isFalse);
       expect(profile['DirectPlayProfiles'], isNotEmpty);
+      final directPlayProfile = (profile['DirectPlayProfiles'] as List<dynamic>).first as Map<String, dynamic>;
+      expect(directPlayProfile['VideoCodec'], contains('mpeg2video'));
+      expect(directPlayProfile['AudioCodec'], contains('mp2'));
       expect(profile['TranscodingProfiles'], isNotEmpty);
       expect(profile['CodecProfiles'], isEmpty);
       final subtitleProfiles = profile['SubtitleProfiles'] as List<dynamic>;
@@ -516,18 +519,25 @@ void main() {
       expect(uri.queryParameters['api_key'], 'tok-abc');
     });
 
-    test('live TV stream resolution negotiates PlaybackInfo and preserves PlaySessionId', () async {
+    test('live TV stream resolution opens a direct stream instead of HLS transcode', () async {
       final requests = <Uri>[];
+      String? capturedBody;
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((request) async {
           requests.add(request.url);
+          capturedBody = request.body;
           if (request.url.path == '/Items/channel-1/PlaybackInfo') {
             return http.Response(
               jsonEncode({
                 'PlaySessionId': 'live-session-1',
                 'MediaSources': [
-                  {'Id': 'source-1', 'TranscodingUrl': '/Videos/channel-1/master.m3u8?PlaySessionId=live-session-1'},
+                  {
+                    'Id': 'source-1',
+                    'Container': 'ts',
+                    'LiveStreamId': 'open-stream-1',
+                    'TranscodingUrl': '/Videos/channel-1/live.m3u8?PlaySessionId=live-session-1',
+                  },
                 ],
               }),
               200,
@@ -542,11 +552,25 @@ void main() {
       final resolution = await scoped.liveTv.resolveStreamUrl('channel-1');
 
       expect(requests.single.path, '/Items/channel-1/PlaybackInfo');
+      expect(requests.single.queryParameters['AutoOpenLiveStream'], 'true');
+      expect(requests.single.queryParameters['EnableTranscoding'], 'false');
+      expect(requests.single.queryParameters['EnableDirectPlay'], 'true');
+      expect(requests.single.queryParameters['EnableDirectStream'], 'true');
+      expect(requests.single.queryParameters['AllowVideoStreamCopy'], 'true');
+      expect(requests.single.queryParameters['AllowAudioStreamCopy'], 'true');
+      final body = jsonDecode(capturedBody!) as Map<String, dynamic>;
+      expect(body['AutoOpenLiveStream'], isTrue);
+      expect(body['EnableTranscoding'], isFalse);
       expect(resolution, isNotNull);
       expect(resolution!.playSessionId, 'live-session-1');
       final uri = Uri.parse(resolution.url);
-      expect(uri.path, '/Videos/channel-1/master.m3u8');
+      expect(uri.path, '/Videos/channel-1/stream');
+      expect(uri.queryParameters['Static'], 'true');
+      expect(uri.queryParameters['Container'], 'ts');
+      expect(uri.queryParameters['MediaSourceId'], 'source-1');
+      expect(uri.queryParameters['LiveStreamId'], 'open-stream-1');
       expect(uri.queryParameters['PlaySessionId'], 'live-session-1');
+      expect(uri.queryParameters['DeviceId'], 'dev-xyz');
       expect(uri.queryParameters['api_key'], 'tok-abc');
     });
 

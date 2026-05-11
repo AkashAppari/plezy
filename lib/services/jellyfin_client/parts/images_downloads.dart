@@ -3,13 +3,26 @@ part of '../../jellyfin_client.dart';
 mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
   JellyfinConnection get connection;
   Future<JellyfinPlaybackBundle?> fetchPlaybackBundle(String itemId, {int sourceIndex = 0});
-  String buildDirectStreamUrl(String itemId, {String? container, String? mediaSourceId});
+  String buildDirectStreamUrl(
+    String itemId, {
+    String? container,
+    String? mediaSourceId,
+    String? playSessionId,
+    String? liveStreamId,
+  });
   Future<Map<String, dynamic>?> getPlaybackInfo(
     String itemId, {
     int maxStreamingBitrate = 100000000,
     String? mediaSourceId,
+    String? liveStreamId,
     int? audioStreamIndex,
     int? subtitleStreamIndex,
+    bool? autoOpenLiveStream,
+    bool? enableDirectPlay,
+    bool? enableDirectStream,
+    bool? enableTranscoding,
+    bool? allowVideoStreamCopy,
+    bool? allowAudioStreamCopy,
   });
   String _withApiKey(String urlOrPath);
 

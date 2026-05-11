@@ -172,18 +172,34 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
 
   @override
   Future<LiveTvStreamResolution?> resolveStreamUrl(String channelKey, {String? dvrKey}) async {
-    final info = await _client.getPlaybackInfo(channelKey);
+    final info = await _client.getPlaybackInfo(
+      channelKey,
+      autoOpenLiveStream: true,
+      enableDirectPlay: true,
+      enableDirectStream: true,
+      enableTranscoding: false,
+      allowVideoStreamCopy: true,
+      allowAudioStreamCopy: true,
+    );
     final sources = info?['MediaSources'];
     final source = sources is List && sources.isNotEmpty && sources.first is Map<String, dynamic>
         ? sources.first as Map<String, dynamic>
         : null;
     if (source == null) return null;
 
-    final rawUrl = source['TranscodingUrl'] ?? source['DirectStreamUrl'];
-    final url = rawUrl is String && rawUrl.isNotEmpty
+    String? nonEmptyString(dynamic raw) => raw is String && raw.isNotEmpty ? raw : null;
+
+    var playSessionId = nonEmptyString(info?['PlaySessionId']);
+    final rawUrl = nonEmptyString(source['DirectStreamUrl']);
+    final url = rawUrl != null
         ? _client._withApiKey(rawUrl)
-        : _client.buildDirectStreamUrl(channelKey);
-    var playSessionId = info?['PlaySessionId'] as String?;
+        : _client.buildDirectStreamUrl(
+            channelKey,
+            container: nonEmptyString(source['Container']),
+            mediaSourceId: nonEmptyString(source['Id']),
+            playSessionId: playSessionId,
+            liveStreamId: nonEmptyString(source['LiveStreamId']),
+          );
     playSessionId ??= Uri.tryParse(url)?.queryParameters['PlaySessionId'];
     return LiveTvStreamResolution(url: url, playSessionId: playSessionId);
   }

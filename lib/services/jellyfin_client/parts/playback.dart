@@ -316,7 +316,13 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
   /// item only has a single MediaSource, [mediaSourceId] equals [itemId] and
   /// can be omitted; for items with multiple versions Jellyfin uses the
   /// param to pick which file to serve.
-  String buildDirectStreamUrl(String itemId, {String? container, String? mediaSourceId}) {
+  String buildDirectStreamUrl(
+    String itemId, {
+    String? container,
+    String? mediaSourceId,
+    String? playSessionId,
+    String? liveStreamId,
+  }) {
     return buildJellyfinDirectStreamUrl(
       baseUrl: connection.baseUrl,
       accessToken: connection.accessToken,
@@ -324,6 +330,8 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
       itemId: itemId,
       container: container,
       mediaSourceId: mediaSourceId,
+      playSessionId: playSessionId,
+      liveStreamId: liveStreamId,
     );
   }
 
@@ -359,16 +367,30 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     String itemId, {
     int maxStreamingBitrate = 100000000,
     String? mediaSourceId,
+    String? liveStreamId,
     int? audioStreamIndex,
     int? subtitleStreamIndex,
+    bool? autoOpenLiveStream,
+    bool? enableDirectPlay,
+    bool? enableDirectStream,
+    bool? enableTranscoding,
+    bool? allowVideoStreamCopy,
+    bool? allowAudioStreamCopy,
   }) async {
     try {
       final query = <String, String>{
         'userId': connection.userId,
         'MaxStreamingBitrate': maxStreamingBitrate.toString(),
         'MediaSourceId': ?mediaSourceId,
+        'LiveStreamId': ?liveStreamId,
         'AudioStreamIndex': ?audioStreamIndex?.toString(),
         'SubtitleStreamIndex': ?subtitleStreamIndex?.toString(),
+        'AutoOpenLiveStream': ?autoOpenLiveStream?.toString(),
+        'EnableDirectPlay': ?enableDirectPlay?.toString(),
+        'EnableDirectStream': ?enableDirectStream?.toString(),
+        'EnableTranscoding': ?enableTranscoding?.toString(),
+        'AllowVideoStreamCopy': ?allowVideoStreamCopy?.toString(),
+        'AllowAudioStreamCopy': ?allowAudioStreamCopy?.toString(),
       };
       final response = await _http.post(
         '/Items/${_segment(itemId)}/PlaybackInfo',
@@ -376,6 +398,16 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
         body: {
           'UserId': connection.userId,
           'MaxStreamingBitrate': maxStreamingBitrate,
+          'MediaSourceId': ?mediaSourceId,
+          'LiveStreamId': ?liveStreamId,
+          'AudioStreamIndex': ?audioStreamIndex,
+          'SubtitleStreamIndex': ?subtitleStreamIndex,
+          'AutoOpenLiveStream': ?autoOpenLiveStream,
+          'EnableDirectPlay': ?enableDirectPlay,
+          'EnableDirectStream': ?enableDirectStream,
+          'EnableTranscoding': ?enableTranscoding,
+          'AllowVideoStreamCopy': ?allowVideoStreamCopy,
+          'AllowAudioStreamCopy': ?allowAudioStreamCopy,
           'DeviceProfile': <String, Object?>{
             'Name': 'Plezy',
             'MaxStreamingBitrate': maxStreamingBitrate,
@@ -402,8 +434,8 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
               {
                 'Type': 'Video',
                 'Container': 'mp4,mkv,m4v,webm,mov,ts',
-                'VideoCodec': 'hevc,h264,h265,vp8,vp9,av1,mpeg4',
-                'AudioCodec': 'aac,mp3,ac3,eac3,flac,opus,vorbis,dts',
+                'VideoCodec': 'hevc,h264,h265,vp8,vp9,av1,mpeg4,mpeg2video',
+                'AudioCodec': 'aac,mp3,mp2,ac3,eac3,flac,opus,vorbis,dts',
               },
             ],
             'SubtitleProfiles': const <Map<String, Object?>>[
