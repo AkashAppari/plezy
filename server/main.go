@@ -40,6 +40,10 @@ const (
 	logIDLength        = 5
 	logRateInterval    = 1 * time.Minute
 	maxLogEntries      = 500
+	maxPosterSize      = 5 * 1024 * 1024 // 5MB
+	maxPosterStoreSize = int64(1 * 1024 * 1024 * 1024)
+	posterMaxAge       = 3 * time.Hour
+	posterIDLength     = 16
 	maxConnsPerIP      = 5
 	maxGlobalConns     = 100
 	maxRoomsPerIP      = 3
@@ -61,19 +65,19 @@ var upgrader = websocket.Upgrader{
 // --- Rate limiter (token bucket) ---
 
 type rateLimiter struct {
-	tokens    float64
-	maxTokens float64
+	tokens     float64
+	maxTokens  float64
 	refillRate float64
-	lastTime  time.Time
-	mu        sync.Mutex
+	lastTime   time.Time
+	mu         sync.Mutex
 }
 
 func newRateLimiter(burst, sustained int) *rateLimiter {
 	return &rateLimiter{
-		tokens:    float64(burst),
-		maxTokens: float64(burst),
+		tokens:     float64(burst),
+		maxTokens:  float64(burst),
 		refillRate: float64(sustained),
-		lastTime:  time.Now(),
+		lastTime:   time.Now(),
 	}
 }
 
@@ -373,15 +377,19 @@ func (ls *logStore) filePath(id string) string {
 	return filepath.Join(ls.dir, id+".log")
 }
 
-const logIDChars = "abcdefghijklmnopqrstuvwxyz0123456789"
+const idChars = "abcdefghijklmnopqrstuvwxyz0123456789"
 
-func generateLogID() string {
-	b := make([]byte, logIDLength)
+func generateID(length int) string {
+	b := make([]byte, length)
 	for i := range b {
-		n, _ := rand.Int(rand.Reader, big.NewInt(int64(len(logIDChars))))
-		b[i] = logIDChars[n.Int64()]
+		n, _ := rand.Int(rand.Reader, big.NewInt(int64(len(idChars))))
+		b[i] = idChars[n.Int64()]
 	}
 	return string(b)
+}
+
+func generateLogID() string {
+	return generateID(logIDLength)
 }
 
 func (ls *logStore) cleanup() {
@@ -398,6 +406,269 @@ func (ls *logStore) cleanup() {
 		if now.Sub(lastTime) > logRateInterval {
 			delete(ls.rateLimit, ip)
 		}
+	}
+}
+
+// --- Poster store ---
+
+type posterEntry struct {
+	Filename    string
+	Size        int64
+	ContentType string
+	CreatedAt   time.Time
+	ExpiresAt   time.Time
+}
+
+type posterStore struct {
+	entries    map[string]posterEntry
+	dir        string
+	maxBytes   int64
+	maxAge     time.Duration
+	totalBytes int64
+	mu         sync.RWMutex
+}
+
+func newPosterStore(dir string, maxBytes int64, maxAge time.Duration) *posterStore {
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		log.Fatalf("failed to create poster dir %s: %v", dir, err)
+	}
+	ps := &posterStore{
+		entries:  make(map[string]posterEntry),
+		dir:      dir,
+		maxBytes: maxBytes,
+		maxAge:   maxAge,
+	}
+	ps.loadExisting(time.Now())
+	return ps
+}
+
+func (ps *posterStore) filePath(filename string) string {
+	return filepath.Join(ps.dir, filename)
+}
+
+func generatePosterID() string {
+	return generateID(posterIDLength)
+}
+
+func posterExtForContentType(contentType string) (string, bool) {
+	switch strings.ToLower(strings.SplitN(contentType, ";", 2)[0]) {
+	case "image/jpeg":
+		return ".jpg", true
+	case "image/png":
+		return ".png", true
+	case "image/gif":
+		return ".gif", true
+	case "image/webp":
+		return ".webp", true
+	default:
+		return "", false
+	}
+}
+
+func posterContentTypeForExt(ext string) (string, bool) {
+	switch strings.ToLower(ext) {
+	case ".jpg", ".jpeg":
+		return "image/jpeg", true
+	case ".png":
+		return "image/png", true
+	case ".gif":
+		return "image/gif", true
+	case ".webp":
+		return "image/webp", true
+	default:
+		return "", false
+	}
+}
+
+func validID(id string, length int) bool {
+	if len(id) != length {
+		return false
+	}
+	for _, ch := range id {
+		if !strings.ContainsRune(idChars, ch) {
+			return false
+		}
+	}
+	return true
+}
+
+func posterIDFromFilename(filename string) (string, bool) {
+	if filename == "" || strings.ContainsAny(filename, `/\\`) {
+		return "", false
+	}
+	ext := filepath.Ext(filename)
+	if _, ok := posterContentTypeForExt(ext); !ok {
+		return "", false
+	}
+	id := strings.TrimSuffix(filename, ext)
+	if !validID(id, posterIDLength) {
+		return "", false
+	}
+	return id, true
+}
+
+func (ps *posterStore) loadExisting(now time.Time) {
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
+
+	files, err := os.ReadDir(ps.dir)
+	if err != nil {
+		log.Printf("posters: failed to read dir %s: %v", ps.dir, err)
+		return
+	}
+	for _, f := range files {
+		filename := f.Name()
+		path := ps.filePath(filename)
+		if f.IsDir() || strings.HasSuffix(filename, ".tmp") {
+			os.RemoveAll(path)
+			continue
+		}
+		id, ok := posterIDFromFilename(filename)
+		if !ok {
+			os.Remove(path)
+			continue
+		}
+		info, err := f.Info()
+		if err != nil {
+			os.Remove(path)
+			continue
+		}
+		createdAt := info.ModTime()
+		expiresAt := createdAt.Add(ps.maxAge)
+		if !now.Before(expiresAt) {
+			os.Remove(path)
+			continue
+		}
+		contentType, _ := posterContentTypeForExt(filepath.Ext(filename))
+		entry := posterEntry{
+			Filename:    filename,
+			Size:        info.Size(),
+			ContentType: contentType,
+			CreatedAt:   createdAt,
+			ExpiresAt:   expiresAt,
+		}
+		ps.entries[id] = entry
+		ps.totalBytes += entry.Size
+	}
+	ps.evictOldestLocked(0)
+}
+
+func (ps *posterStore) store(data []byte, contentType string, now time.Time) (string, posterEntry, error) {
+	entrySize := int64(len(data))
+	if entrySize <= 0 {
+		return "", posterEntry{}, errors.New("empty poster")
+	}
+	if entrySize > ps.maxBytes {
+		return "", posterEntry{}, errors.New("poster exceeds store size")
+	}
+	ext, ok := posterExtForContentType(contentType)
+	if !ok {
+		return "", posterEntry{}, errors.New("unsupported poster type")
+	}
+
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
+
+	ps.cleanupExpiredLocked(now)
+	ps.evictOldestLocked(entrySize)
+	if ps.totalBytes+entrySize > ps.maxBytes {
+		return "", posterEntry{}, errors.New("poster store full")
+	}
+
+	id := generatePosterID()
+	for {
+		if _, exists := ps.entries[id]; !exists {
+			if _, err := os.Stat(ps.filePath(id + ext)); errors.Is(err, fs.ErrNotExist) {
+				break
+			}
+		}
+		id = generatePosterID()
+	}
+
+	filename := id + ext
+	path := ps.filePath(filename)
+	tmpPath := path + ".tmp"
+	if err := os.WriteFile(tmpPath, data, 0644); err != nil {
+		os.Remove(tmpPath)
+		return "", posterEntry{}, err
+	}
+	if err := os.Rename(tmpPath, path); err != nil {
+		os.Remove(tmpPath)
+		return "", posterEntry{}, err
+	}
+	_ = os.Chtimes(path, now, now)
+
+	entry := posterEntry{
+		Filename:    filename,
+		Size:        entrySize,
+		ContentType: strings.ToLower(strings.SplitN(contentType, ";", 2)[0]),
+		CreatedAt:   now,
+		ExpiresAt:   now.Add(ps.maxAge),
+	}
+	ps.entries[id] = entry
+	ps.totalBytes += entry.Size
+	return id, entry, nil
+}
+
+func (ps *posterStore) lookup(filename string, now time.Time) (posterEntry, bool) {
+	id, ok := posterIDFromFilename(filename)
+	if !ok {
+		return posterEntry{}, false
+	}
+
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
+	entry, ok := ps.entries[id]
+	if !ok || entry.Filename != filename {
+		return posterEntry{}, false
+	}
+	if !now.Before(entry.ExpiresAt) {
+		ps.deleteEntryLocked(id, entry)
+		return posterEntry{}, false
+	}
+	return entry, true
+}
+
+func (ps *posterStore) cleanup(now time.Time) {
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
+	ps.cleanupExpiredLocked(now)
+	ps.evictOldestLocked(0)
+}
+
+func (ps *posterStore) cleanupExpiredLocked(now time.Time) {
+	for id, entry := range ps.entries {
+		if !now.Before(entry.ExpiresAt) {
+			ps.deleteEntryLocked(id, entry)
+		}
+	}
+}
+
+func (ps *posterStore) evictOldestLocked(extraBytes int64) {
+	for ps.totalBytes+extraBytes > ps.maxBytes && len(ps.entries) > 0 {
+		var oldestID string
+		var oldest posterEntry
+		first := true
+		for id, entry := range ps.entries {
+			if first || entry.CreatedAt.Before(oldest.CreatedAt) {
+				oldestID = id
+				oldest = entry
+				first = false
+			}
+		}
+		if oldestID == "" {
+			return
+		}
+		ps.deleteEntryLocked(oldestID, oldest)
+	}
+}
+
+func (ps *posterStore) deleteEntryLocked(id string, entry posterEntry) {
+	os.Remove(ps.filePath(entry.Filename))
+	delete(ps.entries, id)
+	ps.totalBytes -= entry.Size
+	if ps.totalBytes < 0 {
+		ps.totalBytes = 0
 	}
 }
 
@@ -551,16 +822,22 @@ func (sn *snapshotter) logWriteErr(err error) {
 // --- Server ---
 
 type Server struct {
-	rooms map[string]*Room
-	logs  *logStore
-	conns *connTracker
-	snap  *snapshotter
-	oauth *oauthProxy // nil when OAUTH_BASE_URL is unset
-	mu    sync.RWMutex
+	rooms   map[string]*Room
+	logs    *logStore
+	posters *posterStore
+	conns   *connTracker
+	snap    *snapshotter
+	oauth   *oauthProxy // nil when OAUTH_BASE_URL is unset
+	mu      sync.RWMutex
 }
 
-func newServer(logDir, stateFile string) *Server {
-	s := &Server{rooms: make(map[string]*Room), logs: newLogStore(logDir), conns: newConnTracker()}
+func newServer(logDir, stateFile, posterDir string) *Server {
+	s := &Server{
+		rooms:   make(map[string]*Room),
+		logs:    newLogStore(logDir),
+		posters: newPosterStore(posterDir, maxPosterStoreSize, posterMaxAge),
+		conns:   newConnTracker(),
+	}
 	if p, ok := oauthConfigFromEnv(); ok {
 		s.oauth = p
 		log.Printf("oauth: proxy enabled (base=%s, services=%d)", p.baseURL, len(p.services))
@@ -681,6 +958,7 @@ func (s *Server) runCleanupStep(now time.Time) {
 		s.snap.schedule()
 	}
 	s.logs.cleanup()
+	s.posters.cleanup(now)
 	s.conns.cleanup()
 	if s.oauth != nil {
 		s.oauth.cleanup()
@@ -803,6 +1081,79 @@ func (s *Server) handleGetLogs(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
+func (s *Server) handlePostPosters(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	body, err := io.ReadAll(io.LimitReader(r.Body, maxPosterSize+1))
+	if err != nil {
+		http.Error(w, "Failed to read body", http.StatusBadRequest)
+		return
+	}
+	if len(body) > maxPosterSize {
+		http.Error(w, "Poster too large (max 5MB)", http.StatusRequestEntityTooLarge)
+		return
+	}
+	if len(body) == 0 {
+		http.Error(w, "Empty body", http.StatusBadRequest)
+		return
+	}
+
+	contentType := http.DetectContentType(body)
+	if _, ok := posterExtForContentType(contentType); !ok {
+		http.Error(w, "Unsupported media type", http.StatusUnsupportedMediaType)
+		return
+	}
+
+	id, entry, err := s.posters.store(body, contentType, time.Now())
+	if err != nil {
+		log.Printf("posters: failed to store from %s: %v", clientIP(r), err)
+		http.Error(w, "Failed to store poster", http.StatusInternalServerError)
+		return
+	}
+
+	url := "/posters/" + entry.Filename
+	log.Printf("posters: stored %s (%d bytes) from %s", id, entry.Size, clientIP(r))
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{
+		"id":        id,
+		"url":       url,
+		"expiresIn": int(s.posters.maxAge.Seconds()),
+	})
+}
+
+func (s *Server) handleGetPosters(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	filename := strings.TrimPrefix(r.URL.Path, "/posters/")
+	entry, ok := s.posters.lookup(filename, time.Now())
+	if !ok {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
+
+	f, err := os.Open(s.posters.filePath(entry.Filename))
+	if err != nil {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
+	defer f.Close()
+
+	remaining := int(time.Until(entry.ExpiresAt).Seconds())
+	if remaining < 0 {
+		remaining = 0
+	}
+	w.Header().Set("Cache-Control", "public, max-age="+strconv.Itoa(remaining))
+	w.Header().Set("Content-Type", entry.ContentType)
+	w.Header().Set("Content-Length", strconv.FormatInt(entry.Size, 10))
+	http.ServeContent(w, r, entry.Filename, entry.CreatedAt, f)
+}
 func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 	ip := clientIP(r)
 
@@ -999,10 +1350,11 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 func main() {
 	addr := flag.String("addr", ":8080", "Listen address")
 	logDir := flag.String("log-dir", "/data/logs", "Directory for log file storage")
+	posterDir := flag.String("poster-dir", "/data/posters", "Directory for Discord poster storage")
 	stateFile := flag.String("state-file", "/data/rooms.json", "Path to room snapshot file")
 	flag.Parse()
 
-	srv := newServer(*logDir, *stateFile)
+	srv := newServer(*logDir, *stateFile, *posterDir)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/relay", srv.handleWS)
@@ -1012,6 +1364,8 @@ func main() {
 	})
 	mux.HandleFunc("/logs", srv.handlePostLogs)
 	mux.HandleFunc("/logs/", srv.handleGetLogs)
+	mux.HandleFunc("/posters", srv.handlePostPosters)
+	mux.HandleFunc("/posters/", srv.handleGetPosters)
 	registerOAuthRoutes(mux, srv.oauth)
 
 	httpSrv := &http.Server{Addr: *addr, Handler: mux}

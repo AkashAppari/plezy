@@ -27,9 +27,10 @@ import (
 func newTestServer(t *testing.T, stateFile string) *Server {
 	t.Helper()
 	s := &Server{
-		rooms: make(map[string]*Room),
-		logs:  newLogStore(t.TempDir()),
-		conns: newConnTracker(),
+		rooms:   make(map[string]*Room),
+		logs:    newLogStore(t.TempDir()),
+		posters: newPosterStore(t.TempDir(), maxPosterStoreSize, posterMaxAge),
+		conns:   newConnTracker(),
 	}
 	s.snap = newSnapshotter(stateFile, s.buildSnapshot)
 	return s
@@ -323,7 +324,7 @@ func newRelayHarness(t *testing.T) *relayHarness {
 // can share a snapshot across a simulated restart.
 func newRelayHarnessAt(t *testing.T, logDir, stateFile string) *relayHarness {
 	t.Helper()
-	srv := newServer(logDir, stateFile)
+	srv := newServer(logDir, stateFile, filepath.Join(t.TempDir(), "posters"))
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/relay", srv.handleWS)
@@ -333,6 +334,8 @@ func newRelayHarnessAt(t *testing.T, logDir, stateFile string) *relayHarness {
 	})
 	mux.HandleFunc("/logs", srv.handlePostLogs)
 	mux.HandleFunc("/logs/", srv.handleGetLogs)
+	mux.HandleFunc("/posters", srv.handlePostPosters)
+	mux.HandleFunc("/posters/", srv.handleGetPosters)
 
 	httpSrv := httptest.NewServer(mux)
 	t.Cleanup(func() {
@@ -673,7 +676,7 @@ func TestGenerateLogIDShape(t *testing.T) {
 			t.Fatalf("len=%d want %d (id=%q)", len(id), logIDLength, id)
 		}
 		for _, c := range id {
-			if !strings.ContainsRune(logIDChars, c) {
+			if !strings.ContainsRune(idChars, c) {
 				t.Fatalf("id %q has unexpected char %q", id, c)
 			}
 		}
@@ -1065,6 +1068,48 @@ func postLogAndGetID(t *testing.T, baseURL, ip string, body []byte) string {
 	return out.ID
 }
 
+type posterUploadResponse struct {
+	ID        string `json:"id"`
+	URL       string `json:"url"`
+	ExpiresIn int    `json:"expiresIn"`
+}
+
+func postPoster(t *testing.T, baseURL, ip string, body []byte) *http.Response {
+	t.Helper()
+	req, err := http.NewRequest(http.MethodPost, baseURL+"/posters", bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("new request: %v", err)
+	}
+	if ip != "" {
+		req.Header.Set("X-Forwarded-For", ip)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("post: %v", err)
+	}
+	return resp
+}
+
+func postPosterAndDecode(t *testing.T, baseURL, ip string, body []byte) posterUploadResponse {
+	t.Helper()
+	resp := postPoster(t, baseURL, ip, body)
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("post status=%d", resp.StatusCode)
+	}
+	var out posterUploadResponse
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if len(out.ID) != posterIDLength {
+		t.Fatalf("id=%q len=%d want %d", out.ID, len(out.ID), posterIDLength)
+	}
+	if out.URL == "" {
+		t.Fatal("empty poster url")
+	}
+	return out
+}
+
 func TestLogsRoundTrip(t *testing.T) {
 	h := newRelayHarness(t)
 	payload := []byte("hello log world")
@@ -1194,6 +1239,120 @@ func TestLogsMethodNotAllowed(t *testing.T) {
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusMethodNotAllowed {
 		t.Errorf("GET /logs status=%d want 405", resp.StatusCode)
+	}
+}
+
+// ======================================================================
+// Poster endpoints
+// ======================================================================
+
+func TestPostersRoundTrip(t *testing.T) {
+	h := newRelayHarness(t)
+	payload := []byte{0x89, 'P', 'N', 'G', 0x0d, 0x0a, 0x1a, 0x0a, 0x01, 0x02, 0x03}
+	out := postPosterAndDecode(t, h.baseURL, "9.0.0.1", payload)
+
+	if out.ExpiresIn != int(posterMaxAge.Seconds()) {
+		t.Fatalf("expiresIn=%d want %d", out.ExpiresIn, int(posterMaxAge.Seconds()))
+	}
+	if !strings.HasPrefix(out.URL, "/posters/") || !strings.HasSuffix(out.URL, ".png") {
+		t.Fatalf("url=%q should be a relative png poster path", out.URL)
+	}
+	if strings.Contains(out.URL, "://") {
+		t.Fatalf("url=%q should be relative", out.URL)
+	}
+
+	getResp, err := http.Get(h.baseURL + out.URL)
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	defer getResp.Body.Close()
+	if getResp.StatusCode != http.StatusOK {
+		t.Fatalf("get status=%d", getResp.StatusCode)
+	}
+	got, _ := io.ReadAll(getResp.Body)
+	if !bytes.Equal(got, payload) {
+		t.Fatalf("round-tripped bytes mismatch: got %v want %v", got, payload)
+	}
+	if ct := getResp.Header.Get("Content-Type"); !strings.HasPrefix(ct, "image/png") {
+		t.Errorf("Content-Type=%q", ct)
+	}
+}
+
+func TestPostersRejectInvalidAndOversizedUploads(t *testing.T) {
+	h := newRelayHarness(t)
+
+	invalid := postPoster(t, h.baseURL, "9.0.0.2", []byte("not an image"))
+	invalid.Body.Close()
+	if invalid.StatusCode != http.StatusUnsupportedMediaType {
+		t.Fatalf("invalid status=%d want 415", invalid.StatusCode)
+	}
+
+	oversized := postPoster(t, h.baseURL, "9.0.0.3", make([]byte, maxPosterSize+1))
+	oversized.Body.Close()
+	if oversized.StatusCode != http.StatusRequestEntityTooLarge {
+		t.Fatalf("oversized status=%d want 413", oversized.StatusCode)
+	}
+}
+
+func TestPosterStoreEvictsOldestOverQuota(t *testing.T) {
+	ps := newPosterStore(t.TempDir(), 12, time.Hour)
+	now := time.Now()
+	payload := []byte{1, 2, 3, 4, 5, 6, 7}
+
+	id1, entry1, err := ps.store(payload, "image/png", now)
+	if err != nil {
+		t.Fatalf("store first: %v", err)
+	}
+	id2, entry2, err := ps.store(payload, "image/png", now.Add(time.Minute))
+	if err != nil {
+		t.Fatalf("store second: %v", err)
+	}
+
+	ps.mu.RLock()
+	_, hasFirst := ps.entries[id1]
+	_, hasSecond := ps.entries[id2]
+	total := ps.totalBytes
+	ps.mu.RUnlock()
+
+	if hasFirst {
+		t.Fatal("oldest poster should have been evicted")
+	}
+	if !hasSecond {
+		t.Fatal("newest poster should remain")
+	}
+	if total != int64(len(payload)) {
+		t.Fatalf("totalBytes=%d want %d", total, len(payload))
+	}
+	if _, err := os.Stat(ps.filePath(entry1.Filename)); !os.IsNotExist(err) {
+		t.Fatalf("oldest file still exists or stat failed unexpectedly: %v", err)
+	}
+	if _, err := os.Stat(ps.filePath(entry2.Filename)); err != nil {
+		t.Fatalf("newest file missing: %v", err)
+	}
+}
+
+func TestPosterStoreCleanupExpiresOldPosters(t *testing.T) {
+	ps := newPosterStore(t.TempDir(), 1024, time.Hour)
+	now := time.Now()
+	id, entry, err := ps.store([]byte{1, 2, 3}, "image/png", now.Add(-2*time.Hour))
+	if err != nil {
+		t.Fatalf("store: %v", err)
+	}
+
+	ps.cleanup(now)
+
+	ps.mu.RLock()
+	_, exists := ps.entries[id]
+	total := ps.totalBytes
+	ps.mu.RUnlock()
+	if exists {
+		t.Fatal("expired poster should have been removed")
+	}
+	if total != 0 {
+		t.Fatalf("totalBytes=%d want 0", total)
+	}
+	if _, err := os.Stat(ps.filePath(entry.Filename)); !os.IsNotExist(err) {
+		t.Fatalf("expired file still exists or stat failed unexpectedly: %v", err)
 	}
 }
 
