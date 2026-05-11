@@ -379,13 +379,13 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
   /// Hide controls when navigating up from timeline (keyboard mode)
   /// If skip marker button or Play Next dialog is visible, focus it instead of hiding controls
   void _hideControlsFromKeyboard() {
-    if (_currentMarker != null) {
-      _skipMarkerFocusNode.requestFocus();
+    if (widget.playNextFocusNode != null) {
+      widget.playNextFocusNode!.requestFocus();
       return;
     }
 
-    if (widget.playNextFocusNode != null) {
-      widget.playNextFocusNode!.requestFocus();
+    if (_currentMarker != null) {
+      _skipMarkerFocusNode.requestFocus();
       return;
     }
 

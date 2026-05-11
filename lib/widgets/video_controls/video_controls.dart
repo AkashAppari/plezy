@@ -785,7 +785,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                     ),
                   ),
                   // Skip intro/credits button (auto-dismisses after 7s, then only shows with controls)
-                  if (_currentMarker != null && (!_skipButtonDismissed || _showControls))
+                  if (_currentMarker != null &&
+                      widget.playNextFocusNode == null &&
+                      (!_skipButtonDismissed || _showControls))
                     AnimatedPositioned(
                       duration: const Duration(milliseconds: 200),
                       curve: Curves.easeInOut,
