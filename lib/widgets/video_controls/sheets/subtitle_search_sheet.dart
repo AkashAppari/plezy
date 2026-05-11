@@ -10,6 +10,7 @@ import '../../../i18n/strings.g.dart';
 import '../../../mixins/controller_disposer_mixin.dart';
 import '../../../models/plex/plex_subtitle_search_result.dart';
 import '../../../services/plex_client.dart';
+import '../../../services/settings_service.dart';
 import '../../../utils/language_codes.dart';
 import '../../../utils/provider_extensions.dart';
 import '../../../utils/snackbar_helper.dart';
@@ -19,6 +20,13 @@ import '../../../widgets/overlay_sheet.dart';
 import '../../../widgets/pill_input_decoration.dart';
 import 'base_video_control_sheet.dart';
 import '../../loading_indicator_box.dart';
+
+@visibleForTesting
+String resolveSubtitleSearchLanguageCode({String? savedLanguageCode, required Locale systemLocale}) {
+  return LanguageCodes.getIso6391Code(savedLanguageCode ?? '') ??
+      LanguageCodes.getIso6391Code(systemLocale.languageCode) ??
+      'en';
+}
 
 class SubtitleSearchSheet extends StatefulWidget {
   final String ratingKey;
@@ -62,13 +70,14 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
   }
 
   void _initDefaultLanguage() {
-    final locale = WidgetsBinding.instance.platformDispatcher.locale;
-    final code = locale.languageCode;
+    final code = resolveSubtitleSearchLanguageCode(
+      savedLanguageCode: SettingsService.instanceOrNull?.read(SettingsService.subtitleSearchLanguage),
+      systemLocale: WidgetsBinding.instance.platformDispatcher.locale,
+    );
     final name = LanguageCodes.getLanguageName(code);
-    if (name != null) {
-      _languageCode = code;
-      _languageName = name;
-    }
+    if (name == null) return;
+    _languageCode = code;
+    _languageName = name;
   }
 
   @override
@@ -153,6 +162,10 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
       _languageName = name;
       _showLanguagePicker = false;
     });
+    final settings = SettingsService.instanceOrNull;
+    if (settings != null) {
+      unawaited(settings.write(SettingsService.subtitleSearchLanguage, code));
+    }
     OverlaySheetController.of(context).refocus();
     _search();
   }

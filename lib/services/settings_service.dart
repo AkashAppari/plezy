@@ -271,6 +271,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const sleepTimerDuration = IntPref('sleep_timer_duration', defaultValue: 30);
   static const audioSyncOffset = IntPref('audio_sync_offset');
   static const subtitleSyncOffset = IntPref('subtitle_sync_offset');
+  static const subtitleSearchLanguage = NullableStringPref('subtitle_search_language');
   static const volume = DoublePref('volume', defaultValue: 100.0);
   static const rotationLocked = BoolPref('rotation_locked', defaultValue: true);
   static const subtitleFontSize = IntPref('subtitle_font_size', defaultValue: 38);
@@ -655,6 +656,7 @@ class SettingsService extends BaseSharedPreferencesService {
     sleepTimerDuration,
     audioSyncOffset,
     subtitleSyncOffset,
+    subtitleSearchLanguage,
     volume,
     maxVolume,
     subtitleFontSize,
