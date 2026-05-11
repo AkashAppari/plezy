@@ -50,6 +50,7 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.SubtitleView
 import com.edde746.plezy.shared.AudioFocusManager
+import com.edde746.plezy.shared.DeviceQuirks
 import com.edde746.plezy.shared.FlutterOverlayHelper
 import com.edde746.plezy.shared.FrameRateManager
 import io.github.peerless2012.ass.media.AssHandler
@@ -136,6 +137,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var decoderHangRunnable: Runnable? = null
   private var decoderInitName: String? = null
   private var audioDecoderInitName: String? = null
+  private var loggedEwasteEac3Workaround: Boolean = false
   private var firstFrameRendered: Boolean = false
   var delegate: ExoPlayerDelegate? = null
   var debugLoggingEnabled: Boolean = false
@@ -388,14 +390,12 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         .setUsage(C.USAGE_MEDIA)
         .build()
 
-      // Use DefaultRenderersFactory with FFmpeg fallback for unsupported audio codecs
+      // Use DefaultRenderersFactory with FFmpeg fallback for unsupported or blocked audio codecs.
       val renderersFactory = PlezyRenderersFactory(activity).apply {
         setEnableDecoderFallback(true)
         setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
-        // Force FFmpeg for FLAC — hardware FLAC decoders (e.g. Samsung c2.sec.flac.decoder)
-        // have buggy 32KB input buffer limits causing InsufficientCapacityException.
         setMediaCodecSelector { mimeType, requiresSecureDecoder, requiresTunnelingDecoder ->
-          if (mimeType == MimeTypes.AUDIO_FLAC) {
+          if (shouldForceAppAudioDecoder(mimeType)) {
             emptyList()
           } else {
             MediaCodecSelector.DEFAULT.getDecoderInfos(
@@ -1084,10 +1084,23 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
   // Tunneling control — disabled when audio codec has no hardware decoder (requires FFmpeg)
 
+  private fun shouldForceAppAudioDecoder(mimeType: String): Boolean {
+    if (mimeType == MimeTypes.AUDIO_FLAC) return true
+    if (DeviceQuirks.isEWaste && isEac3MimeType(mimeType)) {
+      if (!loggedEwasteEac3Workaround) {
+        loggedEwasteEac3Workaround = true
+        emitLog("info", "decoder", "Using app decoder for E-AC3 on this device")
+      }
+      return true
+    }
+    return false
+  }
+
+  private fun isEac3MimeType(mimeType: String): Boolean = mimeType == MimeTypes.AUDIO_E_AC3 || mimeType == MimeTypes.AUDIO_E_AC3_JOC
+
   private fun hasHardwareAudioDecoder(mimeType: String): Boolean {
-    // FLAC hardware decoders are excluded via MediaCodecSelector (Samsung c2.sec.flac.decoder
-    // has buggy 32KB input buffer limits), so report no hardware decoder for tunneling purposes.
-    if (mimeType == MimeTypes.AUDIO_FLAC) return false
+    // Keep tunneling decisions aligned with the MediaCodecSelector exclusions.
+    if (shouldForceAppAudioDecoder(mimeType)) return false
     hwAudioDecoderCache[mimeType]?.let { return it }
     val result = try {
       val codecList = android.media.MediaCodecList(android.media.MediaCodecList.REGULAR_CODECS)

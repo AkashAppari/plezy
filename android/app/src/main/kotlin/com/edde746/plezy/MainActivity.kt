@@ -19,6 +19,7 @@ import android.widget.FrameLayout
 import androidx.core.content.FileProvider
 import com.edde746.plezy.exoplayer.ExoPlayerPlugin
 import com.edde746.plezy.mpv.MpvPlayerPlugin
+import com.edde746.plezy.shared.DeviceQuirks
 import com.edde746.plezy.shared.ThemeHelper
 import com.edde746.plezy.watchnext.WatchNextPlugin
 import io.flutter.embedding.android.FlutterActivity
@@ -169,16 +170,7 @@ class MainActivity : FlutterActivity() {
   private fun shouldDisableImpeller(): Boolean {
     // Android TV devices — weaker GPUs, less Impeller testing
     if (isAndroidTvDevice()) return true
-    // Google Tensor SoC (Mali GPU) — Pixel 6+
-    // SOC_MODEL may return marketing name ("Tensor G2") or internal ID ("GS201")
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-      val soc = Build.SOC_MODEL
-      if (soc.startsWith("Tensor", ignoreCase = true) ||
-        soc.startsWith("GS", ignoreCase = true)
-      ) {
-        return true
-      }
-    }
+    if (DeviceQuirks.isEWaste) return true
     // NVIDIA Tegra (Shield TV)
     if (Build.MANUFACTURER.equals("NVIDIA", ignoreCase = true)) return true
     // Huawei/HONOR Kirin SoCs use Mali GPUs
