@@ -1,6 +1,11 @@
+import 'package:json_annotation/json_annotation.dart';
+
 import '../utils/codec_utils.dart';
 import '../utils/formatters.dart';
+import '../utils/json_utils.dart';
 import 'media_part.dart';
+
+part 'media_version.g.dart';
 
 /// Convert backend bitrates reported in bits-per-second to app-standard kbps.
 int? bitrateKbpsFromBps(int? bps) {
@@ -19,15 +24,21 @@ String _videoResolutionDisplayLabel(String resolution) {
 /// A single media variant available for an item — represents one quality level
 /// or transcode profile of the underlying file. An item with multiple versions
 /// (e.g. 4K + 1080p re-encode) exposes one [MediaVersion] per option.
+@JsonSerializable(includeIfNull: false, explicitToJson: true)
 class MediaVersion {
   /// Backend-opaque version identifier.
+  @JsonKey(fromJson: _stringFromJson)
   final String id;
+  @JsonKey(fromJson: flexibleInt)
   final int? width;
+  @JsonKey(fromJson: flexibleInt)
   final int? height;
   final String? videoResolution; // "1080", "4k", "sd"
   final String? videoCodec;
+  @JsonKey(fromJson: flexibleInt)
   final int? bitrate;
   final String? container;
+  @JsonKey(fromJson: _partsFromJson, toJson: _partsToJson)
   final List<MediaPart> parts;
 
   /// Human-readable name for this version (e.g. "Director's Cut").
@@ -47,6 +58,10 @@ class MediaVersion {
     this.parts = const [],
     this.name,
   });
+
+  factory MediaVersion.fromJson(Map<String, dynamic> json) => _$MediaVersionFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MediaVersionToJson(this);
 
   /// Defaults to true when file-access fields are absent. Plex only populates
   /// them when metadata is fetched with `checkFiles=1`.
@@ -123,3 +138,16 @@ class MediaVersion {
     return null;
   }
 }
+
+String _stringFromJson(Object? raw) => (raw ?? '').toString();
+
+List<MediaPart> _partsFromJson(Object? raw) {
+  return raw is List
+      ? [
+          for (final part in raw)
+            if (part is Map<String, dynamic>) MediaPart.fromJson(part),
+        ]
+      : const [];
+}
+
+List<Map<String, dynamic>> _partsToJson(List<MediaPart> parts) => [for (final part in parts) part.toJson()];

@@ -162,7 +162,9 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
         if (raw == null || raw.isEmpty) return const PlayQueueEmpty();
 
         final shuffled = List.of(raw)..shuffle(Random());
-        final items = shuffled.map((e) => e.copyWith(serverId: serverId, serverName: metadata.serverName)).toList();
+        final items = shuffled
+            .map((e) => e.copyWith(serverId: serverId, serverName: metadata.serverName ?? e.serverName))
+            .toList();
 
         await dismissLoading();
         if (!context.mounted && navigateForTesting == null) {

@@ -50,10 +50,15 @@ class WatchStateOverlayProvider extends ChangeNotifier with DisposableChangeNoti
   static MediaItem applyPatch(MediaItem item, WatchStateOverlayPatch? patch) {
     if (patch == null) return item;
 
-    return item.copyWith(
-      viewCount: patch.isWatched == null ? null : (patch.isWatched! ? 1 : 0),
-      viewOffsetMs: patch.hasViewOffsetMs ? patch.viewOffsetMs : null,
-    );
+    var updated = item;
+    final isWatched = patch.isWatched;
+    if (isWatched != null) {
+      updated = updated.copyWith(viewCount: isWatched ? 1 : 0);
+    }
+    if (patch.hasViewOffsetMs) {
+      updated = updated.copyWith(viewOffsetMs: patch.viewOffsetMs);
+    }
+    return updated;
   }
 
   void setActiveProfileId(String? profileId) {

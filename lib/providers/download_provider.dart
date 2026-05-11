@@ -1019,7 +1019,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       try {
         final fullMetadata = await client.fetchItem(metadata.id);
         if (fullMetadata != null) {
-          metadataToStore = fullMetadata.copyWith(serverId: metadata.serverId, serverName: metadata.serverName);
+          metadataToStore = fullMetadata.copyWith(
+            serverId: metadata.serverId ?? fullMetadata.serverId,
+            serverName: metadata.serverName ?? fullMetadata.serverName,
+          );
         }
       } catch (e) {
         appLogger.w('Failed to fetch full metadata for ${metadata.id}, using partial', error: e);

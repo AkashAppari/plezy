@@ -229,19 +229,24 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final isWatched = event.isNowWatched;
     if (isWatched == null) return;
     final viewOffsetMs = isWatched && !clearWatchedProgress ? null : 0;
+    MediaItem patchItem(MediaItem item) {
+      final updated = item.copyWith(viewCount: isWatched ? 1 : 0);
+      return viewOffsetMs == null ? updated : updated.copyWith(viewOffsetMs: viewOffsetMs);
+    }
+
     setStateIfMounted(() {
       final base = _fullMetadata ?? widget.metadata;
       if (base.id == event.itemId) {
-        _fullMetadata = base.copyWith(viewCount: isWatched ? 1 : 0, viewOffsetMs: viewOffsetMs);
+        _fullMetadata = patchItem(base);
       }
 
       final onDeckEpisode = _onDeckEpisode;
       if (onDeckEpisode != null && onDeckEpisode.id == event.itemId) {
-        _onDeckEpisode = onDeckEpisode.copyWith(viewCount: isWatched ? 1 : 0, viewOffsetMs: viewOffsetMs);
+        _onDeckEpisode = patchItem(onDeckEpisode);
       }
 
       if (epIndex != -1) {
-        final updated = _episodes[epIndex].copyWith(viewCount: isWatched ? 1 : 0, viewOffsetMs: viewOffsetMs);
+        final updated = patchItem(_episodes[epIndex]);
         _episodes[epIndex] = updated;
         _syncEpisodeToCache(epIndex, updated);
       }
@@ -272,7 +277,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   MediaItem _applyLocalProgress(MediaItem item) {
     if (!_localProgressById.containsKey(item.id)) return item;
-    return item.copyWith(viewOffsetMs: _localProgressById[item.id]);
+    return item.copyWith(viewOffsetMs: _localProgressById[item.id]!);
   }
 
   @override
@@ -395,10 +400,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       final onDeckEpisode = result.onDeckEpisode;
       if (metadata != null) {
         setStateIfMounted(() {
-          _fullMetadata = _applyLocalProgress(metadata.copyWith(serverId: serverId, serverName: serverName));
+          _fullMetadata = _applyLocalProgress(
+            metadata.copyWith(serverId: serverId, serverName: serverName ?? metadata.serverName),
+          );
           _onDeckEpisode = onDeckEpisode == null
               ? null
-              : _applyLocalProgress(onDeckEpisode.copyWith(serverId: serverId, serverName: serverName));
+              : _applyLocalProgress(
+                  onDeckEpisode.copyWith(serverId: serverId, serverName: serverName ?? onDeckEpisode.serverName),
+                );
         });
       }
 
@@ -406,7 +415,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final seasons = await mediaClient.fetchChildren(_metadata.id);
         _episodeCache.clear();
         setStateIfMounted(() {
-          _seasons = seasons.map((s) => s.copyWith(serverId: serverId, serverName: serverName)).toList();
+          _seasons = seasons
+              .map((s) => s.copyWith(serverId: serverId, serverName: serverName ?? s.serverName))
+              .toList();
         });
         if (_showEpisodesDirectly) {
           await _fetchAllEpisodes();
@@ -992,10 +1003,18 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       // Preserve serverId from original metadata
       final serverId = _metadata.serverId;
       final serverName = _metadata.serverName;
-      final base = _applyLocalProgress((metadata ?? _metadata).copyWith(serverId: serverId, serverName: serverName));
+      final source = metadata ?? _metadata;
+      final base = _applyLocalProgress(
+        source.copyWith(serverId: serverId ?? source.serverId, serverName: serverName ?? source.serverName),
+      );
       final onDeckWithServerId = onDeckEpisode == null
           ? null
-          : _applyLocalProgress(onDeckEpisode.copyWith(serverId: serverId, serverName: serverName));
+          : _applyLocalProgress(
+              onDeckEpisode.copyWith(
+                serverId: serverId ?? onDeckEpisode.serverId,
+                serverName: serverName ?? onDeckEpisode.serverName,
+              ),
+            );
 
       setState(() {
         _fullMetadata = base;
@@ -1065,7 +1084,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
       // Preserve serverId for each season.
       final seasonsWithServerId = seasons
-          .map((season) => season.copyWith(serverId: serverId, serverName: _metadata.serverName))
+          .map((season) => season.copyWith(serverId: serverId, serverName: _metadata.serverName ?? season.serverName))
           .toList();
 
       // Plex's flattenSeasons modes: 1 = always, 2 = single-season only.
@@ -1257,10 +1276,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final episodesWithServerId = episodes
             .map(
               (e) => e.copyWith(
-                serverId: _metadata.serverId,
-                serverName: _metadata.serverName,
+                serverId: _metadata.serverId ?? e.serverId,
+                serverName: _metadata.serverName ?? e.serverName,
                 grandparentId: _metadata.id,
-                grandparentTitle: _metadata.title,
+                grandparentTitle: _metadata.title ?? e.grandparentTitle,
               ),
             )
             .map(_applyLocalProgress)
@@ -1301,7 +1320,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
       // Preserve serverId for each extra (needed for multi-server setups).
       final extrasWithServerId = extras
-          .map((extra) => extra.copyWith(serverId: _metadata.serverId, serverName: _metadata.serverName))
+          .map(
+            (extra) => extra.copyWith(
+              serverId: _metadata.serverId ?? extra.serverId,
+              serverName: _metadata.serverName ?? extra.serverName,
+            ),
+          )
           .toList();
 
       setStateIfMounted(() {
@@ -1985,7 +2009,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           .map(
             (e) => e.copyWith(
               serverId: serverId,
-              serverName: _metadata.serverName,
+              serverName: _metadata.serverName ?? e.serverName,
               grandparentId: e.grandparentId ?? fallbackGrandparentId,
               grandparentTitle: e.grandparentTitle ?? fallbackGrandparentTitle,
             ),
@@ -2070,7 +2094,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       // Play the first episode
       final firstEpisode = episodes.first;
       // Preserve serverId for the episode
-      final episodeWithServerId = firstEpisode.copyWith(serverId: _metadata.serverId, serverName: _metadata.serverName);
+      final episodeWithServerId = firstEpisode.copyWith(
+        serverId: _metadata.serverId ?? firstEpisode.serverId,
+        serverName: _metadata.serverName ?? firstEpisode.serverName,
+      );
       if (mounted) {
         appLogger.d('Playing first episode: ${episodeWithServerId.title}');
         await navigateToVideoPlayerWithRefresh(

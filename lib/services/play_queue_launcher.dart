@@ -286,7 +286,7 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
     var itemToPlay = selectedItem ?? playQueue.items!.first;
 
     if (copyServerInfo && serverId != null) {
-      itemToPlay = itemToPlay.copyWith(serverId: serverId, serverName: serverName);
+      itemToPlay = itemToPlay.copyWith(serverId: serverId, serverName: serverName ?? itemToPlay.serverName);
     }
 
     await navigateToVideoPlayer(context, metadata: itemToPlay);
