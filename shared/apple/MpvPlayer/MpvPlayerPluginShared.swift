@@ -12,7 +12,7 @@ protocol MpvPluginShared: AnyObject, MpvPlayerDelegate {
   var eventSink: FlutterEventSink? { get }
   var nameToId: [String: Int] { get set }
 
-  func setPlayerVisible(_ visible: Bool)
+  func setPlayerVisible(_ visible: Bool, restoreOnWindowVisible: Bool)
   func updatePlayerFrame()
 }
 
@@ -86,9 +86,10 @@ extension MpvPluginShared {
           code: "INVALID_ARGS", message: "Missing 'visible' argument", details: nil))
       return
     }
+    let restoreOnWindowVisible = args["restoreOnWindowVisible"] as? Bool ?? false
 
     DispatchQueue.main.async { [weak self] in
-      self?.setPlayerVisible(visible)
+      self?.setPlayerVisible(visible, restoreOnWindowVisible: restoreOnWindowVisible)
       if visible { self?.updatePlayerFrame() }
       result(nil)
     }

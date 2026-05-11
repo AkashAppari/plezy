@@ -100,14 +100,27 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
   private var isVisible = false
   private var pausedState = true
+  private var shouldRestoreOnWindowVisible = false
 
-  func setVisible(_ visible: Bool) {
+  func setVisible(_ visible: Bool, restoreOnWindowVisible: Bool = false) {
     guard metalLayer != nil, !isPipActive else { return }
 
+    if visible && isVisible && !shouldRestoreOnWindowVisible {
+      isBackgrounded = false
+      if metalLayer?.isHidden == true {
+        setMetalLayerHidden(false)
+      }
+      beginPlaybackActivity()
+      print("[MpvPlayerCore] setVisible(true) skipped - already visible")
+      return
+    }
+
     isVisible = visible
+    shouldRestoreOnWindowVisible = !visible && restoreOnWindowVisible
     isBackgrounded = !visible
 
     if visible {
+      shouldRestoreOnWindowVisible = false
       if let contentView = window?.contentView {
         contentView.wantsLayer = true
         if let superlayer = contentView.layer {
@@ -120,7 +133,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     }
 
     setMetalLayerHidden(!visible)
-    print("[MpvPlayerCore] setVisible(\(visible))")
+    print("[MpvPlayerCore] setVisible(\(visible), restoreOnWindowVisible: \(restoreOnWindowVisible))")
   }
 
   func setPaused(_ paused: Bool) {
@@ -211,7 +224,11 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     } else if windowVisible && layerHiddenForOcclusion {
       print("[MpvPlayerCore] Window visible - showing Metal layer")
       layerHiddenForOcclusion = false
-      setMetalLayerHidden(!isVisible)
+      if shouldRestoreOnWindowVisible {
+        restoreMetalLayerAfterOcclusion()
+      } else {
+        setMetalLayerHidden(!isVisible)
+      }
       isBackgrounded = false
       if !pausedState {
         beginPlaybackActivity()
@@ -233,6 +250,24 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     ProcessInfo.processInfo.endActivity(playbackActivity)
     self.playbackActivity = nil
     print("[MpvPlayerCore] Ended playback activity assertion")
+  }
+
+  private func restoreMetalLayerAfterOcclusion() {
+    if let metalLayer, let contentView = window?.contentView {
+      contentView.wantsLayer = true
+      if let superlayer = contentView.layer {
+        let targetFrame = contentView.bounds
+        let needsAttach = metalLayer.superlayer !== superlayer || superlayer.sublayers?.first !== metalLayer
+        if needsAttach {
+          attachMetalLayer(to: superlayer, frame: targetFrame)
+        } else if !metalLayer.frame.equalTo(targetFrame) {
+          updateFrame(targetFrame)
+        }
+      }
+    }
+    isVisible = true
+    shouldRestoreOnWindowVisible = false
+    setMetalLayerHidden(false)
   }
 
   private func attachMetalLayer(to superlayer: CALayer, frame: CGRect) {

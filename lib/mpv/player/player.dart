@@ -163,8 +163,12 @@ abstract class Player {
   /// On macOS, this controls the Metal layer visibility.
   /// On other platforms, this may have no effect.
   ///
+  /// When [restoreOnWindowVisible] is true, macOS may restore the layer as soon
+  /// as AppKit reports the window visible again instead of waiting for Dart's
+  /// lifecycle resume callback.
+  ///
   /// Returns true if the operation was successful.
-  Future<bool> setVisible(bool visible);
+  Future<bool> setVisible(bool visible, {bool restoreOnWindowVisible = false});
 
   /// Update the video frame/surface dimensions.
   ///

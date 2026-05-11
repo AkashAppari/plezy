@@ -14,7 +14,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
 
   // MpvPluginShared conformance
   var coreBase: MpvPlayerCoreBase? { playerCore }
-  func setPlayerVisible(_ visible: Bool) { playerCore?.setVisible(visible) }
+  func setPlayerVisible(_ visible: Bool, restoreOnWindowVisible _: Bool) { playerCore?.setVisible(visible) }
   func updatePlayerFrame() { playerCore?.updateFrame() }
 
   // PiP

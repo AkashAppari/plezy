@@ -523,10 +523,10 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   }
 
   @override
-  Future<bool> setVisible(bool visible) async {
+  Future<bool> setVisible(bool visible, {bool restoreOnWindowVisible = false}) async {
     if (_disposed) return false;
     try {
-      await invoke('setVisible', {'visible': visible});
+      await invoke('setVisible', {'visible': visible, 'restoreOnWindowVisible': restoreOnWindowVisible});
       return true;
     } catch (e) {
       errorController.add(PlayerError('Failed to set visibility: $e'));

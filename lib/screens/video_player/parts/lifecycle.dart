@@ -115,7 +115,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     }
 
     _hiddenForBackground = true;
-    await currentPlayer.setVisible(false);
+    await currentPlayer.setVisible(false, restoreOnWindowVisible: Platform.isMacOS);
     _recordLifecycleState('hidden', action: 'render_hidden');
   }
 
@@ -133,7 +133,9 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     // video-output refresh before any auto-resume logic runs.
     if (_hiddenForBackground && currentPlayer != null && _isPlayerInitialized) {
       await currentPlayer.setVisible(true);
-      await currentPlayer.updateFrame();
+      if (!Platform.isMacOS) {
+        await currentPlayer.updateFrame();
+      }
 
       if (!mounted || currentPlayer != player) return;
 
