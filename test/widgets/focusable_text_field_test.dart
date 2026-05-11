@@ -9,9 +9,10 @@ import 'package:plezy/utils/platform_detector.dart';
 void main() {
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
+    TvDetectionService.setForceTVSync(false);
   });
 
-  testWidgets('tab traversal focuses the text form field instead of its key handler wrapper', (tester) async {
+  testWidgets('tab traversal focuses the text form field', (tester) async {
     final controller = TextEditingController();
     final fieldFocusNode = FocusNode(debugLabel: 'server_url_field');
     final buttonFocusNode = FocusNode(debugLabel: 'find_server_button');
@@ -43,7 +44,7 @@ void main() {
     expect(buttonFocusNode.hasFocus, isFalse);
   });
 
-  testWidgets('focused text form field still receives wrapper select handling', (tester) async {
+  testWidgets('focused text form field still receives select handling', (tester) async {
     final controller = TextEditingController();
     final fieldFocusNode = FocusNode(debugLabel: 'server_url_field');
     var selects = 0;
@@ -64,6 +65,116 @@ void main() {
     await tester.pump();
 
     expect(selects, 1);
+  });
+
+  testWidgets('d-pad direction handlers are installed on the text field focus node', (tester) async {
+    final controller = TextEditingController();
+    final fieldFocusNode = FocusNode(debugLabel: 'name_field');
+    final nextFocusNode = FocusNode(debugLabel: 'next_button');
+    addTearDown(controller.dispose);
+    addTearDown(fieldFocusNode.dispose);
+    addTearDown(nextFocusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              FocusableTextField(
+                controller: controller,
+                focusNode: fieldFocusNode,
+                onNavigateDown: nextFocusNode.requestFocus,
+              ),
+              FilledButton(focusNode: nextFocusNode, onPressed: () {}, child: const Text('Next')),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    fieldFocusNode.requestFocus();
+    await tester.pump();
+    final handler = fieldFocusNode.onKeyEvent;
+
+    expect(handler, isNotNull);
+    final result = handler!(
+      fieldFocusNode,
+      const KeyDownEvent(
+        physicalKey: PhysicalKeyboardKey.arrowDown,
+        logicalKey: LogicalKeyboardKey.arrowDown,
+        timeStamp: Duration.zero,
+        deviceType: ui.KeyEventDeviceType.directionalPad,
+      ),
+    );
+    await tester.pump();
+
+    expect(result, KeyEventResult.handled);
+    expect(nextFocusNode.hasPrimaryFocus, isTrue);
+  });
+
+  testWidgets('existing focus node key handler is preserved before text field navigation', (tester) async {
+    final controller = TextEditingController();
+    final handledKeys = <LogicalKeyboardKey>[];
+    final fieldFocusNode = FocusNode(
+      debugLabel: 'custom_field',
+      onKeyEvent: (_, event) {
+        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.arrowUp) {
+          handledKeys.add(event.logicalKey);
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+    );
+    final nextFocusNode = FocusNode(debugLabel: 'next_button');
+    addTearDown(controller.dispose);
+    addTearDown(fieldFocusNode.dispose);
+    addTearDown(nextFocusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              FocusableTextField(
+                controller: controller,
+                focusNode: fieldFocusNode,
+                onNavigateDown: nextFocusNode.requestFocus,
+              ),
+              FilledButton(focusNode: nextFocusNode, onPressed: () {}, child: const Text('Next')),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    fieldFocusNode.requestFocus();
+    await tester.pump();
+    final handler = fieldFocusNode.onKeyEvent!;
+
+    final customResult = handler(
+      fieldFocusNode,
+      const KeyDownEvent(
+        physicalKey: PhysicalKeyboardKey.arrowUp,
+        logicalKey: LogicalKeyboardKey.arrowUp,
+        timeStamp: Duration.zero,
+        deviceType: ui.KeyEventDeviceType.directionalPad,
+      ),
+    );
+    final navigationResult = handler(
+      fieldFocusNode,
+      const KeyDownEvent(
+        physicalKey: PhysicalKeyboardKey.arrowDown,
+        logicalKey: LogicalKeyboardKey.arrowDown,
+        timeStamp: Duration.zero,
+        deviceType: ui.KeyEventDeviceType.directionalPad,
+      ),
+    );
+    await tester.pump();
+
+    expect(customResult, KeyEventResult.handled);
+    expect(handledKeys, [LogicalKeyboardKey.arrowUp]);
+    expect(navigationResult, KeyEventResult.handled);
+    expect(nextFocusNode.hasPrimaryFocus, isTrue);
   });
 
   testWidgets('tvOS keyboard enter does not open virtual keyboard', (tester) async {
@@ -124,6 +235,45 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(Dialog), findsOneWidget);
+  });
+
+  testWidgets('Android TV native keyboard done uses D-pad navigation', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(null);
+    await TvDetectionService.getInstance(forceTv: true);
+    TvDetectionService.setForceTVSync(true);
+    final controller = TextEditingController();
+    final fieldFocusNode = FocusNode(debugLabel: 'name_field');
+    final nextFocusNode = FocusNode(debugLabel: 'next_button');
+    addTearDown(controller.dispose);
+    addTearDown(fieldFocusNode.dispose);
+    addTearDown(nextFocusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              FocusableTextField(
+                controller: controller,
+                focusNode: fieldFocusNode,
+                textInputAction: TextInputAction.done,
+                onNavigateDown: nextFocusNode.requestFocus,
+              ),
+              FilledButton(focusNode: nextFocusNode, onPressed: () {}, child: const Text('Next')),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    fieldFocusNode.requestFocus();
+    await tester.pump();
+    await tester.showKeyboard(find.byType(TextField));
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+
+    expect(nextFocusNode.hasPrimaryFocus, isTrue);
+    expect(find.byType(Dialog), findsNothing);
   });
 
   testWidgets('tvOS engine-synthesized select opens the virtual keyboard', (tester) async {

@@ -19,6 +19,7 @@ void main() {
 
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
+    TvDetectionService.setForceTVSync(false);
   });
 
   testWidgets('D-pad leaves profile name input and reaches actions', (tester) async {
@@ -42,6 +43,27 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump();
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddLocalProfile:Cancel');
+  });
+
+  testWidgets('Android TV native keyboard done leaves profile name input', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(null);
+    await TvDetectionService.getInstance(forceTv: true);
+    TvDetectionService.setForceTVSync(true);
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: const InputModeTracker(child: MaterialApp(home: AddLocalProfileScreen())),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddLocalProfile:Name');
+
+    await tester.showKeyboard(find.byType(TextField));
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddLocalProfile:SetPin');
   });
 
   testWidgets('remote back pops the new profile page', (tester) async {

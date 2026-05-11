@@ -430,6 +430,13 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
   });
 
   bool get _hasTvKeyboard => _usesTvKeyboard(enableTvKeyboard);
+  bool get _usesNativeTvKeyboard => PlatformDetector.isTV() && !_hasTvKeyboard;
+
+  VoidCallback? get _effectiveOnEditingComplete {
+    if (onEditingComplete != null) return onEditingComplete;
+    if (_usesNativeTvKeyboard && onSubmitted == null) return _handleTvKeyboardAction;
+    return null;
+  }
 
   void _showTvKeyboard(BuildContext context) {
     if (!enabled) return;
@@ -445,8 +452,20 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
       maxLines: maxLines,
       onChanged: onChanged,
       onSubmitted: onSubmitted,
-      onAction: onEditingComplete ?? onSelect,
+      onAction: _handleTvKeyboardAction,
     );
+  }
+
+  void _handleTvKeyboardAction() {
+    if (onEditingComplete != null) {
+      onEditingComplete!();
+    } else if (onSelect != null) {
+      onSelect!();
+    } else if (onNavigateDown != null) {
+      onNavigateDown!();
+    } else {
+      _defaultEditingComplete(textInputAction);
+    }
   }
 
   KeyEventResult _handleKey(BuildContext context, FocusNode _, KeyEvent event) {
@@ -473,16 +492,84 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
     );
   }
 
-  Widget buildFocusableInput(BuildContext context, Widget Function(bool usesTvKeyboard) builder) {
-    final usesTvKeyboard = _hasTvKeyboard;
-    return Focus(
-      // This wrapper only intercepts key events bubbling from the input; the
-      // real TextField/TextFormField must remain the traversable focus target.
-      canRequestFocus: false,
-      skipTraversal: true,
-      onKeyEvent: (node, event) => _handleKey(context, node, event),
-      child: builder(usesTvKeyboard),
-    );
+  Widget buildFocusableInput(BuildContext context, Widget Function(bool usesTvKeyboard, FocusNode focusNode) builder) {
+    return _FocusableTextInputHost(input: this, builder: builder);
+  }
+}
+
+class _FocusableTextInputHost extends StatefulWidget {
+  final _FocusableTextInputBase input;
+  final Widget Function(bool usesTvKeyboard, FocusNode focusNode) builder;
+
+  const _FocusableTextInputHost({required this.input, required this.builder});
+
+  @override
+  State<_FocusableTextInputHost> createState() => _FocusableTextInputHostState();
+}
+
+class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
+  FocusNode? _ownedFocusNode;
+  FocusNode? _installedFocusNode;
+  FocusOnKeyEventCallback? _previousOnKeyEvent;
+  late final FocusOnKeyEventCallback _keyHandler = _handleKey;
+
+  FocusNode get _effectiveFocusNode =>
+      widget.input.focusNode ?? (_ownedFocusNode ??= FocusNode(debugLabel: 'FocusableTextInput'));
+
+  @override
+  void didUpdateWidget(_FocusableTextInputHost oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.input.focusNode != widget.input.focusNode) {
+      _restoreInstalledHandler();
+    }
+  }
+
+  @override
+  void dispose() {
+    _restoreInstalledHandler();
+    _ownedFocusNode?.dispose();
+    super.dispose();
+  }
+
+  KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
+    final previous = _previousOnKeyEvent;
+    if (previous != null && !identical(previous, _keyHandler)) {
+      final result = previous(node, event);
+      if (result != KeyEventResult.ignored) return result;
+    }
+    return widget.input._handleKey(context, node, event);
+  }
+
+  void _installKeyHandler(FocusNode node) {
+    // Handle D-pad escapes on the field's own node so EditableText shortcuts
+    // can't consume directions before our reusable navigation callbacks run.
+    if (_installedFocusNode == node) {
+      if (identical(node.onKeyEvent, _keyHandler)) return;
+      _previousOnKeyEvent = node.onKeyEvent;
+      node.onKeyEvent = _keyHandler;
+      return;
+    }
+
+    _restoreInstalledHandler();
+    _installedFocusNode = node;
+    _previousOnKeyEvent = node.onKeyEvent;
+    node.onKeyEvent = _keyHandler;
+  }
+
+  void _restoreInstalledHandler() {
+    final node = _installedFocusNode;
+    if (node != null && identical(node.onKeyEvent, _keyHandler)) {
+      node.onKeyEvent = _previousOnKeyEvent;
+    }
+    _installedFocusNode = null;
+    _previousOnKeyEvent = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final focusNode = _effectiveFocusNode;
+    _installKeyHandler(focusNode);
+    return widget.builder(widget.input._hasTvKeyboard, focusNode);
   }
 }
 
@@ -530,9 +617,9 @@ class FocusableTextField extends _FocusableTextInputBase {
   Widget build(BuildContext context) {
     return buildFocusableInput(
       context,
-      (usesTvKeyboard) => TextField(
+      (usesTvKeyboard, effectiveFocusNode) => TextField(
         controller: controller,
-        focusNode: focusNode,
+        focusNode: effectiveFocusNode,
         enabled: enabled,
         decoration: decoration,
         keyboardType: usesTvKeyboard ? TextInputType.none : keyboardType,
@@ -540,7 +627,7 @@ class FocusableTextField extends _FocusableTextInputBase {
         inputFormatters: inputFormatters,
         onChanged: onChanged,
         onSubmitted: onSubmitted,
-        onEditingComplete: onEditingComplete,
+        onEditingComplete: _effectiveOnEditingComplete,
         autofocus: autofocus,
         autocorrect: autocorrect,
         enableSuggestions: enableSuggestions,
@@ -605,9 +692,9 @@ class FocusableTextFormField extends _FocusableTextInputBase {
   Widget build(BuildContext context) {
     return buildFocusableInput(
       context,
-      (usesTvKeyboard) => TextFormField(
+      (usesTvKeyboard, effectiveFocusNode) => TextFormField(
         controller: controller,
-        focusNode: focusNode,
+        focusNode: effectiveFocusNode,
         enabled: enabled,
         decoration: decoration,
         keyboardType: usesTvKeyboard ? TextInputType.none : keyboardType,
@@ -615,7 +702,7 @@ class FocusableTextFormField extends _FocusableTextInputBase {
         inputFormatters: inputFormatters,
         onChanged: onChanged,
         onFieldSubmitted: onFieldSubmitted,
-        onEditingComplete: onEditingComplete,
+        onEditingComplete: _effectiveOnEditingComplete,
         validator: validator,
         autovalidateMode: autovalidateMode,
         onSaved: onSaved,
