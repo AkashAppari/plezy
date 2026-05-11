@@ -3209,6 +3209,9 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
     return (items: result.items.map((m) => PlexMappers.mediaItem(m)).toList(), totalSize: result.totalSize);
   }
 
+  @override
+  Future<List<MediaItem>> fetchPersonMedia(String personId) => fetchAllPersonMediaAsMediaItems(personId);
+
   /// Plex-specific: full person-media listing across pages.
   Future<List<MediaItem>> fetchAllPersonMediaAsMediaItems(String personId) async {
     final raw = await _fetchAllPersonMediaDto(personId);

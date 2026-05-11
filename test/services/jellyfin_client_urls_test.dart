@@ -746,6 +746,42 @@ void main() {
       expect(starts, ['0', '200']);
     });
 
+    test('fetchPersonMedia queries items by person id', () async {
+      Uri? captured;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          captured = req.url;
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                {'Id': 'movie-1', 'Type': 'Movie', 'Name': 'Movie'},
+              ],
+              'TotalRecordCount': 1,
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.fetchPersonMedia('person-1');
+
+      expect(result.single.id, 'movie-1');
+      expect(captured, isNotNull);
+      expect(captured!.path, '/Items');
+      expect(captured!.queryParameters['userId'], 'user-1');
+      expect(captured!.queryParameters['PersonIds'], 'person-1');
+      expect(captured!.queryParameters['IncludeItemTypes'], 'Movie,Series');
+      expect(captured!.queryParameters['Recursive'], 'true');
+      expect(captured!.queryParameters['SortBy'], 'PremiereDate,ProductionYear,SortName');
+      expect(captured!.queryParameters['SortOrder'], 'Descending,Descending,Ascending');
+      expect(captured!.queryParameters['CollapseBoxSetItems'], 'false');
+      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(captured!.queryParameters['ImageTypeLimit'], '1');
+    });
+
     test('fetchItemWithOnDeck keeps resumable NextUp semantics for show detail lookup', () async {
       Uri? capturedNextUp;
       final scoped = JellyfinClient.forTesting(

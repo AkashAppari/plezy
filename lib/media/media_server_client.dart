@@ -219,6 +219,9 @@ abstract class MediaServerClient {
   /// "More like this" recommendations for [id].
   Future<List<MediaHub>> fetchRelatedHubs(String id, {int count = 10});
 
+  /// Media featuring a specific person/actor.
+  Future<List<MediaItem>> fetchPersonMedia(String personId);
+
   /// Page through items in [hubId] when the hub previewed only the first N
   /// items (`MediaHub.more == true`). Plex hits `/hubs/{key}` (the same
   /// id used in [fetchGlobalHubs]); Jellyfin re-runs the synthesised query

@@ -500,6 +500,26 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   }
 
   @override
+  Future<List<MediaItem>> fetchPersonMedia(String personId) async {
+    final response = await _http.get(
+      '/Items',
+      queryParameters: {
+        'userId': connection.userId,
+        'PersonIds': personId,
+        'IncludeItemTypes': 'Movie,Series',
+        'Recursive': 'true',
+        'Fields': _browseFields,
+        'SortBy': 'PremiereDate,ProductionYear,SortName',
+        'SortOrder': 'Descending,Descending,Ascending',
+        'CollapseBoxSetItems': 'false',
+        ...jellyfinImageQueryParameters,
+      },
+    );
+    throwIfHttpError(response);
+    return _mapItems(_itemsArray(response.data));
+  }
+
+  @override
   Future<List<MediaItem>> fetchRecentlyAdded({int limit = 50}) async {
     // Matches userLibraryApi.getLatestMedia in the Jellyfin SDK.
     final response = await _http.get(

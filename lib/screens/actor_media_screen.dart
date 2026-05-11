@@ -3,7 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
-import '../services/plex_client.dart';
+import '../media/media_server_client.dart';
 import '../utils/provider_extensions.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/optimized_media_image.dart';
@@ -15,10 +15,6 @@ import '../mixins/grid_focus_node_mixin.dart';
 import '../focus/focusable_action_bar.dart';
 
 /// Screen to browse all media featuring a specific actor.
-///
-/// Plex-only today: uses `fetchAllPersonMediaAsMediaItems` which has no
-/// Jellyfin counterpart yet. Callers must guard the navigation by backend
-/// (see `_navigateToActorMedia` in media_detail_screen.dart).
 class ActorMediaScreen extends StatefulWidget {
   final String actorName;
   final String personId;
@@ -75,13 +71,10 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
     super.dispose();
   }
 
-  PlexClient get _plexClient => context.getPlexClientForServer(widget.serverId);
+  MediaServerClient get _mediaClient => context.getMediaClientForServer(widget.serverId);
 
   @override
-  Future<List<MediaItem>> fetchItems() async {
-    // Plex-only — guarded at the call site in media_detail_screen.dart.
-    return _plexClient.fetchAllPersonMediaAsMediaItems(widget.personId);
-  }
+  Future<List<MediaItem>> fetchItems() => _mediaClient.fetchPersonMedia(widget.personId);
 
   @override
   Future<void> loadItems() async {
@@ -104,7 +97,7 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
             ClipRRect(
               borderRadius: BorderRadius.circular(40),
               child: OptimizedMediaImage(
-                client: _plexClient,
+                client: _mediaClient,
                 imagePath: widget.actorThumb,
                 width: 80,
                 height: 80,

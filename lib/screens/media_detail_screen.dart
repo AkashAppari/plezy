@@ -853,10 +853,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   void _navigateToActorMedia(MediaRole actor) {
-    // Plex-only today — Jellyfin's `/Persons/{id}/Items` isn't wired yet.
-    // Cast cards still render for parity, but tapping is a no-op until the
-    // Jellyfin path lands.
-    if (_metadata.backend != MediaBackend.plex) return;
     final personId = actor.id;
     if (personId == null || _metadata.serverId == null) return;
 
