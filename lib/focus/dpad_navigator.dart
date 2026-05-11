@@ -5,19 +5,22 @@ import 'package:flutter/services.dart';
 extension KeyEventActionable on KeyEvent {
   bool get isActionable => this is KeyDownEvent || this is KeyRepeatEvent;
   bool get isPhysicalKeyboardEvent => deviceType == ui.KeyEventDeviceType.keyboard;
+  // Only true keyboard submit keys belong here. LogicalKeyboardKey.select is
+  // a TV-remote / dpad-center key (Android DPAD_CENTER, tvOS UIPressTypeSelect)
+  // — USB keyboards never emit it. The custom Flutter tvOS engine reports its
+  // synthesized Siri Remote presses with deviceType=keyboard, so classifying
+  // select-with-keyboard-deviceType as a "keyboard enter" would route center
+  // dpad through TextField submit and skip the TV virtual keyboard.
   bool get isPhysicalKeyboardEnter =>
       deviceType == ui.KeyEventDeviceType.keyboard &&
-      (logicalKey == LogicalKeyboardKey.enter ||
-          logicalKey == LogicalKeyboardKey.numpadEnter ||
-          logicalKey == LogicalKeyboardKey.select);
+      (logicalKey == LogicalKeyboardKey.enter || logicalKey == LogicalKeyboardKey.numpadEnter);
 
   bool get isTvSelectEvent {
-    if (isPhysicalKeyboardEvent) return false;
+    // Dpad-center / gamepad-A are TV-remote-only — always treat as TV select,
+    // regardless of the deviceType claim from the engine.
     if (logicalKey == LogicalKeyboardKey.select || logicalKey == LogicalKeyboardKey.gameButtonA) return true;
-    if (logicalKey == LogicalKeyboardKey.enter || logicalKey == LogicalKeyboardKey.numpadEnter) {
-      return deviceType != ui.KeyEventDeviceType.keyboard;
-    }
-    return false;
+    if (isPhysicalKeyboardEvent) return false;
+    return logicalKey == LogicalKeyboardKey.enter || logicalKey == LogicalKeyboardKey.numpadEnter;
   }
 }
 

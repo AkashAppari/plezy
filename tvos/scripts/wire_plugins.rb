@@ -78,5 +78,23 @@ plugins.each do |plugin_name, files|
   end
 end
 
+# Remove stale Runner/-level Swift refs from earlier engine workarounds.
+# Currently nothing needs to live directly under tvos/Runner/ besides
+# AppDelegate.swift (which the Xcode project tracks on its own); the
+# SiriRemoteDpadBridge.swift workaround was removed once the engine patch
+# took over dpad click handling.
+STALE_RUNNER_LOCAL_SOURCES = %w[SiriRemoteDpadBridge.swift]
+
+project.files.select { |f| STALE_RUNNER_LOCAL_SOURCES.include?(f.display_name) }.each do |f|
+  f.remove_from_project
+  puts "[rm  ] stale ref: #{f.display_name}"
+end
+project.targets.each do |t|
+  t.build_phases.each do |phase|
+    next unless phase.respond_to?(:files)
+    phase.files.delete_if { |bf| bf.file_ref.nil? }
+  end
+end
+
 project.save
 puts "Saved"

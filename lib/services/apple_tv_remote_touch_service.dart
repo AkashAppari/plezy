@@ -108,12 +108,11 @@ class AppleTvRemoteTouchService {
         if (position == null) return;
         _moveTouch(position.$1, position.$2);
       case 'ended':
-        final position = _positionFrom(arguments);
-        if (position == null) {
-          _resetTouch();
-          return;
-        }
-        _moveTouch(position.$1, position.$2);
+        // Drop the lift frame: the final position on touchesEnded is
+        // unreliable on the Siri Remote — a natural finger pivot during
+        // lift can register enough delta from the post-last-swipe anchor
+        // to fire a stray opposite-direction swipe. In-gesture 'move'
+        // events have already covered any legitimate swipe motion.
         _resetTouch();
       case 'cancelled':
         _resetTouch();

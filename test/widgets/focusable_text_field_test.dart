@@ -126,8 +126,16 @@ void main() {
     expect(find.byType(Dialog), findsOneWidget);
   });
 
-  testWidgets('tvOS keyboard-mapped select submits without opening virtual keyboard', (tester) async {
+  testWidgets('tvOS engine-synthesized select opens the virtual keyboard', (tester) async {
+    // The custom Flutter tvOS engine emits Siri Remote center-dpad presses
+    // as `LogicalKeyboardKey.select` with `deviceType=keyboard` (via the
+    // legacy `flutter/keyevent` Android DPAD_CENTER path). On Apple TV this
+    // must open the on-screen keyboard, not submit the form. Previously
+    // `isPhysicalKeyboardEnter` matched select+keyboard and routed through
+    // `_submitTextInput`, which silently triggered form submit on every
+    // dpad center press (e.g. immediate validation error on empty fields).
     TvDetectionService.debugSetAppleTVOverride(true);
+    await _setTvSurfaceSize(tester);
     final controller = TextEditingController(text: 'query');
     final fieldFocusNode = FocusNode(debugLabel: 'search_field');
     String? submitted;
@@ -151,8 +159,8 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.select);
     await tester.pumpAndSettle();
 
-    expect(submitted, 'query');
-    expect(find.byType(Dialog), findsNothing);
+    expect(submitted, isNull);
+    expect(find.byType(Dialog), findsOneWidget);
   });
 
   testWidgets('tvOS text field handles physical keyboard text editing without opening virtual keyboard', (

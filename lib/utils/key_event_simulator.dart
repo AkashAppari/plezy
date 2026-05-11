@@ -9,6 +9,14 @@ import 'package:flutter/widgets.dart';
 /// Used by companion remotes, Apple TV touch input, and gamepad services to
 /// translate external input into focus-tree key events.
 void simulateKeyPress(LogicalKeyboardKey logicalKey) {
+  // The dispatch below is deferred via addPostFrameCallback to ensure the
+  // focus tree is settled before we walk it. That post-frame callback only
+  // fires after a frame actually renders — and when Flutter is idle (no
+  // animations, no rebuilds), the engine will never schedule one on its
+  // own, so the callback hangs indefinitely. Force a frame so external
+  // input (gamepad, tvOS remote, companion remote) always advances focus
+  // immediately rather than batching until something else wakes the engine.
+  scheduleFrameIfIdle();
   SchedulerBinding.instance.addPostFrameCallback((_) {
     final focusNode = FocusManager.instance.primaryFocus;
     if (focusNode == null) return;

@@ -119,6 +119,21 @@ void main() {
       expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
     });
 
+    test('ended position past threshold opposite of the last move does not fire a reverse swipe', () async {
+      final harness = _Harness();
+
+      // User swipes left, then releases the finger. The final lift
+      // position registers past the swipe threshold from the post-swipe
+      // anchor in the *opposite* direction — natural finger pivot during
+      // a lift. The previous implementation called _moveTouch on the
+      // ended event and re-fired a stray arrowRight here.
+      await harness.send('started', x: 500, y: 500);
+      await harness.send('move', x: 380, y: 500);
+      await harness.send('ended', x: 600, y: 500);
+
+      expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+    });
+
     test('deduplicates touch tap and click fallback select events', () async {
       final harness = _Harness();
 
