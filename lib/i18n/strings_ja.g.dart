@@ -736,18 +736,32 @@ class _TranslationsProfilesJa extends TranslationsProfilesEn {
 	@override String get pinManagedByPlex => 'PINはPlexで管理されています。plex.tvで編集してください。';
 	@override String get noPinSetEditOnPlex => 'PINが設定されていません。要求するには、plex.tvでHomeユーザーを編集してください。';
 	@override String get setPin => 'PINを設定';
+	@override String get setPinTitle => 'PINを設定';
+	@override String get confirmPinTitle => 'PINを確認';
+	@override String get pinSet => 'PIN設定済み';
+	@override String get changePin => '変更';
+	@override String get removePin => '削除';
 	@override String get connectionsLabel => '接続';
 	@override String get add => '追加';
 	@override String get deleteProfileButton => 'プロファイルを削除';
 	@override String get noConnectionsHint => '接続がありません — このプロファイルを使うには1つ追加してください。';
+	@override String get noConnections => '接続がありません';
 	@override String get plexHomeAccount => 'Plex Homeアカウント';
 	@override String get connectionDefault => 'デフォルト';
+	@override String connectionAs({required Object displayName}) => '${displayName}として';
 	@override String get makeDefault => 'デフォルトに設定';
 	@override String get removeConnection => '削除';
+	@override String get profileRenamed => 'プロフィール名を変更しました。';
 	@override String borrowAddTo({required Object displayName}) => '${displayName}に追加';
 	@override String get borrowExplain => '別のプロフィールの接続を借用します。PIN保護されたプロフィールにはPINが必要です。';
 	@override String get borrowEmpty => 'まだ借りるものがありません。';
 	@override String get borrowEmptySubtitle => 'まず別のプロフィールにPlexまたはJellyfinを接続してください。';
+	@override String borrowFromProfile({required Object displayName}) => '${displayName}から';
+	@override String get borrowConnectionBorrowed => '接続を借用しました。';
+	@override String get borrowFailed => '接続を借用できませんでした。';
+	@override String get incorrectPin => 'PINが正しくありません。';
+	@override String get sourceProfileMissingParentAccount => 'ソースプロフィールに親アカウントがありません。';
+	@override String get failedToVerifyPin => 'PINを確認できませんでした。';
 	@override String get newProfile => '新しいプロファイル';
 	@override String get profileNameHint => '例：ゲスト、キッズ、ファミリールーム';
 	@override String get pinProtectionOptional => 'PIN保護（オプション）';
@@ -2256,20 +2270,34 @@ extension on TranslationsJa {
 			'profiles.pinManagedByPlex' => 'PINはPlexで管理されています。plex.tvで編集してください。',
 			'profiles.noPinSetEditOnPlex' => 'PINが設定されていません。要求するには、plex.tvでHomeユーザーを編集してください。',
 			'profiles.setPin' => 'PINを設定',
+			'profiles.setPinTitle' => 'PINを設定',
+			'profiles.confirmPinTitle' => 'PINを確認',
+			'profiles.pinSet' => 'PIN設定済み',
+			'profiles.changePin' => '変更',
+			_ => null,
+		} ?? switch (path) {
+			'profiles.removePin' => '削除',
 			'profiles.connectionsLabel' => '接続',
 			'profiles.add' => '追加',
 			'profiles.deleteProfileButton' => 'プロファイルを削除',
 			'profiles.noConnectionsHint' => '接続がありません — このプロファイルを使うには1つ追加してください。',
-			_ => null,
-		} ?? switch (path) {
+			'profiles.noConnections' => '接続がありません',
 			'profiles.plexHomeAccount' => 'Plex Homeアカウント',
 			'profiles.connectionDefault' => 'デフォルト',
+			'profiles.connectionAs' => ({required Object displayName}) => '${displayName}として',
 			'profiles.makeDefault' => 'デフォルトに設定',
 			'profiles.removeConnection' => '削除',
+			'profiles.profileRenamed' => 'プロフィール名を変更しました。',
 			'profiles.borrowAddTo' => ({required Object displayName}) => '${displayName}に追加',
 			'profiles.borrowExplain' => '別のプロフィールの接続を借用します。PIN保護されたプロフィールにはPINが必要です。',
 			'profiles.borrowEmpty' => 'まだ借りるものがありません。',
 			'profiles.borrowEmptySubtitle' => 'まず別のプロフィールにPlexまたはJellyfinを接続してください。',
+			'profiles.borrowFromProfile' => ({required Object displayName}) => '${displayName}から',
+			'profiles.borrowConnectionBorrowed' => '接続を借用しました。',
+			'profiles.borrowFailed' => '接続を借用できませんでした。',
+			'profiles.incorrectPin' => 'PINが正しくありません。',
+			'profiles.sourceProfileMissingParentAccount' => 'ソースプロフィールに親アカウントがありません。',
+			'profiles.failedToVerifyPin' => 'PINを確認できませんでした。',
 			'profiles.newProfile' => '新しいプロファイル',
 			'profiles.profileNameHint' => '例：ゲスト、キッズ、ファミリールーム',
 			'profiles.pinProtectionOptional' => 'PIN保護（オプション）',
@@ -2760,6 +2788,8 @@ extension on TranslationsJa {
 			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => '過去${count}日間に追加されたエピソード',
 			'metadataEdit.deleteAfterPlaying' => '再生後にエピソードを削除',
 			'metadataEdit.never' => 'しない',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.afterADay' => '1日後',
 			'metadataEdit.afterAWeek' => '1週間後',
 			'metadataEdit.afterAMonth' => '1ヶ月後',
@@ -2774,8 +2804,6 @@ extension on TranslationsJa {
 			'metadataEdit.metadataLanguage' => 'メタデータの言語',
 			'metadataEdit.useOriginalTitle' => '原題を使用',
 			'metadataEdit.preferredAudioLanguage' => '優先音声言語',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.preferredSubtitleLanguage' => '優先字幕言語',
 			'metadataEdit.subtitleMode' => '字幕自動選択モード',
 			'metadataEdit.manuallySelected' => '手動選択',

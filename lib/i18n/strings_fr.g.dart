@@ -736,18 +736,32 @@ class _TranslationsProfilesFr extends TranslationsProfilesEn {
 	@override String get pinManagedByPlex => 'PIN géré par Plex. Modifier sur plex.tv.';
 	@override String get noPinSetEditOnPlex => 'Aucun PIN défini. Pour en exiger un, modifiez l\'utilisateur Home sur plex.tv.';
 	@override String get setPin => 'Définir un PIN';
+	@override String get setPinTitle => 'Définir un PIN';
+	@override String get confirmPinTitle => 'Confirmer le PIN';
+	@override String get pinSet => 'PIN défini';
+	@override String get changePin => 'Modifier';
+	@override String get removePin => 'Retirer';
 	@override String get connectionsLabel => 'Connexions';
 	@override String get add => 'Ajouter';
 	@override String get deleteProfileButton => 'Supprimer le profil';
 	@override String get noConnectionsHint => 'Aucune connexion — ajoutez-en une pour utiliser ce profil.';
+	@override String get noConnections => 'Aucune connexion';
 	@override String get plexHomeAccount => 'Compte Plex Home';
 	@override String get connectionDefault => 'Par défaut';
+	@override String connectionAs({required Object displayName}) => 'en tant que ${displayName}';
 	@override String get makeDefault => 'Définir par défaut';
 	@override String get removeConnection => 'Retirer';
+	@override String get profileRenamed => 'Profil renommé.';
 	@override String borrowAddTo({required Object displayName}) => 'Ajouter à ${displayName}';
 	@override String get borrowExplain => 'Emprunter la connexion d\'un autre profil. Les profils protégés par PIN exigent un PIN.';
 	@override String get borrowEmpty => 'Rien à emprunter pour le moment.';
 	@override String get borrowEmptySubtitle => 'Connectez d\'abord Plex ou Jellyfin à un autre profil.';
+	@override String borrowFromProfile({required Object displayName}) => 'De ${displayName}';
+	@override String get borrowConnectionBorrowed => 'Connexion empruntée.';
+	@override String get borrowFailed => 'Impossible d\'emprunter la connexion.';
+	@override String get incorrectPin => 'PIN incorrect.';
+	@override String get sourceProfileMissingParentAccount => 'Le profil source n\'a pas son compte parent.';
+	@override String get failedToVerifyPin => 'Impossible de vérifier le PIN.';
 	@override String get newProfile => 'Nouveau profil';
 	@override String get profileNameHint => 'ex. Invités, Enfants, Salon familial';
 	@override String get pinProtectionOptional => 'Protection par PIN (optionnelle)';
@@ -2256,20 +2270,34 @@ extension on TranslationsFr {
 			'profiles.pinManagedByPlex' => 'PIN géré par Plex. Modifier sur plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'Aucun PIN défini. Pour en exiger un, modifiez l\'utilisateur Home sur plex.tv.',
 			'profiles.setPin' => 'Définir un PIN',
+			'profiles.setPinTitle' => 'Définir un PIN',
+			'profiles.confirmPinTitle' => 'Confirmer le PIN',
+			'profiles.pinSet' => 'PIN défini',
+			'profiles.changePin' => 'Modifier',
+			_ => null,
+		} ?? switch (path) {
+			'profiles.removePin' => 'Retirer',
 			'profiles.connectionsLabel' => 'Connexions',
 			'profiles.add' => 'Ajouter',
 			'profiles.deleteProfileButton' => 'Supprimer le profil',
 			'profiles.noConnectionsHint' => 'Aucune connexion — ajoutez-en une pour utiliser ce profil.',
-			_ => null,
-		} ?? switch (path) {
+			'profiles.noConnections' => 'Aucune connexion',
 			'profiles.plexHomeAccount' => 'Compte Plex Home',
 			'profiles.connectionDefault' => 'Par défaut',
+			'profiles.connectionAs' => ({required Object displayName}) => 'en tant que ${displayName}',
 			'profiles.makeDefault' => 'Définir par défaut',
 			'profiles.removeConnection' => 'Retirer',
+			'profiles.profileRenamed' => 'Profil renommé.',
 			'profiles.borrowAddTo' => ({required Object displayName}) => 'Ajouter à ${displayName}',
 			'profiles.borrowExplain' => 'Emprunter la connexion d\'un autre profil. Les profils protégés par PIN exigent un PIN.',
 			'profiles.borrowEmpty' => 'Rien à emprunter pour le moment.',
 			'profiles.borrowEmptySubtitle' => 'Connectez d\'abord Plex ou Jellyfin à un autre profil.',
+			'profiles.borrowFromProfile' => ({required Object displayName}) => 'De ${displayName}',
+			'profiles.borrowConnectionBorrowed' => 'Connexion empruntée.',
+			'profiles.borrowFailed' => 'Impossible d\'emprunter la connexion.',
+			'profiles.incorrectPin' => 'PIN incorrect.',
+			'profiles.sourceProfileMissingParentAccount' => 'Le profil source n\'a pas son compte parent.',
+			'profiles.failedToVerifyPin' => 'Impossible de vérifier le PIN.',
 			'profiles.newProfile' => 'Nouveau profil',
 			'profiles.profileNameHint' => 'ex. Invités, Enfants, Salon familial',
 			'profiles.pinProtectionOptional' => 'Protection par PIN (optionnelle)',
@@ -2760,6 +2788,8 @@ extension on TranslationsFr {
 			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => 'Épisodes ajoutés ces ${count} derniers jours',
 			'metadataEdit.deleteAfterPlaying' => 'Supprimer les épisodes après lecture',
 			'metadataEdit.never' => 'Jamais',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.afterADay' => 'Après un jour',
 			'metadataEdit.afterAWeek' => 'Après une semaine',
 			'metadataEdit.afterAMonth' => 'Après un mois',
@@ -2774,8 +2804,6 @@ extension on TranslationsFr {
 			'metadataEdit.metadataLanguage' => 'Langue des métadonnées',
 			'metadataEdit.useOriginalTitle' => 'Utiliser le titre original',
 			'metadataEdit.preferredAudioLanguage' => 'Langue audio préférée',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.preferredSubtitleLanguage' => 'Langue de sous-titres préférée',
 			'metadataEdit.subtitleMode' => 'Sélection automatique des sous-titres',
 			'metadataEdit.manuallySelected' => 'Sélectionné manuellement',

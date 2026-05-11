@@ -638,7 +638,7 @@ class _PinKey {
       case _PinKeyType.digit:
         return digit.toString();
       case _PinKeyType.backspace:
-        return 'Del';
+        return t.common.delete;
       case _PinKeyType.close:
         return t.common.cancel;
     }
@@ -671,13 +671,13 @@ Future<String?> showPinEntryDialog(BuildContext context, String userName, {Strin
 /// in one place so multiple call sites don't drift.
 Future<String?> captureAndConfirmPin(
   BuildContext context, {
-  String setLabel = 'Set PIN',
-  String confirmLabel = 'Confirm PIN',
+  String? setLabel,
+  String? confirmLabel,
   void Function(BuildContext)? onMismatch,
 }) async {
-  final pin = await showPinEntryDialog(context, setLabel);
+  final pin = await showPinEntryDialog(context, setLabel ?? t.profiles.setPinTitle);
   if (pin == null || !context.mounted) return null;
-  final confirm = await showPinEntryDialog(context, confirmLabel);
+  final confirm = await showPinEntryDialog(context, confirmLabel ?? t.profiles.confirmPinTitle);
   if (confirm == null || !context.mounted) return null;
   if (pin == confirm) return pin;
   onMismatch?.call(context);

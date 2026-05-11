@@ -241,7 +241,7 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
       if (pin == null) return false;
       if (!verifyProfilePin(cand.source, pin)) {
         if (!mounted) return false;
-        showErrorSnackBar(context, 'Incorrect PIN.');
+        showErrorSnackBar(context, t.profiles.incorrectPin);
         return false;
       }
       return true;
@@ -254,7 +254,7 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
     if (parentId == null || homeUuid == null) return false;
     final parent = await context.read<ConnectionRegistry>().getPlexAccount(parentId);
     if (parent == null) {
-      if (mounted) showErrorSnackBar(context, 'Source profile is missing its parent account.');
+      if (mounted) showErrorSnackBar(context, t.profiles.sourceProfileMissingParentAccount);
       return false;
     }
     final auth = await PlexAuthService.create();
@@ -272,7 +272,7 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
       );
       if (!result.succeeded) {
         if (result.status == PlexHomeSwitchStatus.failed && mounted) {
-          showErrorSnackBar(context, 'Failed to verify PIN.');
+          showErrorSnackBar(context, t.profiles.failedToVerifyPin);
         }
         return false;
       }
@@ -300,7 +300,7 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
       );
       if (!result.succeeded) {
         if (result.status == PlexHomeSwitchStatus.failed && mounted) {
-          showErrorSnackBar(context, 'Failed to borrow connection.');
+          showErrorSnackBar(context, t.profiles.borrowFailed);
         }
         return;
       }
@@ -319,12 +319,12 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
           Navigator.of(context).pop(true);
           return;
         }
-        showSuccessSnackBar(context, 'Connection borrowed.');
+        showSuccessSnackBar(context, t.profiles.borrowConnectionBorrowed);
       }
     } catch (e, st) {
       appLogger.w('Borrow failed', error: e, stackTrace: st);
       if (mounted) {
-        showErrorSnackBar(context, 'Failed to borrow connection.');
+        showErrorSnackBar(context, t.profiles.borrowFailed);
       }
     } finally {
       auth.dispose();
@@ -349,7 +349,7 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
         Navigator.of(context).pop(true);
         return;
       }
-      showSuccessSnackBar(context, 'Connection borrowed.');
+      showSuccessSnackBar(context, t.profiles.borrowConnectionBorrowed);
     }
   }
 }
@@ -393,7 +393,7 @@ class _BorrowTile extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        'From ${candidate.source.displayName}',
+                        t.profiles.borrowFromProfile(displayName: candidate.source.displayName),
                         style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                       ),
                       if (candidate.source.isPinProtected) ...[
@@ -405,7 +405,10 @@ class _BorrowTile extends StatelessWidget {
                   if (candidate.connection is PlexAccountConnection)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
-                      child: Text('as ${candidate.source.displayName}', style: theme.textTheme.bodySmall),
+                      child: Text(
+                        t.profiles.connectionAs(displayName: candidate.source.displayName),
+                        style: theme.textTheme.bodySmall,
+                      ),
                     ),
                 ],
               ),

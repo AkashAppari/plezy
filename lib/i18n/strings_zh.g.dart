@@ -736,18 +736,32 @@ class _TranslationsProfilesZh extends TranslationsProfilesEn {
 	@override String get pinManagedByPlex => 'PIN 由 Plex 管理。在 plex.tv 上编辑。';
 	@override String get noPinSetEditOnPlex => '未设置 PIN。如需要求 PIN，请在 plex.tv 上编辑 Home 用户。';
 	@override String get setPin => '设置 PIN';
+	@override String get setPinTitle => '设置 PIN';
+	@override String get confirmPinTitle => '确认 PIN';
+	@override String get pinSet => '已设置 PIN';
+	@override String get changePin => '更改';
+	@override String get removePin => '移除';
 	@override String get connectionsLabel => '连接';
 	@override String get add => '添加';
 	@override String get deleteProfileButton => '删除配置文件';
 	@override String get noConnectionsHint => '没有连接 — 添加一个以使用此配置文件。';
+	@override String get noConnections => '没有连接';
 	@override String get plexHomeAccount => 'Plex Home 账户';
 	@override String get connectionDefault => '默认';
+	@override String connectionAs({required Object displayName}) => '以 ${displayName} 身份';
 	@override String get makeDefault => '设为默认';
 	@override String get removeConnection => '移除';
+	@override String get profileRenamed => '个人资料已重命名。';
 	@override String borrowAddTo({required Object displayName}) => '添加到 ${displayName}';
 	@override String get borrowExplain => '借用另一个个人资料的连接。受 PIN 保护的个人资料需要 PIN。';
 	@override String get borrowEmpty => '暂无可借用的内容。';
 	@override String get borrowEmptySubtitle => '请先将 Plex 或 Jellyfin 连接到另一个个人资料。';
+	@override String borrowFromProfile({required Object displayName}) => '来自 ${displayName}';
+	@override String get borrowConnectionBorrowed => '已借用连接。';
+	@override String get borrowFailed => '无法借用连接。';
+	@override String get incorrectPin => 'PIN 不正确。';
+	@override String get sourceProfileMissingParentAccount => '源个人资料缺少其父账号。';
+	@override String get failedToVerifyPin => '无法验证 PIN。';
 	@override String get newProfile => '新建配置文件';
 	@override String get profileNameHint => '例如：访客、儿童、家庭房';
 	@override String get pinProtectionOptional => 'PIN 保护（可选）';
@@ -2256,20 +2270,34 @@ extension on TranslationsZh {
 			'profiles.pinManagedByPlex' => 'PIN 由 Plex 管理。在 plex.tv 上编辑。',
 			'profiles.noPinSetEditOnPlex' => '未设置 PIN。如需要求 PIN，请在 plex.tv 上编辑 Home 用户。',
 			'profiles.setPin' => '设置 PIN',
+			'profiles.setPinTitle' => '设置 PIN',
+			'profiles.confirmPinTitle' => '确认 PIN',
+			'profiles.pinSet' => '已设置 PIN',
+			'profiles.changePin' => '更改',
+			_ => null,
+		} ?? switch (path) {
+			'profiles.removePin' => '移除',
 			'profiles.connectionsLabel' => '连接',
 			'profiles.add' => '添加',
 			'profiles.deleteProfileButton' => '删除配置文件',
 			'profiles.noConnectionsHint' => '没有连接 — 添加一个以使用此配置文件。',
-			_ => null,
-		} ?? switch (path) {
+			'profiles.noConnections' => '没有连接',
 			'profiles.plexHomeAccount' => 'Plex Home 账户',
 			'profiles.connectionDefault' => '默认',
+			'profiles.connectionAs' => ({required Object displayName}) => '以 ${displayName} 身份',
 			'profiles.makeDefault' => '设为默认',
 			'profiles.removeConnection' => '移除',
+			'profiles.profileRenamed' => '个人资料已重命名。',
 			'profiles.borrowAddTo' => ({required Object displayName}) => '添加到 ${displayName}',
 			'profiles.borrowExplain' => '借用另一个个人资料的连接。受 PIN 保护的个人资料需要 PIN。',
 			'profiles.borrowEmpty' => '暂无可借用的内容。',
 			'profiles.borrowEmptySubtitle' => '请先将 Plex 或 Jellyfin 连接到另一个个人资料。',
+			'profiles.borrowFromProfile' => ({required Object displayName}) => '来自 ${displayName}',
+			'profiles.borrowConnectionBorrowed' => '已借用连接。',
+			'profiles.borrowFailed' => '无法借用连接。',
+			'profiles.incorrectPin' => 'PIN 不正确。',
+			'profiles.sourceProfileMissingParentAccount' => '源个人资料缺少其父账号。',
+			'profiles.failedToVerifyPin' => '无法验证 PIN。',
 			'profiles.newProfile' => '新建配置文件',
 			'profiles.profileNameHint' => '例如：访客、儿童、家庭房',
 			'profiles.pinProtectionOptional' => 'PIN 保护（可选）',
@@ -2760,6 +2788,8 @@ extension on TranslationsZh {
 			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => '过去 ${count} 天内添加的剧集',
 			'metadataEdit.deleteAfterPlaying' => '播放后删除剧集',
 			'metadataEdit.never' => '从不',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.afterADay' => '一天后',
 			'metadataEdit.afterAWeek' => '一周后',
 			'metadataEdit.afterAMonth' => '一个月后',
@@ -2774,8 +2804,6 @@ extension on TranslationsZh {
 			'metadataEdit.metadataLanguage' => '元数据语言',
 			'metadataEdit.useOriginalTitle' => '使用原始标题',
 			'metadataEdit.preferredAudioLanguage' => '首选音频语言',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.preferredSubtitleLanguage' => '首选字幕语言',
 			'metadataEdit.subtitleMode' => '自动选择字幕模式',
 			'metadataEdit.manuallySelected' => '手动选择',

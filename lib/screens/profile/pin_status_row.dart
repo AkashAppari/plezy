@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../focus/focusable_button.dart';
+import '../../i18n/strings.g.dart';
 import '../../widgets/app_icon.dart';
 
 /// "PIN set" pill + Change/Remove text buttons. Shown on profile creation
@@ -26,7 +27,7 @@ class PinStatusRow extends StatelessWidget {
               AppIcon(Symbols.lock_rounded, fill: 1, color: theme.colorScheme.onPrimaryContainer, size: 18),
               const SizedBox(width: 6),
               Text(
-                'PIN set',
+                t.profiles.pinSet,
                 style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onPrimaryContainer),
               ),
             ],
@@ -35,11 +36,11 @@ class PinStatusRow extends StatelessWidget {
         const SizedBox(width: 12),
         FocusableButton(
           onPressed: onChange,
-          child: TextButton(onPressed: onChange, child: const Text('Change')),
+          child: TextButton(onPressed: onChange, child: Text(t.profiles.changePin)),
         ),
         FocusableButton(
           onPressed: onRemove,
-          child: TextButton(onPressed: onRemove, child: const Text('Remove')),
+          child: TextButton(onPressed: onRemove, child: Text(t.profiles.removePin)),
         ),
       ],
     );

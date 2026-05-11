@@ -736,18 +736,32 @@ class _TranslationsProfilesNb extends TranslationsProfilesEn {
 	@override String get pinManagedByPlex => 'PIN administreres av Plex. Rediger på plex.tv.';
 	@override String get noPinSetEditOnPlex => 'Ingen PIN er satt. For å kreve én, rediger Home-brukeren på plex.tv.';
 	@override String get setPin => 'Sett PIN';
+	@override String get setPinTitle => 'Sett PIN';
+	@override String get confirmPinTitle => 'Bekreft PIN';
+	@override String get pinSet => 'PIN satt';
+	@override String get changePin => 'Endre';
+	@override String get removePin => 'Fjern';
 	@override String get connectionsLabel => 'Tilkoblinger';
 	@override String get add => 'Legg til';
 	@override String get deleteProfileButton => 'Slett profil';
 	@override String get noConnectionsHint => 'Ingen tilkoblinger — legg til én for å bruke denne profilen.';
+	@override String get noConnections => 'Ingen tilkoblinger';
 	@override String get plexHomeAccount => 'Plex Home-konto';
 	@override String get connectionDefault => 'Standard';
+	@override String connectionAs({required Object displayName}) => 'som ${displayName}';
 	@override String get makeDefault => 'Gjør til standard';
 	@override String get removeConnection => 'Fjern';
+	@override String get profileRenamed => 'Profilen er omdøpt.';
 	@override String borrowAddTo({required Object displayName}) => 'Legg til ${displayName}';
 	@override String get borrowExplain => 'Lån en annen profils tilkobling. PIN-beskyttede profiler krever PIN.';
 	@override String get borrowEmpty => 'Ingenting å låne enda.';
 	@override String get borrowEmptySubtitle => 'Koble Plex eller Jellyfin til en annen profil først.';
+	@override String borrowFromProfile({required Object displayName}) => 'Fra ${displayName}';
+	@override String get borrowConnectionBorrowed => 'Tilkobling lånt.';
+	@override String get borrowFailed => 'Kunne ikke låne tilkoblingen.';
+	@override String get incorrectPin => 'Feil PIN.';
+	@override String get sourceProfileMissingParentAccount => 'Kildeprofilen mangler foreldrekontoen sin.';
+	@override String get failedToVerifyPin => 'Kunne ikke bekrefte PIN.';
 	@override String get newProfile => 'Ny profil';
 	@override String get profileNameHint => 'f.eks. Gjester, Barn, Familierom';
 	@override String get pinProtectionOptional => 'PIN-beskyttelse (valgfri)';
@@ -2256,20 +2270,34 @@ extension on TranslationsNb {
 			'profiles.pinManagedByPlex' => 'PIN administreres av Plex. Rediger på plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'Ingen PIN er satt. For å kreve én, rediger Home-brukeren på plex.tv.',
 			'profiles.setPin' => 'Sett PIN',
+			'profiles.setPinTitle' => 'Sett PIN',
+			'profiles.confirmPinTitle' => 'Bekreft PIN',
+			'profiles.pinSet' => 'PIN satt',
+			'profiles.changePin' => 'Endre',
+			_ => null,
+		} ?? switch (path) {
+			'profiles.removePin' => 'Fjern',
 			'profiles.connectionsLabel' => 'Tilkoblinger',
 			'profiles.add' => 'Legg til',
 			'profiles.deleteProfileButton' => 'Slett profil',
 			'profiles.noConnectionsHint' => 'Ingen tilkoblinger — legg til én for å bruke denne profilen.',
-			_ => null,
-		} ?? switch (path) {
+			'profiles.noConnections' => 'Ingen tilkoblinger',
 			'profiles.plexHomeAccount' => 'Plex Home-konto',
 			'profiles.connectionDefault' => 'Standard',
+			'profiles.connectionAs' => ({required Object displayName}) => 'som ${displayName}',
 			'profiles.makeDefault' => 'Gjør til standard',
 			'profiles.removeConnection' => 'Fjern',
+			'profiles.profileRenamed' => 'Profilen er omdøpt.',
 			'profiles.borrowAddTo' => ({required Object displayName}) => 'Legg til ${displayName}',
 			'profiles.borrowExplain' => 'Lån en annen profils tilkobling. PIN-beskyttede profiler krever PIN.',
 			'profiles.borrowEmpty' => 'Ingenting å låne enda.',
 			'profiles.borrowEmptySubtitle' => 'Koble Plex eller Jellyfin til en annen profil først.',
+			'profiles.borrowFromProfile' => ({required Object displayName}) => 'Fra ${displayName}',
+			'profiles.borrowConnectionBorrowed' => 'Tilkobling lånt.',
+			'profiles.borrowFailed' => 'Kunne ikke låne tilkoblingen.',
+			'profiles.incorrectPin' => 'Feil PIN.',
+			'profiles.sourceProfileMissingParentAccount' => 'Kildeprofilen mangler foreldrekontoen sin.',
+			'profiles.failedToVerifyPin' => 'Kunne ikke bekrefte PIN.',
 			'profiles.newProfile' => 'Ny profil',
 			'profiles.profileNameHint' => 'f.eks. Gjester, Barn, Familierom',
 			'profiles.pinProtectionOptional' => 'PIN-beskyttelse (valgfri)',
@@ -2760,6 +2788,8 @@ extension on TranslationsNb {
 			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => 'Episoder lagt til de siste ${count} dagene',
 			'metadataEdit.deleteAfterPlaying' => 'Slett episoder etter avspilling',
 			'metadataEdit.never' => 'Aldri',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.afterADay' => 'Etter en dag',
 			'metadataEdit.afterAWeek' => 'Etter en uke',
 			'metadataEdit.afterAMonth' => 'Etter en måned',
@@ -2774,8 +2804,6 @@ extension on TranslationsNb {
 			'metadataEdit.metadataLanguage' => 'Metadataspråk',
 			'metadataEdit.useOriginalTitle' => 'Bruk originaltittel',
 			'metadataEdit.preferredAudioLanguage' => 'Foretrukket lydspråk',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.preferredSubtitleLanguage' => 'Foretrukket undertekstspråk',
 			'metadataEdit.subtitleMode' => 'Automatisk valg av undertekstmodus',
 			'metadataEdit.manuallySelected' => 'Manuelt valgt',

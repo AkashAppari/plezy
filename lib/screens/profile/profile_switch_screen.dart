@@ -532,7 +532,7 @@ class _ConnectionChips extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     if (chips.isEmpty) {
-      return Text('No connections', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error));
+      return Text(t.profiles.noConnections, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error));
     }
     return Wrap(
       spacing: 6,

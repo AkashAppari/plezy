@@ -736,18 +736,32 @@ class _TranslationsProfilesKo extends TranslationsProfilesEn {
 	@override String get pinManagedByPlex => 'PIN은 Plex에서 관리됩니다. plex.tv에서 편집하세요.';
 	@override String get noPinSetEditOnPlex => '설정된 PIN이 없습니다. 요구하려면 plex.tv에서 Home 사용자를 편집하세요.';
 	@override String get setPin => 'PIN 설정';
+	@override String get setPinTitle => 'PIN 설정';
+	@override String get confirmPinTitle => 'PIN 확인';
+	@override String get pinSet => 'PIN 설정됨';
+	@override String get changePin => '변경';
+	@override String get removePin => '제거';
 	@override String get connectionsLabel => '연결';
 	@override String get add => '추가';
 	@override String get deleteProfileButton => '프로필 삭제';
 	@override String get noConnectionsHint => '연결이 없습니다 — 이 프로필을 사용하려면 하나 추가하세요.';
+	@override String get noConnections => '연결 없음';
 	@override String get plexHomeAccount => 'Plex Home 계정';
 	@override String get connectionDefault => '기본값';
+	@override String connectionAs({required Object displayName}) => '${displayName}(으)로';
 	@override String get makeDefault => '기본값으로 설정';
 	@override String get removeConnection => '제거';
+	@override String get profileRenamed => '프로필 이름이 변경되었습니다.';
 	@override String borrowAddTo({required Object displayName}) => '${displayName}에 추가';
 	@override String get borrowExplain => '다른 프로필의 연결을 빌립니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.';
 	@override String get borrowEmpty => '아직 빌릴 것이 없습니다.';
 	@override String get borrowEmptySubtitle => '먼저 다른 프로필에 Plex 또는 Jellyfin을 연결하세요.';
+	@override String borrowFromProfile({required Object displayName}) => '${displayName}에서';
+	@override String get borrowConnectionBorrowed => '연결을 빌렸습니다.';
+	@override String get borrowFailed => '연결을 빌리지 못했습니다.';
+	@override String get incorrectPin => 'PIN이 올바르지 않습니다.';
+	@override String get sourceProfileMissingParentAccount => '원본 프로필에 상위 계정이 없습니다.';
+	@override String get failedToVerifyPin => 'PIN을 확인하지 못했습니다.';
 	@override String get newProfile => '새 프로필';
 	@override String get profileNameHint => '예: 손님, 어린이, 가족실';
 	@override String get pinProtectionOptional => 'PIN 보호 (선택 사항)';
@@ -2256,20 +2270,34 @@ extension on TranslationsKo {
 			'profiles.pinManagedByPlex' => 'PIN은 Plex에서 관리됩니다. plex.tv에서 편집하세요.',
 			'profiles.noPinSetEditOnPlex' => '설정된 PIN이 없습니다. 요구하려면 plex.tv에서 Home 사용자를 편집하세요.',
 			'profiles.setPin' => 'PIN 설정',
+			'profiles.setPinTitle' => 'PIN 설정',
+			'profiles.confirmPinTitle' => 'PIN 확인',
+			'profiles.pinSet' => 'PIN 설정됨',
+			'profiles.changePin' => '변경',
+			_ => null,
+		} ?? switch (path) {
+			'profiles.removePin' => '제거',
 			'profiles.connectionsLabel' => '연결',
 			'profiles.add' => '추가',
 			'profiles.deleteProfileButton' => '프로필 삭제',
 			'profiles.noConnectionsHint' => '연결이 없습니다 — 이 프로필을 사용하려면 하나 추가하세요.',
-			_ => null,
-		} ?? switch (path) {
+			'profiles.noConnections' => '연결 없음',
 			'profiles.plexHomeAccount' => 'Plex Home 계정',
 			'profiles.connectionDefault' => '기본값',
+			'profiles.connectionAs' => ({required Object displayName}) => '${displayName}(으)로',
 			'profiles.makeDefault' => '기본값으로 설정',
 			'profiles.removeConnection' => '제거',
+			'profiles.profileRenamed' => '프로필 이름이 변경되었습니다.',
 			'profiles.borrowAddTo' => ({required Object displayName}) => '${displayName}에 추가',
 			'profiles.borrowExplain' => '다른 프로필의 연결을 빌립니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.',
 			'profiles.borrowEmpty' => '아직 빌릴 것이 없습니다.',
 			'profiles.borrowEmptySubtitle' => '먼저 다른 프로필에 Plex 또는 Jellyfin을 연결하세요.',
+			'profiles.borrowFromProfile' => ({required Object displayName}) => '${displayName}에서',
+			'profiles.borrowConnectionBorrowed' => '연결을 빌렸습니다.',
+			'profiles.borrowFailed' => '연결을 빌리지 못했습니다.',
+			'profiles.incorrectPin' => 'PIN이 올바르지 않습니다.',
+			'profiles.sourceProfileMissingParentAccount' => '원본 프로필에 상위 계정이 없습니다.',
+			'profiles.failedToVerifyPin' => 'PIN을 확인하지 못했습니다.',
 			'profiles.newProfile' => '새 프로필',
 			'profiles.profileNameHint' => '예: 손님, 어린이, 가족실',
 			'profiles.pinProtectionOptional' => 'PIN 보호 (선택 사항)',
@@ -2760,6 +2788,8 @@ extension on TranslationsKo {
 			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => '최근 ${count}일 내 추가된 에피소드',
 			'metadataEdit.deleteAfterPlaying' => '재생 후 에피소드 삭제',
 			'metadataEdit.never' => '안 함',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.afterADay' => '하루 후',
 			'metadataEdit.afterAWeek' => '일주일 후',
 			'metadataEdit.afterAMonth' => '한 달 후',
@@ -2774,8 +2804,6 @@ extension on TranslationsKo {
 			'metadataEdit.metadataLanguage' => '메타데이터 언어',
 			'metadataEdit.useOriginalTitle' => '원제 사용',
 			'metadataEdit.preferredAudioLanguage' => '선호 오디오 언어',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.preferredSubtitleLanguage' => '선호 자막 언어',
 			'metadataEdit.subtitleMode' => '자막 자동 선택 모드',
 			'metadataEdit.manuallySelected' => '수동 선택',

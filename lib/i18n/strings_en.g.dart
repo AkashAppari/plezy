@@ -1700,6 +1700,21 @@ class TranslationsProfilesEn {
 	/// en: 'Set PIN'
 	String get setPin => 'Set PIN';
 
+	/// en: 'Set PIN'
+	String get setPinTitle => 'Set PIN';
+
+	/// en: 'Confirm PIN'
+	String get confirmPinTitle => 'Confirm PIN';
+
+	/// en: 'PIN set'
+	String get pinSet => 'PIN set';
+
+	/// en: 'Change'
+	String get changePin => 'Change';
+
+	/// en: 'Remove'
+	String get removePin => 'Remove';
+
 	/// en: 'Connections'
 	String get connectionsLabel => 'Connections';
 
@@ -1712,17 +1727,26 @@ class TranslationsProfilesEn {
 	/// en: 'No connections — add one to use this profile.'
 	String get noConnectionsHint => 'No connections — add one to use this profile.';
 
+	/// en: 'No connections'
+	String get noConnections => 'No connections';
+
 	/// en: 'Plex Home account'
 	String get plexHomeAccount => 'Plex Home account';
 
 	/// en: 'Default'
 	String get connectionDefault => 'Default';
 
+	/// en: 'as ${displayName}'
+	String connectionAs({required Object displayName}) => 'as ${displayName}';
+
 	/// en: 'Make default'
 	String get makeDefault => 'Make default';
 
 	/// en: 'Remove'
 	String get removeConnection => 'Remove';
+
+	/// en: 'Profile renamed.'
+	String get profileRenamed => 'Profile renamed.';
 
 	/// en: 'Add to ${displayName}'
 	String borrowAddTo({required Object displayName}) => 'Add to ${displayName}';
@@ -1735,6 +1759,24 @@ class TranslationsProfilesEn {
 
 	/// en: 'Connect Plex or Jellyfin to another profile first.'
 	String get borrowEmptySubtitle => 'Connect Plex or Jellyfin to another profile first.';
+
+	/// en: 'From ${displayName}'
+	String borrowFromProfile({required Object displayName}) => 'From ${displayName}';
+
+	/// en: 'Connection borrowed.'
+	String get borrowConnectionBorrowed => 'Connection borrowed.';
+
+	/// en: 'Failed to borrow connection.'
+	String get borrowFailed => 'Failed to borrow connection.';
+
+	/// en: 'Incorrect PIN.'
+	String get incorrectPin => 'Incorrect PIN.';
+
+	/// en: 'Source profile is missing its parent account.'
+	String get sourceProfileMissingParentAccount => 'Source profile is missing its parent account.';
+
+	/// en: 'Failed to verify PIN.'
+	String get failedToVerifyPin => 'Failed to verify PIN.';
 
 	/// en: 'New profile'
 	String get newProfile => 'New profile';
@@ -4520,20 +4562,34 @@ extension on Translations {
 			'profiles.pinManagedByPlex' => 'PIN managed by Plex. Edit on plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'No PIN set. To require one, edit the home user on plex.tv.',
 			'profiles.setPin' => 'Set PIN',
+			'profiles.setPinTitle' => 'Set PIN',
+			'profiles.confirmPinTitle' => 'Confirm PIN',
+			'profiles.pinSet' => 'PIN set',
+			'profiles.changePin' => 'Change',
+			_ => null,
+		} ?? switch (path) {
+			'profiles.removePin' => 'Remove',
 			'profiles.connectionsLabel' => 'Connections',
 			'profiles.add' => 'Add',
 			'profiles.deleteProfileButton' => 'Delete profile',
 			'profiles.noConnectionsHint' => 'No connections — add one to use this profile.',
-			_ => null,
-		} ?? switch (path) {
+			'profiles.noConnections' => 'No connections',
 			'profiles.plexHomeAccount' => 'Plex Home account',
 			'profiles.connectionDefault' => 'Default',
+			'profiles.connectionAs' => ({required Object displayName}) => 'as ${displayName}',
 			'profiles.makeDefault' => 'Make default',
 			'profiles.removeConnection' => 'Remove',
+			'profiles.profileRenamed' => 'Profile renamed.',
 			'profiles.borrowAddTo' => ({required Object displayName}) => 'Add to ${displayName}',
 			'profiles.borrowExplain' => 'Borrow another profile\'s connection. PIN-protected profiles require a PIN.',
 			'profiles.borrowEmpty' => 'Nothing to borrow yet.',
 			'profiles.borrowEmptySubtitle' => 'Connect Plex or Jellyfin to another profile first.',
+			'profiles.borrowFromProfile' => ({required Object displayName}) => 'From ${displayName}',
+			'profiles.borrowConnectionBorrowed' => 'Connection borrowed.',
+			'profiles.borrowFailed' => 'Failed to borrow connection.',
+			'profiles.incorrectPin' => 'Incorrect PIN.',
+			'profiles.sourceProfileMissingParentAccount' => 'Source profile is missing its parent account.',
+			'profiles.failedToVerifyPin' => 'Failed to verify PIN.',
 			'profiles.newProfile' => 'New profile',
 			'profiles.profileNameHint' => 'e.g. Guests, Kids, Family Room',
 			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
@@ -5024,6 +5080,8 @@ extension on Translations {
 			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => 'Episodes added in the past ${count} days',
 			'metadataEdit.deleteAfterPlaying' => 'Delete Episodes After Playing',
 			'metadataEdit.never' => 'Never',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.afterADay' => 'After a day',
 			'metadataEdit.afterAWeek' => 'After a week',
 			'metadataEdit.afterAMonth' => 'After a month',
@@ -5038,8 +5096,6 @@ extension on Translations {
 			'metadataEdit.metadataLanguage' => 'Metadata Language',
 			'metadataEdit.useOriginalTitle' => 'Use Original Title',
 			'metadataEdit.preferredAudioLanguage' => 'Preferred Audio Language',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.preferredSubtitleLanguage' => 'Preferred Subtitle Language',
 			'metadataEdit.subtitleMode' => 'Auto-Select Subtitle Mode',
 			'metadataEdit.manuallySelected' => 'Manually selected',

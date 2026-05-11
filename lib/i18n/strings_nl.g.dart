@@ -736,18 +736,32 @@ class _TranslationsProfilesNl extends TranslationsProfilesEn {
 	@override String get pinManagedByPlex => 'PIN wordt beheerd door Plex. Bewerk op plex.tv.';
 	@override String get noPinSetEditOnPlex => 'Geen PIN ingesteld. Bewerk de Home-gebruiker op plex.tv om er één te vereisen.';
 	@override String get setPin => 'PIN instellen';
+	@override String get setPinTitle => 'PIN instellen';
+	@override String get confirmPinTitle => 'PIN bevestigen';
+	@override String get pinSet => 'PIN ingesteld';
+	@override String get changePin => 'Wijzigen';
+	@override String get removePin => 'Verwijderen';
 	@override String get connectionsLabel => 'Verbindingen';
 	@override String get add => 'Toevoegen';
 	@override String get deleteProfileButton => 'Profiel verwijderen';
 	@override String get noConnectionsHint => 'Geen verbindingen — voeg er één toe om dit profiel te gebruiken.';
+	@override String get noConnections => 'Geen verbindingen';
 	@override String get plexHomeAccount => 'Plex Home-account';
 	@override String get connectionDefault => 'Standaard';
+	@override String connectionAs({required Object displayName}) => 'als ${displayName}';
 	@override String get makeDefault => 'Als standaard instellen';
 	@override String get removeConnection => 'Verwijderen';
+	@override String get profileRenamed => 'Profiel hernoemd.';
 	@override String borrowAddTo({required Object displayName}) => 'Toevoegen aan ${displayName}';
 	@override String get borrowExplain => 'Leen de verbinding van een ander profiel. PIN-beveiligde profielen vereisen een PIN.';
 	@override String get borrowEmpty => 'Nog niets te lenen.';
 	@override String get borrowEmptySubtitle => 'Verbind Plex of Jellyfin eerst met een ander profiel.';
+	@override String borrowFromProfile({required Object displayName}) => 'Van ${displayName}';
+	@override String get borrowConnectionBorrowed => 'Verbinding geleend.';
+	@override String get borrowFailed => 'Kan verbinding niet lenen.';
+	@override String get incorrectPin => 'Onjuiste PIN.';
+	@override String get sourceProfileMissingParentAccount => 'Het bronprofiel mist het bovenliggende account.';
+	@override String get failedToVerifyPin => 'Kan PIN niet verifiëren.';
 	@override String get newProfile => 'Nieuw profiel';
 	@override String get profileNameHint => 'bijv. Gasten, Kinderen, Woonkamer';
 	@override String get pinProtectionOptional => 'PIN-beveiliging (optioneel)';
@@ -2256,20 +2270,34 @@ extension on TranslationsNl {
 			'profiles.pinManagedByPlex' => 'PIN wordt beheerd door Plex. Bewerk op plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'Geen PIN ingesteld. Bewerk de Home-gebruiker op plex.tv om er één te vereisen.',
 			'profiles.setPin' => 'PIN instellen',
+			'profiles.setPinTitle' => 'PIN instellen',
+			'profiles.confirmPinTitle' => 'PIN bevestigen',
+			'profiles.pinSet' => 'PIN ingesteld',
+			'profiles.changePin' => 'Wijzigen',
+			_ => null,
+		} ?? switch (path) {
+			'profiles.removePin' => 'Verwijderen',
 			'profiles.connectionsLabel' => 'Verbindingen',
 			'profiles.add' => 'Toevoegen',
 			'profiles.deleteProfileButton' => 'Profiel verwijderen',
 			'profiles.noConnectionsHint' => 'Geen verbindingen — voeg er één toe om dit profiel te gebruiken.',
-			_ => null,
-		} ?? switch (path) {
+			'profiles.noConnections' => 'Geen verbindingen',
 			'profiles.plexHomeAccount' => 'Plex Home-account',
 			'profiles.connectionDefault' => 'Standaard',
+			'profiles.connectionAs' => ({required Object displayName}) => 'als ${displayName}',
 			'profiles.makeDefault' => 'Als standaard instellen',
 			'profiles.removeConnection' => 'Verwijderen',
+			'profiles.profileRenamed' => 'Profiel hernoemd.',
 			'profiles.borrowAddTo' => ({required Object displayName}) => 'Toevoegen aan ${displayName}',
 			'profiles.borrowExplain' => 'Leen de verbinding van een ander profiel. PIN-beveiligde profielen vereisen een PIN.',
 			'profiles.borrowEmpty' => 'Nog niets te lenen.',
 			'profiles.borrowEmptySubtitle' => 'Verbind Plex of Jellyfin eerst met een ander profiel.',
+			'profiles.borrowFromProfile' => ({required Object displayName}) => 'Van ${displayName}',
+			'profiles.borrowConnectionBorrowed' => 'Verbinding geleend.',
+			'profiles.borrowFailed' => 'Kan verbinding niet lenen.',
+			'profiles.incorrectPin' => 'Onjuiste PIN.',
+			'profiles.sourceProfileMissingParentAccount' => 'Het bronprofiel mist het bovenliggende account.',
+			'profiles.failedToVerifyPin' => 'Kan PIN niet verifiëren.',
 			'profiles.newProfile' => 'Nieuw profiel',
 			'profiles.profileNameHint' => 'bijv. Gasten, Kinderen, Woonkamer',
 			'profiles.pinProtectionOptional' => 'PIN-beveiliging (optioneel)',
@@ -2760,6 +2788,8 @@ extension on TranslationsNl {
 			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => 'Afleveringen toegevoegd in de afgelopen ${count} dagen',
 			'metadataEdit.deleteAfterPlaying' => 'Afleveringen verwijderen na afspelen',
 			'metadataEdit.never' => 'Nooit',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.afterADay' => 'Na een dag',
 			'metadataEdit.afterAWeek' => 'Na een week',
 			'metadataEdit.afterAMonth' => 'Na een maand',
@@ -2774,8 +2804,6 @@ extension on TranslationsNl {
 			'metadataEdit.metadataLanguage' => 'Metadatataal',
 			'metadataEdit.useOriginalTitle' => 'Oorspronkelijke titel gebruiken',
 			'metadataEdit.preferredAudioLanguage' => 'Voorkeurstaal audio',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.preferredSubtitleLanguage' => 'Voorkeurstaal ondertiteling',
 			'metadataEdit.subtitleMode' => 'Automatische ondertitelselectie',
 			'metadataEdit.manuallySelected' => 'Handmatig geselecteerd',
