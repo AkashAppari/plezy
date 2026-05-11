@@ -1,148 +1,83 @@
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../models/plex/plex_home_user.dart';
+
+part 'profile.freezed.dart';
 
 /// Top-level profile — the user-facing identity in the app.
 ///
 /// Two kinds:
-/// - [ProfileKind.local]: a Plezy-only profile created by the user. May have
+/// - [LocalProfile]: a Plezy-only profile created by the user. May have
 ///   an optional 4-digit PIN.
-/// - [ProfileKind.plexHome]: auto-surfaced from a connected Plex account's
+/// - [PlexHomeProfile]: auto-surfaced from a connected Plex account's
 ///   Home users. PIN protection is handled server-side by Plex via the
 ///   `/home/users/{uuid}/switch` flow — `pinHash` is unused.
 ///
 /// A profile owns 1+ connections via the `profile_connections` join table.
 /// The join row carries the per-profile user-level token used to talk to
 /// each connection.
-class Profile {
-  final String id;
-  final ProfileKind kind;
-  final String displayName;
-  final String? avatarThumbUrl;
+@freezed
+sealed class Profile with _$Profile {
+  const Profile._();
 
-  /// Hashed PIN if set — only meaningful for [ProfileKind.local]. The raw
-  /// PIN is never persisted; see [computePinHash].
-  final String? pinHash;
+  const factory Profile.local({
+    required String id,
+    required String displayName,
+    String? avatarThumbUrl,
 
-  /// For [ProfileKind.plexHome]: the parent Plex account's connection id.
-  /// `null` for local profiles.
-  final String? parentConnectionId;
+    /// Hashed PIN if set. The raw PIN is never persisted; see [computePinHash].
+    String? pinHash,
+    @Default(0) int sortOrder,
+    required DateTime createdAt,
+    DateTime? lastUsedAt,
+  }) = LocalProfile;
 
-  /// For [ProfileKind.plexHome]: the Plex Home user UUID. Used by the
-  /// active-profile binder to call `/home/users/{uuid}/switch`. `null` for
-  /// local profiles.
-  final String? plexHomeUserUuid;
+  const factory Profile.plexHome({
+    required String id,
+    required String displayName,
+    String? avatarThumbUrl,
 
-  /// Plex Home flags — only meaningful for [ProfileKind.plexHome].
-  final bool plexRestricted;
-  final bool plexAdmin;
+    /// The parent Plex account's connection id.
+    String? parentConnectionId,
 
-  /// Plex's `protected` flag — true when the home user has a PIN that must
-  /// be entered before `/home/users/{uuid}/switch` will succeed.
-  final bool plexProtected;
+    /// The Plex Home user UUID. Used by the active-profile binder to call
+    /// `/home/users/{uuid}/switch`.
+    String? plexHomeUserUuid,
+    @Default(false) bool plexRestricted,
+    @Default(false) bool plexAdmin,
 
-  final int sortOrder;
-  final DateTime createdAt;
-  final DateTime? lastUsedAt;
-
-  Profile({
-    required this.id,
-    required this.kind,
-    required this.displayName,
-    this.avatarThumbUrl,
-    this.pinHash,
-    this.parentConnectionId,
-    this.plexHomeUserUuid,
-    this.plexRestricted = false,
-    this.plexAdmin = false,
-    this.plexProtected = false,
-    this.sortOrder = 0,
-    required this.createdAt,
-    this.lastUsedAt,
-  });
+    /// Plex's `protected` flag — true when the home user has a PIN that must
+    /// be entered before `/home/users/{uuid}/switch` will succeed.
+    @Default(false) bool plexProtected,
+    @Default(0) int sortOrder,
+    required DateTime createdAt,
+    DateTime? lastUsedAt,
+  }) = PlexHomeProfile;
 
   /// Construct an in-memory virtual `Profile` for a Plex Home user. These
   /// are never persisted — Plex owns the Home user list, so the picker
   /// reads them live from [PlexHomeService] and merges them with the local
-  /// rows from [ProfileRegistry].
+  /// rows from `ProfileRegistry`.
   factory Profile.virtualPlexHome({
     required String connectionId,
     required PlexHomeUser homeUser,
     DateTime? lastUsedAt,
-  }) {
-    return Profile(
-      id: plexHomeProfileId(accountConnectionId: connectionId, homeUserUuid: homeUser.uuid),
-      kind: ProfileKind.plexHome,
-      displayName: homeUser.displayName,
-      avatarThumbUrl: homeUser.thumb.isNotEmpty ? homeUser.thumb : null,
-      parentConnectionId: connectionId,
-      plexHomeUserUuid: homeUser.uuid,
-      plexRestricted: homeUser.restricted,
-      plexAdmin: homeUser.admin,
-      plexProtected: homeUser.protected,
-      sortOrder: homeUser.admin ? 0 : 1,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-      lastUsedAt: lastUsedAt,
-    );
-  }
-
-  bool get isLocal => kind == ProfileKind.local;
-  bool get isPlexHome => kind == ProfileKind.plexHome;
-
-  /// True when entering this profile requires user-supplied PIN.
-  ///
-  /// Locals: gated by their own [pinHash].
-  /// Plex Home: gated by Plex's own protected flag (`plexProtected`).
-  bool get isPinProtected => isLocal ? (pinHash != null && pinHash!.isNotEmpty) : plexProtected;
-
-  Profile copyWith({
-    String? id,
-    ProfileKind? kind,
-    String? displayName,
-    String? avatarThumbUrl,
-    bool clearAvatar = false,
-    String? pinHash,
-    bool clearPin = false,
-    String? parentConnectionId,
-    String? plexHomeUserUuid,
-    bool? plexRestricted,
-    bool? plexAdmin,
-    bool? plexProtected,
-    int? sortOrder,
-    DateTime? createdAt,
-    DateTime? lastUsedAt,
-    bool clearLastUsedAt = false,
-  }) {
-    return Profile(
-      id: id ?? this.id,
-      kind: kind ?? this.kind,
-      displayName: displayName ?? this.displayName,
-      avatarThumbUrl: clearAvatar ? null : (avatarThumbUrl ?? this.avatarThumbUrl),
-      pinHash: clearPin ? null : (pinHash ?? this.pinHash),
-      parentConnectionId: parentConnectionId ?? this.parentConnectionId,
-      plexHomeUserUuid: plexHomeUserUuid ?? this.plexHomeUserUuid,
-      plexRestricted: plexRestricted ?? this.plexRestricted,
-      plexAdmin: plexAdmin ?? this.plexAdmin,
-      plexProtected: plexProtected ?? this.plexProtected,
-      sortOrder: sortOrder ?? this.sortOrder,
-      createdAt: createdAt ?? this.createdAt,
-      lastUsedAt: clearLastUsedAt ? null : (lastUsedAt ?? this.lastUsedAt),
-    );
-  }
-
-  Map<String, Object?> toConfigJson() {
-    return switch (kind) {
-      ProfileKind.local => {'pinHash': pinHash},
-      ProfileKind.plexHome => {
-        'parentConnectionId': parentConnectionId,
-        'restricted': plexRestricted,
-        'admin': plexAdmin,
-        'protected': plexProtected,
-      },
-    };
-  }
+  }) => Profile.plexHome(
+    id: plexHomeProfileId(accountConnectionId: connectionId, homeUserUuid: homeUser.uuid),
+    displayName: homeUser.displayName,
+    avatarThumbUrl: homeUser.thumb.isNotEmpty ? homeUser.thumb : null,
+    parentConnectionId: connectionId,
+    plexHomeUserUuid: homeUser.uuid,
+    plexRestricted: homeUser.restricted,
+    plexAdmin: homeUser.admin,
+    plexProtected: homeUser.protected,
+    sortOrder: homeUser.admin ? 0 : 1,
+    createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+    lastUsedAt: lastUsedAt,
+  );
 
   factory Profile.fromRow({
     required String id,
@@ -156,9 +91,8 @@ class Profile {
   }) {
     final parsedKind = ProfileKind.fromId(kind);
     return switch (parsedKind) {
-      ProfileKind.local => Profile(
+      ProfileKind.local => Profile.local(
         id: id,
-        kind: parsedKind,
         displayName: displayName,
         avatarThumbUrl: avatarThumbUrl,
         pinHash: json['pinHash'] as String?,
@@ -166,9 +100,8 @@ class Profile {
         createdAt: createdAt,
         lastUsedAt: lastUsedAt,
       ),
-      ProfileKind.plexHome => Profile(
+      ProfileKind.plexHome => Profile.plexHome(
         id: id,
-        kind: parsedKind,
         displayName: displayName,
         avatarThumbUrl: avatarThumbUrl,
         parentConnectionId: json['parentConnectionId'] as String?,
@@ -181,6 +114,66 @@ class Profile {
       ),
     };
   }
+
+  bool get isLocal => this is LocalProfile;
+  bool get isPlexHome => this is PlexHomeProfile;
+
+  ProfileKind get kind => switch (this) {
+    LocalProfile() => ProfileKind.local,
+    PlexHomeProfile() => ProfileKind.plexHome,
+  };
+
+  /// True when entering this profile requires user-supplied PIN.
+  ///
+  /// Locals: gated by their own [pinHash].
+  /// Plex Home: gated by Plex's own protected flag (`plexProtected`).
+  bool get isPinProtected => switch (this) {
+    LocalProfile(:final pinHash) => pinHash != null && pinHash.isNotEmpty,
+    PlexHomeProfile(:final plexProtected) => plexProtected,
+  };
+
+  /// Hashed PIN, only set for [LocalProfile]. Returns null for plexHome.
+  String? get pinHash => switch (this) {
+    LocalProfile(:final pinHash) => pinHash,
+    PlexHomeProfile() => null,
+  };
+
+  /// Parent Plex account connection id, only set for [PlexHomeProfile].
+  String? get parentConnectionId => switch (this) {
+    LocalProfile() => null,
+    PlexHomeProfile(:final parentConnectionId) => parentConnectionId,
+  };
+
+  /// Plex Home user UUID, only set for [PlexHomeProfile].
+  String? get plexHomeUserUuid => switch (this) {
+    LocalProfile() => null,
+    PlexHomeProfile(:final plexHomeUserUuid) => plexHomeUserUuid,
+  };
+
+  bool get plexRestricted => switch (this) {
+    LocalProfile() => false,
+    PlexHomeProfile(:final plexRestricted) => plexRestricted,
+  };
+
+  bool get plexAdmin => switch (this) {
+    LocalProfile() => false,
+    PlexHomeProfile(:final plexAdmin) => plexAdmin,
+  };
+
+  bool get plexProtected => switch (this) {
+    LocalProfile() => false,
+    PlexHomeProfile(:final plexProtected) => plexProtected,
+  };
+
+  Map<String, Object?> toConfigJson() => switch (this) {
+    LocalProfile(:final pinHash) => {'pinHash': pinHash},
+    PlexHomeProfile(:final parentConnectionId, :final plexRestricted, :final plexAdmin, :final plexProtected) => {
+      'parentConnectionId': parentConnectionId,
+      'restricted': plexRestricted,
+      'admin': plexAdmin,
+      'protected': plexProtected,
+    },
+  };
 }
 
 enum ProfileKind {

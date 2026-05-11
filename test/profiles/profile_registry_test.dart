@@ -23,9 +23,8 @@ void main() {
     });
 
     test('upsert + get round-trips a local profile', () async {
-      final profile = Profile(
+      final profile = Profile.local(
         id: 'local-1',
-        kind: ProfileKind.local,
         displayName: 'Owner',
         pinHash: computePinHash('1234'),
         createdAt: DateTime(2026, 1, 1),
@@ -40,9 +39,8 @@ void main() {
     });
 
     test('upsert + get round-trips a plex_home profile', () async {
-      final profile = Profile(
+      final profile = Profile.plexHome(
         id: 'plex-home-acct-uuid',
-        kind: ProfileKind.plexHome,
         displayName: 'Admin',
         avatarThumbUrl: 'https://plex.tv/users/abc/avatar?',
         parentConnectionId: 'acct',
@@ -62,28 +60,20 @@ void main() {
     });
 
     test('list orders by sortOrder then createdAt', () async {
-      await registry.upsert(
-        Profile(id: 'a', kind: ProfileKind.local, displayName: 'A', sortOrder: 1, createdAt: DateTime(2026, 1, 1)),
-      );
-      await registry.upsert(
-        Profile(id: 'b', kind: ProfileKind.local, displayName: 'B', sortOrder: 0, createdAt: DateTime(2026, 1, 2)),
-      );
+      await registry.upsert(Profile.local(id: 'a', displayName: 'A', sortOrder: 1, createdAt: DateTime(2026, 1, 1)));
+      await registry.upsert(Profile.local(id: 'b', displayName: 'B', sortOrder: 0, createdAt: DateTime(2026, 1, 2)));
       final list = await registry.list();
       expect(list.map((p) => p.id).toList(), ['b', 'a']);
     });
 
     test('remove deletes a profile', () async {
-      await registry.upsert(
-        Profile(id: 'p', kind: ProfileKind.local, displayName: 'P', createdAt: DateTime(2026, 1, 1)),
-      );
+      await registry.upsert(Profile.local(id: 'p', displayName: 'P', createdAt: DateTime(2026, 1, 1)));
       await registry.remove('p');
       expect(await registry.get('p'), isNull);
     });
 
     test('markUsed updates lastUsedAt', () async {
-      await registry.upsert(
-        Profile(id: 'p', kind: ProfileKind.local, displayName: 'P', createdAt: DateTime(2026, 1, 1)),
-      );
+      await registry.upsert(Profile.local(id: 'p', displayName: 'P', createdAt: DateTime(2026, 1, 1)));
       final ts = DateTime(2026, 1, 5, 12, 0);
       await registry.markUsed('p', ts);
       final fetched = await registry.get('p');
@@ -91,12 +81,8 @@ void main() {
     });
 
     test('upsert is idempotent (replaces existing row)', () async {
-      await registry.upsert(
-        Profile(id: 'p', kind: ProfileKind.local, displayName: 'Original', createdAt: DateTime(2026, 1, 1)),
-      );
-      await registry.upsert(
-        Profile(id: 'p', kind: ProfileKind.local, displayName: 'Renamed', createdAt: DateTime(2026, 1, 1)),
-      );
+      await registry.upsert(Profile.local(id: 'p', displayName: 'Original', createdAt: DateTime(2026, 1, 1)));
+      await registry.upsert(Profile.local(id: 'p', displayName: 'Renamed', createdAt: DateTime(2026, 1, 1)));
       final fetched = await registry.get('p');
       expect(fetched!.displayName, 'Renamed');
     });
@@ -115,9 +101,7 @@ void main() {
           emitsThrough(isEmpty),
         ]),
       );
-      await registry.upsert(
-        Profile(id: 'p', kind: ProfileKind.local, displayName: 'P', createdAt: DateTime(2026, 1, 1)),
-      );
+      await registry.upsert(Profile.local(id: 'p', displayName: 'P', createdAt: DateTime(2026, 1, 1)));
       await registry.remove('p');
       await assertion;
     });

@@ -28,12 +28,7 @@ void main() {
 
   testWidgets('D-pad can focus profile actions and open the manage menu', (tester) async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
-    final profile = Profile(
-      id: 'local-owner',
-      kind: ProfileKind.local,
-      displayName: 'Owner',
-      createdAt: DateTime(2026, 1, 1),
-    );
+    final profile = Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
     final profiles = _FakeProfileRegistry(db, [profile]);
     final connections = _FakeConnectionRegistry(db);
     final profileConnections = _FakeProfileConnectionRegistry(db);

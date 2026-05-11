@@ -64,9 +64,8 @@ class _AddLocalProfileScreenState extends State<AddLocalProfileScreen> with Cont
     setState(() => _saving = true);
 
     final registry = context.read<ProfileRegistry>();
-    final profile = Profile(
+    final profile = Profile.local(
       id: 'local-${const Uuid().v4()}',
-      kind: ProfileKind.local,
       displayName: name,
       pinHash: _pinHash,
       sortOrder: DateTime.now().millisecondsSinceEpoch,

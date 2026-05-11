@@ -438,18 +438,18 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       selectedTrack = _state.tracks.audio.firstWhereOrNull((t) => t.id == id);
     }
 
+    if (selectedTrack == null) return;
     _state = _state.copyWith(track: _state.track.copyWith(audio: selectedTrack));
     trackController.add(_state.track);
   }
 
   void updateSelectedSubtitleTrack(dynamic trackId) {
     final id = trackId?.toString();
-    SubtitleTrack? selectedTrack;
-
-    selectedTrack = (id == null || id == 'no')
+    final selectedTrack = (id == null || id == 'no')
         ? SubtitleTrack.off
         : _state.tracks.subtitle.firstWhereOrNull((t) => t.id == id);
 
+    if (selectedTrack == null) return;
     _state = _state.copyWith(track: _state.track.copyWith(subtitle: selectedTrack));
     trackController.add(_state.track);
   }

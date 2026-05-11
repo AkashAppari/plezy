@@ -544,7 +544,7 @@ class WatchTogetherProvider with ChangeNotifier {
         if (message.peerId != null && message.position != null) {
           final index = _participants.indexWhere((p) => p.peerId == message.peerId);
           if (index >= 0) {
-            _participants[index] = _participants[index].copyWith(lastKnownPosition: message.position);
+            _participants[index] = _participants[index].copyWith(lastKnownPosition: message.position!);
             // Don't notify for position updates - too frequent
           }
         }
@@ -606,7 +606,7 @@ class WatchTogetherProvider with ChangeNotifier {
 
     if (message.controlMode != null) {
       appLogger.d('WatchTogether: Received session config, controlMode: ${message.controlMode}');
-      _session = _session!.copyWith(controlMode: message.controlMode);
+      _session = _session!.copyWith(controlMode: message.controlMode!);
       _syncManager?.updateSession(_session!); // Update sync manager if it exists
       notifyListeners();
     }

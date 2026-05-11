@@ -459,7 +459,11 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
       final contexts = List<RemoteAuthContext>.unmodifiable(_authContexts);
       final result = await _peerService!.createSessionForContexts(_deviceName, _platform, contexts);
 
-      _session = RemoteSession(role: RemoteSessionRole.host, status: RemoteSessionStatus.connected);
+      _session = RemoteSession(
+        role: RemoteSessionRole.host,
+        status: RemoteSessionStatus.connected,
+        createdAt: DateTime.now(),
+      );
       safeNotifyListeners();
 
       // Start LAN discovery broadcasting
@@ -480,6 +484,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
         role: RemoteSessionRole.host,
         status: RemoteSessionStatus.error,
         errorMessage: e.toString(),
+        createdAt: DateTime.now(),
       );
       safeNotifyListeners();
     }
@@ -538,7 +543,11 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     _peerService = CompanionRemotePeerService();
     _setupPeerServiceListeners();
 
-    _session = RemoteSession(role: RemoteSessionRole.remote, status: RemoteSessionStatus.connecting);
+    _session = RemoteSession(
+      role: RemoteSessionRole.remote,
+      status: RemoteSessionStatus.connecting,
+      createdAt: DateTime.now(),
+    );
     safeNotifyListeners();
 
     try {
@@ -582,7 +591,11 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     _peerService = CompanionRemotePeerService();
     _setupPeerServiceListeners();
 
-    _session = RemoteSession(role: RemoteSessionRole.remote, status: RemoteSessionStatus.connecting);
+    _session = RemoteSession(
+      role: RemoteSessionRole.remote,
+      status: RemoteSessionStatus.connecting,
+      createdAt: DateTime.now(),
+    );
     safeNotifyListeners();
 
     try {
@@ -629,13 +642,13 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     _deviceDisconnectedSubscription = _peerService!.onDeviceDisconnected.listen((_) {
       appLogger.d('CompanionRemote: Device disconnected (intentional: $_intentionalDisconnect)');
       if (_intentionalDisconnect) {
-        _session = _session?.copyWith(status: RemoteSessionStatus.disconnected, clearConnectedDevice: true);
+        _session = _session?.copyWith(status: RemoteSessionStatus.disconnected, connectedDevice: null);
         safeNotifyListeners();
       } else if (isHost) {
         _session = _session?.copyWith(
           status: RemoteSessionStatus.reconnecting,
-          clearConnectedDevice: true,
-          clearErrorMessage: true,
+          connectedDevice: null,
+          errorMessage: null,
         );
         safeNotifyListeners();
         appLogger.d('CompanionRemote: Host waiting for client to reconnect');
@@ -668,7 +681,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
 
       appLogger.d('CompanionRemote: Device info - name: $name, platform: $platform, role: $role');
 
-      final device = RemoteDevice(id: id, name: name, platform: platform);
+      final device = RemoteDevice(id: id, name: name, platform: platform, connectedAt: DateTime.now());
 
       _session = _session?.copyWith(connectedDevice: device);
       safeNotifyListeners();
@@ -756,7 +769,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
       _lastAuthContextId = _peerService!.selectedAuthContextId ?? authContextId;
       _lastHostClientId = _peerService!.selectedHostClientId ?? _lastHostClientId;
 
-      _session = _session?.copyWith(status: RemoteSessionStatus.connected, clearErrorMessage: true);
+      _session = _session?.copyWith(status: RemoteSessionStatus.connected, errorMessage: null);
       _reconnectAttempts = 0;
       safeNotifyListeners();
       appLogger.d('CompanionRemote: Reconnected successfully');
@@ -777,7 +790,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   void cancelReconnect() {
     _reconnectTimer?.cancel();
     _reconnectAttempts = 0;
-    _session = _session?.copyWith(status: RemoteSessionStatus.disconnected, clearConnectedDevice: true);
+    _session = _session?.copyWith(status: RemoteSessionStatus.disconnected, connectedDevice: null);
     safeNotifyListeners();
   }
 

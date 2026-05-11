@@ -6,12 +6,7 @@ import 'package:plezy/profiles/profiles_view.dart';
 void main() {
   group('visibleProfileConnections', () {
     test('keeps all local profile connection rows', () {
-      final profile = Profile(
-        id: 'local-1',
-        kind: ProfileKind.local,
-        displayName: 'Owner',
-        createdAt: DateTime(2026, 1, 1),
-      );
+      final profile = Profile.local(id: 'local-1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
       const rows = [
         ProfileConnection(profileId: 'local-1', connectionId: 'plex-1', userIdentifier: 'u1'),
         ProfileConnection(profileId: 'local-1', connectionId: 'jellyfin-1', userIdentifier: 'u2'),
@@ -21,9 +16,8 @@ void main() {
     });
 
     test('filters Plex Home parent token cache row', () {
-      final profile = Profile(
+      final profile = Profile.plexHome(
         id: 'plex-home-plex-1-user-1',
-        kind: ProfileKind.plexHome,
         displayName: 'Kid',
         parentConnectionId: 'plex-1',
         createdAt: DateTime(2026, 1, 1),

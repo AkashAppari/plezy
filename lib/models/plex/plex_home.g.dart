@@ -27,5 +27,5 @@ Map<String, dynamic> _$PlexHomeToJson(PlexHome instance) => <String, dynamic>{
   'guestUserUUID': instance.guestUserUUID,
   'guestEnabled': instance.guestEnabled,
   'subscription': instance.subscription,
-  'users': instance.users,
+  'users': instance.users.map((e) => e.toJson()).toList(),
 };

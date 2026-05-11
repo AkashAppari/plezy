@@ -80,12 +80,7 @@ void main() {
         await db.close();
       });
 
-      final profile = Profile(
-        id: 'local-owner',
-        kind: ProfileKind.local,
-        displayName: 'Owner',
-        createdAt: DateTime(2026, 1, 1),
-      );
+      final profile = Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
       final plex = PlexAccountConnection(
         id: 'plex-a',
         accountToken: 'plex-token',
@@ -217,12 +212,7 @@ void main() {
         await db.close();
       });
 
-      final profile = Profile(
-        id: 'local-owner',
-        kind: ProfileKind.local,
-        displayName: 'Owner',
-        createdAt: DateTime(2026, 1, 1),
-      );
+      final profile = Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
       final accountA = PlexAccountConnection(
         id: 'plex-a',
         accountToken: 'wrong-owner-token',

@@ -1,3 +1,9 @@
+// ignore_for_file: invalid_annotation_target
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'shader_preset.freezed.dart';
+part 'shader_preset.g.dart';
+
 enum ShaderPresetType { none, nvscaler, artcnn, anime4k, custom }
 
 /// ArtCNN real-time model sizes.
@@ -51,76 +57,34 @@ enum Anime4KMode {
   modeCA,
 }
 
-class Anime4KConfig {
-  final Anime4KQuality quality;
-  final Anime4KMode mode;
+@freezed
+sealed class Anime4KConfig with _$Anime4KConfig {
+  const factory Anime4KConfig({
+    @JsonKey(unknownEnumValue: Anime4KQuality.fast) required Anime4KQuality quality,
+    @JsonKey(unknownEnumValue: Anime4KMode.modeA) required Anime4KMode mode,
+  }) = _Anime4KConfig;
 
-  const Anime4KConfig({required this.quality, required this.mode});
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is Anime4KConfig && other.quality == quality && other.mode == mode;
-  }
-
-  @override
-  int get hashCode => quality.hashCode ^ mode.hashCode;
-
-  Map<String, dynamic> toJson() => {'quality': quality.name, 'mode': mode.name};
-
-  factory Anime4KConfig.fromJson(Map<String, dynamic> json) {
-    return Anime4KConfig(
-      quality: Anime4KQuality.values.asNameMap()[json['quality']] ?? Anime4KQuality.fast,
-      mode: Anime4KMode.values.asNameMap()[json['mode']] ?? Anime4KMode.modeA,
-    );
-  }
+  factory Anime4KConfig.fromJson(Map<String, dynamic> json) => _$Anime4KConfigFromJson(json);
 }
 
-class ArtCNNConfig {
-  final ArtCNNModel model;
-  final ArtCNNVariant variant;
+@freezed
+sealed class ArtCNNConfig with _$ArtCNNConfig {
+  const factory ArtCNNConfig({
+    @JsonKey(unknownEnumValue: ArtCNNModel.c4f16) required ArtCNNModel model,
+    @JsonKey(unknownEnumValue: ArtCNNVariant.neutral) required ArtCNNVariant variant,
+  }) = _ArtCNNConfig;
 
-  const ArtCNNConfig({required this.model, required this.variant});
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is ArtCNNConfig && other.model == model && other.variant == variant;
-  }
-
-  @override
-  int get hashCode => model.hashCode ^ variant.hashCode;
-
-  Map<String, dynamic> toJson() => {'model': model.name, 'variant': variant.name};
-
-  factory ArtCNNConfig.fromJson(Map<String, dynamic> json) {
-    return ArtCNNConfig(
-      model: ArtCNNModel.values.asNameMap()[json['model']] ?? ArtCNNModel.c4f16,
-      variant: ArtCNNVariant.values.asNameMap()[json['variant']] ?? ArtCNNVariant.neutral,
-    );
-  }
+  factory ArtCNNConfig.fromJson(Map<String, dynamic> json) => _$ArtCNNConfigFromJson(json);
 }
 
-class NVScalerConfig {
-  /// Whether to automatically skip NVScaler on HDR content
-  final bool autoHdrSkip;
+@freezed
+sealed class NVScalerConfig with _$NVScalerConfig {
+  const factory NVScalerConfig({
+    /// Whether to automatically skip NVScaler on HDR content
+    @Default(true) bool autoHdrSkip,
+  }) = _NVScalerConfig;
 
-  const NVScalerConfig({this.autoHdrSkip = true});
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is NVScalerConfig && other.autoHdrSkip == autoHdrSkip;
-  }
-
-  @override
-  int get hashCode => autoHdrSkip.hashCode;
-
-  Map<String, dynamic> toJson() => {'autoHdrSkip': autoHdrSkip};
-
-  factory NVScalerConfig.fromJson(Map<String, dynamic> json) {
-    return NVScalerConfig(autoHdrSkip: json['autoHdrSkip'] as bool? ?? true);
-  }
+  factory NVScalerConfig.fromJson(Map<String, dynamic> json) => _$NVScalerConfigFromJson(json);
 }
 
 class ShaderPreset {

@@ -75,12 +75,7 @@ void main() {
   });
 
   test('initial profile selection is skipped when a profile was auto-selected', () {
-    final profile = Profile(
-      id: 'local-owner',
-      kind: ProfileKind.local,
-      displayName: 'Owner',
-      createdAt: DateTime(2026, 1, 1),
-    );
+    final profile = Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
 
     expect(
       shouldPromptForInitialProfileSelection(
@@ -94,12 +89,7 @@ void main() {
   });
 
   test('initial profile selection is required when the launch setting is enabled', () {
-    final profile = Profile(
-      id: 'local-owner',
-      kind: ProfileKind.local,
-      displayName: 'Owner',
-      createdAt: DateTime(2026, 1, 1),
-    );
+    final profile = Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
 
     expect(
       shouldPromptForInitialProfileSelection(

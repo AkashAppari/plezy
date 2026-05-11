@@ -1,4 +1,9 @@
+// ignore_for_file: invalid_annotation_target
+import 'package:freezed_annotation/freezed_annotation.dart';
+
 import '../utils/formatters.dart';
+
+part 'download_models.freezed.dart';
 
 enum DownloadStatus {
   queued,
@@ -10,30 +15,21 @@ enum DownloadStatus {
   partial, // Some episodes downloaded, but not all (for shows/seasons)
 }
 
-class DownloadProgress {
-  final String globalKey;
-  final DownloadStatus status;
-  final int progress; // 0-100
-  final int downloadedBytes;
-  final int totalBytes;
-  final double speed; // bytes per second
-  final String? errorMessage;
-  final String? currentFile; // What's being downloaded (video, subtitles, artwork)
+@freezed
+sealed class DownloadProgress with _$DownloadProgress {
+  const DownloadProgress._();
 
-  // Thumbnail path (populated after artwork download completes)
-  final String? thumbPath;
-
-  const DownloadProgress({
-    required this.globalKey,
-    required this.status,
-    this.progress = 0,
-    this.downloadedBytes = 0,
-    this.totalBytes = 0,
-    this.speed = 0,
-    this.errorMessage,
-    this.currentFile,
-    this.thumbPath,
-  });
+  const factory DownloadProgress({
+    required String globalKey,
+    required DownloadStatus status,
+    @Default(0) int progress,
+    @Default(0) int downloadedBytes,
+    @Default(0) int totalBytes,
+    @Default(0.0) double speed,
+    String? errorMessage,
+    String? currentFile,
+    String? thumbPath,
+  }) = _DownloadProgress;
 
   double get progressPercent => progress / 100.0;
 
@@ -42,73 +38,23 @@ class DownloadProgress {
   String get totalFormatted => ByteFormatter.formatBytes(totalBytes);
 
   bool get hasArtworkPaths => thumbPath != null;
-
-  DownloadProgress copyWith({
-    String? globalKey,
-    DownloadStatus? status,
-    int? progress,
-    int? downloadedBytes,
-    int? totalBytes,
-    double? speed,
-    String? errorMessage,
-    String? currentFile,
-    String? thumbPath,
-  }) {
-    return DownloadProgress(
-      globalKey: globalKey ?? this.globalKey,
-      status: status ?? this.status,
-      progress: progress ?? this.progress,
-      downloadedBytes: downloadedBytes ?? this.downloadedBytes,
-      totalBytes: totalBytes ?? this.totalBytes,
-      speed: speed ?? this.speed,
-      errorMessage: errorMessage ?? this.errorMessage,
-      currentFile: currentFile ?? this.currentFile,
-      thumbPath: thumbPath ?? this.thumbPath,
-    );
-  }
 }
 
-class DeletionProgress {
-  final String globalKey;
-  final String itemTitle;
-  final int currentItem;
-  final int totalItems;
-  final String? currentOperation;
+@freezed
+sealed class DeletionProgress with _$DeletionProgress {
+  const DeletionProgress._();
 
-  const DeletionProgress({
-    required this.globalKey,
-    required this.itemTitle,
-    required this.currentItem,
-    required this.totalItems,
-    this.currentOperation,
-  });
+  const factory DeletionProgress({
+    required String globalKey,
+    required String itemTitle,
+    required int currentItem,
+    required int totalItems,
+    String? currentOperation,
+  }) = _DeletionProgress;
 
   double get progressPercent => totalItems > 0 ? (currentItem / totalItems) : 0.0;
 
   int get progressPercentInt => (progressPercent * 100).round();
 
   bool get isComplete => currentItem >= totalItems;
-
-  DeletionProgress copyWith({
-    String? globalKey,
-    String? itemTitle,
-    int? currentItem,
-    int? totalItems,
-    String? currentOperation,
-  }) {
-    return DeletionProgress(
-      globalKey: globalKey ?? this.globalKey,
-      itemTitle: itemTitle ?? this.itemTitle,
-      currentItem: currentItem ?? this.currentItem,
-      totalItems: totalItems ?? this.totalItems,
-      currentOperation: currentOperation ?? this.currentOperation,
-    );
-  }
-
-  @override
-  String toString() {
-    return 'DeletionProgress(globalKey: $globalKey, itemTitle: $itemTitle, '
-        'currentItem: $currentItem, totalItems: $totalItems, '
-        'progressPercent: $progressPercentInt%)';
-  }
 }

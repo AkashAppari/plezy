@@ -87,14 +87,18 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
       onMismatch: (ctx) => showErrorSnackBar(ctx, t.profiles.pinsDontMatch),
     );
     if (pin == null || !mounted) return;
-    final updated = _profile.copyWith(pinHash: computePinHash(pin));
+    final profile = _profile;
+    if (profile is! LocalProfile) return;
+    final updated = profile.copyWith(pinHash: computePinHash(pin));
     await context.read<ProfileRegistry>().upsert(updated);
     if (!mounted) return;
     setState(() => _profile = updated);
   }
 
   Future<void> _clearPin() async {
-    final updated = _profile.copyWith(clearPin: true);
+    final profile = _profile;
+    if (profile is! LocalProfile) return;
+    final updated = profile.copyWith(pinHash: null);
     await context.read<ProfileRegistry>().upsert(updated);
     if (!mounted) return;
     setState(() => _profile = updated);

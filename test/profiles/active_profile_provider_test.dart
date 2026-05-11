@@ -97,9 +97,7 @@ void main() {
       // Fresh state: no auto-fallback to the first profile so the UI can
       // force the picker. The binder skips its rebind while active is null,
       // which is what avoids the surprise PIN prompt at first sign-in.
-      await registry.upsert(
-        Profile(id: 'p1', kind: ProfileKind.local, displayName: 'Owner', createdAt: DateTime(2026, 1, 1)),
-      );
+      await registry.upsert(Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)));
       await provider.initialize();
       expect(provider.profiles, hasLength(1));
       expect(provider.activeId, isNull);
@@ -127,9 +125,7 @@ void main() {
     test('initialize clears storage when stored id is stale', () async {
       // A previously-active profile that was deleted should not keep
       // storage-scoped settings under the removed profile id.
-      await registry.upsert(
-        Profile(id: 'p1', kind: ProfileKind.local, displayName: 'Owner', createdAt: DateTime(2026, 1, 1)),
-      );
+      await registry.upsert(Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)));
       await storage.setActiveProfileId('ghost-id-no-longer-exists');
       await provider.initialize();
       await Future<void>.delayed(Duration.zero);
@@ -138,24 +134,16 @@ void main() {
     });
 
     test('initialize resolves the stored active profile id', () async {
-      await registry.upsert(
-        Profile(id: 'p1', kind: ProfileKind.local, displayName: 'Owner', createdAt: DateTime(2026, 1, 1)),
-      );
-      await registry.upsert(
-        Profile(id: 'p2', kind: ProfileKind.local, displayName: 'Kids', createdAt: DateTime(2026, 1, 2)),
-      );
+      await registry.upsert(Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)));
+      await registry.upsert(Profile.local(id: 'p2', displayName: 'Kids', createdAt: DateTime(2026, 1, 2)));
       await storage.setActiveProfileId('p2');
       await provider.initialize();
       expect(provider.activeId, 'p2');
     });
 
     test('activate without PIN switches a non-protected profile', () async {
-      await registry.upsert(
-        Profile(id: 'p1', kind: ProfileKind.local, displayName: 'Owner', createdAt: DateTime(2026, 1, 1)),
-      );
-      await registry.upsert(
-        Profile(id: 'p2', kind: ProfileKind.local, displayName: 'Kids', createdAt: DateTime(2026, 1, 2)),
-      );
+      await registry.upsert(Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)));
+      await registry.upsert(Profile.local(id: 'p2', displayName: 'Kids', createdAt: DateTime(2026, 1, 2)));
       await provider.initialize();
       final p2 = provider.profiles.firstWhere((p) => p.id == 'p2');
       final ok = await provider.activate(p2);
@@ -164,9 +152,7 @@ void main() {
     });
 
     test('clearActiveProfile clears storage and in-memory active profile', () async {
-      await registry.upsert(
-        Profile(id: 'p1', kind: ProfileKind.local, displayName: 'Owner', createdAt: DateTime(2026, 1, 1)),
-      );
+      await registry.upsert(Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)));
       await provider.initialize();
       await provider.activate(provider.profiles.single);
 
@@ -178,13 +164,7 @@ void main() {
 
     test('activate rejects wrong PIN for a protected local profile', () async {
       await registry.upsert(
-        Profile(
-          id: 'p1',
-          kind: ProfileKind.local,
-          displayName: 'Kids',
-          pinHash: computePinHash('1234'),
-          createdAt: DateTime(2026, 1, 1),
-        ),
+        Profile.local(id: 'p1', displayName: 'Kids', pinHash: computePinHash('1234'), createdAt: DateTime(2026, 1, 1)),
       );
       await provider.initialize();
       final p1 = provider.profiles.first;
@@ -193,9 +173,7 @@ void main() {
     });
 
     test('hasMultipleProfiles reflects the registry size', () async {
-      await registry.upsert(
-        Profile(id: 'p1', kind: ProfileKind.local, displayName: 'Owner', createdAt: DateTime(2026, 1, 1)),
-      );
+      await registry.upsert(Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)));
       await provider.initialize();
       expect(provider.hasMultipleProfiles, isFalse);
       // Latch onto the next provider notification that flips the flag,
@@ -211,9 +189,7 @@ void main() {
 
       provider.addListener(listener);
       addTearDown(() => provider.removeListener(listener));
-      await registry.upsert(
-        Profile(id: 'p2', kind: ProfileKind.local, displayName: 'Kids', createdAt: DateTime(2026, 1, 2)),
-      );
+      await registry.upsert(Profile.local(id: 'p2', displayName: 'Kids', createdAt: DateTime(2026, 1, 2)));
       await flipped.future.timeout(const Duration(seconds: 2));
       expect(provider.hasMultipleProfiles, isTrue);
     });

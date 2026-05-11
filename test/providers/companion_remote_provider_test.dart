@@ -461,7 +461,7 @@ JellyfinConnection _jellyfinConnection(String id) {
 }
 
 Profile _localProfile(String id) {
-  return Profile(id: id, kind: ProfileKind.local, displayName: id, createdAt: DateTime(2026, 1, 1));
+  return Profile.local(id: id, displayName: id, createdAt: DateTime(2026, 1, 1));
 }
 
 PlexHome _home(String adminUuid) {

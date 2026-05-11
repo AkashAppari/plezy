@@ -264,9 +264,8 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
       hasProfiles: activeProvider.profiles.isNotEmpty,
     )) {
       final now = DateTime.now();
-      final profile = Profile(
+      final profile = Profile.local(
         id: 'local-${const Uuid().v4()}',
-        kind: ProfileKind.local,
         displayName: connection.userName.isNotEmpty ? connection.userName : connection.serverName,
         sortOrder: now.millisecondsSinceEpoch,
         createdAt: now,

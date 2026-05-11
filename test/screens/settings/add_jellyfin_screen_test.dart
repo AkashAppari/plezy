@@ -5,13 +5,8 @@ import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/screens/settings/add_jellyfin_screen.dart';
 import 'package:plezy/utils/platform_detector.dart';
 
-Profile _profile(String id) => Profile(
-  id: id,
-  kind: ProfileKind.local,
-  displayName: id,
-  sortOrder: 0,
-  createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-);
+Profile _profile(String id) =>
+    Profile.local(id: id, displayName: id, sortOrder: 0, createdAt: DateTime.fromMillisecondsSinceEpoch(0));
 
 void main() {
   tearDown(() {

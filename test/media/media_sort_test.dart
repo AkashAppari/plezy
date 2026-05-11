@@ -59,11 +59,17 @@ void main() {
   });
 
   group('MediaSort equality & hashCode', () {
-    test('equality is based on key only (matches current contract)', () {
+    test('value equality across all fields', () {
       final a = MediaSort(key: 'k', descKey: 'k:desc', title: 'A', defaultDirection: 'asc');
-      final b = MediaSort(key: 'k', descKey: 'other', title: 'B', defaultDirection: 'desc');
+      final b = MediaSort(key: 'k', descKey: 'k:desc', title: 'A', defaultDirection: 'asc');
       expect(a, equals(b));
       expect(a.hashCode, b.hashCode);
+    });
+
+    test('differing non-key fields make instances unequal', () {
+      final a = MediaSort(key: 'k', descKey: 'k:desc', title: 'A', defaultDirection: 'asc');
+      final b = MediaSort(key: 'k', descKey: 'other', title: 'B', defaultDirection: 'desc');
+      expect(a, isNot(equals(b)));
     });
 
     test('different keys are not equal', () {

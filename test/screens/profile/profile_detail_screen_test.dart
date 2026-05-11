@@ -35,12 +35,7 @@ void main() {
   testWidgets('remote back pops the manage profile page', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
     final db = AppDatabase.forTesting(NativeDatabase.memory());
-    final profile = Profile(
-      id: 'local-owner',
-      kind: ProfileKind.local,
-      displayName: 'Owner',
-      createdAt: DateTime(2026, 1, 1),
-    );
+    final profile = Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
     final profiles = ProfileRegistry(db);
     final connections = _FakeConnectionRegistry(db);
     final profileConnections = _FakeProfileConnectionRegistry(db);

@@ -71,7 +71,7 @@ void main() {
   });
 
   Future<Profile> createActiveLocalProfile(String id) async {
-    final profile = Profile(id: id, kind: ProfileKind.local, displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
+    final profile = Profile.local(id: id, displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
     await profiles.upsert(profile);
     await storage.setActiveProfileId(profile.id);
     await activeProfile.initialize();
@@ -79,12 +79,7 @@ void main() {
   }
 
   test('local profile with no connections binds successfully with empty visibility', () async {
-    final profile = Profile(
-      id: 'local-owner',
-      kind: ProfileKind.local,
-      displayName: 'Owner',
-      createdAt: DateTime(2026, 1, 1),
-    );
+    final profile = Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
     await profiles.upsert(profile);
     await storage.setActiveProfileId(profile.id);
     await activeProfile.initialize();
@@ -97,12 +92,7 @@ void main() {
   });
 
   test('started binder does not loop forever after empty local bind', () async {
-    final profile = Profile(
-      id: 'local-empty',
-      kind: ProfileKind.local,
-      displayName: 'Empty',
-      createdAt: DateTime(2026, 1, 1),
-    );
+    final profile = Profile.local(id: 'local-empty', displayName: 'Empty', createdAt: DateTime(2026, 1, 1));
     await profiles.upsert(profile);
     await storage.setActiveProfileId(profile.id);
     await activeProfile.initialize();

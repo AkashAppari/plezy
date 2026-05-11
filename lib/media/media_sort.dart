@@ -1,19 +1,16 @@
-import 'package:json_annotation/json_annotation.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
+part 'media_sort.freezed.dart';
 part 'media_sort.g.dart';
 
-@JsonSerializable()
-class MediaSort {
-  final String key;
-  final String? descKey;
-  final String title;
-  final String? defaultDirection;
+@freezed
+sealed class MediaSort with _$MediaSort {
+  const MediaSort._();
 
-  MediaSort({required this.key, this.descKey, required this.title, this.defaultDirection});
+  const factory MediaSort({required String key, String? descKey, required String title, String? defaultDirection}) =
+      _MediaSort;
 
   factory MediaSort.fromJson(Map<String, dynamic> json) => _$MediaSortFromJson(json);
-
-  Map<String, dynamic> toJson() => _$MediaSortToJson(this);
 
   String getSortKey({bool descending = false}) {
     if (!descending) {
@@ -26,18 +23,4 @@ class MediaSort {
   bool get isDefaultDescending {
     return defaultDirection?.toLowerCase() == 'desc';
   }
-
-  @override
-  String toString() {
-    return 'MediaSort(key: $key, title: $title, defaultDirection: $defaultDirection)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is MediaSort && other.key == key;
-  }
-
-  @override
-  int get hashCode => key.hashCode;
 }

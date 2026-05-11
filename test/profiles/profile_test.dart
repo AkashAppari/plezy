@@ -4,7 +4,7 @@ import 'package:plezy/profiles/profile.dart';
 void main() {
   group('Profile', () {
     test('local profile defaults', () {
-      final p = Profile(id: 'local-1', kind: ProfileKind.local, displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
+      final p = Profile.local(id: 'local-1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
       expect(p.isLocal, isTrue);
       expect(p.isPlexHome, isFalse);
       expect(p.isPinProtected, isFalse);
@@ -12,9 +12,8 @@ void main() {
     });
 
     test('local profile with PIN is pin-protected', () {
-      final p = Profile(
+      final p = Profile.local(
         id: 'local-1',
-        kind: ProfileKind.local,
         displayName: 'Kids',
         pinHash: computePinHash('1234'),
         createdAt: DateTime(2026, 1, 1),
@@ -23,9 +22,8 @@ void main() {
     });
 
     test('plex_home profile pin protection follows the protected flag', () {
-      final p = Profile(
+      final p = Profile.plexHome(
         id: 'plex-home-acct1-uuid1',
-        kind: ProfileKind.plexHome,
         displayName: 'Sarah',
         parentConnectionId: 'acct1',
         plexProtected: true,
@@ -36,9 +34,8 @@ void main() {
     });
 
     test('local PIN hash is round-tripped via configJson', () {
-      final p = Profile(
+      final p = Profile.local(
         id: 'local-1',
-        kind: ProfileKind.local,
         displayName: 'Kids',
         pinHash: computePinHash('1234'),
         createdAt: DateTime(2026, 1, 1),
@@ -59,9 +56,8 @@ void main() {
     });
 
     test('plex_home configJson round-trips with all flags', () {
-      final p = Profile(
+      final p = Profile.plexHome(
         id: 'plex-home-acct1-uuid1',
-        kind: ProfileKind.plexHome,
         displayName: 'Admin',
         parentConnectionId: 'acct1',
         plexAdmin: true,

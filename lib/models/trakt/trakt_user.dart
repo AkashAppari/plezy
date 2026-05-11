@@ -1,4 +1,9 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'trakt_user.g.dart';
+
 /// Minimal Trakt user info parsed from `GET /users/settings`.
+@JsonSerializable(createToJson: false)
 class TraktUser {
   final String username;
   final String? name;
@@ -10,6 +15,6 @@ class TraktUser {
     if (user == null) {
       throw const FormatException('Trakt /users/settings response missing "user" field');
     }
-    return TraktUser(username: user['username'] as String, name: user['name'] as String?);
+    return _$TraktUserFromJson(user);
   }
 }

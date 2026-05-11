@@ -343,7 +343,12 @@ class CompanionRemotePeerService with KeepaliveMixin {
               await _sendEncryptedToSocket(socket, jsonEncode({'type': 'authSuccess'}));
 
               // Notify connection
-              final device = RemoteDevice(id: 'remote-client', name: deviceName, platform: platform);
+              final device = RemoteDevice(
+                id: 'remote-client',
+                name: deviceName,
+                platform: platform,
+                connectedAt: DateTime.now(),
+              );
               _deviceConnectedController.add(device);
               _connectionStateController.add(RemoteSessionStatus.connected);
 
@@ -516,7 +521,12 @@ class CompanionRemotePeerService with KeepaliveMixin {
                   completer.complete();
                 }
 
-                final device = RemoteDevice(id: 'host', name: 'Desktop', platform: 'desktop');
+                final device = RemoteDevice(
+                  id: 'host',
+                  name: 'Desktop',
+                  platform: 'desktop',
+                  connectedAt: DateTime.now(),
+                );
                 _deviceConnectedController.add(device);
                 _connectionStateController.add(RemoteSessionStatus.connected);
 
