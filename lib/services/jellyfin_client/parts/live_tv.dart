@@ -1,7 +1,152 @@
-part of '../jellyfin_client.dart';
+part of '../../jellyfin_client.dart';
 
-/// Jellyfin implementation of [LiveTvSupport]. Wraps the existing
-/// `fetchLiveTvChannels` / `fetchLiveTvPrograms` / `buildDirectStreamUrl`.
+mixin _JellyfinLiveTvMethods on MediaServerCacheMixin {
+  JellyfinConnection get connection;
+  MediaServerHttpClient get _http;
+  String? _absolutizeImagePath(String? path);
+  Future<List<Map<String, dynamic>>> _safeFetchItemsArray(String path, Map<String, dynamic> queryParameters);
+
+  /// Returns `true` when this server has Live TV configured (channels
+  /// available). Probes `/LiveTv/Channels?limit=1`. Used by [MultiServerProvider]
+  /// to gate the Live TV menu.
+  Future<bool> hasLiveTv() async {
+    try {
+      final response = await _http.get(
+        '/LiveTv/Channels',
+        queryParameters: {'limit': '1', 'userId': connection.userId},
+      );
+      if (response.statusCode != 200) return false;
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        final total = data['TotalRecordCount'];
+        if (total is int) return total > 0;
+        final items = data['Items'];
+        if (items is List) return items.isNotEmpty;
+      }
+      return false;
+    } catch (e) {
+      appLogger.d('Jellyfin Live TV probe failed', error: e);
+      return false;
+    }
+  }
+
+  /// Fetch the user's Live TV channel list. Each `BaseItemDto` of type
+  /// `TvChannel` is mapped to a [LiveTvChannel].
+  Future<List<LiveTvChannel>> fetchLiveTvChannels() async {
+    final items = await _safeFetchItemsArray('/LiveTv/Channels', {
+      'userId': connection.userId,
+      'enableImages': 'true',
+      'enableUserData': 'true',
+      'sortBy': 'SortName',
+      'sortOrder': 'Ascending',
+    });
+    return items.map(_channelFromJson).toList();
+  }
+
+  /// EPG / programs grid. [channelIds] scopes to specific channels (when
+  /// empty, the server returns programs across all channels). [beginsAt] /
+  /// [endsAt] are epoch seconds and bound the time window — Jellyfin uses
+  /// ISO 8601 strings on the wire.
+  Future<List<LiveTvProgram>> fetchLiveTvPrograms({
+    List<String> channelIds = const [],
+    int? beginsAt,
+    int? endsAt,
+  }) async {
+    DateTime? toDt(int? epoch) => epoch == null ? null : DateTime.fromMillisecondsSinceEpoch(epoch * 1000, isUtc: true);
+    final params = <String, dynamic>{
+      'userId': connection.userId,
+      'enableImages': 'true',
+      'sortBy': 'StartDate',
+      'sortOrder': 'Ascending',
+      if (channelIds.isNotEmpty) 'channelIds': channelIds.join(','),
+      if (beginsAt != null) 'minStartDate': toDt(beginsAt)!.toIso8601String(),
+      if (endsAt != null) 'maxStartDate': toDt(endsAt)!.toIso8601String(),
+    };
+    final items = await _safeFetchItemsArray('/LiveTv/Programs', params);
+    return items.map(_programFromJson).toList();
+  }
+
+  LiveTvProgram _programFromJson(Map<String, dynamic> json) {
+    final id = json['Id'] as String?;
+    int? toEpochSec(dynamic raw) {
+      if (raw is! String || raw.isEmpty) return null;
+      final ms = DateTime.tryParse(raw)?.toUtc().millisecondsSinceEpoch;
+      return ms != null ? ms ~/ 1000 : null;
+    }
+
+    final tags = json['ImageTags'];
+    String? primaryTag;
+    if (tags is Map<String, dynamic>) {
+      primaryTag = tags['Primary'] as String?;
+    }
+    final thumbPath = (id != null && primaryTag != null)
+        ? _absolutizeImagePath('/Items/${_segment(id)}/Images/Primary?tag=${Uri.encodeComponent(primaryTag)}')
+        : null;
+    return LiveTvProgram(
+      key: id,
+      ratingKey: id,
+      guid: null,
+      title: json['Name'] as String? ?? 'Unknown Program',
+      summary: json['Overview'] as String?,
+      type: 'episode',
+      year: (json['ProductionYear'] as num?)?.toInt(),
+      beginsAt: toEpochSec(json['StartDate']),
+      endsAt: toEpochSec(json['EndDate']),
+      grandparentTitle: json['SeriesName'] as String?,
+      parentTitle: json['SeasonName'] as String?,
+      index: (json['IndexNumber'] as num?)?.toInt(),
+      parentIndex: (json['ParentIndexNumber'] as num?)?.toInt(),
+      thumb: thumbPath,
+      art: null,
+      channelIdentifier: json['ChannelId'] as String?,
+      channelCallSign: json['ChannelCallSign'] as String? ?? json['ChannelName'] as String?,
+      live: json['IsLive'] as bool?,
+      premiere: json['IsPremiere'] as bool?,
+    );
+  }
+
+  LiveTvChannel _channelFromJson(Map<String, dynamic> json) {
+    final id = json['Id'] as String? ?? '';
+    final name = json['Name'] as String?;
+    final number = json['Number'] as String? ?? json['ChannelNumber'] as String?;
+    final tags = json['ImageTags'];
+    String? primaryTag;
+    if (tags is Map<String, dynamic>) {
+      primaryTag = tags['Primary'] as String?;
+    }
+    final thumbPath = primaryTag != null
+        ? _absolutizeImagePath('/Items/${_segment(id)}/Images/Primary?tag=${Uri.encodeComponent(primaryTag)}')
+        : null;
+    return LiveTvChannel(
+      key: id,
+      identifier: id,
+      callSign: json['CallSign'] as String?,
+      title: name,
+      thumb: thumbPath,
+      art: null,
+      number: number,
+      hd: false,
+      lineup: null,
+      slug: null,
+      drm: null,
+      serverId: serverId,
+      serverName: serverName,
+    );
+  }
+
+  @override
+  LiveTvSupport get liveTv => _JellyfinLiveTvSupport(this as JellyfinClient);
+
+  /// Toggle the per-user `IsFavorite` flag for [itemId]. Used by the live-TV
+  /// favorite-channel adapter; works on any Jellyfin item.
+  Future<void> _setItemFavorite(String itemId, bool isFavorite) async {
+    final path = '/Users/${_segment(connection.userId)}/FavoriteItems/${_segment(itemId)}';
+    final response = isFavorite ? await _http.post(path) : await _http.delete(path);
+    throwIfHttpError(response);
+  }
+}
+
+/// Adapter from [LiveTvSupport] to Jellyfin channel/program helpers.
 class _JellyfinLiveTvSupport implements LiveTvSupport {
   final JellyfinClient _client;
   _JellyfinLiveTvSupport(this._client);

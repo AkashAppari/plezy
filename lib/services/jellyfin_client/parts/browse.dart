@@ -1,0 +1,840 @@
+part of '../../jellyfin_client.dart';
+
+String _segment(String value) => Uri.encodeComponent(value);
+
+List<Map<String, dynamic>> _itemsArray(Object? data) {
+  if (data is Map<String, dynamic>) {
+    final items = data['Items'];
+    if (items is List) return items.whereType<Map<String, dynamic>>().toList();
+  }
+  if (data is List) return data.whereType<Map<String, dynamic>>().toList();
+  return const [];
+}
+
+/// Slim field set for grid/list browsing — what the card UI actually
+/// renders (title, year, watched badge, episode count for series),
+/// plus `MediaSources` so the long-press "Play Version" gate matches
+/// Plex's flow (Plex always inlines `Media[]`).
+///
+/// The real Jellyfin web client + Findroid skip explicit `Fields` for
+/// list calls; we ask for the minimum extras needed to drive the
+/// MediaItem mapper:
+///  - `RecursiveItemCount`/`ChildCount` for series leaf count
+///  - `UserData` is included in defaults but pinned for safety
+///  - `PremiereDate` for sort-by-release-date and episode metadata
+///  - `OriginalTitle`/`SortName` for sort + alphabetised display
+///  - `Overview` so episode-list rows show their description
+///  - `MediaSources` so the context menu can hide `Play Version` when
+///    there's nothing to pick (cost: ~40ms per 50-item page)
+///
+/// Heavier fields (`People`, `Genres`, `Tags`, `Studios`, `Taglines`,
+/// `ProviderIds`, `Chapters`) stay in [_detailFields] — together they
+/// added ~6s to a 100-item Series page on a small home server.
+const _browseFields =
+    'RecursiveItemCount,ChildCount,UserData,PremiereDate,OriginalTitle,SortName,Overview,MediaSources';
+
+/// Even slimmer set used by [fetchClientSideEpisodeQueue]. Queue rows
+/// only need title, thumbnail (`ImageTags['Primary']`), season/episode
+/// index, and watched state. Title + indices come back without any
+/// `Fields` request; we only need to ask for `UserData` for the
+/// watched indicator. Drops `Overview` etc. so that even a thousand-
+/// episode shounen show fits comfortably in one response.
+const _queueFields = 'UserData';
+
+/// Page size for [fetchClientSideEpisodeQueue]. Keeps each server response
+/// bounded while still returning the full series queue.
+const _episodeQueuePageSize = 200;
+
+/// Full field set for the detail screen and the resume / next-up
+/// pre-fetch paths. Mirrors what the Jellyfin web detail view requests.
+const _detailFields =
+    'Overview,Genres,People,Studios,ProductionLocations,Tags,Taglines,DateCreated,DateLastSaved,'
+    'PremiereDate,RecursiveItemCount,ChildCount,UserData,MediaSources,OriginalTitle,SortName,'
+    // Chapters: Jellyfin returns them at the item level; the playback
+    // init flow plucks `raw['Chapters']` and feeds the seek-bar tick UI.
+    'Chapters,'
+    // Trickplay: per-resolution sprite-sheet manifest. The scrub-thumbnail
+    // loader reads `raw['Trickplay']` and computes tile URLs from it.
+    'Trickplay,'
+    // ProviderIds carries Tmdb/Imdb/Tvdb keys — required for Trakt + the
+    // unified tracker coordinator to scrobble Jellyfin items without
+    // any extra round-trip.
+    'ProviderIds';
+
+mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
+  JellyfinConnection get connection;
+  MediaServerHttpClient get _http;
+  MediaItem? _mapItem(Map<String, dynamic> json);
+  List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
+
+  // Endpoint conventions follow what the official Jellyfin Kotlin SDK
+  // generates (cross-checked against the Findroid client). The SDK mixes
+  // `/Users/{userId}/...` for "user library" / "views" / "latest" / "single
+  // item" calls and `/Items?userId=...` for the generic list and resume
+  // endpoints. We mirror that exactly so requests hash the same way against
+  // proxy rules and rate limiters as a stock Jellyfin app.
+
+  @override
+  Future<List<MediaLibrary>> fetchLibraries() async {
+    final response = await _http.get('/Users/${_segment(connection.userId)}/Views');
+    throwIfHttpError(response);
+    final items = _itemsArray(response.data);
+    // Jellyfin surfaces the user's collection (BoxSet) and playlist roots as
+    // top-level views. We expose those as per-library tabs instead of
+    // standalone library entries — matches the Plex shape and avoids
+    // duplicating the same data in two navigation slots.
+    return items
+        .where((view) {
+          final ct = (view['CollectionType'] as String?)?.toLowerCase();
+          return ct != 'boxsets' && ct != 'playlists';
+        })
+        .map((view) => JellyfinMappers.library(view, serverId: serverId, serverName: serverName))
+        .whereType<MediaLibrary>()
+        .toList();
+  }
+
+  @override
+  Future<LibraryPage<MediaItem>> fetchLibraryContent(
+    String libraryId,
+    LibraryQuery query, {
+    AbortController? abort,
+  }) async {
+    final translator = JellyfinLibraryQueryTranslator(
+      userId: connection.userId,
+      parentId: libraryId,
+      fields: _browseFields,
+    );
+    final params = translator.toQueryParameters(query);
+
+    final response = await _http.get('/Items', queryParameters: params, abort: abort);
+    throwIfHttpError(response);
+    final data = response.data;
+    final items = _itemsArray(data);
+    final total = (data is Map<String, dynamic> ? data['TotalRecordCount'] as int? : null) ?? items.length;
+    return LibraryPage<MediaItem>(items: _mapItems(items), totalCount: total, offset: query.offset);
+  }
+
+  /// Jellyfin's `/Items/Filters` returns Genres / OfficialRatings / Tags /
+  /// Categories + values from `/Items/Filters` in a single call. Keys are
+  /// translated to Plex's filter naming so the existing filter-param map
+  /// round-trips through `_buildFilterParams` unchanged; the synthesised
+  /// `MediaFilter.key` is prefixed `jellyfin:` so FiltersBottomSheet can
+  /// recognise it as cached and skip the per-category value fetch.
+  @override
+  Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId) async {
+    final response = await _http.get(
+      '/Items/Filters',
+      queryParameters: {'userId': connection.userId, 'ParentId': libraryId},
+    );
+    throwIfHttpError(response);
+    final data = response.data;
+    if (data is! Map<String, dynamic>) return LibraryFilterResult.empty;
+    List<String> stringList(Object? raw) {
+      if (raw is! List) return const [];
+      return raw.whereType<String>().where((s) => s.isNotEmpty).toList();
+    }
+
+    final raw = <String, List<String>>{
+      'genre': stringList(data['Genres']),
+      'contentRating': stringList(data['OfficialRatings']),
+      'tag': stringList(data['Tags']),
+      'year': (data['Years'] is List)
+          ? (data['Years'] as List).whereType<num>().map((y) => y.toInt().toString()).toList()
+          : const <String>[],
+    };
+
+    const order = ['genre', 'year', 'contentRating', 'tag'];
+    final titles = {
+      'genre': t.libraries.filterCategories.genre,
+      'year': t.libraries.filterCategories.year,
+      'contentRating': t.libraries.filterCategories.contentRating,
+      'tag': t.libraries.filterCategories.tag,
+    };
+    final filters = <MediaFilter>[];
+    final values = <String, List<MediaFilterValue>>{};
+    for (final key in order) {
+      final entries = raw[key];
+      if (entries == null || entries.isEmpty) continue;
+      filters.add(
+        MediaFilter(filter: key, filterType: 'string', key: 'jellyfin:$key', title: titles[key] ?? key, type: 'filter'),
+      );
+      final sorted = List<String>.from(entries);
+      if (key == 'year') {
+        sorted.sort((a, b) => (int.tryParse(b) ?? 0).compareTo(int.tryParse(a) ?? 0));
+      } else {
+        sorted.sort();
+      }
+      values[key] = sorted.map((v) => MediaFilterValue(key: v, title: v)).toList();
+    }
+    return LibraryFilterResult(filters: filters, cachedValues: values);
+  }
+
+  /// Jellyfin has no `/sorts` listing endpoint, so this returns a hardcoded
+  /// list mirroring the Plex fallback set. Keys are the backend-neutral names
+  /// understood by [JellyfinLibraryQueryTranslator] (`title`, `addedAt`, …);
+  /// `_buildFilterParams` emits them as `addedAt:desc` etc., and
+  /// [LibraryQueryTranslator.parseSortParam] turns them back into a
+  /// [LibrarySort] before the translator maps them to Jellyfin's
+  /// `SortBy`/`SortOrder`.
+  @override
+  Future<List<MediaSort>> fetchSortOptions(String libraryId, {String? libraryType}) async {
+    return [
+      MediaSort(key: 'title', descKey: 'title:desc', title: t.libraries.sortLabels.title, defaultDirection: 'asc'),
+      MediaSort(
+        key: 'addedAt',
+        descKey: 'addedAt:desc',
+        title: t.libraries.sortLabels.dateAdded,
+        defaultDirection: 'desc',
+      ),
+      MediaSort(
+        key: 'originallyAvailableAt',
+        descKey: 'originallyAvailableAt:desc',
+        title: t.libraries.sortLabels.releaseDate,
+        defaultDirection: 'desc',
+      ),
+      MediaSort(key: 'rating', descKey: 'rating:desc', title: t.libraries.sortLabels.rating, defaultDirection: 'desc'),
+      MediaSort(
+        key: 'lastViewedAt',
+        descKey: 'lastViewedAt:desc',
+        title: t.libraries.sortLabels.lastPlayed,
+        defaultDirection: 'desc',
+      ),
+      MediaSort(
+        key: 'viewCount',
+        descKey: 'viewCount:desc',
+        title: t.libraries.sortLabels.playCount,
+        defaultDirection: 'desc',
+      ),
+      MediaSort(key: 'random', title: t.libraries.sortLabels.random, defaultDirection: 'asc'),
+    ];
+  }
+
+  /// Jellyfin internalisation of the Plex-style filter map → [LibraryQuery]
+  /// translation. Routes through [fetchLibraryContent] so the
+  /// [JellyfinLibraryQueryTranslator] handles the actual `/Items` query.
+  ///
+  /// [libraryKind] threads through so a "Shows" library returns Series rows
+  /// rather than the recursive episode expansion Jellyfin would otherwise
+  /// produce.
+  @override
+  Future<LibraryPage<MediaItem>> fetchLibraryPagedContent(
+    String libraryId, {
+    required LibraryQuery query,
+    MediaKind? libraryKind,
+    AbortController? abort,
+  }) async {
+    // [libraryKind] takes priority over any kind already on [query] — the
+    // browse tab passes the library's actual kind (Series, Movie) to override
+    // a less specific value.
+    final effective = (libraryKind != null && libraryKind != MediaKind.unknown)
+        ? query.copyWith(kind: libraryKind)
+        : query;
+    return fetchLibraryContent(libraryId, effective, abort: abort);
+  }
+
+  /// Synthesised 27-letter alphabet — Jellyfin has no equivalent of Plex's
+  /// `/firstCharacter` endpoint, so the UI treats the bar as a name-prefix
+  /// filter instead of a scroll affordance. Each entry has `size: 1` so
+  /// the alpha-jump helper renders it without trying to do offset math.
+  @override
+  Future<List<LibraryFirstCharacter>> fetchFirstCharacters(String libraryId, {Map<String, String>? filters}) async {
+    const letters = [
+      '#',
+      'A',
+      'B',
+      'C',
+      'D',
+      'E',
+      'F',
+      'G',
+      'H',
+      'I',
+      'J',
+      'K',
+      'L',
+      'M',
+      'N',
+      'O',
+      'P',
+      'Q',
+      'R',
+      'S',
+      'T',
+      'U',
+      'V',
+      'W',
+      'X',
+      'Y',
+      'Z',
+    ];
+    return [for (final l in letters) LibraryFirstCharacter(key: l, title: l, size: 1)];
+  }
+
+  /// Queue a metadata refresh for the library. Jellyfin treats a library
+  /// view as an item, so we POST to `/Items/{id}/Refresh`. `FullRefresh`
+  /// re-pulls metadata from configured providers; `replaceAllMetadata=false`
+  /// preserves user edits — same UX as Plex's `refresh?force=1`.
+  @override
+  Future<void> refreshLibraryMetadata(String libraryId) async {
+    final response = await _http.post(
+      '/Items/${_segment(libraryId)}/Refresh',
+      queryParameters: {
+        'metadataRefreshMode': 'FullRefresh',
+        'imageRefreshMode': 'Default',
+        'replaceAllMetadata': 'false',
+        'replaceAllImages': 'false',
+      },
+    );
+    throwIfHttpError(response);
+  }
+
+  /// Jellyfin has no single-round-trip equivalent of Plex's
+  /// `?includeOnDeck=1`. We approximate it for shows by chaining a second
+  /// request to `/Shows/NextUp` filtered by `seriesId`. NextUp's defaults
+  /// (`enableResumable=true`, `disableFirstEpisode=false`) match Plex
+  /// OnDeck semantics: returns the resume episode when one exists, or S1E1
+  /// when the user hasn't started. Movies and other kinds short-circuit.
+  @override
+  Future<({MediaItem? item, MediaItem? onDeckEpisode})> fetchItemWithOnDeck(String id) async {
+    final item = await fetchItem(id);
+    if (item == null || item.kind != MediaKind.show) {
+      return (item: item, onDeckEpisode: null);
+    }
+    final nextUp = await _safeFetchItemsArray('/Shows/NextUp', {
+      'seriesId': id,
+      'userId': connection.userId,
+      'Limit': '1',
+      'Fields': _browseFields,
+      ...jellyfinImageQueryParameters,
+    });
+    final onDeckEpisode = nextUp.isEmpty ? null : _mapItem(nextUp.first);
+    return (item: item, onDeckEpisode: onDeckEpisode);
+  }
+
+  @override
+  Future<MediaItem?> fetchItem(String id) async {
+    final endpoint = '/Users/${_segment(connection.userId)}/Items/${_segment(id)}';
+    // Contract:
+    //   - 200 with parseable Map → MediaItem
+    //   - 200 with non-Map body (HTML/text proxy page, empty) → null
+    //   - 404 → null (item doesn't exist server-side)
+    //   - 401/403/5xx → throw [MediaServerHttpException] so the UI can
+    //     surface "auth required" / "server unavailable". Falling back to
+    //     a cached row here would mislead the user into thinking they're
+    //     still connected — explicit cache reads belong to the offline path.
+    //   - Pure transport errors (no HTTP response) → fall back to cached row
+    //     when present, otherwise rethrow.
+    if (isOfflineMode) {
+      final cached = await cache.get(cacheServerId, endpoint);
+      if (cached is Map<String, dynamic>) return _mapItem(cached);
+      return null;
+    }
+    try {
+      final response = await _http.get(endpoint, queryParameters: {'Fields': _detailFields});
+      throwIfHttpError(response);
+      final data = response.data;
+      if (data is! Map<String, dynamic>) return null;
+      try {
+        await cache.put(cacheServerId, endpoint, data);
+      } catch (e, st) {
+        appLogger.w('JellyfinClient.fetchItem cache write failed', error: e, stackTrace: st);
+      }
+      return _mapItem(data);
+    } on MediaServerHttpException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
+    } catch (e) {
+      // Transport-layer failure: socket error, DNS, TLS, etc. Try cache.
+      appLogger.w('JellyfinClient.fetchItem network call failed', error: e);
+      try {
+        final cached = await cache.get(cacheServerId, endpoint);
+        if (cached is Map<String, dynamic>) return _mapItem(cached);
+      } catch (cacheError, st) {
+        appLogger.w('JellyfinClient.fetchItem cache fallback failed', error: cacheError, stackTrace: st);
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<MediaItem>> fetchChildren(String parentId) async {
+    // Cache keys include userId so two users on the same server don't share
+    // per-user UserData (watched state) baked into the response.
+    final seasonsKey = '/Shows/$parentId/Seasons?userId=${connection.userId}';
+    final childrenKey = '/Items?ParentId=$parentId&userId=${connection.userId}';
+
+    if (isOfflineMode) {
+      final cachedSeasons = await cache.get(cacheServerId, seasonsKey);
+      if (cachedSeasons != null) {
+        final items = _itemsArray(cachedSeasons);
+        if (items.isNotEmpty) return _mapItems(items);
+      }
+      final cachedChildren = await cache.get(cacheServerId, childrenKey);
+      if (cachedChildren != null) {
+        return _mapItems(_itemsArray(cachedChildren));
+      }
+      return const [];
+    }
+
+    // For a series, the direct children are SEASONS (not the recursive
+    // episode expansion). Match Findroid: showsApi.getSeasons(seriesId)
+    // → /Shows/{seriesId}/Seasons. If the parent isn't a series this
+    // returns an empty list (or 404), so we fall through.
+    try {
+      final seasons = await _http.get(
+        '/Shows/${_segment(parentId)}/Seasons',
+        queryParameters: {'userId': connection.userId, 'Fields': _browseFields, ...jellyfinImageQueryParameters},
+      );
+      if (seasons.statusCode == 200) {
+        final data = seasons.data;
+        final items = _itemsArray(data);
+        if (items.isNotEmpty && data is Map<String, dynamic>) {
+          await cache.put(cacheServerId, seasonsKey, data);
+          return _mapItems(items);
+        }
+      }
+    } on MediaServerHttpException {
+      // Not a series — fall through to the generic ParentId query.
+    }
+    // Generic direct-children query: works for season → episodes,
+    // collection → items, etc.
+    final response = await _http.get(
+      '/Items',
+      queryParameters: {
+        'userId': connection.userId,
+        'ParentId': parentId,
+        'Fields': _browseFields,
+        'Limit': '500',
+        ...jellyfinImageQueryParameters,
+      },
+    );
+    throwIfHttpError(response);
+    final data = response.data;
+    if (data is Map<String, dynamic>) {
+      await cache.put(cacheServerId, childrenKey, data);
+    }
+    return _mapItems(_itemsArray(data));
+  }
+
+  /// All directly-playable descendants of [parentId] (Movies + Episodes),
+  /// recursively expanded. Used by the playback launcher so a collection
+  /// containing a Series plays its episodes instead of the unplayable
+  /// Series entry, and a playlist mixing both comes through the same path.
+  /// Direct browsing keeps using [fetchChildren] / [fetchPlaylistItems]
+  /// since those preserve the container shape (Series rows, PlaylistItemId).
+  ///
+  /// No `Limit` — Jellyfin returns the entire list for this endpoint by
+  /// default, same precedent as [fetchClientSideEpisodeQueue].
+  @override
+  Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async {
+    final response = await _http.get(
+      '/Items',
+      queryParameters: {
+        'userId': connection.userId,
+        'ParentId': parentId,
+        'Recursive': 'true',
+        'IncludeItemTypes': 'Movie,Episode',
+        'Fields': _browseFields,
+        ...jellyfinImageQueryParameters,
+      },
+    );
+    throwIfHttpError(response);
+    return _mapItems(_itemsArray(response.data));
+  }
+
+  /// All episodes of a series in air order, optimised for queue-building.
+  /// Uses [_queueFields] (only `UserData`) instead of the browse field
+  /// set so the response stays small even for shows with thousands of
+  /// episodes.
+  ///
+  /// Paged in [_episodeQueuePageSize] chunks so long-running shows still get
+  /// a complete client-side next/previous queue without one huge response.
+  @override
+  Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId) async {
+    final all = <MediaItem>[];
+    var startIndex = 0;
+    int? totalRecordCount;
+
+    while (totalRecordCount == null || startIndex < totalRecordCount) {
+      final response = await _http.get(
+        '/Shows/${_segment(seriesId)}/Episodes',
+        queryParameters: {
+          'userId': connection.userId,
+          'Fields': _queueFields,
+          'StartIndex': '$startIndex',
+          'Limit': '$_episodeQueuePageSize',
+          ...jellyfinImageQueryParameters,
+        },
+      );
+      throwIfHttpError(response);
+      final data = response.data;
+      final page = _mapItems(_itemsArray(data));
+      all.addAll(page);
+      if (data is Map<String, dynamic>) {
+        final rawTotal = data['TotalRecordCount'];
+        if (rawTotal is int) totalRecordCount = rawTotal;
+      }
+      if (page.length < _episodeQueuePageSize) break;
+      startIndex += page.length;
+    }
+
+    return all;
+  }
+
+  @override
+  Future<List<MediaItem>> searchItems(String query, {int limit = 30}) async {
+    final response = await _http.get(
+      '/Items',
+      queryParameters: {
+        'userId': connection.userId,
+        'SearchTerm': query,
+        'Recursive': 'true',
+        'Limit': limit.toString(),
+        'IncludeItemTypes': 'Movie,Series,Episode',
+        'Fields': _browseFields,
+        ...jellyfinImageQueryParameters,
+      },
+    );
+    throwIfHttpError(response);
+    return _mapItems(_itemsArray(response.data));
+  }
+
+  @override
+  Future<List<MediaItem>> fetchRecentlyAdded({int limit = 50}) async {
+    // Matches userLibraryApi.getLatestMedia in the Jellyfin SDK.
+    final response = await _http.get(
+      '/Users/${_segment(connection.userId)}/Items/Latest',
+      queryParameters: {
+        'Limit': limit.toString(),
+        'Fields': _browseFields,
+        'IncludeItemTypes': 'Movie,Series,Episode',
+        ...jellyfinImageQueryParameters,
+      },
+    );
+    throwIfHttpError(response);
+    final data = response.data;
+    // Latest returns a bare array, not an Items wrapper.
+    if (data is List) {
+      return _mapItems(data.whereType<Map<String, dynamic>>());
+    }
+    return _mapItems(_itemsArray(data));
+  }
+
+  @override
+  Future<List<MediaItem>> fetchContinueWatching({int count = 20}) async {
+    final results = await Future.wait([
+      _fetchItemsArray('/UserItems/Resume', {
+        'userId': connection.userId,
+        'Limit': count.toString(),
+        'Fields': _browseFields,
+        'MediaTypes': 'Video',
+        'Recursive': 'true',
+        ...jellyfinImageQueryParameters,
+      }),
+      _safeFetchItemsArray('/Shows/NextUp', {
+        'userId': connection.userId,
+        'Limit': count.toString(),
+        'Fields': _browseFields,
+        'EnableResumable': 'false',
+        'EnableTotalRecordCount': 'false',
+        ...jellyfinImageQueryParameters,
+      }),
+    ]);
+
+    return _mergeContinueWatchingAndNextUp(resume: _mapItems(results[0]), nextUp: _mapItems(results[1]), limit: count);
+  }
+
+  @override
+  Future<List<MediaHub>> fetchGlobalHubs({int limit = 10, bool includePlaybackHubs = true}) async {
+    // Jellyfin doesn't expose a single "hubs" endpoint, so we synthesise the
+    // home rows from Latest plus optional playback rows. The richer Plex Discover surface
+    // is intentionally left untranslated — see ServerCapabilities.richHubs.
+    final latestFuture = _safeFetchItemsArray('/Users/${_segment(connection.userId)}/Items/Latest', {
+      'Limit': limit.toString(),
+      'Fields': _browseFields,
+      'IncludeItemTypes': 'Movie,Series,Episode',
+      ...jellyfinImageQueryParameters,
+    });
+
+    if (!includePlaybackHubs) {
+      final latest = await latestFuture;
+      return [
+        JellyfinMappers.syntheticHub(
+          mapItem: _mapItem,
+          identifier: 'home.recent',
+          title: t.discover.recentlyAdded,
+          type: 'mixed',
+          items: latest,
+          serverId: serverId,
+          serverName: serverName,
+        ),
+      ].where((h) => h.items.isNotEmpty).toList();
+    }
+
+    final results = await Future.wait([
+      latestFuture,
+      _safeFetchItemsArray('/UserItems/Resume', {
+        'userId': connection.userId,
+        'Limit': limit.toString(),
+        'Fields': _browseFields,
+        'MediaTypes': 'Video',
+        'Recursive': 'true',
+        ...jellyfinImageQueryParameters,
+      }),
+      _safeFetchItemsArray('/Shows/NextUp', {
+        'userId': connection.userId,
+        'Limit': limit.toString(),
+        'Fields': _browseFields,
+        'EnableResumable': 'false',
+        'EnableTotalRecordCount': 'false',
+        ...jellyfinImageQueryParameters,
+      }),
+    ]);
+
+    return [
+      JellyfinMappers.syntheticHub(
+        mapItem: _mapItem,
+        identifier: 'home.continue',
+        title: t.discover.continueWatching,
+        type: 'mixed',
+        items: results[1],
+        serverId: serverId,
+        serverName: serverName,
+      ),
+      JellyfinMappers.syntheticHub(
+        mapItem: _mapItem,
+        identifier: 'home.nextup',
+        title: t.discover.nextUp,
+        type: 'episode',
+        items: results[2],
+        serverId: serverId,
+        serverName: serverName,
+      ),
+      JellyfinMappers.syntheticHub(
+        mapItem: _mapItem,
+        identifier: 'home.recent',
+        title: t.discover.recentlyAdded,
+        type: 'mixed',
+        items: results[0],
+        serverId: serverId,
+        serverName: serverName,
+      ),
+    ].where((h) => h.items.isNotEmpty).toList();
+  }
+
+  @override
+  Future<List<MediaHub>> fetchLibraryHubs(
+    String libraryId, {
+    required String libraryName,
+    int limit = 10,
+    bool includePlaybackHubs = true,
+  }) async {
+    // Mirror the Jellyfin web client's per-library "Suggestions" tab:
+    // Continue Watching + Next Up (TV libraries) + Recently Added.
+    //
+    // Issued in parallel so the recommended tab loads in one round-trip.
+    // We probe the library kind first to decide whether to ask for NextUp
+    // — querying it for a movie library is harmless (returns []), but
+    // skipping the request keeps the wire chatter tighter.
+    final latestFuture = _safeFetchItemsArray('/Users/${_segment(connection.userId)}/Items/Latest', {
+      'Limit': limit.toString(),
+      'ParentId': libraryId,
+      'Fields': _browseFields,
+      ...jellyfinImageQueryParameters,
+    });
+
+    if (!includePlaybackHubs) {
+      final latest = await latestFuture;
+      return [
+        JellyfinMappers.syntheticHub(
+          mapItem: _mapItem,
+          identifier: 'library.$libraryId.recent',
+          title: t.discover.recentlyAddedIn(library: libraryName),
+          type: 'mixed',
+          items: latest,
+          serverId: serverId,
+          serverName: serverName,
+        ),
+      ].where((h) => h.items.isNotEmpty).toList();
+    }
+
+    final results = await Future.wait([
+      latestFuture,
+      _safeFetchItemsArray('/UserItems/Resume', {
+        'userId': connection.userId,
+        'ParentId': libraryId,
+        'Limit': limit.toString(),
+        'Fields': _browseFields,
+        'MediaTypes': 'Video',
+        'Recursive': 'true',
+        ...jellyfinImageQueryParameters,
+      }),
+      _safeFetchItemsArray('/Shows/NextUp', {
+        'userId': connection.userId,
+        'ParentId': libraryId,
+        'Limit': limit.toString(),
+        'Fields': _browseFields,
+        'EnableResumable': 'false',
+        'EnableTotalRecordCount': 'false',
+        ...jellyfinImageQueryParameters,
+      }),
+    ]);
+
+    return [
+      JellyfinMappers.syntheticHub(
+        mapItem: _mapItem,
+        identifier: 'library.$libraryId.continue',
+        title: t.discover.continueWatchingIn(library: libraryName),
+        type: 'mixed',
+        items: results[1],
+        serverId: serverId,
+        serverName: serverName,
+      ),
+      JellyfinMappers.syntheticHub(
+        mapItem: _mapItem,
+        identifier: 'library.$libraryId.nextup',
+        title: t.discover.nextUpIn(library: libraryName),
+        type: 'episode',
+        items: results[2],
+        serverId: serverId,
+        serverName: serverName,
+      ),
+      JellyfinMappers.syntheticHub(
+        mapItem: _mapItem,
+        identifier: 'library.$libraryId.recent',
+        title: t.discover.recentlyAddedIn(library: libraryName),
+        type: 'mixed',
+        items: results[0],
+        serverId: serverId,
+        serverName: serverName,
+      ),
+    ].where((h) => h.items.isNotEmpty).toList();
+  }
+
+  /// Re-run the synthetic hub query without the preview limit so the
+  /// hub-detail screen can render the full list. Branches on the
+  /// identifier emitted by [fetchGlobalHubs] / [fetchLibraryHubs]:
+  /// `home.recent` / `library.{id}.recent` → Latest, `*.continue` → Resume,
+  /// `*.nextup` → NextUp. Unknown ids return an empty list.
+  @override
+  Future<List<MediaItem>> fetchMoreHubItems(String hubId, {int? limit}) async {
+    final effectiveLimit = (limit ?? 50).toString();
+    String? parentId;
+    if (hubId.startsWith('library.')) {
+      final rest = hubId.substring('library.'.length);
+      final dot = rest.lastIndexOf('.');
+      if (dot > 0) parentId = rest.substring(0, dot);
+    }
+    final tail = hubId.split('.').last;
+    final List<Map<String, dynamic>> items;
+    switch (tail) {
+      case 'recent':
+        items = await _safeFetchItemsArray('/Users/${_segment(connection.userId)}/Items/Latest', {
+          'Limit': effectiveLimit,
+          'Fields': _browseFields,
+          if (parentId != null) 'ParentId': parentId else 'IncludeItemTypes': 'Movie,Series,Episode',
+          ...jellyfinImageQueryParameters,
+        });
+        break;
+      case 'continue':
+        items = await _safeFetchItemsArray('/UserItems/Resume', {
+          'userId': connection.userId,
+          'Limit': effectiveLimit,
+          'Fields': _browseFields,
+          'Recursive': 'true',
+          if (parentId != null) 'ParentId': parentId else 'MediaTypes': 'Video',
+          ...jellyfinImageQueryParameters,
+        });
+        break;
+      case 'nextup':
+        items = await _safeFetchItemsArray('/Shows/NextUp', {
+          'userId': connection.userId,
+          'Limit': effectiveLimit,
+          'Fields': _browseFields,
+          'ParentId': ?parentId,
+          'EnableResumable': 'false',
+          'EnableTotalRecordCount': 'false',
+          ...jellyfinImageQueryParameters,
+        });
+        break;
+      default:
+        return const [];
+    }
+    return _mapItems(items);
+  }
+
+  @override
+  Future<List<MediaHub>> fetchRelatedHubs(String id, {int count = 10}) async {
+    final response = await _http.get(
+      '/Items/${_segment(id)}/Similar',
+      queryParameters: {
+        'userId': connection.userId,
+        'Limit': count.toString(),
+        'Fields': _browseFields,
+        ...jellyfinImageQueryParameters,
+      },
+    );
+    throwIfHttpError(response);
+    return [
+      JellyfinMappers.syntheticHub(
+        mapItem: _mapItem,
+        identifier: 'item.$id.similar',
+        title: 'More Like This',
+        type: 'mixed',
+        items: _itemsArray(response.data),
+        serverId: serverId,
+        serverName: serverName,
+      ),
+    ].where((h) => h.items.isNotEmpty).toList();
+  }
+
+  List<MediaItem> _mergeContinueWatchingAndNextUp({
+    required List<MediaItem> resume,
+    required List<MediaItem> nextUp,
+    required int limit,
+  }) {
+    if (limit <= 0) return const [];
+
+    final result = <MediaItem>[];
+    final seenIds = <String>{};
+    final seenSeriesIds = <String>{};
+
+    void add(MediaItem item) {
+      if (!seenIds.add(item.id)) return;
+      final seriesId = item.kind == MediaKind.episode ? item.grandparentId : null;
+      if (seriesId != null && !seenSeriesIds.add(seriesId)) return;
+      result.add(item);
+    }
+
+    for (final item in resume) {
+      add(item);
+      if (result.length >= limit) return result;
+    }
+    for (final item in nextUp) {
+      add(item);
+      if (result.length >= limit) return result;
+    }
+    return result;
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchItemsArray(String path, Map<String, dynamic> queryParameters) async {
+    final response = await _http.get(path, queryParameters: queryParameters);
+    throwIfHttpError(response);
+    return _itemsArray(response.data);
+  }
+
+  Future<List<Map<String, dynamic>>> _safeFetchItemsArray(String path, Map<String, dynamic> queryParameters) async {
+    try {
+      final response = await _http.get(path, queryParameters: queryParameters);
+      throwIfHttpError(response);
+      final data = response.data;
+      if (data is List) {
+        return data.whereType<Map<String, dynamic>>().toList();
+      }
+      return _itemsArray(data);
+    } catch (e, st) {
+      appLogger.w('JellyfinClient: $path failed (treating as empty)', error: e, stackTrace: st);
+      return const [];
+    }
+  }
+}
