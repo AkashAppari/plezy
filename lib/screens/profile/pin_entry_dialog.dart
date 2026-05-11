@@ -201,11 +201,13 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
   final FocusNode _mobileFocusNode = FocusNode(debugLabel: 'PinInputMobile');
   late final TextEditingController _mobileController = createTextEditingController();
   final FocusNode _keypadFocusNode = FocusNode(debugLabel: 'PinKeypad');
+  bool _keypadRefocusScheduled = false;
 
   @override
   void initState() {
     super.initState();
     _mobileFocusNode.addListener(_handleMobileFocusChanged);
+    _keypadFocusNode.addListener(_handleKeypadFocusChanged);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -220,6 +222,7 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
 
   @override
   void dispose() {
+    _keypadFocusNode.removeListener(_handleKeypadFocusChanged);
     _keypadFocusNode.dispose();
     _mobileFocusNode.removeListener(_handleMobileFocusChanged);
     _mobileFocusNode.dispose();
@@ -228,6 +231,21 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
 
   void _handleMobileFocusChanged() {
     if (mounted) setState(() {});
+  }
+
+  void _handleKeypadFocusChanged() {
+    if (!mounted || widget.isMobile || _keypadFocusNode.hasFocus) return;
+    _scheduleKeypadRefocus();
+  }
+
+  void _scheduleKeypadRefocus() {
+    if (_keypadRefocusScheduled) return;
+    _keypadRefocusScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _keypadRefocusScheduled = false;
+      if (!mounted || widget.isMobile || _keypadFocusNode.hasFocus) return;
+      _requestKeypadFocus();
+    });
   }
 
   void _reset() {
@@ -361,13 +379,13 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
         return KeyEventResult.handled;
       }
 
-      if (event.isPhysicalKeyboardEnter) {
-        _trySubmit();
+      if (event.isTvSelectEvent || (PlatformDetector.isTV() && event.isPhysicalKeyboardEnter)) {
+        _activate(_rows[_row][_column]);
         return KeyEventResult.handled;
       }
 
-      if (event.isTvSelectEvent) {
-        _activate(_rows[_row][_column]);
+      if (event.isPhysicalKeyboardEnter) {
+        _trySubmit();
         return KeyEventResult.handled;
       }
 
@@ -445,7 +463,12 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
       return _buildMobileLayout(context);
     }
 
-    return Focus(focusNode: _keypadFocusNode, onKeyEvent: _handleKey, child: _buildKeypadLayout(context));
+    return Focus(
+      focusNode: _keypadFocusNode,
+      autofocus: true,
+      onKeyEvent: _handleKey,
+      child: _buildKeypadLayout(context),
+    );
   }
 
   Widget _buildKeypadLayout(BuildContext context) {
