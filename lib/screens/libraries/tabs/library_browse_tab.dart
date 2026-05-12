@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import '../../../media/library_first_character.dart';
 import '../../../media/library_query.dart';
+import '../../../media/media_backend.dart';
 import '../../../media/media_item.dart';
 import '../../../providers/multi_server_provider.dart';
 import '../../../utils/media_server_http_client.dart';
@@ -19,6 +20,7 @@ import '../../../services/image_cache_service.dart';
 import '../../../services/library_query_translator.dart';
 import '../../../services/plex_constants.dart';
 import '../../../utils/error_message_utils.dart';
+import '../../../utils/app_logger.dart';
 import '../../../utils/grid_size_calculator.dart';
 import '../../../utils/layout_constants.dart';
 import '../../../utils/media_image_helper.dart';
@@ -267,9 +269,13 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   int _contentRequestId = 0;
   int _firstCharactersRequestId = 0;
   static const int _fetchSize = 200;
+  static const int _jellyfinFetchSize = 72;
   Timer? _scrollIdleTimer;
   bool _rangeLoadScheduled = false;
   bool _topScrollResetScheduled = false;
+
+  bool get _isJellyfinLibrary => widget.library.backend == MediaBackend.jellyfin;
+  int get _activeFetchSize => _isJellyfinLibrary ? _jellyfinFetchSize : _fetchSize;
 
   // Focus nodes for filter chips
   final FocusNode _groupingChipFocusNode = FocusNode(debugLabel: 'grouping_chip');
@@ -445,17 +451,28 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     // `/sorts`; Jellyfin maps `/Items/Filters` into the same shape with
     // values pre-cached and a hardcoded client-side sort list. Both flow
     // through the unified [MediaServerClient.fetchLibraryFiltersWithValues].
-    final loader = LibraryFilterSortLoader(clientFor: context.getMediaClientForLibrary);
+    final client = context.getMediaClientForLibrary(widget.library);
+    final loader = LibraryFilterSortLoader(clientFor: (_) => client);
 
     try {
-      // Filters+sorts must resolve before items so the saved-sort restoration
-      // can match a saved key against the just-loaded sort list, and so the
-      // first item fetch already includes the restored sort param.
-      final loaded = await loader.load(widget.library);
       final storage = await StorageService.getInstance();
       final savedFilters = storage.getLibraryFilters(sectionId: widget.library.globalKey);
       final savedSort = storage.getLibrarySort(widget.library.globalKey);
       final savedGrouping = storage.getLibraryGrouping(widget.library.globalKey);
+
+      final LoadedFiltersAndSorts loaded;
+      if (_isJellyfinLibrary) {
+        // `/Items/Filters` can be much slower than the paged `/Items` browse
+        // request on large Jellyfin libraries. Load only the local sort list
+        // before page 1, then fill filter values in the background.
+        final sorts = await client.fetchSortOptions(widget.library.id, libraryType: widget.library.kind.id);
+        loaded = LoadedFiltersAndSorts(filters: const [], sorts: sorts);
+      } else {
+        // Plex filters+sorts must resolve before items so saved-sort restoration
+        // can match a saved key against the just-loaded sort list, and so the
+        // first item fetch already includes the restored sort param.
+        loaded = await loader.load(widget.library);
+      }
 
       if (generation != _contentRequestId || !mounted) return;
       setState(() {
@@ -480,6 +497,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         }
       });
 
+      if (_isJellyfinLibrary) {
+        _loadJellyfinFiltersInBackground(generation);
+      }
+
       // Load items and first characters in parallel
       // _loadItems manages its own requestId internally
       await Future.wait([_loadItems(), _loadFirstCharacters(requestId: firstCharactersGeneration)]);
@@ -490,6 +511,24 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         isLoading = false;
       });
     }
+  }
+
+  void _loadJellyfinFiltersInBackground(int generation) {
+    final client = context.getMediaClientForLibrary(widget.library);
+    unawaited(
+      client
+          .fetchLibraryFiltersWithValues(widget.library.id)
+          .then((result) {
+            if (generation != _contentRequestId || !mounted) return;
+            setState(() {
+              _filters = result.filters;
+              _jellyfinFilterValues = result.cachedValues;
+            });
+          })
+          .catchError((Object e, StackTrace st) {
+            appLogger.w('Jellyfin library filters failed; browse content remains available', error: e, stackTrace: st);
+          }),
+    );
   }
 
   /// Initial UI state both Plex and Jellyfin paths need before fetching:
@@ -960,7 +999,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       clearPendingRanges();
       final range = _computeVisibleRange();
       if (range != null) {
-        ensureRangeLoaded(range.firstIndex, range.visibleCount, buffer: _fetchSize ~/ 2);
+        ensureRangeLoaded(range.firstIndex, range.visibleCount, buffer: _activeFetchSize ~/ 2);
         evictDistantItems(range.firstIndex, maxKeep: 500, threshold: 600);
         evictDistantFocusNodes(range.firstIndex);
       }
@@ -969,7 +1008,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     // Eager prefetch: fetch data before scroll stops
     final range = _computeVisibleRange();
     if (range != null) {
-      prefetchAhead(range.firstIndex, range.visibleCount, pageSize: _fetchSize);
+      prefetchAhead(range.firstIndex, range.visibleCount, pageSize: _activeFetchSize);
     }
 
     if (!_shouldShowAlphaJumpBar || !_scrollMetrics.isUsable) return;
@@ -1235,7 +1274,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       if (!mounted) return;
       final range = _computeVisibleRange();
       if (range != null) {
-        ensureRangeLoaded(range.firstIndex, range.visibleCount, buffer: _fetchSize ~/ 2);
+        ensureRangeLoaded(range.firstIndex, range.visibleCount, buffer: _activeFetchSize ~/ 2);
       }
     });
   }
@@ -1265,12 +1304,15 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       final itemWidth = screenSize.width / columnCount;
       final itemHeight = itemWidth / GridLayoutConstants.posterAspectRatio;
       final rowHeight = itemHeight + GridLayoutConstants.mainAxisSpacing;
-      if (rowHeight <= 0) return _fetchSize;
+      if (rowHeight <= 0) return _activeFetchSize;
       final visibleRows = (screenSize.height / rowHeight).ceil() + 1;
       final visibleCount = visibleRows * columnCount;
-      return (visibleCount * 3).clamp(100, 500);
+      if (_isJellyfinLibrary) {
+        return (visibleCount * 2).clamp(36, _jellyfinFetchSize).toInt();
+      }
+      return (visibleCount * 3).clamp(100, 500).toInt();
     } catch (_) {
-      return _fetchSize;
+      return _activeFetchSize;
     }
   }
 
@@ -1335,7 +1377,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   }
 
   /// Whether the filters chip is visible
-  bool get _isFiltersChipVisible => _filters.isNotEmpty && _selectedGrouping != 'folders';
+  bool get _isFiltersChipVisible =>
+      (_filters.isNotEmpty || _selectedFilters.isNotEmpty) && _selectedGrouping != 'folders';
 
   /// Whether the sort chip is visible
   bool get _isSortChipVisible => _sortOptions.isNotEmpty && _selectedGrouping != 'folders';

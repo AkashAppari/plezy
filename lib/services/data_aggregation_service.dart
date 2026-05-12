@@ -167,6 +167,7 @@ class DataAggregationService {
               libraryName: l.title,
               limit: limit,
               includePlaybackHubs: includePlaybackHubs,
+              libraryKind: l.kind,
             );
           } catch (e, st) {
             appLogger.e('Failed to fetch library hubs for ${l.globalKey}', error: e, stackTrace: st);

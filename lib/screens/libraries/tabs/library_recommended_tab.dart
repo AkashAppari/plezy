@@ -148,7 +148,14 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
     final client = context.tryGetMediaClientForServer(widget.library.serverId);
     final hubs = client == null
         ? <MediaHub>[]
-        : List.of(await client.fetchLibraryHubs(widget.library.id, libraryName: widget.library.title, limit: 12));
+        : List.of(
+            await client.fetchLibraryHubs(
+              widget.library.id,
+              libraryName: widget.library.title,
+              limit: 12,
+              libraryKind: widget.library.kind,
+            ),
+          );
 
     // Move Continue Watching hub to the front if present
     final cwIndex = hubs.indexWhere(_isContinueWatchingHub);

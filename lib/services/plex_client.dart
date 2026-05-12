@@ -3128,6 +3128,7 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
     required String libraryName,
     int limit = 10,
     bool includePlaybackHubs = true,
+    MediaKind? libraryKind,
   }) async {
     // libraryName is unused: Plex's /hubs/sections/{id} returns hubs already
     // titled per-library (e.g. "Recently Added in Movies").

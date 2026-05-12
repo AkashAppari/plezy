@@ -208,12 +208,14 @@ abstract class MediaServerClient {
   /// the title of synthetic hubs (Jellyfin) so per-library "Recently Added"
   /// / "Next Up" hubs aren't all identically named on the home screen.
   /// [includePlaybackHubs] lets surfaces that already render Continue
-  /// Watching skip duplicate playback rows.
+  /// Watching skip duplicate playback rows. [libraryKind] lets backends avoid
+  /// irrelevant expensive probes, e.g. Jellyfin `NextUp` for movie libraries.
   Future<List<MediaHub>> fetchLibraryHubs(
     String libraryId, {
     required String libraryName,
     int limit = 10,
     bool includePlaybackHubs = true,
+    MediaKind? libraryKind,
   });
 
   /// "More like this" recommendations for [id].

@@ -12,9 +12,7 @@ List<Map<String, dynamic>> _itemsArray(Object? data) {
 }
 
 /// Slim field set for grid/list browsing — what the card UI actually
-/// renders (title, year, watched badge, episode count for series),
-/// plus `MediaSources` so the long-press "Play Version" gate matches
-/// Plex's flow (Plex always inlines `Media[]`).
+/// renders (title, year, watched badge, episode count for series).
 ///
 /// The real Jellyfin web client + Findroid skip explicit `Fields` for
 /// list calls; we ask for the minimum extras needed to drive the
@@ -23,15 +21,12 @@ List<Map<String, dynamic>> _itemsArray(Object? data) {
 ///  - `UserData` is included in defaults but pinned for safety
 ///  - `PremiereDate` for sort-by-release-date and episode metadata
 ///  - `OriginalTitle`/`SortName` for sort + alphabetised display
-///  - `Overview` so episode-list rows show their description
-///  - `MediaSources` so the context menu can hide `Play Version` when
-///    there's nothing to pick (cost: ~40ms per 50-item page)
+///  - `Overview` so list rows can show their description
 ///
-/// Heavier fields (`People`, `Genres`, `Tags`, `Studios`, `Taglines`,
-/// `ProviderIds`, `Chapters`) stay in [_detailFields] — together they
-/// added ~6s to a 100-item Series page on a small home server.
-const _browseFields =
-    'RecursiveItemCount,ChildCount,UserData,PremiereDate,OriginalTitle,SortName,Overview,MediaSources';
+/// Heavier fields (`MediaSources`, `People`, `Genres`, `Tags`, `Studios`,
+/// `Taglines`, `ProviderIds`, `Chapters`) stay in [_detailFields] — together
+/// they added seconds to large-library pages on small home servers.
+const _browseFields = 'RecursiveItemCount,ChildCount,UserData,PremiereDate,OriginalTitle,SortName,Overview';
 
 /// Even slimmer set used by [fetchClientSideEpisodeQueue]. Queue rows
 /// only need title, thumbnail (`ImageTags['Primary']`), season/episode
@@ -44,6 +39,10 @@ const _queueFields = 'UserData';
 /// Page size for [fetchClientSideEpisodeQueue]. Keeps each server response
 /// bounded while still returning the full series queue.
 const _episodeQueuePageSize = 200;
+
+/// `/Items/Filters` is a legacy unpaged endpoint; keep failures isolated from
+/// the paged Browse tab so very large libraries can still open.
+const _filtersTimeout = Duration(seconds: 8);
 
 /// Full field set for the detail screen and the resume / next-up
 /// pre-fetch paths. Mirrors what the Jellyfin web detail view requests.
@@ -122,13 +121,8 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   /// recognise it as cached and skip the per-category value fetch.
   @override
   Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId) async {
-    final response = await _http.get(
-      '/Items/Filters',
-      queryParameters: {'userId': connection.userId, 'ParentId': libraryId},
-    );
-    throwIfHttpError(response);
-    final data = response.data;
-    if (data is! Map<String, dynamic>) return LibraryFilterResult.empty;
+    final data = await _safeFetchFilterPayload(libraryId);
+    if (data == null) return LibraryFilterResult.empty;
     List<String> stringList(Object? raw) {
       if (raw is! List) return const [];
       return raw.whereType<String>().where((s) => s.isNotEmpty).toList();
@@ -167,6 +161,23 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       values[key] = sorted.map((v) => MediaFilterValue(key: v, title: v)).toList();
     }
     return LibraryFilterResult(filters: filters, cachedValues: values);
+  }
+
+  Future<Map<String, dynamic>?> _safeFetchFilterPayload(String libraryId) async {
+    try {
+      final response = await _http.get(
+        '/Items/Filters',
+        queryParameters: {'userId': connection.userId, 'ParentId': libraryId},
+        timeout: _filtersTimeout,
+      );
+      throwIfHttpError(response);
+      final data = response.data;
+      return data is Map<String, dynamic> ? data : null;
+    } on MediaServerHttpException catch (e, st) {
+      if (!e.isTransient) rethrow;
+      appLogger.w('JellyfinClient: /Items/Filters timed out (filters disabled)', error: e, stackTrace: st);
+      return null;
+    }
   }
 
   /// Jellyfin has no `/sorts` listing endpoint, so this returns a hardcoded
@@ -549,6 +560,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         'Fields': _browseFields,
         'MediaTypes': 'Video',
         'Recursive': 'true',
+        'EnableTotalRecordCount': 'false',
         ...jellyfinImageQueryParameters,
       }),
       _safeFetchItemsArray('/Shows/NextUp', {
@@ -599,6 +611,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         'Fields': _browseFields,
         'MediaTypes': 'Video',
         'Recursive': 'true',
+        'EnableTotalRecordCount': 'false',
         ...jellyfinImageQueryParameters,
       }),
       _safeFetchItemsArray('/Shows/NextUp', {
@@ -648,14 +661,14 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     required String libraryName,
     int limit = 10,
     bool includePlaybackHubs = true,
+    MediaKind? libraryKind,
   }) async {
     // Mirror the Jellyfin web client's per-library "Suggestions" tab:
     // Continue Watching + Next Up (TV libraries) + Recently Added.
     //
     // Issued in parallel so the recommended tab loads in one round-trip.
-    // We probe the library kind first to decide whether to ask for NextUp
-    // — querying it for a movie library is harmless (returns []), but
-    // skipping the request keeps the wire chatter tighter.
+    // When the caller knows the library kind, skip NextUp for movie libraries;
+    // Jellyfin can otherwise spend time scanning TV state only to return [].
     final latestFuture = _safeFetchItemsArray('/Users/${_segment(connection.userId)}/Items/Latest', {
       'Limit': limit.toString(),
       'ParentId': libraryId,
@@ -678,6 +691,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       ].where((h) => h.items.isNotEmpty).toList();
     }
 
+    final includeNextUp = libraryKind == null || libraryKind == MediaKind.show;
     final results = await Future.wait([
       latestFuture,
       _safeFetchItemsArray('/UserItems/Resume', {
@@ -687,17 +701,20 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         'Fields': _browseFields,
         'MediaTypes': 'Video',
         'Recursive': 'true',
-        ...jellyfinImageQueryParameters,
-      }),
-      _safeFetchItemsArray('/Shows/NextUp', {
-        'userId': connection.userId,
-        'ParentId': libraryId,
-        'Limit': limit.toString(),
-        'Fields': _browseFields,
-        'EnableResumable': 'false',
         'EnableTotalRecordCount': 'false',
         ...jellyfinImageQueryParameters,
       }),
+      includeNextUp
+          ? _safeFetchItemsArray('/Shows/NextUp', {
+              'userId': connection.userId,
+              'ParentId': libraryId,
+              'Limit': limit.toString(),
+              'Fields': _browseFields,
+              'EnableResumable': 'false',
+              'EnableTotalRecordCount': 'false',
+              ...jellyfinImageQueryParameters,
+            })
+          : Future.value(const <Map<String, dynamic>>[]),
     ]);
 
     return [
@@ -762,6 +779,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
           'Limit': effectiveLimit,
           'Fields': _browseFields,
           'Recursive': 'true',
+          'EnableTotalRecordCount': 'false',
           if (parentId != null) 'ParentId': parentId else 'MediaTypes': 'Video',
           ...jellyfinImageQueryParameters,
         });

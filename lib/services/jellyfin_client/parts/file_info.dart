@@ -3,8 +3,8 @@ part of '../../jellyfin_client.dart';
 mixin _JellyfinFileInfoMethods on MediaServerCacheMixin {
   @override
   Future<MediaFileInfo?> getFileInfo(MediaItem item) async {
-    // Browse responses already include `MediaSources` (see [_browseFields]).
-    // Re-fetch via [fetchItem] only if the inline data isn't available.
+    // Lightweight browse responses omit `MediaSources`; detail and some cached
+    // entries still include them, otherwise fetch the full item on demand.
     final raw = item.raw is Map<String, dynamic> ? item.raw as Map<String, dynamic> : null;
     Map<String, dynamic>? itemJson = raw;
     if (itemJson == null || itemJson['MediaSources'] is! List) {

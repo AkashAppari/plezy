@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/connection/connection.dart';
+import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
@@ -736,6 +737,44 @@ void main() {
       expect(headers['Accept'], 'application/json');
     });
 
+    test('fetchLibraryContent sends a bounded paged Items request', () async {
+      Uri? captured;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          captured = req.url;
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                {'Id': 'movie-1', 'Type': 'Movie', 'Name': 'Movie'},
+              ],
+              'TotalRecordCount': 123,
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final page = await scoped.fetchLibraryContent(
+        'lib-1',
+        const LibraryQuery(kind: MediaKind.movie, offset: 50, limit: 25),
+      );
+
+      expect(page.items.single.id, 'movie-1');
+      expect(page.totalCount, 123);
+      expect(captured, isNotNull);
+      expect(captured!.path, '/Items');
+      expect(captured!.queryParameters['ParentId'], 'lib-1');
+      expect(captured!.queryParameters['StartIndex'], '50');
+      expect(captured!.queryParameters['Limit'], '25');
+      expect(captured!.queryParameters['IncludeItemTypes'], 'Movie');
+      expect(captured!.queryParameters['Fields'], isNot(contains('MediaSources')));
+      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(captured!.queryParameters['ImageTypeLimit'], '1');
+    });
+
     test('fetchClientSideEpisodeQueue pages past the first 200 episodes', () async {
       final starts = <String?>[];
       final pagedClient = JellyfinClient.forTesting(
@@ -955,6 +994,7 @@ void main() {
       expect(resume.queryParameters['Limit'], '3');
       expect(resume.queryParameters['MediaTypes'], 'Video');
       expect(resume.queryParameters['Recursive'], 'true');
+      expect(resume.queryParameters['EnableTotalRecordCount'], 'false');
       expect(resume.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
       expect(resume.queryParameters['ImageTypeLimit'], '1');
       final nextUp = requests.singleWhere((uri) => uri.path == '/Shows/NextUp');
@@ -1016,6 +1056,9 @@ void main() {
 
       await client.fetchGlobalHubs(limit: 12);
 
+      final resume = captured.singleWhere((uri) => uri.path == '/UserItems/Resume');
+      expect(resume.queryParameters['EnableTotalRecordCount'], 'false');
+
       final nextUp = capturedNextUpRequest();
       expect(nextUp.queryParameters['userId'], 'user-1');
       expect(nextUp.queryParameters['Limit'], '12');
@@ -1050,11 +1093,11 @@ void main() {
       return JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
     }
 
-    test('library Next Up excludes resumable episodes without date cutoff', () async {
+    test('show library Next Up excludes resumable episodes without date cutoff', () async {
       final client = buildClient();
       addTearDown(client.close);
 
-      await client.fetchLibraryHubs('lib-99', libraryName: 'Movies', limit: 12);
+      await client.fetchLibraryHubs('lib-99', libraryName: 'Shows', limit: 12, libraryKind: MediaKind.show);
 
       final nextUp = captured.singleWhere((uri) => uri.path == '/Shows/NextUp');
       expect(nextUp.queryParameters['ParentId'], 'lib-99');
@@ -1065,6 +1108,19 @@ void main() {
       expect(nextUp.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
       expect(nextUp.queryParameters['ImageTypeLimit'], '1');
       expect(nextUp.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
+    });
+
+    test('movie library skips Next Up and disables resume total count', () async {
+      final client = buildClient();
+      addTearDown(client.close);
+
+      await client.fetchLibraryHubs('lib-99', libraryName: 'Movies', limit: 12, libraryKind: MediaKind.movie);
+
+      expect(captured.where((uri) => uri.path == '/Shows/NextUp'), isEmpty);
+      final resume = captured.singleWhere((uri) => uri.path == '/UserItems/Resume');
+      expect(resume.queryParameters['ParentId'], 'lib-99');
+      expect(resume.queryParameters['Limit'], '12');
+      expect(resume.queryParameters['EnableTotalRecordCount'], 'false');
     });
 
     test('can skip library playback hubs', () async {
@@ -1115,6 +1171,7 @@ void main() {
       expect(captured!.queryParameters['Limit'], '50');
       expect(captured!.queryParameters['MediaTypes'], 'Video');
       expect(captured!.queryParameters['Recursive'], 'true');
+      expect(captured!.queryParameters['EnableTotalRecordCount'], 'false');
       expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
       expect(captured!.queryParameters['ImageTypeLimit'], '1');
       expect(captured!.queryParameters.containsKey('ParentId'), isFalse);
@@ -1163,6 +1220,7 @@ void main() {
       expect(captured!.queryParameters['ParentId'], 'lib-99');
       expect(captured!.queryParameters['userId'], 'user-1');
       expect(captured!.queryParameters['Recursive'], 'true');
+      expect(captured!.queryParameters['EnableTotalRecordCount'], 'false');
       expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
       expect(captured!.queryParameters['ImageTypeLimit'], '1');
       client.close();
