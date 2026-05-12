@@ -204,6 +204,115 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     )
   }
 
+  override func updateDisplayCriteria(
+    doviProfile: Int64,
+    doviLevel: Int64,
+    fps: Double,
+    width: Int32,
+    height: Int32,
+    sigPeak: Double
+  ) {
+    #if os(tvOS)
+      guard let window = containerView?.window ?? self.window else { return }
+      let displayManager = window.avDisplayManager
+      guard displayManager.isDisplayCriteriaMatchingEnabled else { return }
+
+      let refreshRate = Float(fps > 0 ? fps : 0)
+
+      if doviProfile > 0, width > 0, height > 0, #available(tvOS 17.0, *) {
+        // Profile 8.x always carries a compatibility id; profile 5 has none.
+        // We assume bl_signal_compatibility_id = 1 (HDR10 base) for profile 8
+        // because mpv does not expose the compat id and that's by far the
+        // most common case (and matches the user's reported content).
+        let compat: UInt8 = doviProfile == 8 ? 1 : 0
+        if let fd = Self.makeDolbyVisionFormatDescription(
+          width: width,
+          height: height,
+          profile: UInt8(truncatingIfNeeded: doviProfile),
+          level: UInt8(truncatingIfNeeded: doviLevel),
+          compatibility: compat)
+        {
+          let criteria = AVDisplayCriteria(refreshRate: refreshRate, formatDescription: fd)
+          displayManager.preferredDisplayCriteria = criteria
+          print(
+            "[MpvPlayerCore] preferredDisplayCriteria set to Dolby Vision (profile: \(doviProfile), level: \(doviLevel), fps: \(refreshRate), \(width)x\(height))"
+          )
+          return
+        }
+        print("[MpvPlayerCore] Failed to synthesize DV CMVideoFormatDescription; clearing criteria")
+      }
+
+      // Non-DV content (HDR10 / SDR) or DV FD synthesis failed: clear the
+      // hint and let tvOS auto-pick from the AVSampleBufferDisplayLayer's
+      // actual sample-buffer attachments (BT.2020 + PQ for HDR10).
+      if displayManager.preferredDisplayCriteria != nil {
+        displayManager.preferredDisplayCriteria = nil
+        print("[MpvPlayerCore] preferredDisplayCriteria cleared (sigPeak: \(sigPeak))")
+      }
+    #endif
+  }
+
+  #if os(tvOS)
+    /// Build a synthetic 'dvh1' `CMVideoFormatDescription` from the Dolby Vision
+    /// metadata mpv exposes. Used solely as a hint object for
+    /// `AVDisplayCriteria(refreshRate:formatDescription:)` — it is never
+    /// enqueued onto the sample-buffer layer.
+    private static func makeDolbyVisionFormatDescription(
+      width: Int32,
+      height: Int32,
+      profile: UInt8,
+      level: UInt8,
+      compatibility: UInt8
+    ) -> CMVideoFormatDescription? {
+      // 24-byte Dolby Vision configuration record (dvcC ≤ profile 7, dvvC ≥ 8).
+      // Layout from ETSI TS 103 572 §7.1.1 — same packing as FFmpeg's
+      // videotoolbox_dovi_extradata_create (in 0002 patch):
+      //   [0]     dv_version_major (= 1)
+      //   [1]     dv_version_minor (= 0)
+      //   [2..3]  big-endian uint16: profile<<9 | level<<3 | rpu<<2 | el<<1 | bl
+      //   [4]     compatibility<<4 | md_compression<<2
+      //   [5..23] reserved zero
+      var dovi = [UInt8](repeating: 0, count: 24)
+      dovi[0] = 1
+      dovi[1] = 0
+      let flags: UInt16 =
+        (UInt16(profile) & 0x7f) << 9
+        | (UInt16(level) & 0x3f) << 3
+        | (1 << 2)  // rpu_present_flag
+        | (1 << 0)  // bl_present_flag
+      dovi[2] = UInt8((flags >> 8) & 0xff)
+      dovi[3] = UInt8(flags & 0xff)
+      dovi[4] = (compatibility & 0x0f) << 4
+
+      // CoreMedia does not export a typed
+      // `kCMFormatDescriptionExtension_DolbyVision…` constant. The well-known
+      // CFString key is the four-char box name VideoToolbox/AVFoundation
+      // expect (same key FFmpeg writes in 0002-videotoolbox-add-dolby-vision-hevc-format.patch).
+      let recordKey: CFString = (profile > 7 ? "dvvC" : "dvcC") as CFString
+
+      let extensions: [CFString: Any] = [
+        recordKey: Data(dovi) as CFData,
+        kCMFormatDescriptionExtension_ColorPrimaries:
+          kCMFormatDescriptionColorPrimaries_ITU_R_2020,
+        kCMFormatDescriptionExtension_TransferFunction:
+          kCMFormatDescriptionTransferFunction_SMPTE_ST_2084_PQ,
+        kCMFormatDescriptionExtension_YCbCrMatrix:
+          kCMFormatDescriptionYCbCrMatrix_ITU_R_2020,
+      ]
+
+      var fd: CMVideoFormatDescription?
+      let status = CMVideoFormatDescriptionCreate(
+        allocator: kCFAllocatorDefault,
+        codecType: kCMVideoCodecType_DolbyVisionHEVC,  // 'dvh1'
+        width: width,
+        height: height,
+        extensions: extensions as CFDictionary,
+        formatDescriptionOut: &fd
+      )
+      return status == noErr ? fd : nil
+    }
+  #endif
+
   func dispose() {
     NotificationCenter.default.removeObserver(self)
     #if os(iOS)

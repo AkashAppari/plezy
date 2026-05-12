@@ -76,6 +76,9 @@ class MpvPlayerCoreBase: NSObject {
   var isBackgrounded = false
   private var cachedHDREnabled = true
   private var cachedLastSigPeak = 0.0
+  private var cachedDoviProfile: Int64 = 0
+  private var cachedDoviLevel: Int64 = 0
+  private var cachedContainerFps: Double = 0
   var hdrEnabled: Bool {
     cacheLock.lock()
     defer { cacheLock.unlock() }
@@ -86,6 +89,21 @@ class MpvPlayerCoreBase: NSObject {
     defer { cacheLock.unlock() }
     return cachedLastSigPeak
   }
+  var doviProfile: Int64 {
+    cacheLock.lock()
+    defer { cacheLock.unlock() }
+    return cachedDoviProfile
+  }
+  var doviLevel: Int64 {
+    cacheLock.lock()
+    defer { cacheLock.unlock() }
+    return cachedDoviLevel
+  }
+  var containerFps: Double {
+    cacheLock.lock()
+    defer { cacheLock.unlock() }
+    return cachedContainerFps
+  }
 
   /// Properties that must still flow to Dart while backgrounded (state-critical).
   private static let criticalProperties: Set<String> = [
@@ -95,10 +113,16 @@ class MpvPlayerCoreBase: NSObject {
   private static let internalSigPeakObserverId: UInt64 = UInt64.max - 1
   private static let internalWidthObserverId: UInt64 = UInt64.max - 2
   private static let internalHeightObserverId: UInt64 = UInt64.max - 3
+  private static let internalDoviProfileObserverId: UInt64 = UInt64.max - 4
+  private static let internalDoviLevelObserverId: UInt64 = UInt64.max - 5
+  private static let internalContainerFpsObserverId: UInt64 = UInt64.max - 6
   private static let internalObserverIds: Set<UInt64> = [
     internalSigPeakObserverId,
     internalWidthObserverId,
     internalHeightObserverId,
+    internalDoviProfileObserverId,
+    internalDoviLevelObserverId,
+    internalContainerFpsObserverId,
   ]
 
   let queue = DispatchQueue(label: "mpv", qos: .userInitiated)
@@ -130,6 +154,37 @@ class MpvPlayerCoreBase: NSObject {
   func configurePlatformMpvOptions() {}
 
   func updateEDRMode(sigPeak: Double) {}
+
+  func updateDisplayCriteria(
+    doviProfile: Int64,
+    doviLevel: Int64,
+    fps: Double,
+    width: Int32,
+    height: Int32,
+    sigPeak: Double
+  ) {}
+
+  func scheduleDisplayCriteriaUpdate() {
+    cacheLock.lock()
+    let profile = cachedDoviProfile
+    let level = cachedDoviLevel
+    let fps = cachedContainerFps
+    let width = Int32(cachedWidth)
+    let height = Int32(cachedHeight)
+    let sigPeak = cachedLastSigPeak
+    cacheLock.unlock()
+
+    DispatchQueue.main.async { [weak self] in
+      self?.updateDisplayCriteria(
+        doviProfile: profile,
+        doviLevel: level,
+        fps: fps,
+        width: width,
+        height: height,
+        sigPeak: sigPeak
+      )
+    }
+  }
 
   func setupMpv() -> Bool {
     #if os(macOS)
@@ -176,6 +231,15 @@ class MpvPlayerCoreBase: NSObject {
     mpv_observe_property(mpv, Self.internalSigPeakObserverId, "video-params/sig-peak", MPV_FORMAT_DOUBLE)
     mpv_observe_property(mpv, Self.internalWidthObserverId, "width", MPV_FORMAT_DOUBLE)
     mpv_observe_property(mpv, Self.internalHeightObserverId, "height", MPV_FORMAT_DOUBLE)
+    mpv_observe_property(
+      mpv, Self.internalDoviProfileObserverId,
+      "current-tracks/video/dolby-vision-profile", MPV_FORMAT_INT64)
+    mpv_observe_property(
+      mpv, Self.internalDoviLevelObserverId,
+      "current-tracks/video/dolby-vision-level", MPV_FORMAT_INT64)
+    mpv_observe_property(
+      mpv, Self.internalContainerFpsObserverId,
+      "container-fps", MPV_FORMAT_DOUBLE)
     return true
   }
 
@@ -368,6 +432,17 @@ class MpvPlayerCoreBase: NSObject {
   func disposeSharedState(destroySynchronously: Bool) {
     isDisposing = true
     cancelPendingRequests()
+
+    cacheLock.lock()
+    cachedDoviProfile = 0
+    cachedDoviLevel = 0
+    cachedContainerFps = 0
+    cachedLastSigPeak = 0
+    cacheLock.unlock()
+    DispatchQueue.main.async { [weak self] in
+      self?.updateDisplayCriteria(
+        doviProfile: 0, doviLevel: 0, fps: 0, width: 0, height: 0, sigPeak: 0)
+    }
 
     let mpvHandle = mpv
     mpv = nil
@@ -638,6 +713,11 @@ class MpvPlayerCoreBase: NSObject {
         value = data.assumingMemoryBound(to: Double.self).pointee
       }
 
+    case MPV_FORMAT_INT64:
+      if let data = property.data {
+        value = data.assumingMemoryBound(to: Int64.self).pointee
+      }
+
     case MPV_FORMAT_FLAG:
       if let data = property.data {
         value = data.assumingMemoryBound(to: Int32.self).pointee != 0
@@ -668,6 +748,29 @@ class MpvPlayerCoreBase: NSObject {
       DispatchQueue.main.async {
         self.updateEDRMode(sigPeak: sigPeak)
       }
+      scheduleDisplayCriteriaUpdate()
+    }
+
+    switch name {
+    case "current-tracks/video/dolby-vision-profile":
+      cacheLock.lock()
+      cachedDoviProfile = (value as? Int64) ?? 0
+      cacheLock.unlock()
+      scheduleDisplayCriteriaUpdate()
+    case "current-tracks/video/dolby-vision-level":
+      cacheLock.lock()
+      cachedDoviLevel = (value as? Int64) ?? 0
+      cacheLock.unlock()
+      scheduleDisplayCriteriaUpdate()
+    case "container-fps":
+      cacheLock.lock()
+      cachedContainerFps = (value as? Double) ?? 0
+      cacheLock.unlock()
+      scheduleDisplayCriteriaUpdate()
+    case "width", "height":
+      scheduleDisplayCriteriaUpdate()
+    default:
+      break
     }
 
     if Self.internalObserverIds.contains(replyUserdata) { return }
