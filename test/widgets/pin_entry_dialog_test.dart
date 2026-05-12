@@ -64,6 +64,68 @@ void main() {
     expect(find.byType(PinEntryDialog), findsNothing);
   });
 
+  testWidgets('mobile duplicate submit does not pop route below PIN dialog', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(false);
+    String? pinResult;
+    bool? boolRouteResult;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.iOS),
+        home: Builder(
+          builder: (context) {
+            return Scaffold(
+              body: TextButton(
+                onPressed: () async {
+                  boolRouteResult = await Navigator.of(context).push<bool>(
+                    MaterialPageRoute(
+                      builder: (routeContext) {
+                        return Scaffold(
+                          body: Column(
+                            children: [
+                              const Text('Bool Route'),
+                              TextButton(
+                                onPressed: () async {
+                                  pinResult = await showPinEntryDialog(routeContext, 'Protected Profile');
+                                },
+                                child: const Text('Open PIN'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+                child: const Text('Open Bool Route'),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open Bool Route'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bool Route'), findsOneWidget);
+
+    await tester.tap(find.text('Open PIN'));
+    await tester.pumpAndSettle();
+
+    final field = find.byType(TextField);
+    await tester.showKeyboard(field);
+    await tester.enterText(field, '1234');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(pinResult, '1234');
+    expect(boolRouteResult, isNull);
+    expect(find.text('Bool Route'), findsOneWidget);
+    expect(find.byType(PinEntryDialog), findsNothing);
+  });
+
   testWidgets('D-pad keypad enters and submits PIN', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
     String? result;

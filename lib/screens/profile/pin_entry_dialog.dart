@@ -27,6 +27,7 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
   late Animation<double> _shakeAnimation;
   final _pinInputKey = GlobalKey<_TvPinInputState>();
   final _cancelFocusNode = FocusNode(debugLabel: 'PinCancelButton');
+  bool _completed = false;
 
   @override
   void initState() {
@@ -56,11 +57,15 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
   }
 
   void _submit(String pin) {
-    Navigator.of(context).pop(pin);
+    if (_completed) return;
+    _completed = true;
+    Navigator.of(context).pop<String>(pin);
   }
 
   void _cancel() {
-    Navigator.of(context).pop(null);
+    if (_completed) return;
+    _completed = true;
+    Navigator.of(context).pop<String>();
   }
 
   void _focusPinInput() {
