@@ -55,7 +55,7 @@ dependencies:
   background_downloader:
     git:
       url: https://github.com/edde746/background_downloader
-      ref: 1f42690
+      ref: 15f517c0df110a922ca1747d5b01989c7fbe95aa
   sentry_flutter:
     git:
       url: https://github.com/edde746/sentry-dart
