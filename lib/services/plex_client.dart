@@ -55,6 +55,7 @@ import '../utils/media_server_retry.dart';
 import '../utils/media_server_timeouts.dart';
 import '../utils/log_redaction_manager.dart';
 import '../utils/plex_cache_parser.dart';
+import '../utils/plex_library_section_utils.dart';
 import '../utils/plex_url_helper.dart';
 import '../utils/session_identifier.dart' as session_id;
 import '../utils/watch_state_notifier.dart';
@@ -81,16 +82,27 @@ List<PlexHubDto> _processHubResponse(
   Map<String, dynamic> decoded,
   String serverId,
   String? serverName, {
+  int? librarySectionID,
+  String? librarySectionTitle,
   bool Function(PlexMetadataDto)? filter,
 }) {
   final container = decoded['MediaContainer'] as Map<String, dynamic>?;
   if (container == null || container['Hub'] == null) return [];
 
+  final containerSectionID = _librarySectionIdFromJson(container) ?? librarySectionID;
+  final containerSectionTitle = _librarySectionTitleFromJson(container) ?? librarySectionTitle;
   final itemFilter = filter ?? (PlexMetadataDto item) => ContentTypes.videoTypes.contains(item.type?.toLowerCase());
   final hubs = <PlexHubDto>[];
   for (final hubJson in container['Hub'] as List) {
     try {
-      final hub = PlexHubDto.fromJson(hubJson as Map<String, dynamic>, serverId: serverId, serverName: serverName);
+      final hubMap = hubJson as Map<String, dynamic>;
+      final hubSectionID = _librarySectionIdFromJson(hubMap) ?? containerSectionID;
+      final hubSectionTitle = _librarySectionTitleFromJson(hubMap) ?? containerSectionTitle;
+      final hub = _plexHubWithLibrarySection(
+        PlexHubDto.fromJson(hubMap, serverId: serverId, serverName: serverName),
+        librarySectionID: hubSectionID,
+        librarySectionTitle: hubSectionTitle,
+      );
       if (hub.items.isEmpty) continue;
 
       final filteredItems = hub.items.where(itemFilter).toList();
@@ -115,6 +127,48 @@ List<PlexHubDto> _processHubResponse(
     }
   }
   return hubs;
+}
+
+int? _librarySectionIdFromJson(Map<String, dynamic>? json) => plexLibrarySectionIdFromJson(json);
+
+int? _librarySectionIdFromString(String? sectionId) => plexLibrarySectionIdFromString(sectionId);
+
+String? _librarySectionTitleFromJson(Map<String, dynamic>? json) => plexLibrarySectionTitleFromJson(json);
+
+PlexMetadataDto _plexMetadataWithLibrarySection(
+  PlexMetadataDto metadata, {
+  int? librarySectionID,
+  String? librarySectionTitle,
+}) {
+  final nextSectionID = metadata.librarySectionID ?? librarySectionID;
+  final nextSectionTitle = metadata.librarySectionTitle ?? librarySectionTitle;
+  if (nextSectionID == metadata.librarySectionID && nextSectionTitle == metadata.librarySectionTitle) {
+    return metadata;
+  }
+  return metadata.copyWith(librarySectionID: nextSectionID, librarySectionTitle: nextSectionTitle);
+}
+
+PlexHubDto _plexHubWithLibrarySection(PlexHubDto hub, {int? librarySectionID, String? librarySectionTitle}) {
+  if (librarySectionID == null && librarySectionTitle == null) return hub;
+  return PlexHubDto(
+    hubKey: hub.hubKey,
+    title: hub.title,
+    type: hub.type,
+    hubIdentifier: hub.hubIdentifier,
+    size: hub.size,
+    more: hub.more,
+    items: hub.items
+        .map(
+          (item) => _plexMetadataWithLibrarySection(
+            item,
+            librarySectionID: librarySectionID,
+            librarySectionTitle: librarySectionTitle,
+          ),
+        )
+        .toList(),
+    serverId: hub.serverId,
+    serverName: hub.serverName,
+  );
 }
 
 // PlexStreamType moved to plex_constants.dart to break a would-be circular
@@ -614,14 +668,54 @@ class PlexClient
   PlexMetadataDto _tagMetadata(PlexMetadataDto metadata) =>
       metadata.copyWith(serverId: serverId, serverName: serverName);
 
+  PlexMetadataDto _tagMetadataWithLibrary(
+    PlexMetadataDto metadata, {
+    int? librarySectionID,
+    String? librarySectionTitle,
+  }) {
+    return _plexMetadataWithLibrarySection(
+      _tagMetadata(metadata),
+      librarySectionID: librarySectionID,
+      librarySectionTitle: librarySectionTitle,
+    );
+  }
+
   @override
   PlexMetadataDto _createTaggedMetadata(Map<String, dynamic> json) => _tagMetadata(PlexMetadataDto.fromJson(json));
 
+  PlexMetadataDto _createTaggedMetadataWithLibrary(
+    Map<String, dynamic> json, {
+    int? librarySectionID,
+    String? librarySectionTitle,
+  }) {
+    return _tagMetadataWithLibrary(
+      PlexMetadataDto.fromJson(json),
+      librarySectionID: _librarySectionIdFromJson(json) ?? librarySectionID,
+      librarySectionTitle: _librarySectionTitleFromJson(json) ?? librarySectionTitle,
+    );
+  }
+
   @override
-  List<PlexMetadataDto> _extractMetadataList(MediaServerResponse response) {
+  List<PlexMetadataDto> _extractMetadataList(MediaServerResponse response) => _extractMetadataListWithLibrary(response);
+
+  List<PlexMetadataDto> _extractMetadataListWithLibrary(
+    MediaServerResponse response, {
+    int? librarySectionID,
+    String? librarySectionTitle,
+  }) {
     final container = _getMediaContainer(response);
     if (container != null && container['Metadata'] != null) {
-      return (container['Metadata'] as List).map((json) => _createTaggedMetadata(json)).toList();
+      final containerSectionID = _librarySectionIdFromJson(container) ?? librarySectionID;
+      final containerSectionTitle = _librarySectionTitleFromJson(container) ?? librarySectionTitle;
+      return (container['Metadata'] as List)
+          .map(
+            (json) => _createTaggedMetadataWithLibrary(
+              json as Map<String, dynamic>,
+              librarySectionID: containerSectionID,
+              librarySectionTitle: containerSectionTitle,
+            ),
+          )
+          .toList();
     }
     return [];
   }
@@ -745,7 +839,7 @@ class PlexClient
     if (filters != null) queryParams.addAll(filters);
     final endpoint = sectionId == 'shared' ? '/library/shared/all' : '/library/sections/$sectionId/all';
     final response = await _getWithFailover(endpoint, queryParameters: queryParams, abort: abort);
-    return _extractLibraryContentResult(response);
+    return _extractLibraryContentResult(response, librarySectionID: _librarySectionIdFromString(sectionId));
   }
 
   Map<String, dynamic> _buildPaginationParams(int? start, int? size) {
@@ -755,8 +849,16 @@ class PlexClient
     return params;
   }
 
-  _LibraryContentResult _extractLibraryContentResult(MediaServerResponse response) {
-    final items = _extractMetadataList(response);
+  _LibraryContentResult _extractLibraryContentResult(
+    MediaServerResponse response, {
+    int? librarySectionID,
+    String? librarySectionTitle,
+  }) {
+    final items = _extractMetadataListWithLibrary(
+      response,
+      librarySectionID: librarySectionID,
+      librarySectionTitle: librarySectionTitle,
+    );
     final container = _getMediaContainer(response);
     final totalSize = container?['totalSize'] as int? ?? container?['size'] as int? ?? items.length;
     return _LibraryContentResult(items: items, totalSize: totalSize);
@@ -767,16 +869,35 @@ class PlexClient
     int? start,
     int? size,
     AbortController? abort,
+    int? librarySectionID,
+    String? librarySectionTitle,
   }) async {
     final response = await _getWithFailover(path, queryParameters: _buildPaginationParams(start, size), abort: abort);
-    return _extractLibraryContentResult(response);
+    return _extractLibraryContentResult(
+      response,
+      librarySectionID: librarySectionID,
+      librarySectionTitle: librarySectionTitle,
+    );
   }
 
   /// Parse list of PlexMetadataDto from a cached response
   List<PlexMetadataDto> _parseMetadataListFromCachedResponse(Map<String, dynamic> cached) {
+    final container = cached['MediaContainer'] is Map<String, dynamic>
+        ? cached['MediaContainer'] as Map<String, dynamic>
+        : null;
+    final containerSectionID = _librarySectionIdFromJson(container);
+    final containerSectionTitle = _librarySectionTitleFromJson(container);
     final metadataList = PlexCacheParser.extractMetadataList(cached);
     if (metadataList != null) {
-      return metadataList.map((json) => _createTaggedMetadata(json)).toList();
+      return metadataList
+          .map(
+            (json) => _createTaggedMetadataWithLibrary(
+              json as Map<String, dynamic>,
+              librarySectionID: containerSectionID,
+              librarySectionTitle: containerSectionTitle,
+            ),
+          )
+          .toList();
     }
     return [];
   }
@@ -840,10 +961,17 @@ class PlexClient
             PlexMetadataDto? metadata;
             PlexMetadataDto? onDeckEpisode;
 
+            final container = _getMediaContainer(response);
+            final containerSectionID = _librarySectionIdFromJson(container);
+            final containerSectionTitle = _librarySectionTitleFromJson(container);
             final metadataJson = _getFirstMetadataJson(response);
 
             if (metadataJson != null) {
-              metadata = _tagMetadata(PlexMetadataDto.fromJsonWithImages(metadataJson));
+              metadata = _tagMetadataWithLibrary(
+                PlexMetadataDto.fromJsonWithImages(metadataJson),
+                librarySectionID: _librarySectionIdFromJson(metadataJson) ?? containerSectionID,
+                librarySectionTitle: _librarySectionTitleFromJson(metadataJson) ?? containerSectionTitle,
+              );
 
               // Check if OnDeck is nested inside Metadata
               if (metadataJson.containsKey('OnDeck') && metadataJson['OnDeck'] != null) {
@@ -853,7 +981,11 @@ class PlexClient
                 if (onDeckData is Map && onDeckData.containsKey('Metadata')) {
                   final onDeckMetadata = onDeckData['Metadata'];
                   if (onDeckMetadata != null) {
-                    onDeckEpisode = _createTaggedMetadata(onDeckMetadata);
+                    onDeckEpisode = _createTaggedMetadataWithLibrary(
+                      onDeckMetadata as Map<String, dynamic>,
+                      librarySectionID: metadata.librarySectionID ?? containerSectionID,
+                      librarySectionTitle: metadata.librarySectionTitle ?? containerSectionTitle,
+                    );
                   }
                 }
               }
@@ -878,17 +1010,32 @@ class PlexClient
           _http.get('/library/metadata/$ratingKey', queryParameters: {'includeChapters': 1, 'includeMarkers': 1}),
       parseCache: (cachedData) => _parseMetadataWithImagesFromCachedResponse(cachedData),
       parseResponse: (response) {
+        final container = _getMediaContainer(response);
         final metadataJson = _getFirstMetadataJson(response);
-        return metadataJson != null ? _tagMetadata(PlexMetadataDto.fromJsonWithImages(metadataJson)) : null;
+        return metadataJson != null
+            ? _tagMetadataWithLibrary(
+                PlexMetadataDto.fromJsonWithImages(metadataJson),
+                librarySectionID: _librarySectionIdFromJson(metadataJson) ?? _librarySectionIdFromJson(container),
+                librarySectionTitle:
+                    _librarySectionTitleFromJson(metadataJson) ?? _librarySectionTitleFromJson(container),
+              )
+            : null;
       },
     );
   }
 
   /// Parse PlexMetadataDto with images from a cached response
   PlexMetadataDto? _parseMetadataWithImagesFromCachedResponse(Map<String, dynamic> cached) {
+    final container = cached['MediaContainer'] is Map<String, dynamic>
+        ? cached['MediaContainer'] as Map<String, dynamic>
+        : null;
     final firstMetadata = PlexCacheParser.extractFirstMetadata(cached);
     if (firstMetadata != null) {
-      return _tagMetadata(PlexMetadataDto.fromJsonWithImages(firstMetadata));
+      return _tagMetadataWithLibrary(
+        PlexMetadataDto.fromJsonWithImages(firstMetadata),
+        librarySectionID: _librarySectionIdFromJson(firstMetadata) ?? _librarySectionIdFromJson(container),
+        librarySectionTitle: _librarySectionTitleFromJson(firstMetadata) ?? _librarySectionTitleFromJson(container),
+      );
     }
     return null;
   }
@@ -1574,7 +1721,7 @@ class PlexClient
 
   /// Get library hubs (recommendations for a specific library section)
   /// Returns a list of recommendation hubs like "Trending Movies", "Top in Genre", etc.
-  Future<List<PlexHubDto>> _getLibraryHubs(String sectionId, {int limit = 10}) async {
+  Future<List<PlexHubDto>> _getLibraryHubs(String sectionId, {int limit = 10, String? libraryName}) async {
     try {
       final response = await retryTransientMediaServerCall(
         operation: 'Plex library hubs',
@@ -1590,7 +1737,15 @@ class PlexClient
       final sid = serverId;
       final sname = serverName;
       final data = response.data as Map<String, dynamic>;
-      return await tryIsolateRun(() => _processHubResponse(data, sid, sname));
+      return await tryIsolateRun(
+        () => _processHubResponse(
+          data,
+          sid,
+          sname,
+          librarySectionID: _librarySectionIdFromString(sectionId),
+          librarySectionTitle: libraryName,
+        ),
+      );
     } catch (e) {
       appLogger.e('Failed to get library hubs: $e');
     }
@@ -1655,8 +1810,9 @@ class PlexClient
   /// Get full content from a hub using its hub key
   /// Returns the complete list of metadata items in the hub
   Future<List<PlexMetadataDto>> _getHubContent(String hubKey) async {
+    final hubSectionID = _librarySectionIdFromString(hubKey);
     return _wrapListApiCall<PlexMetadataDto>(() => _http.get(hubKey), (response) {
-      final allItems = _extractMetadataList(response);
+      final allItems = _extractMetadataListWithLibrary(response, librarySectionID: hubSectionID);
       // Filter to only video content (movies, shows, seasons, episodes)
       return allItems.where((item) {
         return ContentTypes.videoTypes.contains(item.type?.toLowerCase());
@@ -1996,7 +2152,10 @@ class PlexClient
         queryParameters: {'includeGuids': 1, 'X-Plex-Container-Size': _defaultListContainerSize},
       ),
       (response) {
-        final allItems = _extractMetadataList(response);
+        final allItems = _extractMetadataListWithLibrary(
+          response,
+          librarySectionID: _librarySectionIdFromString(sectionId),
+        );
         // Collections should have type="collection"
         return allItems.where((item) {
           return item.type?.toLowerCase() == ContentTypes.collection;
@@ -2012,11 +2171,32 @@ class PlexClient
     int? start,
     int? size,
     AbortController? abort,
-  }) => _fetchPaginatedList('/library/collections/$collectionId/children', start: start, size: size, abort: abort);
+    String? librarySectionID,
+    String? librarySectionTitle,
+  }) => _fetchPaginatedList(
+    '/library/collections/$collectionId/children',
+    start: start,
+    size: size,
+    abort: abort,
+    librarySectionID: _librarySectionIdFromString(librarySectionID),
+    librarySectionTitle: librarySectionTitle,
+  );
 
   /// Fetch every item in a collection (downloads, sync rules, context-menu shuffle).
-  Future<List<PlexMetadataDto>> _fetchAllCollectionItemsDto(String collectionId) =>
-      _fetchAllPages((start, size, abort) => _getCollectionItems(collectionId, start: start, size: size, abort: abort));
+  Future<List<PlexMetadataDto>> _fetchAllCollectionItemsDto(
+    String collectionId, {
+    String? librarySectionID,
+    String? librarySectionTitle,
+  }) => _fetchAllPages(
+    (start, size, abort) => _getCollectionItems(
+      collectionId,
+      start: start,
+      size: size,
+      abort: abort,
+      librarySectionID: librarySectionID,
+      librarySectionTitle: librarySectionTitle,
+    ),
+  );
 
   /// Get media featuring a specific person (actor/director), paginated.
   Future<_LibraryContentResult> _getPersonMedia(String personId, {int? start, int? size, AbortController? abort}) =>
@@ -2141,16 +2321,25 @@ class PlexClient
 
   /// Parse a `/playQueues/{id}` response into a [PlayQueueResponse] with
   /// MediaItem-typed entries.
-  PlayQueueResponse _parsePlayQueueResponse(dynamic data) {
+  PlayQueueResponse _parsePlayQueueResponse(dynamic data, {int? librarySectionID, String? librarySectionTitle}) {
     final container = data is Map && data['MediaContainer'] is Map
         ? data['MediaContainer'] as Map<String, dynamic>
         : data as Map<String, dynamic>;
+    final containerSectionID = _librarySectionIdFromJson(container) ?? librarySectionID;
+    final containerSectionTitle = _librarySectionTitleFromJson(container) ?? librarySectionTitle;
     final metadata = container['Metadata'];
     List<MediaItem>? items;
     if (metadata is List) {
       items = [
         for (final e in metadata)
-          if (e is Map<String, dynamic>) PlexMappers.mediaItem(_createTaggedMetadata(e)),
+          if (e is Map<String, dynamic>)
+            PlexMappers.mediaItem(
+              _createTaggedMetadataWithLibrary(
+                e,
+                librarySectionID: containerSectionID,
+                librarySectionTitle: containerSectionTitle,
+              ),
+            ),
       ];
     }
     return PlayQueueResponse(
@@ -2177,6 +2366,8 @@ class PlexClient
     int shuffle = 0,
     int repeat = 0,
     int continuous = 0,
+    String? librarySectionID,
+    String? librarySectionTitle,
   }) async {
     try {
       final queryParams = <String, dynamic>{
@@ -2198,7 +2389,11 @@ class PlexClient
 
       final response = await _http.post('/playQueues', queryParameters: queryParams);
 
-      return _parsePlayQueueResponse(response.data);
+      return _parsePlayQueueResponse(
+        response.data,
+        librarySectionID: _librarySectionIdFromString(librarySectionID),
+        librarySectionTitle: librarySectionTitle,
+      );
     } catch (e) {
       appLogger.e('Failed to create play queue', error: e);
       return null;
@@ -2213,6 +2408,8 @@ class PlexClient
     int window = 50,
     int includeBefore = 1,
     int includeAfter = 1,
+    String? librarySectionID,
+    String? librarySectionTitle,
   }) async {
     try {
       final queryParams = <String, dynamic>{
@@ -2227,7 +2424,11 @@ class PlexClient
 
       final response = await _getWithFailover('/playQueues/$playQueueId', queryParameters: queryParams);
 
-      return _parsePlayQueueResponse(response.data);
+      return _parsePlayQueueResponse(
+        response.data,
+        librarySectionID: _librarySectionIdFromString(librarySectionID),
+        librarySectionTitle: librarySectionTitle,
+      );
     } catch (e) {
       appLogger.e('Failed to get play queue: $e');
       return null;
@@ -2249,6 +2450,8 @@ class PlexClient
     required String showRatingKey,
     int shuffle = 0,
     String? startingEpisodeKey,
+    String? librarySectionID,
+    String? librarySectionTitle,
   }) async {
     try {
       final machineId = config.machineIdentifier ?? await getMachineIdentifier();
@@ -2263,6 +2466,8 @@ class PlexClient
         shuffle: shuffle,
         key: startingEpisodeKey != null ? '/library/metadata/$startingEpisodeKey' : null,
         continuous: startingEpisodeKey != null && shuffle == 0 ? 1 : 0,
+        librarySectionID: librarySectionID,
+        librarySectionTitle: librarySectionTitle,
       );
     } catch (e) {
       appLogger.e('Failed to create show play queue', error: e);
@@ -2273,17 +2478,29 @@ class PlexClient
   /// Extract both Metadata and Directory entries from response
   /// Folders can come back as either type
   /// Automatically tags all items with this client's serverId and serverName
-  List<PlexMetadataDto> _extractMetadataAndDirectories(MediaServerResponse response) {
+  List<PlexMetadataDto> _extractMetadataAndDirectories(
+    MediaServerResponse response, {
+    int? librarySectionID,
+    String? librarySectionTitle,
+  }) {
     final List<PlexMetadataDto> items = [];
     final container = _getMediaContainer(response);
 
     if (container != null) {
+      final containerSectionID = _librarySectionIdFromJson(container) ?? librarySectionID;
+      final containerSectionTitle = _librarySectionTitleFromJson(container) ?? librarySectionTitle;
       // Extract Metadata entries - try full parsing first
       if (container['Metadata'] != null) {
         for (final json in container['Metadata'] as List) {
           try {
             // Try to parse with full PlexMetadataDto.fromJson first
-            items.add(_createTaggedMetadata(json));
+            items.add(
+              _createTaggedMetadataWithLibrary(
+                json as Map<String, dynamic>,
+                librarySectionID: containerSectionID,
+                librarySectionTitle: containerSectionTitle,
+              ),
+            );
           } catch (e) {
             // If full parsing fails, use minimal safe parsing
             appLogger.d('Using minimal parsing for metadata item: $e');
@@ -2297,6 +2514,8 @@ class PlexClient
                   thumb: json['thumb'],
                   art: json['art'],
                   year: json['year'],
+                  librarySectionID: _librarySectionIdFromJson(json) ?? containerSectionID,
+                  librarySectionTitle: _librarySectionTitleFromJson(json) ?? containerSectionTitle,
                   serverId: serverId,
                   serverName: serverName,
                 ),
@@ -2313,7 +2532,13 @@ class PlexClient
         for (final json in container['Directory'] as List) {
           try {
             // Try to parse as PlexMetadataDto first
-            items.add(_createTaggedMetadata(json));
+            items.add(
+              _createTaggedMetadataWithLibrary(
+                json as Map<String, dynamic>,
+                librarySectionID: containerSectionID,
+                librarySectionTitle: containerSectionTitle,
+              ),
+            );
           } catch (e) {
             // If that fails, use minimal folder representation
             try {
@@ -2325,6 +2550,8 @@ class PlexClient
                   title: json['title'] ?? 'Untitled',
                   thumb: json['thumb'],
                   art: json['art'],
+                  librarySectionID: _librarySectionIdFromJson(json) ?? containerSectionID,
+                  librarySectionTitle: _librarySectionTitleFromJson(json) ?? containerSectionTitle,
                   serverId: serverId,
                   serverName: serverName,
                 ),
@@ -2348,7 +2575,7 @@ class PlexClient
         '/library/sections/$sectionId/folder',
         queryParameters: {'includeCollections': 0},
       );
-      return _extractMetadataAndDirectories(response);
+      return _extractMetadataAndDirectories(response, librarySectionID: _librarySectionIdFromString(sectionId));
     } catch (e) {
       appLogger.e('Failed to get library folders: $e');
       return [];
@@ -2357,10 +2584,18 @@ class PlexClient
 
   /// Get children of a specific folder
   /// Returns files and subfolders within the given folder
-  Future<List<PlexMetadataDto>> _getFolderChildren(String folderKey) async {
+  Future<List<PlexMetadataDto>> _getFolderChildren(
+    String folderKey, {
+    String? librarySectionID,
+    String? librarySectionTitle,
+  }) async {
     try {
       final response = await _getWithFailover(folderKey);
-      return _extractMetadataAndDirectories(response);
+      return _extractMetadataAndDirectories(
+        response,
+        librarySectionID: _librarySectionIdFromString(folderKey) ?? _librarySectionIdFromString(librarySectionID),
+        librarySectionTitle: librarySectionTitle,
+      );
     } catch (e) {
       appLogger.e('Failed to get folder children: $e');
       return [];
@@ -3091,7 +3326,7 @@ class PlexClient
   }) async {
     // libraryName is unused: Plex's /hubs/sections/{id} returns hubs already
     // titled per-library (e.g. "Recently Added in Movies").
-    final hubs = await _getLibraryHubs(libraryId, limit: limit);
+    final hubs = await _getLibraryHubs(libraryId, limit: limit, libraryName: libraryName);
     return hubs.map((h) => PlexMappers.mediaHub(h)).toList();
   }
 
@@ -3168,8 +3403,17 @@ class PlexClient
     int? start,
     int? size,
     AbortController? abort,
+    String? libraryId,
+    String? libraryTitle,
   }) async {
-    final result = await _getCollectionItems(collectionId, start: start, size: size, abort: abort);
+    final result = await _getCollectionItems(
+      collectionId,
+      start: start,
+      size: size,
+      abort: abort,
+      librarySectionID: libraryId,
+      librarySectionTitle: libraryTitle,
+    );
     return LibraryPage<MediaItem>(
       items: result.items.map((m) => PlexMappers.mediaItem(m)).toList(),
       totalCount: result.totalSize,
@@ -3178,8 +3422,16 @@ class PlexClient
   }
 
   /// Plex-specific: full collection contents across pages.
-  Future<List<MediaItem>> fetchAllCollectionItemsAsMediaItems(String collectionId) async {
-    final raw = await _fetchAllCollectionItemsDto(collectionId);
+  Future<List<MediaItem>> fetchAllCollectionItemsAsMediaItems(
+    String collectionId, {
+    String? libraryId,
+    String? libraryTitle,
+  }) async {
+    final raw = await _fetchAllCollectionItemsDto(
+      collectionId,
+      librarySectionID: libraryId,
+      librarySectionTitle: libraryTitle,
+    );
     return raw.map((m) => PlexMappers.mediaItem(m)).toList();
   }
 
@@ -3225,8 +3477,8 @@ class PlexClient
   }
 
   /// Plex-specific: contents of a folder (files and subfolders).
-  Future<List<MediaItem>> fetchFolderChildren(String folderKey) async {
-    final raw = await _getFolderChildren(folderKey);
+  Future<List<MediaItem>> fetchFolderChildren(String folderKey, {String? libraryId, String? libraryTitle}) async {
+    final raw = await _getFolderChildren(folderKey, librarySectionID: libraryId, librarySectionTitle: libraryTitle);
     return raw.map((m) => PlexMappers.mediaItem(m)).toList();
   }
 

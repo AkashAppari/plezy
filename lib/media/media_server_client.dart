@@ -307,6 +307,8 @@ abstract class MediaServerClient {
     int? start,
     int? size,
     AbortController? abort,
+    String? libraryId,
+    String? libraryTitle,
   });
 
   /// Create a new collection in [libraryId] seeded with [items]. Returns the

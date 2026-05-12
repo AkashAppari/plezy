@@ -53,11 +53,21 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
         showRatingKey: showRatingKey,
         shuffle: 0,
         startingEpisodeKey: _currentMetadata.id,
+        librarySectionID: _currentMetadata.libraryId,
+        librarySectionTitle: _currentMetadata.libraryTitle,
       );
 
       if (playQueue != null && playQueue.items != null && playQueue.items!.isNotEmpty) {
         await playbackState.setPlaybackFromPlayQueue(playQueue, showRatingKey);
-        playbackState.setPlayQueueWindowFetcher(client.getPlayQueue);
+        playbackState.setPlayQueueWindowFetcher(
+          (id, {center, window = 50}) => client.getPlayQueue(
+            id,
+            center: center,
+            window: window,
+            librarySectionID: _currentMetadata.libraryId,
+            librarySectionTitle: _currentMetadata.libraryTitle,
+          ),
+        );
 
         appLogger.d('Sequential play queue created with ${playQueue.items!.length} items');
       }

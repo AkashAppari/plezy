@@ -377,7 +377,14 @@ class _CollectionPagingClient implements MediaServerClient {
   }
 
   @override
-  Future<LibraryPage<MediaItem>> fetchCollectionPage(String collectionId, {int? start, int? size, abort}) async {
+  Future<LibraryPage<MediaItem>> fetchCollectionPage(
+    String collectionId, {
+    int? start,
+    int? size,
+    abort,
+    String? libraryId,
+    String? libraryTitle,
+  }) async {
     collectionPageCalls.add((start: start, size: size));
     expect(collectionId, 'collection-1');
     return LibraryPage(

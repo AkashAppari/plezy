@@ -1283,10 +1283,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final client = _getMediaClientForItem();
 
     try {
-      // [fetchChildren] is the neutral equivalent of the previous Plex-only
-      // `fetchAllCollectionItemsAsMediaItems` — both backends return the
-      // collection's contents.
-      final items = await client.fetchChildren(collection.id);
+      final items = await fetchAllCollectionItemsPaged(
+        client,
+        collection.id,
+        libraryId: collection.libraryId,
+        libraryTitle: collection.libraryTitle,
+      );
       if (!context.mounted) return;
 
       final result = await showCollectionDownloadOptionsAndQueue(

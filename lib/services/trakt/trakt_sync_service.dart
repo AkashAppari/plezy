@@ -114,8 +114,7 @@ class TraktSyncService {
     final kind = TraktMediaKind.tryFromMediaKindId(event.mediaType);
     if (kind == null) return;
 
-    final settings = SettingsService.instanceOrNull;
-    if (settings != null && !settings.isLibraryAllowedForTracker(TrackerService.trakt, event.librarySectionGlobalKey)) {
+    if (!_isLibraryAllowed(event.librarySectionGlobalKey)) {
       appLogger.d('Trakt sync: library filtered out for ${event.itemId}');
       return;
     }
@@ -125,6 +124,7 @@ class TraktSyncService {
       op: op,
       ratingKey: event.itemId,
       serverId: event.serverId,
+      libraryGlobalKey: event.librarySectionGlobalKey,
       kind: kind,
       watchedAtIso: DateTime.now().toUtc().toIso8601String(),
     );
@@ -134,6 +134,7 @@ class TraktSyncService {
     required TraktSyncOp op,
     required String ratingKey,
     required String serverId,
+    required String? libraryGlobalKey,
     required TraktMediaKind kind,
     required String watchedAtIso,
   }) async {
@@ -178,6 +179,7 @@ class TraktSyncService {
       op: op,
       ratingKey: ratingKey,
       serverId: serverId,
+      libraryGlobalKey: libraryGlobalKey,
       kind: kind,
       ids: ids,
       season: season,
@@ -241,6 +243,10 @@ class TraktSyncService {
       await _recoverInMemoryFallback();
 
       await _queue.drainWith(_activeUserUuid, (item) async {
+        if (!_isLibraryAllowed(item.libraryGlobalKey)) {
+          appLogger.d('Trakt sync: queued library filtered out for ${item.ratingKey}');
+          return null;
+        }
         if (item.attempts >= TraktSyncQueue.maxAttempts) {
           appLogger.w('Trakt sync: dropping ${item.op.name} ${item.ratingKey} after ${item.attempts} attempts');
           return null;
@@ -271,6 +277,10 @@ class TraktSyncService {
     for (final item in snapshot) {
       await _persistOrBuffer(item);
     }
+  }
+
+  bool _isLibraryAllowed(String? libraryGlobalKey) {
+    return SettingsService.instanceOrNull?.isLibraryAllowedForTracker(TrackerService.trakt, libraryGlobalKey) ?? true;
   }
 
   TraktScrobbleRequest _bodyFor(TraktSyncQueueItem item) {

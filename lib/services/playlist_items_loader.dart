@@ -14,3 +14,29 @@ Future<List<MediaItem>> fetchAllPlaylistItems(MediaServerClient client, String p
   }
   return all;
 }
+
+/// Page through every item in a collection via the backend-neutral client API.
+Future<List<MediaItem>> fetchAllCollectionItemsPaged(
+  MediaServerClient client,
+  String collectionId, {
+  int pageSize = 100,
+  String? libraryId,
+  String? libraryTitle,
+}) async {
+  final all = <MediaItem>[];
+  var offset = 0;
+  while (true) {
+    final page = await client.fetchCollectionPage(
+      collectionId,
+      start: offset,
+      size: pageSize,
+      libraryId: libraryId,
+      libraryTitle: libraryTitle,
+    );
+    if (page.items.isEmpty) break;
+    all.addAll(page.items);
+    if (all.length >= page.totalCount || page.items.length < pageSize) break;
+    offset += page.items.length;
+  }
+  return all;
+}

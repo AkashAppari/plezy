@@ -25,8 +25,8 @@ abstract class Tracker {
 
   /// Whether an item in the given library should be scrobbled. Applies the
   /// per-tracker whitelist/blacklist — callers pass the Plex library
-  /// `serverId:sectionId` globalKey (null when unknown, in which case the
-  /// filter is bypassed so we err on the side of syncing).
+  /// `serverId:sectionId` globalKey. Null is allowed only when no filter is
+  /// configured for this tracker.
   bool shouldScrobbleForLibrary(String? libraryGlobalKey);
 
   Future<void> markWatched(TrackerContext ctx);

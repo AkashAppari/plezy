@@ -23,8 +23,15 @@ void main() {
   });
 
   // Helper: minimal Plex MediaContainer payload that PlexCacheParser can parse.
-  Map<String, dynamic> mediaContainer({String ratingKey = '42', String title = 'Item'}) => {
+  Map<String, dynamic> mediaContainer({
+    String ratingKey = '42',
+    String title = 'Item',
+    Object? librarySectionID,
+    String? librarySectionTitle,
+  }) => {
     'MediaContainer': {
+      'librarySectionID': ?librarySectionID,
+      'librarySectionTitle': ?librarySectionTitle,
       'Metadata': [
         {'ratingKey': ratingKey, 'title': title, 'type': 'movie'},
       ],
@@ -260,6 +267,20 @@ void main() {
       expect(meta.serverId, 'srv');
     });
 
+    test('getMetadata preserves hoisted MediaContainer library fields', () async {
+      await cache.put(
+        'srv',
+        '/library/metadata/42',
+        mediaContainer(ratingKey: '42', title: 'Hello', librarySectionID: '7', librarySectionTitle: 'Movies'),
+      );
+
+      final meta = await cache.getMetadata('srv', '42');
+
+      expect(meta, isNotNull);
+      expect(meta!.libraryId, '7');
+      expect(meta.libraryTitle, 'Movies');
+    });
+
     test('getAllPinnedMetadata returns an empty map when nothing is pinned', () async {
       await cache.put('srv', '/library/metadata/1', mediaContainer(ratingKey: '1'));
       // No pin yet.
@@ -283,6 +304,20 @@ void main() {
       expect(result['srv-a:1']!.serverId, 'srv-a');
       expect(result['srv-b:9']!.title, 'B9');
       expect(result['srv-b:9']!.serverId, 'srv-b');
+    });
+
+    test('getAllPinnedMetadata preserves hoisted MediaContainer library fields', () async {
+      await cache.put(
+        'srv',
+        '/library/metadata/42',
+        mediaContainer(ratingKey: '42', title: 'Hello', librarySectionID: 7, librarySectionTitle: 'Movies'),
+      );
+      await cache.pinForOffline('srv', '42');
+
+      final result = await cache.getAllPinnedMetadata();
+
+      expect(result['srv:42']!.libraryId, '7');
+      expect(result['srv:42']!.libraryTitle, 'Movies');
     });
 
     test('getAllPinnedMetadata skips rows whose key is not a metadata endpoint', () async {

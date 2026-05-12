@@ -63,7 +63,8 @@ class WatchStateEvent with HierarchicalEventMixin {
   }) : globalKey = buildGlobalKey(serverId, itemId);
 
   /// `serverId:librarySectionID`, matching [MediaLibrary.globalKey]. Null when
-  /// the library section is unknown.
+  /// the library section is unknown; tracker filters treat unknown as allowed
+  /// only when no filter is configured.
   String? get librarySectionGlobalKey => librarySectionID != null ? buildGlobalKey(serverId, librarySectionID!) : null;
 
   @override

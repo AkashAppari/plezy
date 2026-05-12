@@ -156,6 +156,8 @@ void main() {
       final hubs = await client.fetchLibraryHubs('4', libraryName: 'Movies', limit: 12);
 
       expect(hubs, hasLength(1));
+      expect(hubs.single.items.single.libraryId, '4');
+      expect(hubs.single.items.single.libraryTitle, 'Movies');
       expect(client.config.baseUrl, primary);
       expect(httpClient.requests, hasLength(2));
       expect(httpClient.requests.map((r) => r.url.origin), everyElement(primary));

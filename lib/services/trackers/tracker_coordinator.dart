@@ -27,6 +27,7 @@ class TrackerCoordinator {
   /// Resolver persists across episode swaps so back-to-back episodes of the
   /// same show reuse the cached IDs. Cleared only on profile switch.
   TrackerIdResolver? _resolver;
+  String? _activeLibraryGlobalKey;
 
   TrackerContext? _ctx;
   Duration _duration = Duration.zero;
@@ -41,8 +42,13 @@ class TrackerCoordinator {
     if (isLive) return;
     final mediaType = metadata.kind;
     if (mediaType != MediaKind.movie && mediaType != MediaKind.episode) return;
-    if (!_trackers.any((t) => t.canScrobble)) return;
+    final libraryGlobalKey = metadata.libraryGlobalKey;
+    if (!_trackers.any((t) => t.canScrobble && t.shouldScrobbleForLibrary(libraryGlobalKey))) {
+      _reset();
+      return;
+    }
 
+    _activeLibraryGlobalKey = libraryGlobalKey;
     _resolver ??= TrackerIdResolver(client, needsFribb: _anyTrackerNeedsFribb);
     final ctx = await _buildContext(metadata);
     if (ctx == null) {
@@ -54,7 +60,8 @@ class TrackerCoordinator {
     _ctx = ctx;
   }
 
-  bool _anyTrackerNeedsFribb() => _trackers.any((t) => t.canScrobble && t.needsFribb);
+  bool _anyTrackerNeedsFribb() =>
+      _trackers.any((t) => t.canScrobble && t.needsFribb && t.shouldScrobbleForLibrary(_activeLibraryGlobalKey));
 
   Future<void> stopPlayback() async {
     final ctx = _ctx;
@@ -98,6 +105,7 @@ class TrackerCoordinator {
 
   void _reset() {
     _ctx = null;
+    _activeLibraryGlobalKey = null;
     _duration = Duration.zero;
     _lastPosition = Duration.zero;
     _thresholdCrossed = false;

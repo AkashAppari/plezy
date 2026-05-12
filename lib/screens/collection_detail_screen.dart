@@ -17,6 +17,7 @@ import '../i18n/strings.g.dart';
 import 'base_media_list_detail_screen.dart';
 import 'focusable_detail_screen_mixin.dart';
 import '../mixins/grid_focus_node_mixin.dart';
+import '../services/playlist_items_loader.dart';
 
 /// Screen to display the contents of a collection
 class CollectionDetailScreen extends StatefulWidget {
@@ -59,7 +60,14 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
 
   @override
   Future<LibraryPage<MediaItem>> fetchPage(int start, int size, AbortController? abort) {
-    return mediaClient.fetchCollectionPage(widget.collection.id, start: start, size: size, abort: abort);
+    return mediaClient.fetchCollectionPage(
+      widget.collection.id,
+      start: start,
+      size: size,
+      abort: abort,
+      libraryId: widget.collection.libraryId,
+      libraryTitle: widget.collection.libraryTitle,
+    );
   }
 
   @override
@@ -147,10 +155,12 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
 
     final downloadProvider = context.read<DownloadProvider>();
     try {
-      // [fetchChildren] is the neutral equivalent of the Plex-only
-      // `fetchAllCollectionItemsAsMediaItems` — both backends return the
-      // collection's full contents.
-      final allItems = await mediaClient.fetchChildren(widget.collection.id);
+      final allItems = await fetchAllCollectionItemsPaged(
+        mediaClient,
+        widget.collection.id,
+        libraryId: widget.collection.libraryId,
+        libraryTitle: widget.collection.libraryTitle,
+      );
       if (!mounted) return;
       final result = await showCollectionDownloadOptionsAndQueue(
         context,

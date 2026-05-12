@@ -94,5 +94,21 @@ void main() {
       expect(mode.value, TrackerLibraryFilterMode.blacklist);
       expect(ids.value, isEmpty);
     });
+
+    test('tracker library filter only allows unknown libraries when no filter is configured', () async {
+      final settings = await SettingsService.getInstance();
+      final modePref = SettingsService.trackerFilterModePref(TrackerService.trakt);
+      final idsPref = SettingsService.trackerFilterIdsPref(TrackerService.trakt);
+
+      expect(settings.isLibraryAllowedForTracker(TrackerService.trakt, null), isTrue);
+
+      await settings.write(idsPref, ['server:blocked']);
+      expect(settings.isLibraryAllowedForTracker(TrackerService.trakt, null), isFalse);
+
+      await settings.write(modePref, TrackerLibraryFilterMode.whitelist);
+      await settings.write(idsPref, ['server:allowed']);
+      expect(settings.isLibraryAllowedForTracker(TrackerService.trakt, null), isFalse);
+      expect(settings.isLibraryAllowedForTracker(TrackerService.trakt, 'server:allowed'), isTrue);
+    });
   });
 }

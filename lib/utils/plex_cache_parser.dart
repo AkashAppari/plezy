@@ -4,9 +4,13 @@
 class PlexCacheParser {
   PlexCacheParser._();
 
+  static Map<String, dynamic>? extractMediaContainer(Map<String, dynamic>? cached) {
+    final container = cached?['MediaContainer'];
+    return container is Map<String, dynamic> ? container : null;
+  }
+
   static List<dynamic>? extractMetadataList(Map<String, dynamic>? cached) {
-    if (cached == null) return null;
-    return cached['MediaContainer']?['Metadata'] as List?;
+    return extractMediaContainer(cached)?['Metadata'] as List?;
   }
 
   static Map<String, dynamic>? extractFirstMetadata(Map<String, dynamic>? cached) {

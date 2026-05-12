@@ -50,6 +50,8 @@ mixin _JellyfinCollectionMethods on MediaServerCacheMixin {
     int? start,
     int? size,
     AbortController? abort,
+    String? libraryId,
+    String? libraryTitle,
   }) async {
     final cached = _collectionItemsCache[collectionId] ?? await _loadAndCacheCollectionItems(collectionId);
     final s = start ?? 0;

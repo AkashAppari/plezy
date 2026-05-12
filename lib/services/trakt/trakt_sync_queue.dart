@@ -11,6 +11,7 @@ class TraktSyncQueueItem {
   final TraktSyncOp op;
   final String ratingKey;
   final String serverId;
+  final String? libraryGlobalKey;
   final TraktMediaKind kind;
   final TraktIds ids;
 
@@ -28,6 +29,7 @@ class TraktSyncQueueItem {
     required this.kind,
     required this.ids,
     required this.watchedAtIso,
+    this.libraryGlobalKey,
     this.season,
     this.number,
     this.attempts = 0,
@@ -37,6 +39,7 @@ class TraktSyncQueueItem {
     op: op,
     ratingKey: ratingKey,
     serverId: serverId,
+    libraryGlobalKey: libraryGlobalKey,
     kind: kind,
     ids: ids,
     watchedAtIso: watchedAtIso,
@@ -49,6 +52,7 @@ class TraktSyncQueueItem {
     'op': op.name,
     'ratingKey': ratingKey,
     'serverId': serverId,
+    if (libraryGlobalKey != null) 'libraryGlobalKey': libraryGlobalKey,
     'kind': kind.name,
     'ids': ids.toJson(),
     if (season != null) 'season': season,
@@ -61,6 +65,7 @@ class TraktSyncQueueItem {
     op: TraktSyncOp.fromName(json['op'] as String),
     ratingKey: json['ratingKey'] as String,
     serverId: json['serverId'] as String,
+    libraryGlobalKey: json['libraryGlobalKey'] as String?,
     kind: TraktMediaKind.fromName(json['kind'] as String),
     ids: TraktIds.fromJson(json['ids'] as Map<String, dynamic>),
     season: (json['season'] as num?)?.toInt(),

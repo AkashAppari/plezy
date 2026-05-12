@@ -106,6 +106,8 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
       actionLabel: t.common.shuffle,
       execute: (dismissLoading) async {
         PlayQueueResponse? playQueue;
+        final sourceLibraryId = facts.isCollection && item is MediaItem ? item.libraryId : null;
+        final sourceLibraryTitle = facts.isCollection && item is MediaItem ? item.libraryTitle : null;
         // Plex's `key` param positions the queue's selected item — passed
         // through when the caller wants playback to start at a specific
         // entry. Ignored on shuffle (the server picks a random head).
@@ -124,6 +126,8 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
             type: 'video',
             shuffle: shuffle ? 1 : 0,
             key: selectedKey,
+            librarySectionID: sourceLibraryId,
+            librarySectionTitle: sourceLibraryTitle,
           );
         } else {
           // For playlists, use playlistID parameter
@@ -137,7 +141,11 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
 
         // If the queue is empty, try fetching it again with getPlayQueue
         if (playQueue != null && (playQueue.items == null || playQueue.items!.isEmpty)) {
-          final fetchedQueue = await client.getPlayQueue(playQueue.playQueueID);
+          final fetchedQueue = await client.getPlayQueue(
+            playQueue.playQueueID,
+            librarySectionID: sourceLibraryId,
+            librarySectionTitle: sourceLibraryTitle,
+          );
           if (fetchedQueue != null && fetchedQueue.items != null && fetchedQueue.items!.isNotEmpty) {
             playQueue = fetchedQueue;
           }
@@ -151,6 +159,8 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
           ratingKey: ratingKey,
           serverId: itemServerId,
           serverName: itemServerName,
+          libraryId: sourceLibraryId,
+          libraryTitle: sourceLibraryTitle,
           selectedItem: selectedKey != null ? _resolveSelectedMediaItem(playQueue) : null,
         );
       },
@@ -217,7 +227,12 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
           showRatingKey = metadata.parentId!;
         }
 
-        final playQueue = await client.createShowPlayQueue(showRatingKey: showRatingKey, shuffle: 1);
+        final playQueue = await client.createShowPlayQueue(
+          showRatingKey: showRatingKey,
+          shuffle: 1,
+          librarySectionID: metadata.libraryId,
+          librarySectionTitle: metadata.libraryTitle,
+        );
 
         // Close loading dialog before navigating to the player
         await dismissLoading();
@@ -227,6 +242,8 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
           ratingKey: showRatingKey,
           serverId: metadata.serverId ?? serverId,
           serverName: metadata.serverName ?? serverName,
+          libraryId: metadata.libraryId,
+          libraryTitle: metadata.libraryTitle,
           copyServerInfo: true,
         );
       },
@@ -237,6 +254,8 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
   Future<PlayQueueResult> launchFromFolder({
     required String folderKey,
     required bool shuffle,
+    String? libraryId,
+    String? libraryTitle,
     bool showLoadingIndicator = true,
   }) async {
     return executeWithLoading(
@@ -246,10 +265,20 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
       execute: (dismissLoading) async {
         final folderUri = await client.buildFolderUri(folderKey);
 
-        var playQueue = await client.createPlayQueue(uri: folderUri, type: 'video', shuffle: shuffle ? 1 : 0);
+        var playQueue = await client.createPlayQueue(
+          uri: folderUri,
+          type: 'video',
+          shuffle: shuffle ? 1 : 0,
+          librarySectionID: libraryId,
+          librarySectionTitle: libraryTitle,
+        );
 
         if (playQueue != null && (playQueue.items == null || playQueue.items!.isEmpty)) {
-          final fetchedQueue = await client.getPlayQueue(playQueue.playQueueID);
+          final fetchedQueue = await client.getPlayQueue(
+            playQueue.playQueueID,
+            librarySectionID: libraryId,
+            librarySectionTitle: libraryTitle,
+          );
           if (fetchedQueue != null && fetchedQueue.items != null && fetchedQueue.items!.isNotEmpty) {
             playQueue = fetchedQueue;
           }
@@ -257,7 +286,14 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
 
         await dismissLoading();
 
-        return _launchFromQueue(playQueue: playQueue, ratingKey: folderKey, serverId: serverId, serverName: serverName);
+        return _launchFromQueue(
+          playQueue: playQueue,
+          ratingKey: folderKey,
+          serverId: serverId,
+          serverName: serverName,
+          libraryId: libraryId,
+          libraryTitle: libraryTitle,
+        );
       },
     );
   }
@@ -268,6 +304,8 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
     required String ratingKey,
     String? serverId,
     String? serverName,
+    String? libraryId,
+    String? libraryTitle,
     MediaItem? selectedItem,
     bool copyServerInfo = false,
   }) async {
@@ -278,7 +316,17 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
     if (!context.mounted) return const PlayQueueError('Context not mounted');
 
     final playbackState = context.read<PlaybackStateProvider>();
-    playbackState.setPlayQueueWindowFetcher(client.getPlayQueue);
+    playbackState.setPlayQueueWindowFetcher(
+      libraryId == null
+          ? (id, {center, window = 50}) => client.getPlayQueue(id, center: center, window: window)
+          : (id, {center, window = 50}) => client.getPlayQueue(
+              id,
+              center: center,
+              window: window,
+              librarySectionID: libraryId,
+              librarySectionTitle: libraryTitle,
+            ),
+    );
     await playbackState.setPlaybackFromPlayQueue(playQueue, ratingKey);
 
     if (!context.mounted) return const PlayQueueError('Context not mounted');
@@ -286,7 +334,12 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
     var itemToPlay = selectedItem ?? playQueue.items!.first;
 
     if (copyServerInfo && serverId != null) {
-      itemToPlay = itemToPlay.copyWith(serverId: serverId, serverName: serverName ?? itemToPlay.serverName);
+      itemToPlay = itemToPlay.copyWith(
+        serverId: serverId,
+        serverName: serverName ?? itemToPlay.serverName,
+        libraryId: itemToPlay.libraryId ?? libraryId,
+        libraryTitle: itemToPlay.libraryTitle ?? libraryTitle,
+      );
     }
 
     await navigateToVideoPlayer(context, metadata: itemToPlay);

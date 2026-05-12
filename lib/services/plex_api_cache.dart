@@ -8,6 +8,7 @@ import '../media/media_item.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/isolate_helper.dart';
 import '../utils/plex_cache_parser.dart';
+import '../utils/plex_library_section_utils.dart';
 import 'api_cache.dart';
 import 'plex_mappers.dart';
 
@@ -78,9 +79,21 @@ class PlexApiCache extends ApiCache {
   @override
   Future<MediaItem?> getMetadata(String serverId, String ratingKey) async {
     final cached = await get(serverId, '/library/metadata/$ratingKey');
+    final container = PlexCacheParser.extractMediaContainer(cached);
     final json = PlexCacheParser.extractFirstMetadata(cached);
     if (json == null) return null;
-    return PlexMappers.mediaItemFromCacheJson(json, serverId: serverId);
+    return PlexMappers.mediaItemFromCacheJson(_withContainerLibrary(json, container), serverId: serverId);
+  }
+
+  static Map<String, dynamic> _withContainerLibrary(Map<String, dynamic> json, Map<String, dynamic>? container) {
+    final sectionId = plexLibrarySectionIdFromJson(json) ?? plexLibrarySectionIdFromJson(container);
+    final sectionTitle = plexLibrarySectionTitleFromJson(json) ?? plexLibrarySectionTitleFromJson(container);
+    if (sectionId == null && sectionTitle == null) return json;
+
+    final enriched = Map<String, dynamic>.from(json);
+    if (sectionId != null) enriched['librarySectionID'] ??= sectionId;
+    if (sectionTitle != null) enriched['librarySectionTitle'] ??= sectionTitle;
+    return enriched;
   }
 
   /// Persist a watched/unwatched flip into the cached metadata JSON. Mirrors
@@ -135,10 +148,11 @@ class PlexApiCache extends ApiCache {
       for (final entry in entries) {
         try {
           final data = jsonDecode(entry.data) as Map<String, dynamic>;
+          final container = PlexCacheParser.extractMediaContainer(data);
           final json = PlexCacheParser.extractFirstMetadata(data);
           if (json == null) continue;
           result[buildGlobalKey(entry.serverId, entry.id)] = PlexMappers.mediaItemFromCacheJson(
-            json,
+            _withContainerLibrary(json, container),
             serverId: entry.serverId,
           );
         } catch (_) {

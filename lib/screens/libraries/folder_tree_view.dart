@@ -116,7 +116,11 @@ class FolderTreeViewState extends State<FolderTreeView> {
       final client = context.getPlexClientForServer(widget.serverId!);
 
       // Items are automatically tagged with server info by PlexClient.
-      final children = await client.fetchFolderChildren(folderKey);
+      final children = await client.fetchFolderChildren(
+        folderKey,
+        libraryId: folder.libraryId,
+        libraryTitle: folder.libraryTitle,
+      );
 
       if (!mounted) return;
 
@@ -162,7 +166,12 @@ class FolderTreeViewState extends State<FolderTreeView> {
     if (folderKey == null) return;
     final client = context.getPlexClientForServer(widget.serverId!);
     final launcher = PlexPlayQueueLauncher(context: context, client: client, serverId: widget.serverId);
-    await launcher.launchFromFolder(folderKey: folderKey, shuffle: false);
+    await launcher.launchFromFolder(
+      folderKey: folderKey,
+      shuffle: false,
+      libraryId: folder.libraryId,
+      libraryTitle: folder.libraryTitle,
+    );
   }
 
   Future<void> _handleFolderShuffle(MediaItem folder) async {
@@ -170,7 +179,12 @@ class FolderTreeViewState extends State<FolderTreeView> {
     if (folderKey == null) return;
     final client = context.getPlexClientForServer(widget.serverId!);
     final launcher = PlexPlayQueueLauncher(context: context, client: client, serverId: widget.serverId);
-    await launcher.launchFromFolder(folderKey: folderKey, shuffle: true);
+    await launcher.launchFromFolder(
+      folderKey: folderKey,
+      shuffle: true,
+      libraryId: folder.libraryId,
+      libraryTitle: folder.libraryTitle,
+    );
   }
 
   bool _isFolder(MediaItem item) {

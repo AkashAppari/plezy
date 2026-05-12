@@ -965,9 +965,9 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         // was the same pattern as collectEpisodes*, just inlined.
         final episodes = <MediaItem>[];
         if (item.isShow) {
-          await collectEpisodesForShow(client, item.id, unwatchedOnly: unwatchedOnly, out: episodes);
+          await collectEpisodesForShow(client, item.id, unwatchedOnly: unwatchedOnly, out: episodes, fallback: item);
         } else {
-          await collectEpisodesForSeason(client, item.id, unwatchedOnly: unwatchedOnly, out: episodes);
+          await collectEpisodesForSeason(client, item.id, unwatchedOnly: unwatchedOnly, out: episodes, fallback: item);
         }
         for (final ep in episodes) {
           await queueItem(ep);
@@ -1022,6 +1022,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
           metadataToStore = fullMetadata.copyWith(
             serverId: metadata.serverId ?? fullMetadata.serverId,
             serverName: metadata.serverName ?? fullMetadata.serverName,
+            libraryId: fullMetadata.libraryId ?? metadata.libraryId,
+            libraryTitle: fullMetadata.libraryTitle ?? metadata.libraryTitle,
           );
         }
       } catch (e) {
@@ -1191,9 +1193,21 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     final unwatchedOnly = filter == DownloadFilter.unwatched;
     final episodes = <MediaItem>[];
     if (container.kind == MediaKind.show) {
-      await collectEpisodesForShow(client, container.id, unwatchedOnly: unwatchedOnly, out: episodes);
+      await collectEpisodesForShow(
+        client,
+        container.id,
+        unwatchedOnly: unwatchedOnly,
+        out: episodes,
+        fallback: container,
+      );
     } else {
-      await collectEpisodesForSeason(client, container.id, unwatchedOnly: unwatchedOnly, out: episodes);
+      await collectEpisodesForSeason(
+        client,
+        container.id,
+        unwatchedOnly: unwatchedOnly,
+        out: episodes,
+        fallback: container,
+      );
     }
 
     int count = 0;

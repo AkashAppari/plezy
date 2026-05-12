@@ -124,6 +124,8 @@ Future<MediaNavigationResult> navigateToMediaItem(
           title: mi.grandparentTitle ?? mi.parentTitle ?? mi.displayTitle,
           thumbPath: mi.grandparentThumbPath ?? mi.parentThumbPath,
           artPath: mi.grandparentArtPath,
+          libraryId: mi.libraryId,
+          libraryTitle: mi.libraryTitle,
           serverId: mi.serverId,
           serverName: mi.serverName,
         );

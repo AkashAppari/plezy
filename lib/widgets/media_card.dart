@@ -909,6 +909,8 @@ void _navigateToSeason(BuildContext context, MediaItem episode, {bool isOffline 
       title: episode.grandparentTitle ?? episode.displayTitle,
       thumbPath: episode.grandparentThumbPath,
       artPath: episode.grandparentArtPath,
+      libraryId: episode.libraryId,
+      libraryTitle: episode.libraryTitle,
       serverId: episode.serverId,
       serverName: episode.serverName,
     );
@@ -929,6 +931,8 @@ void _navigateToSeason(BuildContext context, MediaItem episode, {bool isOffline 
       index: episode.parentIndex,
       parentId: episode.grandparentId,
       thumbPath: episode.parentThumbPath,
+      libraryId: episode.libraryId,
+      libraryTitle: episode.libraryTitle,
       serverId: episode.serverId,
       serverName: episode.serverName,
     );
@@ -956,6 +960,8 @@ void _navigateToDetail(BuildContext context, MediaItem mi, {bool isOffline = fal
       title: mi.grandparentTitle ?? mi.displayTitle,
       thumbPath: mi.grandparentThumbPath,
       artPath: mi.grandparentArtPath,
+      libraryId: mi.libraryId,
+      libraryTitle: mi.libraryTitle,
       serverId: mi.serverId,
       serverName: mi.serverName,
     );
@@ -968,6 +974,8 @@ void _navigateToDetail(BuildContext context, MediaItem mi, {bool isOffline = fal
       title: mi.grandparentTitle ?? mi.parentTitle ?? mi.displayTitle,
       thumbPath: mi.grandparentThumbPath ?? mi.parentThumbPath,
       artPath: mi.grandparentArtPath,
+      libraryId: mi.libraryId,
+      libraryTitle: mi.libraryTitle,
       serverId: mi.serverId,
       serverName: mi.serverName,
     );

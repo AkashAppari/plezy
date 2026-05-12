@@ -446,11 +446,14 @@ class SettingsService extends BaseSharedPreferencesService {
   static Map<String, String> defaultKeyboardShortcuts() => _defaultKeyboardShortcuts();
   static Map<String, HotKey> defaultKeyboardHotkeys() => _defaultKeyboardHotkeys();
 
-  /// Null keys bypass the filter so we err on the side of syncing.
+  /// Unknown libraries are allowed only when no filter is configured.
   bool isLibraryAllowedForTracker(TrackerService service, String? libraryGlobalKey) {
-    if (libraryGlobalKey == null) return true;
-    final inList = read(trackerFilterIdsPref(service)).contains(libraryGlobalKey);
+    final filterIds = read(trackerFilterIdsPref(service));
     final mode = read(trackerFilterModePref(service));
+    if (libraryGlobalKey == null) {
+      return mode == TrackerLibraryFilterMode.blacklist && filterIds.isEmpty;
+    }
+    final inList = filterIds.contains(libraryGlobalKey);
     return mode == TrackerLibraryFilterMode.blacklist ? !inList : inList;
   }
 
