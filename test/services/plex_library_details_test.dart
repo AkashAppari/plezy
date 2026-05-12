@@ -5,8 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
-import 'package:plezy/media/media_filter.dart';
-import 'package:plezy/media/media_sort.dart';
 import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
@@ -37,58 +35,86 @@ void main() {
     );
   }
 
-  test('filters and sorts share the includeDetails section request', () async {
-    var requestCount = 0;
+  test('filters and sorts use dedicated Plex endpoints', () async {
+    final requests = <Uri>[];
     final client = makeClient((request) async {
-      requestCount++;
-      expect(request.url.path, '/library/sections/1');
-      expect(request.url.queryParameters['includeDetails'], '1');
-      return http.Response(jsonEncode(_sectionDetailsPayload()), 200, headers: {'content-type': 'application/json'});
+      requests.add(request.url);
+      return switch (request.url.path) {
+        '/library/sections/1/filters' => http.Response(
+          jsonEncode(_filtersPayload()),
+          200,
+          headers: {'content-type': 'application/json'},
+        ),
+        '/library/sections/1/sorts' => http.Response(
+          jsonEncode(_sortsPayload()),
+          200,
+          headers: {'content-type': 'application/json'},
+        ),
+        _ => http.Response('not found', 404),
+      };
     });
     addTearDown(client.close);
 
-    final results = await Future.wait<Object>([
-      client.getLibraryFilters('1'),
-      client.fetchSortOptions('1', libraryType: 'movie'),
-    ]);
+    final filters = await client.getLibraryFilters('1');
+    final sorts = await client.fetchSortOptions('1', libraryType: 'show');
 
-    final filters = results[0] as List<MediaFilter>;
-    final sorts = results[1] as List<MediaSort>;
-    expect(requestCount, 1);
-    expect(filters.map((f) => f.filter), ['genre', 'year']);
-    expect(sorts.map((s) => s.key), ['addedAt', 'titleSort']);
+    expect(requests.map((u) => u.path), ['/library/sections/1/filters', '/library/sections/1/sorts']);
+    expect(requests.every((u) => u.queryParameters.isEmpty), isTrue);
+    expect(filters.map((f) => f.filter), ['genre', 'year', 'unwatched']);
+    expect(sorts.map((s) => s.key), [
+      'titleSort',
+      'rating',
+      'audienceRating',
+      'addedAt',
+      'episode.addedAt',
+      'lastViewedAt',
+      'random',
+    ]);
   });
 }
 
-Map<String, dynamic> _sectionDetailsPayload() => {
+Map<String, dynamic> _filtersPayload() => {
   'MediaContainer': {
     'Directory': [
-      {'key': 'all', 'title': 'All Movies'},
       {
-        'key': '/library/sections/1/all?type=1',
-        'title': 'Movies',
-        'type': '1',
-        'Filter': [
-          {
-            'filter': 'genre',
-            'filterType': 'string',
-            'key': '/library/sections/1/genre',
-            'title': 'Genre',
-            'type': 'filter',
-          },
-          {
-            'filter': 'year',
-            'filterType': 'integer',
-            'key': '/library/sections/1/year',
-            'title': 'Year',
-            'type': 'filter',
-          },
-        ],
-        'Sort': [
-          {'defaultDirection': 'desc', 'descKey': 'addedAt:desc', 'key': 'addedAt', 'title': 'Date Added'},
-          {'defaultDirection': 'asc', 'descKey': 'titleSort:desc', 'key': 'titleSort', 'title': 'Name'},
-        ],
+        'filter': 'genre',
+        'filterType': 'string',
+        'key': '/library/sections/1/genre',
+        'title': 'Genre',
+        'type': 'filter',
       },
+      {'filter': 'year', 'filterType': 'integer', 'key': '/library/sections/1/year', 'title': 'Year', 'type': 'filter'},
+      {
+        'filter': 'unwatched',
+        'filterType': 'boolean',
+        'key': '/library/sections/1/unwatched',
+        'title': 'Unwatched',
+        'type': 'filter',
+      },
+    ],
+  },
+};
+
+Map<String, dynamic> _sortsPayload() => {
+  'MediaContainer': {
+    'Directory': [
+      {'defaultDirection': 'asc', 'descKey': 'titleSort:desc', 'key': 'titleSort', 'title': 'Title'},
+      {'defaultDirection': 'desc', 'descKey': 'rating:desc', 'key': 'rating', 'title': 'Critic Rating'},
+      {
+        'defaultDirection': 'desc',
+        'descKey': 'audienceRating:desc',
+        'key': 'audienceRating',
+        'title': 'Audience Rating',
+      },
+      {'defaultDirection': 'desc', 'descKey': 'addedAt:desc', 'key': 'addedAt', 'title': 'Date Added'},
+      {
+        'defaultDirection': 'desc',
+        'descKey': 'episode.addedAt:desc',
+        'key': 'episode.addedAt',
+        'title': 'Last Episode Date Added',
+      },
+      {'defaultDirection': 'desc', 'descKey': 'lastViewedAt:desc', 'key': 'lastViewedAt', 'title': 'Date Viewed'},
+      {'defaultDirection': 'desc', 'descKey': 'random:desc', 'key': 'random', 'title': 'Randomly'},
     ],
   },
 };

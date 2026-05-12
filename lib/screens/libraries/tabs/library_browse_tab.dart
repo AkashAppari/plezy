@@ -541,6 +541,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       resetPaginationState();
       _filters = [];
       _sortOptions = [];
+      _jellyfinFilterValues = const {};
+      _jellyfinAlphaPrefix = null;
       _selectedFilters = {};
       _selectedSort = null;
       _isSortDescending = false;
