@@ -954,13 +954,18 @@ class _MainScreenState extends State<MainScreen>
       return KeyEventResult.handled;
     }
 
+    // AppleTV: KeyDown does the work, KeyUp is consumed silently. See the
+    // matching comment in handleBackKeyAction for why the suppressor pattern
+    // doesn't fit here.
     if (PlatformDetector.isAppleTV() && event is KeyDownEvent) {
       final result = _handleMainBack(allowTvSystemExit: true);
       if (result == KeyEventResult.handled) {
         BackKeyCoordinator.markHandled();
-        BackKeyUpSuppressor.suppressBackUntilKeyUp();
       }
       return result;
+    }
+    if (PlatformDetector.isAppleTV() && event is KeyUpEvent) {
+      return KeyEventResult.handled;
     }
 
     if (event is KeyUpEvent) {
