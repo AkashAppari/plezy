@@ -1,6 +1,7 @@
 #!/usr/bin/env pwsh
 # Usage: upload-symbols.ps1 <platform> [source-root]
-# Env: BUGS_ADMIN_TOKEN (required unless BUGS_UPLOAD_DRY_RUN is set), BUGS_URL (default https://bugs.plezy.app)
+# Env: SENTRY_AUTH_TOKEN or BUGS_ADMIN_TOKEN (required unless BUGS_UPLOAD_DRY_RUN is set)
+#      SENTRY_URL or BUGS_URL (default https://bugs.plezy.app)
 # Platforms: windows-x64 | windows-arm64
 param(
     [Parameter(Mandatory = $true)]
@@ -9,15 +10,6 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-
-$Token = $env:BUGS_ADMIN_TOKEN
-$DryRun = -not [string]::IsNullOrEmpty($env:BUGS_UPLOAD_DRY_RUN)
-if (-not $DryRun -and [string]::IsNullOrEmpty($Token)) {
-    Write-Error 'BUGS_ADMIN_TOKEN env var required'
-    exit 1
-}
-
-$Url = if ([string]::IsNullOrEmpty($env:BUGS_URL)) { 'https://bugs.plezy.app' } else { $env:BUGS_URL }
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $Root = Split-Path -Parent $ScriptDir
@@ -30,62 +22,118 @@ elseif ([System.IO.Path]::IsPathRooted($SourceRoot)) {
     $SearchRoot = $SourceRoot
 }
 else {
-    $SearchRoot = Join-Path $Root $SourceRoot
+    $SearchRoot = [System.IO.Path]::GetFullPath((Join-Path $Root $SourceRoot))
 }
 
-$Release = "plezy@$(git rev-parse --short HEAD)"
-$Stage = New-Item -ItemType Directory -Path ([System.IO.Path]::GetTempPath()) -Name ([System.IO.Path]::GetRandomFileName()) -Force
-$Zip = $null
+$BuildRoot = Join-Path $SearchRoot 'build'
+$SymbolRoot = Join-Path (Join-Path $SearchRoot 'debug-info') $Platform
+$DryRun = -not [string]::IsNullOrEmpty($env:BUGS_UPLOAD_DRY_RUN)
 
-try {
-    $DebugInfoDir = Join-Path $SearchRoot "debug-info\$Platform"
-    if (Test-Path $DebugInfoDir) {
-        Copy-Item -Path "$DebugInfoDir\*" -Destination $Stage -Recurse -Force
+$SearchRoots = [System.Collections.Generic.List[string]]::new()
+function Add-ExistingRoot([string]$Path) {
+    if (Test-Path -Path $Path -PathType Container) {
+        $SearchRoots.Add($Path)
     }
-
-    switch ($Platform) {
-        { $_ -eq 'windows-x64' -or $_ -eq 'windows-arm64' } {
-            $Arch = $Platform -replace '^windows-', ''
-            $PdbRoot = Join-Path $SearchRoot "build\windows\$Arch\runner\Release"
-            if (Test-Path $PdbRoot) {
-                Get-ChildItem -Path $PdbRoot -Filter '*.pdb' -Recurse | ForEach-Object {
-                    Copy-Item $_.FullName -Destination $Stage -Force
-                }
-            }
-        }
-        default {
-            Write-Error "unknown platform: $Platform"
-            exit 2
-        }
-    }
-
-    $Files = Get-ChildItem -Path $Stage -File -Recurse
-    if (-not $Files) {
-        Write-Error "no symbols found for platform $Platform"
-        exit 3
-    }
-
-    if ($DryRun) {
-        Write-Host "dry-run: would upload $($Files.Count) symbol file(s) for $Platform release $Release"
-        $Files | ForEach-Object { Write-Host "dry-run: $_" }
-        return
-    }
-
-    $Zip = Join-Path ([System.IO.Path]::GetTempPath()) "symbols-$([System.IO.Path]::GetRandomFileName()).zip"
-    Compress-Archive -Path (Join-Path $Stage '*') -DestinationPath $Zip -Force
-
-    $Headers = @{ 'Authorization' = "Bearer $Token" }
-    $Form = @{
-        file    = Get-Item $Zip
-        release = $Release
-    }
-
-    Invoke-RestMethod -Method Post -Uri "$Url/api/0/projects/plezy/plezy/files/dsyms/" `
-        -Headers $Headers -Form $Form
 }
-finally {
-    Remove-Item -Path $Stage -Recurse -Force -ErrorAction SilentlyContinue
-    if ($Zip -and (Test-Path $Zip)) {
-        Remove-Item -Path $Zip -Force -ErrorAction SilentlyContinue
+
+Add-ExistingRoot $SymbolRoot
+
+switch ($Platform) {
+    { $_ -eq 'windows-x64' -or $_ -eq 'windows-arm64' } {
+        Add-ExistingRoot (Join-Path $BuildRoot 'windows')
     }
+    default {
+        Write-Error "unknown platform: $Platform"
+        exit 2
+    }
+}
+
+function Has-SymbolFile {
+    foreach ($RootPath in $SearchRoots) {
+        $First = Get-ChildItem -Path $RootPath -File -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($null -ne $First) {
+            return $true
+        }
+    }
+    return $false
+}
+
+if (-not (Has-SymbolFile)) {
+    Write-Error "no symbols found for platform $Platform"
+    exit 3
+}
+
+if ([string]::IsNullOrEmpty($env:SENTRY_URL)) {
+    $env:SENTRY_URL = if ([string]::IsNullOrEmpty($env:BUGS_URL)) { 'https://bugs.plezy.app' } else { $env:BUGS_URL }
+}
+
+if ([string]::IsNullOrEmpty($env:SENTRY_RELEASE)) {
+    $env:SENTRY_RELEASE = "plezy@$(git rev-parse --short HEAD)"
+}
+
+if ([string]::IsNullOrEmpty($env:SENTRY_LOG_LEVEL)) {
+    $env:SENTRY_LOG_LEVEL = 'info'
+}
+
+if ([string]::IsNullOrEmpty($env:SENTRY_AUTH_TOKEN) -and -not [string]::IsNullOrEmpty($env:BUGS_ADMIN_TOKEN)) {
+    $env:SENTRY_AUTH_TOKEN = $env:BUGS_ADMIN_TOKEN
+}
+
+if (-not $DryRun -and [string]::IsNullOrEmpty($env:SENTRY_AUTH_TOKEN)) {
+    Write-Error 'SENTRY_AUTH_TOKEN or BUGS_ADMIN_TOKEN env var required'
+    exit 1
+}
+
+$DartSymbolMapPath = $env:SENTRY_DART_SYMBOL_MAP_PATH
+if ([string]::IsNullOrEmpty($DartSymbolMapPath)) {
+    $Candidates = @(
+        (Join-Path $SymbolRoot 'obfuscation.map.json'),
+        (Join-Path (Join-Path $BuildRoot 'app\obfuscation') "$Platform.map.json"),
+        (Join-Path (Join-Path $BuildRoot 'app') 'obfuscation.map.json')
+    )
+
+    foreach ($Candidate in $Candidates) {
+        if (Test-Path -Path $Candidate -PathType Leaf) {
+            $DartSymbolMapPath = $Candidate
+            break
+        }
+    }
+}
+
+$PluginArgs = @(
+    "--sentry-define=release=$($env:SENTRY_RELEASE)",
+    "--sentry-define=url=$($env:SENTRY_URL)",
+    "--sentry-define=build_path=$BuildRoot"
+)
+
+if (-not [string]::IsNullOrEmpty($env:SENTRY_DIST)) {
+    $PluginArgs += "--sentry-define=dist=$($env:SENTRY_DIST)"
+}
+
+if (Test-Path -Path $SymbolRoot -PathType Container) {
+    $PluginArgs += "--sentry-define=symbols_path=$SymbolRoot"
+}
+
+if (-not [string]::IsNullOrEmpty($DartSymbolMapPath)) {
+    $PluginArgs += "--sentry-define=dart_symbol_map_path=$DartSymbolMapPath"
+}
+
+if ($DryRun) {
+    Write-Host "dry-run: would upload symbols for $Platform"
+    Write-Host "dry-run: release=$($env:SENTRY_RELEASE)"
+    Write-Host "dry-run: dist=$($env:SENTRY_DIST)"
+    Write-Host "dry-run: source_root=$SearchRoot"
+    Write-Host "dry-run: build_path=$BuildRoot"
+    Write-Host "dry-run: symbols_path=$SymbolRoot"
+    Write-Host "dry-run: dart_symbol_map_path=$DartSymbolMapPath"
+    foreach ($RootPath in $SearchRoots) {
+        Get-ChildItem -Path $RootPath -File -Recurse -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_.FullName }
+    }
+    exit 0
+}
+
+Write-Host "uploading symbols for $Platform release $($env:SENTRY_RELEASE) dist $($env:SENTRY_DIST)"
+& dart run sentry_dart_plugin @PluginArgs
+if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
 }

@@ -1,19 +1,12 @@
 #!/usr/bin/env bash
 # Usage: upload-symbols.sh <platform> [source-root]
-# Env: BUGS_ADMIN_TOKEN (required unless BUGS_UPLOAD_DRY_RUN is set), BUGS_URL (default https://bugs.plezy.app)
+# Env: SENTRY_AUTH_TOKEN or BUGS_ADMIN_TOKEN (required unless BUGS_UPLOAD_DRY_RUN is set)
+#      SENTRY_URL or BUGS_URL (default https://bugs.plezy.app)
 # Platforms: macos | ios | android-apk | android-aab | linux-x64 | linux-arm64
 set -euo pipefail
 
 PLATFORM="${1:?platform arg required}"
-URL="${BUGS_URL:-https://bugs.plezy.app}"
-MAX_ATTEMPTS="${BUGS_UPLOAD_ATTEMPTS:-5}"
 DRY_RUN="${BUGS_UPLOAD_DRY_RUN:-}"
-
-if [ -z "$DRY_RUN" ]; then
-  TOKEN="${BUGS_ADMIN_TOKEN:?BUGS_ADMIN_TOKEN env var required}"
-else
-  TOKEN="${BUGS_ADMIN_TOKEN:-}"
-fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -24,109 +17,45 @@ if [[ "$SOURCE_ROOT" != /* ]]; then
   SOURCE_ROOT="$ROOT/$SOURCE_ROOT"
 fi
 
-RELEASE="plezy@$(git rev-parse --short HEAD)"
-ENDPOINT="${URL}/api/0/projects/plezy/plezy/files/dsyms/"
-FILES=()
+BUILD_ROOT="$SOURCE_ROOT/build"
+SYMBOL_ROOT="$SOURCE_ROOT/debug-info/$PLATFORM"
+DART_SYMBOL_MAP_PATH="${SENTRY_DART_SYMBOL_MAP_PATH:-}"
 
-add_matches() {
-  local path
-  while IFS= read -r -d '' path; do
-    FILES+=("$path")
-  done < <(find "$@" -print0 2>/dev/null || true)
-}
-
-add_debug_info() {
-  if [ -d "${SOURCE_ROOT}/debug-info/${PLATFORM}" ]; then
-    add_matches "${SOURCE_ROOT}/debug-info/${PLATFORM}" -type f
-  fi
-}
-
-file_size() {
-  wc -c < "$1" | tr -d '[:space:]'
-}
-
-curl_fail_arg() {
-  if curl --help all 2>/dev/null | grep -q -- '--fail-with-body'; then
-    printf '%s\n' '--fail-with-body'
-  else
-    printf '%s\n' '--fail'
-  fi
-}
-
-upload_file() {
-  local file="$1"
-  local index="$2"
-  local total="$3"
-  local size
-  local body
-  local attempt
-  local delay
-  local fail_arg
-
-  size="$(file_size "$file")"
-
-  if [ -n "$DRY_RUN" ]; then
-    echo "dry-run: would upload symbols ${index}/${total}: ${file} (${size} bytes)"
-    return 0
-  fi
-
-  body="$(mktemp)"
-  fail_arg="$(curl_fail_arg)"
-
-  echo "uploading symbols ${index}/${total}: ${file} (${size} bytes)"
-
-  attempt=1
-  delay=2
-  while [ "$attempt" -le "$MAX_ATTEMPTS" ]; do
-    if curl "$fail_arg" --silent --show-error \
-      --connect-timeout 20 \
-      --max-time 600 \
-      -o "$body" \
-      -X POST \
-      -H "Authorization: Bearer ${TOKEN}" \
-      -F "file=@${file}" \
-      -F "release=${RELEASE}" \
-      "$ENDPOINT"; then
-      rm -f "$body"
-      return 0
+if [ -z "$DART_SYMBOL_MAP_PATH" ]; then
+  for candidate in \
+    "$SYMBOL_ROOT/obfuscation.map.json" \
+    "$BUILD_ROOT/app/obfuscation/$PLATFORM.map.json" \
+    "$BUILD_ROOT/app/obfuscation.map.json"; do
+    if [ -f "$candidate" ]; then
+      DART_SYMBOL_MAP_PATH="$candidate"
+      break
     fi
-
-    if [ "$attempt" -lt "$MAX_ATTEMPTS" ]; then
-      echo "symbol upload failed for ${file}; retrying in ${delay}s (${attempt}/${MAX_ATTEMPTS})" >&2
-      sleep "$delay"
-      delay=$((delay * 2))
-    fi
-    attempt=$((attempt + 1))
   done
+fi
 
-  echo "symbol upload failed after ${MAX_ATTEMPTS} attempts" >&2
-  echo "platform=${PLATFORM}" >&2
-  echo "release=${RELEASE}" >&2
-  echo "file_count=${total}" >&2
-  echo "failed_file=${file}" >&2
-  echo "failed_file_size=${size}" >&2
-  if [ -s "$body" ]; then
-    echo "response_body:" >&2
-    sed 's/^/  /' "$body" >&2
+SEARCH_ROOTS=()
+
+add_existing_root() {
+  if [ -d "$1" ]; then
+    SEARCH_ROOTS+=("$1")
   fi
-  rm -f "$body"
-  return 1
 }
 
-add_debug_info
+add_existing_root "$SYMBOL_ROOT"
 
 case "$PLATFORM" in
   macos)
-    add_matches "${SOURCE_ROOT}/build/macos/Build/Products/Release" -path '*.dSYM/Contents/Resources/DWARF/*' -type f
+    add_existing_root "$BUILD_ROOT/macos"
     ;;
   ios)
-    add_matches "${SOURCE_ROOT}/build/ios" -path '*.dSYM/Contents/Resources/DWARF/*' -type f
+    add_existing_root "$BUILD_ROOT/ios"
+    add_existing_root "$SOURCE_ROOT/ios/build"
     ;;
   linux-x64|linux-arm64)
-    add_matches "${SOURCE_ROOT}/build/linux" -path '*/release/bundle/plezy' -type f
+    add_existing_root "$BUILD_ROOT/linux"
     ;;
   android-apk|android-aab)
-    add_matches "${SOURCE_ROOT}/build/app/intermediates/merged_native_libs" -name '*.so' -type f
+    add_existing_root "$BUILD_ROOT/app"
     ;;
   *)
     echo "unknown platform: $PLATFORM" >&2
@@ -134,15 +63,63 @@ case "$PLATFORM" in
     ;;
 esac
 
-if [ "${#FILES[@]}" -eq 0 ]; then
+found_symbol_file() {
+  local first
+  if [ "${#SEARCH_ROOTS[@]}" -eq 0 ]; then
+    return 1
+  fi
+
+  first="$(find "${SEARCH_ROOTS[@]}" -type f -print -quit 2>/dev/null || true)"
+  [ -n "$first" ]
+}
+
+if ! found_symbol_file; then
   echo "no symbols found for platform ${PLATFORM}" >&2
   exit 3
 fi
 
-echo "uploading ${#FILES[@]} symbol file(s) for ${PLATFORM} release ${RELEASE}"
+export SENTRY_URL="${SENTRY_URL:-${BUGS_URL:-https://bugs.plezy.app}}"
+export SENTRY_RELEASE="${SENTRY_RELEASE:-plezy@$(git rev-parse --short HEAD)}"
+export SENTRY_LOG_LEVEL="${SENTRY_LOG_LEVEL:-info}"
 
-index=1
-for file in "${FILES[@]}"; do
-  upload_file "$file" "$index" "${#FILES[@]}"
-  index=$((index + 1))
-done
+if [ -z "${SENTRY_AUTH_TOKEN:-}" ] && [ -n "${BUGS_ADMIN_TOKEN:-}" ]; then
+  export SENTRY_AUTH_TOKEN="$BUGS_ADMIN_TOKEN"
+fi
+
+if [ -z "$DRY_RUN" ] && [ -z "${SENTRY_AUTH_TOKEN:-}" ]; then
+  echo "SENTRY_AUTH_TOKEN or BUGS_ADMIN_TOKEN env var required" >&2
+  exit 1
+fi
+
+PLUGIN_ARGS=(
+  "--sentry-define=release=${SENTRY_RELEASE}"
+  "--sentry-define=url=${SENTRY_URL}"
+  "--sentry-define=build_path=${BUILD_ROOT}"
+)
+
+if [ -n "${SENTRY_DIST:-}" ]; then
+  PLUGIN_ARGS+=("--sentry-define=dist=${SENTRY_DIST}")
+fi
+
+if [ -d "$SYMBOL_ROOT" ]; then
+  PLUGIN_ARGS+=("--sentry-define=symbols_path=${SYMBOL_ROOT}")
+fi
+
+if [ -n "$DART_SYMBOL_MAP_PATH" ]; then
+  PLUGIN_ARGS+=("--sentry-define=dart_symbol_map_path=${DART_SYMBOL_MAP_PATH}")
+fi
+
+if [ -n "$DRY_RUN" ]; then
+  echo "dry-run: would upload symbols for ${PLATFORM}"
+  echo "dry-run: release=${SENTRY_RELEASE}"
+  echo "dry-run: dist=${SENTRY_DIST:-}"
+  echo "dry-run: source_root=${SOURCE_ROOT}"
+  echo "dry-run: build_path=${BUILD_ROOT}"
+  echo "dry-run: symbols_path=${SYMBOL_ROOT}"
+  echo "dry-run: dart_symbol_map_path=${DART_SYMBOL_MAP_PATH}"
+  find "${SEARCH_ROOTS[@]}" -type f -print 2>/dev/null || true
+  exit 0
+fi
+
+echo "uploading symbols for ${PLATFORM} release ${SENTRY_RELEASE} dist ${SENTRY_DIST:-}"
+dart run sentry_dart_plugin "${PLUGIN_ARGS[@]}"
