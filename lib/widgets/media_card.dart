@@ -26,6 +26,7 @@ import '../i18n/strings.g.dart';
 import 'media_context_menu.dart';
 import 'media_progress_bar.dart';
 import 'media_card_list_layout.dart';
+import 'backend_badge.dart';
 import 'optimized_media_image.dart';
 
 const _failedPosterUrlCacheLimit = 512;
@@ -619,9 +620,8 @@ class _MediaCardList extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        AppIcon(
-                          Symbols.dns_rounded,
-                          fill: 1,
+                        BackendBadge(
+                          backend: (item as MediaItem).backend,
                           size: _metadataFontSize + 2,
                           color: tokens(context).textMuted.withValues(alpha: 0.6),
                         ),
