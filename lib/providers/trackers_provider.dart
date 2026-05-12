@@ -180,41 +180,47 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   Future<MalSession> _enrichMal(MalSession raw) async {
+    MalClient? tmp;
     try {
-      final tmp = MalClient(raw, onSessionInvalidated: () {});
+      tmp = MalClient(raw, onSessionInvalidated: () {});
       final user = await tmp.getMyUser();
-      tmp.dispose();
       final name = user?['name'] as String?;
       return name != null ? raw.copyWith(username: name) : raw;
     } catch (e) {
       appLogger.d('MAL: getMyUser failed (non-fatal)', error: e);
       return raw;
+    } finally {
+      tmp?.dispose();
     }
   }
 
   Future<AnilistSession> _enrichAnilist(AnilistSession raw) async {
+    AnilistClient? tmp;
     try {
-      final tmp = AnilistClient(raw, onSessionInvalidated: () {});
+      tmp = AnilistClient(raw, onSessionInvalidated: () {});
       final name = await tmp.getViewerName();
-      tmp.dispose();
       return name != null ? raw.copyWith(username: name) : raw;
     } catch (e) {
       appLogger.d('AniList: getViewerName failed (non-fatal)', error: e);
       return raw;
+    } finally {
+      tmp?.dispose();
     }
   }
 
   Future<SimklSession> _enrichSimkl(SimklSession raw) async {
+    SimklClient? tmp;
     try {
-      final tmp = SimklClient(raw, onSessionInvalidated: () {});
+      tmp = SimklClient(raw, onSessionInvalidated: () {});
       final user = await tmp.getUserSettings();
-      tmp.dispose();
       final userObj = user?['user'];
       final name = userObj is Map ? userObj['name'] as String? : null;
       return name != null ? raw.copyWith(username: name) : raw;
     } catch (e) {
       appLogger.d('Simkl: getUserSettings failed (non-fatal)', error: e);
       return raw;
+    } finally {
+      tmp?.dispose();
     }
   }
 

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../../../utils/abortable_http_request.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/platform_http_client_stub.dart'
     if (dart.library.io) '../../../utils/platform_http_client_io.dart'
@@ -54,7 +55,15 @@ class AnilistClient {
     final body = json.encode({'query': query, 'variables': ?variables});
 
     final sw = Stopwatch()..start();
-    final res = await _http.post(uri, headers: headers, body: body).timeout(TrackerConstants.requestTimeout);
+    final res = await sendAbortableHttpRequest(
+      _http,
+      'POST',
+      uri,
+      headers: headers,
+      body: body,
+      timeout: TrackerConstants.requestTimeout,
+      operation: 'AniList POST ${uri.path}',
+    );
     sw.stop();
     appLogger.d('AniList POST ${uri.path} → ${res.statusCode} (${sw.elapsedMilliseconds}ms)');
 

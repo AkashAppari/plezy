@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../../utils/abortable_http_request.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/platform_http_client_stub.dart'
     if (dart.library.io) '../../utils/platform_http_client_io.dart'
@@ -29,13 +30,15 @@ class OAuthProxyClient {
   /// POST /auth/start — register a new session. Returns a handle including the
   /// URL to display as a QR code for the phone scan.
   Future<OAuthProxyStart> start(String service) async {
-    final res = await _http
-        .post(
-          Uri.parse('$baseUrl/auth/start'),
-          headers: {'Content-Type': 'application/json'},
-          body: json.encode({'service': service}),
-        )
-        .timeout(TrackerConstants.authRequestTimeout);
+    final res = await sendAbortableHttpRequest(
+      _http,
+      'POST',
+      Uri.parse('$baseUrl/auth/start'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'service': service}),
+      timeout: TrackerConstants.authRequestTimeout,
+      operation: 'OAuth proxy start',
+    );
     if (res.statusCode != 200) {
       throw OAuthProxyException('start failed: HTTP ${res.statusCode}: ${res.body}');
     }
@@ -65,7 +68,14 @@ class OAuthProxyClient {
       final Object? raced;
       try {
         raced = await Future.any<Object?>([
-          _http.get(uri).timeout(TrackerConstants.oauthProxyPollTimeout),
+          sendAbortableHttpRequest(
+            _http,
+            'GET',
+            uri,
+            timeout: TrackerConstants.oauthProxyPollTimeout,
+            abortTrigger: onCancel,
+            operation: 'OAuth proxy poll',
+          ),
           ?cancelFuture,
         ]);
       } on TimeoutException {

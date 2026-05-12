@@ -61,6 +61,10 @@ import 'server_capabilities.dart';
 /// two states to different UI ("Sign in again" vs "Server offline").
 enum HealthStatus { online, offline, authError }
 
+abstract interface class GracefullyCloseable {
+  Future<void> closeGracefully({Duration drainTimeout});
+}
+
 abstract class MediaServerClient {
   String get serverId;
   String? get serverName;

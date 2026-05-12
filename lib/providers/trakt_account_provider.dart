@@ -77,14 +77,16 @@ class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
   }
 
   Future<TraktSession> _enrichUsername(TraktSession raw) async {
+    TraktClient? tmp;
     try {
-      final tmp = TraktClient(raw, onSessionInvalidated: () {});
+      tmp = TraktClient(raw, onSessionInvalidated: () {});
       final user = await tmp.getUserSettings();
-      tmp.dispose();
       return raw.copyWith(username: user.username);
     } catch (e) {
       appLogger.d('Trakt: getUserSettings failed (non-fatal)', error: e);
       return raw;
+    } finally {
+      tmp?.dispose();
     }
   }
 
@@ -93,8 +95,11 @@ class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
     final session = _session;
     if (session != null) {
       final client = TraktClient(session, onSessionInvalidated: () {});
-      await client.revoke();
-      client.dispose();
+      try {
+        await client.revoke();
+      } finally {
+        client.dispose();
+      }
     }
     await _store.clear(_activeUserUuid);
     _setSessionAndRebind(null);

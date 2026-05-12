@@ -9,6 +9,7 @@ import 'app_logger.dart';
 import 'future_extensions.dart';
 import 'isolate_helper.dart';
 import 'log_redaction_manager.dart';
+import 'managed_http_client.dart';
 import '../exceptions/media_server_exceptions.dart';
 
 // Platform-specific imports are conditional
@@ -63,6 +64,8 @@ class AbortController {
 /// timeouts, logging, and optional endpoint failover.
 class MediaServerHttpClient {
   final http.Client _client;
+  final Set<AbortController> _activeAborts = <AbortController>{};
+  bool _closing = false;
 
   MediaServerHttpClient({
     http.Client? client,
@@ -135,58 +138,114 @@ class MediaServerHttpClient {
   }) => _send('DELETE', path, queryParameters: queryParameters, headers: headers, timeout: timeout, abort: abort);
 
   /// Fetch raw bytes (e.g. images, BIF files, subtitles).
-  Future<Uint8List> getBytes(String url, {Map<String, String>? headers, Duration? timeout}) async {
+  Future<Uint8List> getBytes(
+    String url, {
+    Map<String, String>? headers,
+    Duration? timeout,
+    AbortController? abort,
+  }) async {
+    if (_closing) {
+      throw MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'HTTP client is closing');
+    }
+
     final uri = _isAbsoluteUrl(url) ? Uri.parse(url) : _buildUri(url, null);
-    final request = http.Request('GET', uri);
+    final requestAbort = AbortController();
+    _activeAborts.add(requestAbort);
+    final request = http.AbortableRequest('GET', uri, abortTrigger: _abortTrigger(requestAbort, abort));
     request.headers.addAll({...defaultHeaders, ...?headers});
 
     final sw = Stopwatch()..start();
     try {
-      final streamed = await _client
-          .send(request)
-          .namedTimeout(timeout ?? connectTimeout, operation: 'GET ${uri.path} connect');
+      final streamed = await _withAbortOnTimeout(
+        _client.send(request),
+        timeout ?? connectTimeout,
+        operation: 'GET ${uri.path} connect',
+        abort: requestAbort,
+      );
 
-      final bytes = await streamed.stream.toBytes().namedTimeout(
+      final bytes = await _withAbortOnTimeout(
+        streamed.stream.toBytes(),
         timeout ?? receiveTimeout,
         operation: 'GET ${uri.path} receive',
+        abort: requestAbort,
       );
 
       sw.stop();
       _logResponse('GET', uri, streamed.statusCode, sw.elapsedMilliseconds);
       return bytes;
     } catch (e) {
+      requestAbort.abort();
       sw.stop();
       throw MediaServerHttpException.from(e, uri: uri);
+    } finally {
+      _activeAborts.remove(requestAbort);
     }
   }
 
   /// Stream-download a URL directly into a file.
-  Future<void> downloadFile(String url, String filePath, {Map<String, String>? headers, Duration? timeout}) async {
+  Future<void> downloadFile(
+    String url,
+    String filePath, {
+    Map<String, String>? headers,
+    Duration? timeout,
+    AbortController? abort,
+  }) async {
+    if (_closing) {
+      throw MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'HTTP client is closing');
+    }
+
     final uri = _isAbsoluteUrl(url) ? Uri.parse(url) : _buildUri(url, null);
-    final request = http.Request('GET', uri);
+    final requestAbort = AbortController();
+    _activeAborts.add(requestAbort);
+    final request = http.AbortableRequest('GET', uri, abortTrigger: _abortTrigger(requestAbort, abort));
     request.headers.addAll({...defaultHeaders, ...?headers});
 
     try {
-      final streamed = await _client
-          .send(request)
-          .namedTimeout(timeout ?? connectTimeout, operation: 'download ${uri.path} connect');
+      final streamed = await _withAbortOnTimeout(
+        _client.send(request),
+        timeout ?? connectTimeout,
+        operation: 'download ${uri.path} connect',
+        abort: requestAbort,
+      );
 
       final file = File(filePath);
       final sink = file.openWrite();
       try {
-        await streamed.stream.pipe(sink);
+        await _withAbortOnTimeout(
+          streamed.stream.pipe(sink),
+          timeout ?? receiveTimeout,
+          operation: 'download ${uri.path} receive',
+          abort: requestAbort,
+        );
       } finally {
         await sink.close();
       }
     } catch (e) {
+      requestAbort.abort();
       throw MediaServerHttpException.from(e, uri: uri);
+    } finally {
+      _activeAborts.remove(requestAbort);
     }
   }
 
   /// Send a streamed request (for image cache etc).
   Future<http.StreamedResponse> sendStreamed(http.BaseRequest request) => _client.send(request);
 
-  void close() => _client.close();
+  void close() {
+    _closing = true;
+    _abortActiveRequests();
+    _client.close();
+  }
+
+  Future<void> closeGracefully({Duration drainTimeout = const Duration(seconds: 2)}) async {
+    _closing = true;
+    _abortActiveRequests();
+    if (_client case final ManagedHttpClient managed) {
+      await managed.closeGracefully(drainTimeout: drainTimeout);
+    } else {
+      _client.close();
+    }
+  }
 
   Future<MediaServerResponse> _send(
     String method,
@@ -197,30 +256,36 @@ class MediaServerHttpClient {
     Duration? timeout,
     AbortController? abort,
   }) async {
+    if (_closing) {
+      throw MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'HTTP client is closing');
+    }
+
     final uri = _isAbsoluteUrl(path)
         ? _appendQuery(Uri.parse(path), queryParameters)
         : _buildUri(path, queryParameters);
 
     final mergedHeaders = <String, String>{...defaultHeaders, ...?headers};
 
-    final http.Request request;
-    if (abort != null) {
-      request = http.AbortableRequest(method, uri, abortTrigger: abort.trigger);
-    } else {
-      request = http.Request(method, uri);
-    }
+    final requestAbort = AbortController();
+    _activeAborts.add(requestAbort);
+    final request = http.AbortableRequest(method, uri, abortTrigger: _abortTrigger(requestAbort, abort));
     request.headers.addAll(mergedHeaders);
     _setBody(request, body);
 
     final sw = Stopwatch()..start();
     try {
-      final streamed = await _client
-          .send(request)
-          .namedTimeout(timeout ?? connectTimeout, operation: '$method ${uri.path} connect');
+      final streamed = await _withAbortOnTimeout(
+        _client.send(request),
+        timeout ?? connectTimeout,
+        operation: '$method ${uri.path} connect',
+        abort: requestAbort,
+      );
 
-      final bytes = await streamed.stream.toBytes().namedTimeout(
+      final bytes = await _withAbortOnTimeout(
+        streamed.stream.toBytes(),
         timeout ?? receiveTimeout,
         operation: '$method ${uri.path} receive',
+        abort: requestAbort,
       );
 
       sw.stop();
@@ -246,8 +311,36 @@ class MediaServerHttpClient {
         requestUri: uri,
       );
     } catch (e) {
+      requestAbort.abort();
       sw.stop();
       throw MediaServerHttpException.from(e, uri: uri);
+    } finally {
+      _activeAborts.remove(requestAbort);
+    }
+  }
+
+  void _abortActiveRequests() {
+    for (final abort in _activeAborts.toList()) {
+      abort.abort();
+    }
+  }
+
+  Future<void> _abortTrigger(AbortController owned, AbortController? external) {
+    final externalTrigger = external?.trigger;
+    return externalTrigger == null ? owned.trigger : Future.any<void>([owned.trigger, externalTrigger]);
+  }
+
+  Future<T> _withAbortOnTimeout<T>(
+    Future<T> future,
+    Duration timeLimit, {
+    required String operation,
+    required AbortController abort,
+  }) async {
+    try {
+      return await future.namedTimeout(timeLimit, operation: operation);
+    } on TimeoutException {
+      abort.abort();
+      rethrow;
     }
   }
 

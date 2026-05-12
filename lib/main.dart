@@ -33,6 +33,7 @@ import 'services/settings_service.dart';
 import 'utils/platform_detector.dart';
 import 'services/apple_tv_remote_touch_service.dart';
 import 'services/discord_rpc_service.dart';
+import 'services/image_cache_service.dart';
 import 'services/gamepad_service.dart';
 import 'services/trakt/trakt_scrobble_service.dart';
 import 'services/trakt/trakt_sync_service.dart';
@@ -66,7 +67,8 @@ import 'services/plex_api_cache.dart';
 import 'database/app_database.dart';
 import 'screens/video_player_screen.dart';
 import 'utils/app_logger.dart';
-import 'utils/media_server_http_client.dart' show httpClient;
+import 'utils/managed_http_client.dart';
+import 'utils/media_server_http_client.dart';
 import 'utils/orientation_helper.dart';
 import 'utils/watch_state_notifier.dart';
 import 'i18n/strings.g.dart';
@@ -423,6 +425,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   final Set<String> _pendingSyncKeys = <String>{};
   bool _isAutoDeleteRunning = false;
   bool _lastConnectivityWasWifi = false;
+  bool _shutdownStarted = false;
 
   /// Last time server health probes ran from a resume event (cooldown for desktop)
   DateTime _lastResumeProbe = DateTime(0);
@@ -470,11 +473,33 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
 
     _appLifecycleListener = AppLifecycleListener(
       onExitRequested: () async {
-        httpClient.close();
-        await _appDatabase.close();
+        await _shutdownForExit();
         return AppExitResponse.exit;
       },
     );
+  }
+
+  Future<void> _shutdownForExit() async {
+    if (_shutdownStarted) return;
+    _shutdownStarted = true;
+
+    _syncDebounce?.cancel();
+    await _watchStateSubscription?.cancel();
+    await _connectivitySubscription?.cancel();
+    _memoryCheckTimer?.cancel();
+
+    _downloadManager.dispose();
+    TrackerCoordinator.instance.cancelInFlight();
+    TraktScrobbleService.instance.cancelInFlight();
+    await TraktSyncService.instance.dispose();
+
+    await _serverManager.disconnectAllGracefully();
+    await Future.wait([
+      httpClient.closeGracefully(drainTimeout: const Duration(seconds: 5)),
+      closeArtworkHttpClientGracefully(),
+    ], eagerError: false);
+    await ManagedHttpClient.closeAllGracefully();
+    await _appDatabase.close();
   }
 
   @override
@@ -484,8 +509,10 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     _connectivitySubscription?.cancel();
     _memoryCheckTimer?.cancel();
     _appLifecycleListener.dispose();
-    _downloadManager.dispose();
-    _serverManager.dispose();
+    if (!_shutdownStarted) {
+      _downloadManager.dispose();
+      _serverManager.dispose();
+    }
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

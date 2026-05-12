@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import '../../models/trackers/fribb_mapping_row.dart';
 import '../base_shared_preferences_service.dart';
+import '../../utils/abortable_http_request.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/platform_http_client_stub.dart'
     if (dart.library.io) '../../utils/platform_http_client_io.dart'
@@ -99,9 +100,14 @@ class FribbMappingStore {
   Future<String?> _download() async {
     final client = platform.createPlatformClient();
     try {
-      final res = await client
-          .get(Uri.parse(_sourceUrl), headers: const {'Accept': 'application/json'})
-          .timeout(_requestTimeout);
+      final res = await sendAbortableHttpRequest(
+        client,
+        'GET',
+        Uri.parse(_sourceUrl),
+        headers: const {'Accept': 'application/json'},
+        timeout: _requestTimeout,
+        operation: 'Fribb mapping download',
+      );
       if (res.statusCode != 200) {
         appLogger.d('Fribb: download returned HTTP ${res.statusCode}');
         return null;
@@ -154,9 +160,14 @@ class FribbMappingStore {
       final etag = prefs.getString(_prefsEtagKey);
       final client = platform.createPlatformClient();
       try {
-        final res = await client
-            .get(Uri.parse(_sourceUrl), headers: {'If-None-Match': ?etag, 'Accept': 'application/json'})
-            .timeout(_requestTimeout);
+        final res = await sendAbortableHttpRequest(
+          client,
+          'GET',
+          Uri.parse(_sourceUrl),
+          headers: {'If-None-Match': ?etag, 'Accept': 'application/json'},
+          timeout: _requestTimeout,
+          operation: 'Fribb mapping refresh',
+        );
         await prefs.setInt(_prefsLastCheckKey, now);
 
         if (res.statusCode == 304) {

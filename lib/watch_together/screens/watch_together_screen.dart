@@ -97,8 +97,8 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
   String? get _plexDisplayName => context.read<ActiveProfileProvider>().active?.displayName;
 
   Future<void> _checkHealth() async {
+    final client = HttpClient();
     try {
-      final client = HttpClient();
       client.connectionTimeout = const Duration(seconds: 5);
       final request = await client.getUrl(Uri.parse(WatchTogetherPeerService.healthUrlFor(_customRelayUrl)));
       final response = await request.close().namedTimeout(
@@ -106,13 +106,14 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
         operation: 'WatchTogether health check',
       );
       final body = await response.transform(const SystemEncoding().decoder).join();
-      client.close();
       if (!mounted) return;
       setState(() => _healthOk = response.statusCode == 200 && body.trim() == 'ok');
     } catch (e) {
       appLogger.w('Watch Together health check failed', error: e);
       if (!mounted) return;
       setState(() => _healthOk = false);
+    } finally {
+      client.close(force: true);
     }
   }
 

@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../../models/trakt/trakt_scrobble_request.dart';
 import '../../models/trakt/trakt_user.dart';
+import '../../utils/abortable_http_request.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/platform_http_client_stub.dart'
     if (dart.library.io) '../../utils/platform_http_client_io.dart'
@@ -64,18 +65,21 @@ class TraktClient {
 
   Future<TraktSession> _doRefresh() async {
     appLogger.d('Trakt: refreshing access token');
-    final res = await _http
-        .post(
-          Uri.parse(TraktConstants.tokenUrl),
-          headers: TraktConstants.headers(),
-          body: json.encode({
-            'refresh_token': _session.refreshToken,
-            'client_id': TraktConstants.clientId,
-            'client_secret': TraktConstants.clientSecret,
-            'grant_type': 'refresh_token',
-          }),
-        )
-        .timeout(TrackerConstants.refreshTimeout);
+    final tokenUri = Uri.parse(TraktConstants.tokenUrl);
+    final res = await sendAbortableHttpRequest(
+      _http,
+      'POST',
+      tokenUri,
+      headers: TraktConstants.headers(),
+      body: json.encode({
+        'refresh_token': _session.refreshToken,
+        'client_id': TraktConstants.clientId,
+        'client_secret': TraktConstants.clientSecret,
+        'grant_type': 'refresh_token',
+      }),
+      timeout: TrackerConstants.refreshTimeout,
+      operation: 'Trakt token refresh',
+    );
 
     if (res.statusCode == 200) {
       final body = json.decode(res.body) as Map<String, dynamic>;
@@ -91,17 +95,19 @@ class TraktClient {
   /// Revoke the access token at Trakt. Best-effort; swallows network errors.
   Future<void> revoke() async {
     try {
-      await _http
-          .post(
-            Uri.parse(TraktConstants.revokeUrl),
-            headers: TraktConstants.headers(),
-            body: json.encode({
-              'token': _session.accessToken,
-              'client_id': TraktConstants.clientId,
-              'client_secret': TraktConstants.clientSecret,
-            }),
-          )
-          .timeout(TrackerConstants.revokeTimeout);
+      await sendAbortableHttpRequest(
+        _http,
+        'POST',
+        Uri.parse(TraktConstants.revokeUrl),
+        headers: TraktConstants.headers(),
+        body: json.encode({
+          'token': _session.accessToken,
+          'client_id': TraktConstants.clientId,
+          'client_secret': TraktConstants.clientSecret,
+        }),
+        timeout: TrackerConstants.revokeTimeout,
+        operation: 'Trakt token revoke',
+      );
     } catch (e) {
       appLogger.d('Trakt: revoke failed (non-fatal)', error: e);
     }
@@ -152,12 +158,17 @@ class TraktClient {
 
     final sw = Stopwatch()..start();
     final res = await switch (method) {
-      'GET' => _http.get(uri, headers: headers),
-      'POST' => _http.post(uri, headers: headers, body: encoded),
-      'PUT' => _http.put(uri, headers: headers, body: encoded),
-      'DELETE' => _http.delete(uri, headers: headers),
+      'GET' || 'POST' || 'PUT' || 'DELETE' => sendAbortableHttpRequest(
+        _http,
+        method,
+        uri,
+        headers: headers,
+        body: encoded,
+        timeout: TrackerConstants.requestTimeout,
+        operation: 'Trakt $method ${uri.path}',
+      ),
       _ => throw ArgumentError('Unsupported HTTP method: $method'),
-    }.timeout(TrackerConstants.requestTimeout);
+    };
     sw.stop();
 
     appLogger.d('Trakt $method ${uri.path} → ${res.statusCode} (${sw.elapsedMilliseconds}ms)');

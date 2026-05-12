@@ -1009,30 +1009,34 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
         receiveTimeout: MediaServerTimeouts.receive,
         defaultHeaders: {'Accept-Language': 'en'},
       );
-      final decisionUrl = '${config.baseUrl}/video/:/transcode/universal/decision?$queryString';
-      final decisionResponse = await decisionClient.get(decisionUrl);
+      try {
+        final decisionUrl = '${config.baseUrl}/video/:/transcode/universal/decision?$queryString';
+        final decisionResponse = await decisionClient.get(decisionUrl);
 
-      if (decisionResponse.statusCode != 200) {
-        appLogger.w('Decision returned ${decisionResponse.statusCode}');
-        return null;
+        if (decisionResponse.statusCode != 200) {
+          appLogger.w('Decision returned ${decisionResponse.statusCode}');
+          return null;
+        }
+
+        // Log decision response for diagnostics (the web client parses this XML
+        // to extract generalDecisionCode, mdeDecisionCode, transcodeDecisionCode).
+        final decisionBody = decisionResponse.data?.toString() ?? '';
+        if (decisionBody.isNotEmpty) {
+          appLogger.d(
+            'Decision response: ${decisionBody.length > 500 ? '${decisionBody.substring(0, 500)}...' : decisionBody}',
+          );
+        }
+
+        // Token is added by the caller via .withPlexToken()
+        final startParams = Map<String, String>.from(allParams)..remove('X-Plex-Token');
+        final startQuery = startParams.entries
+            .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+            .join('&');
+
+        return '/video/:/transcode/universal/start?$startQuery';
+      } finally {
+        decisionClient.close();
       }
-
-      // Log decision response for diagnostics (the web client parses this XML
-      // to extract generalDecisionCode, mdeDecisionCode, transcodeDecisionCode).
-      final decisionBody = decisionResponse.data?.toString() ?? '';
-      if (decisionBody.isNotEmpty) {
-        appLogger.d(
-          'Decision response: ${decisionBody.length > 500 ? '${decisionBody.substring(0, 500)}...' : decisionBody}',
-        );
-      }
-
-      // Token is added by the caller via .withPlexToken()
-      final startParams = Map<String, String>.from(allParams)..remove('X-Plex-Token');
-      final startQuery = startParams.entries
-          .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
-          .join('&');
-
-      return '/video/:/transcode/universal/start?$startQuery';
     } catch (e, st) {
       appLogger.e('Failed to build live stream path', error: e, stackTrace: st);
       return null;

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../../models/trackers/device_code.dart';
+import '../../../utils/abortable_http_request.dart';
 import '../../../utils/app_logger.dart';
 import '../device_code_auth_service.dart';
 import '../oauth_proxy_client.dart';
@@ -24,9 +25,14 @@ class SimklAuthService extends DeviceCodeAuthServiceBase<SimklSession> {
     final uri = Uri.parse(SimklConstants.pinUrl).replace(
       queryParameters: {'client_id': SimklConstants.clientId, 'redirect': '${OAuthProxyClient.baseUrl}/auth/done'},
     );
-    final res = await httpClient
-        .get(uri, headers: SimklConstants.headers())
-        .timeout(TrackerConstants.authRequestTimeout);
+    final res = await sendAbortableHttpRequest(
+      httpClient,
+      'GET',
+      uri,
+      headers: SimklConstants.headers(),
+      timeout: TrackerConstants.authRequestTimeout,
+      operation: 'Simkl PIN request',
+    );
     if (res.statusCode != 200) {
       throw DeviceCodeAuthFlowException('Simkl PIN request failed: HTTP ${res.statusCode}: ${res.body}');
     }
@@ -49,9 +55,14 @@ class SimklAuthService extends DeviceCodeAuthServiceBase<SimklSession> {
     ).replace(queryParameters: {'client_id': SimklConstants.clientId});
     final http.Response res;
     try {
-      res = await httpClient
-          .get(pollUri, headers: SimklConstants.headers())
-          .timeout(TrackerConstants.authRequestTimeout);
+      res = await sendAbortableHttpRequest(
+        httpClient,
+        'GET',
+        pollUri,
+        headers: SimklConstants.headers(),
+        timeout: TrackerConstants.authRequestTimeout,
+        operation: 'Simkl PIN poll',
+      );
     } catch (e) {
       appLogger.d('Simkl device-code poll error (transient)', error: e);
       return const DevicePollPending();

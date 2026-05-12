@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../models/trackers/device_code.dart';
+import '../../utils/abortable_http_request.dart';
 import '../../utils/app_logger.dart';
 import '../trackers/device_code_auth_service.dart';
 import '../trackers/tracker_constants.dart';
@@ -20,9 +21,15 @@ class TraktAuthService extends DeviceCodeAuthServiceBase<TraktSession> {
   Future<DeviceCode> createDeviceCode() async {
     final uri = Uri.parse(TraktConstants.deviceCodeUrl);
     final sw = Stopwatch()..start();
-    final res = await httpClient
-        .post(uri, headers: TraktConstants.headers(), body: json.encode({'client_id': TraktConstants.clientId}))
-        .timeout(TrackerConstants.authRequestTimeout);
+    final res = await sendAbortableHttpRequest(
+      httpClient,
+      'POST',
+      uri,
+      headers: TraktConstants.headers(),
+      body: json.encode({'client_id': TraktConstants.clientId}),
+      timeout: TrackerConstants.authRequestTimeout,
+      operation: 'Trakt device code request',
+    );
     sw.stop();
     appLogger.d('Trakt POST ${uri.path} → ${res.statusCode} (${sw.elapsedMilliseconds}ms)');
 
@@ -48,17 +55,19 @@ class TraktAuthService extends DeviceCodeAuthServiceBase<TraktSession> {
     final tokenUri = Uri.parse(TraktConstants.deviceTokenUrl);
     final http.Response res;
     try {
-      res = await httpClient
-          .post(
-            tokenUri,
-            headers: TraktConstants.headers(),
-            body: json.encode({
-              'code': code.deviceCode,
-              'client_id': TraktConstants.clientId,
-              'client_secret': TraktConstants.clientSecret,
-            }),
-          )
-          .timeout(TrackerConstants.authRequestTimeout);
+      res = await sendAbortableHttpRequest(
+        httpClient,
+        'POST',
+        tokenUri,
+        headers: TraktConstants.headers(),
+        body: json.encode({
+          'code': code.deviceCode,
+          'client_id': TraktConstants.clientId,
+          'client_secret': TraktConstants.clientSecret,
+        }),
+        timeout: TrackerConstants.authRequestTimeout,
+        operation: 'Trakt device token poll',
+      );
       appLogger.d('Trakt POST ${tokenUri.path} → ${res.statusCode}');
     } catch (e) {
       appLogger.d('Trakt device-code poll error (transient)', error: e);

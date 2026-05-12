@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../../../utils/abortable_http_request.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/platform_http_client_stub.dart'
     if (dart.library.io) '../../../utils/platform_http_client_io.dart'
@@ -35,16 +36,14 @@ class MalAuthService extends OAuthProxyAuthServiceBase<MalSession> {
   }
 
   Future<MalSession> refresh(MalSession current) async {
-    final res = await _http
-        .post(
-          Uri.parse(MalConstants.tokenUrl),
-          body: {
-            'client_id': MalConstants.clientId,
-            'grant_type': 'refresh_token',
-            'refresh_token': current.refreshToken,
-          },
-        )
-        .timeout(TrackerConstants.requestTimeout);
+    final res = await sendAbortableHttpRequest(
+      _http,
+      'POST',
+      Uri.parse(MalConstants.tokenUrl),
+      body: {'client_id': MalConstants.clientId, 'grant_type': 'refresh_token', 'refresh_token': current.refreshToken},
+      timeout: TrackerConstants.requestTimeout,
+      operation: 'MAL token refresh',
+    );
 
     if (res.statusCode != 200) {
       appLogger.w('MAL: refresh failed (${res.statusCode}): ${res.body}');

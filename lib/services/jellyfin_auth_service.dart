@@ -82,7 +82,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     final normalised = _normaliseBaseUrl(baseUrl);
     final client = _buildHttpClient(baseUrl: normalised);
     try {
-      final response = await client.get('/System/Info/Public').timeout(MediaServerTimeouts.jellyfinProbe);
+      final response = await client.get('/System/Info/Public', timeout: MediaServerTimeouts.jellyfinProbe);
       throwIfHttpError(response);
       final data = response.data;
       if (data is! Map<String, dynamic>) {
@@ -100,8 +100,8 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     } on MediaServerHttpException catch (e) {
       throw MediaServerUrlException('Server probe failed: ${e.message}');
     } on TimeoutException {
-      // The `.timeout(...)` above throws raw [TimeoutException]; wrap so
-      // callers can `catch (MediaServerUrlException)` uniformly.
+      // Defensive: most request timeouts are wrapped by MediaServerHttpClient,
+      // but keep raw timeouts surfaced uniformly if one escapes.
       throw MediaServerUrlException('Server did not respond in time');
     } catch (e) {
       // Catch-all for transport errors that bypass the http client wrap
@@ -136,11 +136,13 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
       headers: {'Authorization': authHeader, 'Content-Type': 'application/json'},
     );
     try {
-      final response = await client
-          .post('/Users/AuthenticateByName', body: jsonEncode({'Username': username, 'Pw': password}))
-          // Bound the auth POST so a hanging server can't freeze the auth
-          // screen indefinitely; mirrors the timeout on [probe].
-          .timeout(MediaServerTimeouts.jellyfinProbe);
+      final response = await client.post(
+        '/Users/AuthenticateByName',
+        body: jsonEncode({'Username': username, 'Pw': password}),
+        // Bound the auth POST so a hanging server can't freeze the auth
+        // screen indefinitely; mirrors the timeout on [probe].
+        timeout: MediaServerTimeouts.jellyfinProbe,
+      );
       if (response.statusCode == 401 || response.statusCode == 403) {
         throw MediaServerAuthException('Invalid username or password', statusCode: response.statusCode);
       }
@@ -172,9 +174,8 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
         isAdministrator: isAdmin,
       );
     } on TimeoutException {
-      // The auth POST's `.timeout(...)` throws raw [TimeoutException]; surface
-      // as a URL-level error so the auth screen shows a normal "couldn't
-      // reach server" message instead of a stack trace.
+      // Defensive: most request timeouts are wrapped by MediaServerHttpClient.
+      // Surface raw timeouts as a URL-level error if one escapes.
       throw MediaServerUrlException('Server did not respond in time');
     } on MediaServerHttpException catch (e) {
       if (e.statusCode == 401 || e.statusCode == 403) {
@@ -193,7 +194,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     final normalised = _normaliseBaseUrl(baseUrl);
     final client = _buildHttpClient(baseUrl: normalised);
     try {
-      final response = await client.get('/QuickConnect/Enabled').timeout(MediaServerTimeouts.jellyfinProbe);
+      final response = await client.get('/QuickConnect/Enabled', timeout: MediaServerTimeouts.jellyfinProbe);
       if (response.statusCode != 200) return false;
       final data = response.data;
       // The endpoint returns a bare JSON `true`/`false`, not an object.
@@ -223,9 +224,9 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     try {
       // Current Jellyfin (10.7+) accepts GET; older builds required POST.
       // Try GET first, fall back on 405.
-      var response = await client.get('/QuickConnect/Initiate').timeout(MediaServerTimeouts.jellyfinProbe);
+      var response = await client.get('/QuickConnect/Initiate', timeout: MediaServerTimeouts.jellyfinProbe);
       if (response.statusCode == 405) {
-        response = await client.post('/QuickConnect/Initiate').timeout(MediaServerTimeouts.jellyfinProbe);
+        response = await client.post('/QuickConnect/Initiate', timeout: MediaServerTimeouts.jellyfinProbe);
       }
       if (response.statusCode == 401 || response.statusCode == 403) {
         throw MediaServerAuthException('Quick Connect rejected by server', statusCode: response.statusCode);
@@ -375,7 +376,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     if (connection is! JellyfinConnection) return false;
     final client = _authenticatedClient(connection);
     try {
-      final response = await client.get('/Users/Me').timeout(MediaServerTimeouts.jellyfinProbe);
+      final response = await client.get('/Users/Me', timeout: MediaServerTimeouts.jellyfinProbe);
       return response.statusCode == 200;
     } on MediaServerHttpException catch (e) {
       if (e.statusCode == 401 || e.statusCode == 403) return false;
@@ -401,7 +402,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     final client = _authenticatedClient(connection);
     try {
       // Best-effort: server may already have invalidated the session.
-      await client.post('/Sessions/Logout').timeout(MediaServerTimeouts.jellyfinSignOut);
+      await client.post('/Sessions/Logout', timeout: MediaServerTimeouts.jellyfinSignOut);
     } catch (e) {
       appLogger.d('JellyfinConnectionAuthService: signOut best-effort failed: $e');
     } finally {

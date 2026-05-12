@@ -85,7 +85,7 @@ class JellyfinClient
         _JellyfinFileInfoMethods,
         _JellyfinLiveTvMethods,
         _JellyfinImageDownloadMethods
-    implements MediaServerClient, ScopedMediaServerClient {
+    implements MediaServerClient, ScopedMediaServerClient, GracefullyCloseable {
   JellyfinClient._({
     required JellyfinConnection connection,
     required MediaServerHttpClient http,
@@ -229,6 +229,10 @@ class JellyfinClient
   @override
   void close() => _http.close();
 
+  @override
+  Future<void> closeGracefully({Duration drainTimeout = const Duration(seconds: 2)}) =>
+      _http.closeGracefully(drainTimeout: drainTimeout);
+
   /// Reachable *and* token-valid. We probe `/Users/Me` (auth-required)
   /// rather than `/System/Info/Public` so a revoked token surfaces as
   /// unhealthy on the very next sweep, instead of waiting for the first
@@ -244,7 +248,7 @@ class JellyfinClient
   @override
   Future<HealthStatus> checkHealth() async {
     try {
-      final response = await _http.get('/Users/Me').timeout(const Duration(seconds: 8));
+      final response = await _http.get('/Users/Me', timeout: const Duration(seconds: 8));
       final ok = response.statusCode >= 200 && response.statusCode < 300;
       if (ok) {
         final data = response.data;

@@ -310,17 +310,37 @@ class MultiServerManager {
         final client = _jellyfinByCompoundId.remove(compoundId);
         _jellyfinHealthByCompoundId.remove(compoundId);
         if (client != null && closed.add(client)) {
-          client.close();
+          _closeClient(client);
         }
       }
     } else {
-      _clients.remove(serverId)?.close();
+      final client = _clients.remove(serverId);
+      if (client != null) _closeClient(client);
     }
     _plexServers.remove(serverId);
     _serverStatus.remove(serverId);
     _authErrorServers.remove(serverId);
     _statusController.add(Map.from(_serverStatus));
     appLogger.i('Removed server: $serverId');
+  }
+
+  void _closeClient(MediaServerClient client) {
+    if (client case final GracefullyCloseable graceful) {
+      unawaited(graceful.closeGracefully());
+    } else {
+      client.close();
+    }
+  }
+
+  Future<void> _closeClientGracefully(
+    MediaServerClient client, {
+    Duration drainTimeout = const Duration(seconds: 2),
+  }) async {
+    if (client case final GracefullyCloseable graceful) {
+      await graceful.closeGracefully(drainTimeout: drainTimeout);
+    } else {
+      client.close();
+    }
   }
 
   /// Connect every server attached to a Plex account in parallel. Each
@@ -349,7 +369,8 @@ class MultiServerManager {
           server: server,
           clientIdentifier: connection.clientIdentifier,
         ).namedTimeout(timeout, operation: 'connect to ${server.name}');
-        _clients[serverId]?.close();
+        final oldClient = _clients[serverId];
+        if (oldClient != null) _closeClient(oldClient);
         _clients[serverId] = client;
         _serverStatus[serverId] = true;
         onServerStatus?.call(serverId, true);
@@ -409,7 +430,8 @@ class MultiServerManager {
           server: server,
           clientIdentifier: connection.clientIdentifier,
         ).namedTimeout(timeout, operation: 'connect to ${server.name}');
-        _clients[serverId]?.close();
+        final oldClient = _clients[serverId];
+        if (oldClient != null) _closeClient(oldClient);
         _clients[serverId] = client;
         _serverStatus[serverId] = true;
         _authErrorServers.remove(serverId);
@@ -433,7 +455,8 @@ class MultiServerManager {
   void removePlexAccount(PlexAccountConnection connection) {
     for (final server in connection.servers) {
       final id = server.clientIdentifier;
-      _clients.remove(id)?.close();
+      final client = _clients.remove(id);
+      if (client != null) _closeClient(client);
       _plexServers.remove(id);
       _serverStatus.remove(id);
       _authErrorServers.remove(id);
@@ -464,7 +487,8 @@ class MultiServerManager {
 
       // Replace any prior client for this exact compound id (re-add of the
       // same user — e.g., token refresh or settings re-add).
-      _jellyfinByCompoundId[compoundId]?.close();
+      final oldClient = _jellyfinByCompoundId[compoundId];
+      if (oldClient != null) _closeClient(oldClient);
       _jellyfinByCompoundId[compoundId] = client;
 
       // Bind this user as the active client for its machine. A previously
@@ -521,7 +545,7 @@ class MultiServerManager {
     final machineId = connection.serverMachineId;
     final client = _jellyfinByCompoundId.remove(compoundId);
     _jellyfinHealthByCompoundId.remove(compoundId);
-    client?.close();
+    if (client != null) _closeClient(client);
     if (_activeJellyfinMachine[machineId] == compoundId) {
       _activeJellyfinMachine.remove(machineId);
       _clients.remove(machineId);
@@ -766,7 +790,8 @@ class MultiServerManager {
       appLogger.d('Attempting reconnection for ${server.name}');
       final client = await _createClientForServer(server: server, clientIdentifier: clientId);
 
-      _clients[serverId]?.close();
+      final oldClient = _clients[serverId];
+      if (oldClient != null) _closeClient(oldClient);
       _clients[serverId] = client;
       updateServerStatus(serverId, true);
       appLogger.i('Successfully reconnected to ${server.name}');
@@ -910,6 +935,22 @@ class MultiServerManager {
   /// Disconnect all servers
   void disconnectAll() {
     appLogger.i('Disconnecting all servers');
+    final clients = _detachAllClients();
+    for (final client in clients) {
+      _closeClient(client);
+    }
+  }
+
+  Future<void> disconnectAllGracefully({Duration drainTimeout = const Duration(seconds: 5)}) async {
+    appLogger.i('Gracefully disconnecting all servers');
+    final clients = _detachAllClients();
+    await Future.wait(
+      clients.map((client) => _closeClientGracefully(client, drainTimeout: drainTimeout)),
+      eagerError: false,
+    );
+  }
+
+  Set<MediaServerClient> _detachAllClients() {
     _stopNetworkMonitoring();
     for (final timer in _reconnectDebounce.values) {
       timer.cancel();
@@ -917,15 +958,7 @@ class MultiServerManager {
     _reconnectDebounce.clear();
     _activeHealthCheck = null;
     _activeReconnect = null;
-    final activeClients = _clients.values.toSet();
-    for (final client in _clients.values) {
-      client.close();
-    }
-    for (final client in _jellyfinByCompoundId.values) {
-      if (!activeClients.contains(client)) {
-        client.close();
-      }
-    }
+    final clients = <MediaServerClient>{..._clients.values, ..._jellyfinByCompoundId.values};
     _clients.clear();
     _jellyfinByCompoundId.clear();
     _activeJellyfinMachine.clear();
@@ -935,12 +968,17 @@ class MultiServerManager {
     _authErrorServers.clear();
     _clientIdByServer.clear();
     _activeOptimizations.clear();
-    _statusController.add({});
+    if (!_statusController.isClosed) {
+      _statusController.add({});
+    }
+    return clients;
   }
 
   /// Dispose resources
   void dispose() {
     disconnectAll();
-    _statusController.close();
+    if (!_statusController.isClosed) {
+      _statusController.close();
+    }
   }
 }

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../../../utils/abortable_http_request.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/platform_http_client_stub.dart'
     if (dart.library.io) '../../../utils/platform_http_client_io.dart'
@@ -45,10 +46,17 @@ class SimklClient {
 
     final sw = Stopwatch()..start();
     final res = await switch (method) {
-      'GET' => _http.get(uri, headers: headers),
-      'POST' => _http.post(uri, headers: headers, body: encoded),
+      'GET' || 'POST' => sendAbortableHttpRequest(
+        _http,
+        method,
+        uri,
+        headers: headers,
+        body: encoded,
+        timeout: TrackerConstants.requestTimeout,
+        operation: 'Simkl $method ${uri.path}',
+      ),
       _ => throw ArgumentError('Unsupported HTTP method: $method'),
-    }.timeout(TrackerConstants.requestTimeout);
+    };
     sw.stop();
     appLogger.d('Simkl $method ${uri.path} → ${res.statusCode} (${sw.elapsedMilliseconds}ms)');
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 // CE's public conditional export hides the IO-only httpClientFactory parameter
 // behind a narrower unsupported-platform stub.
 // ignore: implementation_imports
@@ -7,6 +9,10 @@ import 'package:http/http.dart' as http;
 import '../utils/media_server_http_client.dart';
 
 final _artworkHttpClient = MediaServerHttpClient(usePlexApiClient: true);
+
+Future<void> closeArtworkHttpClientGracefully({Duration drainTimeout = const Duration(seconds: 5)}) {
+  return _artworkHttpClient.closeGracefully(drainTimeout: drainTimeout);
+}
 
 /// Shared cache manager for media-server image artwork. Used for both Plex and
 /// Jellyfin artwork (the class name predates Jellyfin support — it's

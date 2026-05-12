@@ -134,7 +134,9 @@ class ConnectionTestResult {
   ConnectionTestResult({required this.success, required this.latencyMs, this.error, this.transcoderVideo});
 }
 
-class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements MediaServerClient {
+class PlexClient
+    with MediaServerCacheMixin, _PlexLiveTvClientMethods
+    implements MediaServerClient, GracefullyCloseable {
   @override
   PlexConfig config;
 
@@ -301,6 +303,11 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
   @override
   void close() {
     _http.close();
+  }
+
+  @override
+  Future<void> closeGracefully({Duration drainTimeout = const Duration(seconds: 2)}) {
+    return _http.closeGracefully(drainTimeout: drainTimeout);
   }
 
   bool _failoverSwitching = false;
@@ -2578,30 +2585,34 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
         receiveTimeout: MediaServerTimeouts.receive,
         defaultHeaders: const {'Accept-Language': 'en', 'Accept': 'application/json'},
       );
-      final decisionUrl = '${config.baseUrl}/video/:/transcode/universal/decision?$queryString';
-      final decisionResponse = await decisionClient.get(decisionUrl);
+      try {
+        final decisionUrl = '${config.baseUrl}/video/:/transcode/universal/decision?$queryString';
+        final decisionResponse = await decisionClient.get(decisionUrl);
 
-      final decisionBody = decisionResponse.data?.toString() ?? '<empty>';
-      appLogger.i(
-        'Transcode decision [${decisionResponse.statusCode}] body: '
-        '${decisionBody.length > 2000 ? '${decisionBody.substring(0, 2000)}…' : decisionBody}',
-      );
+        final decisionBody = decisionResponse.data?.toString() ?? '<empty>';
+        appLogger.i(
+          'Transcode decision [${decisionResponse.statusCode}] body: '
+          '${decisionBody.length > 2000 ? '${decisionBody.substring(0, 2000)}…' : decisionBody}',
+        );
 
-      if (decisionResponse.statusCode != 200) {
-        appLogger.w('Transcode decision returned ${decisionResponse.statusCode}');
-        return (startPath: null, outcome: TranscodeDecisionOutcome.failed);
+        if (decisionResponse.statusCode != 200) {
+          appLogger.w('Transcode decision returned ${decisionResponse.statusCode}');
+          return (startPath: null, outcome: TranscodeDecisionOutcome.failed);
+        }
+
+        final outcome = _parseTranscodeDecisionOutcome(decisionResponse.data, isOriginal: isOriginal);
+        if (outcome == TranscodeDecisionOutcome.failed) {
+          return (startPath: null, outcome: outcome);
+        }
+
+        final startParams = Map<String, String>.from(allParams)..remove('X-Plex-Token');
+        final startQuery = startParams.entries.map((e) => '${_plexEncode(e.key)}=${_plexEncode(e.value)}').join('&');
+
+        // `.m3u8` tells the server to return an HLS manifest.
+        return (startPath: '/video/:/transcode/universal/start.m3u8?$startQuery', outcome: outcome);
+      } finally {
+        decisionClient.close();
       }
-
-      final outcome = _parseTranscodeDecisionOutcome(decisionResponse.data, isOriginal: isOriginal);
-      if (outcome == TranscodeDecisionOutcome.failed) {
-        return (startPath: null, outcome: outcome);
-      }
-
-      final startParams = Map<String, String>.from(allParams)..remove('X-Plex-Token');
-      final startQuery = startParams.entries.map((e) => '${_plexEncode(e.key)}=${_plexEncode(e.value)}').join('&');
-
-      // `.m3u8` tells the server to return an HLS manifest.
-      return (startPath: '/video/:/transcode/universal/start.m3u8?$startQuery', outcome: outcome);
     } catch (e, st) {
       appLogger.e('Failed to build transcode start path', error: e, stackTrace: st);
       return (startPath: null, outcome: TranscodeDecisionOutcome.failed);
