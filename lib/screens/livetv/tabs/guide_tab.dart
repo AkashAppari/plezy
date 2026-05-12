@@ -13,6 +13,7 @@ import '../../../i18n/strings.g.dart';
 import '../../../mixins/mounted_set_state_mixin.dart';
 import '../../../models/livetv_channel.dart';
 import '../../../models/livetv_program.dart';
+import '../../../models/media_grab_operation.dart';
 import '../../../providers/multi_server_provider.dart';
 import '../../../media/media_server_client.dart';
 import '../../../utils/app_logger.dart';
@@ -54,6 +55,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
   static const _minutesPerSlot = 30;
 
   List<LiveTvProgram> _programs = [];
+  Set<String> _scheduledRecordingKeys = const {};
   bool _isLoading = true;
 
   late DateTime _gridStart;
@@ -125,6 +127,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
       // ignore: no-empty-block - setState triggers rebuild to update time indicator
       setStateIfMounted(() {});
     });
+    unawaited(_refreshScheduledRecordingKeys());
   }
 
   @override
@@ -204,6 +207,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
       final multiServer = context.read<MultiServerProvider>();
       final liveTvServers = multiServer.liveTvServers;
       final allPrograms = <LiveTvProgram>[];
+      final scheduledRecordingKeys = <String>{};
       final queriedServers = <String>{};
 
       for (final serverInfo in liveTvServers) {
@@ -219,6 +223,11 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
           final toDt = DateTime.fromMillisecondsSinceEpoch(endEpoch * 1000, isUtc: true);
           final programs = await genericClient.liveTv.fetchSchedule(from: fromDt, to: toDt);
           allPrograms.addAll(programs);
+          await _addScheduledRecordingKeysForServer(
+            client: genericClient,
+            serverId: serverInfo.serverId,
+            keys: scheduledRecordingKeys,
+          );
         } catch (e) {
           appLogger.e('Failed to load programs from server ${serverInfo.serverId}', error: e);
         }
@@ -230,6 +239,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
 
       setState(() {
         _programs = allPrograms;
+        _scheduledRecordingKeys = scheduledRecordingKeys;
         _isLoading = false;
       });
 
@@ -246,6 +256,102 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  Future<void> _refreshScheduledRecordingKeys() async {
+    if (!mounted) return;
+    final multiServer = context.read<MultiServerProvider>();
+    final scheduledRecordingKeys = <String>{};
+    final queriedServers = <String>{};
+
+    for (final serverInfo in multiServer.liveTvServers) {
+      if (!queriedServers.add(serverInfo.serverId)) continue;
+      final client = multiServer.getClientForServer(serverInfo.serverId);
+      if (client == null) continue;
+      await _addScheduledRecordingKeysForServer(
+        client: client,
+        serverId: serverInfo.serverId,
+        keys: scheduledRecordingKeys,
+      );
+    }
+
+    if (!mounted) return;
+    setState(() => _scheduledRecordingKeys = scheduledRecordingKeys);
+  }
+
+  Future<void> _addScheduledRecordingKeysForServer({
+    required MediaServerClient client,
+    required String serverId,
+    required Set<String> keys,
+  }) async {
+    if (!client.capabilities.liveTvDvr) return;
+    try {
+      final grabs = await client.liveTv.fetchScheduledRecordings();
+      for (final grab in grabs) {
+        if (!_isActiveScheduledGrab(grab)) continue;
+        final program = grab.program;
+        if (program == null) continue;
+        keys.addAll(_recordingKeysForProgram(program, fallbackServerId: serverId));
+      }
+    } catch (e) {
+      appLogger.d('Failed to load scheduled recordings for $serverId', error: e);
+    }
+  }
+
+  bool _isActiveScheduledGrab(MediaGrabOperation grab) {
+    final status = grab.status?.toLowerCase();
+    return status == null || status.isEmpty || status == 'scheduled' || status == 'grabbing';
+  }
+
+  bool _isRecordingScheduled(LiveTvProgram program) {
+    final keys = _recordingKeysForProgram(program);
+    return keys.any(_scheduledRecordingKeys.contains);
+  }
+
+  void _handleRecordingStateChanged(LiveTvProgram program, bool isScheduled) {
+    final keys = _recordingKeysForProgram(program);
+    if (keys.isNotEmpty) {
+      setState(() {
+        final next = {..._scheduledRecordingKeys};
+        if (isScheduled) {
+          next.addAll(keys);
+        } else {
+          next.removeAll(keys);
+        }
+        _scheduledRecordingKeys = next;
+      });
+    }
+    unawaited(_refreshScheduledRecordingKeys());
+  }
+
+  Set<String> _recordingKeysForProgram(LiveTvProgram program, {String? fallbackServerId}) {
+    final serverId = _nonEmpty(program.serverId) ?? _nonEmpty(fallbackServerId);
+    if (serverId == null) return const <String>{};
+
+    final keys = <String>{};
+    void addMediaId(String? value) {
+      final normalized = _nonEmpty(value);
+      if (normalized != null) keys.add(_recordingKey(serverId, 'media', normalized));
+    }
+
+    addMediaId(program.ratingKey);
+    addMediaId(program.guid);
+    addMediaId(program.key);
+
+    final channelIdentifier = _nonEmpty(program.channelIdentifier);
+    final beginsAt = program.beginsAt;
+    if (channelIdentifier != null && beginsAt != null) {
+      keys.add(_recordingKey(serverId, 'slot', '$channelIdentifier|$beginsAt|${program.endsAt ?? ''}'));
+    }
+
+    return keys;
+  }
+
+  String _recordingKey(String serverId, String type, String value) => '$serverId\u0000$type\u0000$value';
+
+  String? _nonEmpty(String? value) {
+    final trimmed = value?.trim();
+    return trimmed == null || trimmed.isEmpty ? null : trimmed;
   }
 
   void _scrollToNow() {
@@ -993,6 +1099,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
   }) {
     final isCurrentlyAiring = program.isCurrentlyAiring;
     final isPast = program.endsAt != null && program.endsAt! < DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final isRecordingScheduled = _isRecordingScheduled(program);
 
     Color materialColor;
     if (isFocused) {
@@ -1052,11 +1159,24 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        program.grandparentTitle ?? program.title,
-                        style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: titleColor),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Row(
+                        children: [
+                          if (isRecordingScheduled) ...[
+                            _RecordingDot(color: Colors.red, tooltip: t.liveTv.recordingScheduled),
+                            const SizedBox(width: 5),
+                          ],
+                          Expanded(
+                            child: Text(
+                              program.grandparentTitle ?? program.title,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: titleColor,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                       if (program.grandparentTitle != null)
                         Text(
@@ -1105,6 +1225,29 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
       posterUrl: posterUrl,
       onTuneChannel: () => _tuneChannel(channel),
       client: client,
+      onRecordingStateChanged: (isScheduled) => _handleRecordingStateChanged(program, isScheduled),
+    );
+  }
+}
+
+class _RecordingDot extends StatelessWidget {
+  final Color color;
+  final String tooltip;
+
+  const _RecordingDot({required this.color, required this.tooltip});
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Semantics(
+        label: tooltip,
+        child: Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+      ),
     );
   }
 }

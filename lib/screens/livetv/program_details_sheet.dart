@@ -30,6 +30,7 @@ void showProgramDetailsSheet(
   required String? posterUrl,
   required VoidCallback? onTuneChannel,
   MediaServerClient? client,
+  ValueChanged<bool>? onRecordingStateChanged,
 }) {
   OverlaySheetController.showAdaptive(
     context,
@@ -40,6 +41,7 @@ void showProgramDetailsSheet(
         posterUrl: posterUrl,
         onTuneChannel: onTuneChannel,
         client: client,
+        onRecordingStateChanged: onRecordingStateChanged,
       );
     },
   );
@@ -67,6 +69,7 @@ class _ProgramDetailsSheetContent extends StatefulWidget {
   final String? posterUrl;
   final VoidCallback? onTuneChannel;
   final MediaServerClient? client;
+  final ValueChanged<bool>? onRecordingStateChanged;
 
   const _ProgramDetailsSheetContent({
     required this.program,
@@ -74,6 +77,7 @@ class _ProgramDetailsSheetContent extends StatefulWidget {
     required this.posterUrl,
     required this.onTuneChannel,
     required this.client,
+    required this.onRecordingStateChanged,
   });
 
   @override
@@ -181,7 +185,10 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
             style: _ActionStyle.filled,
             onPressed: () async {
               final deleted = await confirmDeleteRule(context, client, existing);
-              if (deleted && mounted) _closeSheet();
+              if (deleted && mounted) {
+                widget.onRecordingStateChanged?.call(false);
+                _closeSheet();
+              }
             },
           ),
         );
@@ -195,6 +202,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
               final outcome = await recordProgram(context, client, program);
               if (!mounted) return;
               if (outcome == RecordOutcome.scheduled || outcome == RecordOutcome.alreadyScheduled) {
+                widget.onRecordingStateChanged?.call(true);
                 _closeSheet();
               }
             },
