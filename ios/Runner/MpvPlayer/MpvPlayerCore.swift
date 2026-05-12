@@ -1,4 +1,7 @@
 import AVFoundation
+#if os(tvOS)
+  import AVKit
+#endif
 import QuartzCore
 import UIKit
 
