@@ -1083,7 +1083,21 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     // through `context` after async gaps trip the use_build_context_synchronously
     // lint, and reading early is safe because the registry is a singleton.
     final connectionRegistry = context.read<ConnectionRegistry>();
-    final allConnections = await connectionRegistry.list();
+    final List<Connection> allConnections;
+    try {
+      allConnections = await connectionRegistry.list();
+    } catch (e, st) {
+      // Defence-in-depth: a DB-open failure here used to propagate
+      // uncaught and strand the splash forever (#1022). Route to auth so
+      // the user is never trapped, and surface to Sentry so an unknown
+      // regression doesn't go silent.
+      appLogger.e('Setup: failed to load connections; returning to auth', error: e, stackTrace: st);
+      unawaited(Sentry.captureException(e, stackTrace: st));
+      if (mounted) {
+        unawaited(Navigator.pushReplacement(context, fadeRoute(const AuthScreen())));
+      }
+      return;
+    }
 
     if (allConnections.isEmpty) {
       if (mounted) {

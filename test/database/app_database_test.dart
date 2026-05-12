@@ -137,6 +137,103 @@ class _AppDatabaseTestSuite {
         }
       });
     });
+
+    _registerLegacyDesktopMigrationTests();
+  }
+
+  void _registerLegacyDesktopMigrationTests() {
+    // ============================================================
+    // Legacy desktop DB-file relocation (Documents → AppSupport).
+    // Regression coverage for #1022: cross-drive rename (e.g. OneDrive
+    // Documents on X:, AppData on C:) used to throw an uncaught
+    // FileSystemException out of _openConnection and strand the splash.
+    // ============================================================
+
+    group('legacy desktop DB migration', () {
+      late Directory tempDir;
+
+      setUp(() async {
+        tempDir = await Directory.systemTemp.createTemp('plezy_legacy_migration_test_');
+      });
+
+      tearDown(() async {
+        if (await tempDir.exists()) {
+          await tempDir.delete(recursive: true);
+        }
+      });
+
+      test('no-op when source does not exist', () async {
+        final source = File('${tempDir.path}/Documents/plezy_downloads.db');
+        final target = File('${tempDir.path}/AppData/plezy_downloads.db');
+        await target.parent.create(recursive: true);
+
+        await migrateLegacyDesktopDatabase(sourceOverride: source, target: target);
+
+        expect(await source.exists(), isFalse);
+        expect(await target.exists(), isFalse);
+      });
+
+      test('rename happy path moves the file and preserves content', () async {
+        final source = File('${tempDir.path}/Documents/plezy_downloads.db');
+        final target = File('${tempDir.path}/AppData/plezy_downloads.db');
+        await source.parent.create(recursive: true);
+        await target.parent.create(recursive: true);
+        await source.writeAsBytes([1, 2, 3, 4, 5]);
+
+        await migrateLegacyDesktopDatabase(sourceOverride: source, target: target);
+
+        expect(await source.exists(), isFalse);
+        expect(await target.exists(), isTrue);
+        expect(await target.readAsBytes(), [1, 2, 3, 4, 5]);
+      });
+
+      test('cross-drive rename failure falls back to copy + delete', () async {
+        // Simulate Windows ERROR_NOT_SAME_DEVICE by throwing the same
+        // exception shape `File.rename` would emit when source and target
+        // live on different volumes.
+        final source = File('${tempDir.path}/Documents/plezy_downloads.db');
+        final target = File('${tempDir.path}/AppData/plezy_downloads.db');
+        await source.parent.create(recursive: true);
+        await target.parent.create(recursive: true);
+        await source.writeAsBytes([9, 8, 7]);
+
+        await migrateLegacyDesktopDatabase(
+          sourceOverride: source,
+          target: target,
+          renameOverride: (_, _) => throw const FileSystemException(
+            'Cannot rename file across drives',
+            '',
+            OSError('The system cannot move the file to a different disk drive', 17),
+          ),
+        );
+
+        expect(await source.exists(), isFalse, reason: 'source should be deleted after successful copy');
+        expect(await target.exists(), isTrue);
+        expect(await target.readAsBytes(), [9, 8, 7]);
+      });
+
+      test('copy failure leaves source intact and never throws', () async {
+        final source = File('${tempDir.path}/Documents/plezy_downloads.db');
+        // Point target at a non-existent directory so copy fails. The
+        // helper must swallow the error — splash boot must never see it.
+        final target = File('${tempDir.path}/does-not-exist/AppData/plezy_downloads.db');
+        await source.parent.create(recursive: true);
+        await source.writeAsBytes([0xAA, 0xBB]);
+
+        await expectLater(
+          migrateLegacyDesktopDatabase(
+            sourceOverride: source,
+            target: target,
+            renameOverride: (_, _) => throw const FileSystemException('cross-drive', ''),
+          ),
+          completes,
+        );
+
+        expect(await source.exists(), isTrue, reason: 'source should be preserved when copy fails');
+        expect(await source.readAsBytes(), [0xAA, 0xBB]);
+        expect(await target.exists(), isFalse);
+      });
+    });
   }
 
   void _registerApiCacheTests() {
