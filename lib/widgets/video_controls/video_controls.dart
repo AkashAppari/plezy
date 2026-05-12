@@ -22,6 +22,7 @@ import '../../services/pip_service.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../mixins/settings_effect_mixin.dart';
+import '../../mixins/mounted_set_state_mixin.dart';
 import '../../mpv/mpv.dart';
 import '../overlay_sheet.dart';
 import '../../focus/dpad_navigator.dart';
@@ -337,7 +338,8 @@ class PlexVideoControls extends StatefulWidget {
   State<PlexVideoControls> createState() => _PlexVideoControlsState();
 }
 
-class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListener, SettingsEffectMixin {
+class _PlexVideoControlsState extends State<PlexVideoControls>
+    with WindowListener, SettingsEffectMixin, MountedSetStateMixin {
   bool _showControls = true;
   bool _forceShowControls = false;
   bool _isLoadingExtras = false;
@@ -501,7 +503,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     });
   }
 
-  void _setControlsState(VoidCallback fn) => setState(fn);
+  void _setControlsState(VoidCallback fn) => setStateIfMounted(fn);
 
   @override
   void dispose() {

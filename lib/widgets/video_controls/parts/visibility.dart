@@ -344,6 +344,7 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
 
     if (requestFocus) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
         _desktopControlsKey.currentState?.requestPlayPauseFocus();
       });
     } else {
@@ -372,6 +373,7 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     _startHideTimer();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       _desktopControlsKey.currentState?.requestTimelineFocus();
     });
   }

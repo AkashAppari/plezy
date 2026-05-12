@@ -347,12 +347,12 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
     if (name == null || !mounted) return;
 
     await RecentRoomsService.renameRoom(room.code, name.isEmpty ? null : name);
-    setState(() => _recentRooms = RecentRoomsService.getRecentRooms());
+    setStateIfMounted(() => _recentRooms = RecentRoomsService.getRecentRooms());
   }
 
   Future<void> _removeRoom(RecentRoom room) async {
     await RecentRoomsService.removeRoom(room.code);
-    setState(() => _recentRooms = RecentRoomsService.getRecentRooms());
+    setStateIfMounted(() => _recentRooms = RecentRoomsService.getRecentRooms());
   }
 }
 

@@ -26,6 +26,7 @@ mixin ItemUpdatable<T extends StatefulWidget> on State<T> {
       if (serverId == null) return;
       final updatedItem = await context.tryGetMediaClientForServer(serverId)?.fetchItem(itemId);
       if (updatedItem != null) {
+        if (!mounted) return;
         setState(() {
           updateItemInLists(itemId, updatedItem);
         });

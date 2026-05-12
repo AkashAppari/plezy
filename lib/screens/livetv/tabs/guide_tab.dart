@@ -705,6 +705,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
         }),
       ],
     ).then((value) {
+      if (!mounted) return;
       if (value == null) {
         _guideFocusNode.requestFocus();
         return;

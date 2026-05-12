@@ -394,7 +394,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       _heroController.animateToPage(nextPage, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
       // Wait for page transition to complete before resetting progress
       Future.delayed(const Duration(milliseconds: 500), () {
-        if (!_isAutoScrollPaused) {
+        if (mounted && !_isAutoScrollPaused) {
           _startIndicatorProgress();
         }
       });
@@ -402,11 +402,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   void _startIndicatorProgress() {
+    if (!mounted) return;
     _indicatorTimer?.cancel();
     _indicatorProgress.value = 0.0;
     final totalSteps = _heroAutoScrollDuration.inMilliseconds ~/ _indicatorUpdateInterval.inMilliseconds;
     int step = 0;
     _indicatorTimer = Timer.periodic(_indicatorUpdateInterval, (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
       step++;
       _indicatorProgress.value = (step / totalSteps).clamp(0.0, 1.0);
       if (step >= totalSteps) {

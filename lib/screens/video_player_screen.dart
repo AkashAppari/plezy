@@ -29,6 +29,7 @@ import '../models/livetv_capture_buffer.dart';
 import '../models/livetv_channel.dart';
 import '../models/transcode_quality_preset.dart';
 import '../media/media_source_info.dart';
+import '../mixins/mounted_set_state_mixin.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
@@ -213,7 +214,7 @@ class VideoPlayerScreen extends StatefulWidget {
   State<VideoPlayerScreen> createState() => VideoPlayerScreenState();
 }
 
-class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindingObserver {
+class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindingObserver, MountedSetStateMixin {
   static const int _liveEdgeThresholdSeconds = 5;
 
   // Track the currently active video to guard against duplicate navigation
@@ -1131,7 +1132,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     await _navigateToEpisode(metadata);
   }
 
-  void _setPlayerState(VoidCallback fn) => setState(fn);
+  void _setPlayerState(VoidCallback fn) => setStateIfMounted(fn);
 
   bool _isSwitchingChannel = false;
 

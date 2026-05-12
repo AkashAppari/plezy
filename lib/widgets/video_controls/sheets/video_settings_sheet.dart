@@ -798,8 +798,9 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                 }
                 await widget.shaderService!.applyPreset(preset);
                 await shaderProvider.setPreset(preset);
+                if (!context.mounted) return;
                 widget.onShaderChanged?.call();
-                if (context.mounted) OverlaySheetController.of(context).close();
+                OverlaySheetController.of(context).close();
               },
             );
           },
@@ -826,6 +827,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         }
         await widget.shaderService!.applyPreset(preset);
         await shaderProvider.setPreset(preset);
+        if (!mounted) return;
         widget.onShaderChanged?.call();
       }
 
@@ -846,7 +848,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     // If the deleted shader is active, clear it from the player first
     if (widget.shaderService!.currentPreset.id == preset.id) {
       await widget.shaderService!.applyPreset(ShaderPreset.none);
-      widget.onShaderChanged?.call();
+      if (mounted) widget.onShaderChanged?.call();
     }
 
     await shaderProvider.deleteCustomShader(preset);

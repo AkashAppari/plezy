@@ -336,6 +336,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     widget.onContentStripVisibilityChanged?.call(true);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       _contentStripKey.currentState?.requestInitialFocus();
     });
   }
@@ -349,6 +350,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
 
     // Return focus to the last focused button (or play/pause as fallback)
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final target = _lastFocusedButtonNode;
       if (target != null && target.context != null) {
         target.requestFocus();

@@ -34,8 +34,9 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
         shaderService
             .applyPreset(ShaderPreset.none)
             .then((_) {
+              if (!mounted) return;
               // ignore: no-empty-block - setState triggers rebuild to reflect disabled shader
-              if (mounted) _setControlsState(() {});
+              _setControlsState(() {});
               widget.onShaderChanged?.call();
             })
             .catchError((Object e, StackTrace st) {
@@ -54,9 +55,10 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
         shaderService
             .applyPreset(targetPreset)
             .then((_) {
+              if (!mounted) return;
               shaderProvider.setCurrentPreset(targetPreset);
               // ignore: no-empty-block - setState triggers rebuild to reflect restored shader
-              if (mounted) _setControlsState(() {});
+              _setControlsState(() {});
               widget.onShaderChanged?.call();
             })
             .catchError((Object e, StackTrace st) {

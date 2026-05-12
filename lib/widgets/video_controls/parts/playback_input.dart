@@ -167,6 +167,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
 
     final delta = Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall);
     await _seekByOffset(delta);
+    if (!mounted) return;
 
     // Refresh feedback (extends timer, updates display)
     _showSkipFeedback(isForward: isForward);
@@ -181,6 +182,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
 
     final delta = Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall);
     await _seekByOffset(delta);
+    if (!mounted) return;
 
     _showSkipFeedback(isForward: isForward);
 
