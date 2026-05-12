@@ -439,10 +439,6 @@ class MpvPlayerCoreBase: NSObject {
     cachedContainerFps = 0
     cachedLastSigPeak = 0
     cacheLock.unlock()
-    DispatchQueue.main.async { [weak self] in
-      self?.updateDisplayCriteria(
-        doviProfile: 0, doviLevel: 0, fps: 0, width: 0, height: 0, sigPeak: 0)
-    }
 
     let mpvHandle = mpv
     mpv = nil
@@ -477,6 +473,12 @@ class MpvPlayerCoreBase: NSObject {
       #if targetEnvironment(simulator)
         checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "no"))
         checkError(mpv_set_option_string(mpv, "hwdec", "no"))
+      #elseif os(tvOS)
+        // tvOS HDR is HDMI mode switching, not EDR — an SDR sibling layer
+        // doesn't dim the video, so skip the per-frame CI composite that
+        // round-trips BT.2020/PQ through linear P3.
+        checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "no"))
+        checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
       #else
         checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "yes"))
         checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))

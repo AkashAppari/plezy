@@ -12,6 +12,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   private weak var window: UIWindow?
   private var mainBlankView: UIView?
   private var isVisible = false
+  private var isDisposed = false
 
   var isPipStarting = false
 
@@ -317,6 +318,19 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   #endif
 
   func dispose() {
+    // Guard double-dispose: the plugin calls dispose() then drops the
+    // strong ref, which fires deinit → dispose() again. The second call
+    // would re-enter and crash on weak-ref formation during dealloc.
+    guard !isDisposed else { return }
+    isDisposed = true
+
+    // Reset the HDMI mode hint synchronously while self is still alive
+    // and on main. An async-to-main dispatch here would be drained after
+    // dealloc (the plugin sets playerCore = nil right after this call
+    // returns), leaving the link stuck at the last clip's refresh rate.
+    updateDisplayCriteria(
+      doviProfile: 0, doviLevel: 0, fps: 0, width: 0, height: 0, sigPeak: 0)
+
     NotificationCenter.default.removeObserver(self)
     #if os(iOS)
       ExternalDisplayManager.shared.detach(core: self)
