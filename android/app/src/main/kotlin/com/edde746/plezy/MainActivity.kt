@@ -7,12 +7,16 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.graphics.SurfaceTexture
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.util.Rational
 import android.view.KeyEvent
+import android.view.TextureView
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
@@ -23,6 +27,7 @@ import com.edde746.plezy.shared.DeviceQuirks
 import com.edde746.plezy.shared.ThemeHelper
 import com.edde746.plezy.watchnext.WatchNextPlugin
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterTextureView
 import io.flutter.embedding.android.RenderMode
 import io.flutter.embedding.android.TransparencyMode
 import io.flutter.embedding.engine.FlutterEngine
@@ -182,11 +187,56 @@ class MainActivity : FlutterActivity() {
     return false
   }
 
-  override fun getRenderMode(): RenderMode = RenderMode.surface
+  override fun getRenderMode(): RenderMode {
+    // Android TV Dolby Vision playback is sensitive to extra full-screen
+    // SurfaceView layers above the video surface. Keep phones/tablets on the
+    // faster FlutterSurfaceView path, but use FlutterTextureView on TVs so the
+    // video/subtitle SurfaceViews remain the only native composition layers.
+    return if (isAndroidTvDevice()) RenderMode.texture else RenderMode.surface
+  }
 
   override fun getTransparencyMode(): TransparencyMode {
     // Keep Flutter transparent so video/subtitles are visible below.
     return TransparencyMode.transparent
+  }
+
+  override fun onFlutterTextureViewCreated(flutterTextureView: FlutterTextureView) {
+    val original = flutterTextureView.surfaceTextureListener ?: return
+    val handler = Handler(Looper.getMainLooper())
+    var pendingResize: Runnable? = null
+    var lastWidth = 0
+    var lastHeight = 0
+
+    flutterTextureView.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
+      override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
+        original.onSurfaceTextureAvailable(surface, width, height)
+      }
+
+      override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
+        if (width == lastWidth && height == lastHeight) return
+        lastWidth = width
+        lastHeight = height
+        pendingResize?.let { handler.removeCallbacks(it) }
+        pendingResize = Runnable {
+          if (flutterTextureView.isAvailable) {
+            original.onSurfaceTextureSizeChanged(surface, width, height)
+          }
+        }
+        handler.postDelayed(pendingResize!!, 100)
+      }
+
+      override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
+        original.onSurfaceTextureUpdated(surface)
+      }
+
+      override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
+        pendingResize?.let { handler.removeCallbacks(it) }
+        pendingResize = null
+        lastWidth = 0
+        lastHeight = 0
+        return original.onSurfaceTextureDestroyed(surface)
+      }
+    }
   }
 
   override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
