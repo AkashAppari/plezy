@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io' show Platform, ProcessInfo;
+import 'dart:io' show Directory, Platform, ProcessInfo;
 import 'dart:ui' show AppExitResponse;
 import 'package:flutter/foundation.dart';
 // ignore: depend_on_referenced_packages
@@ -33,6 +33,7 @@ import 'services/settings_service.dart';
 import 'utils/platform_detector.dart';
 import 'services/apple_tv_remote_touch_service.dart';
 import 'services/discord_rpc_service.dart';
+import 'package:path_provider/path_provider.dart';
 import 'services/image_cache_service.dart';
 import 'services/gamepad_service.dart';
 import 'services/trakt/trakt_scrobble_service.dart';
@@ -157,6 +158,21 @@ Future<void> _bootstrapApp() async {
   unawaited(LocaleSettings.setLocale(savedLocale));
 
   await initializeDateFormatting(savedLocale.languageCode, null);
+
+  // One-time cleanup of the old flutter_cache_manager image cache directory
+  // (replaced by cached_network_image_ce in a prior refactor).
+  if (!settings.read(SettingsService.cleanedOldImageCache)) {
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final oldCacheDir = Directory('${tempDir.path}/plexImageCache');
+      if (await oldCacheDir.exists()) {
+        await oldCacheDir.delete(recursive: true);
+      }
+    } catch (_) {
+      // Best-effort; the directory may be locked or already partial.
+    }
+    await settings.write(SettingsService.cleanedOldImageCache, true);
+  }
 
   // Configure image cache — keep budget modest to leave headroom for Skia decode buffers
   if (PlatformDetector.isDesktopOS()) {

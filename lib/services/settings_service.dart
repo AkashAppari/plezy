@@ -287,6 +287,7 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static const subtitleBold = BoolPref('subtitle_bold');
   static const subtitleItalic = BoolPref('subtitle_italic');
+  static const cleanedOldImageCache = BoolPref('cleaned_old_image_cache');
   static const rememberTrackSelections = BoolPref('remember_track_selections', defaultValue: true);
   static const showChapterMarkersOnTimeline = BoolPref('show_chapter_markers_on_timeline', defaultValue: true);
   static const clickVideoTogglesPlayback = BoolPref('click_video_toggles_playback');
