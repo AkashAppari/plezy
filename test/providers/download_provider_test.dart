@@ -72,6 +72,25 @@ void main() {
     await db.close();
   });
 
+  group('DownloadManagerService — platform support', () {
+    test('disables downloads only for tvOS builds', () {
+      expect(DownloadManagerService.downloadsSupportedFor(tvosBuild: true), isFalse);
+      expect(DownloadManagerService.downloadsSupportedFor(tvosBuild: false), isTrue);
+    });
+
+    test('recovery is a no-op when downloads are unsupported', () async {
+      final unsupportedManager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        downloadsSupportedOverride: false,
+      );
+
+      await unsupportedManager.recoverInterruptedDownloads();
+
+      unsupportedManager.dispose();
+    });
+  });
+
   group('DownloadProvider — initial state', () {
     test('starts with empty downloads/metadata maps and no sync rules', () async {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
@@ -329,6 +348,25 @@ void main() {
       title: 'Owned Movie',
       serverId: 'srv',
     );
+
+    test('queueDownload is a no-op when downloads are unsupported', () async {
+      final unsupportedManager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        downloadsSupportedOverride: false,
+      )..recoveryFuture = Future<void>.value();
+      final p = DownloadProvider.forTesting(downloadManager: unsupportedManager, database: db);
+      await p.ensureInitialized();
+
+      final queued = await p.queueDownload(movie, _ScopedTestClient(serverId: 'srv', scopedServerId: 'srv'));
+
+      expect(queued, 0);
+      expect(p.downloads, isEmpty);
+      expect(await db.getDownloadedMedia('srv:1'), isNull);
+
+      p.dispose();
+      unsupportedManager.dispose();
+    });
 
     test('download getters only expose active-profile owned physical rows', () async {
       await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'srv:1');

@@ -12,12 +12,25 @@ import 'managed_http_client.dart';
 /// Shared Cronet engine so all clients reuse the same connection pool.
 CronetEngine? _sharedEngine;
 
+const bool _tvosBuild = bool.fromEnvironment('TVOS_BUILD');
+
 bool _loggedPlatformClient = false;
 
 void _logPlatformClient(String platform, String client) {
   if (_loggedPlatformClient) return;
   _loggedPlatformClient = true;
   appLogger.i('Platform HTTP client', error: {'platform': platform, 'client': client});
+}
+
+http.Client _createTunedIoClient(String debugLabel) {
+  return ManagedHttpClient(
+    IOClient(
+      HttpClient()
+        ..maxConnectionsPerHost = 12
+        ..idleTimeout = const Duration(seconds: 90),
+    ),
+    debugLabel: debugLabel,
+  );
 }
 
 http.Client createPlatformClient() {
@@ -31,9 +44,11 @@ http.Client createPlatformClient() {
     _logPlatformClient('android', 'CronetClient');
     return ManagedHttpClient(CronetClient.fromCronetEngine(_sharedEngine!), debugLabel: 'CronetClient');
   }
+  if (Platform.isIOS && _tvosBuild) {
+    _logPlatformClient('tvos', 'IOClient (tvOS tuned)');
+    return _createTunedIoClient('IOClient (tvOS tuned)');
+  }
   if (Platform.isIOS || Platform.isMacOS) {
-    // cupertino_http relies on the objective_c FFI dylib, which isn't
-    // available on tvOS. Fall back to IOClient if the init fails.
     try {
       final client = CupertinoClient.defaultSessionConfiguration();
       _logPlatformClient(Platform.isIOS ? 'ios' : 'macos', 'CupertinoClient');
@@ -62,14 +77,7 @@ http.Client createPlatformClient() {
 http.Client createPlexApiClient() {
   if (Platform.isLinux) {
     _logPlatformClient('linux', 'IOClient (Plex API tuned)');
-    return ManagedHttpClient(
-      IOClient(
-        HttpClient()
-          ..maxConnectionsPerHost = 12
-          ..idleTimeout = const Duration(seconds: 90),
-      ),
-      debugLabel: 'IOClient (Plex API tuned)',
-    );
+    return _createTunedIoClient('IOClient (Plex API tuned)');
   }
   return createPlatformClient();
 }

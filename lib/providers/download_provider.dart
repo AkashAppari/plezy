@@ -880,6 +880,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     DownloadFilter filter = DownloadFilter.all,
     int? maxCount,
   }) async {
+    if (!_downloadManager.downloadsSupported) return 0;
+
     final globalKey = metadata.globalKey;
     final config = versionConfig ?? DownloadVersionConfig();
 
@@ -942,6 +944,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     DownloadFilter filter = DownloadFilter.all,
     bool expandShows = true,
   }) async {
+    if (!_downloadManager.downloadsSupported) return 0;
+
     if (await DownloadManagerService.shouldBlockDownloadOnCellular()) {
       throw CellularDownloadBlockedException();
     }
@@ -988,6 +992,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     int mediaIndex = 0,
     DownloadVersionConfig? versionConfig,
   }) async {
+    if (!_downloadManager.downloadsSupported) return false;
+
     _requireActiveProfileId();
     final globalKey = metadata.globalKey;
 
@@ -1384,6 +1390,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// Resume queued downloads that were interrupted by app kill.
   /// Call after a [MediaServerClient] becomes available (e.g. after server connect on launch).
   void resumeQueuedDownloads(MediaServerClient client) {
+    if (!_downloadManager.downloadsSupported) return;
     _downloadManager.resumeQueuedDownloads(client);
   }
 
@@ -1653,6 +1660,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   ///
   /// Returns titles of newly queued items (for snackbar display).
   Future<List<String>> executeSyncRules(MultiServerManager serverManager, {bool force = false}) async {
+    if (!_downloadManager.downloadsSupported) return [];
+
     final profileId = _activeProfileId;
     if (profileId == null || profileId.isEmpty) return [];
     if (_syncRules.isEmpty) return [];
@@ -1676,6 +1685,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// Execute a single sync rule immediately (eager path for `addToPlaylist` /
   /// `addToCollection`). Bypasses the cooldown.
   Future<SyncRuleResult?> executeSyncRuleFor(String globalKey, MultiServerManager serverManager) async {
+    if (!_downloadManager.downloadsSupported) return null;
+
     final profileId = _activeProfileId;
     if (profileId == null || profileId.isEmpty) return null;
     if (!_syncRules.containsKey(globalKey)) return null;
