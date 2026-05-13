@@ -78,6 +78,26 @@ void main() {
       expect(Uri.parse(url).path, '/Videos/folder%2Fitem%20%231%3Fx/stream');
     });
 
+    test('fetchSortOptions exposes the broad Jellyfin sort set', () async {
+      final sorts = await client.fetchSortOptions('lib-1');
+      expect(sorts.map((sort) => sort.key).toList(), [
+        'title',
+        'rating',
+        'criticRating',
+        'addedAt',
+        'lastViewedAt',
+        'viewCount',
+        'productionYear',
+        'runtime',
+        'officialRating',
+        'originallyAvailableAt',
+        'startDate',
+        'airTime',
+        'studio',
+        'random',
+      ]);
+    });
+
     test('reportPlaybackProgress sends media source and stream indexes', () async {
       Uri? capturedUri;
       String? capturedBody;

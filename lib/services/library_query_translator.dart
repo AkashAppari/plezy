@@ -238,7 +238,7 @@ class JellyfinLibraryQueryTranslator implements LibraryQueryTranslator {
     }
     final sort = query.sort;
     if (sort != null) {
-      params['SortBy'] = _sortFieldFor(sort.field);
+      params['SortBy'] = _sortFieldFor(sort.field, query.kind);
       params['SortOrder'] = sort.direction == LibrarySortDirection.descending ? 'Descending' : 'Ascending';
     }
     if (query.search != null && query.search!.isNotEmpty) {
@@ -274,14 +274,24 @@ class JellyfinLibraryQueryTranslator implements LibraryQueryTranslator {
     };
   }
 
-  static String _sortFieldFor(String neutral) {
+  static String _sortFieldFor(String neutral, MediaKind? kind) {
     return switch (neutral) {
       'addedAt' => 'DateCreated',
+      'dateCreated' => 'DateCreated',
       'originallyAvailableAt' => 'PremiereDate',
-      'lastViewedAt' => 'DatePlayed',
+      'premiereDate' => 'PremiereDate',
+      'lastViewedAt' || 'datePlayed' => kind == MediaKind.show ? 'SeriesDatePlayed' : 'DatePlayed',
       'title' => 'SortName',
-      'rating' => 'CommunityRating',
-      'viewCount' => 'PlayCount',
+      'name' => 'SortName',
+      'rating' || 'communityRating' => 'CommunityRating',
+      'viewCount' || 'playCount' => 'PlayCount',
+      'productionYear' => 'ProductionYear',
+      'runtime' => 'Runtime',
+      'officialRating' => 'OfficialRating',
+      'criticRating' => 'CriticRating',
+      'startDate' => 'StartDate',
+      'airTime' => 'AirTime',
+      'studio' => 'Studio',
       'random' => 'Random',
       _ => neutral,
     };

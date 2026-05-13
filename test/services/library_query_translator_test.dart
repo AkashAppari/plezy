@@ -135,6 +135,42 @@ void main() {
       expect(addedSort['SortOrder'], 'Descending');
     });
 
+    test('Streamyfin broad sort keys map to Jellyfin ItemSortBy values', () {
+      const cases = {
+        'criticRating': 'CriticRating',
+        'viewCount': 'PlayCount',
+        'productionYear': 'ProductionYear',
+        'runtime': 'Runtime',
+        'officialRating': 'OfficialRating',
+        'startDate': 'StartDate',
+        'airTime': 'AirTime',
+        'studio': 'Studio',
+      };
+
+      for (final entry in cases.entries) {
+        final params = translator.toQueryParameters(LibraryQuery(sort: LibrarySort(field: entry.key)));
+        expect(params['SortBy'], entry.value, reason: entry.key);
+      }
+    });
+
+    test('show date played sort maps to Jellyfin series-specific sort field', () {
+      final showSort = translator.toQueryParameters(
+        const LibraryQuery(
+          kind: MediaKind.show,
+          sort: LibrarySort(field: 'lastViewedAt'),
+        ),
+      );
+      expect(showSort['SortBy'], 'SeriesDatePlayed');
+
+      final movieSort = translator.toQueryParameters(
+        const LibraryQuery(
+          kind: MediaKind.movie,
+          sort: LibrarySort(field: 'lastViewedAt'),
+        ),
+      );
+      expect(movieSort['SortBy'], 'DatePlayed');
+    });
+
     test('nameStartsWith="#" maps to NameLessThan=A', () {
       final params = translator.toQueryParameters(const LibraryQuery(nameStartsWith: '#'));
       expect(params['NameLessThan'], 'A');

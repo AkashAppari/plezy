@@ -1606,8 +1606,18 @@ class _TranslationsLibrariesSortLabelsZh extends TranslationsLibrariesSortLabels
 	@override String get dateAdded => '添加日期';
 	@override String get releaseDate => '发行日期';
 	@override String get rating => '评分';
+	@override String get communityRating => '社区评分';
+	@override String get criticRating => '影评人评分';
 	@override String get lastPlayed => '最近播放';
+	@override String get datePlayed => '播放日期';
 	@override String get playCount => '播放次数';
+	@override String get productionYear => '制作年份';
+	@override String get runtime => '时长';
+	@override String get officialRating => '官方分级';
+	@override String get premiereDate => '首映日期';
+	@override String get startDate => '开始日期';
+	@override String get airTime => '播出时间';
+	@override String get studio => '工作室';
 	@override String get random => '随机';
 	@override String get dateShared => '共享日期';
 	@override String get latestEpisodeAirDate => '最新一集播出日期';
@@ -2400,8 +2410,18 @@ extension on TranslationsZh {
 			'libraries.sortLabels.dateAdded' => '添加日期',
 			'libraries.sortLabels.releaseDate' => '发行日期',
 			'libraries.sortLabels.rating' => '评分',
+			'libraries.sortLabels.communityRating' => '社区评分',
+			'libraries.sortLabels.criticRating' => '影评人评分',
 			'libraries.sortLabels.lastPlayed' => '最近播放',
+			'libraries.sortLabels.datePlayed' => '播放日期',
 			'libraries.sortLabels.playCount' => '播放次数',
+			'libraries.sortLabels.productionYear' => '制作年份',
+			'libraries.sortLabels.runtime' => '时长',
+			'libraries.sortLabels.officialRating' => '官方分级',
+			'libraries.sortLabels.premiereDate' => '首映日期',
+			'libraries.sortLabels.startDate' => '开始日期',
+			'libraries.sortLabels.airTime' => '播出时间',
+			'libraries.sortLabels.studio' => '工作室',
 			'libraries.sortLabels.random' => '随机',
 			'libraries.sortLabels.dateShared' => '共享日期',
 			'libraries.sortLabels.latestEpisodeAirDate' => '最新一集播出日期',
@@ -2778,6 +2798,8 @@ extension on TranslationsZh {
 			'metadataEdit.libraryDefault' => '媒体库默认',
 			'metadataEdit.accountDefault' => '账户默认',
 			'metadataEdit.seriesDefault' => '剧集默认',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.episodeSorting' => '剧集排序',
 			'metadataEdit.oldestFirst' => '最旧优先',
 			'metadataEdit.newestFirst' => '最新优先',
@@ -2788,8 +2810,6 @@ extension on TranslationsZh {
 			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => '过去 ${count} 天内添加的剧集',
 			'metadataEdit.deleteAfterPlaying' => '播放后删除剧集',
 			'metadataEdit.never' => '从不',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.afterADay' => '一天后',
 			'metadataEdit.afterAWeek' => '一周后',
 			'metadataEdit.afterAMonth' => '一个月后',

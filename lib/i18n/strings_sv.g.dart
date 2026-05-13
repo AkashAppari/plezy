@@ -1606,8 +1606,18 @@ class _TranslationsLibrariesSortLabelsSv extends TranslationsLibrariesSortLabels
 	@override String get dateAdded => 'Tillagd';
 	@override String get releaseDate => 'Releasedatum';
 	@override String get rating => 'Betyg';
+	@override String get communityRating => 'Användarbetyg';
+	@override String get criticRating => 'Kritikerbetyg';
 	@override String get lastPlayed => 'Senast spelad';
+	@override String get datePlayed => 'Speldatum';
 	@override String get playCount => 'Antal spelningar';
+	@override String get productionYear => 'Produktionsår';
+	@override String get runtime => 'Speltid';
+	@override String get officialRating => 'Officiell klassificering';
+	@override String get premiereDate => 'Premiärdatum';
+	@override String get startDate => 'Startdatum';
+	@override String get airTime => 'Sändningstid';
+	@override String get studio => 'Studio';
 	@override String get random => 'Slumpmässigt';
 	@override String get dateShared => 'Delningsdatum';
 	@override String get latestEpisodeAirDate => 'Senaste avsnittets sändningsdatum';
@@ -2400,8 +2410,18 @@ extension on TranslationsSv {
 			'libraries.sortLabels.dateAdded' => 'Tillagd',
 			'libraries.sortLabels.releaseDate' => 'Releasedatum',
 			'libraries.sortLabels.rating' => 'Betyg',
+			'libraries.sortLabels.communityRating' => 'Användarbetyg',
+			'libraries.sortLabels.criticRating' => 'Kritikerbetyg',
 			'libraries.sortLabels.lastPlayed' => 'Senast spelad',
+			'libraries.sortLabels.datePlayed' => 'Speldatum',
 			'libraries.sortLabels.playCount' => 'Antal spelningar',
+			'libraries.sortLabels.productionYear' => 'Produktionsår',
+			'libraries.sortLabels.runtime' => 'Speltid',
+			'libraries.sortLabels.officialRating' => 'Officiell klassificering',
+			'libraries.sortLabels.premiereDate' => 'Premiärdatum',
+			'libraries.sortLabels.startDate' => 'Startdatum',
+			'libraries.sortLabels.airTime' => 'Sändningstid',
+			'libraries.sortLabels.studio' => 'Studio',
 			'libraries.sortLabels.random' => 'Slumpmässigt',
 			'libraries.sortLabels.dateShared' => 'Delningsdatum',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Senaste avsnittets sändningsdatum',
@@ -2778,6 +2798,8 @@ extension on TranslationsSv {
 			'metadataEdit.libraryDefault' => 'Biblioteksstandard',
 			'metadataEdit.accountDefault' => 'Kontostandard',
 			'metadataEdit.seriesDefault' => 'Seriestandard',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.episodeSorting' => 'Avsnittsortering',
 			'metadataEdit.oldestFirst' => 'Äldst först',
 			'metadataEdit.newestFirst' => 'Nyast först',
@@ -2788,8 +2810,6 @@ extension on TranslationsSv {
 			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => 'Avsnitt tillagda de senaste ${count} dagarna',
 			'metadataEdit.deleteAfterPlaying' => 'Ta bort avsnitt efter uppspelning',
 			'metadataEdit.never' => 'Aldrig',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.afterADay' => 'Efter en dag',
 			'metadataEdit.afterAWeek' => 'Efter en vecka',
 			'metadataEdit.afterAMonth' => 'Efter en månad',

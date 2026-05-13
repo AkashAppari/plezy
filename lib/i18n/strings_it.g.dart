@@ -1606,8 +1606,18 @@ class _TranslationsLibrariesSortLabelsIt extends TranslationsLibrariesSortLabels
 	@override String get dateAdded => 'Data di aggiunta';
 	@override String get releaseDate => 'Data di uscita';
 	@override String get rating => 'Valutazione';
+	@override String get communityRating => 'Valutazione della community';
+	@override String get criticRating => 'Valutazione critica';
 	@override String get lastPlayed => 'Ultima riproduzione';
+	@override String get datePlayed => 'Data di riproduzione';
 	@override String get playCount => 'Riproduzioni';
+	@override String get productionYear => 'Anno di produzione';
+	@override String get runtime => 'Durata';
+	@override String get officialRating => 'Classificazione ufficiale';
+	@override String get premiereDate => 'Data di première';
+	@override String get startDate => 'Data di inizio';
+	@override String get airTime => 'Orario di messa in onda';
+	@override String get studio => 'Studio';
 	@override String get random => 'Casuale';
 	@override String get dateShared => 'Data di condivisione';
 	@override String get latestEpisodeAirDate => 'Data ultima messa in onda';
@@ -2400,8 +2410,18 @@ extension on TranslationsIt {
 			'libraries.sortLabels.dateAdded' => 'Data di aggiunta',
 			'libraries.sortLabels.releaseDate' => 'Data di uscita',
 			'libraries.sortLabels.rating' => 'Valutazione',
+			'libraries.sortLabels.communityRating' => 'Valutazione della community',
+			'libraries.sortLabels.criticRating' => 'Valutazione critica',
 			'libraries.sortLabels.lastPlayed' => 'Ultima riproduzione',
+			'libraries.sortLabels.datePlayed' => 'Data di riproduzione',
 			'libraries.sortLabels.playCount' => 'Riproduzioni',
+			'libraries.sortLabels.productionYear' => 'Anno di produzione',
+			'libraries.sortLabels.runtime' => 'Durata',
+			'libraries.sortLabels.officialRating' => 'Classificazione ufficiale',
+			'libraries.sortLabels.premiereDate' => 'Data di première',
+			'libraries.sortLabels.startDate' => 'Data di inizio',
+			'libraries.sortLabels.airTime' => 'Orario di messa in onda',
+			'libraries.sortLabels.studio' => 'Studio',
 			'libraries.sortLabels.random' => 'Casuale',
 			'libraries.sortLabels.dateShared' => 'Data di condivisione',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Data ultima messa in onda',
@@ -2778,6 +2798,8 @@ extension on TranslationsIt {
 			'metadataEdit.libraryDefault' => 'Predefinito libreria',
 			'metadataEdit.accountDefault' => 'Predefinito account',
 			'metadataEdit.seriesDefault' => 'Predefinito serie',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.episodeSorting' => 'Ordinamento episodi',
 			'metadataEdit.oldestFirst' => 'Più vecchi prima',
 			'metadataEdit.newestFirst' => 'Più recenti prima',
@@ -2788,8 +2810,6 @@ extension on TranslationsIt {
 			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => 'Episodi aggiunti negli ultimi ${count} giorni',
 			'metadataEdit.deleteAfterPlaying' => 'Elimina episodi dopo la riproduzione',
 			'metadataEdit.never' => 'Mai',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.afterADay' => 'Dopo un giorno',
 			'metadataEdit.afterAWeek' => 'Dopo una settimana',
 			'metadataEdit.afterAMonth' => 'Dopo un mese',

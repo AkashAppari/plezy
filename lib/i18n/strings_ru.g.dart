@@ -1606,8 +1606,18 @@ class _TranslationsLibrariesSortLabelsRu extends TranslationsLibrariesSortLabels
 	@override String get dateAdded => 'Дата добавления';
 	@override String get releaseDate => 'Дата выхода';
 	@override String get rating => 'Рейтинг';
+	@override String get communityRating => 'Оценка сообщества';
+	@override String get criticRating => 'Оценка критиков';
 	@override String get lastPlayed => 'Последний просмотр';
+	@override String get datePlayed => 'Дата просмотра';
 	@override String get playCount => 'Количество просмотров';
+	@override String get productionYear => 'Год производства';
+	@override String get runtime => 'Длительность';
+	@override String get officialRating => 'Официальный рейтинг';
+	@override String get premiereDate => 'Дата премьеры';
+	@override String get startDate => 'Дата начала';
+	@override String get airTime => 'Время эфира';
+	@override String get studio => 'Студия';
 	@override String get random => 'Случайно';
 	@override String get dateShared => 'Дата открытия доступа';
 	@override String get latestEpisodeAirDate => 'Дата выхода последнего эпизода';
@@ -2400,8 +2410,18 @@ extension on TranslationsRu {
 			'libraries.sortLabels.dateAdded' => 'Дата добавления',
 			'libraries.sortLabels.releaseDate' => 'Дата выхода',
 			'libraries.sortLabels.rating' => 'Рейтинг',
+			'libraries.sortLabels.communityRating' => 'Оценка сообщества',
+			'libraries.sortLabels.criticRating' => 'Оценка критиков',
 			'libraries.sortLabels.lastPlayed' => 'Последний просмотр',
+			'libraries.sortLabels.datePlayed' => 'Дата просмотра',
 			'libraries.sortLabels.playCount' => 'Количество просмотров',
+			'libraries.sortLabels.productionYear' => 'Год производства',
+			'libraries.sortLabels.runtime' => 'Длительность',
+			'libraries.sortLabels.officialRating' => 'Официальный рейтинг',
+			'libraries.sortLabels.premiereDate' => 'Дата премьеры',
+			'libraries.sortLabels.startDate' => 'Дата начала',
+			'libraries.sortLabels.airTime' => 'Время эфира',
+			'libraries.sortLabels.studio' => 'Студия',
 			'libraries.sortLabels.random' => 'Случайно',
 			'libraries.sortLabels.dateShared' => 'Дата открытия доступа',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Дата выхода последнего эпизода',
@@ -2778,6 +2798,8 @@ extension on TranslationsRu {
 			'metadataEdit.libraryDefault' => 'По умолчанию библиотеки',
 			'metadataEdit.accountDefault' => 'По умолчанию аккаунта',
 			'metadataEdit.seriesDefault' => 'По умолчанию сериала',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.episodeSorting' => 'Сортировка эпизодов',
 			'metadataEdit.oldestFirst' => 'Сначала старые',
 			'metadataEdit.newestFirst' => 'Сначала новые',
@@ -2788,8 +2810,6 @@ extension on TranslationsRu {
 			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => 'Эпизоды, добавленные за последние ${count} дней',
 			'metadataEdit.deleteAfterPlaying' => 'Удалять эпизоды после просмотра',
 			'metadataEdit.never' => 'Никогда',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.afterADay' => 'Через день',
 			'metadataEdit.afterAWeek' => 'Через неделю',
 			'metadataEdit.afterAMonth' => 'Через месяц',

@@ -1606,8 +1606,18 @@ class _TranslationsLibrariesSortLabelsKo extends TranslationsLibrariesSortLabels
 	@override String get dateAdded => '추가된 날짜';
 	@override String get releaseDate => '출시일';
 	@override String get rating => '평점';
+	@override String get communityRating => '커뮤니티 평점';
+	@override String get criticRating => '평론가 평점';
 	@override String get lastPlayed => '마지막 재생';
+	@override String get datePlayed => '재생일';
 	@override String get playCount => '재생 횟수';
+	@override String get productionYear => '제작 연도';
+	@override String get runtime => '재생 시간';
+	@override String get officialRating => '공식 등급';
+	@override String get premiereDate => '최초 공개일';
+	@override String get startDate => '시작일';
+	@override String get airTime => '방영 시간';
+	@override String get studio => '스튜디오';
 	@override String get random => '무작위';
 	@override String get dateShared => '공유된 날짜';
 	@override String get latestEpisodeAirDate => '최신 에피소드 방영일';
@@ -2400,8 +2410,18 @@ extension on TranslationsKo {
 			'libraries.sortLabels.dateAdded' => '추가된 날짜',
 			'libraries.sortLabels.releaseDate' => '출시일',
 			'libraries.sortLabels.rating' => '평점',
+			'libraries.sortLabels.communityRating' => '커뮤니티 평점',
+			'libraries.sortLabels.criticRating' => '평론가 평점',
 			'libraries.sortLabels.lastPlayed' => '마지막 재생',
+			'libraries.sortLabels.datePlayed' => '재생일',
 			'libraries.sortLabels.playCount' => '재생 횟수',
+			'libraries.sortLabels.productionYear' => '제작 연도',
+			'libraries.sortLabels.runtime' => '재생 시간',
+			'libraries.sortLabels.officialRating' => '공식 등급',
+			'libraries.sortLabels.premiereDate' => '최초 공개일',
+			'libraries.sortLabels.startDate' => '시작일',
+			'libraries.sortLabels.airTime' => '방영 시간',
+			'libraries.sortLabels.studio' => '스튜디오',
 			'libraries.sortLabels.random' => '무작위',
 			'libraries.sortLabels.dateShared' => '공유된 날짜',
 			'libraries.sortLabels.latestEpisodeAirDate' => '최신 에피소드 방영일',
@@ -2778,6 +2798,8 @@ extension on TranslationsKo {
 			'metadataEdit.libraryDefault' => '라이브러리 기본값',
 			'metadataEdit.accountDefault' => '계정 기본값',
 			'metadataEdit.seriesDefault' => '시리즈 기본값',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.episodeSorting' => '에피소드 정렬',
 			'metadataEdit.oldestFirst' => '오래된 순',
 			'metadataEdit.newestFirst' => '최신 순',
@@ -2788,8 +2810,6 @@ extension on TranslationsKo {
 			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => '최근 ${count}일 내 추가된 에피소드',
 			'metadataEdit.deleteAfterPlaying' => '재생 후 에피소드 삭제',
 			'metadataEdit.never' => '안 함',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.afterADay' => '하루 후',
 			'metadataEdit.afterAWeek' => '일주일 후',
 			'metadataEdit.afterAMonth' => '한 달 후',

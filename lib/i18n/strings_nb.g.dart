@@ -1606,8 +1606,18 @@ class _TranslationsLibrariesSortLabelsNb extends TranslationsLibrariesSortLabels
 	@override String get dateAdded => 'Lagt til-dato';
 	@override String get releaseDate => 'Utgivelsesdato';
 	@override String get rating => 'Vurdering';
+	@override String get communityRating => 'Fellesskapsvurdering';
+	@override String get criticRating => 'Kritikervurdering';
 	@override String get lastPlayed => 'Sist spilt';
+	@override String get datePlayed => 'Avspillingsdato';
 	@override String get playCount => 'Avspillinger';
+	@override String get productionYear => 'Produksjonsår';
+	@override String get runtime => 'Varighet';
+	@override String get officialRating => 'Offisiell vurdering';
+	@override String get premiereDate => 'Premieredato';
+	@override String get startDate => 'Startdato';
+	@override String get airTime => 'Sendetid';
+	@override String get studio => 'Studio';
 	@override String get random => 'Tilfeldig';
 	@override String get dateShared => 'Delingsdato';
 	@override String get latestEpisodeAirDate => 'Siste episodes sendedato';
@@ -2400,8 +2410,18 @@ extension on TranslationsNb {
 			'libraries.sortLabels.dateAdded' => 'Lagt til-dato',
 			'libraries.sortLabels.releaseDate' => 'Utgivelsesdato',
 			'libraries.sortLabels.rating' => 'Vurdering',
+			'libraries.sortLabels.communityRating' => 'Fellesskapsvurdering',
+			'libraries.sortLabels.criticRating' => 'Kritikervurdering',
 			'libraries.sortLabels.lastPlayed' => 'Sist spilt',
+			'libraries.sortLabels.datePlayed' => 'Avspillingsdato',
 			'libraries.sortLabels.playCount' => 'Avspillinger',
+			'libraries.sortLabels.productionYear' => 'Produksjonsår',
+			'libraries.sortLabels.runtime' => 'Varighet',
+			'libraries.sortLabels.officialRating' => 'Offisiell vurdering',
+			'libraries.sortLabels.premiereDate' => 'Premieredato',
+			'libraries.sortLabels.startDate' => 'Startdato',
+			'libraries.sortLabels.airTime' => 'Sendetid',
+			'libraries.sortLabels.studio' => 'Studio',
 			'libraries.sortLabels.random' => 'Tilfeldig',
 			'libraries.sortLabels.dateShared' => 'Delingsdato',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Siste episodes sendedato',
@@ -2778,6 +2798,8 @@ extension on TranslationsNb {
 			'metadataEdit.libraryDefault' => 'Bibliotekstandard',
 			'metadataEdit.accountDefault' => 'Kontostandard',
 			'metadataEdit.seriesDefault' => 'Seriestandard',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.episodeSorting' => 'Episodesortering',
 			'metadataEdit.oldestFirst' => 'Eldste først',
 			'metadataEdit.newestFirst' => 'Nyeste først',
@@ -2788,8 +2810,6 @@ extension on TranslationsNb {
 			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => 'Episoder lagt til de siste ${count} dagene',
 			'metadataEdit.deleteAfterPlaying' => 'Slett episoder etter avspilling',
 			'metadataEdit.never' => 'Aldri',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.afterADay' => 'Etter en dag',
 			'metadataEdit.afterAWeek' => 'Etter en uke',
 			'metadataEdit.afterAMonth' => 'Etter en måned',

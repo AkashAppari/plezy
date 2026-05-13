@@ -1606,8 +1606,18 @@ class _TranslationsLibrariesSortLabelsJa extends TranslationsLibrariesSortLabels
 	@override String get dateAdded => '追加日';
 	@override String get releaseDate => 'リリース日';
 	@override String get rating => '評価';
+	@override String get communityRating => 'コミュニティ評価';
+	@override String get criticRating => '批評家評価';
 	@override String get lastPlayed => '最終再生';
+	@override String get datePlayed => '再生日';
 	@override String get playCount => '再生回数';
+	@override String get productionYear => '製作年';
+	@override String get runtime => '再生時間';
+	@override String get officialRating => '公式レーティング';
+	@override String get premiereDate => 'プレミア日';
+	@override String get startDate => '開始日';
+	@override String get airTime => '放送時刻';
+	@override String get studio => 'スタジオ';
 	@override String get random => 'ランダム';
 	@override String get dateShared => '共有日';
 	@override String get latestEpisodeAirDate => '最新エピソード放送日';
@@ -2400,8 +2410,18 @@ extension on TranslationsJa {
 			'libraries.sortLabels.dateAdded' => '追加日',
 			'libraries.sortLabels.releaseDate' => 'リリース日',
 			'libraries.sortLabels.rating' => '評価',
+			'libraries.sortLabels.communityRating' => 'コミュニティ評価',
+			'libraries.sortLabels.criticRating' => '批評家評価',
 			'libraries.sortLabels.lastPlayed' => '最終再生',
+			'libraries.sortLabels.datePlayed' => '再生日',
 			'libraries.sortLabels.playCount' => '再生回数',
+			'libraries.sortLabels.productionYear' => '製作年',
+			'libraries.sortLabels.runtime' => '再生時間',
+			'libraries.sortLabels.officialRating' => '公式レーティング',
+			'libraries.sortLabels.premiereDate' => 'プレミア日',
+			'libraries.sortLabels.startDate' => '開始日',
+			'libraries.sortLabels.airTime' => '放送時刻',
+			'libraries.sortLabels.studio' => 'スタジオ',
 			'libraries.sortLabels.random' => 'ランダム',
 			'libraries.sortLabels.dateShared' => '共有日',
 			'libraries.sortLabels.latestEpisodeAirDate' => '最新エピソード放送日',
@@ -2778,6 +2798,8 @@ extension on TranslationsJa {
 			'metadataEdit.libraryDefault' => 'ライブラリのデフォルト',
 			'metadataEdit.accountDefault' => 'アカウントのデフォルト',
 			'metadataEdit.seriesDefault' => 'シリーズのデフォルト',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.episodeSorting' => 'エピソードの並べ替え',
 			'metadataEdit.oldestFirst' => '古い順',
 			'metadataEdit.newestFirst' => '新しい順',
@@ -2788,8 +2810,6 @@ extension on TranslationsJa {
 			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => '過去${count}日間に追加されたエピソード',
 			'metadataEdit.deleteAfterPlaying' => '再生後にエピソードを削除',
 			'metadataEdit.never' => 'しない',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.afterADay' => '1日後',
 			'metadataEdit.afterAWeek' => '1週間後',
 			'metadataEdit.afterAMonth' => '1ヶ月後',

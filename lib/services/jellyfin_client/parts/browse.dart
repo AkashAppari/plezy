@@ -181,16 +181,26 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   }
 
   /// Jellyfin has no `/sorts` listing endpoint, so this returns a hardcoded
-  /// list mirroring the Plex fallback set. Keys are the backend-neutral names
-  /// understood by [JellyfinLibraryQueryTranslator] (`title`, `addedAt`, …);
-  /// `_buildFilterParams` emits them as `addedAt:desc` etc., and
-  /// [LibraryQueryTranslator.parseSortParam] turns them back into a
-  /// [LibrarySort] before the translator maps them to Jellyfin's
-  /// `SortBy`/`SortOrder`.
+  /// list based on the broad sort set Streamyfin exposes. Keys remain
+  /// backend-neutral where Plezy already had saved preferences (`rating`,
+  /// `lastViewedAt`, …); [JellyfinLibraryQueryTranslator] maps them to
+  /// Jellyfin's `SortBy`/`SortOrder` at request time.
   @override
   Future<List<MediaSort>> fetchSortOptions(String libraryId, {String? libraryType}) async {
     return [
       MediaSort(key: 'title', descKey: 'title:desc', title: t.libraries.sortLabels.title, defaultDirection: 'asc'),
+      MediaSort(
+        key: 'rating',
+        descKey: 'rating:desc',
+        title: t.libraries.sortLabels.communityRating,
+        defaultDirection: 'desc',
+      ),
+      MediaSort(
+        key: 'criticRating',
+        descKey: 'criticRating:desc',
+        title: t.libraries.sortLabels.criticRating,
+        defaultDirection: 'desc',
+      ),
       MediaSort(
         key: 'addedAt',
         descKey: 'addedAt:desc',
@@ -198,16 +208,9 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         defaultDirection: 'desc',
       ),
       MediaSort(
-        key: 'originallyAvailableAt',
-        descKey: 'originallyAvailableAt:desc',
-        title: t.libraries.sortLabels.releaseDate,
-        defaultDirection: 'desc',
-      ),
-      MediaSort(key: 'rating', descKey: 'rating:desc', title: t.libraries.sortLabels.rating, defaultDirection: 'desc'),
-      MediaSort(
         key: 'lastViewedAt',
         descKey: 'lastViewedAt:desc',
-        title: t.libraries.sortLabels.lastPlayed,
+        title: t.libraries.sortLabels.datePlayed,
         defaultDirection: 'desc',
       ),
       MediaSort(
@@ -216,6 +219,43 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         title: t.libraries.sortLabels.playCount,
         defaultDirection: 'desc',
       ),
+      MediaSort(
+        key: 'productionYear',
+        descKey: 'productionYear:desc',
+        title: t.libraries.sortLabels.productionYear,
+        defaultDirection: 'desc',
+      ),
+      MediaSort(
+        key: 'runtime',
+        descKey: 'runtime:desc',
+        title: t.libraries.sortLabels.runtime,
+        defaultDirection: 'desc',
+      ),
+      MediaSort(
+        key: 'officialRating',
+        descKey: 'officialRating:desc',
+        title: t.libraries.sortLabels.officialRating,
+        defaultDirection: 'asc',
+      ),
+      MediaSort(
+        key: 'originallyAvailableAt',
+        descKey: 'originallyAvailableAt:desc',
+        title: t.libraries.sortLabels.premiereDate,
+        defaultDirection: 'desc',
+      ),
+      MediaSort(
+        key: 'startDate',
+        descKey: 'startDate:desc',
+        title: t.libraries.sortLabels.startDate,
+        defaultDirection: 'asc',
+      ),
+      MediaSort(
+        key: 'airTime',
+        descKey: 'airTime:desc',
+        title: t.libraries.sortLabels.airTime,
+        defaultDirection: 'asc',
+      ),
+      MediaSort(key: 'studio', descKey: 'studio:desc', title: t.libraries.sortLabels.studio, defaultDirection: 'asc'),
       MediaSort(key: 'random', title: t.libraries.sortLabels.random, defaultDirection: 'asc'),
     ];
   }

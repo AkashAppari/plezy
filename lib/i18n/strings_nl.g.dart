@@ -1606,8 +1606,18 @@ class _TranslationsLibrariesSortLabelsNl extends TranslationsLibrariesSortLabels
 	@override String get dateAdded => 'Toegevoegd op';
 	@override String get releaseDate => 'Uitgavedatum';
 	@override String get rating => 'Beoordeling';
+	@override String get communityRating => 'Communitybeoordeling';
+	@override String get criticRating => 'Criticusbeoordeling';
 	@override String get lastPlayed => 'Laatst afgespeeld';
+	@override String get datePlayed => 'Afspeeldatum';
 	@override String get playCount => 'Aantal afspelingen';
+	@override String get productionYear => 'Productiejaar';
+	@override String get runtime => 'Speelduur';
+	@override String get officialRating => 'Officiële beoordeling';
+	@override String get premiereDate => 'Premièredatum';
+	@override String get startDate => 'Begindatum';
+	@override String get airTime => 'Uitzendtijd';
+	@override String get studio => 'Studio';
 	@override String get random => 'Willekeurig';
 	@override String get dateShared => 'Gedeeld op';
 	@override String get latestEpisodeAirDate => 'Laatste afleveringsuitzending';
@@ -2400,8 +2410,18 @@ extension on TranslationsNl {
 			'libraries.sortLabels.dateAdded' => 'Toegevoegd op',
 			'libraries.sortLabels.releaseDate' => 'Uitgavedatum',
 			'libraries.sortLabels.rating' => 'Beoordeling',
+			'libraries.sortLabels.communityRating' => 'Communitybeoordeling',
+			'libraries.sortLabels.criticRating' => 'Criticusbeoordeling',
 			'libraries.sortLabels.lastPlayed' => 'Laatst afgespeeld',
+			'libraries.sortLabels.datePlayed' => 'Afspeeldatum',
 			'libraries.sortLabels.playCount' => 'Aantal afspelingen',
+			'libraries.sortLabels.productionYear' => 'Productiejaar',
+			'libraries.sortLabels.runtime' => 'Speelduur',
+			'libraries.sortLabels.officialRating' => 'Officiële beoordeling',
+			'libraries.sortLabels.premiereDate' => 'Premièredatum',
+			'libraries.sortLabels.startDate' => 'Begindatum',
+			'libraries.sortLabels.airTime' => 'Uitzendtijd',
+			'libraries.sortLabels.studio' => 'Studio',
 			'libraries.sortLabels.random' => 'Willekeurig',
 			'libraries.sortLabels.dateShared' => 'Gedeeld op',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Laatste afleveringsuitzending',
@@ -2778,6 +2798,8 @@ extension on TranslationsNl {
 			'metadataEdit.libraryDefault' => 'Bibliotheekstandaard',
 			'metadataEdit.accountDefault' => 'Accountstandaard',
 			'metadataEdit.seriesDefault' => 'Seriestandaard',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.episodeSorting' => 'Afleveringen sorteren',
 			'metadataEdit.oldestFirst' => 'Oudste eerst',
 			'metadataEdit.newestFirst' => 'Nieuwste eerst',
@@ -2788,8 +2810,6 @@ extension on TranslationsNl {
 			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => 'Afleveringen toegevoegd in de afgelopen ${count} dagen',
 			'metadataEdit.deleteAfterPlaying' => 'Afleveringen verwijderen na afspelen',
 			'metadataEdit.never' => 'Nooit',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.afterADay' => 'Na een dag',
 			'metadataEdit.afterAWeek' => 'Na een week',
 			'metadataEdit.afterAMonth' => 'Na een maand',

@@ -3733,11 +3733,41 @@ class TranslationsLibrariesSortLabelsEn {
 	/// en: 'Rating'
 	String get rating => 'Rating';
 
+	/// en: 'Community Rating'
+	String get communityRating => 'Community Rating';
+
+	/// en: 'Critic Rating'
+	String get criticRating => 'Critic Rating';
+
 	/// en: 'Last Played'
 	String get lastPlayed => 'Last Played';
 
+	/// en: 'Date Played'
+	String get datePlayed => 'Date Played';
+
 	/// en: 'Play Count'
 	String get playCount => 'Play Count';
+
+	/// en: 'Production Year'
+	String get productionYear => 'Production Year';
+
+	/// en: 'Runtime'
+	String get runtime => 'Runtime';
+
+	/// en: 'Official Rating'
+	String get officialRating => 'Official Rating';
+
+	/// en: 'Premiere Date'
+	String get premiereDate => 'Premiere Date';
+
+	/// en: 'Start Date'
+	String get startDate => 'Start Date';
+
+	/// en: 'Air Time'
+	String get airTime => 'Air Time';
+
+	/// en: 'Studio'
+	String get studio => 'Studio';
 
 	/// en: 'Random'
 	String get random => 'Random';
@@ -4692,8 +4722,18 @@ extension on Translations {
 			'libraries.sortLabels.dateAdded' => 'Date Added',
 			'libraries.sortLabels.releaseDate' => 'Release Date',
 			'libraries.sortLabels.rating' => 'Rating',
+			'libraries.sortLabels.communityRating' => 'Community Rating',
+			'libraries.sortLabels.criticRating' => 'Critic Rating',
 			'libraries.sortLabels.lastPlayed' => 'Last Played',
+			'libraries.sortLabels.datePlayed' => 'Date Played',
 			'libraries.sortLabels.playCount' => 'Play Count',
+			'libraries.sortLabels.productionYear' => 'Production Year',
+			'libraries.sortLabels.runtime' => 'Runtime',
+			'libraries.sortLabels.officialRating' => 'Official Rating',
+			'libraries.sortLabels.premiereDate' => 'Premiere Date',
+			'libraries.sortLabels.startDate' => 'Start Date',
+			'libraries.sortLabels.airTime' => 'Air Time',
+			'libraries.sortLabels.studio' => 'Studio',
 			'libraries.sortLabels.random' => 'Random',
 			'libraries.sortLabels.dateShared' => 'Date Shared',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Latest Episode Air Date',
@@ -5070,6 +5110,8 @@ extension on Translations {
 			'metadataEdit.libraryDefault' => 'Library default',
 			'metadataEdit.accountDefault' => 'Account default',
 			'metadataEdit.seriesDefault' => 'Series default',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.episodeSorting' => 'Episode Sorting',
 			'metadataEdit.oldestFirst' => 'Oldest first',
 			'metadataEdit.newestFirst' => 'Newest first',
@@ -5080,8 +5122,6 @@ extension on Translations {
 			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => 'Episodes added in the past ${count} days',
 			'metadataEdit.deleteAfterPlaying' => 'Delete Episodes After Playing',
 			'metadataEdit.never' => 'Never',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.afterADay' => 'After a day',
 			'metadataEdit.afterAWeek' => 'After a week',
 			'metadataEdit.afterAMonth' => 'After a month',
