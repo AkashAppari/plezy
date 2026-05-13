@@ -71,15 +71,12 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   final Map<String, String> _favoriteStoreBySource = {};
   final Map<String, FavoriteChannelPersistenceMode> _favoriteModeByStore = {};
 
-  List<LiveTvChannel> get _filteredChannels {
-    if (!_showFavoritesOnly) return _channels;
-    if (_favoriteKeys.isEmpty) return const [];
-    final channelMap = {for (final c in _channels) _favoriteKeyForChannel(c): c};
-    return [
-      for (final fav in _favoriteChannels)
-        if (channelMap.containsKey(fav.stableKey)) channelMap[fav.stableKey]!,
-    ];
-  }
+  List<LiveTvChannel> get _filteredChannels => filterLiveTvChannelsForFavorites(
+    channels: _channels,
+    favoritesOnly: _showFavoritesOnly,
+    favorites: _favoriteChannels,
+    sourceForChannel: _sourceForChannel,
+  );
 
   String _liveServerScopeKey(LiveTvServerInfo serverInfo) => '${serverInfo.serverId}\u0000${serverInfo.dvrKey}';
 

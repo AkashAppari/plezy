@@ -31,6 +31,21 @@ String favoriteChannelKey(String source, String id) => '$source\u0000$id';
 String liveTvChannelScopeKey(LiveTvChannel channel) =>
     '${channel.serverId ?? ''}\u0000${channel.liveDvrKey ?? ''}\u0000${channel.key}';
 
+List<LiveTvChannel> filterLiveTvChannelsForFavorites({
+  required List<LiveTvChannel> channels,
+  required bool favoritesOnly,
+  required Iterable<FavoriteChannel> favorites,
+  required String Function(LiveTvChannel channel) sourceForChannel,
+}) {
+  if (!favoritesOnly || favorites.isEmpty) return channels;
+
+  final channelMap = {
+    for (final channel in channels) favoriteChannelKey(sourceForChannel(channel), channel.key): channel,
+  };
+
+  return [for (final favorite in favorites) ?channelMap[favorite.stableKey]];
+}
+
 @JsonSerializable(createToJson: false)
 class LiveTvChannel with MultiServerFields {
   @JsonKey(readValue: _readChannelKey)
