@@ -105,6 +105,7 @@ class PlayerNative extends PlayerBase {
     if (disposed) return;
     await _ensureInitialized();
     final startPosition = media.start ?? Duration.zero;
+    clearTracks();
     resetPlaybackProgress(startPosition);
     setSeekable(false);
 
