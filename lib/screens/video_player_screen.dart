@@ -537,11 +537,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   Future<void> _initializePlayer() async {
+    var initPhase = 'starting';
     try {
       if (mounted) {
         setState(() => _playerInitializationError = null);
       }
+      initPhase = 'loading settings';
       final settingsService = await SettingsService.getInstance();
+      if (!mounted) return;
       _videoPlayerNavigationEnabled = settingsService.read(SettingsService.videoPlayerNavigationEnabled);
       _autoPipEnabled = settingsService.read(SettingsService.autoPip);
       _rewindOnResume = settingsService.read(SettingsService.rewindOnResume);
@@ -551,18 +554,22 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final useExoPlayer = settingsService.read(SettingsService.useExoPlayer);
 
       if (Platform.isWindows) {
+        initPhase = 'syncing display mode';
         _displayModeService = DisplayModeService(settingsService, FullscreenStateManager());
         await _displayModeService!.syncWithNative();
+        if (!mounted) return;
         FullscreenStateManager().addListener(_onFullscreenChanged);
       }
 
-      player = Player(useExoPlayer: useExoPlayer);
-      _playerBackendLabel = player!.playerType;
+      initPhase = 'creating player';
+      final currentPlayer = Player(useExoPlayer: useExoPlayer);
+      player = currentPlayer;
+      _playerBackendLabel = currentPlayer.playerType;
 
       // Kick off audio-focus negotiation in parallel with MPV config + prefetch.
       // On Android this is a round-trip to AudioManager (~90ms cold).
       if (Platform.isAndroid && !widget.isLive) {
-        _audioFocusFuture = player!.requestAudioFocus();
+        _audioFocusFuture = currentPlayer.requestAudioFocus();
         _audioFocusFuture!.ignore();
       }
 
@@ -613,17 +620,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _playbackDataFuture!.ignore();
       }
 
-      await player!.configureSubtitleFonts();
-      await player!.setProperty('sub-ass', 'yes'); // Enable libass
+      if (!mounted || player != currentPlayer) return;
+      initPhase = 'configuring player';
+      await currentPlayer.configureSubtitleFonts();
+      await currentPlayer.setProperty('sub-ass', 'yes'); // Enable libass
       if (Platform.isAndroid && useExoPlayer) {
         final tunneledPlayback = settingsService.read(SettingsService.tunneledPlayback);
-        await player!.setProperty('tunneled-playback', tunneledPlayback ? 'yes' : 'no');
+        await currentPlayer.setProperty('tunneled-playback', tunneledPlayback ? 'yes' : 'no');
       }
       if (bufferSizeMB > 0) {
         final bufferSizeBytes = bufferSizeMB * 1024 * 1024;
-        await player!.setProperty('demuxer-max-bytes', bufferSizeBytes.toString());
+        await currentPlayer.setProperty('demuxer-max-bytes', bufferSizeBytes.toString());
         final backBytes = bufferSizeBytes ~/ 4;
-        await player!.setProperty('demuxer-max-back-bytes', backBytes.toString());
+        await currentPlayer.setProperty('demuxer-max-back-bytes', backBytes.toString());
       }
       if (Platform.isAndroid) {
         // Cap demuxer buffers based on device heap to prevent OOM crashes.
@@ -631,6 +640,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // buffering, which combined with decoded frames and GPU textures
         // exhausts the process address space on memory-constrained devices.
         final heapMB = await PlayerAndroid.getHeapSize();
+        if (!mounted || player != currentPlayer) return;
         if (heapMB > 0) {
           int autoBackMB;
           if (heapMB <= 256) {
@@ -649,75 +659,84 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             } else {
               autoForwardMB = 100;
             }
-            await player!.setProperty('demuxer-max-bytes', '${autoForwardMB * 1024 * 1024}');
-            await player!.setProperty('demuxer-max-back-bytes', '${autoBackMB * 1024 * 1024}');
+            await currentPlayer.setProperty('demuxer-max-bytes', '${autoForwardMB * 1024 * 1024}');
+            await currentPlayer.setProperty('demuxer-max-back-bytes', '${autoBackMB * 1024 * 1024}');
           } else {
             // Manual mode: cap back-buffer relative to heap if 1/4 ratio is too high
             final maxBackBytes = min(bufferSizeMB * 1024 * 1024 ~/ 4, autoBackMB * 1024 * 1024);
-            await player!.setProperty('demuxer-max-back-bytes', maxBackBytes.toString());
+            await currentPlayer.setProperty('demuxer-max-back-bytes', maxBackBytes.toString());
           }
         }
       }
-      await player!.setProperty('msg-level', debugLoggingEnabled ? 'all=debug' : 'all=error');
-      await player!.setLogLevel(debugLoggingEnabled ? 'v' : 'warn');
-      await player!.setProperty('hwdec', _getHwdecValue(enableHardwareDecoding));
+      await currentPlayer.setProperty('msg-level', debugLoggingEnabled ? 'all=debug' : 'all=error');
+      await currentPlayer.setLogLevel(debugLoggingEnabled ? 'v' : 'warn');
+      await currentPlayer.setProperty('hwdec', _getHwdecValue(enableHardwareDecoding));
 
-      await player!.setProperty('sub-font-size', settingsService.read(SettingsService.subtitleFontSize).toString());
-      await player!.setProperty('sub-color', settingsService.read(SettingsService.subtitleTextColor));
-      await player!.setProperty('sub-border-size', settingsService.read(SettingsService.subtitleBorderSize).toString());
-      await player!.setProperty('sub-border-color', settingsService.read(SettingsService.subtitleBorderColor));
-      await player!.setProperty('sub-bold', settingsService.read(SettingsService.subtitleBold) ? 'yes' : 'no');
-      await player!.setProperty('sub-italic', settingsService.read(SettingsService.subtitleItalic) ? 'yes' : 'no');
+      await currentPlayer.setProperty(
+        'sub-font-size',
+        settingsService.read(SettingsService.subtitleFontSize).toString(),
+      );
+      await currentPlayer.setProperty('sub-color', settingsService.read(SettingsService.subtitleTextColor));
+      await currentPlayer.setProperty(
+        'sub-border-size',
+        settingsService.read(SettingsService.subtitleBorderSize).toString(),
+      );
+      await currentPlayer.setProperty('sub-border-color', settingsService.read(SettingsService.subtitleBorderColor));
+      await currentPlayer.setProperty('sub-bold', settingsService.read(SettingsService.subtitleBold) ? 'yes' : 'no');
+      await currentPlayer.setProperty(
+        'sub-italic',
+        settingsService.read(SettingsService.subtitleItalic) ? 'yes' : 'no',
+      );
       final bgOpacity = (settingsService.read(SettingsService.subtitleBackgroundOpacity) * 255 / 100).toInt();
       final bgColor = settingsService.read(SettingsService.subtitleBackgroundColor).replaceFirst('#', '');
-      await player!.setProperty(
+      await currentPlayer.setProperty(
         'sub-back-color',
         '#${bgOpacity.toRadixString(16).padLeft(2, '0').toUpperCase()}$bgColor',
       );
       if (settingsService.read(SettingsService.subtitleBackgroundOpacity) > 0) {
-        await player!.setProperty('sub-border-style', 'background-box');
+        await currentPlayer.setProperty('sub-border-style', 'background-box');
       }
-      await player!.setProperty('sub-ass-override', settingsService.read(SettingsService.subAssOverride).name);
-      await player!.setProperty('sub-ass-video-aspect-override', '1');
-      await player!.setProperty('sub-pos', settingsService.read(SettingsService.subtitlePosition).toString());
+      await currentPlayer.setProperty('sub-ass-override', settingsService.read(SettingsService.subAssOverride).name);
+      await currentPlayer.setProperty('sub-ass-video-aspect-override', '1');
+      await currentPlayer.setProperty('sub-pos', settingsService.read(SettingsService.subtitlePosition).toString());
 
       if (Platform.isIOS) {
-        await player!.setProperty('audio-exclusive', 'yes');
+        await currentPlayer.setProperty('audio-exclusive', 'yes');
       }
 
       // Audio passthrough (desktop only - sends bitstream to receiver)
       if (PlatformDetector.isDesktopOS()) {
         if (settingsService.read(SettingsService.audioPassthrough)) {
-          await player!.setAudioPassthrough(true);
+          await currentPlayer.setAudioPassthrough(true);
         }
       }
 
       // HDR is controlled via custom hdr-enabled property on iOS/macOS/Windows
       if (Platform.isIOS || Platform.isMacOS || Platform.isWindows) {
         final enableHDR = settingsService.read(SettingsService.enableHDR);
-        await player!.setProperty('hdr-enabled', enableHDR ? 'yes' : 'no');
+        await currentPlayer.setProperty('hdr-enabled', enableHDR ? 'yes' : 'no');
       }
 
       final audioSyncOffset = settingsService.read(SettingsService.audioSyncOffset);
       if (audioSyncOffset != 0) {
         final offsetSeconds = audioSyncOffset / 1000.0;
-        await player!.setProperty('audio-delay', offsetSeconds.toString());
+        await currentPlayer.setProperty('audio-delay', offsetSeconds.toString());
       }
 
       final subtitleSyncOffset = settingsService.read(SettingsService.subtitleSyncOffset);
       if (subtitleSyncOffset != 0) {
         final offsetSeconds = subtitleSyncOffset / 1000.0;
-        await player!.setProperty('sub-delay', offsetSeconds.toString());
+        await currentPlayer.setProperty('sub-delay', offsetSeconds.toString());
       }
 
       if (settingsService.read(SettingsService.audioNormalization)) {
-        await player!.setProperty('af', 'loudnorm=I=-14:TP=-3:LRA=4');
+        await currentPlayer.setProperty('af', 'loudnorm=I=-14:TP=-3:LRA=4');
       }
 
       final customMpvConfig = SettingsService.parseMpvConfigText(settingsService.read(SettingsService.mpvConfigText));
       for (final entry in customMpvConfig.entries) {
         try {
-          await player!.setProperty(entry.key, entry.value);
+          await currentPlayer.setProperty(entry.key, entry.value);
           appLogger.d('Applied custom MPV property: ${entry.key}=${entry.value}');
         } catch (e) {
           appLogger.w('Failed to set MPV property ${entry.key}', error: e);
@@ -725,10 +744,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
 
       final maxVolume = settingsService.read(SettingsService.maxVolume);
-      await player!.setProperty('volume-max', maxVolume.toString());
+      await currentPlayer.setProperty('volume-max', maxVolume.toString());
 
       final savedVolume = settingsService.read(SettingsService.volume).clamp(0.0, maxVolume.toDouble());
-      await player!.setVolume(savedVolume);
+      await currentPlayer.setVolume(savedVolume);
+
+      if (!mounted || player != currentPlayer) return;
 
       if (mounted) {
         setState(() {
@@ -736,19 +757,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         });
 
         // Restart sleep timer if we're starting a new playback session
-        final p = player;
-        if (p != null) {
-          SleepTimerService().restartIfNeeded(() => p.pause());
-        }
+        SleepTimerService().restartIfNeeded(() => currentPlayer.pause());
 
         // Enable wakelock to prevent screen from turning off during playback
         unawaited(_setWakelock(true));
         appLogger.d('Wakelock enabled for video playback');
       }
 
+      initPhase = 'starting playback';
       await _startPlayback();
+      if (!mounted || player != currentPlayer) return;
 
       // Set fullscreen mode and orientation based on rotation lock setting
+      initPhase = 'applying orientation';
       if (mounted) {
         try {
           // Check rotation lock setting before applying orientation
@@ -768,6 +789,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
       }
 
+      if (!mounted || player != currentPlayer) return;
+      initPhase = 'wiring player streams';
       await Future.wait<void>([
         if (_playingSubscription != null) _playingSubscription!.cancel(),
         if (_completedSubscription != null) _completedSubscription!.cancel(),
@@ -779,33 +802,34 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         if (_playbackRestartSubscription != null) _playbackRestartSubscription!.cancel(),
         if (_positionSubscription != null) _positionSubscription!.cancel(),
       ]);
+      if (!mounted || player != currentPlayer) return;
 
-      _playingSubscription = player!.streams.playing.listen(_onPlayingStateChanged);
+      _playingSubscription = currentPlayer.streams.playing.listen(_onPlayingStateChanged);
 
       // Listen to completion. When mpv emits completed=false (file-loaded after a
       // reconnect-seek or fresh open), clear a stale _completionTriggered so the
       // real end-of-file can still show Play Next. Guarded against clobbering an
       // active dialog or running auto-play countdown.
-      _completedSubscription = player!.streams.completed.listen((done) {
+      _completedSubscription = currentPlayer.streams.completed.listen((done) {
         if (!done && _completionTriggered && !_showPlayNextDialog && _autoPlayTimer?.isActive != true) {
           _completionTriggered = false;
         }
         _onVideoCompleted(done);
       });
 
-      _errorSubscription = player!.streams.error.listen(_onPlayerError);
+      _errorSubscription = currentPlayer.streams.error.listen(_onPlayerError);
 
       // warn is included so we can catch ffmpeg's "HTTP error 500" line in
       // _onPlayerLog — the error-level log that follows omits the status code.
-      _logSubscription = player!.streams.log
+      _logSubscription = currentPlayer.streams.log
           .where((log) => const {PlayerLogLevel.fatal, PlayerLogLevel.error, PlayerLogLevel.warn}.contains(log.level))
           .listen(_onPlayerLog);
 
       if (Platform.isAndroid && useExoPlayer) {
-        _backendSwitchedSubscription = player!.streams.backendSwitched.listen((_) => _onBackendSwitched());
+        _backendSwitchedSubscription = currentPlayer.streams.backendSwitched.listen((_) => _onBackendSwitched());
       }
 
-      _bufferingSubscription = player!.streams.buffering.listen((isBuffering) {
+      _bufferingSubscription = currentPlayer.streams.buffering.listen((isBuffering) {
         _isBuffering.value = isBuffering;
       });
 
@@ -829,7 +853,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
       }
 
-      _playbackRestartSubscription = player!.streams.playbackRestart.listen((_) async {
+      _playbackRestartSubscription = currentPlayer.streams.playbackRestart.listen((_) async {
+        if (!mounted || player != currentPlayer) return;
         _lastLogError = null;
         _sawServer500 = false;
         _liveStreamFallbackLevel = 0;
@@ -849,9 +874,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       });
 
       int? lastObservedPositionMs;
-      _positionSubscription = player!.streams.position.listen((position) {
-        final currentPlayer = player;
-        if (currentPlayer == null) return;
+      _positionSubscription = currentPlayer.streams.position.listen((position) {
+        final activePlayer = player;
+        if (activePlayer == null || activePlayer != currentPlayer) return;
 
         // Fallback for cases where playbackRestart doesn't fire (observed on
         // some offline Android playback flows). Prevents a permanent loading
@@ -872,7 +897,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           lastObservedPositionMs = position.inMilliseconds;
         }
 
-        final duration = currentPlayer.state.duration;
+        final duration = activePlayer.state.duration;
         if (duration.inMilliseconds > 0 &&
             position.inMilliseconds >= duration.inMilliseconds - 1000 &&
             !_showPlayNextDialog &&
@@ -893,9 +918,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           if (mounted) _loadAdjacentEpisodes();
         }),
       );
+      initPhase = 'initializing playback services';
       await _initializeServices();
-    } catch (e) {
-      appLogger.e('Failed to initialize player', error: e);
+    } catch (e, st) {
+      appLogger.e('Failed to initialize player during $initPhase', error: e, stackTrace: st);
       if (mounted) {
         setState(() {
           _isPlayerInitialized = false;

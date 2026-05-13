@@ -4,20 +4,29 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
   /// Initialize VideoFilterManager and VideoPIPManager if not already set up.
   /// Called from both live TV and VOD playback paths.
   Future<void> _initVideoFilterAndPip() async {
-    if (player == null || _videoFilterManager != null) return;
-    final settings = await SettingsService.getInstance();
-    _videoFilterManager = VideoFilterManager(
-      player: player!,
-      availableVersions: _availableVersions,
-      selectedMediaIndex: widget.selectedMediaIndex,
-      initialBoxFitMode: settings.read(SettingsService.defaultBoxFitMode),
-      onBoxFitModeChanged: (mode) => settings.write(SettingsService.defaultBoxFitMode, mode),
-    );
-    _videoFilterManager!.updateVideoFilter();
+    final currentPlayer = player;
+    if (currentPlayer == null || (_videoFilterManager != null && _videoPIPManager != null)) return;
 
-    _videoPIPManager = VideoPIPManager(player: player!);
-    _videoPIPManager!.onBeforeEnterPip = _preparePipFiltersForEntry;
-    _videoPIPManager!.isPipActive.addListener(_onPipStateChanged);
+    final needsVideoFilter = _videoFilterManager == null;
+    final settings = needsVideoFilter ? await SettingsService.getInstance() : null;
+    if (!mounted || player != currentPlayer) return;
+
+    if (needsVideoFilter && _videoFilterManager == null && settings != null) {
+      _videoFilterManager = VideoFilterManager(
+        player: currentPlayer,
+        availableVersions: _availableVersions,
+        selectedMediaIndex: widget.selectedMediaIndex,
+        initialBoxFitMode: settings.read(SettingsService.defaultBoxFitMode),
+        onBoxFitModeChanged: (mode) => settings.write(SettingsService.defaultBoxFitMode, mode),
+      );
+      _videoFilterManager!.updateVideoFilter();
+    }
+
+    if (_videoPIPManager == null) {
+      _videoPIPManager = VideoPIPManager(player: currentPlayer);
+      _videoPIPManager!.onBeforeEnterPip = _preparePipFiltersForEntry;
+      _videoPIPManager!.isPipActive.addListener(_onPipStateChanged);
+    }
   }
 
   Future<void> _togglePIPMode() async {

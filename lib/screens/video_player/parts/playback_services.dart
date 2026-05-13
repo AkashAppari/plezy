@@ -18,7 +18,8 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     String? playMethod,
     MediaSourceInfo? mediaInfo,
   }) {
-    if (player == null) return;
+    final currentPlayer = player;
+    if (currentPlayer == null) return;
     _stoppedProgressFuture = null;
 
     // Progress tracker — offline mode queues for later sync; online mode
@@ -27,7 +28,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       _progressTracker = PlaybackProgressTracker(
         client: null,
         metadata: metadata,
-        player: player!,
+        player: currentPlayer,
         isOffline: true,
         offlineWatchService: offlineWatchService,
       );
@@ -36,7 +37,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       _progressTracker = PlaybackProgressTracker(
         client: mediaClient,
         metadata: metadata,
-        player: player!,
+        player: currentPlayer,
         playMethod: playMethod ?? (_isTranscoding ? 'Transcode' : 'DirectPlay'),
         playSessionId: playSessionId,
         mediaInfo: mediaInfo,
@@ -68,7 +69,8 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
   /// Initialize the service layer
   Future<void> _initializeServices() async {
-    if (!mounted || player == null) return;
+    final currentPlayer = player;
+    if (!mounted || currentPlayer == null) return;
 
     // Live TV: send timeline heartbeats to keep transcode session alive
     if (widget.isLive) {
@@ -84,14 +86,15 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
     // Initialize media controls manager (must exist before the per-item
     // helper wires its metadata update).
-    _mediaControlsManager = MediaControlsManager();
+    final mediaControlsManager = MediaControlsManager();
+    _mediaControlsManager = mediaControlsManager;
 
     // Set up media control event handling
-    _mediaControlSubscription = _mediaControlsManager!.controlEvents.listen((event) {
-      final currentPlayer = player;
+    _mediaControlSubscription = mediaControlsManager.controlEvents.listen((event) {
+      final activePlayer = player;
       if (_mediaControlsSuspendedForTvBackground) {
         final eventLabel = event.runtimeType.toString();
-        if (currentPlayer != null && (event is PlayEvent || event is TogglePlayPauseEvent)) {
+        if (activePlayer != null && (event is PlayEvent || event is TogglePlayPauseEvent)) {
           appLogger.d('Media control: $eventLabel received while Android TV background-suspended');
           unawaited(_requestForegroundResumeFromSuspendedMediaControl(eventLabel));
         } else {
@@ -100,12 +103,12 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         return;
       }
 
-      if (currentPlayer == null && event is! NextTrackEvent && event is! PreviousTrackEvent) return;
+      if (activePlayer == null && event is! NextTrackEvent && event is! PreviousTrackEvent) return;
 
       if (event is PlayEvent) {
         appLogger.d('Media control: Play event received');
-        _seekBackForRewind(currentPlayer!);
-        currentPlayer.play();
+        _seekBackForRewind(activePlayer!);
+        activePlayer.play();
         _wasPlayingBeforeInactive = false;
         _updateMediaControlsPlaybackState();
       } else if (event is PauseEvent) {
@@ -114,21 +117,21 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
           return;
         }
         appLogger.d('Media control: Pause event received');
-        currentPlayer!.pause();
+        activePlayer!.pause();
         _updateMediaControlsPlaybackState();
       } else if (event is TogglePlayPauseEvent) {
         appLogger.d('Media control: Toggle play/pause event received');
-        if (currentPlayer!.state.isActive) {
-          currentPlayer.pause();
+        if (activePlayer!.state.isActive) {
+          activePlayer.pause();
         } else {
-          _seekBackForRewind(currentPlayer);
-          currentPlayer.play();
+          _seekBackForRewind(activePlayer);
+          activePlayer.play();
           _wasPlayingBeforeInactive = false;
         }
         _updateMediaControlsPlaybackState();
       } else if (event is SeekEvent) {
         appLogger.d('Media control: Seek event received to ${event.position}');
-        unawaited(currentPlayer!.seek(clampSeekPosition(currentPlayer, event.position)));
+        unawaited(activePlayer!.seek(clampSeekPosition(activePlayer, event.position)));
       } else if (event is NextTrackEvent) {
         appLogger.d('Media control: Next track event received');
         if (_nextEpisode != null) _playNext();
@@ -153,34 +156,35 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     if (!mounted) return;
 
     await _syncMediaControlsAvailability();
+    if (!mounted || player != currentPlayer || _mediaControlsManager != mediaControlsManager) return;
 
     // Listen to playing state and update media controls
-    _mediaControlsPlayingSubscription = player!.streams.playing.listen((isPlaying) {
+    _mediaControlsPlayingSubscription = currentPlayer.streams.playing.listen((isPlaying) {
       _updateMediaControlsPlaybackState();
     });
 
     // Listen to position updates for media controls and Discord
-    _mediaControlsPositionSubscription = player!.streams.position.listen((position) {
-      _mediaControlsManager?.updatePlaybackState(
-        isPlaying: player!.state.isActive,
+    _mediaControlsPositionSubscription = currentPlayer.streams.position.listen((position) {
+      mediaControlsManager.updatePlaybackState(
+        isPlaying: currentPlayer.state.isActive,
         position: position,
-        speed: player!.state.rate,
+        speed: currentPlayer.state.rate,
       );
       DiscordRPCService.instance.updatePosition(position);
       TraktScrobbleService.instance.updatePosition(position);
       TrackerCoordinator.instance.updatePosition(position);
       // Keep Trakt's known duration current — mpv only emits on the duration
       // stream once per load, but this is cheap and avoids an extra listener.
-      TraktScrobbleService.instance.updateDuration(player!.state.duration);
-      TrackerCoordinator.instance.updateDuration(player!.state.duration);
+      TraktScrobbleService.instance.updateDuration(currentPlayer.state.duration);
+      TrackerCoordinator.instance.updateDuration(currentPlayer.state.duration);
     });
 
     // Listen to playback rate changes for Discord Rich Presence
-    _mediaControlsRateSubscription = player!.streams.rate.listen((rate) {
+    _mediaControlsRateSubscription = currentPlayer.streams.rate.listen((rate) {
       DiscordRPCService.instance.updatePlaybackSpeed(rate);
     });
 
-    _mediaControlsSeekableSubscription = player!.streams.seekable.listen((_) {
+    _mediaControlsSeekableSubscription = currentPlayer.streams.seekable.listen((_) {
       unawaited(_syncMediaControlsAvailability());
     });
   }
