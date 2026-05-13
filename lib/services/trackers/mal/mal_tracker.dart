@@ -11,10 +11,8 @@ import 'mal_session.dart';
 ///
 /// MAL is anime-only: no-op when [TrackerContext.anime] is null.
 ///
-/// For split-cour shows Fribb maps each cour to a distinct MAL ID; the
-/// episode number sent here is the Plex episode index within the current
-/// season, which is usually what MAL expects for the mapped entry. Episode
-/// offsets for irregular cuts aren't in the mini mapping — known v1 gap.
+/// For anime episodes, MAL receives watched progress in the mapped anime entry
+/// when Fribb can define that scope, otherwise local episode progress.
 class MalTracker extends TrackerBase {
   static MalTracker? _instance;
   static MalTracker get instance => _instance ??= MalTracker._();
@@ -54,9 +52,14 @@ class MalTracker extends TrackerBase {
     final malId = ctx.anime?.mal;
     if (client == null || malId == null) return;
 
-    final fields = ctx.isMovie
-        ? {'status': 'completed', 'num_watched_episodes': '1'}
-        : {'status': 'watching', 'num_watched_episodes': '${ctx.episodeNumber}'};
+    final Map<String, String> fields;
+    if (ctx.isMovie) {
+      fields = {'status': 'completed', 'num_watched_episodes': '1'};
+    } else {
+      final progress = ctx.animeProgress ?? ctx.episodeNumber;
+      if (progress == null || progress <= 0) return;
+      fields = {'status': ctx.animeProgressComplete ? 'completed' : 'watching', 'num_watched_episodes': '$progress'};
+    }
 
     await client.updateMyListStatus(malId, fields);
     appLogger.d('MAL: updated list status (mal=$malId, fields=$fields)');

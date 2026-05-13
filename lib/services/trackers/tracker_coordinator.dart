@@ -160,6 +160,8 @@ class TrackerCoordinator {
       libraryGlobalKey: libraryKey,
       season: season,
       episodeNumber: number,
+      animeProgress: ids.animeProgress,
+      animeProgressComplete: ids.animeProgressComplete,
     );
   }
 }

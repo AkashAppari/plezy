@@ -3,6 +3,7 @@ import '../../media/media_server_client.dart';
 import '../../models/trackers/anime_ids.dart';
 import '../../models/trackers/fribb_mapping_row.dart';
 import '../../utils/external_ids.dart';
+import 'anime_episode_progress_resolver.dart';
 import 'fribb_mapping_store.dart';
 
 /// Paired ID output: always-present Plex external IDs (tvdb/imdb/tmdb) plus
@@ -11,8 +12,27 @@ import 'fribb_mapping_store.dart';
 class TrackerIds {
   final ExternalIds external;
   final AnimeIds? anime;
+  final AnimeProgressScope? animeProgressScope;
+  final int? animeProgress;
+  final bool animeProgressComplete;
 
-  const TrackerIds({required this.external, required this.anime});
+  const TrackerIds({
+    required this.external,
+    required this.anime,
+    this.animeProgressScope,
+    this.animeProgress,
+    this.animeProgressComplete = false,
+  });
+
+  TrackerIds withAnimeProgress(ResolvedAnimeProgress? animeProgress) {
+    return TrackerIds(
+      external: external,
+      anime: anime,
+      animeProgressScope: animeProgressScope,
+      animeProgress: animeProgress?.progress,
+      animeProgressComplete: animeProgress?.isComplete ?? false,
+    );
+  }
 }
 
 /// Resolves item ids → tracker external IDs. Returns both backend-native
@@ -27,16 +47,23 @@ class TrackerIds {
 /// so those users don't pay the 5.6 MB mapping download they'll never need.
 class TrackerIdResolver {
   final MediaServerClient _client;
-  final FribbMappingStore _store;
+  final FribbMappingLookup _store;
+  final AnimeEpisodeProgressLookup _animeProgress;
   final bool Function() _needsFribb;
 
   /// Null entries mean "the server had no IDs" — cached so scrubbing on an
   /// un-matched item doesn't re-hit the server every position update.
   final Map<String, TrackerIds?> _cache = {};
 
-  TrackerIdResolver(this._client, {bool Function()? needsFribb, FribbMappingStore? store})
-    : _needsFribb = needsFribb ?? _returnTrue,
-      _store = store ?? FribbMappingStore.instance;
+  TrackerIdResolver(
+    MediaServerClient client, {
+    bool Function()? needsFribb,
+    FribbMappingLookup? store,
+    AnimeEpisodeProgressLookup? animeProgress,
+  }) : _client = client,
+       _needsFribb = needsFribb ?? _returnTrue,
+       _store = store ?? FribbMappingStore.instance,
+       _animeProgress = animeProgress ?? AnimeEpisodeProgressResolver(client);
 
   static bool _returnTrue() => true;
 
@@ -67,15 +94,24 @@ class TrackerIdResolver {
     // Cache under the (showId, season) pair so a show with multiple Fribb
     // rows caches each season separately during a marathon.
     final cacheKey = season != null ? '$showId#s$season' : showId;
-    if (_cache.containsKey(cacheKey)) return _cache[cacheKey];
+    TrackerIds? ids;
+    if (_cache.containsKey(cacheKey)) {
+      ids = _cache[cacheKey];
+    } else {
+      final external = await _fetchExternalIds(showId);
+      ids = await _build(external, isEpisodeSeason: season, isMovie: false);
+      _cache[cacheKey] = ids;
+    }
 
-    final external = await _fetchExternalIds(showId);
-    final ids = await _build(external, isEpisodeSeason: season, isMovie: false);
-    _cache[cacheKey] = ids;
-    return ids;
+    if (ids == null || ids.animeProgressScope == null) return ids;
+    final progress = await _animeProgress.resolve(episode, scope: ids.animeProgressScope!);
+    return ids.withAnimeProgress(progress);
   }
 
-  void clearCache() => _cache.clear();
+  void clearCache() {
+    _cache.clear();
+    _animeProgress.clearCache();
+  }
 
   Future<TrackerIds?> _build(ExternalIds external, {int? isEpisodeSeason, required bool isMovie}) async {
     if (!external.hasAny) return null;
@@ -83,7 +119,11 @@ class TrackerIdResolver {
     final rows = await _store.lookup(tvdbId: external.tvdb, tmdbId: external.tmdb, imdbId: external.imdb);
     final row = isMovie ? _pickMovieRow(rows) : _pickShowRow(rows, season: isEpisodeSeason);
     final anime = row == null ? null : AnimeIds.fromFribb(row);
-    return TrackerIds(external: external, anime: anime);
+    return TrackerIds(
+      external: external,
+      anime: anime,
+      animeProgressScope: _animeProgressScope(selected: row, rows: rows, season: isEpisodeSeason, isMovie: isMovie),
+    );
   }
 
   /// Pick the best row for a movie lookup — prefer rows marked `type: MOVIE`.
@@ -98,8 +138,8 @@ class TrackerIdResolver {
 
   /// Pick the best row for a show lookup. When Fribb has multiple rows
   /// sharing the same show-level external ID (split-cour anime), prefer the
-  /// one whose `season.tvdb` matches the Plex episode's season; otherwise
-  /// the first non-MOVIE row.
+  /// one whose `season.tvdb` or `season.tmdb` matches the Plex episode's
+  /// season; otherwise prefer regular TV/ONA rows.
   FribbMappingRow? _pickShowRow(List<FribbMappingRow> rows, {int? season}) {
     if (rows.isEmpty) return null;
 
@@ -109,10 +149,48 @@ class TrackerIdResolver {
       }
     }
 
-    // No season match — fall back to the first non-MOVIE row (prefer series).
+    // No season match — prefer regular TV/ONA rows over movies/OVAs/specials.
+    for (final row in rows) {
+      if (_isRegularSeriesRow(row)) return row;
+    }
+
+    // Fall back to the first non-MOVIE row (prefer series-like entries).
     for (final row in rows) {
       if (!row.isMovie) return row;
     }
     return rows.first;
+  }
+
+  AnimeProgressScope? _animeProgressScope({
+    required FribbMappingRow? selected,
+    required List<FribbMappingRow> rows,
+    required int? season,
+    required bool isMovie,
+  }) {
+    if (isMovie) return null;
+    if (season == null || season <= 0) return null;
+    if (selected == null) return null;
+    if (_hasSeasonMapping(selected)) {
+      final exactSeason = selected.tvdbSeason == season || selected.tmdbSeason == season;
+      return exactSeason && _isRegularSeriesRow(selected) ? AnimeProgressScope.season : null;
+    }
+
+    final regularRows = rows.where(_isRegularSeriesRow).toList(growable: false);
+    if (regularRows.length == 1 && identical(regularRows.single, selected)) {
+      return AnimeProgressScope.show;
+    }
+    return null;
+  }
+
+  bool _hasSeasonMapping(FribbMappingRow row) => row.tvdbSeason != null || row.tmdbSeason != null;
+
+  bool _isRegularSeriesRow(FribbMappingRow row) {
+    if (row.isMovie) return false;
+    if (row.tvdbSeason == 0 || row.tmdbSeason == 0) return false;
+
+    return switch (row.type?.toUpperCase()) {
+      null || 'TV' || 'ONA' || 'UNKNOWN' => true,
+      _ => false,
+    };
   }
 }

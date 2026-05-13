@@ -43,11 +43,9 @@ class AnilistTracker extends TrackerBase {
     final anilistId = ctx.anime?.anilist;
     if (client == null || anilistId == null) return;
 
-    // AniList auto-promotes CURRENT → COMPLETED when progress == total, so we
-    // only need to send CURRENT for episodes. Movies are always a single-unit
-    // completion.
-    final progress = ctx.isMovie ? 1 : (ctx.episodeNumber ?? 0);
-    final status = ctx.isMovie ? 'COMPLETED' : 'CURRENT';
+    final progress = ctx.isMovie ? 1 : (ctx.animeProgress ?? ctx.episodeNumber);
+    if (progress == null || progress <= 0) return;
+    final status = ctx.isMovie || ctx.animeProgressComplete ? 'COMPLETED' : 'CURRENT';
 
     await client.saveMediaListEntry(mediaId: anilistId, progress: progress, status: status);
     appLogger.d('AniList: saved entry (anilist=$anilistId, progress=$progress, status=$status)');

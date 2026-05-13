@@ -1,0 +1,174 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/services/trackers/anime_episode_progress_resolver.dart';
+
+class _FakeMediaServerClient implements MediaServerClient {
+  final Map<String, List<MediaItem>> childrenByParent;
+  Object? throwOnFetchChildren;
+  int fetchChildrenCalls = 0;
+
+  _FakeMediaServerClient(this.childrenByParent);
+
+  @override
+  Future<List<MediaItem>> fetchChildren(String parentId) async {
+    fetchChildrenCalls++;
+    final error = throwOnFetchChildren;
+    if (error != null) throw error;
+    return childrenByParent[parentId] ?? const [];
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+MediaItem _season(int number, {int? watched, int? total}) => MediaItem(
+  id: 'season-$number',
+  backend: MediaBackend.plex,
+  kind: MediaKind.season,
+  title: 'Season $number',
+  index: number,
+  leafCount: total,
+  viewedLeafCount: watched,
+);
+
+MediaItem _episode({int season = 2, int number = 6, String showId = 'show-1', int? viewCount}) => MediaItem(
+  id: 'episode-$season-$number',
+  backend: MediaBackend.plex,
+  kind: MediaKind.episode,
+  title: 'Episode $number',
+  grandparentId: showId,
+  parentIndex: season,
+  index: number,
+  viewCount: viewCount,
+);
+
+void main() {
+  group('AnimeEpisodeProgressResolver', () {
+    test('show scope sums watched counts across regular seasons', () async {
+      final seasons = [_season(1, watched: 45), _season(2, watched: 10)];
+      final resolver = AnimeEpisodeProgressResolver(_FakeMediaServerClient({'show-1': seasons}));
+
+      final result = await resolver.resolve(_episode(), scope: AnimeProgressScope.show);
+
+      expect(result?.progress, 56);
+      expect(result?.isComplete, isFalse);
+    });
+
+    test('show scope ignores specials season', () async {
+      final resolver = AnimeEpisodeProgressResolver(
+        _FakeMediaServerClient({
+          'show-1': [_season(0, watched: 999), _season(1, watched: 5)],
+        }),
+      );
+
+      final result = await resolver.resolve(_episode(season: 1, number: 6), scope: AnimeProgressScope.show);
+
+      expect(result?.progress, 6);
+      expect(result?.isComplete, isFalse);
+    });
+
+    test('season scope uses only current season watched count', () async {
+      final resolver = AnimeEpisodeProgressResolver(
+        _FakeMediaServerClient({
+          'show-1': [_season(1, watched: 100), _season(2, watched: 5)],
+        }),
+      );
+
+      final result = await resolver.resolve(_episode(season: 2, number: 6), scope: AnimeProgressScope.season);
+
+      expect(result?.progress, 6);
+      expect(result?.isComplete, isFalse);
+    });
+
+    test('season scope marks complete when progress reaches known season total', () async {
+      final resolver = AnimeEpisodeProgressResolver(
+        _FakeMediaServerClient({
+          'show-1': [_season(2, watched: 11, total: 12)],
+        }),
+      );
+
+      final result = await resolver.resolve(_episode(season: 2, number: 12), scope: AnimeProgressScope.season);
+
+      expect(result?.progress, 12);
+      expect(result?.isComplete, isTrue);
+    });
+
+    test('show scope marks complete when progress reaches known show total', () async {
+      final resolver = AnimeEpisodeProgressResolver(
+        _FakeMediaServerClient({
+          'show-1': [_season(1, watched: 12, total: 12), _season(2, watched: 11, total: 12)],
+        }),
+      );
+
+      final result = await resolver.resolve(_episode(season: 2, number: 12), scope: AnimeProgressScope.show);
+
+      expect(result?.progress, 24);
+      expect(result?.isComplete, isTrue);
+    });
+
+    test('unknown total does not mark complete', () async {
+      final resolver = AnimeEpisodeProgressResolver(
+        _FakeMediaServerClient({
+          'show-1': [_season(1, watched: 11)],
+        }),
+      );
+
+      final result = await resolver.resolve(_episode(season: 1, number: 12), scope: AnimeProgressScope.season);
+
+      expect(result?.progress, 12);
+      expect(result?.isComplete, isFalse);
+    });
+
+    test('already watched current episode does not add one', () async {
+      final resolver = AnimeEpisodeProgressResolver(
+        _FakeMediaServerClient({
+          'show-1': [_season(1, watched: 5)],
+        }),
+      );
+
+      final result = await resolver.resolve(
+        _episode(season: 1, number: 5, viewCount: 1),
+        scope: AnimeProgressScope.season,
+      );
+
+      expect(result?.progress, 5);
+      expect(result?.isComplete, isFalse);
+    });
+
+    test('missing viewedLeafCount returns null', () async {
+      final resolver = AnimeEpisodeProgressResolver(
+        _FakeMediaServerClient({
+          'show-1': [_season(1, total: 12)],
+        }),
+      );
+
+      final result = await resolver.resolve(_episode(season: 1, number: 1), scope: AnimeProgressScope.season);
+
+      expect(result, isNull);
+    });
+
+    test('returns null instead of throwing when season fetch fails', () async {
+      final client = _FakeMediaServerClient(const {});
+      client.throwOnFetchChildren = StateError('offline');
+      final resolver = AnimeEpisodeProgressResolver(client);
+
+      final result = await resolver.resolve(_episode(season: 2, number: 1), scope: AnimeProgressScope.show);
+
+      expect(result, isNull);
+    });
+
+    test('cache is reused for multiple episodes in the same show', () async {
+      final client = _FakeMediaServerClient({
+        'show-1': [_season(1, watched: 10), _season(2, watched: 5)],
+      });
+      final resolver = AnimeEpisodeProgressResolver(client);
+
+      expect((await resolver.resolve(_episode(season: 2, number: 6), scope: AnimeProgressScope.show))?.progress, 16);
+      expect((await resolver.resolve(_episode(season: 2, number: 7), scope: AnimeProgressScope.show))?.progress, 16);
+      expect(client.fetchChildrenCalls, 1);
+    });
+  });
+}
