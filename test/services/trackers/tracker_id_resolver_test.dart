@@ -45,8 +45,8 @@ class _FakeAnimeProgressLookup implements AnimeEpisodeProgressLookup {
   MediaItem? lastEpisode;
   AnimeProgressScope? lastScope;
 
-  _FakeAnimeProgressLookup(int? progress, {bool isComplete = false})
-    : result = progress == null ? null : ResolvedAnimeProgress(progress: progress, isComplete: isComplete);
+  _FakeAnimeProgressLookup(int? progress)
+    : result = progress == null ? null : ResolvedAnimeProgress(progress: progress);
 
   @override
   Future<ResolvedAnimeProgress?> resolve(MediaItem episode, {required AnimeProgressScope scope}) async {
@@ -100,14 +100,13 @@ void main() {
       expect(ids?.anime?.mal, 21);
       expect(ids?.animeProgressScope, AnimeProgressScope.show);
       expect(ids?.animeProgress, 6);
-      expect(ids?.animeProgressComplete, isFalse);
       expect(animeProgress.resolveCalls, 1);
       expect(animeProgress.lastEpisode?.id, 'episode-23-6');
       expect(animeProgress.lastScope, AnimeProgressScope.show);
     });
 
     test('exact season-scoped row uses season-scope progress', () async {
-      final animeProgress = _FakeAnimeProgressLookup(18, isComplete: true);
+      final animeProgress = _FakeAnimeProgressLookup(18);
       final resolver = _resolver(
         animeProgress: animeProgress,
         rows: const [
@@ -121,7 +120,6 @@ void main() {
       expect(ids?.anime?.mal, 200);
       expect(ids?.animeProgressScope, AnimeProgressScope.season);
       expect(ids?.animeProgress, 18);
-      expect(ids?.animeProgressComplete, isTrue);
       expect(animeProgress.resolveCalls, 1);
       expect(animeProgress.lastScope, AnimeProgressScope.season);
     });

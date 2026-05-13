@@ -1,3 +1,5 @@
+import 'package:http/http.dart' as http;
+
 import '../../../models/trackers/tracker_context.dart';
 import '../../../utils/app_logger.dart';
 import '../../settings_service.dart';
@@ -25,6 +27,7 @@ class AnilistTracker extends TrackerBase {
   bool get needsFribb => true;
 
   AnilistClient? _client;
+  final Map<int, Future<int?>> _episodeCountLoads = {};
 
   @override
   bool get hasActiveClient => _client != null;
@@ -32,9 +35,16 @@ class AnilistTracker extends TrackerBase {
   @override
   bool readEnabledSetting(SettingsService settings) => settings.read(SettingsService.enableAnilistScrobble);
 
-  void rebindSession(AnilistSession? session, {required void Function() onSessionInvalidated}) {
+  void rebindSession(
+    AnilistSession? session, {
+    required void Function() onSessionInvalidated,
+    http.Client? httpClient,
+  }) {
     _client?.dispose();
-    _client = session == null ? null : AnilistClient(session, onSessionInvalidated: onSessionInvalidated);
+    _episodeCountLoads.clear();
+    _client = session == null
+        ? null
+        : AnilistClient(session, onSessionInvalidated: onSessionInvalidated, httpClient: httpClient);
   }
 
   @override
@@ -45,9 +55,27 @@ class AnilistTracker extends TrackerBase {
 
     final progress = ctx.isMovie ? 1 : (ctx.animeProgress ?? ctx.episodeNumber);
     if (progress == null || progress <= 0) return;
-    final status = ctx.isMovie || ctx.animeProgressComplete ? 'COMPLETED' : 'CURRENT';
+    final total = ctx.isMovie || ctx.animeProgress == null ? null : await _episodeCount(client, anilistId);
+    final watched = total != null && progress > total ? total : progress;
+    final status = ctx.isMovie || (total != null && progress >= total) ? 'COMPLETED' : 'CURRENT';
 
-    await client.saveMediaListEntry(mediaId: anilistId, progress: progress, status: status);
-    appLogger.d('AniList: saved entry (anilist=$anilistId, progress=$progress, status=$status)');
+    await client.saveMediaListEntry(mediaId: anilistId, progress: watched, status: status);
+    appLogger.d('AniList: saved entry (anilist=$anilistId, progress=$watched, status=$status)');
+  }
+
+  Future<int?> _episodeCount(AnilistClient client, int anilistId) {
+    final existing = _episodeCountLoads[anilistId];
+    if (existing != null) return existing;
+
+    late final Future<int?> loading;
+    loading = client.getAnimeEpisodeCount(anilistId).catchError((Object e) {
+      if (identical(_episodeCountLoads[anilistId], loading)) {
+        final _ = _episodeCountLoads.remove(anilistId);
+      }
+      appLogger.d('AniList: failed to fetch anime episode count (anilist=$anilistId)', error: e);
+      return null;
+    });
+    _episodeCountLoads[anilistId] = loading;
+    return loading;
   }
 }

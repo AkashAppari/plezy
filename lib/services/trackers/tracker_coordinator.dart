@@ -161,7 +161,6 @@ class TrackerCoordinator {
       season: season,
       episodeNumber: number,
       animeProgress: ids.animeProgress,
-      animeProgressComplete: ids.animeProgressComplete,
     );
   }
 }

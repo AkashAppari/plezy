@@ -14,15 +14,8 @@ class TrackerIds {
   final AnimeIds? anime;
   final AnimeProgressScope? animeProgressScope;
   final int? animeProgress;
-  final bool animeProgressComplete;
 
-  const TrackerIds({
-    required this.external,
-    required this.anime,
-    this.animeProgressScope,
-    this.animeProgress,
-    this.animeProgressComplete = false,
-  });
+  const TrackerIds({required this.external, required this.anime, this.animeProgressScope, this.animeProgress});
 
   TrackerIds withAnimeProgress(ResolvedAnimeProgress? animeProgress) {
     return TrackerIds(
@@ -30,7 +23,6 @@ class TrackerIds {
       anime: anime,
       animeProgressScope: animeProgressScope,
       animeProgress: animeProgress?.progress,
-      animeProgressComplete: animeProgress?.isComplete ?? false,
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../utils/abortable_http_request.dart';
 import '../../../utils/app_logger.dart';
+import '../../../utils/json_utils.dart';
 import '../../../utils/platform_http_client_stub.dart'
     if (dart.library.io) '../../../utils/platform_http_client_io.dart'
     as platform;
@@ -47,6 +48,21 @@ class AnilistClient {
       }
     ''';
     await query(mutation, variables: {'mediaId': mediaId, 'progress': progress, 'status': status});
+  }
+
+  Future<int?> getAnimeEpisodeCount(int mediaId) async {
+    const mediaQuery = '''
+      query(\$mediaId: Int) {
+        Media(id: \$mediaId, type: ANIME) {
+          episodes
+        }
+      }
+    ''';
+    final data = await query(mediaQuery, variables: {'mediaId': mediaId});
+    final media = data['Media'];
+    if (media is! Map) return null;
+    final count = flexibleInt(media['episodes']);
+    return count != null && count > 0 ? count : null;
   }
 
   Future<Map<String, dynamic>> query(String query, {Map<String, dynamic>? variables}) async {

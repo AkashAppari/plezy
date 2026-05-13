@@ -54,7 +54,6 @@ void main() {
       final result = await resolver.resolve(_episode(), scope: AnimeProgressScope.show);
 
       expect(result?.progress, 56);
-      expect(result?.isComplete, isFalse);
     });
 
     test('show scope ignores specials season', () async {
@@ -67,7 +66,6 @@ void main() {
       final result = await resolver.resolve(_episode(season: 1, number: 6), scope: AnimeProgressScope.show);
 
       expect(result?.progress, 6);
-      expect(result?.isComplete, isFalse);
     });
 
     test('season scope uses only current season watched count', () async {
@@ -80,36 +78,33 @@ void main() {
       final result = await resolver.resolve(_episode(season: 2, number: 6), scope: AnimeProgressScope.season);
 
       expect(result?.progress, 6);
-      expect(result?.isComplete, isFalse);
     });
 
-    test('season scope marks complete when progress reaches known season total', () async {
+    test('season scope caps progress at known season total', () async {
       final resolver = AnimeEpisodeProgressResolver(
         _FakeMediaServerClient({
-          'show-1': [_season(2, watched: 11, total: 12)],
+          'show-1': [_season(2, watched: 12, total: 12)],
         }),
       );
 
       final result = await resolver.resolve(_episode(season: 2, number: 12), scope: AnimeProgressScope.season);
 
       expect(result?.progress, 12);
-      expect(result?.isComplete, isTrue);
     });
 
-    test('show scope marks complete when progress reaches known show total', () async {
+    test('show scope caps progress at known show total', () async {
       final resolver = AnimeEpisodeProgressResolver(
         _FakeMediaServerClient({
-          'show-1': [_season(1, watched: 12, total: 12), _season(2, watched: 11, total: 12)],
+          'show-1': [_season(1, watched: 12, total: 12), _season(2, watched: 12, total: 12)],
         }),
       );
 
       final result = await resolver.resolve(_episode(season: 2, number: 12), scope: AnimeProgressScope.show);
 
       expect(result?.progress, 24);
-      expect(result?.isComplete, isTrue);
     });
 
-    test('unknown total does not mark complete', () async {
+    test('unknown total still returns progress', () async {
       final resolver = AnimeEpisodeProgressResolver(
         _FakeMediaServerClient({
           'show-1': [_season(1, watched: 11)],
@@ -119,7 +114,6 @@ void main() {
       final result = await resolver.resolve(_episode(season: 1, number: 12), scope: AnimeProgressScope.season);
 
       expect(result?.progress, 12);
-      expect(result?.isComplete, isFalse);
     });
 
     test('already watched current episode does not add one', () async {
@@ -135,7 +129,6 @@ void main() {
       );
 
       expect(result?.progress, 5);
-      expect(result?.isComplete, isFalse);
     });
 
     test('missing viewedLeafCount returns null', () async {
@@ -160,15 +153,30 @@ void main() {
       expect(result, isNull);
     });
 
-    test('cache is reused for multiple episodes in the same show', () async {
+    test('in-flight load is reused for concurrent episodes in the same show', () async {
       final client = _FakeMediaServerClient({
         'show-1': [_season(1, watched: 10), _season(2, watched: 5)],
       });
       final resolver = AnimeEpisodeProgressResolver(client);
 
-      expect((await resolver.resolve(_episode(season: 2, number: 6), scope: AnimeProgressScope.show))?.progress, 16);
-      expect((await resolver.resolve(_episode(season: 2, number: 7), scope: AnimeProgressScope.show))?.progress, 16);
+      final first = resolver.resolve(_episode(season: 2, number: 6), scope: AnimeProgressScope.show);
+      final second = resolver.resolve(_episode(season: 2, number: 7), scope: AnimeProgressScope.show);
+
+      expect((await first)?.progress, 16);
+      expect((await second)?.progress, 16);
       expect(client.fetchChildrenCalls, 1);
+    });
+
+    test('sequential loads refetch watched counts', () async {
+      final client = _FakeMediaServerClient({
+        'show-1': [_season(1, watched: 5)],
+      });
+      final resolver = AnimeEpisodeProgressResolver(client);
+
+      expect((await resolver.resolve(_episode(season: 1, number: 6), scope: AnimeProgressScope.season))?.progress, 6);
+      client.childrenByParent['show-1'] = [_season(1, watched: 6)];
+      expect((await resolver.resolve(_episode(season: 1, number: 7), scope: AnimeProgressScope.season))?.progress, 7);
+      expect(client.fetchChildrenCalls, 2);
     });
   });
 }

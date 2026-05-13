@@ -1,3 +1,5 @@
+import 'package:http/http.dart' as http;
+
 import '../../../models/trackers/tracker_context.dart';
 import '../../../utils/app_logger.dart';
 import '../../settings_service.dart';
@@ -28,6 +30,7 @@ class MalTracker extends TrackerBase {
   bool get needsFribb => true;
 
   MalClient? _client;
+  final Map<int, Future<int?>> _episodeCountLoads = {};
 
   @override
   bool get hasActiveClient => _client != null;
@@ -39,11 +42,18 @@ class MalTracker extends TrackerBase {
     MalSession? session, {
     required void Function() onSessionInvalidated,
     void Function(MalSession)? onSessionUpdated,
+    http.Client? httpClient,
   }) {
     _client?.dispose();
+    _episodeCountLoads.clear();
     _client = session == null
         ? null
-        : MalClient(session, onSessionInvalidated: onSessionInvalidated, onSessionUpdated: onSessionUpdated);
+        : MalClient(
+            session,
+            onSessionInvalidated: onSessionInvalidated,
+            onSessionUpdated: onSessionUpdated,
+            httpClient: httpClient,
+          );
   }
 
   @override
@@ -58,10 +68,31 @@ class MalTracker extends TrackerBase {
     } else {
       final progress = ctx.animeProgress ?? ctx.episodeNumber;
       if (progress == null || progress <= 0) return;
-      fields = {'status': ctx.animeProgressComplete ? 'completed' : 'watching', 'num_watched_episodes': '$progress'};
+      final total = ctx.animeProgress == null ? null : await _episodeCount(client, malId);
+      final watched = total != null && progress > total ? total : progress;
+      fields = {
+        'status': total != null && progress >= total ? 'completed' : 'watching',
+        'num_watched_episodes': '$watched',
+      };
     }
 
     await client.updateMyListStatus(malId, fields);
     appLogger.d('MAL: updated list status (mal=$malId, fields=$fields)');
+  }
+
+  Future<int?> _episodeCount(MalClient client, int malId) {
+    final existing = _episodeCountLoads[malId];
+    if (existing != null) return existing;
+
+    late final Future<int?> loading;
+    loading = client.getAnimeEpisodeCount(malId).catchError((Object e) {
+      if (identical(_episodeCountLoads[malId], loading)) {
+        final _ = _episodeCountLoads.remove(malId);
+      }
+      appLogger.d('MAL: failed to fetch anime episode count (mal=$malId)', error: e);
+      return null;
+    });
+    _episodeCountLoads[malId] = loading;
+    return loading;
   }
 }

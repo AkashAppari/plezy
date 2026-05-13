@@ -7,9 +7,8 @@ enum AnimeProgressScope { show, season }
 
 class ResolvedAnimeProgress {
   final int progress;
-  final bool isComplete;
 
-  const ResolvedAnimeProgress({required this.progress, required this.isComplete});
+  const ResolvedAnimeProgress({required this.progress});
 }
 
 /// Resolves watched progress in the MAL/AniList anime entry selected by Fribb.
@@ -48,21 +47,20 @@ class AnimeEpisodeProgressResolver implements AnimeEpisodeProgressLookup {
     final existing = _seasonProgressLoads[showId];
     if (existing != null) return existing;
 
-    final loading = _loadSeasonProgress(showId);
+    late final Future<Map<int, _SeasonProgress>?> loading;
+    loading = _loadSeasonProgress(showId).whenComplete(() {
+      if (identical(_seasonProgressLoads[showId], loading)) {
+        final _ = _seasonProgressLoads.remove(showId);
+      }
+    });
     _seasonProgressLoads[showId] = loading;
-
-    final progress = await loading;
-    if (progress == null) {
-      final _ = _seasonProgressLoads.remove(showId);
-    }
-    return progress;
+    return loading;
   }
 
   ResolvedAnimeProgress? _showProgress(Map<int, _SeasonProgress> seasons, bool currentAlreadyWatched) {
     if (seasons.isEmpty) return null;
     var watched = 0;
     var total = 0;
-    var totalKnown = true;
     for (final entry in seasons.entries) {
       final season = entry.key;
       if (season <= 0) continue;
@@ -70,14 +68,11 @@ class AnimeEpisodeProgressResolver implements AnimeEpisodeProgressLookup {
       final count = entry.value.total;
       if (count != null && count > 0) {
         total += count;
-      } else {
-        totalKnown = false;
       }
     }
     final progress = watched + (currentAlreadyWatched ? 0 : 1);
     if (progress <= 0) return null;
-    final isComplete = totalKnown && total > 0 && progress >= total;
-    return ResolvedAnimeProgress(progress: isComplete && progress > total ? total : progress, isComplete: isComplete);
+    return ResolvedAnimeProgress(progress: total > 0 && progress > total ? total : progress);
   }
 
   ResolvedAnimeProgress? _seasonProgress(_SeasonProgress? season, bool currentAlreadyWatched) {
@@ -85,8 +80,7 @@ class AnimeEpisodeProgressResolver implements AnimeEpisodeProgressLookup {
     final progress = season.watched + (currentAlreadyWatched ? 0 : 1);
     if (progress <= 0) return null;
     final total = season.total;
-    final isComplete = total != null && total > 0 && progress >= total;
-    return ResolvedAnimeProgress(progress: isComplete && progress > total ? total : progress, isComplete: isComplete);
+    return ResolvedAnimeProgress(progress: total != null && total > 0 && progress > total ? total : progress);
   }
 
   Future<Map<int, _SeasonProgress>?> _loadSeasonProgress(String showId) async {
