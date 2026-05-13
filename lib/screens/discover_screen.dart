@@ -49,6 +49,7 @@ import '../utils/watch_state_notifier.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
 import '../utils/formatters.dart';
+import '../utils/media_hub_ordering.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/layout_constants.dart';
@@ -128,7 +129,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   bool _isAutoScrollPaused = false;
   bool _isTabVisible = true;
   HiddenLibrariesProvider? _hiddenLibrariesProvider;
+  LibrariesProvider? _librariesProvider;
   Set<String> _lastSeenHiddenKeys = {};
+  List<String> _lastSeenLibraryOrderKeys = const [];
 
   // WatchStateAware: watch on-deck items and their parent shows/seasons
   @override
@@ -308,6 +311,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       _hiddenLibrariesProvider = provider;
       _hiddenLibrariesProvider!.addListener(_onHiddenLibrariesChanged);
     }
+    final librariesProvider = context.read<LibrariesProvider>();
+    if (librariesProvider != _librariesProvider) {
+      _librariesProvider?.removeListener(_onLibrariesChanged);
+      _librariesProvider = librariesProvider;
+      _lastSeenLibraryOrderKeys = _libraryOrderKeys(librariesProvider);
+      _librariesProvider!.addListener(_onLibrariesChanged);
+    }
   }
 
   void _onHiddenLibrariesChanged() {
@@ -317,6 +327,34 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
     _lastSeenHiddenKeys = Set.of(currentKeys);
     _loadContent();
+  }
+
+  void _onLibrariesChanged() {
+    final provider = _librariesProvider;
+    if (provider == null) return;
+    final currentKeys = _libraryOrderKeys(provider);
+    if (_sameStringList(currentKeys, _lastSeenLibraryOrderKeys)) return;
+    _lastSeenLibraryOrderKeys = currentKeys;
+    if (_hubs.isEmpty || !mounted) return;
+
+    final sortedHubs = List<MediaHub>.from(_hubs);
+    if (!sortMediaHubsByLibraryOrder(sortedHubs, provider.libraries)) return;
+    setState(() {
+      _hubs = sortedHubs;
+      _updateHubKeys();
+    });
+  }
+
+  List<String> _libraryOrderKeys(LibrariesProvider provider) {
+    return [for (final library in provider.libraries) library.globalKey];
+  }
+
+  bool _sameStringList(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   /// Handle key events for the hero section
@@ -348,6 +386,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   @override
   void dispose() {
     _hiddenLibrariesProvider?.removeListener(_onHiddenLibrariesChanged);
+    _librariesProvider?.removeListener(_onLibrariesChanged);
     WidgetsBinding.instance.removeObserver(this);
     _autoScrollTimer?.cancel();
     _indicatorTimer?.cancel();
@@ -601,24 +640,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             !title.contains('next up');
       }).toList();
 
-      // Sort hubs by the user's library order
       final libraryOrder = context.read<LibrariesProvider>().libraries;
-      if (!useGlobalHubs && libraryOrder.isNotEmpty) {
-        final orderMap = <String, int>{};
-        for (var i = 0; i < libraryOrder.length; i++) {
-          orderMap[libraryOrder[i].globalKey] = i;
-        }
-        filteredHubs.sort((a, b) {
-          final aKey = _hubLibraryGlobalKey(a);
-          final bKey = _hubLibraryGlobalKey(b);
-          final aIndex = aKey != null ? orderMap[aKey] : null;
-          final bIndex = bKey != null ? orderMap[bKey] : null;
-          if (aIndex == null && bIndex == null) return 0;
-          if (aIndex == null) return 1;
-          if (bIndex == null) return -1;
-          return aIndex.compareTo(bIndex);
-        });
-      }
+      sortMediaHubsByLibraryOrder(filteredHubs, libraryOrder);
 
       appLogger.d('Received ${onDeck.length} on deck items and ${filteredHubs.length} global hubs from all servers');
       if (!mounted) return;
@@ -638,15 +661,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         _areHubsLoading = false;
       });
     }
-  }
-
-  /// Resolve the library globalKey for a hub (for sorting by library order).
-  String? _hubLibraryGlobalKey(MediaHub hub) {
-    final serverId = hub.serverId;
-    if (serverId == null) return null;
-    final sectionId = hub.libraryId ?? hub.items.firstOrNull?.libraryId;
-    if (sectionId == null) return null;
-    return buildGlobalKey(serverId, sectionId);
   }
 
   /// Refresh only the Continue Watching section in the background
