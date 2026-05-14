@@ -7,6 +7,7 @@ import '../../i18n/strings.g.dart';
 import '../../models/transcode_quality_preset.dart';
 import '../../mpv/player/platform/player_android.dart';
 import '../../utils/quality_preset_labels.dart';
+import '../../services/companion_remote/companion_remote_host_controller.dart';
 import '../../services/discord_rpc_service.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart';
@@ -139,6 +140,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
             icon: Symbols.phone_android_rounded,
             title: t.settings.companionRemoteServer,
             subtitle: t.settings.companionRemoteServerDescription,
+            onAfterWrite: (v) => applyCompanionRemoteServerSetting(context, v),
           ),
         SettingSwitchTile(
           pref: SettingsService.rememberTrackSelections,

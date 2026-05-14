@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../connection/connection_registry.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
-import '../../profiles/active_plex_identity.dart';
-import '../../profiles/active_profile_provider.dart';
-import '../../profiles/plex_home_service.dart';
-import '../../profiles/profile_connection_registry.dart';
 import '../../providers/companion_remote_provider.dart';
+import '../../services/companion_remote/companion_remote_host_controller.dart';
+import '../../services/settings_service.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/key_event_utils.dart';
-import '../../utils/app_logger.dart';
 
 class RemoteSessionDialog extends StatefulWidget {
   const RemoteSessionDialog({super.key});
@@ -31,78 +27,69 @@ class RemoteSessionDialog extends StatefulWidget {
 class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedSetStateMixin {
   bool _isStarting = false;
   String? _errorMessage;
+  final _closeFocusNode = FocusNode(debugLabel: 'RemoteSessionDialog.close');
+  final _toggleFocusNode = FocusNode(debugLabel: 'RemoteSessionDialog.toggle');
+  final _minimizeFocusNode = FocusNode(debugLabel: 'RemoteSessionDialog.minimize');
+  final _errorCloseFocusNode = FocusNode(debugLabel: 'RemoteSessionDialog.errorClose');
+  final _errorRetryFocusNode = FocusNode(debugLabel: 'RemoteSessionDialog.errorRetry');
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureServerRunning());
+  void dispose() {
+    _closeFocusNode.dispose();
+    _toggleFocusNode.dispose();
+    _minimizeFocusNode.dispose();
+    _errorCloseFocusNode.dispose();
+    _errorRetryFocusNode.dispose();
+    super.dispose();
   }
 
-  Future<void> _ensureServerRunning() async {
-    final provider = context.read<CompanionRemoteProvider>();
-
+  Future<void> _startServer() async {
     setState(() {
       _isStarting = true;
       _errorMessage = null;
     });
 
     try {
-      final connections = context.read<ConnectionRegistry>();
-      final activeProfile = context.read<ActiveProfileProvider>();
-      final profileConnections = context.read<ProfileConnectionRegistry>();
-      final plexHome = context.read<PlexHomeService>();
-      final identity = await resolveActivePlexIdentity(
-        activeProfile: activeProfile,
-        connections: connections,
-        profileConnections: profileConnections,
-      );
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.enableCompanionRemoteServer, true);
       if (!mounted) return;
-      final home = identity == null ? null : await plexHome.materializePlexHomeForConnection(identity.account.id);
+      final started = await startCompanionRemoteHost(context);
       if (!mounted) return;
-      final ok = await provider.ensureCryptoReady(
-        home,
-        connections: connections,
-        activeProfile: activeProfile,
-        profileConnections: profileConnections,
-        identity: identity,
-        plexHomeForConnection: plexHome.materializePlexHomeForConnection,
-      );
-      if (!mounted) return;
-      if (!ok) {
-        setState(() {
-          _isStarting = false;
-          _errorMessage = t.companionRemote.pairing.cryptoInitFailed;
-        });
-        return;
-      }
-      if (!provider.isHostServerRunning) {
-        await provider.startHostServer();
-      }
-
-      setStateIfMounted(() => _isStarting = false);
-    } catch (e) {
-      appLogger.e('Failed to start companion remote server', error: e);
-      if (!mounted) return;
+      final provider = context.read<CompanionRemoteProvider>();
       setState(() {
+        _isStarting = false;
+        _errorMessage = started ? null : provider.session?.errorMessage ?? t.companionRemote.pairing.cryptoInitFailed;
+      });
+    } catch (e) {
+      setStateIfMounted(() {
         _isStarting = false;
         _errorMessage = e.toString();
       });
     }
   }
 
+  Future<void> _stopServer() async {
+    final settings = await SettingsService.getInstance();
+    await settings.write(SettingsService.enableCompanionRemoteServer, false);
+    if (!mounted) return;
+    await context.read<CompanionRemoteProvider>().stopHostServer();
+  }
+
   Future<void> _toggleServer() async {
     final provider = context.read<CompanionRemoteProvider>();
     if (provider.isHostServerRunning) {
-      await provider.stopHostServer();
+      await _stopServer();
     } else {
-      await _ensureServerRunning();
+      await _startServer();
     }
   }
+
+  void _close() => Navigator.of(context).pop();
 
   @override
   Widget build(BuildContext context) {
     return Focus(
-      autofocus: true,
+      canRequestFocus: false,
       onKeyEvent: (node, event) => handleBackKeyNavigation(context, event),
       child: Consumer<CompanionRemoteProvider>(
         builder: (context, provider, child) {
@@ -135,8 +122,23 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
                 ],
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.common.close)),
-                TextButton(onPressed: _ensureServerRunning, child: Text(t.common.retry)),
+                FocusableButton(
+                  autofocus: true,
+                  focusNode: _errorCloseFocusNode,
+                  onPressed: _close,
+                  onBack: _close,
+                  onNavigateRight: () => _errorRetryFocusNode.requestFocus(),
+                  useBackgroundFocus: true,
+                  child: TextButton(onPressed: _close, child: Text(t.common.close)),
+                ),
+                FocusableButton(
+                  focusNode: _errorRetryFocusNode,
+                  onPressed: _startServer,
+                  onBack: _close,
+                  onNavigateLeft: () => _errorCloseFocusNode.requestFocus(),
+                  useBackgroundFocus: true,
+                  child: TextButton(onPressed: _startServer, child: Text(t.common.retry)),
+                ),
               ],
             );
           }
@@ -164,7 +166,14 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
                             ],
                           ),
                         ),
-                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.of(context).pop()),
+                        FocusableButton(
+                          focusNode: _closeFocusNode,
+                          onPressed: _close,
+                          onBack: _close,
+                          onNavigateDown: () => _toggleFocusNode.requestFocus(),
+                          useBackgroundFocus: true,
+                          child: IconButton(icon: const Icon(Icons.close), onPressed: _close),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 24),
@@ -180,22 +189,33 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        TextButton.icon(
+                        FocusableButton(
+                          autofocus: true,
+                          focusNode: _toggleFocusNode,
                           onPressed: _toggleServer,
-                          icon: Icon(provider.isHostServerRunning ? Icons.stop : Icons.play_arrow),
-                          label: Text(
-                            provider.isHostServerRunning
-                                ? t.companionRemote.session.stopServer
-                                : t.companionRemote.session.startServer,
+                          onBack: _close,
+                          onNavigateUp: () => _closeFocusNode.requestFocus(),
+                          onNavigateRight: () => _minimizeFocusNode.requestFocus(),
+                          useBackgroundFocus: true,
+                          child: TextButton.icon(
+                            onPressed: _toggleServer,
+                            icon: Icon(provider.isHostServerRunning ? Icons.stop : Icons.play_arrow),
+                            label: Text(
+                              provider.isHostServerRunning
+                                  ? t.companionRemote.session.stopServer
+                                  : t.companionRemote.session.startServer,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         FocusableButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: FilledButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: Text(t.companionRemote.session.minimize),
-                          ),
+                          focusNode: _minimizeFocusNode,
+                          onPressed: _close,
+                          onBack: _close,
+                          onNavigateUp: () => _closeFocusNode.requestFocus(),
+                          onNavigateLeft: () => _toggleFocusNode.requestFocus(),
+                          useBackgroundFocus: true,
+                          child: FilledButton(onPressed: _close, child: Text(t.companionRemote.session.minimize)),
                         ),
                       ],
                     ),
