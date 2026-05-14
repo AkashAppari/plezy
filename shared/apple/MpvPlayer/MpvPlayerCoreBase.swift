@@ -74,6 +74,7 @@ class MpvPlayerCoreBase: NSObject {
   var isDisposing = false
   var isPipActive = false
   var isBackgrounded = false
+  private var wakeupCallbackContext: UnsafeMutableRawPointer?
   private var cachedHDREnabled = true
   private var cachedLastSigPeak = 0.0
   private var cachedDoviProfile: Int64 = 0
@@ -218,6 +219,11 @@ class MpvPlayerCoreBase: NSObject {
       return false
     }
 
+    // mpv stores this context without retaining it. Retain manually so the
+    // Swift core cannot deallocate while mpv can still fire wakeup callbacks.
+    let wakeupContext = Unmanaged.passRetained(self).toOpaque()
+    wakeupCallbackContext = wakeupContext
+
     mpv_set_wakeup_callback(
       mpv,
       { context in
@@ -225,7 +231,7 @@ class MpvPlayerCoreBase: NSObject {
         let core = Unmanaged<MpvPlayerCoreBase>.fromOpaque(context).takeUnretainedValue()
         core.readEvents()
       },
-      UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
+      wakeupContext
     )
 
     mpv_observe_property(mpv, Self.internalSigPeakObserverId, "video-params/sig-peak", MPV_FORMAT_DOUBLE)
@@ -441,12 +447,17 @@ class MpvPlayerCoreBase: NSObject {
     cacheLock.unlock()
 
     let mpvHandle = mpv
+    let callbackContext = wakeupCallbackContext
     mpv = nil
+    wakeupCallbackContext = nil
 
     let destroy = {
       if let mpvHandle {
         mpv_set_wakeup_callback(mpvHandle, nil, nil)
         mpv_terminate_destroy(mpvHandle)
+      }
+      if let callbackContext {
+        Unmanaged<MpvPlayerCoreBase>.fromOpaque(callbackContext).release()
       }
     }
 
