@@ -188,11 +188,10 @@ class MainActivity : FlutterActivity() {
   }
 
   override fun getRenderMode(): RenderMode {
-    // Android TV Dolby Vision playback is sensitive to extra full-screen
-    // SurfaceView layers above the video surface. Keep phones/tablets on the
-    // faster FlutterSurfaceView path, but use FlutterTextureView on TVs so the
-    // video/subtitle SurfaceViews remain the only native composition layers.
-    return if (isAndroidTvDevice()) RenderMode.texture else RenderMode.surface
+    // Keep Flutter in the normal View hierarchy so video/subtitle SurfaceViews
+    // remain the only native composition layers. This restores the pre-1.35.0
+    // behavior and avoids compositor regressions with Dolby Vision playback.
+    return RenderMode.texture
   }
 
   override fun getTransparencyMode(): TransparencyMode {
