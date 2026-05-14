@@ -427,6 +427,11 @@ class DownloadManagerService {
       unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'Initializing FileDownloader', category: 'downloads')));
       await _initializeFileDownloader();
 
+      final deletedTempFiles = await FileDownloader().cleanUpOrphanedTempFiles();
+      if (deletedTempFiles > 0) {
+        appLogger.i('Deleted $deletedTempFiles orphaned downloader temp file(s)');
+      }
+
       // Let background_downloader re-enqueue tasks killed by the OS
       unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'Rescheduling killed tasks', category: 'downloads')));
       final (rescheduled, _) = await FileDownloader().rescheduleKilledTasks();
