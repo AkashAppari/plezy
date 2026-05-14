@@ -795,6 +795,36 @@ void main() {
       expect(captured!.queryParameters['ImageTypeLimit'], '1');
     });
 
+    test('fetchLibraryPagedContent uses library kind only when query kind is absent', () async {
+      final captured = <Uri>[];
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          captured.add(req.url);
+          return http.Response(
+            jsonEncode({'Items': const [], 'TotalRecordCount': 0}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(scoped.close);
+
+      await scoped.fetchLibraryPagedContent(
+        'lib-1',
+        query: const LibraryQuery(offset: 0, limit: 20),
+        libraryKind: MediaKind.show,
+      );
+      await scoped.fetchLibraryPagedContent(
+        'lib-1',
+        query: const LibraryQuery(kind: MediaKind.episode, offset: 0, limit: 20),
+        libraryKind: MediaKind.show,
+      );
+
+      expect(captured[0].queryParameters['IncludeItemTypes'], 'Series');
+      expect(captured[1].queryParameters['IncludeItemTypes'], 'Episode');
+    });
+
     test('fetchClientSideEpisodeQueue pages past the first 200 episodes', () async {
       final starts = <String?>[];
       final pagedClient = JellyfinClient.forTesting(
