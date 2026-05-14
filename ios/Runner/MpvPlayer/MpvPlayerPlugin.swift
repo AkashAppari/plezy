@@ -81,6 +81,8 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       handleObserveProperty(call: call, result: result)
     case "command":
       handleCommand(call: call, result: result)
+    case "setDisplayCriteria":
+      handleSetDisplayCriteria(call: call, result: result)
     case "setVisible":
       handleSetVisible(call: call, result: result)
     case "isInitialized":
@@ -361,6 +363,76 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       }
       result(nil)
     }
+  }
+
+  private func handleSetDisplayCriteria(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let args = call.arguments as? [String: Any] else {
+      result(FlutterError(code: "INVALID_ARGS", message: "Missing arguments", details: nil))
+      return
+    }
+
+    guard let core = playerCore else {
+      result(nil)
+      return
+    }
+
+    guard let raw = args["criteria"] as? [String: Any] else {
+      DispatchQueue.main.async {
+        core.setServerDisplayCriteria(nil)
+        result(nil)
+      }
+      return
+    }
+
+    let criteria = ServerDisplayCriteria(
+      doviProfile: int64Value(raw["doviProfile"]) ?? 0,
+      doviLevel: int64Value(raw["doviLevel"]) ?? 0,
+      doviCompatibilityId: int64Value(raw["doviCompatibilityId"]),
+      fps: doubleValue(raw["fps"]) ?? 0,
+      width: Int32(truncatingIfNeeded: int64Value(raw["width"]) ?? 0),
+      height: Int32(truncatingIfNeeded: int64Value(raw["height"]) ?? 0),
+      gamma: stringValue(raw["transfer"]),
+      primaries: stringValue(raw["primaries"]),
+      colorMatrix: stringValue(raw["matrix"])
+    )
+    DispatchQueue.main.async {
+      core.setServerDisplayCriteria(criteria)
+      result(nil)
+    }
+  }
+
+  private func int64Value(_ value: Any?) -> Int64? {
+    switch value {
+    case let value as Int64:
+      return value
+    case let value as Int:
+      return Int64(value)
+    case let value as NSNumber:
+      return value.int64Value
+    case let value as String:
+      return Int64(value)
+    default:
+      return nil
+    }
+  }
+
+  private func doubleValue(_ value: Any?) -> Double? {
+    switch value {
+    case let value as Double:
+      return value
+    case let value as NSNumber:
+      return value.doubleValue
+    case let value as String:
+      return Double(value)
+    default:
+      return nil
+    }
+  }
+
+  private func stringValue(_ value: Any?) -> String? {
+    guard let value else { return nil }
+    let string = String(describing: value).trimmingCharacters(in: .whitespacesAndNewlines)
+    return string.isEmpty ? nil : string
   }
 
   // MARK: - Helpers

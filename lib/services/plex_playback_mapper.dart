@@ -59,6 +59,7 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
             chapters: chapters,
             partId: part['id'] as int?,
             frameRate: streams.frameRate,
+            displayCriteria: PlexMappers.displayCriteriaFromJson(media as Map<String, dynamic>?, streams.videoStream),
           );
         }
       }

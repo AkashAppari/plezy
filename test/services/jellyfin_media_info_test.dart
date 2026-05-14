@@ -85,6 +85,59 @@ void main() {
       expect(sub.key, '/Videos/src-1/Subtitles/3/Stream.srt');
     });
 
+    test('maps display criteria from Jellyfin video stream metadata', () {
+      final info = jellyfinMediaSourceToMediaSourceInfo({
+        'Id': 'src-1',
+        'MediaStreams': [
+          {
+            'Index': 0,
+            'Type': 'Video',
+            'RealFrameRate': 23.976025,
+            'Width': 3840,
+            'Height': 2160,
+            'VideoRangeType': 'DOVIWithHDR10Plus',
+            'DvProfile': 8,
+            'DvLevel': 10,
+            'DvBlSignalCompatibilityId': 1,
+          },
+        ],
+      });
+
+      final criteria = info.displayCriteria;
+      expect(criteria, isNotNull);
+      expect(criteria!.fps, closeTo(23.976, 0.001));
+      expect(criteria.width, 3840);
+      expect(criteria.height, 2160);
+      expect(criteria.doviProfile, 8);
+      expect(criteria.doviLevel, 10);
+      expect(criteria.doviCompatibilityId, 1);
+      expect(criteria.transfer, 'smpte2084');
+      expect(criteria.primaries, 'bt2020');
+      expect(criteria.matrix, 'bt2020nc');
+    });
+
+    test('fills missing HDR color tags from partial Jellyfin transfer metadata', () {
+      final info = jellyfinMediaSourceToMediaSourceInfo({
+        'Id': 'src-1',
+        'MediaStreams': [
+          {
+            'Index': 0,
+            'Type': 'Video',
+            'RealFrameRate': 23.976,
+            'Width': 3840,
+            'Height': 2160,
+            'ColorTransfer': 'smpte2084',
+          },
+        ],
+      });
+
+      final criteria = info.displayCriteria;
+      expect(criteria, isNotNull);
+      expect(criteria!.transfer, 'smpte2084');
+      expect(criteria.primaries, 'bt2020');
+      expect(criteria.matrix, 'bt2020nc');
+    });
+
     test('handles missing MediaStreams gracefully', () {
       final info = jellyfinMediaSourceToMediaSourceInfo({'Id': 'x'});
       expect(info.audioTracks, isEmpty);

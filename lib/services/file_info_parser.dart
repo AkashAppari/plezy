@@ -199,7 +199,7 @@ class PlexFileInfoStreamReader implements FileInfoStreamReader {
 
   @override
   double? frameRateOf(Map<String, dynamic> videoStream) {
-    return (videoStream['frameRate'] as num?)?.toDouble();
+    return flexibleDouble(videoStream['frameRate']);
   }
 }
 

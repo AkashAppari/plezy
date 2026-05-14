@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/services.dart';
 
+import '../../media/media_display_criteria.dart';
 import '../models.dart';
 import 'player_base.dart';
 
@@ -220,6 +221,13 @@ class PlayerNative extends PlayerBase {
     if (disposed) return;
     await _ensureInitialized();
     await invoke('command', {'args': args});
+  }
+
+  @override
+  Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria) async {
+    if (disposed || !Platform.isIOS) return;
+    await _ensureInitialized();
+    await invoke('setDisplayCriteria', {'criteria': criteria?.toJson()});
   }
 
   @override

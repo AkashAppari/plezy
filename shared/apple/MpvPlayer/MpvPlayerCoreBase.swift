@@ -61,6 +61,18 @@ func safeString(_ cstr: UnsafePointer<CChar>) -> String {
   return String(buffer.map { Character(Unicode.Scalar($0)) })
 }
 
+struct ServerDisplayCriteria {
+  let doviProfile: Int64
+  let doviLevel: Int64
+  let doviCompatibilityId: Int64?
+  let fps: Double
+  let width: Int32
+  let height: Int32
+  let gamma: String?
+  let primaries: String?
+  let colorMatrix: String?
+}
+
 class MpvPlayerCoreBase: NSObject {
   weak var delegate: MpvPlayerDelegate?
 
@@ -80,6 +92,10 @@ class MpvPlayerCoreBase: NSObject {
   private var cachedDoviProfile: Int64 = 0
   private var cachedDoviLevel: Int64 = 0
   private var cachedContainerFps: Double = 0
+  private var cachedVideoGamma: String?
+  private var cachedVideoPrimaries: String?
+  private var cachedVideoColorMatrix: String?
+  private var serverDisplayCriteriaActive = false
   var hdrEnabled: Bool {
     cacheLock.lock()
     defer { cacheLock.unlock() }
@@ -117,6 +133,9 @@ class MpvPlayerCoreBase: NSObject {
   private static let internalDoviProfileObserverId: UInt64 = UInt64.max - 4
   private static let internalDoviLevelObserverId: UInt64 = UInt64.max - 5
   private static let internalContainerFpsObserverId: UInt64 = UInt64.max - 6
+  private static let internalVideoGammaObserverId: UInt64 = UInt64.max - 7
+  private static let internalVideoPrimariesObserverId: UInt64 = UInt64.max - 8
+  private static let internalVideoColorMatrixObserverId: UInt64 = UInt64.max - 9
   private static let internalObserverIds: Set<UInt64> = [
     internalSigPeakObserverId,
     internalWidthObserverId,
@@ -124,6 +143,9 @@ class MpvPlayerCoreBase: NSObject {
     internalDoviProfileObserverId,
     internalDoviLevelObserverId,
     internalContainerFpsObserverId,
+    internalVideoGammaObserverId,
+    internalVideoPrimariesObserverId,
+    internalVideoColorMatrixObserverId,
   ]
 
   let queue = DispatchQueue(label: "mpv", qos: .userInitiated)
@@ -156,34 +178,100 @@ class MpvPlayerCoreBase: NSObject {
 
   func updateEDRMode(sigPeak: Double) {}
 
+  @discardableResult
   func updateDisplayCriteria(
     doviProfile: Int64,
     doviLevel: Int64,
+    doviCompatibilityId: Int64?,
     fps: Double,
     width: Int32,
     height: Int32,
-    sigPeak: Double
-  ) {}
+    sigPeak: Double,
+    gamma: String?,
+    primaries: String?,
+    colorMatrix: String?
+  ) -> Bool { false }
 
   func scheduleDisplayCriteriaUpdate() {
     cacheLock.lock()
+    if serverDisplayCriteriaActive {
+      cacheLock.unlock()
+      return
+    }
     let profile = cachedDoviProfile
     let level = cachedDoviLevel
     let fps = cachedContainerFps
     let width = Int32(cachedWidth)
     let height = Int32(cachedHeight)
     let sigPeak = cachedLastSigPeak
+    let gamma = cachedVideoGamma
+    let primaries = cachedVideoPrimaries
+    let colorMatrix = cachedVideoColorMatrix
     cacheLock.unlock()
 
     DispatchQueue.main.async { [weak self] in
       self?.updateDisplayCriteria(
         doviProfile: profile,
         doviLevel: level,
+        doviCompatibilityId: nil,
         fps: fps,
         width: width,
         height: height,
-        sigPeak: sigPeak
+        sigPeak: sigPeak,
+        gamma: gamma,
+        primaries: primaries,
+        colorMatrix: colorMatrix
       )
+    }
+  }
+
+  func setServerDisplayCriteria(_ criteria: ServerDisplayCriteria?) {
+    cacheLock.lock()
+    serverDisplayCriteriaActive = criteria != nil
+    cacheLock.unlock()
+
+    let apply = { [weak self] in
+      guard let self else { return }
+      guard let criteria else {
+        _ = self.updateDisplayCriteria(
+          doviProfile: 0,
+          doviLevel: 0,
+          doviCompatibilityId: nil,
+          fps: 0,
+          width: 0,
+          height: 0,
+          sigPeak: 0,
+          gamma: nil,
+          primaries: nil,
+          colorMatrix: nil
+        )
+        return
+      }
+
+      let applied = self.updateDisplayCriteria(
+        doviProfile: criteria.doviProfile,
+        doviLevel: criteria.doviLevel,
+        doviCompatibilityId: criteria.doviCompatibilityId,
+        fps: criteria.fps,
+        width: criteria.width,
+        height: criteria.height,
+        sigPeak: 0,
+        gamma: criteria.gamma,
+        primaries: criteria.primaries,
+        colorMatrix: criteria.colorMatrix
+      )
+      if !applied {
+        self.cacheLock.lock()
+        self.serverDisplayCriteriaActive = false
+        self.cacheLock.unlock()
+        self.scheduleDisplayCriteriaUpdate()
+      }
+    }
+
+    if Thread.isMainThread {
+      apply()
+    } else {
+      DispatchQueue.main.async(execute: apply)
     }
   }
 
@@ -246,6 +334,11 @@ class MpvPlayerCoreBase: NSObject {
     mpv_observe_property(
       mpv, Self.internalContainerFpsObserverId,
       "container-fps", MPV_FORMAT_DOUBLE)
+    mpv_observe_property(mpv, Self.internalVideoGammaObserverId, "video-params/gamma", MPV_FORMAT_STRING)
+    mpv_observe_property(mpv, Self.internalVideoPrimariesObserverId, "video-params/primaries", MPV_FORMAT_STRING)
+    mpv_observe_property(
+      mpv, Self.internalVideoColorMatrixObserverId,
+      "video-params/colormatrix", MPV_FORMAT_STRING)
     return true
   }
 
@@ -444,6 +537,10 @@ class MpvPlayerCoreBase: NSObject {
     cachedDoviLevel = 0
     cachedContainerFps = 0
     cachedLastSigPeak = 0
+    cachedVideoGamma = nil
+    cachedVideoPrimaries = nil
+    cachedVideoColorMatrix = nil
+    serverDisplayCriteriaActive = false
     cacheLock.unlock()
 
     let mpvHandle = mpv
@@ -778,6 +875,21 @@ class MpvPlayerCoreBase: NSObject {
     case "container-fps":
       cacheLock.lock()
       cachedContainerFps = (value as? Double) ?? 0
+      cacheLock.unlock()
+      scheduleDisplayCriteriaUpdate()
+    case "video-params/gamma":
+      cacheLock.lock()
+      cachedVideoGamma = value as? String
+      cacheLock.unlock()
+      scheduleDisplayCriteriaUpdate()
+    case "video-params/primaries":
+      cacheLock.lock()
+      cachedVideoPrimaries = value as? String
+      cacheLock.unlock()
+      scheduleDisplayCriteriaUpdate()
+    case "video-params/colormatrix":
+      cacheLock.lock()
+      cachedVideoColorMatrix = value as? String
       cacheLock.unlock()
       scheduleDisplayCriteriaUpdate()
     case "width", "height":

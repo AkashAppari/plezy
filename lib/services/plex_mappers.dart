@@ -15,6 +15,7 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../media/media_backend.dart';
+import '../media/media_display_criteria.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
@@ -106,6 +107,14 @@ List<PlexMetadataDto> _hubItemsFromJson(Object? raw) {
 Object? _readMetadataRatingKey(Map json, String _) => (json['ratingKey'] ?? json['key'])?.toString() ?? '';
 
 List<String>? _tagListFromJson(Object? raw) => stringListFromRaw(raw, mapKey: 'tag');
+
+String? _stringOrNull(Object? value) {
+  final string = value?.toString().trim();
+  return string == null || string.isEmpty ? null : string;
+}
+
+String _normalizedDisplayColorTags(String? transfer, String? primaries, String? matrix) =>
+    [transfer, primaries, matrix].whereType<String>().join(' ').toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
 
 @JsonSerializable(createToJson: false)
 class PlexRoleDto {
@@ -880,6 +889,61 @@ class PlexMappers {
     return mediaVersion(PlexMediaVersionDto.fromJson(json));
   }
 
+  static MediaDisplayCriteria? displayCriteriaFromJson(Map<String, dynamic>? media, Map<String, dynamic>? videoStream) {
+    if (videoStream == null) return null;
+
+    final doviProfile = flexibleInt(videoStream['DOVIProfile']);
+    final doviCompatibilityId = flexibleInt(videoStream['DOVIBLCompatID']);
+    final hasDolbyVision = (doviProfile != null && doviProfile > 0) || flexibleBool(videoStream['DOVIPresent']);
+    final transfer = _stringOrNull(videoStream['colorTrc']);
+    final primaries = _stringOrNull(videoStream['colorPrimaries']);
+    final matrix = _stringOrNull(videoStream['colorSpace']);
+    final defaults = _defaultDisplayColorTags(
+      isDolbyVision: hasDolbyVision,
+      doviCompatibilityId: doviCompatibilityId,
+      transfer: transfer,
+      primaries: primaries,
+      matrix: matrix,
+    );
+    final criteria = MediaDisplayCriteria.fromRaw(
+      fps: videoStream['frameRate'],
+      width: videoStream['width'] ?? media?['width'],
+      height: videoStream['height'] ?? media?['height'],
+      doviProfile: doviProfile,
+      doviLevel: videoStream['DOVILevel'],
+      doviCompatibilityId: doviCompatibilityId,
+      transfer: transfer ?? defaults.transfer,
+      primaries: primaries ?? defaults.primaries,
+      matrix: matrix ?? defaults.matrix,
+    );
+    return criteria.isUsable ? criteria : null;
+  }
+
+  static ({String? transfer, String? primaries, String? matrix}) _defaultDisplayColorTags({
+    required bool isDolbyVision,
+    int? doviCompatibilityId,
+    String? transfer,
+    String? primaries,
+    String? matrix,
+  }) {
+    final colorTags = _normalizedDisplayColorTags(transfer, primaries, matrix);
+    if (doviCompatibilityId == 4 || colorTags.contains('hlg') || colorTags.contains('arib')) {
+      return (transfer: 'arib-std-b67', primaries: 'bt2020', matrix: 'bt2020nc');
+    }
+    if (doviCompatibilityId == 1 ||
+        doviCompatibilityId == 6 ||
+        colorTags.contains('smpte2084') ||
+        colorTags.contains('st2084') ||
+        colorTags.contains('pq') ||
+        colorTags.contains('bt2020')) {
+      return (transfer: 'smpte2084', primaries: 'bt2020', matrix: 'bt2020nc');
+    }
+    if (doviCompatibilityId == 2 || !isDolbyVision) {
+      return (transfer: 'bt709', primaries: 'bt709', matrix: 'bt709');
+    }
+    return (transfer: null, primaries: null, matrix: null);
+  }
+
   /// Map a parsed [PlexLibraryDto] into a [MediaLibrary].
   static MediaLibrary mediaLibrary(PlexLibraryDto dto) {
     return MediaLibrary(
@@ -984,6 +1048,10 @@ MediaSourceInfo? plexMediaSourceInfoFromCacheJson(Map<String, dynamic> metadata,
     subtitleTracks: streams.subtitleTracks,
     chapters: const [],
     frameRate: streams.frameRate,
+    displayCriteria: PlexMappers.displayCriteriaFromJson(
+      selectedMedia is Map<String, dynamic> ? selectedMedia : null,
+      streams.videoStream,
+    ),
   );
 }
 

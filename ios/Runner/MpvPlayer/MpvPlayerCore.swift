@@ -13,6 +13,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   private var mainBlankView: UIView?
   private var isVisible = false
   private var isDisposed = false
+  private var activeDisplayCriteriaKey: String?
 
   var isPipStarting = false
 
@@ -99,7 +100,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   private func refreshExternalDisplayAttachment() {
-    guard let containerView else { return }
+    guard containerView != nil else { return }
 
     let externalSuperview = externalVideoSuperview
 
@@ -208,55 +209,236 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     )
   }
 
+  @discardableResult
   override func updateDisplayCriteria(
     doviProfile: Int64,
     doviLevel: Int64,
+    doviCompatibilityId: Int64?,
     fps: Double,
     width: Int32,
     height: Int32,
-    sigPeak: Double
-  ) {
+    sigPeak: Double,
+    gamma: String?,
+    primaries: String?,
+    colorMatrix: String?
+  ) -> Bool {
     #if os(tvOS)
-      guard let window = containerView?.window ?? self.window else { return }
+      guard let window = containerView?.window ?? self.window else { return false }
       let displayManager = window.avDisplayManager
-      guard displayManager.isDisplayCriteriaMatchingEnabled else { return }
+
+      if width <= 0 || height <= 0 {
+        clearDisplayCriteria(displayManager, reason: "no video dimensions")
+        return false
+      }
 
       let refreshRate = Float(fps > 0 ? fps : 0)
+      let sourceHasDolbyVision = doviProfile > 0
+      guard sourceHasDolbyVision || sigPeak > 0 || gamma != nil || primaries != nil || colorMatrix != nil else {
+        clearDisplayCriteria(displayManager, reason: "no display metadata")
+        return false
+      }
 
-      if doviProfile > 0, width > 0, height > 0, #available(tvOS 17.0, *) {
-        // Profile 8.x always carries a compatibility id; profile 5 has none.
-        // We assume bl_signal_compatibility_id = 1 (HDR10 base) for profile 8
-        // because mpv does not expose the compat id and that's by far the
-        // most common case (and matches the user's reported content).
-        let compat: UInt8 = doviProfile == 8 ? 1 : 0
-        if let fd = Self.makeDolbyVisionFormatDescription(
+      let sourceBaseRange = Self.resolveBaseDisplayDynamicRange(
+        sigPeak: sigPeak,
+        gamma: gamma,
+        primaries: primaries,
+        colorMatrix: colorMatrix,
+        doviCompatibilityId: doviCompatibilityId
+      )
+      let sourceRange: DisplayDynamicRange = sourceHasDolbyVision ? .dolbyVision : sourceBaseRange
+      let displayRange: DisplayDynamicRange
+      if sourceHasDolbyVision {
+        displayRange = Self.supportedDolbyVisionDisplayDynamicRange(fallback: sourceBaseRange)
+      } else {
+        displayRange = Self.supportedDisplayDynamicRange(for: sourceBaseRange)
+      }
+      guard displayManager.isDisplayCriteriaMatchingEnabled else {
+        clearDisplayCriteria(displayManager, reason: "matching disabled")
+        return false
+      }
+      guard #available(tvOS 17.0, *) else {
+        clearDisplayCriteria(displayManager, reason: "display criteria unavailable")
+        return false
+      }
+
+      guard
+        let formatDescription = Self.makeDisplayFormatDescription(
+          dynamicRange: displayRange,
           width: width,
           height: height,
-          profile: UInt8(truncatingIfNeeded: doviProfile),
-          level: UInt8(truncatingIfNeeded: doviLevel),
-          compatibility: compat)
-        {
-          let criteria = AVDisplayCriteria(refreshRate: refreshRate, formatDescription: fd)
-          displayManager.preferredDisplayCriteria = criteria
-          print(
-            "[MpvPlayerCore] preferredDisplayCriteria set to Dolby Vision (profile: \(doviProfile), level: \(doviLevel), fps: \(refreshRate), \(width)x\(height))"
-          )
-          return
-        }
-        print("[MpvPlayerCore] Failed to synthesize DV CMVideoFormatDescription; clearing criteria")
+          doviProfile: doviProfile,
+          doviLevel: doviLevel,
+          doviCompatibilityId: doviCompatibilityId)
+      else {
+        clearDisplayCriteria(displayManager, reason: "format description failed")
+        return false
       }
 
-      // Non-DV content (HDR10 / SDR) or DV FD synthesis failed: clear the
-      // hint and let tvOS auto-pick from the AVSampleBufferDisplayLayer's
-      // actual sample-buffer attachments (BT.2020 + PQ for HDR10).
-      if displayManager.preferredDisplayCriteria != nil {
-        displayManager.preferredDisplayCriteria = nil
-        print("[MpvPlayerCore] preferredDisplayCriteria cleared (sigPeak: \(sigPeak))")
-      }
+      let criteriaKey =
+        "\(displayRange.rawValue)|\(refreshRate)|\(width)x\(height)|\(doviProfile)|\(doviLevel)|\(doviCompatibilityId ?? -1)"
+      if activeDisplayCriteriaKey == criteriaKey { return true }
+
+      displayManager.preferredDisplayCriteria = AVDisplayCriteria(
+        refreshRate: refreshRate,
+        formatDescription: formatDescription
+      )
+      activeDisplayCriteriaKey = criteriaKey
+      print(
+        "[MpvPlayerCore] preferredDisplayCriteria set to \(displayRange.rawValue) (source: \(sourceRange.rawValue), fps: \(refreshRate), \(width)x\(height), DV profile: \(doviProfile), level: \(doviLevel), compat: \(doviCompatibilityId ?? -1))"
+      )
+      return true
+    #else
+      return false
     #endif
   }
 
   #if os(tvOS)
+    private enum DisplayDynamicRange: String {
+      case sdr = "SDR"
+      case hdr10 = "HDR10"
+      case hlg = "HLG"
+      case dolbyVision = "Dolby Vision"
+    }
+
+    private func clearDisplayCriteria(_ displayManager: AVDisplayManager, reason: String) {
+      if activeDisplayCriteriaKey != nil || displayManager.preferredDisplayCriteria != nil {
+        displayManager.preferredDisplayCriteria = nil
+        activeDisplayCriteriaKey = nil
+        print("[MpvPlayerCore] preferredDisplayCriteria cleared (\(reason))")
+      }
+    }
+
+    private static func resolveBaseDisplayDynamicRange(
+      sigPeak: Double,
+      gamma: String?,
+      primaries: String?,
+      colorMatrix: String?,
+      doviCompatibilityId: Int64?
+    ) -> DisplayDynamicRange {
+      let normalizedGamma = normalizeColorTag(gamma)
+      let normalizedPrimaries = normalizeColorTag(primaries)
+      let normalizedColorMatrix = normalizeColorTag(colorMatrix)
+
+      if normalizedGamma.contains("hlg") || normalizedGamma.contains("arib") {
+        return .hlg
+      }
+      if normalizedGamma.contains("pq") || normalizedGamma.contains("smpte2084")
+        || normalizedGamma.contains("st2084") || sigPeak > 1.0
+        || normalizedPrimaries.contains("bt2020") || normalizedColorMatrix.contains("bt2020")
+      {
+        return .hdr10
+      }
+      switch doviCompatibilityId {
+      case 1, 6:
+        return .hdr10
+      case 4:
+        return .hlg
+      case 2:
+        return .sdr
+      default:
+        break
+      }
+      return .sdr
+    }
+
+    private static func normalizeColorTag(_ value: String?) -> String {
+      value?.lowercased().filter { $0.isLetter || $0.isNumber } ?? ""
+    }
+
+    private static func supportedDolbyVisionDisplayDynamicRange(
+      fallback: DisplayDynamicRange
+    ) -> DisplayDynamicRange {
+      let availableModes = AVPlayer.availableHDRModes
+      if availableModes.contains(.dolbyVision) { return .dolbyVision }
+      return supportedDisplayDynamicRange(for: fallback)
+    }
+
+    private static func supportedDisplayDynamicRange(for range: DisplayDynamicRange) -> DisplayDynamicRange {
+      let availableModes = AVPlayer.availableHDRModes
+      switch range {
+      case .dolbyVision:
+        if availableModes.contains(.dolbyVision) { return .dolbyVision }
+        if availableModes.contains(.hdr10) { return .hdr10 }
+        if availableModes.contains(.hlg) { return .hlg }
+        return .sdr
+      case .hdr10:
+        return availableModes.contains(.hdr10) ? .hdr10 : .sdr
+      case .hlg:
+        return availableModes.contains(.hlg) ? .hlg : .sdr
+      case .sdr:
+        return .sdr
+      }
+    }
+
+    private static func makeDisplayFormatDescription(
+      dynamicRange: DisplayDynamicRange,
+      width: Int32,
+      height: Int32,
+      doviProfile: Int64,
+      doviLevel: Int64,
+      doviCompatibilityId: Int64?
+    ) -> CMVideoFormatDescription? {
+      if dynamicRange == .dolbyVision {
+        // Profile 8.x always carries a compatibility id; profile 5 has none.
+        // We assume bl_signal_compatibility_id = 1 (HDR10 base) for profile 8
+        // because mpv does not expose the compat id and that's by far the
+        // most common case.
+        let fallbackCompat: Int64 = doviProfile == 8 ? 1 : 0
+        let compat = UInt8(truncatingIfNeeded: doviCompatibilityId ?? fallbackCompat)
+        return makeDolbyVisionFormatDescription(
+          width: width,
+          height: height,
+          profile: UInt8(truncatingIfNeeded: doviProfile),
+          level: UInt8(truncatingIfNeeded: doviLevel),
+          compatibility: compat
+        )
+      }
+
+      let extensions: [CFString: Any]
+      switch dynamicRange {
+      case .hdr10:
+        extensions = [
+          kCMFormatDescriptionExtension_ColorPrimaries:
+            kCMFormatDescriptionColorPrimaries_ITU_R_2020,
+          kCMFormatDescriptionExtension_TransferFunction:
+            kCMFormatDescriptionTransferFunction_SMPTE_ST_2084_PQ,
+          kCMFormatDescriptionExtension_YCbCrMatrix:
+            kCMFormatDescriptionYCbCrMatrix_ITU_R_2020,
+        ]
+      case .hlg:
+        extensions = [
+          kCMFormatDescriptionExtension_ColorPrimaries:
+            kCMFormatDescriptionColorPrimaries_ITU_R_2020,
+          kCMFormatDescriptionExtension_TransferFunction:
+            kCMFormatDescriptionTransferFunction_ITU_R_2100_HLG,
+          kCMFormatDescriptionExtension_YCbCrMatrix:
+            kCMFormatDescriptionYCbCrMatrix_ITU_R_2020,
+        ]
+      case .sdr:
+        extensions = [
+          kCMFormatDescriptionExtension_ColorPrimaries:
+            kCMFormatDescriptionColorPrimaries_ITU_R_709_2,
+          kCMFormatDescriptionExtension_TransferFunction:
+            kCMFormatDescriptionTransferFunction_ITU_R_709_2,
+          kCMFormatDescriptionExtension_YCbCrMatrix:
+            kCMFormatDescriptionYCbCrMatrix_ITU_R_709_2,
+        ]
+      case .dolbyVision:
+        return nil
+      }
+
+      var fd: CMVideoFormatDescription?
+      let status = CMVideoFormatDescriptionCreate(
+        allocator: kCFAllocatorDefault,
+        codecType: kCMVideoCodecType_HEVC,
+        width: width,
+        height: height,
+        extensions: extensions as CFDictionary,
+        formatDescriptionOut: &fd
+      )
+      return status == noErr ? fd : nil
+    }
+
     /// Build a synthetic 'dvh1' `CMVideoFormatDescription` from the Dolby Vision
     /// metadata mpv exposes. Used solely as a hint object for
     /// `AVDisplayCriteria(refreshRate:formatDescription:)` — it is never
@@ -288,14 +470,13 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       dovi[3] = UInt8(flags & 0xff)
       dovi[4] = (compatibility & 0x0f) << 4
 
-      // CoreMedia does not export a typed
-      // `kCMFormatDescriptionExtension_DolbyVision…` constant. The well-known
-      // CFString key is the four-char box name VideoToolbox/AVFoundation
-      // expect (same key FFmpeg writes in 0002-videotoolbox-add-dolby-vision-hevc-format.patch).
+      // CoreMedia carries codec-specific boxes under
+      // kCMFormatDescriptionExtension_SampleDescriptionExtensionAtoms.
       let recordKey: CFString = (profile > 7 ? "dvvC" : "dvcC") as CFString
+      let atoms: [CFString: Any] = [recordKey: Data(dovi) as CFData]
 
       let extensions: [CFString: Any] = [
-        recordKey: Data(dovi) as CFData,
+        kCMFormatDescriptionExtension_SampleDescriptionExtensionAtoms: atoms as CFDictionary,
         kCMFormatDescriptionExtension_ColorPrimaries:
           kCMFormatDescriptionColorPrimaries_ITU_R_2020,
         kCMFormatDescriptionExtension_TransferFunction:
@@ -329,7 +510,9 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     // dealloc (the plugin sets playerCore = nil right after this call
     // returns), leaving the link stuck at the last clip's refresh rate.
     updateDisplayCriteria(
-      doviProfile: 0, doviLevel: 0, fps: 0, width: 0, height: 0, sigPeak: 0)
+      doviProfile: 0, doviLevel: 0, doviCompatibilityId: nil,
+      fps: 0, width: 0, height: 0, sigPeak: 0,
+      gamma: nil, primaries: nil, colorMatrix: nil)
 
     NotificationCenter.default.removeObserver(self)
     #if os(iOS)

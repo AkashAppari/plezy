@@ -47,6 +47,88 @@ void main() {
       expect(result.mediaInfo?.frameRate, 23.976);
       expect(result.mediaInfo?.audioTracks.single.languageCode, 'eng');
     });
+
+    test('maps server display criteria from selected video stream', () {
+      final result = parsePlexVideoPlaybackDataFromJson(
+        {
+          'Media': [
+            {
+              'id': 1,
+              'width': 3840,
+              'height': 2160,
+              'videoResolution': '4k',
+              'Part': [
+                {
+                  'id': 10,
+                  'key': '/library/parts/10/file.mkv',
+                  'accessible': 1,
+                  'exists': 1,
+                  'Stream': [
+                    {
+                      'streamType': 1,
+                      'frameRate': '23.976',
+                      'DOVIProfile': '7',
+                      'DOVILevel': '6',
+                      'DOVIBLCompatID': '6',
+                      'colorTrc': 'smpte2084',
+                      'colorPrimaries': 'bt2020',
+                      'colorSpace': 'bt2020nc',
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        baseUrl: 'http://plex:32400',
+        token: null,
+      );
+
+      final criteria = result.mediaInfo?.displayCriteria;
+      expect(criteria, isNotNull);
+      expect(criteria!.fps, closeTo(23.976, 0.001));
+      expect(criteria.width, 3840);
+      expect(criteria.height, 2160);
+      expect(criteria.doviProfile, 7);
+      expect(criteria.doviLevel, 6);
+      expect(criteria.doviCompatibilityId, 6);
+      expect(criteria.transfer, 'smpte2084');
+      expect(criteria.primaries, 'bt2020');
+      expect(criteria.matrix, 'bt2020nc');
+    });
+
+    test('fills missing HDR color tags from partial Plex transfer metadata', () {
+      final result = parsePlexVideoPlaybackDataFromJson(
+        {
+          'Media': [
+            {
+              'id': 1,
+              'width': 3840,
+              'height': 2160,
+              'Part': [
+                {
+                  'id': 10,
+                  'key': '/library/parts/10/file.mkv',
+                  'accessible': 1,
+                  'exists': 1,
+                  'Stream': [
+                    {'streamType': 1, 'frameRate': 23.976, 'colorTrc': 'smpte2084'},
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        baseUrl: 'http://plex:32400',
+        token: null,
+      );
+
+      final criteria = result.mediaInfo?.displayCriteria;
+      expect(criteria, isNotNull);
+      expect(criteria!.transfer, 'smpte2084');
+      expect(criteria.primaries, 'bt2020');
+      expect(criteria.matrix, 'bt2020nc');
+    });
   });
 
   group('parsePlexFileInfoFromJson', () {

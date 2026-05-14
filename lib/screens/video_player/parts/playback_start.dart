@@ -284,6 +284,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           );
         }
 
+        await currentPlayer.setDisplayCriteria(result.isTranscoding ? null : result.mediaInfo?.displayCriteria);
+
         final shouldAutoPlay = !shouldHoldPlaybackStart && (isExoPlayer || !hasExternalSubs);
         if (needsAndroidMpvStartupRefresh) {
           appLogger.d('Frame rate matching: opening Android MPV paused for startup buffer flush');
