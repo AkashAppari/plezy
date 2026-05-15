@@ -93,6 +93,10 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       let scale = screen.nativeScale > 0 ? screen.nativeScale : screen.scale
       videoLayer.contentsScale = scale
     }
+
+    #if os(iOS)
+      updateEDRMode(sigPeak: lastSigPeak)
+    #endif
   }
 
   func externalDisplayDidChange() {
@@ -188,25 +192,43 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     command(["seek", "0", "relative+exact"])
   }
 
-  override func updateEDRMode(sigPeak: Double) {
+  private func restoreVideoPresentation() {
+    guard !isPipActive else { return }
+
+    refreshExternalDisplayAttachment()
+    recoverDisplayLayerIfNeeded()
+    updateEDRMode(sigPeak: lastSigPeak)
+    if isPaused { forceDraw() }
+  }
+
+  private func recoverDisplayLayerIfNeeded() {
     guard let videoLayer else { return }
 
-    let hdrEnabled = self.hdrEnabled
-    var edrHeadroom: CGFloat = 1.0
+    var requiresFlush = false
+    if #available(iOS 14.0, tvOS 14.0, *) {
+      requiresFlush = videoLayer.requiresFlushToResumeDecoding
+    }
+    let status = videoLayer.status
+    guard requiresFlush || status == .failed else { return }
+
+    videoLayer.flush()
+  }
+
+  override func updateEDRMode(sigPeak: Double) {
     #if os(iOS)
-      if #available(iOS 17.0, *) {
-        edrHeadroom = containerView?.window?.screen.potentialEDRHeadroom ?? 1.0
+      guard let videoLayer else { return }
+
+      let shouldEnableEDR = hdrEnabled && sigPeak > 1.0
+      if #available(iOS 26.0, *) {
         withoutLayerAnimations {
-          videoLayer.wantsExtendedDynamicRangeContent =
-            hdrEnabled && sigPeak > 1.0 && edrHeadroom > 1.0
+          videoLayer.preferredDynamicRange = shouldEnableEDR ? .high : .standard
+        }
+      } else if #available(iOS 17.0, *) {
+        withoutLayerAnimations {
+          videoLayer.wantsExtendedDynamicRangeContent = shouldEnableEDR
         }
       }
     #endif
-
-    let shouldEnableEDR = hdrEnabled && sigPeak > 1.0 && edrHeadroom > 1.0
-    print(
-      "[MpvPlayerCore] EDR mode: \(shouldEnableEDR) (hdrEnabled: \(hdrEnabled), sigPeak: \(sigPeak), headroom: \(edrHeadroom))"
-    )
   }
 
   @discardableResult
@@ -246,12 +268,10 @@ class MpvPlayerCore: MpvPlayerCoreBase {
         doviCompatibilityId: doviCompatibilityId
       )
       let sourceRange: DisplayDynamicRange = sourceHasDolbyVision ? .dolbyVision : sourceBaseRange
-      let displayRange: DisplayDynamicRange
-      if sourceHasDolbyVision {
-        displayRange = Self.supportedDolbyVisionDisplayDynamicRange(fallback: sourceBaseRange)
-      } else {
-        displayRange = Self.supportedDisplayDynamicRange(for: sourceBaseRange)
-      }
+      var displayRange: DisplayDynamicRange =
+        sourceHasDolbyVision
+        ? .dolbyVision
+        : Self.supportedDisplayDynamicRange(for: sourceBaseRange)
       guard displayManager.isDisplayCriteriaMatchingEnabled else {
         clearDisplayCriteria(displayManager, reason: "matching disabled")
         return false
@@ -261,15 +281,25 @@ class MpvPlayerCore: MpvPlayerCoreBase {
         return false
       }
 
-      guard
-        let formatDescription = Self.makeDisplayFormatDescription(
+      var formatDescription = Self.makeDisplayFormatDescription(
+        dynamicRange: displayRange,
+        width: width,
+        height: height,
+        doviProfile: doviProfile,
+        doviLevel: doviLevel,
+        doviCompatibilityId: doviCompatibilityId)
+      if formatDescription == nil, sourceHasDolbyVision {
+        displayRange = sourceBaseRange
+        formatDescription = Self.makeDisplayFormatDescription(
           dynamicRange: displayRange,
           width: width,
           height: height,
           doviProfile: doviProfile,
           doviLevel: doviLevel,
           doviCompatibilityId: doviCompatibilityId)
-      else {
+      }
+
+      guard let formatDescription else {
         clearDisplayCriteria(displayManager, reason: "format description failed")
         return false
       }
@@ -343,14 +373,6 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
     private static func normalizeColorTag(_ value: String?) -> String {
       value?.lowercased().filter { $0.isLetter || $0.isNumber } ?? ""
-    }
-
-    private static func supportedDolbyVisionDisplayDynamicRange(
-      fallback: DisplayDynamicRange
-    ) -> DisplayDynamicRange {
-      let availableModes = AVPlayer.availableHDRModes
-      if availableModes.contains(.dolbyVision) { return .dolbyVision }
-      return supportedDisplayDynamicRange(for: fallback)
     }
 
     private static func supportedDisplayDynamicRange(for range: DisplayDynamicRange) -> DisplayDynamicRange {
@@ -535,21 +557,44 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   private func setupNotifications() {
-    NotificationCenter.default.addObserver(
-      self,
-      selector: #selector(enterBackground),
-      name: UIApplication.didEnterBackgroundNotification,
-      object: nil
-    )
-    NotificationCenter.default.addObserver(
-      self,
-      selector: #selector(enterForeground),
-      name: UIApplication.willEnterForegroundNotification,
-      object: nil
-    )
+    #if os(iOS)
+      let scene = window?.windowScene
+      NotificationCenter.default.addObserver(
+        self,
+        selector: #selector(enterBackground),
+        name: UIScene.didEnterBackgroundNotification,
+        object: scene
+      )
+      NotificationCenter.default.addObserver(
+        self,
+        selector: #selector(enterForeground),
+        name: UIScene.willEnterForegroundNotification,
+        object: scene
+      )
+      NotificationCenter.default.addObserver(
+        self,
+        selector: #selector(sceneDidActivate),
+        name: UIScene.didActivateNotification,
+        object: scene
+      )
+    #else
+      NotificationCenter.default.addObserver(
+        self,
+        selector: #selector(enterBackground),
+        name: UIApplication.didEnterBackgroundNotification,
+        object: nil
+      )
+      NotificationCenter.default.addObserver(
+        self,
+        selector: #selector(enterForeground),
+        name: UIApplication.willEnterForegroundNotification,
+        object: nil
+      )
+    #endif
   }
 
   @objc private func enterBackground() {
+    isBackgrounded = true
     if isPipActive || isPipStarting {
       print("[MpvPlayerCore] Entering background - PiP active/starting, keeping video")
       return
@@ -560,6 +605,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   @objc private func enterForeground() {
+    isBackgrounded = false
     if isPipActive {
       print("[MpvPlayerCore] Entering foreground - PiP active, skipping vid restore")
       return
@@ -568,4 +614,16 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     print("[MpvPlayerCore] Entering foreground - enabling video")
     setProperty("vid", value: "auto")
   }
+
+  #if os(iOS)
+    @objc private func sceneDidActivate() {
+      isBackgrounded = false
+      if isPipActive {
+        return
+      }
+
+      setProperty("vid", value: "auto")
+      restoreVideoPresentation()
+    }
+  #endif
 }
