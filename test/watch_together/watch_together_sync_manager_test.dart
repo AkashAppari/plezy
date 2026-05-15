@@ -58,6 +58,67 @@ void main() {
       await peerService.close();
     });
 
+    test('ready guest re-announces readiness after receiving session config', () async {
+      final peerService = _FakeWatchTogetherPeerService(peerId: 'guest');
+      final player = _FakePlayer(playing: false, position: const Duration(seconds: 10));
+      final manager = _guestManager(peerService, controlMode: ControlMode.anyone);
+
+      manager.initializeParticipants(['guest', 'host']);
+      manager.attachPlayer(player);
+      peerService.broadcasts.clear();
+
+      peerService.emit(
+        SyncMessage.sessionConfig(
+          controlMode: ControlMode.anyone,
+          currentPosition: const Duration(seconds: 20),
+          isPlaying: false,
+          playbackRate: 1.0,
+          peerId: 'host',
+        ),
+      );
+      await _settle();
+
+      expect(
+        peerService.broadcasts.where(
+          (message) =>
+              message.type == SyncMessageType.playerReady &&
+              message.peerId == 'guest' &&
+              message.bufferingState == true,
+        ),
+        isNotEmpty,
+      );
+      expect(player.state.position, const Duration(seconds: 20));
+      expect(player.state.playing, isFalse);
+
+      manager.dispose();
+      await player.dispose();
+      await peerService.close();
+    });
+
+    test('host local play is not deferred after guest readiness is restored', () async {
+      final peerService = _FakeWatchTogetherPeerService(peerId: 'host');
+      final player = _FakePlayer(playing: false, position: const Duration(minutes: 3));
+      final manager = _hostManager(peerService);
+      final deferredStates = <bool>[];
+      manager.onDeferredPlayChanged = deferredStates.add;
+
+      manager.initializeParticipants(['host', 'guest']);
+      manager.attachPlayer(player);
+      peerService.emit(SyncMessage.playerReady(peerId: 'guest', ready: true));
+      await _settle();
+      peerService.broadcasts.clear();
+
+      await player.emitPlaying(true);
+
+      expect(deferredStates, isNot(contains(true)));
+      expect(player.state.playing, isTrue);
+      expect(peerService.broadcasts.where((m) => m.type == SyncMessageType.play), isNotEmpty);
+
+      manager.dispose();
+      await player.dispose();
+      await peerService.close();
+    });
+
     test('removing a disconnected not-ready peer resumes deferred play', () async {
       final peerService = _FakeWatchTogetherPeerService(peerId: 'host');
       final player = _FakePlayer(playing: false, position: const Duration(minutes: 5));

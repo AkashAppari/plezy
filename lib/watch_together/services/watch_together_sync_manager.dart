@@ -894,7 +894,7 @@ class WatchTogetherSyncManager {
       onSessionConfigReceived?.call(message.controlMode!);
     }
 
-    await _runGuardedRemoteAction(
+    final applied = await _runGuardedRemoteAction(
       actionName: 'session config',
       expectedAttachmentGeneration: expectedAttachmentGeneration,
       action: (player, attachmentGeneration) async {
@@ -956,6 +956,10 @@ class WatchTogetherSyncManager {
         return true;
       },
     );
+
+    if (applied) {
+      _reannounceReady(reason: 'session config');
+    }
   }
 
   /// Set syncing state and notify listeners
@@ -984,6 +988,14 @@ class WatchTogetherSyncManager {
     _backgrounded = value;
   }
 
+  void _reannounceReady({required String reason}) {
+    if (_hasAnnouncedReady && _peerService.myPeerId != null) {
+      _peerReady[_peerService.myPeerId!] = true;
+      _peerService.broadcast(SyncMessage.playerReady(peerId: _peerService.myPeerId!, ready: true));
+      appLogger.d('WatchTogether: Re-announced player ready after $reason');
+    }
+  }
+
   /// Re-announce player readiness after reconnect.
   ///
   /// During reconnect the host resets our _peerReady entry to false via
@@ -991,11 +1003,7 @@ class WatchTogetherSyncManager {
   /// reset because the player stays attached). Re-broadcast so the host
   /// doesn't stay stuck in the deferred-play gate.
   void reannounceReadyIfNeeded() {
-    if (_hasAnnouncedReady && _peerService.myPeerId != null) {
-      _peerReady[_peerService.myPeerId!] = true;
-      _peerService.broadcast(SyncMessage.playerReady(peerId: _peerService.myPeerId!, ready: true));
-      appLogger.d('WatchTogether: Re-announced player ready after reconnect');
-    }
+    _reannounceReady(reason: 'reconnect');
   }
 
   /// Send join announcement to all peers
