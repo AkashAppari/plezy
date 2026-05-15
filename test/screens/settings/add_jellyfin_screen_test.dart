@@ -1,4 +1,7 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/profiles/profile.dart';
@@ -11,6 +14,7 @@ Profile _profile(String id) =>
 void main() {
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
+    TvDetectionService.setForceTVSync(false);
   });
 
   testWidgets('autofocuses the server URL field', (tester) async {
@@ -28,6 +32,32 @@ void main() {
     await tester.pumpWidget(const InputModeTracker(child: MaterialApp(home: AddJellyfinScreen())));
     await tester.pumpAndSettle();
 
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Url');
+  });
+
+  testWidgets('Android TV remote navigation stays with native URL keyboard', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(null);
+    await TvDetectionService.getInstance(forceTv: true);
+    TvDetectionService.setForceTVSync(true);
+
+    await tester.pumpWidget(const InputModeTracker(child: MaterialApp(home: AddJellyfinScreen())));
+    await tester.pumpAndSettle();
+
+    final urlFocus = FocusManager.instance.primaryFocus!;
+    expect(urlFocus.debugLabel, 'AddJellyfin:Url');
+
+    final result = urlFocus.onKeyEvent!(
+      urlFocus,
+      const KeyDownEvent(
+        physicalKey: PhysicalKeyboardKey.arrowDown,
+        logicalKey: LogicalKeyboardKey.arrowDown,
+        timeStamp: Duration.zero,
+        deviceType: ui.KeyEventDeviceType.directionalPad,
+      ),
+    );
+    await tester.pump();
+
+    expect(result, KeyEventResult.skipRemainingHandlers);
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Url');
   });
 

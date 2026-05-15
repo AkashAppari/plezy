@@ -32,6 +32,10 @@ KeyEventResult _handleInputKey({
 }) {
   final key = event.logicalKey;
 
+  if (_shouldPassNativeTvKeyToPlatform(usesTvKeyboard: usesTvKeyboard, enabled: enabled, event: event)) {
+    return KeyEventResult.skipRemainingHandlers;
+  }
+
   if (usesTvKeyboard && enabled && event.isTvSelectEvent) {
     if (event is KeyDownEvent) openKeyboard();
     return KeyEventResult.handled;
@@ -91,6 +95,18 @@ KeyEventResult _handleInputKey({
   }
 
   return KeyEventResult.ignored;
+}
+
+bool _shouldPassNativeTvKeyToPlatform({required bool usesTvKeyboard, required bool enabled, required KeyEvent event}) {
+  if (!enabled || usesTvKeyboard || !PlatformDetector.isTV()) return false;
+
+  // Android TV provides its own IME. Remote keys must reach the platform so
+  // users can move around that keyboard instead of escaping the app field.
+  final key = event.logicalKey;
+  final isEngineSynthesizedTvSelect = key == LogicalKeyboardKey.select || key == LogicalKeyboardKey.gameButtonA;
+  if (event.isPhysicalKeyboardEvent && !isEngineSynthesizedTvSelect) return false;
+
+  return key.isDpadDirection || key.isBackKey || event.isTvSelectEvent;
 }
 
 KeyEventResult _handleTvHardwareKeyboardKey({
