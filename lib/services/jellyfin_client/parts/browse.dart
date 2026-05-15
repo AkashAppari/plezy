@@ -591,11 +591,11 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   }
 
   @override
-  Future<List<MediaItem>> fetchContinueWatching({int count = 20}) async {
+  Future<List<MediaItem>> fetchContinueWatching({int? count = 20}) async {
     final results = await Future.wait([
       _fetchItemsArray('/UserItems/Resume', {
         'userId': connection.userId,
-        'Limit': count.toString(),
+        'Limit': ?count?.toString(),
         'Fields': _browseFields,
         'MediaTypes': 'Video',
         'Recursive': 'true',
@@ -604,7 +604,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       }),
       _safeFetchItemsArray('/Shows/NextUp', {
         'userId': connection.userId,
-        'Limit': count.toString(),
+        'Limit': ?count?.toString(),
         'Fields': _browseFields,
         'EnableResumable': 'false',
         'EnableTotalRecordCount': 'false',
@@ -868,9 +868,9 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   List<MediaItem> _mergeContinueWatchingAndNextUp({
     required List<MediaItem> resume,
     required List<MediaItem> nextUp,
-    required int limit,
+    required int? limit,
   }) {
-    if (limit <= 0) return const [];
+    if (limit != null && limit <= 0) return const [];
 
     final result = <MediaItem>[];
     final seenIds = <String>{};
@@ -885,11 +885,11 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
 
     for (final item in resume) {
       add(item);
-      if (result.length >= limit) return result;
+      if (limit != null && result.length >= limit) return result;
     }
     for (final item in nextUp) {
       add(item);
-      if (result.length >= limit) return result;
+      if (limit != null && result.length >= limit) return result;
     }
     return result;
   }

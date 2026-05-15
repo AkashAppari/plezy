@@ -202,7 +202,7 @@ abstract class MediaServerClient {
 
   /// Items the user has started but not finished. Plex calls this "On Deck"
   /// internally; the neutral name matches the Continue Watching UI surface.
-  Future<List<MediaItem>> fetchContinueWatching({int count = 20});
+  Future<List<MediaItem>> fetchContinueWatching({int? count = 20});
 
   /// Curated home-screen hubs across all libraries (Plex Discover; Jellyfin
   /// synthesizes `Latest` plus optional `Resume` + `NextUp`).

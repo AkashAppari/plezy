@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../media/media_hub.dart';
@@ -25,8 +27,17 @@ import 'focusable_detail_screen_mixin.dart';
 /// Screen to display full content of a recommendation hub
 class HubDetailScreen extends StatefulWidget {
   final MediaHub hub;
+  final Future<List<MediaItem>> Function()? loadItems;
+  final bool isInContinueWatching;
+  final VoidCallback? onRemoveFromContinueWatching;
 
-  const HubDetailScreen({super.key, required this.hub});
+  const HubDetailScreen({
+    super.key,
+    required this.hub,
+    this.loadItems,
+    this.isInContinueWatching = false,
+    this.onRemoveFromContinueWatching,
+  });
 
   @override
   State<HubDetailScreen> createState() => _HubDetailScreenState();
@@ -216,7 +227,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     if (_isLoading) return;
 
     final serverId = widget.hub.serverId;
-    if (serverId == null) {
+    if (widget.loadItems == null && serverId == null) {
       appLogger.w('Hub has no serverId; cannot load more items for ${widget.hub.id}');
       return;
     }
@@ -227,8 +238,11 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     });
 
     try {
-      final client = context.tryGetMediaClientForServer(serverId);
-      var items = client == null ? const <MediaItem>[] : await client.fetchMoreHubItems(widget.hub.id);
+      final loader = widget.loadItems;
+      final client = serverId == null ? null : context.tryGetMediaClientForServer(serverId);
+      var items = loader == null
+          ? (client == null ? const <MediaItem>[] : await client.fetchMoreHubItems(widget.hub.id))
+          : await loader();
 
       // Filter to specific library if this hub was split from a multi-library hub
       final sectionFilter = int.tryParse(widget.hub.libraryId ?? '');
@@ -281,6 +295,11 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     } catch (e) {
       appLogger.d('Item refresh skipped for: $ratingKey', error: e);
     }
+  }
+
+  void _handleRemoveFromContinueWatching() {
+    widget.onRemoveFromContinueWatching?.call();
+    unawaited(_loadMoreItems());
   }
 
   @override
@@ -355,6 +374,10 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                               item: item,
                               disableScale: true,
                               onRefresh: _handleItemRefresh,
+                              onRemoveFromContinueWatching: widget.isInContinueWatching
+                                  ? _handleRemoveFromContinueWatching
+                                  : null,
+                              isInContinueWatching: widget.isInContinueWatching,
                               onNavigateUp: index == 0 ? navigateToAppBar : null,
                               onBack: handleBackFromContent,
                               onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
@@ -397,6 +420,10 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                                 focusNode: focusNode,
                                 item: item,
                                 onRefresh: _handleItemRefresh,
+                                onRemoveFromContinueWatching: widget.isInContinueWatching
+                                    ? _handleRemoveFromContinueWatching
+                                    : null,
+                                isInContinueWatching: widget.isInContinueWatching,
                                 onNavigateUp: isFirstRow ? navigateToAppBar : null,
                                 onNavigateLeft: isFirstColumn ? () {} : null,
                                 onBack: handleBackFromContent,

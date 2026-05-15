@@ -1270,13 +1270,13 @@ class PlexClient
   /// Get continue watching items via the hubs system.
   /// Uses /hubs?identifier=home.continue,home.ondeck which respects the
   /// server's OnDeckWindow preference (unlike /library/onDeck).
-  Future<List<PlexMetadataDto>> _getContinueWatching({int count = 20}) async {
+  Future<List<PlexMetadataDto>> _getContinueWatching({int? count = 20}) async {
     final response = await retryTransientMediaServerCall(
       operation: 'Plex continue watching hubs',
       attemptTimeouts: MediaServerTimeouts.homeHubAttemptTimeouts,
       call: (timeout, abort) => _getWithFailover(
         '/hubs',
-        queryParameters: {'identifier': 'home.continue,home.ondeck', 'count': count, 'includeGuids': 1},
+        queryParameters: {'identifier': 'home.continue,home.ondeck', 'count': ?count, 'includeGuids': 1},
         timeout: timeout,
         abort: abort,
         allowEndpointFailover: false,
@@ -3305,7 +3305,7 @@ class PlexClient
   }
 
   @override
-  Future<List<MediaItem>> fetchContinueWatching({int count = 20}) async {
+  Future<List<MediaItem>> fetchContinueWatching({int? count = 20}) async {
     final items = await _getContinueWatching(count: count);
     return items.map((m) => PlexMappers.mediaItem(m)).toList();
   }

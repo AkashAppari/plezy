@@ -14,6 +14,7 @@ import '../utils/grid_size_calculator.dart';
 import '../theme/mono_tokens.dart';
 import '../focus/locked_hub_controller.dart';
 import '../media/media_hub.dart';
+import '../media/media_item.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../screens/hub_detail_screen.dart';
 import '../utils/media_navigation_helper.dart';
@@ -38,6 +39,7 @@ class HubSection extends StatefulWidget {
   final VoidCallback? onRemoveFromContinueWatching;
   final bool isInContinueWatching;
   final bool showServerName;
+  final Future<List<MediaItem>> Function()? loadMoreItems;
 
   /// Callback for vertical navigation (up/down). Return true if handled.
   final bool Function(bool isUp)? onVerticalNavigation;
@@ -66,6 +68,7 @@ class HubSection extends StatefulWidget {
     this.onRemoveFromContinueWatching,
     this.isInContinueWatching = false,
     this.showServerName = false,
+    this.loadMoreItems,
     this.onVerticalNavigation,
     this.onBack,
     this.onNavigateUp,
@@ -314,7 +317,17 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
   }
 
   void _navigateToHubDetail(BuildContext context) {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => HubDetailScreen(hub: widget.hub)));
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HubDetailScreen(
+          hub: widget.hub,
+          loadItems: widget.loadMoreItems,
+          isInContinueWatching: widget.isInContinueWatching,
+          onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
+        ),
+      ),
+    );
   }
 
   @override

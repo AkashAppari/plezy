@@ -82,6 +82,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         WidgetsBindingObserver {
   static const Duration _heroAutoScrollDuration = Duration(seconds: 8);
   static const Duration _indicatorUpdateInterval = Duration(milliseconds: 200);
+  static const int _continueWatchingPreviewLimit = 20;
+  static const int _continueWatchingProbeLimit = _continueWatchingPreviewLimit + 1;
 
   /// Items in [_onDeck] and [_hubs] can come from any registered server
   /// (Plex or Jellyfin), so resolve the server per-item rather than via the
@@ -116,6 +118,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   List<MediaItem> _onDeck = [];
   List<MediaHub> _hubs = [];
+  bool _hasMoreContinueWatching = false;
   bool _isLoading = true;
   bool _areHubsLoading = true;
   bool _switchingProfile = false;
@@ -572,7 +575,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       // Start OnDeck and hubs fetch in parallel
       final useGlobalHubs = context.settingsRead(SettingsService.useGlobalHubs);
       final onDeckFuture = multiServerProvider.aggregationService.getOnDeckFromAllServers(
-        limit: 20,
+        limit: _continueWatchingProbeLimit,
         hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
       );
       final hubsFuture = multiServerProvider.aggregationService.getHubsFromAllServers(
@@ -582,11 +585,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       );
 
       // Wait for OnDeck to complete and show it immediately
-      final onDeck = await onDeckFuture;
+      final fetchedOnDeck = await onDeckFuture;
+      final hasMoreContinueWatching = fetchedOnDeck.length > _continueWatchingPreviewLimit;
+      final onDeck = hasMoreContinueWatching
+          ? fetchedOnDeck.take(_continueWatchingPreviewLimit).toList()
+          : fetchedOnDeck;
 
       if (!mounted) return;
       setState(() {
         _onDeck = onDeck;
+        _hasMoreContinueWatching = hasMoreContinueWatching;
         _isLoading = false; // Show content, but hubs still loading
 
         // Reset hero index to avoid sync issues
@@ -676,14 +684,19 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       }
 
       final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
-      final onDeck = await multiServerProvider.aggregationService.getOnDeckFromAllServers(
-        limit: 20,
+      final fetchedOnDeck = await multiServerProvider.aggregationService.getOnDeckFromAllServers(
+        limit: _continueWatchingProbeLimit,
         hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
       );
+      final hasMoreContinueWatching = fetchedOnDeck.length > _continueWatchingPreviewLimit;
+      final onDeck = hasMoreContinueWatching
+          ? fetchedOnDeck.take(_continueWatchingPreviewLimit).toList()
+          : fetchedOnDeck;
 
       if (mounted) {
         setState(() {
           _onDeck = onDeck;
+          _hasMoreContinueWatching = hasMoreContinueWatching;
           // Reset hero index if needed
           if (_currentHeroIndex >= onDeck.length) {
             _currentHeroIndex = 0;
@@ -704,6 +717,19 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       appLogger.w('Failed to refresh Continue Watching', error: e);
       // Silently fail - don't show error to user for background refresh
     }
+  }
+
+  Future<List<MediaItem>> _loadAllContinueWatchingItems() async {
+    final multiServerProvider = context.read<MultiServerProvider>();
+    if (!multiServerProvider.hasConnectedServers) return const [];
+
+    final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
+    await hiddenLibrariesProvider.ensureInitialized();
+    if (!mounted) return const [];
+
+    return multiServerProvider.aggregationService.getOnDeckFromAllServers(
+      hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
+    );
   }
 
   /// Sync On Deck items to Android TV Watch Next row.
@@ -1238,14 +1264,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         title: t.discover.continueWatching,
                         type: 'mixed',
                         identifier: '_continue_watching_',
-                        size: _onDeck.length,
-                        more: false,
+                        size: _onDeck.length + (_hasMoreContinueWatching ? 1 : 0),
+                        more: _hasMoreContinueWatching,
                         items: _onDeck,
                       ),
                       icon: Symbols.play_circle_rounded,
                       onRefresh: updateItem,
                       onRemoveFromContinueWatching: _refreshContinueWatching,
                       isInContinueWatching: true,
+                      loadMoreItems: _loadAllContinueWatchingItems,
                       onVerticalNavigation: (isUp) => _handleVerticalNavigation(0, isUp),
                       onNavigateUp: _focusTopBoundary,
                       onNavigateToSidebar: _navigateToSidebar,

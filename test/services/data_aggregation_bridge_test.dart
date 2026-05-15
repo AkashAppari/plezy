@@ -59,6 +59,52 @@ void main() {
       expect(await service.getOnDeckFromAllServers(), isEmpty);
     });
 
+    test('getOnDeckFromAllServers forwards preview limit to clients', () async {
+      final captured = <Uri>[];
+
+      final client = PlexClient.forTesting(
+        config: PlexConfig(
+          baseUrl: 'https://plex.example.com',
+          token: 'token',
+          clientIdentifier: 'client-id',
+          product: 'Plezy',
+          version: 'test',
+        ),
+        serverId: 'plex-1',
+        serverName: 'Plex',
+        httpClient: MockClient((req) async {
+          captured.add(req.url);
+          if (req.url.path == '/hubs') {
+            return _json({
+              'MediaContainer': {
+                'Hub': [
+                  {
+                    'key': '/hubs/home/continueWatching',
+                    'title': 'Continue Watching',
+                    'type': 'mixed',
+                    'hubIdentifier': 'home.continue',
+                    'size': 1,
+                    'Metadata': [
+                      {'ratingKey': 'movie-1', 'type': 'movie', 'title': 'Movie 1'},
+                    ],
+                  },
+                ],
+              },
+            });
+          }
+          return http.Response('unexpected request', 500);
+        }),
+      );
+      addTearDown(client.close);
+      manager.debugRegisterClientForTesting(client);
+
+      final items = await service.getOnDeckFromAllServers(limit: 21);
+
+      expect(items.map((item) => item.id), ['movie-1']);
+      expect(captured.single.path, '/hubs');
+      expect(captured.single.queryParameters['count'], '21');
+    });
+
     test('per-library hubs skip playback rows and fetch in bounded batches', () async {
       final captured = <Uri>[];
       var activeLatest = 0;

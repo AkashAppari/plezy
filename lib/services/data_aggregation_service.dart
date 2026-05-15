@@ -52,7 +52,7 @@ class DataAggregationService {
     final futures = clients.entries.map((entry) async {
       final client = entry.value;
       try {
-        return await client.fetchContinueWatching();
+        return await client.fetchContinueWatching(count: limit);
       } catch (e, st) {
         appLogger.e('Failed on-deck fetch from ${entry.key}', error: e, stackTrace: st);
         return <MediaItem>[];

@@ -1084,6 +1084,50 @@ void main() {
 
       expect(items.map((item) => item.id), ['resume-movie-1']);
     });
+
+    test('fetchContinueWatching omits Limit when count is null', () async {
+      final requests = <Uri>[];
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          requests.add(req.url);
+          if (req.url.path == '/UserItems/Resume') {
+            return http.Response(
+              jsonEncode({
+                'Items': [
+                  {'Id': 'resume-movie-1', 'Type': 'Movie', 'Name': 'Resume Movie 1'},
+                  {'Id': 'resume-movie-2', 'Type': 'Movie', 'Name': 'Resume Movie 2'},
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (req.url.path == '/Shows/NextUp') {
+            return http.Response(
+              jsonEncode({
+                'Items': [
+                  {'Id': 'next-show-1', 'Type': 'Episode', 'Name': 'Next Show 1', 'SeriesId': 'show-1'},
+                  {'Id': 'next-show-2', 'Type': 'Episode', 'Name': 'Next Show 2', 'SeriesId': 'show-2'},
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final items = await scoped.fetchContinueWatching(count: null);
+
+      expect(items.map((item) => item.id), ['resume-movie-1', 'resume-movie-2', 'next-show-1', 'next-show-2']);
+      final resume = requests.singleWhere((uri) => uri.path == '/UserItems/Resume');
+      expect(resume.queryParameters.containsKey('Limit'), isFalse);
+      final nextUp = requests.singleWhere((uri) => uri.path == '/Shows/NextUp');
+      expect(nextUp.queryParameters.containsKey('Limit'), isFalse);
+    });
   });
 
   group('JellyfinClient.fetchGlobalHubs URL builders', () {
