@@ -59,7 +59,6 @@ MediaSourceInfo jellyfinMediaSourceToMediaSourceInfo(
     subtitleTracks: subtitleTracks,
     chapters: mappedChapters,
     partId: partId,
-    frameRate: parsedStreams.frameRate,
     displayCriteria: _jellyfinDisplayCriteria(source, parsedStreams.videoStream),
     mediaSourceId: mediaSourceId,
     defaultAudioStreamIndex: defaultAudioStreamIndex,

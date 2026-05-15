@@ -214,7 +214,10 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
 
       final hasExternalSubs = result.externalSubtitles.isNotEmpty;
       final isExoPlayer = player is PlayerAndroid;
-      await currentPlayer.setDisplayCriteria(result.isTranscoding ? null : result.mediaInfo?.displayCriteria);
+      final displayCriteria = result.mediaInfo?.displayCriteria;
+      await currentPlayer.setDisplayCriteria(
+        !result.isTranscoding && displayCriteria?.canPrimeNativeDisplayCriteria == true ? displayCriteria : null,
+      );
       await currentPlayer.open(
         Media(result.videoUrl!, start: resumePosition, headers: streamHeaders),
         play: isExoPlayer || !hasExternalSubs,

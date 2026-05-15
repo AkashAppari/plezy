@@ -115,13 +115,18 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
     if (player == null || _displayModeService == null) return;
 
     try {
+      final displayCriteria = _isTranscoding ? null : _currentMediaInfo?.displayCriteria;
       final fpsStr = await player!.getProperty('container-fps');
-      final fps = double.tryParse(fpsStr ?? '');
+      final fallbackFps = double.tryParse(fpsStr ?? '');
 
       final sigPeakStr = await player!.getProperty('video-params/sig-peak');
       final sigPeak = double.tryParse(sigPeakStr ?? '');
 
-      final delay = await _displayModeService!.applyDisplayMatching(fps: fps, sigPeak: sigPeak);
+      final delay = await _displayModeService!.applyDisplayMatching(
+        criteria: displayCriteria,
+        fallbackFps: fallbackFps,
+        fallbackSigPeak: sigPeak,
+      );
 
       if (delay > Duration.zero) {
         await Future.delayed(delay);

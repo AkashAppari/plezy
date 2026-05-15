@@ -44,7 +44,7 @@ void main() {
       expect(result.availableVersions, hasLength(2));
       expect(result.availableVersions.first.isPlayable, isFalse);
       expect(result.mediaInfo?.partId, 20);
-      expect(result.mediaInfo?.frameRate, 23.976);
+      expect(result.mediaInfo?.displayCriteria?.fps, 23.976);
       expect(result.mediaInfo?.audioTracks.single.languageCode, 'eng');
     });
 

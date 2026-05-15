@@ -51,10 +51,25 @@ class MediaDisplayCriteria {
 
   bool get hasDimensions => (width ?? 0) > 0 && (height ?? 0) > 0;
 
+  bool get hasFrameRate => (fps ?? 0) > 0;
+
   bool get hasDisplayMetadata =>
       (doviProfile ?? 0) > 0 || _hasValue(transfer) || _hasValue(primaries) || _hasValue(matrix);
 
-  bool get isUsable => hasDimensions && hasDisplayMetadata;
+  bool get canPrimeNativeDisplayCriteria => hasDimensions && hasDisplayMetadata;
+
+  bool get isHdr {
+    if ((doviProfile ?? 0) > 0 && doviCompatibilityId != 2) return true;
+    final tags = _normalizedColorTags(transfer, primaries, matrix);
+    return tags.contains('hlg') ||
+        tags.contains('arib') ||
+        tags.contains('pq') ||
+        tags.contains('smpte2084') ||
+        tags.contains('st2084') ||
+        tags.contains('bt2020');
+  }
+
+  bool get isUsable => hasFrameRate || canPrimeNativeDisplayCriteria;
 
   Map<String, Object> toJson() {
     final json = <String, Object>{};
@@ -81,3 +96,6 @@ String? _stringOrNull(Object? value) {
 }
 
 bool _hasValue(String? value) => value != null && value.isNotEmpty;
+
+String _normalizedColorTags(String? transfer, String? primaries, String? matrix) =>
+    [transfer, primaries, matrix].whereType<String>().join(' ').toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');

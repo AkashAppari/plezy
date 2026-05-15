@@ -6,8 +6,7 @@ import 'plex_constants.dart';
 /// per-source stream list (video/audio/subtitle entries) as `List<dynamic>`
 /// under different field names; the per-backend [FileInfoStreamReader]
 /// implementations encapsulate the naming differences so the call sites in
-/// each client can hand a streams array straight to [walkStreams] and read
-/// the four-tuple result.
+/// each client can hand a streams array straight to [walkStreams].
 enum FileInfoStreamType { video, audio, subtitle }
 
 /// Normalised projection of a single entry in Jellyfin's `MediaStreams` array.
@@ -58,23 +57,15 @@ class FileInfoStreams {
   final Map<String, dynamic>? audioStream;
   final List<MediaAudioTrack> audioTracks;
   final List<MediaSubtitleTrack> subtitleTracks;
-  final double? frameRate;
 
   const FileInfoStreams({
     required this.videoStream,
     required this.audioStream,
     required this.audioTracks,
     required this.subtitleTracks,
-    required this.frameRate,
   });
 
-  static const empty = FileInfoStreams(
-    videoStream: null,
-    audioStream: null,
-    audioTracks: [],
-    subtitleTracks: [],
-    frameRate: null,
-  );
+  static const empty = FileInfoStreams(videoStream: null, audioStream: null, audioTracks: [], subtitleTracks: []);
 }
 
 abstract class FileInfoStreamReader {
@@ -90,11 +81,6 @@ abstract class FileInfoStreamReader {
   /// Build a neutral [MediaSubtitleTrack] from a backend-specific subtitle
   /// entry. See [autoIndex] note on [toAudioTrack].
   MediaSubtitleTrack toSubtitleTrack(Map<String, dynamic> stream, int autoIndex);
-
-  /// Pull the playback frame rate out of the video stream entry. Used by
-  /// callers that build a [MediaSourceInfo] for the player so the renderer
-  /// can pick the right refresh-rate match on capable displays.
-  double? frameRateOf(Map<String, dynamic> videoStream);
 }
 
 typedef MalformedStreamHandler = void Function(Object error, StackTrace stackTrace, Map<String, dynamic> stream);
@@ -102,7 +88,7 @@ typedef MalformedStreamHandler = void Function(Object error, StackTrace stackTra
 /// Walk [streams] in a single pass. Captures the first video / audio entries
 /// (later ones are ignored — both backends serve a single primary track per
 /// type), accumulates *all* audio / subtitle tracks for selection UIs, and
-/// extracts the frame rate from the video entry.
+/// keeps the raw video stream for display-metadata parsing.
 FileInfoStreams walkStreams(
   List<dynamic>? streams,
   FileInfoStreamReader reader, {
@@ -113,7 +99,6 @@ FileInfoStreams walkStreams(
   final subtitleTracks = <MediaSubtitleTrack>[];
   Map<String, dynamic>? videoStream;
   Map<String, dynamic>? audioStream;
-  double? frameRate;
   var audioIndex = 0;
   var subtitleIndex = 0;
   for (final raw in streams) {
@@ -124,7 +109,6 @@ FileInfoStreams walkStreams(
       switch (type) {
         case FileInfoStreamType.video:
           videoStream ??= raw;
-          frameRate ??= reader.frameRateOf(raw);
         case FileInfoStreamType.audio:
           audioStream ??= raw;
           audioIndex++;
@@ -143,7 +127,6 @@ FileInfoStreams walkStreams(
     audioStream: audioStream,
     audioTracks: audioTracks,
     subtitleTracks: subtitleTracks,
-    frameRate: frameRate,
   );
 }
 
@@ -195,11 +178,6 @@ class PlexFileInfoStreamReader implements FileInfoStreamReader {
       forced: flexibleBool(stream['forced']),
       key: stream['key'] as String?,
     );
-  }
-
-  @override
-  double? frameRateOf(Map<String, dynamic> videoStream) {
-    return flexibleDouble(videoStream['frameRate']);
   }
 }
 
@@ -254,10 +232,5 @@ class JellyfinFileInfoStreamReader implements FileInfoStreamReader {
       key: f.isExternal ? f.deliveryUrl : null,
       external: f.isExternal,
     );
-  }
-
-  @override
-  double? frameRateOf(Map<String, dynamic> videoStream) {
-    return (videoStream['RealFrameRate'] as num?)?.toDouble() ?? (videoStream['AverageFrameRate'] as num?)?.toDouble();
   }
 }

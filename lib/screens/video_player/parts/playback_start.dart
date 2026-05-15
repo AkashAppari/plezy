@@ -181,7 +181,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       // paused and switch before visible playback starts.
       final settingsService = await SettingsService.getInstance();
       if (!mounted || player != currentPlayer) return;
-      final preKnownFps = result.mediaInfo?.frameRate;
+      final displayCriteria = result.mediaInfo?.displayCriteria;
+      final preKnownFps = displayCriteria?.fps;
       final willAutoSwitch =
           Platform.isAndroid &&
           settingsService.read(SettingsService.matchContentFrameRate) &&
@@ -284,7 +285,9 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           );
         }
 
-        await currentPlayer.setDisplayCriteria(result.isTranscoding ? null : result.mediaInfo?.displayCriteria);
+        await currentPlayer.setDisplayCriteria(
+          !result.isTranscoding && displayCriteria?.canPrimeNativeDisplayCriteria == true ? displayCriteria : null,
+        );
 
         final shouldAutoPlay = !shouldHoldPlaybackStart && (isExoPlayer || !hasExternalSubs);
         if (needsAndroidMpvStartupRefresh) {

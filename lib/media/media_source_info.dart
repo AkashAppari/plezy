@@ -8,7 +8,6 @@ class MediaSourceInfo {
   final List<MediaSubtitleTrack> subtitleTracks;
   final List<MediaChapter> chapters;
   final int? partId;
-  final double? frameRate;
   final MediaDisplayCriteria? displayCriteria;
 
   /// Jellyfin source id for the *selected* version (null on Plex). Lets the
@@ -32,7 +31,6 @@ class MediaSourceInfo {
     required this.subtitleTracks,
     required this.chapters,
     this.partId,
-    this.frameRate,
     this.displayCriteria,
     this.mediaSourceId,
     this.defaultAudioStreamIndex,

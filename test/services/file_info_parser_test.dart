@@ -5,7 +5,7 @@ import 'package:plezy/services/file_info_parser.dart';
 /// represented by its own [FileInfoStreamReader] implementation, so the
 /// tests fix two things:
 ///   1. The walker's accounting (single video pointer, every audio + sub
-///      tracked, frame rate captured once).
+///      tracked, raw video stream retained once).
 ///   2. Each reader's mapping from raw JSON to the neutral track classes.
 void main() {
   group('walkStreams (Plex reader)', () {
@@ -50,7 +50,7 @@ void main() {
 
       expect(out.videoStream?['id'], 100);
       expect(out.audioStream?['id'], 101);
-      expect(out.frameRate, closeTo(23.976, 1e-6));
+      expect(out.videoStream?['frameRate'], closeTo(23.976, 1e-6));
       expect(out.audioTracks.map((t) => t.id), [101, 102]);
       expect(out.audioTracks[0].channels, 6);
       expect(out.audioTracks[0].selected, isTrue);
@@ -74,7 +74,7 @@ void main() {
       expect(out.audioTracks, isEmpty);
       expect(out.subtitleTracks, isEmpty);
       expect(out.videoStream?['id'], 3);
-      expect(out.frameRate, 24.0);
+      expect(out.videoStream?['frameRate'], 24);
     });
 
     test('skips non-Map entries gracefully', () {
@@ -84,7 +84,6 @@ void main() {
       expect(out.audioStream, isNull);
       expect(out.audioTracks, isEmpty);
       expect(out.subtitleTracks, isEmpty);
-      expect(out.frameRate, isNull);
     });
   });
 
@@ -111,7 +110,7 @@ void main() {
 
       expect(out.videoStream?['Index'], 0);
       expect(out.audioStream?['Index'], 1);
-      expect(out.frameRate, closeTo(23.976, 1e-6));
+      expect(out.videoStream?['RealFrameRate'], closeTo(23.976, 1e-6));
       expect(out.audioTracks.map((t) => t.id), [1, 2]);
       expect(out.audioTracks[0].selected, isTrue);
       expect(out.audioTracks[0].languageCode, 'eng');
@@ -130,12 +129,12 @@ void main() {
       expect(out.audioTracks.map((t) => t.id), [1, 7, 3]);
     });
 
-    test('frameRateOf falls back to AverageFrameRate when RealFrameRate is null', () {
+    test('captures video stream when only AverageFrameRate is present', () {
       final streams = [
         {'Type': 'Video', 'AverageFrameRate': 25.0},
       ];
       final out = walkStreams(streams, reader);
-      expect(out.frameRate, 25.0);
+      expect(out.videoStream?['AverageFrameRate'], 25.0);
     });
 
     test('skips streams with unknown Type', () {
@@ -172,7 +171,7 @@ void main() {
       expect(jf.audioTracks, hasLength(1));
       expect(plex.subtitleTracks, hasLength(1));
       expect(jf.subtitleTracks, hasLength(1));
-      expect(plex.frameRate, jf.frameRate);
+      expect(plex.videoStream?['frameRate'], jf.videoStream?['RealFrameRate']);
       expect(plex.audioTracks.first.codec, jf.audioTracks.first.codec);
       expect(plex.audioTracks.first.channels, jf.audioTracks.first.channels);
       expect(plex.audioTracks.first.selected, jf.audioTracks.first.selected);

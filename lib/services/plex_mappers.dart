@@ -1047,7 +1047,6 @@ MediaSourceInfo? plexMediaSourceInfoFromCacheJson(Map<String, dynamic> metadata,
     audioTracks: streams.audioTracks,
     subtitleTracks: streams.subtitleTracks,
     chapters: const [],
-    frameRate: streams.frameRate,
     displayCriteria: PlexMappers.displayCriteriaFromJson(
       selectedMedia is Map<String, dynamic> ? selectedMedia : null,
       streams.videoStream,

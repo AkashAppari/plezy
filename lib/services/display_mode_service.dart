@@ -2,9 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 
+import '../media/media_display_criteria.dart';
+import '../utils/app_logger.dart';
 import 'fullscreen_state_manager.dart';
 import 'settings_service.dart';
-import '../utils/app_logger.dart';
 
 /// Orchestrates Windows display mode matching (refresh rate, HDR) during video playback.
 /// Uses the same platform channel as the mpv player (com.plezy/mpv_player).
@@ -24,7 +25,11 @@ class DisplayModeService {
 
   /// Apply display matching based on video properties. Returns the delay
   /// duration to wait before starting playback.
-  Future<Duration> applyDisplayMatching({required double? fps, required double? sigPeak}) async {
+  Future<Duration> applyDisplayMatching({
+    MediaDisplayCriteria? criteria,
+    required double? fallbackFps,
+    required double? fallbackSigPeak,
+  }) async {
     if (!Platform.isWindows) return Duration.zero;
     if (!_fullscreen.isFullscreen) {
       appLogger.d('Display matching skipped: not in fullscreen');
@@ -32,6 +37,8 @@ class DisplayModeService {
     }
 
     bool anyChange = false;
+    final criteriaFps = criteria?.fps;
+    final fps = criteriaFps != null && criteriaFps > 0 ? criteriaFps : fallbackFps;
 
     if (_settings.read(SettingsService.matchRefreshRate) && fps != null && fps > 0) {
       try {
@@ -42,7 +49,8 @@ class DisplayModeService {
       }
     }
 
-    if (_settings.read(SettingsService.matchDynamicRange) && sigPeak != null && sigPeak > 1.0) {
+    final shouldEnableHdr = criteria?.isHdr == true || (fallbackSigPeak != null && fallbackSigPeak > 1.0);
+    if (_settings.read(SettingsService.matchDynamicRange) && shouldEnableHdr) {
       try {
         final success = await _enableSystemHDR();
         anyChange |= success;

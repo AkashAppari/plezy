@@ -51,7 +51,7 @@ void main() {
 
       expect(info.audioTracks.length, 2);
       expect(info.subtitleTracks.length, 1);
-      expect(info.frameRate, closeTo(23.976, 0.001));
+      expect(info.displayCriteria?.fps, closeTo(23.976, 0.001));
       // Plex partId is null on Jellyfin because Jellyfin persists selected
       // stream indexes through playback progress reports instead.
       expect(info.getPartId(), isNull);
@@ -142,7 +142,7 @@ void main() {
       final info = jellyfinMediaSourceToMediaSourceInfo({'Id': 'x'});
       expect(info.audioTracks, isEmpty);
       expect(info.subtitleTracks, isEmpty);
-      expect(info.frameRate, isNull);
+      expect(info.displayCriteria, isNull);
     });
 
     test('uses Jellyfin default stream indexes over per-stream default flags', () {
