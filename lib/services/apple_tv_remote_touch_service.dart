@@ -20,6 +20,8 @@ class AppleTvRemoteTouchService {
 
   final BasicMessageChannel<dynamic> _channel;
   final void Function(LogicalKeyboardKey logicalKey) _simulateKeyPress;
+  final void Function(LogicalKeyboardKey logicalKey) _simulateKeyDown;
+  final void Function(LogicalKeyboardKey logicalKey) _simulateKeyUp;
   final VoidCallback _scheduleFrame;
   final DateTime Function() _now;
   final GamepadDuplicateInputGuard _duplicateInputGuard;
@@ -39,10 +41,13 @@ class AppleTvRemoteTouchService {
   DateTime? _lastSwipeAt;
   DateTime? _lastDirectionalInputAt;
   DateTime? _lastSyntheticSelectAt;
+  bool _selectPressedFromClick = false;
 
   AppleTvRemoteTouchService({
     BasicMessageChannel<dynamic>? channel,
     void Function(LogicalKeyboardKey logicalKey)? simulateKeyPress,
+    void Function(LogicalKeyboardKey logicalKey)? simulateKeyDown,
+    void Function(LogicalKeyboardKey logicalKey)? simulateKeyUp,
     VoidCallback? scheduleFrame,
     DateTime Function()? now,
     GamepadDuplicateInputGuard? duplicateInputGuard,
@@ -54,6 +59,8 @@ class AppleTvRemoteTouchService {
   }) : assert(axisSwitchDominanceRatio >= 1),
        _channel = channel ?? const BasicMessageChannel<dynamic>(_channelName, JSONMessageCodec()),
        _simulateKeyPress = simulateKeyPress ?? key_sim.simulateKeyPress,
+       _simulateKeyDown = simulateKeyDown ?? key_sim.simulateKeyDown,
+       _simulateKeyUp = simulateKeyUp ?? key_sim.simulateKeyUp,
        _scheduleFrame = scheduleFrame ?? key_sim.scheduleFrameIfIdle,
        _now = now ?? DateTime.now,
        _duplicateInputGuard =
@@ -72,6 +79,7 @@ class AppleTvRemoteTouchService {
     _channel.setMessageHandler(null);
     _unregisterNativeKeyHandler();
     _duplicateInputGuard.clear();
+    _releaseSelectFromClick(source: 'stop');
     _resetTouch();
     _listening = false;
   }
@@ -117,8 +125,9 @@ class AppleTvRemoteTouchService {
       case 'cancelled':
         _resetTouch();
       case 'click_e':
-        _emitSelect();
+        _releaseSelectFromClick(source: 'click_e');
       case 'click_s':
+        _pressSelectFromClick();
       case 'loc':
         break;
       default:
@@ -212,12 +221,12 @@ class AppleTvRemoteTouchService {
     return axis == _SwipeAxis.horizontal ? horizontal : vertical;
   }
 
-  void _emitSelect() {
+  void _pressSelectFromClick() {
     final now = _now();
     final lastDirectionalInputAt = _lastDirectionalInputAt;
     if (lastDirectionalInputAt != null && now.difference(lastDirectionalInputAt) <= clickAfterDirectionSuppression) {
       final age = now.difference(lastDirectionalInputAt).inMilliseconds;
-      _log('suppress key=${_keyName(LogicalKeyboardKey.enter)} source=click_e reason=recent-direction age=${age}ms');
+      _log('suppress key=${_keyName(LogicalKeyboardKey.enter)} source=click_s reason=recent-direction age=${age}ms');
       return;
     }
 
@@ -225,14 +234,35 @@ class AppleTvRemoteTouchService {
     if (lastSyntheticSelectAt != null && now.difference(lastSyntheticSelectAt).abs() <= duplicateSuppressionWindow) {
       final age = now.difference(lastSyntheticSelectAt).abs().inMilliseconds;
       _log(
-        'suppress key=${_keyName(LogicalKeyboardKey.enter)} source=click_e reason=recent-synthetic-select age=${age}ms',
+        'suppress key=${_keyName(LogicalKeyboardKey.enter)} source=click_s reason=recent-synthetic-select age=${age}ms',
       );
       return;
     }
 
-    if (_emitKey(LogicalKeyboardKey.enter, source: 'click_e')) {
-      _lastSyntheticSelectAt = now;
+    if (_duplicateInputGuard.shouldSuppressSyntheticKey(LogicalKeyboardKey.enter)) {
+      _log('suppress key=${_keyName(LogicalKeyboardKey.enter)} source=click_s reason=recent-native');
+      return;
     }
+
+    _setTraditionalFocusHighlight();
+    _scheduleFrame();
+    _selectPressedFromClick = true;
+    _log('emit keydown=${_keyName(LogicalKeyboardKey.enter)} source=click_s');
+    _simulateKeyDown(LogicalKeyboardKey.enter);
+  }
+
+  void _releaseSelectFromClick({required String source}) {
+    if (!_selectPressedFromClick) {
+      _log('ignore keyup=${_keyName(LogicalKeyboardKey.enter)} source=$source reason=no-click-select-down');
+      return;
+    }
+
+    _setTraditionalFocusHighlight();
+    _scheduleFrame();
+    _selectPressedFromClick = false;
+    _lastSyntheticSelectAt = _now();
+    _log('emit keyup=${_keyName(LogicalKeyboardKey.enter)} source=$source');
+    _simulateKeyUp(LogicalKeyboardKey.enter);
   }
 
   bool _emitKey(LogicalKeyboardKey logicalKey, {required String source, String? detail}) {

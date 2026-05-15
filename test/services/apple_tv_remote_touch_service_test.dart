@@ -134,48 +134,60 @@ void main() {
       expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
     });
 
-    test('deduplicates touch tap and click fallback select events', () async {
+    test('click events emit held select key down and up', () async {
       final harness = _Harness();
 
       await harness.send('started', x: 500, y: 500);
       await harness.send('ended', x: 500, y: 500);
+      await harness.send('click_s');
       await harness.send('click_e');
 
-      expect(harness.keys, [LogicalKeyboardKey.enter]);
+      expect(harness.keyDowns, [LogicalKeyboardKey.enter]);
+      expect(harness.keyUps, [LogicalKeyboardKey.enter]);
 
       harness.advance(const Duration(milliseconds: 121));
+      await harness.send('click_s');
       await harness.send('click_e');
 
-      expect(harness.keys, [LogicalKeyboardKey.enter, LogicalKeyboardKey.enter]);
+      expect(harness.keyDowns, [LogicalKeyboardKey.enter, LogicalKeyboardKey.enter]);
+      expect(harness.keyUps, [LogicalKeyboardKey.enter, LogicalKeyboardKey.enter]);
     });
 
     test('native select suppresses click fallback from physical remote path', () async {
       final harness = _Harness();
 
       harness.service.handleNativeKeyEvent(_keyDown(LogicalKeyboardKey.select));
+      await harness.send('click_s');
       await harness.send('click_e');
 
-      expect(harness.keys, isEmpty);
+      expect(harness.keyDowns, isEmpty);
+      expect(harness.keyUps, isEmpty);
 
       harness.service.handleNativeKeyEvent(_keyUp(LogicalKeyboardKey.select));
       harness.advance(const Duration(milliseconds: 121));
+      await harness.send('click_s');
       await harness.send('click_e');
 
-      expect(harness.keys, [LogicalKeyboardKey.enter]);
+      expect(harness.keyDowns, [LogicalKeyboardKey.enter]);
+      expect(harness.keyUps, [LogicalKeyboardKey.enter]);
     });
 
     test('recent directional input suppresses click fallback', () async {
       final harness = _Harness();
 
       harness.service.handleNativeKeyEvent(_keyDown(LogicalKeyboardKey.arrowLeft));
+      await harness.send('click_s');
       await harness.send('click_e');
 
-      expect(harness.keys, isEmpty);
+      expect(harness.keyDowns, isEmpty);
+      expect(harness.keyUps, isEmpty);
 
       harness.advance(const Duration(milliseconds: 221));
+      await harness.send('click_s');
       await harness.send('click_e');
 
-      expect(harness.keys, [LogicalKeyboardKey.enter]);
+      expect(harness.keyDowns, [LogicalKeyboardKey.enter]);
+      expect(harness.keyUps, [LogicalKeyboardKey.enter]);
     });
 
     test('synthetic swipe suppresses click fallback', () async {
@@ -183,9 +195,12 @@ void main() {
 
       await harness.send('started', x: 500, y: 500);
       await harness.send('move', x: 380, y: 500);
+      await harness.send('click_s');
       await harness.send('click_e');
 
       expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+      expect(harness.keyDowns, isEmpty);
+      expect(harness.keyUps, isEmpty);
     });
 
     test('cancelled touch does not emit select on a later ended message', () async {
@@ -204,9 +219,13 @@ void main() {
 class _Harness {
   DateTime now = DateTime(2026, 5, 5, 12);
   final List<LogicalKeyboardKey> keys = [];
+  final List<LogicalKeyboardKey> keyDowns = [];
+  final List<LogicalKeyboardKey> keyUps = [];
 
   late final AppleTvRemoteTouchService service = AppleTvRemoteTouchService(
     simulateKeyPress: keys.add,
+    simulateKeyDown: keyDowns.add,
+    simulateKeyUp: keyUps.add,
     scheduleFrame: () {},
     now: () => now,
     swipeThreshold: 100,

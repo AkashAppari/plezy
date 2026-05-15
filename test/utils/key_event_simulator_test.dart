@@ -7,29 +7,7 @@ import 'package:plezy/utils/key_event_simulator.dart';
 
 void main() {
   testWidgets('simulateKeyPress dispatches directional pad key events', (tester) async {
-    final events = <KeyEvent>[];
-    late BuildContext focusContext;
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Focus(
-          autofocus: true,
-          onKeyEvent: (_, event) {
-            events.add(event);
-            return KeyEventResult.handled;
-          },
-          child: Builder(
-            builder: (context) {
-              focusContext = context;
-              return const SizedBox.shrink();
-            },
-          ),
-        ),
-      ),
-    );
-    Focus.of(focusContext).requestFocus();
-    await tester.pump();
-    expect(Focus.of(focusContext).hasPrimaryFocus, isTrue);
+    final events = await _pumpKeyEventRecorder(tester);
 
     scheduleFrameIfIdle();
     simulateKeyPress(LogicalKeyboardKey.enter);
@@ -39,4 +17,45 @@ void main() {
     expect(events, hasLength(2));
     expect(events.map((event) => event.deviceType), everyElement(ui.KeyEventDeviceType.directionalPad));
   });
+
+  testWidgets('simulateKeyDown and simulateKeyUp dispatch held directional pad events', (tester) async {
+    final events = await _pumpKeyEventRecorder(tester);
+
+    simulateKeyDown(LogicalKeyboardKey.enter);
+    simulateKeyUp(LogicalKeyboardKey.enter);
+    await tester.pump();
+    await tester.pump();
+
+    expect(events, hasLength(2));
+    expect(events[0], isA<KeyDownEvent>());
+    expect(events[1], isA<KeyUpEvent>());
+    expect(events.map((event) => event.deviceType), everyElement(ui.KeyEventDeviceType.directionalPad));
+  });
+}
+
+Future<List<KeyEvent>> _pumpKeyEventRecorder(WidgetTester tester) async {
+  final events = <KeyEvent>[];
+  late BuildContext focusContext;
+
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Focus(
+        autofocus: true,
+        onKeyEvent: (_, event) {
+          events.add(event);
+          return KeyEventResult.handled;
+        },
+        child: Builder(
+          builder: (context) {
+            focusContext = context;
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    ),
+  );
+  Focus.of(focusContext).requestFocus();
+  await tester.pump();
+  expect(Focus.of(focusContext).hasPrimaryFocus, isTrue);
+  return events;
 }

@@ -30,15 +30,7 @@ void simulateKeyPress(LogicalKeyboardKey logicalKey) {
       deviceType: ui.KeyEventDeviceType.directionalPad,
     );
 
-    FocusNode? node = focusNode;
-    KeyEventResult result = KeyEventResult.ignored;
-
-    while (node != null && result != KeyEventResult.handled) {
-      if (node.onKeyEvent != null) {
-        result = node.onKeyEvent!(node, keyDownEvent);
-      }
-      node = node.parent;
-    }
+    _dispatchKeyEvent(focusNode, keyDownEvent);
 
     final keyUpEvent = KeyUpEvent(
       physicalKey: physicalKey,
@@ -47,15 +39,56 @@ void simulateKeyPress(LogicalKeyboardKey logicalKey) {
       deviceType: ui.KeyEventDeviceType.directionalPad,
     );
 
-    node = focusNode;
-    while (node != null) {
-      if (node.onKeyEvent != null) {
-        final upResult = node.onKeyEvent!(node, keyUpEvent);
-        if (upResult == KeyEventResult.handled) break;
-      }
-      node = node.parent;
-    }
+    _dispatchKeyEvent(focusNode, keyUpEvent);
   });
+}
+
+/// Simulate only key down. Pair with [simulateKeyUp] for held buttons.
+void simulateKeyDown(LogicalKeyboardKey logicalKey) {
+  scheduleFrameIfIdle();
+  SchedulerBinding.instance.addPostFrameCallback((_) {
+    final focusNode = FocusManager.instance.primaryFocus;
+    if (focusNode == null) return;
+
+    _dispatchKeyEvent(
+      focusNode,
+      KeyDownEvent(
+        physicalKey: _getPhysicalKey(logicalKey),
+        logicalKey: logicalKey,
+        timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
+        deviceType: ui.KeyEventDeviceType.directionalPad,
+      ),
+    );
+  });
+}
+
+/// Simulate only key up. The release half of [simulateKeyDown].
+void simulateKeyUp(LogicalKeyboardKey logicalKey) {
+  scheduleFrameIfIdle();
+  SchedulerBinding.instance.addPostFrameCallback((_) {
+    final focusNode = FocusManager.instance.primaryFocus;
+    if (focusNode == null) return;
+
+    _dispatchKeyEvent(
+      focusNode,
+      KeyUpEvent(
+        physicalKey: _getPhysicalKey(logicalKey),
+        logicalKey: logicalKey,
+        timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
+        deviceType: ui.KeyEventDeviceType.directionalPad,
+      ),
+    );
+  });
+}
+
+void _dispatchKeyEvent(FocusNode focusNode, KeyEvent event) {
+  FocusNode? node = focusNode;
+  while (node != null) {
+    if (node.onKeyEvent != null && node.onKeyEvent!(node, event) == KeyEventResult.handled) {
+      break;
+    }
+    node = node.parent;
+  }
 }
 
 /// Force a frame when the engine is idle so focus visuals update immediately
