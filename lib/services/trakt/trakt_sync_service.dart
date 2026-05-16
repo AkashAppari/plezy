@@ -1,9 +1,13 @@
 import 'dart:async';
 import 'dart:collection';
 
+import '../../media/media_item.dart';
+import '../../media/media_kind.dart';
+import '../../media/media_server_client.dart';
 import '../../models/trakt/trakt_ids.dart';
 import '../../models/trakt/trakt_scrobble_request.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/episode_collection.dart';
 import '../../utils/watch_state_notifier.dart';
 import '../multi_server_manager.dart';
 import '../settings_service.dart';
@@ -17,8 +21,9 @@ import 'trakt_sync_queue.dart';
 /// One-way push of watched/unwatched events from Plezy to Trakt.
 ///
 /// Subscribes to `WatchStateNotifier` and filters to `{watched, unwatched}`
-/// events on movies/episodes. Failures are queued via `TraktSyncQueue` and
-/// drained on app foreground, network restore, and at startup.
+/// events on movies/episodes, expanding show/season events to their episodes.
+/// Failures are queued via `TraktSyncQueue` and drained on app foreground,
+/// network restore, and at startup.
 class TraktSyncService {
   /// Inter-request delay during queue drain to stay under Trakt's
   /// 1000 req / 5 min rate limit.
@@ -99,7 +104,7 @@ class TraktSyncService {
     // Backend-neutral: TrackerIdResolver pulls external IDs through
     // MediaServerClient.fetchExternalIds — Plex hits `?includeGuids=1`,
     // Jellyfin reads the inline `ProviderIds` map.
-    final mediaClient = _serverManager?.getClient(serverId);
+    final mediaClient = _clientFor(serverId);
     if (mediaClient == null) return null;
 
     final resolver = TrackerIdResolver(mediaClient, needsFribb: () => false);
@@ -107,12 +112,11 @@ class TraktSyncService {
     return resolver;
   }
 
+  MediaServerClient? _clientFor(String serverId) => _serverManager?.getClient(serverId);
+
   Future<void> _onWatchStateEvent(WatchStateEvent event) async {
     if (!_canPush) return;
     if (event.changeType != WatchStateChangeType.watched && event.changeType != WatchStateChangeType.unwatched) return;
-
-    final kind = TraktMediaKind.tryFromMediaKindId(event.mediaType);
-    if (kind == null) return;
 
     if (!_isLibraryAllowed(event.librarySectionGlobalKey)) {
       appLogger.d('Trakt sync: library filtered out for ${event.itemId}');
@@ -120,14 +124,77 @@ class TraktSyncService {
     }
 
     final op = event.changeType == WatchStateChangeType.watched ? TraktSyncOp.add : TraktSyncOp.remove;
-    await _push(
-      op: op,
-      ratingKey: event.itemId,
+    final watchedAtIso = DateTime.now().toUtc().toIso8601String();
+
+    switch (event.mediaType) {
+      case 'movie':
+        await _push(
+          op: op,
+          ratingKey: event.itemId,
+          serverId: event.serverId,
+          libraryGlobalKey: event.librarySectionGlobalKey,
+          kind: TraktMediaKind.movie,
+          watchedAtIso: watchedAtIso,
+        );
+      case 'episode':
+        await _push(
+          op: op,
+          ratingKey: event.itemId,
+          serverId: event.serverId,
+          libraryGlobalKey: event.librarySectionGlobalKey,
+          kind: TraktMediaKind.episode,
+          watchedAtIso: watchedAtIso,
+        );
+      case 'show' || 'season':
+        await _pushPlayableDescendants(op: op, event: event, watchedAtIso: watchedAtIso);
+    }
+  }
+
+  Future<void> _pushPlayableDescendants({
+    required TraktSyncOp op,
+    required WatchStateEvent event,
+    required String watchedAtIso,
+  }) async {
+    final mediaClient = _clientFor(event.serverId);
+    if (mediaClient == null) {
+      appLogger.d('Trakt sync: no client registered for server ${event.serverId}, skipping ${event.mediaType}');
+      return;
+    }
+
+    final fallback = MediaItem(
+      id: event.itemId,
+      backend: mediaClient.backend,
+      kind: MediaKind.fromString(event.mediaType),
       serverId: event.serverId,
-      libraryGlobalKey: event.librarySectionGlobalKey,
-      kind: kind,
-      watchedAtIso: DateTime.now().toUtc().toIso8601String(),
+      serverName: mediaClient.serverName,
+      libraryId: event.librarySectionID,
+      parentId: event.mediaType == 'season' && event.parentChain.isNotEmpty ? event.parentChain.first : null,
     );
+    final episodes = <MediaItem>[];
+    if (fallback.kind == MediaKind.show) {
+      await collectEpisodesForShow(mediaClient, event.itemId, unwatchedOnly: false, out: episodes, fallback: fallback);
+    } else {
+      await collectEpisodesForSeason(
+        mediaClient,
+        event.itemId,
+        unwatchedOnly: false,
+        out: episodes,
+        fallback: fallback,
+      );
+    }
+
+    for (final episode in episodes) {
+      if (episode.kind != MediaKind.episode) continue;
+      await _push(
+        op: op,
+        ratingKey: episode.id,
+        serverId: event.serverId,
+        libraryGlobalKey: episode.libraryGlobalKey ?? event.librarySectionGlobalKey,
+        kind: TraktMediaKind.episode,
+        watchedAtIso: watchedAtIso,
+        episodeMeta: episode,
+      );
+    }
   }
 
   Future<void> _push({
@@ -137,6 +204,7 @@ class TraktSyncService {
     required String? libraryGlobalKey,
     required TraktMediaKind kind,
     required String watchedAtIso,
+    MediaItem? episodeMeta,
   }) async {
     final resolver = _resolverFor(serverId);
     if (resolver == null) {
@@ -155,14 +223,14 @@ class TraktSyncService {
       // doesn't carry the index, so fetch episode metadata via the neutral
       // MediaServerClient surface (Plex `/library/metadata`, Jellyfin
       // `/Users/{id}/Items/{id}`).
-      final mediaClient = _serverManager?.getClient(serverId);
+      final mediaClient = _clientFor(serverId);
       if (mediaClient == null) return;
-      final episodeMeta = await mediaClient.fetchItem(ratingKey);
-      if (episodeMeta == null) return;
-      season = episodeMeta.parentIndex;
-      number = episodeMeta.index;
+      final metadata = episodeMeta ?? await mediaClient.fetchItem(ratingKey);
+      if (metadata == null) return;
+      season = metadata.parentIndex;
+      number = metadata.index;
       if (season == null || number == null) return;
-      resolved = await resolver.resolveShowForEpisode(episodeMeta);
+      resolved = await resolver.resolveShowForEpisode(metadata, includeAnimeProgress: false);
     }
 
     if (resolved == null) {

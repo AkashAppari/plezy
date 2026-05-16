@@ -60,6 +60,10 @@ class MalClient {
     await _request('PUT', '/anime/$animeId/my_list_status', formBody: fields);
   }
 
+  Future<void> deleteMyListStatus(int animeId) async {
+    await _request('DELETE', '/anime/$animeId/my_list_status');
+  }
+
   Future<int?> getMyListScore(int animeId) async {
     try {
       final res = await _request('GET', '/anime/$animeId?fields=my_list_status');

@@ -64,6 +64,21 @@ class AnilistTracker extends TrackerBase {
     appLogger.d('AniList: saved entry (anilist=$anilistId, progress=$watched, status=$status)');
   }
 
+  @override
+  Future<void> markUnwatched(TrackerContext ctx) async {
+    if (ctx.isMovie) {
+      await removeFromList(ctx);
+    }
+  }
+
+  Future<void> removeFromList(TrackerContext ctx) async {
+    final client = _client;
+    final anilistId = ctx.anime?.anilist;
+    if (client == null || anilistId == null) return;
+    await client.deleteMediaListEntry(anilistId);
+    appLogger.d('AniList: deleted entry (anilist=$anilistId)');
+  }
+
   Future<void> rate(TrackerRatingContext ctx, int score) async {
     final client = _client;
     final anilistId = ctx.ids.anime?.anilist;

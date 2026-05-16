@@ -30,6 +30,7 @@ abstract class Tracker {
   bool shouldScrobbleForLibrary(String? libraryGlobalKey);
 
   Future<void> markWatched(TrackerContext ctx);
+  Future<void> markUnwatched(TrackerContext ctx);
 }
 
 class TrackerRatingUnavailableException implements Exception {

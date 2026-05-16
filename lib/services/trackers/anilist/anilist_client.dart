@@ -50,6 +50,34 @@ class AnilistClient {
     await query(mutation, variables: {'mediaId': mediaId, 'progress': progress, 'status': status});
   }
 
+  Future<void> deleteMediaListEntry(int mediaId) async {
+    const idQuery = '''
+      query(\$mediaId: Int) {
+        Media(id: \$mediaId, type: ANIME) {
+          mediaListEntry {
+            id
+          }
+        }
+      }
+    ''';
+    final data = await query(idQuery, variables: {'mediaId': mediaId});
+    final media = data['Media'];
+    if (media is! Map) return;
+    final entry = media['mediaListEntry'];
+    if (entry is! Map) return;
+    final entryId = flexibleInt(entry['id']);
+    if (entryId == null) return;
+
+    const mutation = '''
+      mutation(\$id: Int) {
+        DeleteMediaListEntry(id: \$id) {
+          deleted
+        }
+      }
+    ''';
+    await query(mutation, variables: {'id': entryId});
+  }
+
   Future<void> setMediaListScore({required int mediaId, required int score}) async {
     const mutation = '''
       mutation(\$mediaId: Int, \$scoreRaw: Int) {

@@ -302,7 +302,7 @@ class TraktScrobbleService {
     final number = metadata.index;
     if (season == null || number == null) return null;
 
-    final showIds = await resolver.resolveShowForEpisode(metadata);
+    final showIds = await resolver.resolveShowForEpisode(metadata, includeAnimeProgress: false);
     if (showIds == null) return null;
 
     return TraktScrobbleRequest.episode(

@@ -39,6 +39,8 @@ class SimklClient {
   /// ```
   Future<void> addToHistory(Map<String, dynamic> body) => _request('POST', '/sync/history', body: body);
 
+  Future<void> removeFromHistory(Map<String, dynamic> body) => _request('POST', '/sync/history/remove', body: body);
+
   Future<void> addRatings(Map<String, dynamic> body) => _request('POST', '/sync/ratings', body: body);
 
   Future<void> removeRatings(Map<String, dynamic> body) => _request('POST', '/sync/ratings/remove', body: body);

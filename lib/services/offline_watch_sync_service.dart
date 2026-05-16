@@ -16,6 +16,7 @@ import '../utils/watch_state_notifier.dart';
 import 'multi_server_manager.dart';
 import 'plex_client.dart';
 import 'settings_service.dart';
+import 'trackers/tracker_coordinator.dart';
 
 /// Service for managing offline watch progress and syncing it back to the
 /// owning server. Backend-neutral over [MediaServerClient] — Plex actions
@@ -570,10 +571,12 @@ class OfflineWatchSyncService extends ChangeNotifier {
     switch (action.actionType) {
       case 'watched':
         await client.markWatched(item);
+        await TrackerCoordinator.instance.markWatched(item, client);
         break;
 
       case 'unwatched':
         await client.markUnwatched(item);
+        await TrackerCoordinator.instance.markUnwatched(item, client);
         break;
 
       case 'progress':
@@ -598,6 +601,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
         // If progress exceeded threshold, also mark as watched.
         if (action.shouldMarkWatched) {
           await client.markWatched(item);
+          await TrackerCoordinator.instance.markWatched(item, client);
         }
         break;
     }

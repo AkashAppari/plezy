@@ -53,10 +53,26 @@ Future<void> _collectPlayable(
 
 MediaItem _withFallbackLibrary(MediaItem item, MediaItem? fallback) {
   if (fallback == null) return item;
+  final fallbackIsSeason = fallback.kind == MediaKind.season;
+  final fallbackIsShow = fallback.kind == MediaKind.show;
   return item.copyWith(
     serverId: item.serverId ?? fallback.serverId,
     serverName: item.serverName ?? fallback.serverName,
     libraryId: item.libraryId ?? fallback.libraryId,
     libraryTitle: item.libraryTitle ?? fallback.libraryTitle,
+    parentId: item.parentId ?? (fallbackIsSeason ? fallback.id : null),
+    parentTitle: item.parentTitle ?? (fallbackIsSeason ? fallback.title : null),
+    grandparentId: item.grandparentId ?? _fallbackGrandparentId(fallback, isShow: fallbackIsShow),
+    grandparentTitle: item.grandparentTitle ?? _fallbackGrandparentTitle(fallback, isShow: fallbackIsShow),
   );
+}
+
+String? _fallbackGrandparentId(MediaItem fallback, {required bool isShow}) {
+  if (isShow) return fallback.id;
+  return fallback.grandparentId ?? fallback.parentId;
+}
+
+String? _fallbackGrandparentTitle(MediaItem fallback, {required bool isShow}) {
+  if (isShow) return fallback.title;
+  return fallback.grandparentTitle ?? fallback.parentTitle;
 }

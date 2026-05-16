@@ -81,6 +81,30 @@ class MalTracker extends TrackerBase {
     appLogger.d('MAL: updated list status (mal=$malId, fields=$fields)');
   }
 
+  @override
+  Future<void> markUnwatched(TrackerContext ctx) async {
+    if (ctx.isMovie) {
+      await removeFromList(ctx);
+    }
+  }
+
+  Future<void> removeFromList(TrackerContext ctx) async {
+    final client = _client;
+    final malId = ctx.anime?.mal;
+    if (client == null || malId == null) return;
+    await _deleteMyListStatus(client, malId);
+  }
+
+  Future<void> _deleteMyListStatus(MalClient client, int malId) async {
+    try {
+      await client.deleteMyListStatus(malId);
+      appLogger.d('MAL: deleted list status (mal=$malId)');
+    } on MalApiException catch (e) {
+      if (e.statusCode == 404) return;
+      rethrow;
+    }
+  }
+
   Future<void> rate(TrackerRatingContext ctx, int score) async {
     final client = _client;
     final malId = ctx.ids.anime?.mal;

@@ -3,14 +3,17 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/models/trackers/anime_lists_mapping.dart';
 import 'package:plezy/services/trackers/anime_episode_progress_resolver.dart';
 
 class _FakeMediaServerClient implements MediaServerClient {
   final Map<String, List<MediaItem>> childrenByParent;
+  final Map<String, List<MediaItem>> playableByParent;
   Object? throwOnFetchChildren;
   int fetchChildrenCalls = 0;
+  int fetchPlayableDescendantsCalls = 0;
 
-  _FakeMediaServerClient(this.childrenByParent);
+  _FakeMediaServerClient(this.childrenByParent, {this.playableByParent = const {}});
 
   @override
   Future<List<MediaItem>> fetchChildren(String parentId) async {
@@ -18,6 +21,12 @@ class _FakeMediaServerClient implements MediaServerClient {
     final error = throwOnFetchChildren;
     if (error != null) throw error;
     return childrenByParent[parentId] ?? const [];
+  }
+
+  @override
+  Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async {
+    fetchPlayableDescendantsCalls++;
+    return playableByParent[parentId] ?? const [];
   }
 
   @override
@@ -44,6 +53,17 @@ MediaItem _episode({int season = 2, int number = 6, String showId = 'show-1', in
   index: number,
   viewCount: viewCount,
 );
+
+AnimeEpisodeMatch _match({required int anidbId, required int serverEpisode, required int animeEpisode}) =>
+    AnimeEpisodeMatch(
+      anidbId: anidbId,
+      anidbSeason: 1,
+      anidbEpisode: animeEpisode,
+      provider: AnimeListProvider.tvdb,
+      externalSeason: 1,
+      externalEpisode: serverEpisode,
+      kind: AnimeListMatchKind.range,
+    );
 
 void main() {
   group('AnimeEpisodeProgressResolver', () {
@@ -177,6 +197,59 @@ void main() {
       client.childrenByParent['show-1'] = [_season(1, watched: 6)];
       expect((await resolver.resolve(_episode(season: 1, number: 7), scope: AnimeProgressScope.season))?.progress, 7);
       expect(client.fetchChildrenCalls, 2);
+    });
+
+    test('mapped scope counts only watched episodes in the selected anime entry', () async {
+      final client = _FakeMediaServerClient(
+        const {},
+        playableByParent: {
+          'show-1': [
+            _episode(season: 1, number: 12, viewCount: 1),
+            _episode(season: 1, number: 13, viewCount: 1),
+            _episode(season: 1, number: 14),
+          ],
+        },
+      );
+      final resolver = AnimeEpisodeProgressResolver(client);
+
+      final result = await resolver.resolve(
+        _episode(season: 1, number: 14),
+        scope: AnimeProgressScope.mapped,
+        animeMatch: _match(anidbId: 2, serverEpisode: 14, animeEpisode: 2),
+        episodeMatcher: (episode) async => switch (episode.index) {
+          12 => _match(anidbId: 1, serverEpisode: 12, animeEpisode: 12),
+          13 => _match(anidbId: 2, serverEpisode: 13, animeEpisode: 1),
+          14 => _match(anidbId: 2, serverEpisode: 14, animeEpisode: 2),
+          _ => null,
+        },
+      );
+
+      expect(result?.progress, 2);
+      expect(client.fetchPlayableDescendantsCalls, 1);
+    });
+
+    test('mapped scope can exclude the current episode for unwatch progress', () async {
+      final client = _FakeMediaServerClient(
+        const {},
+        playableByParent: {
+          'show-1': [_episode(season: 1, number: 13, viewCount: 1), _episode(season: 1, number: 14)],
+        },
+      );
+      final resolver = AnimeEpisodeProgressResolver(client);
+
+      final result = await resolver.resolve(
+        _episode(season: 1, number: 14),
+        scope: AnimeProgressScope.mapped,
+        animeMatch: _match(anidbId: 2, serverEpisode: 14, animeEpisode: 2),
+        includeCurrentEpisode: false,
+        episodeMatcher: (episode) async => switch (episode.index) {
+          13 => _match(anidbId: 2, serverEpisode: 13, animeEpisode: 1),
+          14 => _match(anidbId: 2, serverEpisode: 14, animeEpisode: 2),
+          _ => null,
+        },
+      );
+
+      expect(result?.progress, 1);
     });
   });
 }

@@ -56,7 +56,26 @@ class SimklTracker extends TrackerBase {
     final ids = _buildIds(external: ctx.external, anime: ctx.anime);
     if (ids.isEmpty) return;
 
-    final body = ctx.isMovie
+    final body = _historyBody(ctx, ids);
+
+    await client.addToHistory(body);
+    appLogger.d('Simkl: marked watched (ids=$ids, isMovie=${ctx.isMovie})');
+  }
+
+  @override
+  Future<void> markUnwatched(TrackerContext ctx) async {
+    final client = _client;
+    if (client == null) return;
+
+    final ids = _buildIds(external: ctx.external, anime: ctx.anime);
+    if (ids.isEmpty) return;
+
+    await client.removeFromHistory(_historyBody(ctx, ids));
+    appLogger.d('Simkl: marked unwatched (ids=$ids, isMovie=${ctx.isMovie})');
+  }
+
+  Map<String, dynamic> _historyBody(TrackerContext ctx, Map<String, Object> ids) {
+    return ctx.isMovie
         ? {
             'movies': [
               {'ids': ids},
@@ -77,9 +96,6 @@ class SimklTracker extends TrackerBase {
               },
             ],
           };
-
-    await client.addToHistory(body);
-    appLogger.d('Simkl: marked watched (ids=$ids, isMovie=${ctx.isMovie})');
   }
 
   Future<int?> getRating(TrackerRatingContext ctx) async {

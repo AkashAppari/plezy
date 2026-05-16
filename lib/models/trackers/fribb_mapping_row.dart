@@ -18,6 +18,8 @@ Object? _readTmdbSeason(Map json, String key) {
 /// One row from `anime-list-mini.json` (Fribb/anime-lists).
 @JsonSerializable(createToJson: false)
 class FribbMappingRow {
+  @JsonKey(name: 'anidb_id', fromJson: flexibleInt)
+  final int? anidbId;
   @JsonKey(name: 'anilist_id', fromJson: flexibleInt)
   final int? anilistId;
   @JsonKey(name: 'imdb_id')
@@ -43,6 +45,7 @@ class FribbMappingRow {
   final String? type;
 
   const FribbMappingRow({
+    this.anidbId,
     this.anilistId,
     this.imdbId,
     this.malId,

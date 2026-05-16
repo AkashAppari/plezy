@@ -15,6 +15,7 @@ import '../mixins/controller_disposer_mixin.dart';
 import '../services/plex_client.dart';
 import '../services/media_list_playback_launcher.dart';
 import '../services/playlist_items_loader.dart';
+import '../services/trackers/tracker_coordinator.dart';
 import '../models/transcode_quality_preset.dart';
 import '../utils/download_version_utils.dart';
 import '../utils/download_utils.dart';
@@ -549,8 +550,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             // hits /UserPlayedItems. WatchStateNotifier event is fired in both
             // paths so cross-screen UI updates regardless of backend.
             await _executeAction(context, () async {
+              final item = mediaItem;
               final client = context.tryGetMediaClientForServer(_itemServerId!);
-              if (client != null) await client.markWatched(mediaItem!);
+              if (client != null && item != null) {
+                await client.markWatched(item);
+                unawaited(TrackerCoordinator.instance.markWatched(item, client));
+              }
             }, t.messages.markedAsWatched);
           }
           break;
@@ -567,8 +572,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             }
           } else {
             await _executeAction(context, () async {
+              final item = mediaItem;
               final client = context.tryGetMediaClientForServer(_itemServerId!);
-              if (client != null) await client.markUnwatched(mediaItem!);
+              if (client != null && item != null) {
+                await client.markUnwatched(item);
+                unawaited(TrackerCoordinator.instance.markUnwatched(item, client));
+              }
             }, t.messages.markedAsUnwatched);
           }
           break;

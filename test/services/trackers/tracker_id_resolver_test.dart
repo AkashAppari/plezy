@@ -3,8 +3,10 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/models/trackers/anime_lists_mapping.dart';
 import 'package:plezy/models/trackers/fribb_mapping_row.dart';
 import 'package:plezy/services/trackers/anime_episode_progress_resolver.dart';
+import 'package:plezy/services/trackers/anime_lists_mapping_store.dart';
 import 'package:plezy/services/trackers/fribb_mapping_store.dart';
 import 'package:plezy/services/trackers/tracker_id_resolver.dart';
 import 'package:plezy/utils/external_ids.dart';
@@ -44,15 +46,25 @@ class _FakeAnimeProgressLookup implements AnimeEpisodeProgressLookup {
   int clearCalls = 0;
   MediaItem? lastEpisode;
   AnimeProgressScope? lastScope;
+  AnimeEpisodeMatch? lastMatch;
+  bool? lastIncludeCurrentEpisode;
 
   _FakeAnimeProgressLookup(int? progress)
     : result = progress == null ? null : ResolvedAnimeProgress(progress: progress);
 
   @override
-  Future<ResolvedAnimeProgress?> resolve(MediaItem episode, {required AnimeProgressScope scope}) async {
+  Future<ResolvedAnimeProgress?> resolve(
+    MediaItem episode, {
+    required AnimeProgressScope scope,
+    AnimeEpisodeMatch? animeMatch,
+    Future<AnimeEpisodeMatch?> Function(MediaItem episode)? episodeMatcher,
+    bool includeCurrentEpisode = true,
+  }) async {
     resolveCalls++;
     lastEpisode = episode;
     lastScope = scope;
+    lastMatch = animeMatch;
+    lastIncludeCurrentEpisode = includeCurrentEpisode;
     return result;
   }
 
@@ -60,6 +72,23 @@ class _FakeAnimeProgressLookup implements AnimeEpisodeProgressLookup {
   void clearCache() {
     clearCalls++;
   }
+}
+
+class _FakeAnimeListsLookup implements AnimeListsMappingLookup {
+  final Map<String, AnimeEpisodeMatch> matches;
+
+  const _FakeAnimeListsLookup({this.matches = const {}});
+
+  @override
+  Future<AnimeEpisodeMatch?> lookupEpisode({int? tvdbId, int? tmdbId, int? season, int? episodeNumber}) async {
+    return matches['$season-$episodeNumber'];
+  }
+
+  @override
+  Future<Set<int>> lookupAnimeIdsForSeason({int? tvdbId, int? tmdbId, required int season}) async => const <int>{};
+
+  @override
+  Future<Set<int>> lookupAnimeIdsForShow({int? tvdbId, int? tmdbId}) async => const <int>{};
 }
 
 MediaItem _episode({int season = 23, int number = 6}) => MediaItem(
@@ -76,13 +105,26 @@ TrackerIdResolver _resolver({
   required List<FribbMappingRow> rows,
   required _FakeAnimeProgressLookup animeProgress,
   _FakeFribbLookup? lookup,
+  AnimeListsMappingLookup animeLists = const _FakeAnimeListsLookup(),
 }) {
   return TrackerIdResolver(
     _FakeMediaServerClient({'show-1': const ExternalIds(tvdb: 81797, tmdb: 37854, imdb: 'tt0388629')}),
     store: lookup ?? _FakeFribbLookup(rows),
+    animeLists: animeLists,
     animeProgress: animeProgress,
   );
 }
+
+AnimeEpisodeMatch _match({required int anidbId, required int serverEpisode, required int animeEpisode}) =>
+    AnimeEpisodeMatch(
+      anidbId: anidbId,
+      anidbSeason: 1,
+      anidbEpisode: animeEpisode,
+      provider: AnimeListProvider.tvdb,
+      externalSeason: 1,
+      externalEpisode: serverEpisode,
+      kind: AnimeListMatchKind.range,
+    );
 
 void main() {
   group('TrackerIdResolver anime progress', () {
@@ -175,6 +217,69 @@ void main() {
       expect(lookup.lookups, 2);
       expect(animeProgress.clearCalls, 1);
       expect(animeProgress.resolveCalls, 2);
+    });
+
+    test('same server season can select different anime entries by episode range', () async {
+      final animeProgress = _FakeAnimeProgressLookup(2);
+      final resolver = _resolver(
+        animeProgress: animeProgress,
+        animeLists: _FakeAnimeListsLookup(matches: {'1-14': _match(anidbId: 222, serverEpisode: 14, animeEpisode: 2)}),
+        rows: const [
+          FribbMappingRow(anidbId: 111, tvdbId: 81797, malId: 101, tvdbSeason: 1, type: 'TV'),
+          FribbMappingRow(anidbId: 222, tvdbId: 81797, malId: 102, tvdbSeason: 1, type: 'TV'),
+        ],
+      );
+
+      final ids = await resolver.resolveShowForEpisode(_episode(season: 1, number: 14));
+
+      expect(ids?.anime?.mal, 102);
+      expect(ids?.animeProgressScope, AnimeProgressScope.mapped);
+      expect(ids?.animeEpisodeNumber, 2);
+      expect(ids?.animeProgress, 2);
+      expect(animeProgress.lastScope, AnimeProgressScope.mapped);
+      expect(animeProgress.lastMatch?.anidbId, 222);
+    });
+
+    test('passes includeCurrentEpisode through for unwatch progress', () async {
+      final animeProgress = _FakeAnimeProgressLookup(1);
+      final resolver = _resolver(
+        animeProgress: animeProgress,
+        animeLists: _FakeAnimeListsLookup(matches: {'1-14': _match(anidbId: 222, serverEpisode: 14, animeEpisode: 2)}),
+        rows: const [FribbMappingRow(anidbId: 222, tvdbId: 81797, malId: 102, tvdbSeason: 1, type: 'TV')],
+      );
+
+      final ids = await resolver.resolveShowForEpisode(_episode(season: 1, number: 14), includeCurrentEpisode: false);
+
+      expect(ids?.animeProgress, 1);
+      expect(animeProgress.lastIncludeCurrentEpisode, isFalse);
+    });
+
+    test('episode-aware cache does not reuse a same-season split-cour row', () async {
+      final animeProgress = _FakeAnimeProgressLookup(null);
+      final lookup = _FakeFribbLookup(const [
+        FribbMappingRow(anidbId: 111, tvdbId: 81797, malId: 101, tvdbSeason: 1, type: 'TV'),
+        FribbMappingRow(anidbId: 222, tvdbId: 81797, malId: 102, tvdbSeason: 1, type: 'TV'),
+      ]);
+      final client = _FakeMediaServerClient({'show-1': const ExternalIds(tvdb: 81797)});
+      final resolver = TrackerIdResolver(
+        client,
+        store: lookup,
+        animeLists: _FakeAnimeListsLookup(
+          matches: {
+            '1-12': _match(anidbId: 111, serverEpisode: 12, animeEpisode: 12),
+            '1-13': _match(anidbId: 222, serverEpisode: 13, animeEpisode: 1),
+          },
+        ),
+        animeProgress: animeProgress,
+      );
+
+      final first = await resolver.resolveShowForEpisode(_episode(season: 1, number: 12), includeAnimeProgress: false);
+      final second = await resolver.resolveShowForEpisode(_episode(season: 1, number: 13), includeAnimeProgress: false);
+
+      expect(first?.anime?.mal, 101);
+      expect(second?.anime?.mal, 102);
+      expect(client.externalIdCalls, ['show-1']);
+      expect(lookup.lookups, 2);
     });
   });
 }

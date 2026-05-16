@@ -84,5 +84,34 @@ void main() {
       final put = requests.singleWhere((request) => request.method == 'PUT');
       expect(Uri.splitQueryString(put.body), {'status': 'watching', 'num_watched_episodes': '12'});
     });
+
+    test('episode unwatch is a no-op', () async {
+      final requests = <http.Request>[];
+      final client = MockClient((request) async {
+        requests.add(request);
+        fail('Unexpected ${request.method} ${request.url}');
+      });
+      tracker.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: client);
+
+      await tracker.markUnwatched(_episode(animeProgress: 1));
+
+      expect(requests, isEmpty);
+    });
+
+    test('removeFromList removes anime entry', () async {
+      final requests = <http.Request>[];
+      final client = MockClient((request) async {
+        requests.add(request);
+        if (request.method == 'DELETE') return http.Response('{}', 200);
+        fail('Unexpected ${request.method} ${request.url}');
+      });
+      tracker.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: client);
+
+      await tracker.removeFromList(_episode());
+
+      final delete = requests.single;
+      expect(delete.method, 'DELETE');
+      expect(delete.url.path, '/v2/anime/21/my_list_status');
+    });
   });
 }

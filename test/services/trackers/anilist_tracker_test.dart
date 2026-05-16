@@ -128,5 +128,58 @@ void main() {
 
       expect(saved.single, {'mediaId': 21, 'progress': 12, 'status': 'CURRENT'});
     });
+
+    test('episode unwatch is a no-op', () async {
+      final requests = <http.Request>[];
+      final client = MockClient((request) async {
+        requests.add(request);
+        fail('Unexpected ${request.method} ${request.url}');
+      });
+      tracker.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: client);
+
+      await tracker.markUnwatched(_episode(animeProgress: 1));
+
+      expect(requests, isEmpty);
+    });
+
+    test('removeFromList removes anime entry', () async {
+      final variables = <Map<String, dynamic>>[];
+      final client = MockClient((request) async {
+        final body = json.decode(request.body) as Map<String, dynamic>;
+        final query = body['query'] as String;
+        variables.add((body['variables'] as Map).cast<String, dynamic>());
+        if (query.contains('mediaListEntry')) {
+          return http.Response(
+            json.encode({
+              'data': {
+                'Media': {
+                  'mediaListEntry': {'id': 99},
+                },
+              },
+            }),
+            200,
+          );
+        }
+        if (query.contains('DeleteMediaListEntry')) {
+          return http.Response(
+            json.encode({
+              'data': {
+                'DeleteMediaListEntry': {'deleted': true},
+              },
+            }),
+            200,
+          );
+        }
+        fail('Unexpected AniList query: $query');
+      });
+      tracker.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: client);
+
+      await tracker.removeFromList(_episode());
+
+      expect(variables, [
+        {'mediaId': 21},
+        {'id': 99},
+      ]);
+    });
   });
 }

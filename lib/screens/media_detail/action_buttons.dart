@@ -202,8 +202,10 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
 
             if (isWatched) {
               await client.markUnwatched(metadata);
+              unawaited(TrackerCoordinator.instance.markUnwatched(metadata, client));
             } else {
               await client.markWatched(metadata);
+              unawaited(TrackerCoordinator.instance.markWatched(metadata, client));
             }
             if (mounted) {
               _watchStateChanged = true;
