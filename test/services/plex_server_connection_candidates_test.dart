@@ -146,5 +146,37 @@ void main() {
       expect(urls.first, preferred);
       expect(urls, contains(localPlexDirect));
     });
+
+    test('does not treat Tailscale CGNAT preferred endpoint as remote', () {
+      const preferred = 'https://100.90.80.70:32400';
+      const localPlexDirect = 'https://192-168-1-50.abc.plex.direct:32400';
+      final server = PlexServer.fromJson(
+        _serverJsonWithConnections([
+          _connectionJson(protocol: 'https', address: '192.168.1.50', port: 32400, uri: localPlexDirect, local: true),
+        ]),
+      );
+
+      final urls = server.prioritizedEndpointUrls(preferredFirst: preferred);
+
+      expect(server.networkClassForUrl(preferred), PlexNetworkClass.unknown);
+      expect(urls.first, preferred);
+      expect(urls, contains(localPlexDirect));
+    });
+
+    test('does not treat Tailscale MagicDNS preferred endpoint as remote', () {
+      const preferred = 'https://plex.tailnet.ts.net:32400';
+      const localPlexDirect = 'https://192-168-1-50.abc.plex.direct:32400';
+      final server = PlexServer.fromJson(
+        _serverJsonWithConnections([
+          _connectionJson(protocol: 'https', address: '192.168.1.50', port: 32400, uri: localPlexDirect, local: true),
+        ]),
+      );
+
+      final urls = server.prioritizedEndpointUrls(preferredFirst: preferred);
+
+      expect(server.networkClassForUrl(preferred), PlexNetworkClass.unknown);
+      expect(urls.first, preferred);
+      expect(urls, contains(localPlexDirect));
+    });
   });
 }

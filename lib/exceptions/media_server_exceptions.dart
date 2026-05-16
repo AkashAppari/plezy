@@ -93,5 +93,12 @@ class MediaServerHttpException extends MediaServerException {
       type == MediaServerHttpErrorType.receiveTimeout;
 
   @override
-  String toString() => 'MediaServerHttpException(${type.name}: $message)';
+  String toString() {
+    final parts = <String>[type.name];
+    if (statusCode != null) parts.add('HTTP $statusCode');
+    if (message.isNotEmpty) parts.add(message);
+    final uri = requestUri;
+    if (uri != null) parts.add('${uri.host}${uri.path}');
+    return 'MediaServerHttpException(${parts.join(': ')})';
+  }
 }

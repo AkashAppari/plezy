@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io' show InternetAddress, InternetAddressType, Platform;
+import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'storage_service.dart';
 import 'plex_client.dart';
@@ -54,6 +55,14 @@ class PlexAuthService {
 
   PlexAuthService._(this._http, this._clientIdentifier, this._appVersion, this._platformVersion);
 
+  @visibleForTesting
+  PlexAuthService.forTesting({
+    required MediaServerHttpClient http,
+    String clientIdentifier = 'test-client',
+    String appVersion = 'test',
+    String platformVersion = 'test',
+  }) : this._(http, clientIdentifier, appVersion, platformVersion);
+
   /// Close the underlying HTTP client. Call when the service is short-lived
   /// (created for a single API call) to avoid leaking sockets.
   void dispose() => _http.close();
@@ -94,6 +103,16 @@ class PlexAuthService {
   }
 
   void _checkStatus(MediaServerResponse response) => throwIfHttpError(response);
+
+  Future<MediaServerResponse> _getClientsApi(String path, {Map<String, String>? headers, Duration? timeout}) async {
+    try {
+      return await _http.get('$_clientsApi$path', headers: headers, timeout: timeout);
+    } on MediaServerHttpException catch (e) {
+      if (!e.isTransient) rethrow;
+      appLogger.w('Plex clients API request failed; retrying via plex.tv', error: {'path': path, 'type': e.type.name});
+      return _http.get('$_plexApiBase$path', headers: headers, timeout: timeout);
+    }
+  }
 
   /// Verify if a plex.tv token is valid
   Future<bool> verifyToken(String authToken) async {
@@ -164,8 +183,8 @@ class PlexAuthService {
 
   /// Fetch available Plex servers for the authenticated user
   Future<List<PlexServer>> fetchServers(String authToken) async {
-    final response = await _http.get(
-      '$_clientsApi/resources?includeHttps=1&includeRelay=1&includeIPv6=1',
+    final response = await _getClientsApi(
+      '/resources?includeHttps=1&includeRelay=1&includeIPv6=1',
       headers: _getCommonHeaders(authToken: authToken),
     );
 
@@ -209,14 +228,14 @@ class PlexAuthService {
 
   /// Get user profile with preferences (audio/subtitle settings)
   Future<PlexUserProfile> getUserProfile(String authToken) async {
-    final response = await _http.get('$_clientsApi/user', headers: _getCommonHeaders(authToken: authToken));
+    final response = await _getClientsApi('/user', headers: _getCommonHeaders(authToken: authToken));
     _checkStatus(response);
     return PlexUserProfile.fromJson(response.data as Map<String, dynamic>);
   }
 
   /// Get home users for the authenticated user
   Future<PlexHome> getHomeUsers(String authToken) async {
-    final response = await _http.get('$_clientsApi/home/users', headers: _getCommonHeaders(authToken: authToken));
+    final response = await _getClientsApi('/home/users', headers: _getCommonHeaders(authToken: authToken));
     _checkStatus(response);
     return PlexHome.fromJson(response.data as Map<String, dynamic>);
   }
@@ -372,6 +391,20 @@ class PlexServer {
       'lastSeenAt': lastSeenAt?.toIso8601String(),
       'presence': presence,
     };
+  }
+
+  PlexServer withAccessToken(String token) {
+    return PlexServer(
+      name: name,
+      clientIdentifier: clientIdentifier,
+      accessToken: token,
+      connections: connections,
+      owned: owned,
+      product: product,
+      platform: platform,
+      lastSeenAt: lastSeenAt,
+      presence: presence,
+    );
   }
 
   /// Check if server is online using the presence field
@@ -930,7 +963,11 @@ class PlexServer {
     if (address != null) return _isPrivateOrLocalAddress(address);
 
     if (host == 'localhost' || !host.contains('.')) return true;
-    if (host.endsWith('.local') || host.endsWith('.lan') || host.endsWith('.home.arpa') || host.endsWith('.internal')) {
+    if (host.endsWith('.local') ||
+        host.endsWith('.lan') ||
+        host.endsWith('.home.arpa') ||
+        host.endsWith('.internal') ||
+        host.endsWith('.ts.net')) {
       return true;
     }
 
@@ -944,6 +981,7 @@ class PlexServer {
       final b = bytes[1];
       return a == 0 ||
           a == 10 ||
+          (a == 100 && b >= 64 && b <= 127) ||
           a == 127 ||
           (a == 169 && b == 254) ||
           (a == 172 && b >= 16 && b <= 31) ||

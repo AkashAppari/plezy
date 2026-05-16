@@ -89,6 +89,15 @@ void main() {
       final e = MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'halt');
       expect(e.toString(), 'MediaServerHttpException(cancelled: halt)');
     });
+
+    test('toString includes host and path without query parameters', () {
+      final e = MediaServerHttpException(
+        type: MediaServerHttpErrorType.connectionError,
+        message: 'dns failed',
+        requestUri: Uri.parse('https://clients.plex.tv/api/v2/resources?X-Plex-Token=secret'),
+      );
+      expect(e.toString(), 'MediaServerHttpException(connectionError: dns failed: clients.plex.tv/api/v2/resources)');
+    });
   });
 
   group('MediaServerHttpException.isTransient', () {

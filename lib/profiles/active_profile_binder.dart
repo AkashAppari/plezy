@@ -306,6 +306,9 @@ class ActiveProfileBinder {
             'ActiveProfileBinder: fetchServers failed with cached token for ${profile.displayName}',
             error: e,
           );
+          if (e.isTransient) {
+            return _connectFromCachedServers(account, cachedToken, profile.displayName, error: e);
+          }
           return const {};
         }
       } catch (e, st) {
@@ -409,6 +412,11 @@ class ActiveProfileBinder {
           userToken = null;
         } else {
           appLogger.w('ActiveProfileBinder: fetchServers failed for ${profile.displayName}', error: e);
+          if (e.isTransient) {
+            final ids = await _connectFromCachedServers(conn, userToken, profile.displayName, error: e);
+            if (ids.isNotEmpty) await profileConnections.markUsed(profile.id, conn.id);
+            return ids;
+          }
           return const {};
         }
       } catch (e, st) {
@@ -427,6 +435,14 @@ class ActiveProfileBinder {
       userToken = minted;
       try {
         servers = await auth.fetchServers(userToken);
+      } on MediaServerHttpException catch (e) {
+        appLogger.w('ActiveProfileBinder: fetchServers failed for ${profile.displayName}', error: e);
+        if (e.isTransient) {
+          final ids = await _connectFromCachedServers(conn, userToken, profile.displayName, error: e);
+          if (ids.isNotEmpty) await profileConnections.markUsed(profile.id, conn.id);
+          return ids;
+        }
+        return const {};
       } catch (e, st) {
         appLogger.w('ActiveProfileBinder: fetchServers failed for ${profile.displayName}', error: e, stackTrace: st);
         return const {};
@@ -465,10 +481,33 @@ class ActiveProfileBinder {
     final List<PlexServer> servers;
     try {
       servers = await auth.fetchServers(userToken);
+    } on MediaServerHttpException catch (e, st) {
+      appLogger.w('ActiveProfileBinder: fetchServers failed for $profileLabel', error: e, stackTrace: st);
+      if (e.isTransient) {
+        return _connectFromCachedServers(account, userToken, profileLabel, error: e, stackTrace: st);
+      }
+      return const {};
     } catch (e, st) {
       appLogger.w('ActiveProfileBinder: fetchServers failed for $profileLabel', error: e, stackTrace: st);
       return const {};
     }
+    return _connectFromServers(account, userToken, servers, profileLabel);
+  }
+
+  Future<Set<String>> _connectFromCachedServers(
+    PlexAccountConnection account,
+    String userToken,
+    String profileLabel, {
+    Object? error,
+    StackTrace? stackTrace,
+  }) async {
+    if (account.servers.isEmpty) return const {};
+    appLogger.w(
+      'ActiveProfileBinder: using cached Plex server metadata for $profileLabel after resource refresh failed',
+      error: error,
+      stackTrace: stackTrace,
+    );
+    final servers = account.servers.map((server) => server.withAccessToken(userToken)).toList(growable: false);
     return _connectFromServers(account, userToken, servers, profileLabel);
   }
 
