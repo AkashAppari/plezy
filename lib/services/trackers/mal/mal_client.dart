@@ -60,6 +60,20 @@ class MalClient {
     await _request('PUT', '/anime/$animeId/my_list_status', formBody: fields);
   }
 
+  Future<int?> getMyListScore(int animeId) async {
+    try {
+      final res = await _request('GET', '/anime/$animeId?fields=my_list_status');
+      if (res is! Map) return null;
+      final myListStatus = res['my_list_status'];
+      if (myListStatus is! Map) return null;
+      final score = flexibleInt(myListStatus['score']);
+      return score != null && score > 0 ? score : null;
+    } on MalApiException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
+  }
+
   Future<int?> getAnimeEpisodeCount(int animeId) async {
     final res = await _request('GET', '/anime/$animeId?fields=num_episodes');
     if (res is! Map) return null;

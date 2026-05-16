@@ -49,6 +49,7 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsHotkeysNl hotkeys = _TranslationsHotkeysNl._(_root);
 	@override late final _TranslationsFileInfoNl fileInfo = _TranslationsFileInfoNl._(_root);
 	@override late final _TranslationsMediaMenuNl mediaMenu = _TranslationsMediaMenuNl._(_root);
+	@override late final _TranslationsRateSheetNl rateSheet = _TranslationsRateSheetNl._(_root);
 	@override late final _TranslationsAccessibilityNl accessibility = _TranslationsAccessibilityNl._(_root);
 	@override late final _TranslationsTooltipsNl tooltips = _TranslationsTooltipsNl._(_root);
 	@override late final _TranslationsVideoControlsNl videoControls = _TranslationsVideoControlsNl._(_root);
@@ -479,6 +480,26 @@ class _TranslationsMediaMenuNl extends TranslationsMediaMenuEn {
 	@override String get rate => 'Beoordelen';
 	@override String get playFromBeginning => 'Afspelen vanaf het begin';
 	@override String get playVersion => 'Versie afspelen...';
+}
+
+// Path: rateSheet
+class _TranslationsRateSheetNl extends TranslationsRateSheetEn {
+	_TranslationsRateSheetNl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Beoordelen';
+	@override String get server => 'Server';
+	@override String starValue({required Object rating}) => '${rating} / 5';
+	@override String scoreValue({required Object score}) => '${score} / 10';
+	@override String get setScore => 'Score instellen';
+	@override String get notRated => 'Niet beoordeeld';
+	@override String get liked => 'Geliket';
+	@override String get notLiked => 'Niet geliket';
+	@override String get saved => 'Opgeslagen';
+	@override String get notAvailable => 'Geen match gevonden';
+	@override String get noConnectedTrackers => 'Verbind een tracker in Instellingen om daar te beoordelen.';
 }
 
 // Path: accessibility
@@ -2098,6 +2119,17 @@ extension on TranslationsNl {
 			'mediaMenu.rate' => 'Beoordelen',
 			'mediaMenu.playFromBeginning' => 'Afspelen vanaf het begin',
 			'mediaMenu.playVersion' => 'Versie afspelen...',
+			'rateSheet.title' => 'Beoordelen',
+			'rateSheet.server' => 'Server',
+			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
+			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
+			'rateSheet.setScore' => 'Score instellen',
+			'rateSheet.notRated' => 'Niet beoordeeld',
+			'rateSheet.liked' => 'Geliket',
+			'rateSheet.notLiked' => 'Niet geliket',
+			'rateSheet.saved' => 'Opgeslagen',
+			'rateSheet.notAvailable' => 'Geen match gevonden',
+			'rateSheet.noConnectedTrackers' => 'Verbind een tracker in Instellingen om daar te beoordelen.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV-serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -2273,6 +2305,8 @@ extension on TranslationsNl {
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profielen',
 			'profiles.removeConnectionTitle' => 'Verbinding verwijderen?',
 			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Verwijder ${displayName}s toegang tot ${connectionLabel}. Andere profielen behouden die.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteProfileTitle' => 'Profiel verwijderen?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Verwijder ${displayName} en de verbindingen. Servers blijven beschikbaar.',
 			'profiles.profileNameLabel' => 'Profielnaam',
@@ -2284,8 +2318,6 @@ extension on TranslationsNl {
 			'profiles.confirmPinTitle' => 'PIN bevestigen',
 			'profiles.pinSet' => 'PIN ingesteld',
 			'profiles.changePin' => 'Wijzigen',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.removePin' => 'Verwijderen',
 			'profiles.connectionsLabel' => 'Verbindingen',
 			'profiles.add' => 'Toevoegen',
@@ -2787,6 +2819,8 @@ extension on TranslationsNl {
 			'metadataEdit.selectSquareArt' => 'Vierkante afbeelding selecteren',
 			'metadataEdit.fromUrl' => 'Vanaf URL',
 			'metadataEdit.uploadFile' => 'Bestand uploaden',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.enterImageUrl' => 'Voer afbeeldings-URL in',
 			'metadataEdit.imageUrl' => 'Afbeeldings-URL',
 			'metadataEdit.metadataUpdated' => 'Metadata bijgewerkt',
@@ -2798,8 +2832,6 @@ extension on TranslationsNl {
 			'metadataEdit.libraryDefault' => 'Bibliotheekstandaard',
 			'metadataEdit.accountDefault' => 'Accountstandaard',
 			'metadataEdit.seriesDefault' => 'Seriestandaard',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.episodeSorting' => 'Afleveringen sorteren',
 			'metadataEdit.oldestFirst' => 'Oudste eerst',
 			'metadataEdit.newestFirst' => 'Nieuwste eerst',

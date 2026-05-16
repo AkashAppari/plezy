@@ -5,6 +5,7 @@ import '../../../utils/app_logger.dart';
 import '../../settings_service.dart';
 import '../tracker.dart';
 import '../tracker_constants.dart';
+import '../tracker_id_resolver.dart';
 import 'mal_client.dart';
 import 'mal_session.dart';
 
@@ -78,6 +79,32 @@ class MalTracker extends TrackerBase {
 
     await client.updateMyListStatus(malId, fields);
     appLogger.d('MAL: updated list status (mal=$malId, fields=$fields)');
+  }
+
+  Future<void> rate(TrackerRatingContext ctx, int score) async {
+    final client = _client;
+    final malId = ctx.ids.anime?.mal;
+    if (client == null || malId == null) throw const TrackerRatingUnavailableException('MAL');
+
+    final clamped = score.clamp(1, 10).toInt();
+    await client.updateMyListStatus(malId, {'score': '$clamped'});
+    appLogger.d('MAL: updated score (mal=$malId, score=$clamped)');
+  }
+
+  Future<void> clearRating(TrackerRatingContext ctx) async {
+    final client = _client;
+    final malId = ctx.ids.anime?.mal;
+    if (client == null || malId == null) throw const TrackerRatingUnavailableException('MAL');
+
+    await client.updateMyListStatus(malId, {'score': '0'});
+    appLogger.d('MAL: cleared score (mal=$malId)');
+  }
+
+  Future<int?> getRating(TrackerRatingContext ctx) async {
+    final client = _client;
+    final malId = ctx.ids.anime?.mal;
+    if (client == null || malId == null) throw const TrackerRatingUnavailableException('MAL');
+    return client.getMyListScore(malId);
   }
 
   Future<int?> _episodeCount(MalClient client, int malId) {

@@ -347,6 +347,19 @@
     "playFromBeginning": "Afspelen vanaf het begin",
     "playVersion": "Versie afspelen..."
   },
+  "rateSheet": {
+    "title": "Beoordelen",
+    "server": "Server",
+    "starValue": "${rating} / 5",
+    "scoreValue": "${score} / 10",
+    "setScore": "Score instellen",
+    "notRated": "Niet beoordeeld",
+    "liked": "Geliket",
+    "notLiked": "Niet geliket",
+    "saved": "Opgeslagen",
+    "notAvailable": "Geen match gevonden",
+    "noConnectedTrackers": "Verbind een tracker in Instellingen om daar te beoordelen."
+  },
   "accessibility": {
     "mediaCardMovie": "${title}, film",
     "mediaCardShow": "${title}, TV-serie",

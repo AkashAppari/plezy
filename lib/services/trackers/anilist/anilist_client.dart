@@ -50,6 +50,37 @@ class AnilistClient {
     await query(mutation, variables: {'mediaId': mediaId, 'progress': progress, 'status': status});
   }
 
+  Future<void> setMediaListScore({required int mediaId, required int score}) async {
+    const mutation = '''
+      mutation(\$mediaId: Int, \$scoreRaw: Int) {
+        SaveMediaListEntry(mediaId: \$mediaId, scoreRaw: \$scoreRaw) {
+          id
+        }
+      }
+    ''';
+    await query(mutation, variables: {'mediaId': mediaId, 'scoreRaw': score.clamp(0, 10).toInt() * 10});
+  }
+
+  Future<int?> getMediaListScore(int mediaId) async {
+    const mediaQuery = '''
+      query(\$mediaId: Int) {
+        Media(id: \$mediaId, type: ANIME) {
+          mediaListEntry {
+            scoreRaw: score(format: POINT_100)
+          }
+        }
+      }
+    ''';
+    final data = await query(mediaQuery, variables: {'mediaId': mediaId});
+    final media = data['Media'];
+    if (media is! Map) return null;
+    final entry = media['mediaListEntry'];
+    if (entry is! Map) return null;
+    final scoreRaw = flexibleInt(entry['scoreRaw']);
+    if (scoreRaw == null || scoreRaw <= 0) return null;
+    return (scoreRaw / 10).round().clamp(1, 10).toInt();
+  }
+
   Future<int?> getAnimeEpisodeCount(int mediaId) async {
     const mediaQuery = '''
       query(\$mediaId: Int) {

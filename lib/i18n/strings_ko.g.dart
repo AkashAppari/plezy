@@ -49,6 +49,7 @@ class TranslationsKo extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsHotkeysKo hotkeys = _TranslationsHotkeysKo._(_root);
 	@override late final _TranslationsFileInfoKo fileInfo = _TranslationsFileInfoKo._(_root);
 	@override late final _TranslationsMediaMenuKo mediaMenu = _TranslationsMediaMenuKo._(_root);
+	@override late final _TranslationsRateSheetKo rateSheet = _TranslationsRateSheetKo._(_root);
 	@override late final _TranslationsAccessibilityKo accessibility = _TranslationsAccessibilityKo._(_root);
 	@override late final _TranslationsTooltipsKo tooltips = _TranslationsTooltipsKo._(_root);
 	@override late final _TranslationsVideoControlsKo videoControls = _TranslationsVideoControlsKo._(_root);
@@ -479,6 +480,26 @@ class _TranslationsMediaMenuKo extends TranslationsMediaMenuEn {
 	@override String get rate => '평가';
 	@override String get playFromBeginning => '처음부터 재생';
 	@override String get playVersion => '버전 재생...';
+}
+
+// Path: rateSheet
+class _TranslationsRateSheetKo extends TranslationsRateSheetEn {
+	_TranslationsRateSheetKo._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '평가';
+	@override String get server => '서버';
+	@override String starValue({required Object rating}) => '${rating} / 5';
+	@override String scoreValue({required Object score}) => '${score} / 10';
+	@override String get setScore => '점수 설정';
+	@override String get notRated => '평가 없음';
+	@override String get liked => '좋아요';
+	@override String get notLiked => '좋아요 아님';
+	@override String get saved => '저장됨';
+	@override String get notAvailable => '일치 항목 없음';
+	@override String get noConnectedTrackers => '설정에서 트래커를 연결하면 거기에도 평가할 수 있습니다.';
 }
 
 // Path: accessibility
@@ -2098,6 +2119,17 @@ extension on TranslationsKo {
 			'mediaMenu.rate' => '평가',
 			'mediaMenu.playFromBeginning' => '처음부터 재생',
 			'mediaMenu.playVersion' => '버전 재생...',
+			'rateSheet.title' => '평가',
+			'rateSheet.server' => '서버',
+			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
+			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
+			'rateSheet.setScore' => '점수 설정',
+			'rateSheet.notRated' => '평가 없음',
+			'rateSheet.liked' => '좋아요',
+			'rateSheet.notLiked' => '좋아요 아님',
+			'rateSheet.saved' => '저장됨',
+			'rateSheet.notAvailable' => '일치 항목 없음',
+			'rateSheet.noConnectedTrackers' => '설정에서 트래커를 연결하면 거기에도 평가할 수 있습니다.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, 영화',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV 프로그램',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -2273,6 +2305,8 @@ extension on TranslationsKo {
 			'profiles.summaryMultiple' => ({required Object count}) => '${count}개 프로필',
 			'profiles.removeConnectionTitle' => '연결을 제거하시겠습니까?',
 			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => '${displayName}의 ${connectionLabel} 접근 권한을 제거합니다. 다른 프로필에는 유지됩니다.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteProfileTitle' => '프로필을 삭제하시겠습니까?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => '${displayName} 및 해당 연결을 제거합니다. 서버는 계속 사용할 수 있습니다.',
 			'profiles.profileNameLabel' => '프로필 이름',
@@ -2284,8 +2318,6 @@ extension on TranslationsKo {
 			'profiles.confirmPinTitle' => 'PIN 확인',
 			'profiles.pinSet' => 'PIN 설정됨',
 			'profiles.changePin' => '변경',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.removePin' => '제거',
 			'profiles.connectionsLabel' => '연결',
 			'profiles.add' => '추가',
@@ -2787,6 +2819,8 @@ extension on TranslationsKo {
 			'metadataEdit.selectSquareArt' => '정사각형 아트 선택',
 			'metadataEdit.fromUrl' => 'URL에서',
 			'metadataEdit.uploadFile' => '파일 업로드',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.enterImageUrl' => '이미지 URL 입력',
 			'metadataEdit.imageUrl' => '이미지 URL',
 			'metadataEdit.metadataUpdated' => '메타데이터가 업데이트되었습니다',
@@ -2798,8 +2832,6 @@ extension on TranslationsKo {
 			'metadataEdit.libraryDefault' => '라이브러리 기본값',
 			'metadataEdit.accountDefault' => '계정 기본값',
 			'metadataEdit.seriesDefault' => '시리즈 기본값',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.episodeSorting' => '에피소드 정렬',
 			'metadataEdit.oldestFirst' => '오래된 순',
 			'metadataEdit.newestFirst' => '최신 순',

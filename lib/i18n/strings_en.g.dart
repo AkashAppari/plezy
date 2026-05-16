@@ -50,6 +50,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsHotkeysEn hotkeys = TranslationsHotkeysEn.internal(_root);
 	late final TranslationsFileInfoEn fileInfo = TranslationsFileInfoEn.internal(_root);
 	late final TranslationsMediaMenuEn mediaMenu = TranslationsMediaMenuEn.internal(_root);
+	late final TranslationsRateSheetEn rateSheet = TranslationsRateSheetEn.internal(_root);
 	late final TranslationsAccessibilityEn accessibility = TranslationsAccessibilityEn.internal(_root);
 	late final TranslationsTooltipsEn tooltips = TranslationsTooltipsEn.internal(_root);
 	late final TranslationsVideoControlsEn videoControls = TranslationsVideoControlsEn.internal(_root);
@@ -1091,6 +1092,48 @@ class TranslationsMediaMenuEn {
 
 	/// en: 'Play Version...'
 	String get playVersion => 'Play Version...';
+}
+
+// Path: rateSheet
+class TranslationsRateSheetEn {
+	TranslationsRateSheetEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Rate'
+	String get title => 'Rate';
+
+	/// en: 'Server'
+	String get server => 'Server';
+
+	/// en: '${rating} / 5'
+	String starValue({required Object rating}) => '${rating} / 5';
+
+	/// en: '${score} / 10'
+	String scoreValue({required Object score}) => '${score} / 10';
+
+	/// en: 'Set a score'
+	String get setScore => 'Set a score';
+
+	/// en: 'Not rated'
+	String get notRated => 'Not rated';
+
+	/// en: 'Liked'
+	String get liked => 'Liked';
+
+	/// en: 'Not liked'
+	String get notLiked => 'Not liked';
+
+	/// en: 'Saved'
+	String get saved => 'Saved';
+
+	/// en: 'No match found'
+	String get notAvailable => 'No match found';
+
+	/// en: 'Connect a tracker in Settings to rate there.'
+	String get noConnectedTrackers => 'Connect a tracker in Settings to rate there.';
 }
 
 // Path: accessibility
@@ -4410,6 +4453,17 @@ extension on Translations {
 			'mediaMenu.rate' => 'Rate',
 			'mediaMenu.playFromBeginning' => 'Play from Beginning',
 			'mediaMenu.playVersion' => 'Play Version...',
+			'rateSheet.title' => 'Rate',
+			'rateSheet.server' => 'Server',
+			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
+			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
+			'rateSheet.setScore' => 'Set a score',
+			'rateSheet.notRated' => 'Not rated',
+			'rateSheet.liked' => 'Liked',
+			'rateSheet.notLiked' => 'Not liked',
+			'rateSheet.saved' => 'Saved',
+			'rateSheet.notAvailable' => 'No match found',
+			'rateSheet.noConnectedTrackers' => 'Connect a tracker in Settings to rate there.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, movie',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV show',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -4585,6 +4639,8 @@ extension on Translations {
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profiles',
 			'profiles.removeConnectionTitle' => 'Remove connection?',
 			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Remove ${displayName}\'s access to ${connectionLabel}. Other profiles keep it.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteProfileTitle' => 'Delete profile?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Remove ${displayName} and its connections. Servers stay available.',
 			'profiles.profileNameLabel' => 'Profile name',
@@ -4596,8 +4652,6 @@ extension on Translations {
 			'profiles.confirmPinTitle' => 'Confirm PIN',
 			'profiles.pinSet' => 'PIN set',
 			'profiles.changePin' => 'Change',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.removePin' => 'Remove',
 			'profiles.connectionsLabel' => 'Connections',
 			'profiles.add' => 'Add',
@@ -5099,6 +5153,8 @@ extension on Translations {
 			'metadataEdit.selectSquareArt' => 'Select Square Art',
 			'metadataEdit.fromUrl' => 'From URL',
 			'metadataEdit.uploadFile' => 'Upload File',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.enterImageUrl' => 'Enter image URL',
 			'metadataEdit.imageUrl' => 'Image URL',
 			'metadataEdit.metadataUpdated' => 'Metadata updated',
@@ -5110,8 +5166,6 @@ extension on Translations {
 			'metadataEdit.libraryDefault' => 'Library default',
 			'metadataEdit.accountDefault' => 'Account default',
 			'metadataEdit.seriesDefault' => 'Series default',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.episodeSorting' => 'Episode Sorting',
 			'metadataEdit.oldestFirst' => 'Oldest first',
 			'metadataEdit.newestFirst' => 'Newest first',

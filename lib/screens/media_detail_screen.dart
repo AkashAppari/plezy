@@ -20,7 +20,6 @@ import '../focus/focusable_wrapper.dart';
 import '../focus/key_event_utils.dart';
 import '../focus/input_mode_tracker.dart';
 import '../widgets/focus_builders.dart';
-import '../exceptions/media_server_exceptions.dart';
 import '../media/media_backend.dart';
 import '../media/media_hub.dart';
 import '../utils/provider_extensions.dart';
@@ -774,9 +773,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return ListenableBuilder(
       listenable: _ratingChipFocusNode,
       builder: (context, _) {
-        final activate = isNumeric
-            ? () => _showRatingDialog(context, metadata, starValue)
-            : () => _toggleLike(metadata);
+        final activate = () => _showRatingDialog(context, metadata);
         final colorScheme = Theme.of(context).colorScheme;
         final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
         final showFocus = _ratingChipFocusNode.hasFocus && isKeyboardMode;
@@ -831,57 +828,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     );
   }
 
-  /// Like/unlike toggle for backends that only support binary ratings
-  /// (Jellyfin). Maps to [MediaServerClient.rate] with 10 (like) or -1
-  /// (clear) — the Jellyfin client routes those through POST/DELETE on
-  /// `/UserItems/{id}/Rating`.
-  Future<void> _toggleLike(MediaItem metadata) async {
-    final client = _getMediaClientForMetadata(context);
-    if (client == null) return;
-    final wasLiked = metadata.userRating != null && metadata.userRating! >= 6;
-    final newRating = wasLiked ? -1.0 : 10.0;
-    try {
-      await client.rate(metadata, newRating);
-      setStateIfMounted(() {
-        _fullMetadata = _fullMetadata?.copyWith(userRating: wasLiked ? 0 : 10);
-      });
-    } on MediaServerHttpException catch (e) {
-      appLogger.w('Failed to toggle rating', error: e);
-      if (mounted) showErrorSnackBar(context, t.errors.failedToRate);
-    }
-  }
-
-  void _showRatingDialog(BuildContext sheetContext, MediaItem metadata, double currentStarValue) {
+  void _showRatingDialog(BuildContext sheetContext, MediaItem metadata) {
     OverlaySheetController.showAdaptive(
       sheetContext,
       builder: (context) => RatingBottomSheet(
-        currentRating: currentStarValue,
-        onRate: (stars) async {
-          final client = _getMediaClientForMetadata(this.context);
-          if (client == null) return;
-          final plexRating = stars * 2.0; // Convert 0-5 stars to 0-10 scale
-          try {
-            await client.rate(metadata, plexRating);
-            setStateIfMounted(() {
-              _fullMetadata = _fullMetadata?.copyWith(userRating: plexRating);
-            });
-          } on MediaServerHttpException catch (e) {
-            appLogger.w('Failed to set rating', error: e);
-            if (mounted) showErrorSnackBar(this.context, t.errors.failedToRate);
-          }
-        },
-        onClear: () async {
-          final client = _getMediaClientForMetadata(this.context);
-          if (client == null) return;
-          try {
-            await client.rate(metadata, -1);
-            setStateIfMounted(() {
-              _fullMetadata = _fullMetadata?.copyWith(userRating: 0);
-            });
-          } on MediaServerHttpException catch (e) {
-            appLogger.w('Failed to clear rating', error: e);
-            if (mounted) showErrorSnackBar(this.context, t.errors.failedToRate);
-          }
+        item: metadata,
+        serverClient: _getMediaClientForMetadata(this.context),
+        onServerRatingChanged: (rating) {
+          setStateIfMounted(() {
+            _fullMetadata = (_fullMetadata ?? widget.metadata).copyWith(userRating: rating);
+          });
         },
       ),
     );

@@ -49,6 +49,7 @@ class TranslationsRu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsHotkeysRu hotkeys = _TranslationsHotkeysRu._(_root);
 	@override late final _TranslationsFileInfoRu fileInfo = _TranslationsFileInfoRu._(_root);
 	@override late final _TranslationsMediaMenuRu mediaMenu = _TranslationsMediaMenuRu._(_root);
+	@override late final _TranslationsRateSheetRu rateSheet = _TranslationsRateSheetRu._(_root);
 	@override late final _TranslationsAccessibilityRu accessibility = _TranslationsAccessibilityRu._(_root);
 	@override late final _TranslationsTooltipsRu tooltips = _TranslationsTooltipsRu._(_root);
 	@override late final _TranslationsVideoControlsRu videoControls = _TranslationsVideoControlsRu._(_root);
@@ -479,6 +480,26 @@ class _TranslationsMediaMenuRu extends TranslationsMediaMenuEn {
 	@override String get rate => 'Оценить';
 	@override String get playFromBeginning => 'Воспроизвести сначала';
 	@override String get playVersion => 'Воспроизвести версию...';
+}
+
+// Path: rateSheet
+class _TranslationsRateSheetRu extends TranslationsRateSheetEn {
+	_TranslationsRateSheetRu._(TranslationsRu root) : this._root = root, super.internal(root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Оценить';
+	@override String get server => 'Сервер';
+	@override String starValue({required Object rating}) => '${rating} / 5';
+	@override String scoreValue({required Object score}) => '${score} / 10';
+	@override String get setScore => 'Установить оценку';
+	@override String get notRated => 'Без оценки';
+	@override String get liked => 'Понравилось';
+	@override String get notLiked => 'Не отмечено понравившимся';
+	@override String get saved => 'Сохранено';
+	@override String get notAvailable => 'Совпадений не найдено';
+	@override String get noConnectedTrackers => 'Подключите трекер в настройках, чтобы оценивать там.';
 }
 
 // Path: accessibility
@@ -2098,6 +2119,17 @@ extension on TranslationsRu {
 			'mediaMenu.rate' => 'Оценить',
 			'mediaMenu.playFromBeginning' => 'Воспроизвести сначала',
 			'mediaMenu.playVersion' => 'Воспроизвести версию...',
+			'rateSheet.title' => 'Оценить',
+			'rateSheet.server' => 'Сервер',
+			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
+			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
+			'rateSheet.setScore' => 'Установить оценку',
+			'rateSheet.notRated' => 'Без оценки',
+			'rateSheet.liked' => 'Понравилось',
+			'rateSheet.notLiked' => 'Не отмечено понравившимся',
+			'rateSheet.saved' => 'Сохранено',
+			'rateSheet.notAvailable' => 'Совпадений не найдено',
+			'rateSheet.noConnectedTrackers' => 'Подключите трекер в настройках, чтобы оценивать там.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, фильм',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, сериал',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -2273,6 +2305,8 @@ extension on TranslationsRu {
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} профилей',
 			'profiles.removeConnectionTitle' => 'Удалить соединение?',
 			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Удалить доступ ${displayName} к ${connectionLabel}. У других профилей он останется.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteProfileTitle' => 'Удалить профиль?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Удалить ${displayName} и его подключения. Серверы останутся доступны.',
 			'profiles.profileNameLabel' => 'Имя профиля',
@@ -2284,8 +2318,6 @@ extension on TranslationsRu {
 			'profiles.confirmPinTitle' => 'Подтвердить PIN',
 			'profiles.pinSet' => 'PIN установлен',
 			'profiles.changePin' => 'Изменить',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.removePin' => 'Удалить',
 			'profiles.connectionsLabel' => 'Соединения',
 			'profiles.add' => 'Добавить',
@@ -2787,6 +2819,8 @@ extension on TranslationsRu {
 			'metadataEdit.selectSquareArt' => 'Выбрать квадратное изображение',
 			'metadataEdit.fromUrl' => 'По URL',
 			'metadataEdit.uploadFile' => 'Загрузить файл',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.enterImageUrl' => 'Введите URL изображения',
 			'metadataEdit.imageUrl' => 'URL изображения',
 			'metadataEdit.metadataUpdated' => 'Метаданные обновлены',
@@ -2798,8 +2832,6 @@ extension on TranslationsRu {
 			'metadataEdit.libraryDefault' => 'По умолчанию библиотеки',
 			'metadataEdit.accountDefault' => 'По умолчанию аккаунта',
 			'metadataEdit.seriesDefault' => 'По умолчанию сериала',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.episodeSorting' => 'Сортировка эпизодов',
 			'metadataEdit.oldestFirst' => 'Сначала старые',
 			'metadataEdit.newestFirst' => 'Сначала новые',

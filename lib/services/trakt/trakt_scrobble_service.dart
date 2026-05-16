@@ -1,12 +1,16 @@
 import 'dart:async';
 
+import 'package:http/http.dart' as http;
+
 import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
 import '../../media/media_server_client.dart';
 import '../../models/trakt/trakt_ids.dart';
 import '../../models/trakt/trakt_scrobble_request.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/json_utils.dart';
 import '../settings_service.dart';
+import '../trackers/tracker.dart';
 import '../trackers/tracker_constants.dart';
 import '../trackers/tracker_id_resolver.dart';
 import 'trakt_client.dart';
@@ -66,10 +70,44 @@ class TraktScrobbleService {
 
   /// Switch to a different account. Cancels any in-flight scrobble for the
   /// previous account so we don't send a stop event to the wrong user.
-  void rebindToProfile(TraktSession? session, {required void Function() onSessionInvalidated}) {
+  void rebindToProfile(
+    TraktSession? session, {
+    required void Function() onSessionInvalidated,
+    http.Client? httpClient,
+  }) {
     _client?.dispose();
-    _client = session != null ? TraktClient(session, onSessionInvalidated: onSessionInvalidated) : null;
+    _client = session != null
+        ? TraktClient(session, onSessionInvalidated: onSessionInvalidated, httpClient: httpClient)
+        : null;
     cancelInFlight();
+  }
+
+  Future<int?> getRating(TrackerRatingContext ctx) async {
+    final client = _client;
+    if (client == null) throw const TrackerRatingUnavailableException('Trakt');
+    final localIds = TraktIds.fromExternal(ctx.ids.external).toJson();
+    if (localIds.isEmpty) throw const TrackerRatingUnavailableException('Trakt');
+
+    final entries = await client.getRatings(_ratingType(ctx));
+    for (final entry in entries) {
+      if (entry is! Map) continue;
+      if (!_ratingEntryMatches(ctx, entry.cast<String, dynamic>(), localIds)) continue;
+      final rating = flexibleInt(entry['rating']);
+      return rating != null && rating > 0 ? rating.clamp(1, 10).toInt() : null;
+    }
+    return null;
+  }
+
+  Future<void> rate(TrackerRatingContext ctx, int score) async {
+    final client = _client;
+    if (client == null) throw const TrackerRatingUnavailableException('Trakt');
+    await client.addRatings(_ratingBody(ctx, rating: score.clamp(1, 10).toInt()));
+  }
+
+  Future<void> clearRating(TrackerRatingContext ctx) async {
+    final client = _client;
+    if (client == null) throw const TrackerRatingUnavailableException('Trakt');
+    await client.removeRatings(_ratingBody(ctx));
   }
 
   /// Drop the current scrobble state without sending a stop. Called on profile
@@ -85,6 +123,100 @@ class TraktScrobbleService {
   }
 
   bool get _canScrobble => _isEnabled && _client != null;
+
+  String _ratingType(TrackerRatingContext ctx) => switch (ctx.kind) {
+    MediaKind.movie => 'movies',
+    MediaKind.show => 'shows',
+    MediaKind.season => 'seasons',
+    MediaKind.episode => 'episodes',
+    _ => throw const TrackerRatingUnavailableException('Trakt'),
+  };
+
+  bool _ratingEntryMatches(TrackerRatingContext ctx, Map<String, dynamic> entry, Map<String, dynamic> localIds) {
+    final show = entry['show'];
+    final movie = entry['movie'];
+    return switch (ctx.kind) {
+      MediaKind.movie => _idsMatch(_nestedIds(movie), localIds),
+      MediaKind.show => _idsMatch(_nestedIds(show), localIds),
+      MediaKind.season => _idsMatch(_nestedIds(show), localIds) && _numberMatches(entry['season'], ctx.season),
+      MediaKind.episode =>
+        _idsMatch(_nestedIds(show), localIds) &&
+            _numberMatches(entry['episode'], ctx.episodeNumber) &&
+            _seasonMatches(entry['episode'], ctx.season),
+      _ => false,
+    };
+  }
+
+  Map<String, dynamic>? _nestedIds(Object? value) {
+    if (value is! Map) return null;
+    final ids = value['ids'];
+    return ids is Map ? ids.cast<String, dynamic>() : null;
+  }
+
+  bool _idsMatch(Map<String, dynamic>? remoteIds, Map<String, dynamic> localIds) {
+    if (remoteIds == null) return false;
+    for (final entry in localIds.entries) {
+      final local = entry.value;
+      if (local == null) continue;
+      final remote = remoteIds[entry.key];
+      if (remote == null) continue;
+      if (local is String && remote.toString() == local) return true;
+      final remoteInt = flexibleInt(remote);
+      final localInt = flexibleInt(local);
+      if (remoteInt != null && localInt != null && remoteInt == localInt) return true;
+    }
+    return false;
+  }
+
+  bool _numberMatches(Object? value, int? expected) {
+    if (expected == null || value is! Map) return false;
+    return flexibleInt(value['number']) == expected;
+  }
+
+  bool _seasonMatches(Object? value, int? expected) {
+    if (expected == null || value is! Map) return false;
+    return flexibleInt(value['season']) == expected;
+  }
+
+  Map<String, dynamic> _ratingBody(TrackerRatingContext ctx, {int? rating}) {
+    final ids = TraktIds.fromExternal(ctx.ids.external).toJson();
+    final item = {'ids': ids, if (rating != null) 'rating': rating};
+
+    return switch (ctx.kind) {
+      MediaKind.movie => {
+        'movies': [item],
+      },
+      MediaKind.show => {
+        'shows': [item],
+      },
+      MediaKind.season => {
+        'shows': [
+          {
+            'ids': ids,
+            'seasons': [
+              {'number': ctx.season, if (rating != null) 'rating': rating},
+            ],
+          },
+        ],
+      },
+      MediaKind.episode => {
+        'shows': [
+          {
+            'ids': ids,
+            'seasons': [
+              {
+                'number': ctx.season,
+                'episodes': [
+                  {'number': ctx.episodeNumber, if (rating != null) 'rating': rating},
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      _ => throw const TrackerRatingUnavailableException('Trakt'),
+    };
+  }
 
   Future<void> startPlayback(MediaItem metadata, MediaServerClient client, {bool isLive = false}) async {
     if (!_canScrobble) return;

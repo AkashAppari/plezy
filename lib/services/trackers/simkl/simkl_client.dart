@@ -39,6 +39,17 @@ class SimklClient {
   /// ```
   Future<void> addToHistory(Map<String, dynamic> body) => _request('POST', '/sync/history', body: body);
 
+  Future<void> addRatings(Map<String, dynamic> body) => _request('POST', '/sync/ratings', body: body);
+
+  Future<void> removeRatings(Map<String, dynamic> body) => _request('POST', '/sync/ratings/remove', body: body);
+
+  Future<List<dynamic>> getRatings(String type) async {
+    final res = await _request('GET', '/sync/ratings/$type');
+    if (res is List) return res;
+    if (res is Map && res[type] is List) return res[type] as List<dynamic>;
+    return const [];
+  }
+
   Future<dynamic> _request(String method, String path, {Map<String, dynamic>? body}) async {
     final uri = Uri.parse('${SimklConstants.apiBase}$path');
     final headers = SimklConstants.headers(accessToken: session.accessToken);

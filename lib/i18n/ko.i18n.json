@@ -347,6 +347,19 @@
     "playFromBeginning": "처음부터 재생",
     "playVersion": "버전 재생..."
   },
+  "rateSheet": {
+    "title": "평가",
+    "server": "서버",
+    "starValue": "${rating} / 5",
+    "scoreValue": "${score} / 10",
+    "setScore": "점수 설정",
+    "notRated": "평가 없음",
+    "liked": "좋아요",
+    "notLiked": "좋아요 아님",
+    "saved": "저장됨",
+    "notAvailable": "일치 항목 없음",
+    "noConnectedTrackers": "설정에서 트래커를 연결하면 거기에도 평가할 수 있습니다."
+  },
   "accessibility": {
     "mediaCardMovie": "${title}, 영화",
     "mediaCardShow": "${title}, TV 프로그램",

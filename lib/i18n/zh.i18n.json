@@ -347,6 +347,19 @@
     "playFromBeginning": "从头播放",
     "playVersion": "播放版本..."
   },
+  "rateSheet": {
+    "title": "评分",
+    "server": "服务器",
+    "starValue": "${rating} / 5",
+    "scoreValue": "${score} / 10",
+    "setScore": "设置分数",
+    "notRated": "未评分",
+    "liked": "已喜欢",
+    "notLiked": "未喜欢",
+    "saved": "已保存",
+    "notAvailable": "未找到匹配项",
+    "noConnectedTrackers": "在设置中连接跟踪器即可在那里评分。"
+  },
   "accessibility": {
     "mediaCardMovie": "${title}, 电影",
     "mediaCardShow": "${title}, 电视剧",

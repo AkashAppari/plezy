@@ -49,6 +49,7 @@ class TranslationsNb extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsHotkeysNb hotkeys = _TranslationsHotkeysNb._(_root);
 	@override late final _TranslationsFileInfoNb fileInfo = _TranslationsFileInfoNb._(_root);
 	@override late final _TranslationsMediaMenuNb mediaMenu = _TranslationsMediaMenuNb._(_root);
+	@override late final _TranslationsRateSheetNb rateSheet = _TranslationsRateSheetNb._(_root);
 	@override late final _TranslationsAccessibilityNb accessibility = _TranslationsAccessibilityNb._(_root);
 	@override late final _TranslationsTooltipsNb tooltips = _TranslationsTooltipsNb._(_root);
 	@override late final _TranslationsVideoControlsNb videoControls = _TranslationsVideoControlsNb._(_root);
@@ -479,6 +480,26 @@ class _TranslationsMediaMenuNb extends TranslationsMediaMenuEn {
 	@override String get rate => 'Vurder';
 	@override String get playFromBeginning => 'Spill fra begynnelsen';
 	@override String get playVersion => 'Spill av versjon...';
+}
+
+// Path: rateSheet
+class _TranslationsRateSheetNb extends TranslationsRateSheetEn {
+	_TranslationsRateSheetNb._(TranslationsNb root) : this._root = root, super.internal(root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Vurder';
+	@override String get server => 'Server';
+	@override String starValue({required Object rating}) => '${rating} / 5';
+	@override String scoreValue({required Object score}) => '${score} / 10';
+	@override String get setScore => 'Sett en poengsum';
+	@override String get notRated => 'Ikke vurdert';
+	@override String get liked => 'Likt';
+	@override String get notLiked => 'Ikke likt';
+	@override String get saved => 'Lagret';
+	@override String get notAvailable => 'Ingen treff';
+	@override String get noConnectedTrackers => 'Koble til en sporer i Innstillinger for å vurdere der.';
 }
 
 // Path: accessibility
@@ -2098,6 +2119,17 @@ extension on TranslationsNb {
 			'mediaMenu.rate' => 'Vurder',
 			'mediaMenu.playFromBeginning' => 'Spill fra begynnelsen',
 			'mediaMenu.playVersion' => 'Spill av versjon...',
+			'rateSheet.title' => 'Vurder',
+			'rateSheet.server' => 'Server',
+			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
+			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
+			'rateSheet.setScore' => 'Sett en poengsum',
+			'rateSheet.notRated' => 'Ikke vurdert',
+			'rateSheet.liked' => 'Likt',
+			'rateSheet.notLiked' => 'Ikke likt',
+			'rateSheet.saved' => 'Lagret',
+			'rateSheet.notAvailable' => 'Ingen treff',
+			'rateSheet.noConnectedTrackers' => 'Koble til en sporer i Innstillinger for å vurdere der.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV-serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -2273,6 +2305,8 @@ extension on TranslationsNb {
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profiler',
 			'profiles.removeConnectionTitle' => 'Fjerne tilkobling?',
 			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Fjern ${displayName}s tilgang til ${connectionLabel}. Andre profiler beholder den.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteProfileTitle' => 'Slette profil?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Fjern ${displayName} og tilkoblingene. Servere forblir tilgjengelige.',
 			'profiles.profileNameLabel' => 'Profilnavn',
@@ -2284,8 +2318,6 @@ extension on TranslationsNb {
 			'profiles.confirmPinTitle' => 'Bekreft PIN',
 			'profiles.pinSet' => 'PIN satt',
 			'profiles.changePin' => 'Endre',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.removePin' => 'Fjern',
 			'profiles.connectionsLabel' => 'Tilkoblinger',
 			'profiles.add' => 'Legg til',
@@ -2787,6 +2819,8 @@ extension on TranslationsNb {
 			'metadataEdit.selectSquareArt' => 'Velg kvadratisk bilde',
 			'metadataEdit.fromUrl' => 'Fra URL',
 			'metadataEdit.uploadFile' => 'Last opp fil',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.enterImageUrl' => 'Skriv inn bilde-URL',
 			'metadataEdit.imageUrl' => 'Bilde-URL',
 			'metadataEdit.metadataUpdated' => 'Metadata oppdatert',
@@ -2798,8 +2832,6 @@ extension on TranslationsNb {
 			'metadataEdit.libraryDefault' => 'Bibliotekstandard',
 			'metadataEdit.accountDefault' => 'Kontostandard',
 			'metadataEdit.seriesDefault' => 'Seriestandard',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.episodeSorting' => 'Episodesortering',
 			'metadataEdit.oldestFirst' => 'Eldste først',
 			'metadataEdit.newestFirst' => 'Nyeste først',

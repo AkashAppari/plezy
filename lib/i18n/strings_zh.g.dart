@@ -49,6 +49,7 @@ class TranslationsZh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsHotkeysZh hotkeys = _TranslationsHotkeysZh._(_root);
 	@override late final _TranslationsFileInfoZh fileInfo = _TranslationsFileInfoZh._(_root);
 	@override late final _TranslationsMediaMenuZh mediaMenu = _TranslationsMediaMenuZh._(_root);
+	@override late final _TranslationsRateSheetZh rateSheet = _TranslationsRateSheetZh._(_root);
 	@override late final _TranslationsAccessibilityZh accessibility = _TranslationsAccessibilityZh._(_root);
 	@override late final _TranslationsTooltipsZh tooltips = _TranslationsTooltipsZh._(_root);
 	@override late final _TranslationsVideoControlsZh videoControls = _TranslationsVideoControlsZh._(_root);
@@ -479,6 +480,26 @@ class _TranslationsMediaMenuZh extends TranslationsMediaMenuEn {
 	@override String get rate => '评分';
 	@override String get playFromBeginning => '从头播放';
 	@override String get playVersion => '播放版本...';
+}
+
+// Path: rateSheet
+class _TranslationsRateSheetZh extends TranslationsRateSheetEn {
+	_TranslationsRateSheetZh._(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '评分';
+	@override String get server => '服务器';
+	@override String starValue({required Object rating}) => '${rating} / 5';
+	@override String scoreValue({required Object score}) => '${score} / 10';
+	@override String get setScore => '设置分数';
+	@override String get notRated => '未评分';
+	@override String get liked => '已喜欢';
+	@override String get notLiked => '未喜欢';
+	@override String get saved => '已保存';
+	@override String get notAvailable => '未找到匹配项';
+	@override String get noConnectedTrackers => '在设置中连接跟踪器即可在那里评分。';
 }
 
 // Path: accessibility
@@ -2098,6 +2119,17 @@ extension on TranslationsZh {
 			'mediaMenu.rate' => '评分',
 			'mediaMenu.playFromBeginning' => '从头播放',
 			'mediaMenu.playVersion' => '播放版本...',
+			'rateSheet.title' => '评分',
+			'rateSheet.server' => '服务器',
+			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
+			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
+			'rateSheet.setScore' => '设置分数',
+			'rateSheet.notRated' => '未评分',
+			'rateSheet.liked' => '已喜欢',
+			'rateSheet.notLiked' => '未喜欢',
+			'rateSheet.saved' => '已保存',
+			'rateSheet.notAvailable' => '未找到匹配项',
+			'rateSheet.noConnectedTrackers' => '在设置中连接跟踪器即可在那里评分。',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, 电影',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, 电视剧',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -2273,6 +2305,8 @@ extension on TranslationsZh {
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} 个配置文件',
 			'profiles.removeConnectionTitle' => '移除连接？',
 			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => '移除 ${displayName} 对 ${connectionLabel} 的访问。其他个人资料仍保留。',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteProfileTitle' => '删除配置文件？',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => '移除 ${displayName} 及其连接。服务器仍可用。',
 			'profiles.profileNameLabel' => '配置文件名称',
@@ -2284,8 +2318,6 @@ extension on TranslationsZh {
 			'profiles.confirmPinTitle' => '确认 PIN',
 			'profiles.pinSet' => '已设置 PIN',
 			'profiles.changePin' => '更改',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.removePin' => '移除',
 			'profiles.connectionsLabel' => '连接',
 			'profiles.add' => '添加',
@@ -2787,6 +2819,8 @@ extension on TranslationsZh {
 			'metadataEdit.selectSquareArt' => '选择方形图片',
 			'metadataEdit.fromUrl' => '从 URL',
 			'metadataEdit.uploadFile' => '上传文件',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.enterImageUrl' => '输入图片 URL',
 			'metadataEdit.imageUrl' => '图片 URL',
 			'metadataEdit.metadataUpdated' => '元数据已更新',
@@ -2798,8 +2832,6 @@ extension on TranslationsZh {
 			'metadataEdit.libraryDefault' => '媒体库默认',
 			'metadataEdit.accountDefault' => '账户默认',
 			'metadataEdit.seriesDefault' => '剧集默认',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.episodeSorting' => '剧集排序',
 			'metadataEdit.oldestFirst' => '最旧优先',
 			'metadataEdit.newestFirst' => '最新优先',

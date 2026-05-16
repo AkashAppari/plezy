@@ -49,6 +49,7 @@ class TranslationsDa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsHotkeysDa hotkeys = _TranslationsHotkeysDa._(_root);
 	@override late final _TranslationsFileInfoDa fileInfo = _TranslationsFileInfoDa._(_root);
 	@override late final _TranslationsMediaMenuDa mediaMenu = _TranslationsMediaMenuDa._(_root);
+	@override late final _TranslationsRateSheetDa rateSheet = _TranslationsRateSheetDa._(_root);
 	@override late final _TranslationsAccessibilityDa accessibility = _TranslationsAccessibilityDa._(_root);
 	@override late final _TranslationsTooltipsDa tooltips = _TranslationsTooltipsDa._(_root);
 	@override late final _TranslationsVideoControlsDa videoControls = _TranslationsVideoControlsDa._(_root);
@@ -479,6 +480,26 @@ class _TranslationsMediaMenuDa extends TranslationsMediaMenuEn {
 	@override String get rate => 'Bedøm';
 	@override String get playFromBeginning => 'Afspil fra begyndelsen';
 	@override String get playVersion => 'Afspil version...';
+}
+
+// Path: rateSheet
+class _TranslationsRateSheetDa extends TranslationsRateSheetEn {
+	_TranslationsRateSheetDa._(TranslationsDa root) : this._root = root, super.internal(root);
+
+	final TranslationsDa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Bedøm';
+	@override String get server => 'Server';
+	@override String starValue({required Object rating}) => '${rating} / 5';
+	@override String scoreValue({required Object score}) => '${score} / 10';
+	@override String get setScore => 'Angiv en score';
+	@override String get notRated => 'Ikke bedømt';
+	@override String get liked => 'Synes godt om';
+	@override String get notLiked => 'Ikke liket';
+	@override String get saved => 'Gemt';
+	@override String get notAvailable => 'Intet match fundet';
+	@override String get noConnectedTrackers => 'Forbind en tracker i Indstillinger for at bedømme der.';
 }
 
 // Path: accessibility
@@ -2098,6 +2119,17 @@ extension on TranslationsDa {
 			'mediaMenu.rate' => 'Bedøm',
 			'mediaMenu.playFromBeginning' => 'Afspil fra begyndelsen',
 			'mediaMenu.playVersion' => 'Afspil version...',
+			'rateSheet.title' => 'Bedøm',
+			'rateSheet.server' => 'Server',
+			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
+			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
+			'rateSheet.setScore' => 'Angiv en score',
+			'rateSheet.notRated' => 'Ikke bedømt',
+			'rateSheet.liked' => 'Synes godt om',
+			'rateSheet.notLiked' => 'Ikke liket',
+			'rateSheet.saved' => 'Gemt',
+			'rateSheet.notAvailable' => 'Intet match fundet',
+			'rateSheet.noConnectedTrackers' => 'Forbind en tracker i Indstillinger for at bedømme der.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV-serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -2273,6 +2305,8 @@ extension on TranslationsDa {
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profiler',
 			'profiles.removeConnectionTitle' => 'Fjern forbindelse?',
 			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Fjern ${displayName}s adgang til ${connectionLabel}. Andre profiler beholder den.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteProfileTitle' => 'Slet profil?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Fjern ${displayName} og forbindelserne. Servere forbliver tilgængelige.',
 			'profiles.profileNameLabel' => 'Profilnavn',
@@ -2284,8 +2318,6 @@ extension on TranslationsDa {
 			'profiles.confirmPinTitle' => 'Bekræft PIN',
 			'profiles.pinSet' => 'PIN angivet',
 			'profiles.changePin' => 'Skift',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.removePin' => 'Fjern',
 			'profiles.connectionsLabel' => 'Forbindelser',
 			'profiles.add' => 'Tilføj',
@@ -2787,6 +2819,8 @@ extension on TranslationsDa {
 			'metadataEdit.selectSquareArt' => 'Vælg kvadratisk billede',
 			'metadataEdit.fromUrl' => 'Fra URL',
 			'metadataEdit.uploadFile' => 'Upload fil',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.enterImageUrl' => 'Indtast billed-URL',
 			'metadataEdit.imageUrl' => 'Billed-URL',
 			'metadataEdit.metadataUpdated' => 'Metadata opdateret',
@@ -2798,8 +2832,6 @@ extension on TranslationsDa {
 			'metadataEdit.libraryDefault' => 'Biblioteksstandard',
 			'metadataEdit.accountDefault' => 'Kontostandard',
 			'metadataEdit.seriesDefault' => 'Seriestandard',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.episodeSorting' => 'Episodesortering',
 			'metadataEdit.oldestFirst' => 'Ældste først',
 			'metadataEdit.newestFirst' => 'Nyeste først',

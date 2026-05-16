@@ -49,6 +49,7 @@ class TranslationsSv extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsHotkeysSv hotkeys = _TranslationsHotkeysSv._(_root);
 	@override late final _TranslationsFileInfoSv fileInfo = _TranslationsFileInfoSv._(_root);
 	@override late final _TranslationsMediaMenuSv mediaMenu = _TranslationsMediaMenuSv._(_root);
+	@override late final _TranslationsRateSheetSv rateSheet = _TranslationsRateSheetSv._(_root);
 	@override late final _TranslationsAccessibilitySv accessibility = _TranslationsAccessibilitySv._(_root);
 	@override late final _TranslationsTooltipsSv tooltips = _TranslationsTooltipsSv._(_root);
 	@override late final _TranslationsVideoControlsSv videoControls = _TranslationsVideoControlsSv._(_root);
@@ -479,6 +480,26 @@ class _TranslationsMediaMenuSv extends TranslationsMediaMenuEn {
 	@override String get rate => 'Betygsätt';
 	@override String get playFromBeginning => 'Spela från början';
 	@override String get playVersion => 'Spela version...';
+}
+
+// Path: rateSheet
+class _TranslationsRateSheetSv extends TranslationsRateSheetEn {
+	_TranslationsRateSheetSv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Betygsätt';
+	@override String get server => 'Server';
+	@override String starValue({required Object rating}) => '${rating} / 5';
+	@override String scoreValue({required Object score}) => '${score} / 10';
+	@override String get setScore => 'Ange betyg';
+	@override String get notRated => 'Inte betygsatt';
+	@override String get liked => 'Gillad';
+	@override String get notLiked => 'Inte gillad';
+	@override String get saved => 'Sparat';
+	@override String get notAvailable => 'Ingen matchning hittades';
+	@override String get noConnectedTrackers => 'Anslut en spårare i Inställningar för att betygsätta där.';
 }
 
 // Path: accessibility
@@ -2098,6 +2119,17 @@ extension on TranslationsSv {
 			'mediaMenu.rate' => 'Betygsätt',
 			'mediaMenu.playFromBeginning' => 'Spela från början',
 			'mediaMenu.playVersion' => 'Spela version...',
+			'rateSheet.title' => 'Betygsätt',
+			'rateSheet.server' => 'Server',
+			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
+			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
+			'rateSheet.setScore' => 'Ange betyg',
+			'rateSheet.notRated' => 'Inte betygsatt',
+			'rateSheet.liked' => 'Gillad',
+			'rateSheet.notLiked' => 'Inte gillad',
+			'rateSheet.saved' => 'Sparat',
+			'rateSheet.notAvailable' => 'Ingen matchning hittades',
+			'rateSheet.noConnectedTrackers' => 'Anslut en spårare i Inställningar för att betygsätta där.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV-serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -2273,6 +2305,8 @@ extension on TranslationsSv {
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profiler',
 			'profiles.removeConnectionTitle' => 'Ta bort anslutning?',
 			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Ta bort ${displayName}s åtkomst till ${connectionLabel}. Andra profiler behåller den.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteProfileTitle' => 'Ta bort profil?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Ta bort ${displayName} och dess anslutningar. Servrar förblir tillgängliga.',
 			'profiles.profileNameLabel' => 'Profilnamn',
@@ -2284,8 +2318,6 @@ extension on TranslationsSv {
 			'profiles.confirmPinTitle' => 'Bekräfta PIN',
 			'profiles.pinSet' => 'PIN angiven',
 			'profiles.changePin' => 'Ändra',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.removePin' => 'Ta bort',
 			'profiles.connectionsLabel' => 'Anslutningar',
 			'profiles.add' => 'Lägg till',
@@ -2787,6 +2819,8 @@ extension on TranslationsSv {
 			'metadataEdit.selectSquareArt' => 'Välj kvadratisk bild',
 			'metadataEdit.fromUrl' => 'Från URL',
 			'metadataEdit.uploadFile' => 'Ladda upp fil',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.enterImageUrl' => 'Ange bild-URL',
 			'metadataEdit.imageUrl' => 'Bild-URL',
 			'metadataEdit.metadataUpdated' => 'Metadata uppdaterad',
@@ -2798,8 +2832,6 @@ extension on TranslationsSv {
 			'metadataEdit.libraryDefault' => 'Biblioteksstandard',
 			'metadataEdit.accountDefault' => 'Kontostandard',
 			'metadataEdit.seriesDefault' => 'Seriestandard',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.episodeSorting' => 'Avsnittsortering',
 			'metadataEdit.oldestFirst' => 'Äldst först',
 			'metadataEdit.newestFirst' => 'Nyast först',

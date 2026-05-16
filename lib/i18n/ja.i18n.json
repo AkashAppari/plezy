@@ -347,6 +347,19 @@
     "playFromBeginning": "最初から再生",
     "playVersion": "バージョンを再生..."
   },
+  "rateSheet": {
+    "title": "評価",
+    "server": "サーバー",
+    "starValue": "${rating} / 5",
+    "scoreValue": "${score} / 10",
+    "setScore": "スコアを設定",
+    "notRated": "未評価",
+    "liked": "いいね済み",
+    "notLiked": "いいねなし",
+    "saved": "保存済み",
+    "notAvailable": "一致なし",
+    "noConnectedTrackers": "設定でトラッカーを接続すると、そこで評価できます。"
+  },
   "accessibility": {
     "mediaCardMovie": "${title}、映画",
     "mediaCardShow": "${title}、テレビ番組",

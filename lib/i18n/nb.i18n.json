@@ -347,6 +347,19 @@
     "playFromBeginning": "Spill fra begynnelsen",
     "playVersion": "Spill av versjon..."
   },
+  "rateSheet": {
+    "title": "Vurder",
+    "server": "Server",
+    "starValue": "${rating} / 5",
+    "scoreValue": "${score} / 10",
+    "setScore": "Sett en poengsum",
+    "notRated": "Ikke vurdert",
+    "liked": "Likt",
+    "notLiked": "Ikke likt",
+    "saved": "Lagret",
+    "notAvailable": "Ingen treff",
+    "noConnectedTrackers": "Koble til en sporer i Innstillinger for å vurdere der."
+  },
   "accessibility": {
     "mediaCardMovie": "${title}, film",
     "mediaCardShow": "${title}, TV-serie",

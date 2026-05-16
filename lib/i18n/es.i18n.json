@@ -347,6 +347,19 @@
     "playFromBeginning": "Reproducir desde el inicio",
     "playVersion": "Reproducir versión..."
   },
+  "rateSheet": {
+    "title": "Calificar",
+    "server": "Servidor",
+    "starValue": "${rating} / 5",
+    "scoreValue": "${score} / 10",
+    "setScore": "Establecer puntuación",
+    "notRated": "Sin calificar",
+    "liked": "Me gusta",
+    "notLiked": "Sin Me gusta",
+    "saved": "Guardado",
+    "notAvailable": "No se encontró coincidencia",
+    "noConnectedTrackers": "Conecta un tracker en Ajustes para calificar allí."
+  },
   "accessibility": {
     "mediaCardMovie": "${title}, película",
     "mediaCardShow": "${title}, serie de TV",

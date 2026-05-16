@@ -5,6 +5,7 @@ import '../../../utils/app_logger.dart';
 import '../../settings_service.dart';
 import '../tracker.dart';
 import '../tracker_constants.dart';
+import '../tracker_id_resolver.dart';
 import 'anilist_client.dart';
 import 'anilist_session.dart';
 
@@ -61,6 +62,32 @@ class AnilistTracker extends TrackerBase {
 
     await client.saveMediaListEntry(mediaId: anilistId, progress: watched, status: status);
     appLogger.d('AniList: saved entry (anilist=$anilistId, progress=$watched, status=$status)');
+  }
+
+  Future<void> rate(TrackerRatingContext ctx, int score) async {
+    final client = _client;
+    final anilistId = ctx.ids.anime?.anilist;
+    if (client == null || anilistId == null) throw const TrackerRatingUnavailableException('AniList');
+
+    final clamped = score.clamp(1, 10).toInt();
+    await client.setMediaListScore(mediaId: anilistId, score: clamped);
+    appLogger.d('AniList: updated score (anilist=$anilistId, score=$clamped)');
+  }
+
+  Future<void> clearRating(TrackerRatingContext ctx) async {
+    final client = _client;
+    final anilistId = ctx.ids.anime?.anilist;
+    if (client == null || anilistId == null) throw const TrackerRatingUnavailableException('AniList');
+
+    await client.setMediaListScore(mediaId: anilistId, score: 0);
+    appLogger.d('AniList: cleared score (anilist=$anilistId)');
+  }
+
+  Future<int?> getRating(TrackerRatingContext ctx) async {
+    final client = _client;
+    final anilistId = ctx.ids.anime?.anilist;
+    if (client == null || anilistId == null) throw const TrackerRatingUnavailableException('AniList');
+    return client.getMediaListScore(anilistId);
   }
 
   Future<int?> _episodeCount(AnilistClient client, int anilistId) {

@@ -32,6 +32,15 @@ abstract class Tracker {
   Future<void> markWatched(TrackerContext ctx);
 }
 
+class TrackerRatingUnavailableException implements Exception {
+  final String trackerName;
+
+  const TrackerRatingUnavailableException(this.trackerName);
+
+  @override
+  String toString() => 'TrackerRatingUnavailableException($trackerName)';
+}
+
 /// Shared enabled-state bookkeeping. Subclasses override [hasActiveClient],
 /// [readEnabledSetting], and [markWatched].
 abstract class TrackerBase implements Tracker {

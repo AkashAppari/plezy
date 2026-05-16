@@ -49,6 +49,7 @@ class TranslationsJa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsHotkeysJa hotkeys = _TranslationsHotkeysJa._(_root);
 	@override late final _TranslationsFileInfoJa fileInfo = _TranslationsFileInfoJa._(_root);
 	@override late final _TranslationsMediaMenuJa mediaMenu = _TranslationsMediaMenuJa._(_root);
+	@override late final _TranslationsRateSheetJa rateSheet = _TranslationsRateSheetJa._(_root);
 	@override late final _TranslationsAccessibilityJa accessibility = _TranslationsAccessibilityJa._(_root);
 	@override late final _TranslationsTooltipsJa tooltips = _TranslationsTooltipsJa._(_root);
 	@override late final _TranslationsVideoControlsJa videoControls = _TranslationsVideoControlsJa._(_root);
@@ -479,6 +480,26 @@ class _TranslationsMediaMenuJa extends TranslationsMediaMenuEn {
 	@override String get rate => '評価';
 	@override String get playFromBeginning => '最初から再生';
 	@override String get playVersion => 'バージョンを再生...';
+}
+
+// Path: rateSheet
+class _TranslationsRateSheetJa extends TranslationsRateSheetEn {
+	_TranslationsRateSheetJa._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '評価';
+	@override String get server => 'サーバー';
+	@override String starValue({required Object rating}) => '${rating} / 5';
+	@override String scoreValue({required Object score}) => '${score} / 10';
+	@override String get setScore => 'スコアを設定';
+	@override String get notRated => '未評価';
+	@override String get liked => 'いいね済み';
+	@override String get notLiked => 'いいねなし';
+	@override String get saved => '保存済み';
+	@override String get notAvailable => '一致なし';
+	@override String get noConnectedTrackers => '設定でトラッカーを接続すると、そこで評価できます。';
 }
 
 // Path: accessibility
@@ -2098,6 +2119,17 @@ extension on TranslationsJa {
 			'mediaMenu.rate' => '評価',
 			'mediaMenu.playFromBeginning' => '最初から再生',
 			'mediaMenu.playVersion' => 'バージョンを再生...',
+			'rateSheet.title' => '評価',
+			'rateSheet.server' => 'サーバー',
+			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
+			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
+			'rateSheet.setScore' => 'スコアを設定',
+			'rateSheet.notRated' => '未評価',
+			'rateSheet.liked' => 'いいね済み',
+			'rateSheet.notLiked' => 'いいねなし',
+			'rateSheet.saved' => '保存済み',
+			'rateSheet.notAvailable' => '一致なし',
+			'rateSheet.noConnectedTrackers' => '設定でトラッカーを接続すると、そこで評価できます。',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}、映画',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}、テレビ番組',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}、${episodeInfo}',
@@ -2273,6 +2305,8 @@ extension on TranslationsJa {
 			'profiles.summaryMultiple' => ({required Object count}) => '${count}個のプロファイル',
 			'profiles.removeConnectionTitle' => '接続を削除しますか？',
 			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => '${displayName}の${connectionLabel}へのアクセスを削除します。他のプロフィールには残ります。',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteProfileTitle' => 'プロファイルを削除しますか？',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => '${displayName}とその接続を削除します。サーバーは引き続き利用できます。',
 			'profiles.profileNameLabel' => 'プロファイル名',
@@ -2284,8 +2318,6 @@ extension on TranslationsJa {
 			'profiles.confirmPinTitle' => 'PINを確認',
 			'profiles.pinSet' => 'PIN設定済み',
 			'profiles.changePin' => '変更',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.removePin' => '削除',
 			'profiles.connectionsLabel' => '接続',
 			'profiles.add' => '追加',
@@ -2787,6 +2819,8 @@ extension on TranslationsJa {
 			'metadataEdit.selectSquareArt' => '正方形アートを選択',
 			'metadataEdit.fromUrl' => 'URLから',
 			'metadataEdit.uploadFile' => 'ファイルをアップロード',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.enterImageUrl' => '画像URLを入力',
 			'metadataEdit.imageUrl' => '画像URL',
 			'metadataEdit.metadataUpdated' => 'メタデータを更新しました',
@@ -2798,8 +2832,6 @@ extension on TranslationsJa {
 			'metadataEdit.libraryDefault' => 'ライブラリのデフォルト',
 			'metadataEdit.accountDefault' => 'アカウントのデフォルト',
 			'metadataEdit.seriesDefault' => 'シリーズのデフォルト',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.episodeSorting' => 'エピソードの並べ替え',
 			'metadataEdit.oldestFirst' => '古い順',
 			'metadataEdit.newestFirst' => '新しい順',

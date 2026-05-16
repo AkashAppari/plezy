@@ -347,6 +347,19 @@
     "playFromBeginning": "Воспроизвести сначала",
     "playVersion": "Воспроизвести версию..."
   },
+  "rateSheet": {
+    "title": "Оценить",
+    "server": "Сервер",
+    "starValue": "${rating} / 5",
+    "scoreValue": "${score} / 10",
+    "setScore": "Установить оценку",
+    "notRated": "Без оценки",
+    "liked": "Понравилось",
+    "notLiked": "Не отмечено понравившимся",
+    "saved": "Сохранено",
+    "notAvailable": "Совпадений не найдено",
+    "noConnectedTrackers": "Подключите трекер в настройках, чтобы оценивать там."
+  },
   "accessibility": {
     "mediaCardMovie": "${title}, фильм",
     "mediaCardShow": "${title}, сериал",

@@ -49,6 +49,7 @@ class TranslationsDe extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsHotkeysDe hotkeys = _TranslationsHotkeysDe._(_root);
 	@override late final _TranslationsFileInfoDe fileInfo = _TranslationsFileInfoDe._(_root);
 	@override late final _TranslationsMediaMenuDe mediaMenu = _TranslationsMediaMenuDe._(_root);
+	@override late final _TranslationsRateSheetDe rateSheet = _TranslationsRateSheetDe._(_root);
 	@override late final _TranslationsAccessibilityDe accessibility = _TranslationsAccessibilityDe._(_root);
 	@override late final _TranslationsTooltipsDe tooltips = _TranslationsTooltipsDe._(_root);
 	@override late final _TranslationsVideoControlsDe videoControls = _TranslationsVideoControlsDe._(_root);
@@ -479,6 +480,26 @@ class _TranslationsMediaMenuDe extends TranslationsMediaMenuEn {
 	@override String get rate => 'Bewerten';
 	@override String get playFromBeginning => 'Von Anfang an abspielen';
 	@override String get playVersion => 'Version abspielen...';
+}
+
+// Path: rateSheet
+class _TranslationsRateSheetDe extends TranslationsRateSheetEn {
+	_TranslationsRateSheetDe._(TranslationsDe root) : this._root = root, super.internal(root);
+
+	final TranslationsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Bewerten';
+	@override String get server => 'Server';
+	@override String starValue({required Object rating}) => '${rating} / 5';
+	@override String scoreValue({required Object score}) => '${score} / 10';
+	@override String get setScore => 'Eine Wertung festlegen';
+	@override String get notRated => 'Nicht bewertet';
+	@override String get liked => 'Gefällt mir';
+	@override String get notLiked => 'Nicht geliket';
+	@override String get saved => 'Gespeichert';
+	@override String get notAvailable => 'Keine Übereinstimmung gefunden';
+	@override String get noConnectedTrackers => 'Verbinde einen Tracker in den Einstellungen, um dort zu bewerten.';
 }
 
 // Path: accessibility
@@ -2098,6 +2119,17 @@ extension on TranslationsDe {
 			'mediaMenu.rate' => 'Bewerten',
 			'mediaMenu.playFromBeginning' => 'Von Anfang an abspielen',
 			'mediaMenu.playVersion' => 'Version abspielen...',
+			'rateSheet.title' => 'Bewerten',
+			'rateSheet.server' => 'Server',
+			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
+			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
+			'rateSheet.setScore' => 'Eine Wertung festlegen',
+			'rateSheet.notRated' => 'Nicht bewertet',
+			'rateSheet.liked' => 'Gefällt mir',
+			'rateSheet.notLiked' => 'Nicht geliket',
+			'rateSheet.saved' => 'Gespeichert',
+			'rateSheet.notAvailable' => 'Keine Übereinstimmung gefunden',
+			'rateSheet.noConnectedTrackers' => 'Verbinde einen Tracker in den Einstellungen, um dort zu bewerten.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, Film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, Serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -2273,6 +2305,8 @@ extension on TranslationsDe {
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} Profile',
 			'profiles.removeConnectionTitle' => 'Verbindung entfernen?',
 			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Zugriff von ${displayName} auf ${connectionLabel} entfernen. Andere Profile behalten ihn.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteProfileTitle' => 'Profil löschen?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => '${displayName} und Verbindungen entfernen. Server bleiben verfügbar.',
 			'profiles.profileNameLabel' => 'Profilname',
@@ -2284,8 +2318,6 @@ extension on TranslationsDe {
 			'profiles.confirmPinTitle' => 'PIN bestätigen',
 			'profiles.pinSet' => 'PIN festgelegt',
 			'profiles.changePin' => 'Ändern',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.removePin' => 'Entfernen',
 			'profiles.connectionsLabel' => 'Verbindungen',
 			'profiles.add' => 'Hinzufügen',
@@ -2787,6 +2819,8 @@ extension on TranslationsDe {
 			'metadataEdit.selectSquareArt' => 'Quadratisches Bild auswählen',
 			'metadataEdit.fromUrl' => 'Von URL',
 			'metadataEdit.uploadFile' => 'Datei hochladen',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.enterImageUrl' => 'Bild-URL eingeben',
 			'metadataEdit.imageUrl' => 'Bild-URL',
 			'metadataEdit.metadataUpdated' => 'Metadaten aktualisiert',
@@ -2798,8 +2832,6 @@ extension on TranslationsDe {
 			'metadataEdit.libraryDefault' => 'Bibliotheksstandard',
 			'metadataEdit.accountDefault' => 'Kontostandard',
 			'metadataEdit.seriesDefault' => 'Serienstandard',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.episodeSorting' => 'Episodensortierung',
 			'metadataEdit.oldestFirst' => 'Älteste zuerst',
 			'metadataEdit.newestFirst' => 'Neueste zuerst',

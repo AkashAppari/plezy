@@ -347,6 +347,19 @@
     "playFromBeginning": "Spela från början",
     "playVersion": "Spela version..."
   },
+  "rateSheet": {
+    "title": "Betygsätt",
+    "server": "Server",
+    "starValue": "${rating} / 5",
+    "scoreValue": "${score} / 10",
+    "setScore": "Ange betyg",
+    "notRated": "Inte betygsatt",
+    "liked": "Gillad",
+    "notLiked": "Inte gillad",
+    "saved": "Sparat",
+    "notAvailable": "Ingen matchning hittades",
+    "noConnectedTrackers": "Anslut en spårare i Inställningar för att betygsätta där."
+  },
   "accessibility": {
     "mediaCardMovie": "${title}, film",
     "mediaCardShow": "${title}, TV-serie",

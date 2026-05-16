@@ -347,6 +347,19 @@
     "playFromBeginning": "Play from Beginning",
     "playVersion": "Play Version..."
   },
+  "rateSheet": {
+    "title": "Rate",
+    "server": "Server",
+    "starValue": "${rating} / 5",
+    "scoreValue": "${score} / 10",
+    "setScore": "Set a score",
+    "notRated": "Not rated",
+    "liked": "Liked",
+    "notLiked": "Not liked",
+    "saved": "Saved",
+    "notAvailable": "No match found",
+    "noConnectedTrackers": "Connect a tracker in Settings to rate there."
+  },
   "accessibility": {
     "mediaCardMovie": "${title}, movie",
     "mediaCardShow": "${title}, TV show",

@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
-import '../exceptions/media_server_exceptions.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
@@ -1116,32 +1115,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   Future<void> _showRatingSheet(BuildContext context, MediaItem item, MediaServerClient client) async {
-    final currentStarValue = (item.userRating != null && item.userRating! > 0) ? item.userRating! / 2.0 : 0.0;
     await OverlaySheetController.showAdaptive(
       context,
       showDragHandle: true,
       builder: (context) => RatingBottomSheet(
-        currentRating: currentStarValue,
-        onRate: (stars) async {
-          // 0-10 scale used by both Plex and Jellyfin rate endpoints.
-          final rating = stars * 2.0;
-          try {
-            await client.rate(item, rating);
-            widget.onRefresh?.call(item.id);
-          } on MediaServerHttpException catch (e) {
-            appLogger.w('Failed to set rating', error: e);
-            if (context.mounted) showErrorSnackBar(context, t.errors.failedToRate);
-          }
-        },
-        onClear: () async {
-          try {
-            await client.rate(item, -1);
-            widget.onRefresh?.call(item.id);
-          } on MediaServerHttpException catch (e) {
-            appLogger.w('Failed to clear rating', error: e);
-            if (context.mounted) showErrorSnackBar(context, t.errors.failedToRate);
-          }
-        },
+        item: item,
+        serverClient: client,
+        onServerRatingChanged: (_) => widget.onRefresh?.call(item.id),
       ),
     );
   }

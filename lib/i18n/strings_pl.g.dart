@@ -49,6 +49,7 @@ class TranslationsPl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsHotkeysPl hotkeys = _TranslationsHotkeysPl._(_root);
 	@override late final _TranslationsFileInfoPl fileInfo = _TranslationsFileInfoPl._(_root);
 	@override late final _TranslationsMediaMenuPl mediaMenu = _TranslationsMediaMenuPl._(_root);
+	@override late final _TranslationsRateSheetPl rateSheet = _TranslationsRateSheetPl._(_root);
 	@override late final _TranslationsAccessibilityPl accessibility = _TranslationsAccessibilityPl._(_root);
 	@override late final _TranslationsTooltipsPl tooltips = _TranslationsTooltipsPl._(_root);
 	@override late final _TranslationsVideoControlsPl videoControls = _TranslationsVideoControlsPl._(_root);
@@ -479,6 +480,26 @@ class _TranslationsMediaMenuPl extends TranslationsMediaMenuEn {
 	@override String get rate => 'Oceń';
 	@override String get playFromBeginning => 'Odtwórz od początku';
 	@override String get playVersion => 'Odtwórz wersję...';
+}
+
+// Path: rateSheet
+class _TranslationsRateSheetPl extends TranslationsRateSheetEn {
+	_TranslationsRateSheetPl._(TranslationsPl root) : this._root = root, super.internal(root);
+
+	final TranslationsPl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Oceń';
+	@override String get server => 'Serwer';
+	@override String starValue({required Object rating}) => '${rating} / 5';
+	@override String scoreValue({required Object score}) => '${score} / 10';
+	@override String get setScore => 'Ustaw ocenę';
+	@override String get notRated => 'Nie oceniono';
+	@override String get liked => 'Polubione';
+	@override String get notLiked => 'Nie polubiono';
+	@override String get saved => 'Zapisano';
+	@override String get notAvailable => 'Nie znaleziono dopasowania';
+	@override String get noConnectedTrackers => 'Połącz tracker w Ustawieniach, aby tam oceniać.';
 }
 
 // Path: accessibility
@@ -2098,6 +2119,17 @@ extension on TranslationsPl {
 			'mediaMenu.rate' => 'Oceń',
 			'mediaMenu.playFromBeginning' => 'Odtwórz od początku',
 			'mediaMenu.playVersion' => 'Odtwórz wersję...',
+			'rateSheet.title' => 'Oceń',
+			'rateSheet.server' => 'Serwer',
+			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
+			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
+			'rateSheet.setScore' => 'Ustaw ocenę',
+			'rateSheet.notRated' => 'Nie oceniono',
+			'rateSheet.liked' => 'Polubione',
+			'rateSheet.notLiked' => 'Nie polubiono',
+			'rateSheet.saved' => 'Zapisano',
+			'rateSheet.notAvailable' => 'Nie znaleziono dopasowania',
+			'rateSheet.noConnectedTrackers' => 'Połącz tracker w Ustawieniach, aby tam oceniać.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, serial TV',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -2273,6 +2305,8 @@ extension on TranslationsPl {
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profili',
 			'profiles.removeConnectionTitle' => 'Usunąć połączenie?',
 			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Usuń dostęp ${displayName} do ${connectionLabel}. Inne profile go zachowają.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteProfileTitle' => 'Usunąć profil?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Usuń ${displayName} i jego połączenia. Serwery pozostaną dostępne.',
 			'profiles.profileNameLabel' => 'Nazwa profilu',
@@ -2284,8 +2318,6 @@ extension on TranslationsPl {
 			'profiles.confirmPinTitle' => 'Potwierdź PIN',
 			'profiles.pinSet' => 'PIN ustawiony',
 			'profiles.changePin' => 'Zmień',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.removePin' => 'Usuń',
 			'profiles.connectionsLabel' => 'Połączenia',
 			'profiles.add' => 'Dodaj',
@@ -2787,6 +2819,8 @@ extension on TranslationsPl {
 			'metadataEdit.selectSquareArt' => 'Wybierz kwadratowy obraz',
 			'metadataEdit.fromUrl' => 'Z URL',
 			'metadataEdit.uploadFile' => 'Prześlij plik',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.enterImageUrl' => 'Wprowadź URL obrazu',
 			'metadataEdit.imageUrl' => 'URL obrazu',
 			'metadataEdit.metadataUpdated' => 'Metadane zaktualizowane',
@@ -2798,8 +2832,6 @@ extension on TranslationsPl {
 			'metadataEdit.libraryDefault' => 'Domyślne biblioteki',
 			'metadataEdit.accountDefault' => 'Domyślne konta',
 			'metadataEdit.seriesDefault' => 'Domyślne serialu',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.episodeSorting' => 'Sortowanie odcinków',
 			'metadataEdit.oldestFirst' => 'Najstarsze najpierw',
 			'metadataEdit.newestFirst' => 'Najnowsze najpierw',

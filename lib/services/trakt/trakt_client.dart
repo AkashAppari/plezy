@@ -59,6 +59,16 @@ class TraktClient {
   Future<void> removeFromHistory(TraktScrobbleRequest item) =>
       _request('POST', '/sync/history/remove', body: item.toHistoryRemoveBody());
 
+  Future<void> addRatings(Map<String, dynamic> body) =>
+      _request('POST', '/sync/ratings', body: body, allowStatuses: const {200, 201});
+
+  Future<void> removeRatings(Map<String, dynamic> body) => _request('POST', '/sync/ratings/remove', body: body);
+
+  Future<List<dynamic>> getRatings(String type) async {
+    final res = await _request('GET', '/sync/ratings/$type');
+    return res is List ? res : const [];
+  }
+
   /// Refresh the access token. Coalesces concurrent calls so
   /// duplicate POSTs don't race when multiple in-flight requests hit 401.
   Future<TraktSession> refresh() => _refreshCoalescer.run(_doRefresh);

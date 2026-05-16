@@ -1,4 +1,5 @@
 import '../../media/media_item.dart';
+import '../../media/media_kind.dart';
 import '../../media/media_server_client.dart';
 import '../../models/trackers/anime_ids.dart';
 import '../../models/trackers/fribb_mapping_row.dart';
@@ -25,6 +26,22 @@ class TrackerIds {
       animeProgress: animeProgress?.progress,
     );
   }
+}
+
+/// Resolved IDs for manually rating a media item on external trackers.
+///
+/// For TV items, [ids.external] is the show-level ID set. Trakt can then rate
+/// the show/season/episode through nested season/episode numbers, while MAL,
+/// AniList, and Simkl rate the mapped anime/show entry itself.
+class TrackerRatingContext {
+  final TrackerIds ids;
+  final MediaKind kind;
+  final int? season;
+  final int? episodeNumber;
+
+  const TrackerRatingContext({required this.ids, required this.kind, this.season, this.episodeNumber});
+
+  bool get isMovie => kind == MediaKind.movie;
 }
 
 /// Resolves item ids → tracker external IDs. Returns both backend-native
@@ -98,6 +115,46 @@ class TrackerIdResolver {
     if (ids == null || ids.animeProgressScope == null) return ids;
     final progress = await _animeProgress.resolve(episode, scope: ids.animeProgressScope!);
     return ids.withAnimeProgress(progress);
+  }
+
+  /// Resolve IDs for manual tracker ratings. Ratings can be attached to a
+  /// movie, show, season, or episode from the detail screen/context menu.
+  Future<TrackerRatingContext?> resolveForRating(MediaItem item) async {
+    switch (item.kind) {
+      case MediaKind.movie:
+        final ids = await resolveForMovie(item.id);
+        return ids == null ? null : TrackerRatingContext(ids: ids, kind: MediaKind.movie);
+      case MediaKind.show:
+        final ids = await _resolveShow(item.id);
+        return ids == null ? null : TrackerRatingContext(ids: ids, kind: MediaKind.show);
+      case MediaKind.season:
+        final showId = item.parentId;
+        final season = item.index ?? item.parentIndex;
+        if (showId == null || showId.isEmpty || season == null) return null;
+        final ids = await _resolveShow(showId, season: season);
+        return ids == null ? null : TrackerRatingContext(ids: ids, kind: MediaKind.season, season: season);
+      case MediaKind.episode:
+        final season = item.parentIndex;
+        final number = item.index;
+        if (season == null || number == null) return null;
+        final ids = await resolveShowForEpisode(item);
+        return ids == null
+            ? null
+            : TrackerRatingContext(ids: ids, kind: MediaKind.episode, season: season, episodeNumber: number);
+      default:
+        return null;
+    }
+  }
+
+  Future<TrackerIds?> _resolveShow(String showId, {int? season}) async {
+    if (showId.isEmpty) return null;
+    final cacheKey = season != null ? '$showId#s$season' : showId;
+    if (_cache.containsKey(cacheKey)) return _cache[cacheKey];
+
+    final external = await _fetchExternalIds(showId);
+    final ids = await _build(external, isEpisodeSeason: season, isMovie: false);
+    _cache[cacheKey] = ids;
+    return ids;
   }
 
   void clearCache() {
