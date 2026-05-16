@@ -233,7 +233,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     return MediaContextMenu(
       key: _contextMenuKey,
       item: metadata,
-      onRefresh: (_) => _loadFullMetadata(),
+      onRefresh: (itemId) => unawaited(_refreshItemInPlace(itemId)),
       child: Builder(
         builder: (buttonContext) => IconButton.filledTonal(
           onPressed: () {

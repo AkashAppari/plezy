@@ -42,6 +42,7 @@ import '../services/download_storage_service.dart';
 import '../utils/download_version_utils.dart';
 import '../utils/download_utils.dart';
 import '../services/settings_service.dart';
+import '../services/trackers/tracker_coordinator.dart';
 import '../widgets/settings_builder.dart';
 import '../utils/grid_size_calculator.dart';
 import '../utils/layout_constants.dart';
@@ -256,29 +257,152 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   void _patchWatchedStateFromEvent(WatchStateEvent event, {required int epIndex, required bool clearWatchedProgress}) {
     final isWatched = event.isNowWatched;
     if (isWatched == null) return;
-    final viewOffsetMs = isWatched && !clearWatchedProgress ? null : 0;
-    MediaItem patchItem(MediaItem item) {
-      final updated = item.copyWith(viewCount: isWatched ? 1 : 0);
-      return viewOffsetMs == null ? updated : updated.copyWith(viewOffsetMs: viewOffsetMs);
-    }
 
     setStateIfMounted(() {
       final base = _fullMetadata ?? widget.metadata;
+      final episodeDelta = epIndex == -1 ? 0 : _watchStateDelta(_episodes[epIndex], isWatched);
+
       if (base.id == event.itemId) {
-        _fullMetadata = patchItem(base);
+        _fullMetadata = _withWatchedPatch(base, isWatched, clearWatchedProgress: clearWatchedProgress);
       }
 
       final onDeckEpisode = _onDeckEpisode;
       if (onDeckEpisode != null && onDeckEpisode.id == event.itemId) {
-        _onDeckEpisode = patchItem(onDeckEpisode);
+        _onDeckEpisode = _withWatchedPatch(onDeckEpisode, isWatched, clearWatchedProgress: clearWatchedProgress);
       }
 
-      if (epIndex != -1) {
-        final updated = patchItem(_episodes[epIndex]);
-        _episodes[epIndex] = updated;
-        _syncEpisodeToCache(epIndex, updated);
+      _patchWatchedInListWhere(
+        _seasons,
+        (item) => item.id == event.itemId,
+        isWatched,
+        clearWatchedProgress: clearWatchedProgress,
+      );
+      _patchWatchedInListWhere(
+        _episodes,
+        (item) => item.id == event.itemId,
+        isWatched,
+        clearWatchedProgress: clearWatchedProgress,
+      );
+      for (final cached in _episodeCache.values) {
+        _patchWatchedInListWhere(
+          cached,
+          (item) => item.id == event.itemId,
+          isWatched,
+          clearWatchedProgress: clearWatchedProgress,
+        );
+      }
+      final extras = _extras;
+      if (extras != null) {
+        _patchWatchedInListWhere(
+          extras,
+          (item) => item.id == event.itemId,
+          isWatched,
+          clearWatchedProgress: clearWatchedProgress,
+        );
+      }
+      _relatedHubs = _patchWatchedInHubs(
+        _relatedHubs,
+        (item) => item.id == event.itemId,
+        isWatched,
+        clearWatchedProgress: clearWatchedProgress,
+      );
+
+      if (base.id == event.itemId || _seasons.any((season) => season.id == event.itemId)) {
+        _patchLoadedDescendantsOf(event.itemId, isWatched, clearWatchedProgress: clearWatchedProgress);
+      } else if (episodeDelta != 0) {
+        _adjustParentWatchCounts(event.parentChain, episodeDelta);
       }
     });
+  }
+
+  MediaItem _withWatchedPatch(MediaItem item, bool isWatched, {required bool clearWatchedProgress}) {
+    final viewOffsetMs = isWatched && !clearWatchedProgress ? null : 0;
+    var updated = item.copyWith(viewCount: isWatched ? 1 : 0);
+    if (item.leafCount != null || item.viewedLeafCount != null) {
+      updated = updated.copyWith(viewedLeafCount: isWatched ? (item.leafCount ?? item.viewedLeafCount ?? 1) : 0);
+    }
+    return viewOffsetMs == null ? updated : updated.copyWith(viewOffsetMs: viewOffsetMs);
+  }
+
+  int _watchStateDelta(MediaItem item, bool isWatched) {
+    if (item.isWatched == isWatched) return 0;
+    return isWatched ? 1 : -1;
+  }
+
+  void _patchWatchedInListWhere(
+    List<MediaItem> items,
+    bool Function(MediaItem item) test,
+    bool isWatched, {
+    required bool clearWatchedProgress,
+  }) {
+    for (var i = 0; i < items.length; i++) {
+      if (test(items[i])) {
+        items[i] = _withWatchedPatch(items[i], isWatched, clearWatchedProgress: clearWatchedProgress);
+      }
+    }
+  }
+
+  List<MediaHub> _patchWatchedInHubs(
+    List<MediaHub> hubs,
+    bool Function(MediaItem item) test,
+    bool isWatched, {
+    required bool clearWatchedProgress,
+  }) {
+    var changed = false;
+    final updatedHubs = <MediaHub>[];
+    for (final hub in hubs) {
+      var hubChanged = false;
+      final items = List<MediaItem>.of(hub.items);
+      _patchWatchedInListWhere(
+        items,
+        (item) {
+          final matches = test(item);
+          hubChanged = hubChanged || matches;
+          return matches;
+        },
+        isWatched,
+        clearWatchedProgress: clearWatchedProgress,
+      );
+      changed = changed || hubChanged;
+      updatedHubs.add(hubChanged ? hub.copyWith(items: items) : hub);
+    }
+    return changed ? updatedHubs : hubs;
+  }
+
+  void _patchLoadedDescendantsOf(String parentId, bool isWatched, {required bool clearWatchedProgress}) {
+    final isDescendant = (MediaItem item) => item.parentChain.contains(parentId);
+    _patchWatchedInListWhere(_seasons, isDescendant, isWatched, clearWatchedProgress: clearWatchedProgress);
+    _patchWatchedInListWhere(_episodes, isDescendant, isWatched, clearWatchedProgress: clearWatchedProgress);
+    for (final entry in _episodeCache.entries) {
+      _patchWatchedInListWhere(
+        entry.value,
+        (item) => entry.key == parentId || isDescendant(item),
+        isWatched,
+        clearWatchedProgress: clearWatchedProgress,
+      );
+    }
+  }
+
+  void _adjustParentWatchCounts(List<String> parentIds, int delta) {
+    if (parentIds.isEmpty) return;
+    final parentIdSet = parentIds.toSet();
+    final base = _fullMetadata ?? widget.metadata;
+    if (parentIdSet.contains(base.id)) {
+      _fullMetadata = _withAdjustedViewedLeafCount(base, delta);
+    }
+    for (var i = 0; i < _seasons.length; i++) {
+      if (parentIdSet.contains(_seasons[i].id)) {
+        _seasons[i] = _withAdjustedViewedLeafCount(_seasons[i], delta);
+      }
+    }
+  }
+
+  MediaItem _withAdjustedViewedLeafCount(MediaItem item, int delta) {
+    final viewedLeafCount = item.viewedLeafCount;
+    if (viewedLeafCount == null) return item;
+    final max = item.leafCount ?? (1 << 30);
+    final next = (viewedLeafCount + delta).clamp(0, max).toInt();
+    return item.copyWith(viewedLeafCount: next);
   }
 
   void _patchLocalProgress(String itemId, int viewOffset, {int? epIndex}) {
@@ -306,6 +430,83 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   MediaItem _applyLocalProgress(MediaItem item) {
     if (!_localProgressById.containsKey(item.id)) return item;
     return item.copyWith(viewOffsetMs: _localProgressById[item.id]!);
+  }
+
+  MediaItem _normalizeRefreshedItem(MediaItem item, MediaItem fallback) {
+    return _applyLocalProgress(
+      _withFallbackLibrary(
+        item.copyWith(
+          serverId: item.serverId ?? fallback.serverId ?? _metadata.serverId,
+          serverName: item.serverName ?? fallback.serverName ?? _metadata.serverName,
+        ),
+        fallback,
+      ),
+    );
+  }
+
+  void _patchItemEverywhere(MediaItem item) {
+    final base = _fullMetadata ?? widget.metadata;
+    if (base.id == item.id) {
+      _fullMetadata = _normalizeRefreshedItem(item, base);
+    }
+
+    final onDeckEpisode = _onDeckEpisode;
+    if (onDeckEpisode != null && onDeckEpisode.id == item.id) {
+      _onDeckEpisode = _normalizeRefreshedItem(item, onDeckEpisode);
+    }
+
+    _patchItemInList(_seasons, item);
+    _patchItemInList(_episodes, item);
+    for (final cached in _episodeCache.values) {
+      _patchItemInList(cached, item);
+    }
+    final extras = _extras;
+    if (extras != null) {
+      _patchItemInList(extras, item);
+    }
+
+    _relatedHubs = _patchItemInHubs(_relatedHubs, item);
+  }
+
+  void _patchItemInList(List<MediaItem> items, MediaItem item) {
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].id == item.id) {
+        items[i] = _normalizeRefreshedItem(item, items[i]);
+      }
+    }
+  }
+
+  List<MediaHub> _patchItemInHubs(List<MediaHub> hubs, MediaItem item) {
+    var changed = false;
+    final updatedHubs = <MediaHub>[];
+    for (final hub in hubs) {
+      var hubChanged = false;
+      final items = List<MediaItem>.of(hub.items);
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].id == item.id) {
+          items[i] = _normalizeRefreshedItem(item, items[i]);
+          hubChanged = true;
+        }
+      }
+      changed = changed || hubChanged;
+      updatedHubs.add(hubChanged ? hub.copyWith(items: items) : hub);
+    }
+    return changed ? updatedHubs : hubs;
+  }
+
+  Future<void> _refreshItemInPlace(String itemId) async {
+    final client = _getMediaClientForMetadata(context);
+    if (client == null) return;
+
+    try {
+      final refreshed = await client.fetchItem(itemId);
+      if (refreshed == null || !mounted) return;
+      setStateIfMounted(() {
+        _patchItemEverywhere(refreshed);
+      });
+    } catch (e) {
+      appLogger.d('Item refresh failed for $itemId', error: e);
+    }
   }
 
   @override
@@ -447,28 +648,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         });
       }
 
-      if (_metadata.isShow) {
-        final seasons = await mediaClient.fetchChildren(_metadata.id);
-        _episodeCache.clear();
-        setStateIfMounted(() {
-          _seasons = seasons
-              .map(
-                (s) => _withFallbackLibrary(
-                  s.copyWith(serverId: serverId, serverName: serverName ?? s.serverName),
-                  _metadata,
-                ),
-              )
-              .toList();
-        });
-        if (_showEpisodesDirectly) {
-          await _fetchAllEpisodes();
-        } else if (_seasons.isNotEmpty) {
-          unawaited(_fetchSeasonEpisodes(_selectedSeasonIndex));
-        }
-      } else if (_metadata.isSeason) {
-        _episodeCache.clear();
-        await _fetchAllEpisodes();
-      }
+      // Do not refresh seasons/episodes here. The watch event has already
+      // patched loaded rows, and rebuilding those lists causes visible rail
+      // churn on TV/detail layouts.
     } catch (e) {
       appLogger.d('Watch-state refresh failed', error: e);
     }
@@ -1771,8 +1953,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               child: MediaContextMenu(
                 key: contextMenuKey,
                 item: season,
-                onRefresh: (_) {
+                onRefresh: (itemId) {
                   _watchStateChanged = true;
+                  unawaited(_refreshItemInPlace(itemId));
                 },
                 onListRefresh: () {
                   if (widget.isOffline) {
@@ -2112,21 +2295,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               },
             );
           },
-          onRefresh: widget.isOffline
-              ? null
-              : (ratingKey) async {
-                  final refreshed = await client?.fetchItem(ratingKey);
-                  if (refreshed != null) {
-                    setStateIfMounted(() {
-                      final i = _episodes.indexWhere((e) => e.id == ratingKey);
-                      if (i != -1) {
-                        final updated = _applyLocalProgress(refreshed);
-                        _episodes[i] = updated;
-                        _syncEpisodeToCache(i, updated);
-                      }
-                    });
-                  }
-                },
+          onRefresh: widget.isOffline ? null : _refreshItemInPlace,
           onListRefresh: widget.isOffline ? null : _refreshCurrentEpisodes,
         );
       },
@@ -2641,7 +2810,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               hubs: detailHubs,
               iconForHub: _getTvDetailHubIcon,
               onFocusedItemChanged: (_) {},
-              onRefresh: (_) => unawaited(_loadFullMetadata()),
+              onRefresh: (itemId) => unawaited(_refreshItemInPlace(itemId)),
               onActiveHubChanged: _handleTvDetailHubChanged,
               onActivateItem: _handleTvDetailRailItemActivated,
               onNavigateUp: () => _playButtonFocusNode.requestFocus(),
