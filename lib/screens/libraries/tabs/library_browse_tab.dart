@@ -393,7 +393,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   }
 
   /// Height of the chips bar (padding + chip + padding)
-  static const double _chipsBarHeight = 48.0;
+  static const double _chipsBarHeight = 32.0;
 
   /// Focus the chips bar (for navigating from tab bar to content).
   /// Called by libraries screen when pressing DOWN on tab bar.
@@ -1222,7 +1222,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
           // Allow focus decoration to render outside scroll bounds.
           clipBehavior: Clip.none,
           slivers: [
-            SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
             // Capture-only sliver: an invisible Builder whose context lives
             // inside this CustomScrollView, used to grab the per-tab
             // ScrollPosition. NSV's shared inner controller has one position
@@ -1397,7 +1396,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       alignment: Alignment.centerLeft,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1488,9 +1487,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   }
 
   // Top padding for grid content. Chips are inline above the grid now, so this
-  // is purely focus-decoration clearance (~6px) on desktop. Phone has no D-pad
+  // is purely focus-decoration clearance on desktop. Phone has no D-pad
   // focus ring so no extra clearance is needed.
-  static const double _gridTopPadding = 12.0;
+  static const double _gridTopPadding = 6.0;
   static const double _gridTopPaddingPhone = 0.0;
 
   /// Width of the alpha jump bar widget
