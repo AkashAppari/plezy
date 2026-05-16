@@ -1216,7 +1216,7 @@ class PlexClient
   /// Search across all libraries including individually shared items.
   /// Uses /library/search (same endpoint as Plex Web) which finds shared content.
   /// Only returns movies and shows, filtering out other types.
-  Future<List<PlexMetadataDto>> _search(String query, {int limit = 30}) async {
+  Future<List<PlexMetadataDto>> _search(String query, {int limit = 100}) async {
     final response = await _getWithFailover(
       '/library/search',
       queryParameters: {
@@ -3293,7 +3293,7 @@ class PlexClient
   }
 
   @override
-  Future<List<MediaItem>> searchItems(String query, {int limit = 30}) async {
+  Future<List<MediaItem>> searchItems(String query, {int limit = 100}) async {
     final results = await _search(query, limit: limit);
     return results.map((m) => PlexMappers.mediaItem(m)).toList();
   }

@@ -195,7 +195,7 @@ abstract class MediaServerClient {
   Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId);
 
   /// Free-text search across the user's libraries.
-  Future<List<MediaItem>> searchItems(String query, {int limit = 30});
+  Future<List<MediaItem>> searchItems(String query, {int limit = 100});
 
   /// Recently-added items across all libraries.
   Future<List<MediaItem>> fetchRecentlyAdded({int limit = 50});

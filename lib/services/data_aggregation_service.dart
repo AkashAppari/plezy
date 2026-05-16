@@ -7,6 +7,7 @@ import '../media/media_library.dart';
 import '../media/media_server_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/global_key_utils.dart';
+import '../utils/search_relevance.dart';
 import 'multi_server_manager.dart';
 
 /// Cross-server aggregation: fans calls out to every online client and
@@ -213,10 +214,13 @@ class DataAggregationService {
     final clients = _serverManager.onlineClients;
     if (clients.isEmpty) return [];
 
+    final resultLimit = limit ?? defaultMediaSearchLimit;
+    final fetchLimit = resultLimit < defaultMediaSearchLimit ? defaultMediaSearchLimit : resultLimit;
+
     final futures = clients.entries.map((entry) async {
       final client = entry.value;
       try {
-        return await client.searchItems(query, limit: limit ?? 30);
+        return await client.searchItems(query, limit: fetchLimit);
       } catch (e, st) {
         appLogger.e('Search failed on ${entry.key}', error: e, stackTrace: st);
         return <MediaItem>[];
@@ -224,7 +228,7 @@ class DataAggregationService {
     });
 
     final allResults = (await Future.wait(futures)).expand((l) => l).toList();
-    final result = limit != null && limit < allResults.length ? allResults.sublist(0, limit) : allResults;
+    final result = rankMediaSearchResults(allResults, query, limit: resultLimit);
 
     appLogger.i('Found ${result.length} search results across all servers');
 

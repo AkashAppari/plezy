@@ -59,6 +59,65 @@ void main() {
       expect(await service.getOnDeckFromAllServers(), isEmpty);
     });
 
+    test('searchAcrossServers overfetches and ranks before trimming across backends', () async {
+      final plexRequests = <Uri>[];
+      final jellyfinRequests = <Uri>[];
+
+      final plexClient = PlexClient.forTesting(
+        config: PlexConfig(
+          baseUrl: 'https://plex.example.com',
+          token: 'token',
+          clientIdentifier: 'client-id',
+          product: 'Plezy',
+          version: 'test',
+        ),
+        serverId: 'plex-1',
+        serverName: 'Plex',
+        httpClient: MockClient((req) async {
+          plexRequests.add(req.url);
+          if (req.url.path == '/library/search') {
+            return _json({
+              'MediaContainer': {
+                'SearchResult': [
+                  {
+                    'score': 100,
+                    'Metadata': {'ratingKey': 'plex-movie', 'type': 'movie', 'title': 'The Boys in the Boat'},
+                  },
+                ],
+              },
+            });
+          }
+          return http.Response('unexpected request', 500);
+        }),
+      );
+      addTearDown(plexClient.close);
+      manager.debugRegisterClientForTesting(plexClient);
+
+      final jellyfinClient = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          jellyfinRequests.add(req.url);
+          if (req.url.path == '/Items') {
+            return _json({
+              'Items': [
+                {'Id': 'jf-show', 'Type': 'Series', 'Name': 'The Boys'},
+              ],
+            });
+          }
+          return http.Response('unexpected request', 500);
+        }),
+      );
+      addTearDown(jellyfinClient.close);
+      manager.debugRegisterJellyfinClientForTesting(jellyfinClient);
+
+      final results = await service.searchAcrossServers('The Boys', limit: 1);
+
+      expect(results.map((item) => item.id), ['jf-show']);
+      expect(plexRequests.single.queryParameters['limit'], '100');
+      expect(plexRequests.single.queryParameters['searchTypes'], 'movies,tv');
+      expect(jellyfinRequests.single.queryParameters['Limit'], '100');
+    });
+
     test('getOnDeckFromAllServers forwards preview limit to clients', () async {
       final captured = <Uri>[];
 

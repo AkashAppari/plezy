@@ -532,7 +532,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   }
 
   @override
-  Future<List<MediaItem>> searchItems(String query, {int limit = 30}) async {
+  Future<List<MediaItem>> searchItems(String query, {int limit = 100}) async {
     final response = await _http.get(
       '/Items',
       queryParameters: {
