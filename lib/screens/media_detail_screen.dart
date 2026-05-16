@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../main.dart' show routeObserver;
 import '../services/image_cache_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/services.dart';
@@ -44,6 +45,7 @@ import '../utils/download_utils.dart';
 import '../services/settings_service.dart';
 import '../widgets/settings_builder.dart';
 import '../utils/grid_size_calculator.dart';
+import '../utils/layout_constants.dart';
 import '../providers/download_provider.dart';
 import '../providers/offline_watch_provider.dart';
 import '../theme/mono_tokens.dart';
@@ -70,8 +72,17 @@ import 'actor_media_screen.dart';
 import '../widgets/focusable_tab_chip.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/loading_indicator_box.dart';
+import '../widgets/tv_browse_rail.dart';
+import '../widgets/tv_spotlight_background.dart';
 
 part 'media_detail/action_buttons.dart';
+
+const double _tvDetailTallPosterScale = 0.84;
+const double _tvDetailActionSize = 46;
+const double _tvDetailActionRailGap = 8;
+const String _tvDetailSeasonHubIdPrefix = 'detail_season_';
+const String _tvDetailActorsHubId = 'detail_actors';
+const String _tvDetailActorPersonIdRawKey = 'tvDetailActorPersonId';
 
 enum _SyncRuleAction { edit, remove, delete }
 
@@ -90,7 +101,7 @@ class MediaDetailScreen extends StatefulWidget {
 }
 
 class _MediaDetailScreenState extends State<MediaDetailScreen>
-    with WatchStateAware, DeletionAware, MountedSetStateMixin, ServerBoundMediaMixin {
+    with WatchStateAware, DeletionAware, MountedSetStateMixin, ServerBoundMediaMixin, RouteAware {
   /// Public input alias — used as the live source of truth until the detail
   /// fetch returns. Holds backend-neutral [MediaItem] data.
   MediaItem get _metadata => _fullMetadata ?? widget.metadata;
@@ -107,10 +118,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   List<MediaItem>? _extras;
   List<MediaHub> _relatedHubs = [];
   List<GlobalKey<HubSectionState>> _relatedHubKeys = [];
+  final _tvDetailRailKey = GlobalKey<TvBrowseRailState>();
+  PageRoute<dynamic>? _route;
   late final ScrollController _scrollController;
   final ScrollController _extrasScrollController = ScrollController();
   bool _watchStateChanged = false;
   final ValueNotifier<double> _scrollOffset = ValueNotifier<double>(0);
+  bool _suppressBackAfterPop = false;
+  bool _tvDetailRevealed = false;
+  bool _tvDetailRevealScheduled = false;
+  bool _hasLoadedSeasons = false;
+  bool _hasLoadedEpisodes = false;
+  double? _tvDetailPendingRailHeight;
+  double? _tvDetailStableRailHeight;
 
   // Inline season tabs
   int _selectedSeasonIndex = 0;
@@ -474,7 +494,114 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is! PageRoute<dynamic> || route == _route) return;
+    if (_route != null) routeObserver.unsubscribe(this);
+    _route = route;
+    routeObserver.subscribe(this, route);
+  }
+
+  @override
+  void didPopNext() {
+    _suppressBackAfterPop = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _suppressBackAfterPop = false;
+      });
+    });
+  }
+
+  bool _consumeBackAfterChildPop(KeyEvent event) {
+    if (!_suppressBackAfterPop || !event.logicalKey.isBackKey) return false;
+    if (event is KeyUpEvent) _suppressBackAfterPop = false;
+    return true;
+  }
+
+  KeyEventResult _handleMediaDetailBackKey(FocusNode _, KeyEvent event) {
+    if (_consumeBackAfterChildPop(event)) return KeyEventResult.handled;
+    return handleBackKeyNavigation(context, event, result: _watchStateChanged);
+  }
+
+  void _popMediaDetailIfBackNotSuppressed() {
+    if (_suppressBackAfterPop) {
+      _suppressBackAfterPop = false;
+      return;
+    }
+    Navigator.pop(context, _watchStateChanged);
+  }
+
+  bool _isTvDetailReadyToReveal(MediaItem metadata) {
+    if (_isLoadingMetadata) return false;
+
+    if (metadata.isShow) {
+      if (_isLoadingSeasons || (!_hasLoadedSeasons && _seasons.isEmpty)) return false;
+      if (_showEpisodesDirectly) return _hasLoadedEpisodes && !_isLoadingEpisodes;
+      if (_seasons.isEmpty) return true;
+      if (_selectedSeasonIndex < 0 || _selectedSeasonIndex >= _seasons.length) return false;
+      final selectedSeason = _seasons[_selectedSeasonIndex];
+      return !_isLoadingSeasonEpisodes && _episodeCache.containsKey(selectedSeason.id);
+    }
+
+    if (metadata.isSeason) {
+      return _hasLoadedEpisodes && !_isLoadingEpisodes;
+    }
+
+    return true;
+  }
+
+  void _scheduleTvDetailReveal(double railHeight, {required bool focusPrimaryAction}) {
+    final pendingRailHeight = _tvDetailPendingRailHeight;
+    if (pendingRailHeight == null || railHeight > pendingRailHeight) {
+      _tvDetailPendingRailHeight = railHeight;
+    }
+    if (_tvDetailRevealed || _tvDetailRevealScheduled) return;
+
+    _tvDetailRevealScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _tvDetailStableRailHeight = _tvDetailPendingRailHeight ?? railHeight;
+          _tvDetailRevealScheduled = false;
+          _tvDetailRevealed = true;
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          if (focusPrimaryAction) {
+            _playButtonFocusNode.requestFocus();
+          } else {
+            _tvDetailRailKey.currentState?.requestFocus();
+          }
+        });
+      });
+    });
+  }
+
+  Widget _buildTvDetailRevealGate(Widget child, KeyEventResult Function(FocusNode, KeyEvent) handleBack) {
+    final revealed = _tvDetailRevealed;
+    return Focus(
+      canRequestFocus: !revealed,
+      onKeyEvent: revealed ? null : handleBack,
+      child: ExcludeFocus(
+        excluding: !revealed,
+        child: IgnorePointer(
+          ignoring: !revealed,
+          child: AnimatedOpacity(
+            opacity: revealed ? 1 : 0,
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOutCubic,
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _scrollController.dispose();
     _scrollOffset.dispose();
     _extrasScrollController.dispose();
@@ -495,16 +622,23 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     super.dispose();
   }
 
-  /// Build title text widget for clear logo fallback
-  Widget _buildTitleText(BuildContext context, String title) {
+  /// Build title text widget for clear logo fallback.
+  Widget _buildDetailTitle(
+    BuildContext context,
+    String title, {
+    double? fontSize,
+    FontWeight fontWeight = FontWeight.bold,
+    double shadowBlur = 8,
+  }) {
     return Align(
       alignment: Alignment.centerLeft,
       child: Text(
         title,
         style: Theme.of(context).textTheme.displaySmall?.copyWith(
           color: Colors.white,
-          fontWeight: FontWeight.bold,
-          shadows: [Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8)],
+          fontWeight: fontWeight,
+          fontSize: fontSize,
+          shadows: [Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: shadowBlur)],
         ),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
@@ -516,9 +650,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// If progressPercent is null or 0, shows indeterminate spinner
   Widget _buildRadialProgress(double? progressPercent) {
     final colorScheme = Theme.of(context).colorScheme;
+    final size = PlatformDetector.isTV() ? 26.0 : 20.0;
     return SizedBox(
-      width: 20,
-      height: 20,
+      width: size,
+      height: size,
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -544,15 +679,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Build a metadata chip with optional leading icon or widget
   Widget _buildMetadataChip(String text, {IconData? icon, Widget? leading}) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isTv = PlatformDetector.isTV();
     final textWidget = Text(
       text,
-      style: TextStyle(color: colorScheme.onSecondaryContainer, fontSize: 13, fontWeight: FontWeight.w500),
+      style: TextStyle(color: colorScheme.onSecondaryContainer, fontSize: isTv ? 16 : 13, fontWeight: FontWeight.w600),
     );
 
     final hasLeading = leading != null || icon != null;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: isTv ? 14 : 12, vertical: isTv ? 8 : 6),
       decoration: BoxDecoration(
         color: colorScheme.secondaryContainer.withValues(alpha: 0.8),
         borderRadius: const BorderRadius.all(Radius.circular(100)),
@@ -564,8 +700,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 if (leading != null)
                   leading
                 else
-                  AppIcon(icon!, fill: 1, color: colorScheme.onSecondaryContainer, size: 16),
-                const SizedBox(width: 4),
+                  AppIcon(icon!, fill: 1, color: colorScheme.onSecondaryContainer, size: isTv ? 20 : 16),
+                SizedBox(width: isTv ? 6 : 4),
                 textWidget,
               ],
             )
@@ -1008,6 +1144,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         setState(() {
           _fullMetadata = _applyLocalProgress(_metadata);
           _isLoadingMetadata = false;
+          _hasLoadedSeasons = true;
+          _hasLoadedEpisodes = true;
         });
         return;
       }
@@ -1080,12 +1218,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _seasonsCompleter = Completer<void>();
     setStateIfMounted(() {
       _isLoadingSeasons = true;
+      _hasLoadedSeasons = false;
     });
 
     final serverId = _metadata.serverId;
     final client = serverId == null ? null : context.tryGetMediaClientForServer(serverId);
     if (client == null) {
-      setStateIfMounted(() => _isLoadingSeasons = false);
+      setStateIfMounted(() {
+        _isLoadingSeasons = false;
+        _hasLoadedSeasons = true;
+      });
       if (!(_seasonsCompleter?.isCompleted ?? true)) _seasonsCompleter?.complete();
       return;
     }
@@ -1138,6 +1280,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       setStateIfMounted(() {
         _seasons = seasonsWithServerId;
         _isLoadingSeasons = false;
+        _hasLoadedSeasons = true;
         _showEpisodesDirectly = shouldShowEpisodesDirectly;
         _selectedSeasonIndex = onDeckSeasonIndex;
       });
@@ -1152,6 +1295,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       appLogger.w('Seasons load failed', error: e, stackTrace: st);
       setStateIfMounted(() {
         _isLoadingSeasons = false;
+        _hasLoadedSeasons = true;
       });
     } finally {
       if (!(_seasonsCompleter?.isCompleted ?? true)) {
@@ -1208,6 +1352,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     setState(() {
       _seasons = seasons;
       _isLoadingSeasons = false;
+      _hasLoadedSeasons = true;
       _selectedSeasonIndex = onDeckSeasonIndex;
     });
 
@@ -1231,6 +1376,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     setState(() {
       _episodes = seasonEpisodes.map(_applyLocalProgress).toList();
       _isLoadingEpisodes = false;
+      _hasLoadedEpisodes = true;
     });
   }
 
@@ -1267,18 +1413,23 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   Future<void> _fetchSeasonEpisodes(int seasonIndex) async {
     if (seasonIndex < 0 || seasonIndex >= _seasons.length) return;
     final season = _seasons[seasonIndex];
+    final seasonId = season.id;
 
     // Check cache first
-    final cached = _episodeCache[season.id];
+    final cached = _episodeCache[seasonId];
     if (cached != null) {
       setStateIfMounted(() {
-        _episodes = cached.map(_applyLocalProgress).toList();
-        _isLoadingSeasonEpisodes = false;
+        if (_isSelectedSeason(seasonIndex, seasonId)) {
+          _episodes = cached.map(_applyLocalProgress).toList();
+          _isLoadingSeasonEpisodes = false;
+        }
       });
       return;
     }
 
-    setStateIfMounted(() => _isLoadingSeasonEpisodes = true);
+    setStateIfMounted(() {
+      if (_isSelectedSeason(seasonIndex, seasonId)) _isLoadingSeasonEpisodes = true;
+    });
 
     try {
       if (widget.isOffline) {
@@ -1287,18 +1438,18 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final allEpisodes = downloadProvider.getDownloadedEpisodesForShow(_metadata.id);
         final seasonEpisodes = allEpisodes.where((ep) => ep.parentIndex == season.index).toList()
           ..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
-        _episodeCache[season.id] = seasonEpisodes;
-        setStateIfMounted(() {
-          _episodes = seasonEpisodes.map(_applyLocalProgress).toList();
-          _isLoadingSeasonEpisodes = false;
-        });
+        _completeSeasonEpisodesLoad(
+          seasonIndex: seasonIndex,
+          seasonId: seasonId,
+          episodes: seasonEpisodes.map(_applyLocalProgress).toList(),
+        );
       } else {
         // Resolve the right backend client so Jellyfin (where the typed
         // PlexClient helper returns null) loads episodes too.
         final serverId = _metadata.serverId;
         final mediaClient = serverId == null ? null : context.tryGetMediaClientForServer(serverId);
         if (serverId == null || mediaClient == null) {
-          setStateIfMounted(() => _isLoadingSeasonEpisodes = false);
+          _completeSeasonEpisodesLoad(seasonIndex: seasonIndex, seasonId: seasonId, episodes: const <MediaItem>[]);
           return;
         }
         final episodes = await mediaClient.fetchChildren(season.id);
@@ -1316,15 +1467,32 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             )
             .map(_applyLocalProgress)
             .toList();
-        _episodeCache[season.id] = episodesWithServerId;
-        setStateIfMounted(() {
-          _episodes = List.of(episodesWithServerId);
-          _isLoadingSeasonEpisodes = false;
-        });
+        _completeSeasonEpisodesLoad(seasonIndex: seasonIndex, seasonId: seasonId, episodes: episodesWithServerId);
       }
     } catch (e) {
-      setStateIfMounted(() => _isLoadingSeasonEpisodes = false);
+      _completeSeasonEpisodesLoad(seasonIndex: seasonIndex, seasonId: seasonId, episodes: const <MediaItem>[]);
     }
+  }
+
+  bool _isSelectedSeason(int seasonIndex, String seasonId) {
+    return _selectedSeasonIndex == seasonIndex &&
+        seasonIndex >= 0 &&
+        seasonIndex < _seasons.length &&
+        _seasons[seasonIndex].id == seasonId;
+  }
+
+  void _completeSeasonEpisodesLoad({
+    required int seasonIndex,
+    required String seasonId,
+    required List<MediaItem> episodes,
+  }) {
+    setStateIfMounted(() {
+      _episodeCache[seasonId] = episodes;
+      if (_isSelectedSeason(seasonIndex, seasonId)) {
+        _episodes = List.of(episodes);
+        _isLoadingSeasonEpisodes = false;
+      }
+    });
   }
 
   /// Load extras (trailers, behind-the-scenes, etc.). Plex-only — Jellyfin
@@ -1403,7 +1571,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (metadata.isShow && !_showEpisodesDirectly && _seasons.isNotEmpty && _seasonTabFocusNodes.isNotEmpty) {
       _seasonTabFocusNodes[_selectedSeasonIndex].requestFocus();
       _scrollSectionIntoView(_seasonsSectionKey);
-    } else if (metadata.summary != null && metadata.summary!.isNotEmpty) {
+    } else if (!PlatformDetector.isTV() && metadata.summary != null && metadata.summary!.isNotEmpty) {
       _overviewFocusNode.requestFocus();
       _scrollSectionIntoView(_overviewSectionKey);
     } else {
@@ -1455,6 +1623,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   KeyEventResult _handlePlayButtonKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
     if (!event.isActionable) return KeyEventResult.ignored;
+    final isTv = PlatformDetector.isTV();
+
+    if (isTv && key.isUpKey) {
+      return KeyEventResult.handled;
+    }
 
     // UP: focus the rating chip if available
     if (key.isUpKey) {
@@ -1469,8 +1642,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     final metadata = _fullMetadata ?? _metadata;
 
+    if (isTv) {
+      _tvDetailRailKey.currentState?.requestFocus();
+      return KeyEventResult.handled;
+    }
+
     // DOWN order: overview → seasons → cast → extras
-    if (metadata.summary != null && metadata.summary!.isNotEmpty) {
+    if (!PlatformDetector.isTV() && metadata.summary != null && metadata.summary!.isNotEmpty) {
       _overviewFocusNode.requestFocus();
       _scrollSectionIntoView(_overviewSectionKey);
       return KeyEventResult.handled;
@@ -1681,6 +1859,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           }
                         : null,
                     onNavigateDown: () {
+                      if (PlatformDetector.isTV()) {
+                        _tvDetailRailKey.currentState?.requestFocus();
+                        return;
+                      }
                       _firstEpisodeFocusNode.requestFocus();
                     },
                     onLongPress: () => _showSeasonTabContextMenu(index),
@@ -1947,7 +2129,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               ? () {
                   if (!_showEpisodesDirectly) {
                     _focusSelectedSeasonTab();
-                  } else if ((_fullMetadata ?? _metadata).summary?.isNotEmpty == true) {
+                  } else if (!PlatformDetector.isTV() && (_fullMetadata ?? _metadata).summary?.isNotEmpty == true) {
                     _overviewFocusNode.requestFocus();
                     _scrollSectionIntoView(_overviewSectionKey);
                   } else {
@@ -2019,12 +2201,33 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   Future<void> _fetchAllEpisodes() async {
-    if (_seasons.isEmpty) return;
+    if (_seasons.isEmpty) {
+      setStateIfMounted(() {
+        _isLoadingEpisodes = false;
+        _hasLoadedEpisodes = true;
+      });
+      return;
+    }
     final serverId = _metadata.serverId;
-    if (serverId == null) return;
+    if (serverId == null) {
+      setStateIfMounted(() {
+        _isLoadingEpisodes = false;
+        _hasLoadedEpisodes = true;
+      });
+      return;
+    }
     final client = context.tryGetMediaClientForServer(serverId);
-    if (client == null) return;
-    setStateIfMounted(() => _isLoadingEpisodes = true);
+    if (client == null) {
+      setStateIfMounted(() {
+        _isLoadingEpisodes = false;
+        _hasLoadedEpisodes = true;
+      });
+      return;
+    }
+    setStateIfMounted(() {
+      _isLoadingEpisodes = true;
+      _hasLoadedEpisodes = false;
+    });
     try {
       // One-shot recursive expansion — Plex `/grandchildren`, Jellyfin
       // Recursive=true. Replaces the previous per-season fan-out so a
@@ -2054,10 +2257,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       setStateIfMounted(() {
         _episodes = enriched;
         _isLoadingEpisodes = false;
+        _hasLoadedEpisodes = true;
       });
     } catch (e, st) {
       appLogger.w('Failed to load episodes for all seasons', error: e, stackTrace: st);
-      setStateIfMounted(() => _isLoadingEpisodes = false);
+      setStateIfMounted(() {
+        _isLoadingEpisodes = false;
+        _hasLoadedEpisodes = true;
+      });
     }
   }
 
@@ -2177,14 +2384,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final isMobile = PlatformDetector.isMobile(context);
     final isTv = PlatformDetector.isTV();
     final theme = Theme.of(context);
-
-    KeyEventResult handleBack(FocusNode _, KeyEvent event) =>
-        handleBackKeyNavigation(context, event, result: _watchStateChanged);
+    final sectionTitleStyle = theme.textTheme.titleLarge?.copyWith(
+      fontWeight: FontWeight.bold,
+      fontSize: isTv ? 28 : null,
+    );
 
     // Show loading state while fetching full metadata
     if (_isLoadingMetadata) {
       final loading = Focus(
-        onKeyEvent: handleBack,
+        onKeyEvent: _handleMediaDetailBackKey,
         child: Scaffold(
           appBar: AppBar(),
           body: const Center(child: CircularProgressIndicator()),
@@ -2204,11 +2412,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     // Determine header height based on screen size
     final size = MediaQuery.sizeOf(context);
-    final headerHeight = size.height * 0.6;
+    final headerHeight = size.height * (isTv ? 1.0 : 0.6);
+
+    if (isTv) {
+      return _buildTvDetailScreen(context, metadata, _handleMediaDetailBackKey);
+    }
 
     final content = OverlaySheetHost(
       child: Focus(
-        onKeyEvent: handleBack,
+        onKeyEvent: _handleMediaDetailBackKey,
         child: Scaffold(
           body: Stack(
             children: [
@@ -2216,22 +2428,21 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 controller: _scrollController,
                 slivers: [
                   // Hero header with background art
-                  SliverToBoxAdapter(child: _buildHeroHeader(context, metadata, size, headerHeight, theme)),
+                  SliverToBoxAdapter(child: _buildHeroHeader(context, metadata, size, headerHeight)),
 
                   // Main content
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isTv ? TvLayoutConstants.horizontalInset : 16,
+                        vertical: isTv ? 8 : 16,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Summary
-                          if (metadata.summary != null && metadata.summary!.isNotEmpty) ...[
-                            Text(
-                              key: _overviewSectionKey,
-                              t.discover.overview,
-                              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                            ),
+                          if (!isTv && metadata.summary != null && metadata.summary!.isNotEmpty) ...[
+                            Text(key: _overviewSectionKey, t.discover.overview, style: sectionTitleStyle),
                             const SizedBox(height: 12),
                             Focus(
                               focusNode: _overviewFocusNode,
@@ -2279,11 +2490,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                             else if (_seasons.isEmpty)
                               _sectionEmpty(context, t.messages.noSeasonsFound)
                             else ...[
-                              Text(
-                                key: _seasonsSectionKey,
-                                t.libraries.groupings.episodes,
-                                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                              ),
+                              Text(key: _seasonsSectionKey, t.libraries.groupings.episodes, style: sectionTitleStyle),
                               const SizedBox(height: 12),
                               _buildSeasonTabs(),
                               const SizedBox(height: 16),
@@ -2297,11 +2504,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                             const SizedBox(height: 24),
                           ] else if ((isShow && _showEpisodesDirectly) || metadata.isSeason) ...[
                             // Server says flatten — existing behavior unchanged
-                            Text(
-                              key: _seasonsSectionKey,
-                              t.libraries.groupings.episodes,
-                              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                            ),
+                            Text(key: _seasonsSectionKey, t.libraries.groupings.episodes, style: sectionTitleStyle),
                             const SizedBox(height: 12),
                             if (_isLoadingSeasons || _isLoadingEpisodes)
                               _sectionLoading
@@ -2314,11 +2517,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
                           // Cast
                           if (metadata.roles != null && metadata.roles!.isNotEmpty) ...[
-                            Text(
-                              key: _castSectionKey,
-                              t.discover.cast,
-                              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                            ),
+                            Text(key: _castSectionKey, t.discover.cast, style: sectionTitleStyle),
                             const SizedBox(height: 12),
                             _buildCastSection(metadata),
                             const SizedBox(height: 24),
@@ -2326,11 +2525,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
                           // Trailers & Extras Section
                           if (!widget.isOffline && _extras != null && _extras!.isNotEmpty) ...[
-                            Text(
-                              key: _extrasSectionKey,
-                              t.discover.extras,
-                              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                            ),
+                            Text(key: _extrasSectionKey, t.discover.extras, style: sectionTitleStyle),
                             const SizedBox(height: 12),
                             _buildExtrasSection(),
                             const SizedBox(height: 24),
@@ -2345,7 +2540,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                               inset: true,
                               onVerticalNavigation: (isUp) => _handleRelatedHubNavigation(i, isUp),
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: isTv ? 28 : 8),
                           ],
 
                           // Additional info — wrapped in Focus so DPAD DOWN from the
@@ -2439,7 +2634,433 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     );
   }
 
-  Widget _buildHeroHeader(BuildContext context, MediaItem metadata, Size size, double headerHeight, ThemeData theme) {
+  Widget _buildTvDetailScreen(
+    BuildContext context,
+    MediaItem metadata,
+    KeyEventResult Function(FocusNode, KeyEvent) handleBack,
+  ) {
+    final size = MediaQuery.sizeOf(context);
+    final detailHubs = _tvDetailHubs(metadata);
+    final hideSpoilers = SettingsService.instanceOrNull!.read(SettingsService.hideSpoilers);
+    final detailScale = TvLayoutConstants.scaleForSize(size);
+    final spotlightTop = (size.height * 0.08).clamp(44.0 * detailScale, 110.0 * detailScale).toDouble();
+    final rawRailHeight = _estimateTvBrowseRailHeight(size, detailHubs);
+    if (!_tvDetailRevealed && _isTvDetailReadyToReveal(metadata)) {
+      _scheduleTvDetailReveal(rawRailHeight, focusPrimaryAction: metadata.isMovie);
+    }
+    final stableRailHeight = _tvDetailStableRailHeight;
+    final railHeight = stableRailHeight == null || rawRailHeight > stableRailHeight ? rawRailHeight : stableRailHeight;
+    final railTopPadding = 12 * detailScale;
+    final foregroundBottom = (railHeight - railTopPadding) + (_tvDetailActionRailGap * detailScale);
+    final spotlightLeft = (24 * detailScale).clamp(18.0, 40.0).toDouble();
+
+    final revealContent = Stack(
+      fit: StackFit.expand,
+      children: [
+        Positioned(
+          left: spotlightLeft,
+          right: size.width * 0.43,
+          top: spotlightTop,
+          bottom: foregroundBottom,
+          child: _buildTvDetailForeground(context, metadata, hideSpoilers: hideSpoilers, scale: detailScale),
+        ),
+        Positioned(
+          top: 0,
+          left: 0,
+          child: DesktopAppBarHelper.buildAdjustedLeading(
+            AppBarBackButton(
+              style: BackButtonStyle.circular,
+              onPressed: () => Navigator.pop(context, _watchStateChanged),
+            ),
+            context: context,
+          )!,
+        ),
+        if (detailHubs.isNotEmpty)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: TvBrowseRail(
+              key: _tvDetailRailKey,
+              hubs: detailHubs,
+              iconForHub: _getTvDetailHubIcon,
+              onFocusedItemChanged: (_) {},
+              onRefresh: (_) => unawaited(_loadFullMetadata()),
+              onActiveHubChanged: _handleTvDetailHubChanged,
+              onActivateItem: _handleTvDetailRailItemActivated,
+              onNavigateUp: () => _playButtonFocusNode.requestFocus(),
+              onBack: _popMediaDetailIfBackNotSuppressed,
+              tallPosterScale: _tvDetailTallPosterScale,
+              initialHubId: _tvDetailInitialHubId(metadata),
+              initialItemId: _tvDetailInitialItemId(metadata),
+            ),
+          ),
+      ],
+    );
+
+    final content = OverlaySheetHost(
+      child: Focus(
+        onKeyEvent: handleBack,
+        child: Scaffold(
+          body: Stack(
+            children: [
+              TvSpotlightBackground(item: metadata, client: _getArtworkMediaClient(context), showInfo: false),
+              _buildTvDetailRevealGate(revealContent, handleBack),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final blockSystemBack = Platform.isAndroid && InputModeTracker.isKeyboardMode(context);
+    if (!blockSystemBack) return content;
+    return PopScope(
+      canPop: false,
+      // ignore: no-empty-block - required callback, blocks system back on Android TV
+      onPopInvokedWithResult: (didPop, result) {},
+      child: content,
+    );
+  }
+
+  Widget _buildTvDetailForeground(
+    BuildContext context,
+    MediaItem metadata, {
+    required bool hideSpoilers,
+    required double scale,
+  }) {
+    final theme = Theme.of(context);
+    final shouldHideSpoiler = hideSpoilers && metadata.shouldHideSpoiler;
+    final summary = shouldHideSpoiler ? null : metadata.summary;
+    final spoilerText = shouldHideSpoiler && metadata.isEpisode
+        ? (_tvDetailEpisodePrefix(metadata) ?? metadata.title ?? '')
+        : null;
+    final description = summary != null && summary.isNotEmpty ? _tvDetailSummaryText(metadata, summary) : spoilerText;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxHeight <= 0 || constraints.maxWidth <= 0) return const SizedBox.shrink();
+
+        final availableHeight = constraints.maxHeight.isFinite ? constraints.maxHeight : 264.0;
+        final desiredLogoHeight = 220 * scale;
+        final minLogoHeight = 72 * scale;
+        final desiredLogoWidth = 790 * scale;
+        final metadataLineHeight = 22 * scale;
+        final logoMetadataGap = 10 * scale;
+        final summaryGap = 10 * scale;
+        final summaryFontSize = availableHeight < 260 * scale ? 16.2 * scale : 18 * scale;
+        final summaryLineHeight = summaryFontSize * 1.35;
+        final actionHeight = _tvDetailActionSize * scale;
+        final actionGap = 12 * scale;
+        final hasDescription = description != null && description.isNotEmpty;
+        var summaryMaxLines = 0;
+        var logoHeight = 0.0;
+
+        for (var lines = hasDescription ? 3 : 0; lines >= 0; lines--) {
+          final descriptionHeight = lines > 0 ? summaryGap + (summaryLineHeight * lines) : 0.0;
+          final reservedHeight = logoMetadataGap + metadataLineHeight + descriptionHeight + actionGap + actionHeight;
+          final remainingForLogo = availableHeight - reservedHeight;
+          if (remainingForLogo >= minLogoHeight || lines == 0) {
+            summaryMaxLines = lines;
+            logoHeight = remainingForLogo <= 0 ? 0 : remainingForLogo.clamp(0, desiredLogoHeight).toDouble();
+            break;
+          }
+        }
+
+        final showLogo = logoHeight > 0;
+        final descriptionHeight = summaryMaxLines > 0 ? summaryGap + (summaryLineHeight * summaryMaxLines) : 0.0;
+        final contentHeight =
+            (showLogo ? logoHeight + logoMetadataGap : 0) +
+            metadataLineHeight +
+            descriptionHeight +
+            actionGap +
+            actionHeight;
+        final logoWidth = desiredLogoWidth < constraints.maxWidth ? desiredLogoWidth : constraints.maxWidth;
+
+        return ClipRect(
+          child: SizedBox(
+            height: availableHeight,
+            child: Align(
+              alignment: Alignment.bottomLeft,
+              child: SizedBox(
+                height: contentHeight <= availableHeight ? contentHeight : availableHeight,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (showLogo) ...[
+                      _buildDetailLogoOrTitle(
+                        context,
+                        metadata,
+                        width: logoWidth,
+                        height: logoHeight,
+                        titleBuilder: (context, title) => _buildDetailTitle(
+                          context,
+                          title,
+                          fontSize: 56 * scale,
+                          fontWeight: FontWeight.w800,
+                          shadowBlur: 12,
+                        ),
+                      ),
+                      SizedBox(height: logoMetadataGap),
+                    ],
+                    SizedBox(
+                      height: metadataLineHeight,
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: _buildTvDetailMetadataLine(context, metadata, scale),
+                      ),
+                    ),
+                    if (hasDescription && summaryMaxLines > 0) ...[
+                      SizedBox(height: summaryGap),
+                      SizedBox(
+                        height: summaryLineHeight * summaryMaxLines,
+                        child: Text(
+                          description,
+                          maxLines: summaryMaxLines,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.78),
+                            fontSize: summaryFontSize,
+                            height: 1.35,
+                          ),
+                        ),
+                      ),
+                    ],
+                    SizedBox(height: actionGap),
+                    SizedBox(height: actionHeight, child: _buildActionButtons(metadata)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDetailLogoOrTitle(
+    BuildContext context,
+    MediaItem metadata, {
+    required double width,
+    required double height,
+    required Widget Function(BuildContext context, String title) titleBuilder,
+  }) {
+    Widget titleFallback(BuildContext context) => titleBuilder(context, metadata.displayTitle);
+
+    if (metadata.clearLogoPath == null) {
+      return SizedBox(width: width, height: height, child: titleFallback(context));
+    }
+
+    return SizedBox(
+      width: width,
+      height: height,
+      child: Builder(
+        builder: (context) {
+          final localArtwork = _buildOfflineArtworkIfAvailable(
+            context,
+            artworkPaths: [metadata.clearLogoPath],
+            fit: BoxFit.contain,
+            alignment: Alignment.centerLeft,
+            imageType: ImageType.logo,
+            errorWidget: (context, url, error) => titleFallback(context),
+          );
+          if (localArtwork != null) return localArtwork;
+
+          final client = _getArtworkMediaClient(context);
+          final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+          final logoUrl = MediaImageHelper.getOptimizedImageUrl(
+            client: client,
+            thumbPath: metadata.clearLogoPath,
+            maxWidth: width,
+            maxHeight: height,
+            devicePixelRatio: dpr,
+            imageType: ImageType.logo,
+          );
+
+          if (logoUrl.isEmpty) return titleFallback(context);
+
+          return blurArtwork(
+            CachedNetworkImage(
+              imageUrl: logoUrl,
+              cacheManager: PlexImageCacheManager.instance,
+              filterQuality: FilterQuality.medium,
+              fit: BoxFit.contain,
+              alignment: Alignment.centerLeft,
+              memCacheWidth: (width * dpr).clamp(200, 1000).round(),
+              placeholder: (context, url) => const SizedBox.shrink(),
+              errorBuilder: (context, error, stackTrace) => titleFallback(context),
+            ),
+            sigma: 10,
+            clip: false,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildTvDetailMetadataLine(BuildContext context, MediaItem metadata, double scale) {
+    final parts = [
+      if (metadata.isMovie) t.discover.movie else if (metadata.isShow) t.discover.tvShow,
+      if (metadata.rating != null) '★ ${formatRating(metadata.rating!)}',
+      if (metadata.contentRating != null) formatContentRating(metadata.contentRating!),
+      if (metadata.durationMs != null) formatDurationTextual(metadata.durationMs!),
+      if (metadata.year != null) metadata.year.toString(),
+    ];
+
+    return Text(
+      parts.join('  •  '),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(color: Colors.white, fontSize: 18 * scale, fontWeight: FontWeight.w700, letterSpacing: 0.1),
+    );
+  }
+
+  String _tvDetailSummaryText(MediaItem metadata, String summary) {
+    final prefix = _tvDetailEpisodePrefix(metadata);
+    if (prefix == null) return summary;
+    return '$prefix: $summary';
+  }
+
+  String? _tvDetailEpisodePrefix(MediaItem metadata) {
+    if (!metadata.isEpisode || metadata.parentIndex == null || metadata.index == null) return null;
+    return 'S${metadata.parentIndex}, E${metadata.index}';
+  }
+
+  double _estimateTvBrowseRailHeight(Size size, List<MediaHub> hubs) {
+    final svc = SettingsService.instanceOrNull!;
+    return TvBrowseRailLayout.estimateHeight(
+      size: size,
+      hubs: hubs,
+      density: svc.read(SettingsService.libraryDensity),
+      episodePosterMode: svc.read(SettingsService.episodePosterMode),
+      tallPosterScale: _tvDetailTallPosterScale,
+    );
+  }
+
+  List<MediaHub> _tvDetailHubs(MediaItem metadata) {
+    final hubs = <MediaHub>[];
+    if (metadata.isShow && !_showEpisodesDirectly && _seasons.isNotEmpty) {
+      for (var i = 0; i < _seasons.length; i++) {
+        final season = _seasons[i];
+        final episodes = i == _selectedSeasonIndex ? _episodes : (_episodeCache[season.id] ?? const <MediaItem>[]);
+        hubs.add(
+          MediaHub(
+            id: '$_tvDetailSeasonHubIdPrefix$i',
+            title: season.title?.isNotEmpty == true ? season.title! : (season.displaySubtitle ?? season.displayTitle),
+            type: 'episode',
+            items: episodes,
+            size: episodes.length,
+          ),
+        );
+      }
+    } else if (_episodes.isNotEmpty) {
+      hubs.add(
+        MediaHub(
+          id: 'detail_episodes',
+          title: t.libraries.groupings.episodes,
+          type: 'episode',
+          items: _episodes,
+          size: _episodes.length,
+        ),
+      );
+    }
+    final actors = _tvDetailActorItems(metadata);
+    if (actors.isNotEmpty) {
+      hubs.add(
+        MediaHub(id: _tvDetailActorsHubId, title: t.discover.cast, type: 'person', items: actors, size: actors.length),
+      );
+    }
+    if (_extras != null && _extras!.isNotEmpty) {
+      hubs.add(
+        MediaHub(id: 'detail_extras', title: t.discover.extras, type: 'clip', items: _extras!, size: _extras!.length),
+      );
+    }
+    hubs.addAll(_relatedHubs.where((hub) => hub.items.isNotEmpty));
+    return hubs;
+  }
+
+  String? _tvDetailInitialHubId(MediaItem metadata) {
+    if (!metadata.isShow || _showEpisodesDirectly || _seasons.isEmpty) return null;
+    return '$_tvDetailSeasonHubIdPrefix$_selectedSeasonIndex';
+  }
+
+  String? _tvDetailInitialItemId(MediaItem metadata) {
+    if (!metadata.isShow) return null;
+    return _onDeckEpisode?.id;
+  }
+
+  List<MediaItem> _tvDetailActorItems(MediaItem metadata) {
+    final roles = metadata.roles;
+    if (roles == null || roles.isEmpty) return const [];
+
+    return [
+      for (var i = 0; i < roles.length; i++)
+        if (roles[i].tag.trim().isNotEmpty) _tvDetailActorItem(metadata, roles[i], i),
+    ];
+  }
+
+  MediaItem _tvDetailActorItem(MediaItem metadata, MediaRole actor, int index) {
+    final personId = actor.id?.trim();
+    return MediaItem(
+      id: personId != null && personId.isNotEmpty ? '${metadata.id}_actor_$personId' : '${metadata.id}_actor_$index',
+      backend: metadata.backend,
+      kind: MediaKind.unknown,
+      title: actor.tag,
+      parentTitle: actor.role,
+      thumbPath: actor.thumbPath,
+      serverId: metadata.serverId,
+      serverName: metadata.serverName,
+      raw: {if (personId != null && personId.isNotEmpty) _tvDetailActorPersonIdRawKey: personId},
+    );
+  }
+
+  bool _handleTvDetailRailItemActivated(MediaHub hub, MediaItem item) {
+    if (hub.id != _tvDetailActorsHubId) return false;
+    final personId = item.raw?[_tvDetailActorPersonIdRawKey];
+    if (personId is String && personId.isNotEmpty) {
+      _navigateToActorMedia(
+        MediaRole(id: personId, tag: item.displayTitle, role: item.parentTitle, thumbPath: item.thumbPath),
+      );
+    }
+    return true;
+  }
+
+  void _handleTvDetailHubChanged(MediaHub hub, int index) {
+    if (!hub.id.startsWith(_tvDetailSeasonHubIdPrefix)) return;
+    final seasonIndex = int.tryParse(hub.id.substring(_tvDetailSeasonHubIdPrefix.length));
+    if (seasonIndex == null || seasonIndex < 0 || seasonIndex >= _seasons.length) return;
+    final season = _seasons[seasonIndex];
+    final cached = _episodeCache[season.id];
+    if (_selectedSeasonIndex == seasonIndex && (cached != null || _episodes.isNotEmpty || _isLoadingSeasonEpisodes)) {
+      return;
+    }
+
+    if (cached != null) {
+      setStateIfMounted(() {
+        _selectedSeasonIndex = seasonIndex;
+        _episodes = cached.map(_applyLocalProgress).toList();
+        _isLoadingSeasonEpisodes = false;
+      });
+      return;
+    }
+
+    setStateIfMounted(() {
+      _selectedSeasonIndex = seasonIndex;
+      _episodes = const <MediaItem>[];
+      _isLoadingSeasonEpisodes = true;
+    });
+    unawaited(_fetchSeasonEpisodes(seasonIndex));
+  }
+
+  IconData _getTvDetailHubIcon(MediaHub hub, int index) {
+    if (hub.id.startsWith(_tvDetailSeasonHubIdPrefix)) return Symbols.tv_rounded;
+    if (hub.id == 'detail_episodes') return Symbols.tv_rounded;
+    if (hub.id == 'detail_extras') return Symbols.theaters_rounded;
+    if (hub.id == _tvDetailActorsHubId) return Symbols.group_rounded;
+    return _getRelatedHubIcon(hub);
+  }
+
+  Widget _buildHeroHeader(BuildContext context, MediaItem metadata, Size size, double headerHeight) {
     return Stack(
       children: [
         // Background Art (fixed height, no parallax)
@@ -2466,7 +3087,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
               final (_, memHeight) = MediaImageHelper.getMemCacheDimensions(
                 displayWidth: (mqSize.width * dpr).round(),
-                displayHeight: (mqSize.height * 0.6 * dpr).round(),
+                displayHeight: (headerHeight * dpr).round(),
                 imageType: ImageType.art,
               );
 
@@ -2509,97 +3130,105 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
         // Content at bottom
         Positioned(
+          top: 0,
           bottom: 16,
           left: 0,
           right: 0,
           child: SafeArea(
+            top: false,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Clear logo or title
-                  if (metadata.clearLogoPath != null)
-                    SizedBox(
-                      height: 120,
-                      width: 400,
-                      child: Builder(
-                        builder: (context) {
-                          final localArtwork = _buildOfflineArtworkIfAvailable(
-                            context,
-                            artworkPaths: [metadata.clearLogoPath],
-                            fit: BoxFit.contain,
-                            alignment: Alignment.centerLeft,
-                            imageType: ImageType.logo,
-                            errorWidget: (context, url, error) => _buildTitleText(context, metadata.displayTitle),
-                          );
-                          if (localArtwork != null) return localArtwork;
-
-                          final client = _getArtworkMediaClient(context);
-                          final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
-                          final logoUrl = MediaImageHelper.getOptimizedImageUrl(
-                            client: client,
-                            thumbPath: metadata.clearLogoPath,
-                            maxWidth: 400,
-                            maxHeight: 120,
-                            devicePixelRatio: dpr,
-                            imageType: ImageType.logo,
-                          );
-
-                          return blurArtwork(
-                            CachedNetworkImage(
-                              imageUrl: logoUrl,
-                              cacheManager: PlexImageCacheManager.instance,
-                              filterQuality: FilterQuality.medium,
-                              fit: BoxFit.contain,
-                              alignment: Alignment.centerLeft,
-                              memCacheWidth: (400 * dpr).clamp(200, 800).round(),
-                              placeholder: (context, url) => const SizedBox.shrink(),
-                              errorBuilder: (context, error, stackTrace) =>
-                                  _buildTitleText(context, metadata.displayTitle),
-                            ),
-                            sigma: 10,
-                            clip: false,
-                          );
-                        },
-                      ),
-                    )
-                  else
-                    Text(
-                      metadata.displayTitle,
-                      style: theme.textTheme.displaySmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        shadows: [Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8)],
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  const SizedBox(height: 12),
-
-                  // Metadata chips
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      if (metadata.year != null) _buildMetadataChip('${metadata.year}'),
-                      if (metadata case PlexMediaItem(:final editionTitle?)) _buildMetadataChip(editionTitle),
-                      if (metadata.contentRating != null)
-                        _buildMetadataChip(formatContentRating(metadata.contentRating!)),
-                      if (metadata.durationMs != null) _buildMetadataChip(formatDurationTextual(metadata.durationMs!)),
-                      ..._buildRatingChips(metadata),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  // Action buttons
-                  _buildActionButtons(metadata),
-                ],
-              ),
+              child: _buildHeroHeaderContent(context, metadata),
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildHeroHeaderContent(BuildContext context, MediaItem metadata) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxHeight <= 0 || constraints.maxWidth <= 0) return const SizedBox.shrink();
+
+        final availableHeight = constraints.maxHeight.isFinite ? constraints.maxHeight : 264.0;
+        const desiredLogoHeight = 120.0;
+        const desiredLogoWidth = 400.0;
+        const actionHeight = 48.0;
+        final chips = <Widget>[
+          if (metadata.year != null) _buildMetadataChip('${metadata.year}'),
+          if (metadata case PlexMediaItem(:final editionTitle?)) _buildMetadataChip(editionTitle),
+          if (metadata.contentRating != null) _buildMetadataChip(formatContentRating(metadata.contentRating!)),
+          if (metadata.durationMs != null) _buildMetadataChip(formatDurationTextual(metadata.durationMs!)),
+          ..._buildRatingChips(metadata),
+        ];
+
+        final showActions = availableHeight >= actionHeight;
+        final remainingAfterActions = availableHeight - (showActions ? actionHeight : 0);
+        final showChips = chips.isNotEmpty && remainingAfterActions >= 88;
+        final chipHeight = showChips ? (remainingAfterActions >= 170 ? 68.0 : 32.0) : 0.0;
+        final chipActionGap = showChips && showActions ? (availableHeight < 180 ? 8.0 : 16.0) : 0.0;
+        final remainingForLogo = remainingAfterActions - chipHeight - chipActionGap;
+        final logoGap = remainingForLogo >= 52 && (showChips || showActions)
+            ? (availableHeight < 180 ? 8.0 : 12.0)
+            : 0.0;
+        final logoHeight = (remainingForLogo - logoGap).clamp(0.0, desiredLogoHeight).toDouble();
+        final showLogo = logoHeight >= 24;
+        final effectiveLogoGap = showLogo ? logoGap : 0.0;
+        final logoWidth = desiredLogoWidth.clamp(0.0, constraints.maxWidth).toDouble();
+        final titleFontSize = (logoHeight * 0.38).clamp(24.0, 40.0).toDouble();
+        final contentHeight =
+            (showLogo ? logoHeight + effectiveLogoGap : 0.0) +
+            chipHeight +
+            chipActionGap +
+            (showActions ? actionHeight : 0.0);
+
+        return ClipRect(
+          child: SizedBox(
+            height: availableHeight,
+            child: Align(
+              alignment: Alignment.bottomLeft,
+              child: SizedBox(
+                height: contentHeight.clamp(0.0, availableHeight).toDouble(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (showLogo) ...[
+                      _buildDetailLogoOrTitle(
+                        context,
+                        metadata,
+                        width: logoWidth,
+                        height: logoHeight,
+                        titleBuilder: (context, title) => _buildDetailTitle(
+                          context,
+                          title,
+                          fontSize: titleFontSize,
+                          fontWeight: FontWeight.bold,
+                          shadowBlur: 8,
+                        ),
+                      ),
+                      if (effectiveLogoGap > 0) SizedBox(height: effectiveLogoGap),
+                    ],
+                    if (showChips)
+                      SizedBox(
+                        height: chipHeight,
+                        child: ClipRect(
+                          child: Align(
+                            alignment: Alignment.topLeft,
+                            child: Wrap(spacing: 8, runSpacing: 8, children: chips),
+                          ),
+                        ),
+                      ),
+                    if (chipActionGap > 0) SizedBox(height: chipActionGap),
+                    if (showActions) SizedBox(height: actionHeight, child: _buildActionButtons(metadata)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 

@@ -401,6 +401,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         suppressAutoFocus: suppressAutoFocus,
         onDataLoaded: () => _handleTabDataLoaded(tabIndex),
         onBack: focusTabBar,
+        onNavigateToChrome: focusTabBar,
       ),
       LibraryTabType.browse => LibraryBrowseTab(
         key: _browseTabKey,
@@ -1024,6 +1025,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         : null;
 
     final showMobileTabsRow = selectedLibrary != null && !PlatformDetector.shouldUseSideNavigation(context);
+    final currentTabIndex = _visibleTabs.isEmpty ? 0 : tabController.index.clamp(0, _visibleTabs.length - 1).toInt();
+    final currentTabType = _visibleTabs.isEmpty ? null : _visibleTabs[currentTabIndex];
+    final useTvRecommendedBackdrop = PlatformDetector.isTV() && currentTabType == LibraryTabType.recommended;
 
     Widget appBar({required bool floating}) => DesktopSliverAppBar(
       title: _buildAppBarTitle(visibleLibraries, selectedLibrary, groupByServer: groupByServerSetting),
@@ -1033,7 +1037,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       pinned: !floating,
       floating: floating,
       snap: floating,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: useTvRecommendedBackdrop ? Colors.transparent : Theme.of(context).scaffoldBackgroundColor,
       surfaceTintColor: Colors.transparent,
       shadowColor: Colors.transparent,
       scrolledUnderElevation: 0,
@@ -1065,6 +1069,41 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       );
     }
 
+    Widget buildTransparentTvTopBar() {
+      return SafeArea(
+        bottom: false,
+        child: AppBar(
+          primary: false,
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          title: _buildAppBarTitle(visibleLibraries, selectedLibrary, groupByServer: groupByServerSetting),
+          actions: [
+            FocusableActionBar(
+              key: _actionBarKey,
+              onNavigateLeft: () => getTabChipFocusNode(_visibleTabs.length - 1).requestFocus(),
+              onNavigateDown: _focusCurrentTab,
+              actions: [
+                if (allLibraries.isNotEmpty)
+                  FocusableAction(
+                    icon: Symbols.edit_rounded,
+                    tooltip: t.libraries.manageLibraries,
+                    onPressed: _showLibraryManagementSheet,
+                  ),
+                FocusableAction(
+                  icon: Symbols.refresh_rounded,
+                  tooltip: t.common.refresh,
+                  onPressed: _refreshCurrentTab,
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
     Widget body;
     if (isLoadingLibraries) {
       body = buildSimpleScroll(body: const Center(child: CircularProgressIndicator()));
@@ -1092,40 +1131,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
               ),
       );
     } else if (selectedLibrary != null) {
-      body = NestedScrollView(
-        controller: _outerScrollController,
-        floatHeaderSlivers: true,
-        headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          SliverOverlapAbsorber(
-            handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-            sliver: appBar(floating: true),
-          ),
-          if (showMobileTabsRow)
-            SliverToBoxAdapter(
-              child: Container(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      for (int i = 0; i < _visibleTabs.length; i++) ...[
-                        if (i > 0) const SizedBox(width: 8),
-                        buildTabChip(
-                          _getTabLabel(_visibleTabs[i]),
-                          i,
-                          onSelectWhenActive: _focusCurrentTab,
-                          onNavigateDown: _focusCurrentTabFromTabBar,
-                          onNavigateRightFromLast: () => _actionBarKey.currentState?.requestFocusOnFirst(),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ),
-        ],
-        body: TabBarView(
+      Widget buildTabs() {
+        return TabBarView(
           key: ValueKey(_selectedLibraryGlobalKey),
           controller: tabController,
           // Disable swipe on desktop - trackpad scrolling triggers accidental tab switches
@@ -1144,15 +1151,64 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                 ),
               ),
           ],
-        ),
-      );
+        );
+      }
+
+      if (useTvRecommendedBackdrop) {
+        body = Stack(
+          fit: StackFit.expand,
+          children: [
+            buildTabs(),
+            Positioned(top: 0, left: 0, right: 0, child: ExcludeFocusTraversal(child: buildTransparentTvTopBar())),
+          ],
+        );
+      } else {
+        body = NestedScrollView(
+          controller: _outerScrollController,
+          floatHeaderSlivers: true,
+          headerSliverBuilder: (context, innerBoxIsScrolled) => [
+            SliverOverlapAbsorber(
+              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+              sliver: appBar(floating: true),
+            ),
+            if (showMobileTabsRow)
+              SliverToBoxAdapter(
+                child: Container(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        for (int i = 0; i < _visibleTabs.length; i++) ...[
+                          if (i > 0) const SizedBox(width: 8),
+                          buildTabChip(
+                            _getTabLabel(_visibleTabs[i]),
+                            i,
+                            onSelectWhenActive: _focusCurrentTab,
+                            onNavigateDown: _focusCurrentTabFromTabBar,
+                            onNavigateRightFromLast: () => _actionBarKey.currentState?.requestFocusOnFirst(),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+          body: buildTabs(),
+        );
+      }
     } else {
       body = buildSimpleScroll(body: const SizedBox.shrink());
     }
 
-    return Scaffold(
-      body: ScrollConfiguration(behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false), child: body),
+    final scrollBody = ScrollConfiguration(
+      behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+      child: body,
     );
+
+    return Scaffold(body: scrollBody);
   }
 }
 

@@ -51,3 +51,20 @@ class GridLayoutConstants {
   /// Standard grid padding
   static EdgeInsets get gridPadding => const EdgeInsets.only(left: 2, right: 2, bottom: 2);
 }
+
+class TvLayoutConstants {
+  static const double horizontalInset = 72;
+  static const double shelfHorizontalInset = 56;
+  static const double shelfVerticalGap = 32;
+  static const double heroContentMaxWidth = 760;
+  static const double heroLogoWidth = 520;
+  static const double heroLogoHeight = 150;
+  static const double compactHeroLogoWidth = 420;
+  static const double compactHeroLogoHeight = 112;
+
+  static double scaleForHeight(double height) => (height / 1080).clamp(0.85, 1.35).toDouble();
+
+  static double scaleForSize(Size size) => scaleForHeight(size.height);
+
+  static double scaleOf(BuildContext context) => scaleForSize(MediaQuery.sizeOf(context));
+}

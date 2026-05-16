@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../focus/focusable_chip_mixin.dart';
 import '../focus/input_mode_tracker.dart';
+import '../utils/platform_detector.dart';
 import 'focus_builders.dart';
 
 /// A focusable tab chip that shows a color change when focused or selected.
@@ -122,8 +123,13 @@ class _FocusableTabChipState extends State<FocusableTabChip> with FocusableChipS
       foregroundColor = colorScheme.onPrimary;
     } else {
       // Neither selected nor focused
-      backgroundColor = colorScheme.surfaceContainerHighest;
-      foregroundColor = colorScheme.onSurfaceVariant;
+      if (PlatformDetector.isTV()) {
+        backgroundColor = colorScheme.secondaryContainer.withValues(alpha: 0.38);
+        foregroundColor = colorScheme.onSecondaryContainer;
+      } else {
+        backgroundColor = colorScheme.surfaceContainerHighest;
+        foregroundColor = colorScheme.onSurfaceVariant;
+      }
     }
 
     final isHighlighted = showFocus || widget.isSelected;
