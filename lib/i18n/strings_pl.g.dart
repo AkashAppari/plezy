@@ -595,6 +595,7 @@ class _TranslationsVideoControlsPl extends TranslationsVideoControlsEn {
 	@override String endsAt({required Object time}) => 'Kończy się o ${time}';
 	@override String get pipActive => 'Odtwarzanie w trybie obraz w obrazie';
 	@override String get pipFailed => 'Nie udało się uruchomić trybu obraz w obrazie';
+	@override String get screenshotSaved => 'Zrzut ekranu zapisany';
 	@override late final _TranslationsVideoControlsPipErrorsPl pipErrors = _TranslationsVideoControlsPipErrorsPl._(_root);
 	@override String get chapters => 'Rozdziały';
 	@override String get noChaptersAvailable => 'Brak dostępnych rozdziałów';
@@ -1556,6 +1557,7 @@ class _TranslationsHotkeysActionsPl extends TranslationsHotkeysActionsEn {
 	@override String get subSeekPrev => 'Przewiń do poprzedniego napisu';
 	@override String get shaderToggle => 'Przełącz shadery';
 	@override String get skipMarker => 'Pomiń intro/napisy końcowe';
+	@override String get screenshot => 'Zrób zrzut ekranu';
 }
 
 // Path: videoControls.pipErrors
@@ -2079,6 +2081,7 @@ extension on TranslationsPl {
 			'hotkeys.actions.subSeekPrev' => 'Przewiń do poprzedniego napisu',
 			'hotkeys.actions.shaderToggle' => 'Przełącz shadery',
 			'hotkeys.actions.skipMarker' => 'Pomiń intro/napisy końcowe',
+			'hotkeys.actions.screenshot' => 'Zrób zrzut ekranu',
 			'fileInfo.title' => 'Informacje o pliku',
 			'fileInfo.video' => 'Wideo',
 			'fileInfo.audio' => 'Audio',
@@ -2198,6 +2201,7 @@ extension on TranslationsPl {
 			'videoControls.endsAt' => ({required Object time}) => 'Kończy się o ${time}',
 			'videoControls.pipActive' => 'Odtwarzanie w trybie obraz w obrazie',
 			'videoControls.pipFailed' => 'Nie udało się uruchomić trybu obraz w obrazie',
+			'videoControls.screenshotSaved' => 'Zrzut ekranu zapisany',
 			'videoControls.pipErrors.androidVersion' => 'Wymaga Androida 8.0 lub nowszego',
 			'videoControls.pipErrors.iosVersion' => 'Wymaga iOS 15.0 lub nowszego',
 			'videoControls.pipErrors.permissionDisabled' => 'Obraz w obrazie jest wyłączony. Włącz go w ustawieniach systemu.',
@@ -2303,10 +2307,10 @@ extension on TranslationsPl {
 			'profiles.summarySingle' => 'Dodaj profile, aby łączyć zarządzanych użytkowników i tożsamości lokalne',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} profili · aktywny: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profili',
-			'profiles.removeConnectionTitle' => 'Usunąć połączenie?',
-			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Usuń dostęp ${displayName} do ${connectionLabel}. Inne profile go zachowają.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.removeConnectionTitle' => 'Usunąć połączenie?',
+			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Usuń dostęp ${displayName} do ${connectionLabel}. Inne profile go zachowają.',
 			'profiles.deleteProfileTitle' => 'Usunąć profil?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Usuń ${displayName} i jego połączenia. Serwery pozostaną dostępne.',
 			'profiles.profileNameLabel' => 'Nazwa profilu',
@@ -2817,10 +2821,10 @@ extension on TranslationsPl {
 			'metadataEdit.selectBackground' => 'Wybierz tło',
 			'metadataEdit.selectLogo' => 'Wybierz logo',
 			'metadataEdit.selectSquareArt' => 'Wybierz kwadratowy obraz',
-			'metadataEdit.fromUrl' => 'Z URL',
-			'metadataEdit.uploadFile' => 'Prześlij plik',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.fromUrl' => 'Z URL',
+			'metadataEdit.uploadFile' => 'Prześlij plik',
 			'metadataEdit.enterImageUrl' => 'Wprowadź URL obrazu',
 			'metadataEdit.imageUrl' => 'URL obrazu',
 			'metadataEdit.metadataUpdated' => 'Metadane zaktualizowane',

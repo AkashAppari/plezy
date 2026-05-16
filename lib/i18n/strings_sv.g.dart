@@ -595,6 +595,7 @@ class _TranslationsVideoControlsSv extends TranslationsVideoControlsEn {
 	@override String endsAt({required Object time}) => 'Slutar ${time}';
 	@override String get pipActive => 'Spelar i bild-i-bild';
 	@override String get pipFailed => 'Bild-i-bild kunde inte starta';
+	@override String get screenshotSaved => 'Skärmbild sparad';
 	@override late final _TranslationsVideoControlsPipErrorsSv pipErrors = _TranslationsVideoControlsPipErrorsSv._(_root);
 	@override String get chapters => 'Kapitel';
 	@override String get noChaptersAvailable => 'Inga kapitel tillgängliga';
@@ -1556,6 +1557,7 @@ class _TranslationsHotkeysActionsSv extends TranslationsHotkeysActionsEn {
 	@override String get subSeekPrev => 'Hoppa till föregående undertext';
 	@override String get shaderToggle => 'Växla shaders';
 	@override String get skipMarker => 'Hoppa över intro/eftertexter';
+	@override String get screenshot => 'Ta skärmbild';
 }
 
 // Path: videoControls.pipErrors
@@ -2079,6 +2081,7 @@ extension on TranslationsSv {
 			'hotkeys.actions.subSeekPrev' => 'Hoppa till föregående undertext',
 			'hotkeys.actions.shaderToggle' => 'Växla shaders',
 			'hotkeys.actions.skipMarker' => 'Hoppa över intro/eftertexter',
+			'hotkeys.actions.screenshot' => 'Ta skärmbild',
 			'fileInfo.title' => 'Filinformation',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Ljud',
@@ -2198,6 +2201,7 @@ extension on TranslationsSv {
 			'videoControls.endsAt' => ({required Object time}) => 'Slutar ${time}',
 			'videoControls.pipActive' => 'Spelar i bild-i-bild',
 			'videoControls.pipFailed' => 'Bild-i-bild kunde inte starta',
+			'videoControls.screenshotSaved' => 'Skärmbild sparad',
 			'videoControls.pipErrors.androidVersion' => 'Kräver Android 8.0 eller nyare',
 			'videoControls.pipErrors.iosVersion' => 'Kräver iOS 15.0 eller nyare',
 			'videoControls.pipErrors.permissionDisabled' => 'Bild-i-bild är inaktiverat. Aktivera det i systeminställningarna.',
@@ -2303,10 +2307,10 @@ extension on TranslationsSv {
 			'profiles.summarySingle' => 'Lägg till profiler för att blanda hanterade användare och lokala identiteter',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} profiler · aktiv: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profiler',
-			'profiles.removeConnectionTitle' => 'Ta bort anslutning?',
-			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Ta bort ${displayName}s åtkomst till ${connectionLabel}. Andra profiler behåller den.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.removeConnectionTitle' => 'Ta bort anslutning?',
+			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Ta bort ${displayName}s åtkomst till ${connectionLabel}. Andra profiler behåller den.',
 			'profiles.deleteProfileTitle' => 'Ta bort profil?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Ta bort ${displayName} och dess anslutningar. Servrar förblir tillgängliga.',
 			'profiles.profileNameLabel' => 'Profilnamn',
@@ -2817,10 +2821,10 @@ extension on TranslationsSv {
 			'metadataEdit.selectBackground' => 'Välj bakgrund',
 			'metadataEdit.selectLogo' => 'Välj logotyp',
 			'metadataEdit.selectSquareArt' => 'Välj kvadratisk bild',
-			'metadataEdit.fromUrl' => 'Från URL',
-			'metadataEdit.uploadFile' => 'Ladda upp fil',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.fromUrl' => 'Från URL',
+			'metadataEdit.uploadFile' => 'Ladda upp fil',
 			'metadataEdit.enterImageUrl' => 'Ange bild-URL',
 			'metadataEdit.imageUrl' => 'Bild-URL',
 			'metadataEdit.metadataUpdated' => 'Metadata uppdaterad',

@@ -1366,6 +1366,9 @@ class TranslationsVideoControlsEn {
 	/// en: 'Picture-in-picture failed to start'
 	String get pipFailed => 'Picture-in-picture failed to start';
 
+	/// en: 'Screenshot saved'
+	String get screenshotSaved => 'Screenshot saved';
+
 	late final TranslationsVideoControlsPipErrorsEn pipErrors = TranslationsVideoControlsPipErrorsEn.internal(_root);
 
 	/// en: 'Chapters'
@@ -3652,6 +3655,9 @@ class TranslationsHotkeysActionsEn {
 
 	/// en: 'Skip Intro/Credits'
 	String get skipMarker => 'Skip Intro/Credits';
+
+	/// en: 'Take Screenshot'
+	String get screenshot => 'Take Screenshot';
 }
 
 // Path: videoControls.pipErrors
@@ -4413,6 +4419,7 @@ extension on Translations {
 			'hotkeys.actions.subSeekPrev' => 'Seek to Previous Subtitle',
 			'hotkeys.actions.shaderToggle' => 'Toggle Shaders',
 			'hotkeys.actions.skipMarker' => 'Skip Intro/Credits',
+			'hotkeys.actions.screenshot' => 'Take Screenshot',
 			'fileInfo.title' => 'File Info',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Audio',
@@ -4532,6 +4539,7 @@ extension on Translations {
 			'videoControls.endsAt' => ({required Object time}) => 'Ends at ${time}',
 			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
 			'videoControls.pipFailed' => 'Picture-in-picture failed to start',
+			'videoControls.screenshotSaved' => 'Screenshot saved',
 			'videoControls.pipErrors.androidVersion' => 'Requires Android 8.0 or newer',
 			'videoControls.pipErrors.iosVersion' => 'Requires iOS 15.0 or newer',
 			'videoControls.pipErrors.permissionDisabled' => 'Picture-in-picture is disabled. Enable it in system settings.',
@@ -4637,10 +4645,10 @@ extension on Translations {
 			'profiles.summarySingle' => 'Add profiles to mix managed users and local identities',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} profiles · active: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profiles',
-			'profiles.removeConnectionTitle' => 'Remove connection?',
-			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Remove ${displayName}\'s access to ${connectionLabel}. Other profiles keep it.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.removeConnectionTitle' => 'Remove connection?',
+			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Remove ${displayName}\'s access to ${connectionLabel}. Other profiles keep it.',
 			'profiles.deleteProfileTitle' => 'Delete profile?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Remove ${displayName} and its connections. Servers stay available.',
 			'profiles.profileNameLabel' => 'Profile name',
@@ -5151,10 +5159,10 @@ extension on Translations {
 			'metadataEdit.selectBackground' => 'Select Background',
 			'metadataEdit.selectLogo' => 'Select Logo',
 			'metadataEdit.selectSquareArt' => 'Select Square Art',
-			'metadataEdit.fromUrl' => 'From URL',
-			'metadataEdit.uploadFile' => 'Upload File',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.fromUrl' => 'From URL',
+			'metadataEdit.uploadFile' => 'Upload File',
 			'metadataEdit.enterImageUrl' => 'Enter image URL',
 			'metadataEdit.imageUrl' => 'Image URL',
 			'metadataEdit.metadataUpdated' => 'Metadata updated',

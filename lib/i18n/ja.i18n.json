@@ -300,7 +300,8 @@
       "subSeekNext": "次の字幕にシーク",
       "subSeekPrev": "前の字幕にシーク",
       "shaderToggle": "シェーダー切替",
-      "skipMarker": "イントロ/クレジットをスキップ"
+      "skipMarker": "イントロ/クレジットをスキップ",
+      "screenshot": "スクリーンショットを撮る"
     }
   },
   "fileInfo": {
@@ -433,6 +434,7 @@
     "endsAt": "${time}に終了",
     "pipActive": "ピクチャーインピクチャーで再生中",
     "pipFailed": "ピクチャーインピクチャーの開始に失敗しました",
+    "screenshotSaved": "スクリーンショットを保存しました",
     "pipErrors": {
       "androidVersion": "Android 8.0以降が必要です",
       "iosVersion": "iOS 15.0以降が必要です",

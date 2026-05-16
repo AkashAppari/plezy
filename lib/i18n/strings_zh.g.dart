@@ -595,6 +595,7 @@ class _TranslationsVideoControlsZh extends TranslationsVideoControlsEn {
 	@override String endsAt({required Object time}) => '${time} 结束';
 	@override String get pipActive => '正在画中画模式中播放';
 	@override String get pipFailed => '画中画启动失败';
+	@override String get screenshotSaved => '截图已保存';
 	@override late final _TranslationsVideoControlsPipErrorsZh pipErrors = _TranslationsVideoControlsPipErrorsZh._(_root);
 	@override String get chapters => '章节';
 	@override String get noChaptersAvailable => '没有可用的章节';
@@ -1556,6 +1557,7 @@ class _TranslationsHotkeysActionsZh extends TranslationsHotkeysActionsEn {
 	@override String get subSeekPrev => '跳转到上一字幕';
 	@override String get shaderToggle => '切换着色器';
 	@override String get skipMarker => '跳过片头/片尾';
+	@override String get screenshot => '截图';
 }
 
 // Path: videoControls.pipErrors
@@ -2079,6 +2081,7 @@ extension on TranslationsZh {
 			'hotkeys.actions.subSeekPrev' => '跳转到上一字幕',
 			'hotkeys.actions.shaderToggle' => '切换着色器',
 			'hotkeys.actions.skipMarker' => '跳过片头/片尾',
+			'hotkeys.actions.screenshot' => '截图',
 			'fileInfo.title' => '文件信息',
 			'fileInfo.video' => '视频',
 			'fileInfo.audio' => '音频',
@@ -2198,6 +2201,7 @@ extension on TranslationsZh {
 			'videoControls.endsAt' => ({required Object time}) => '${time} 结束',
 			'videoControls.pipActive' => '正在画中画模式中播放',
 			'videoControls.pipFailed' => '画中画启动失败',
+			'videoControls.screenshotSaved' => '截图已保存',
 			'videoControls.pipErrors.androidVersion' => '需要 Android 8.0 或更高版本',
 			'videoControls.pipErrors.iosVersion' => '需要 iOS 15.0 或更高版本',
 			'videoControls.pipErrors.permissionDisabled' => '画中画已禁用。请在系统设置中启用。',
@@ -2303,10 +2307,10 @@ extension on TranslationsZh {
 			'profiles.summarySingle' => '添加配置文件以混合托管用户和本地身份',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} 个配置文件 · 活跃：${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} 个配置文件',
-			'profiles.removeConnectionTitle' => '移除连接？',
-			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => '移除 ${displayName} 对 ${connectionLabel} 的访问。其他个人资料仍保留。',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.removeConnectionTitle' => '移除连接？',
+			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => '移除 ${displayName} 对 ${connectionLabel} 的访问。其他个人资料仍保留。',
 			'profiles.deleteProfileTitle' => '删除配置文件？',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => '移除 ${displayName} 及其连接。服务器仍可用。',
 			'profiles.profileNameLabel' => '配置文件名称',
@@ -2817,10 +2821,10 @@ extension on TranslationsZh {
 			'metadataEdit.selectBackground' => '选择背景',
 			'metadataEdit.selectLogo' => '选择标志',
 			'metadataEdit.selectSquareArt' => '选择方形图片',
-			'metadataEdit.fromUrl' => '从 URL',
-			'metadataEdit.uploadFile' => '上传文件',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.fromUrl' => '从 URL',
+			'metadataEdit.uploadFile' => '上传文件',
 			'metadataEdit.enterImageUrl' => '输入图片 URL',
 			'metadataEdit.imageUrl' => '图片 URL',
 			'metadataEdit.metadataUpdated' => '元数据已更新',

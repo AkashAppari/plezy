@@ -182,6 +182,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onSkipMarker,
     VoidCallback? onNextEpisode,
     VoidCallback? onPreviousEpisode,
+    VoidCallback? onScreenshot,
     int? currentPositionEpoch,
     ValueChanged<int>? onLiveSeek,
   }) {
@@ -258,6 +259,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
           onSkipMarker: onSkipMarker,
           onNextEpisode: onNextEpisode,
           onPreviousEpisode: onPreviousEpisode,
+          onScreenshot: onScreenshot,
           currentPositionEpoch: currentPositionEpoch,
           onLiveSeek: onLiveSeek,
         );
@@ -281,6 +283,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onSkipMarker,
     VoidCallback? onNextEpisode,
     VoidCallback? onPreviousEpisode,
+    VoidCallback? onScreenshot,
     int? currentPositionEpoch,
     ValueChanged<int>? onLiveSeek,
   }) {
@@ -374,6 +377,9 @@ class KeyboardShortcutsService extends ChangeNotifier {
       case 'skip_marker':
         onSkipMarker?.call();
         break;
+      case 'screenshot':
+        unawaited(player.command(['screenshot', 'window']).then((_) => onScreenshot?.call()));
+        break;
     }
   }
 
@@ -425,6 +431,8 @@ class KeyboardShortcutsService extends ChangeNotifier {
         return t.hotkeys.actions.shaderToggle;
       case 'skip_marker':
         return t.hotkeys.actions.skipMarker;
+      case 'screenshot':
+        return t.hotkeys.actions.screenshot;
       default:
         return action;
     }

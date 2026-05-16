@@ -595,6 +595,7 @@ class _TranslationsVideoControlsRu extends TranslationsVideoControlsEn {
 	@override String endsAt({required Object time}) => 'Закончится в ${time}';
 	@override String get pipActive => 'Воспроизводится в режиме «картинка в картинке»';
 	@override String get pipFailed => 'Не удалось запустить режим «картинка в картинке»';
+	@override String get screenshotSaved => 'Снимок экрана сохранён';
 	@override late final _TranslationsVideoControlsPipErrorsRu pipErrors = _TranslationsVideoControlsPipErrorsRu._(_root);
 	@override String get chapters => 'Главы';
 	@override String get noChaptersAvailable => 'Главы недоступны';
@@ -1556,6 +1557,7 @@ class _TranslationsHotkeysActionsRu extends TranslationsHotkeysActionsEn {
 	@override String get subSeekPrev => 'К предыдущему субтитру';
 	@override String get shaderToggle => 'Вкл./выкл. шейдеры';
 	@override String get skipMarker => 'Пропустить вступление/титры';
+	@override String get screenshot => 'Сделать снимок экрана';
 }
 
 // Path: videoControls.pipErrors
@@ -2079,6 +2081,7 @@ extension on TranslationsRu {
 			'hotkeys.actions.subSeekPrev' => 'К предыдущему субтитру',
 			'hotkeys.actions.shaderToggle' => 'Вкл./выкл. шейдеры',
 			'hotkeys.actions.skipMarker' => 'Пропустить вступление/титры',
+			'hotkeys.actions.screenshot' => 'Сделать снимок экрана',
 			'fileInfo.title' => 'Информация о файле',
 			'fileInfo.video' => 'Видео',
 			'fileInfo.audio' => 'Аудио',
@@ -2198,6 +2201,7 @@ extension on TranslationsRu {
 			'videoControls.endsAt' => ({required Object time}) => 'Закончится в ${time}',
 			'videoControls.pipActive' => 'Воспроизводится в режиме «картинка в картинке»',
 			'videoControls.pipFailed' => 'Не удалось запустить режим «картинка в картинке»',
+			'videoControls.screenshotSaved' => 'Снимок экрана сохранён',
 			'videoControls.pipErrors.androidVersion' => 'Требуется Android 8.0 или новее',
 			'videoControls.pipErrors.iosVersion' => 'Требуется iOS 15.0 или новее',
 			'videoControls.pipErrors.permissionDisabled' => 'Картинка-в-картинке отключена. Включите ее в системных настройках.',
@@ -2303,10 +2307,10 @@ extension on TranslationsRu {
 			'profiles.summarySingle' => 'Добавьте профили, чтобы смешать управляемых пользователей и локальные идентификаторы',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} профилей · активный: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} профилей',
-			'profiles.removeConnectionTitle' => 'Удалить соединение?',
-			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Удалить доступ ${displayName} к ${connectionLabel}. У других профилей он останется.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.removeConnectionTitle' => 'Удалить соединение?',
+			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Удалить доступ ${displayName} к ${connectionLabel}. У других профилей он останется.',
 			'profiles.deleteProfileTitle' => 'Удалить профиль?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Удалить ${displayName} и его подключения. Серверы останутся доступны.',
 			'profiles.profileNameLabel' => 'Имя профиля',
@@ -2817,10 +2821,10 @@ extension on TranslationsRu {
 			'metadataEdit.selectBackground' => 'Выбрать фон',
 			'metadataEdit.selectLogo' => 'Выбрать логотип',
 			'metadataEdit.selectSquareArt' => 'Выбрать квадратное изображение',
-			'metadataEdit.fromUrl' => 'По URL',
-			'metadataEdit.uploadFile' => 'Загрузить файл',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.fromUrl' => 'По URL',
+			'metadataEdit.uploadFile' => 'Загрузить файл',
 			'metadataEdit.enterImageUrl' => 'Введите URL изображения',
 			'metadataEdit.imageUrl' => 'URL изображения',
 			'metadataEdit.metadataUpdated' => 'Метаданные обновлены',

@@ -300,7 +300,8 @@
       "subSeekNext": "다음 자막으로 이동",
       "subSeekPrev": "이전 자막으로 이동",
       "shaderToggle": "셰이더 전환",
-      "skipMarker": "인트로/크레딧 건너뛰기"
+      "skipMarker": "인트로/크레딧 건너뛰기",
+      "screenshot": "스크린샷 찍기"
     }
   },
   "fileInfo": {
@@ -433,6 +434,7 @@
     "endsAt": "${time}에 종료",
     "pipActive": "화면 속 화면으로 재생 중",
     "pipFailed": "화면 속 화면 모드를 시작할 수 없습니다",
+    "screenshotSaved": "스크린샷 저장됨",
     "pipErrors": {
       "androidVersion": "Android 8.0 이상이 필요합니다",
       "iosVersion": "iOS 15.0 이상이 필요합니다",

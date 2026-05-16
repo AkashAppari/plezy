@@ -1,4 +1,6 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/models/hotkey_model.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/trackers/tracker_constants.dart';
 
@@ -58,6 +60,17 @@ void main() {
 
     test('empty input yields empty map', () {
       expect(SettingsService.parseMpvConfigText(''), isEmpty);
+    });
+  });
+
+  group('SettingsService keyboard shortcut defaults', () {
+    test('includes Ctrl+S screenshot shortcut', () {
+      expect(SettingsService.defaultKeyboardShortcuts()['screenshot'], 'Ctrl+S');
+
+      final hotkey = SettingsService.defaultKeyboardHotkeys()['screenshot'];
+      expect(hotkey, isNotNull);
+      expect(hotkey!.key, PhysicalKeyboardKey.keyS);
+      expect(hotkey.modifiers, [HotKeyModifier.control]);
     });
   });
 

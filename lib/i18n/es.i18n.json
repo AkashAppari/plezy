@@ -300,7 +300,8 @@
       "subSeekNext": "Ir al Siguiente Subtítulo",
       "subSeekPrev": "Ir al Anterior Subtítulo",
       "shaderToggle": "Alternar Shaders",
-      "skipMarker": "Saltar Intro/Créditos"
+      "skipMarker": "Saltar Intro/Créditos",
+      "screenshot": "Tomar captura de pantalla"
     }
   },
   "fileInfo": {
@@ -433,6 +434,7 @@
     "endsAt": "Termina a las ${time}",
     "pipActive": "Reproduciendo en Imagen en Imagen",
     "pipFailed": "Error al iniciar Imagen en Imagen",
+    "screenshotSaved": "Captura de pantalla guardada",
     "pipErrors": {
       "androidVersion": "Requiere Android 8.0 o más reciente",
       "iosVersion": "Requiere iOS 15.0 o más reciente",

@@ -595,6 +595,7 @@ class _TranslationsVideoControlsEs extends TranslationsVideoControlsEn {
 	@override String endsAt({required Object time}) => 'Termina a las ${time}';
 	@override String get pipActive => 'Reproduciendo en Imagen en Imagen';
 	@override String get pipFailed => 'Error al iniciar Imagen en Imagen';
+	@override String get screenshotSaved => 'Captura de pantalla guardada';
 	@override late final _TranslationsVideoControlsPipErrorsEs pipErrors = _TranslationsVideoControlsPipErrorsEs._(_root);
 	@override String get chapters => 'Capítulos';
 	@override String get noChaptersAvailable => 'No hay capítulos disponibles';
@@ -1556,6 +1557,7 @@ class _TranslationsHotkeysActionsEs extends TranslationsHotkeysActionsEn {
 	@override String get subSeekPrev => 'Ir al Anterior Subtítulo';
 	@override String get shaderToggle => 'Alternar Shaders';
 	@override String get skipMarker => 'Saltar Intro/Créditos';
+	@override String get screenshot => 'Tomar captura de pantalla';
 }
 
 // Path: videoControls.pipErrors
@@ -2079,6 +2081,7 @@ extension on TranslationsEs {
 			'hotkeys.actions.subSeekPrev' => 'Ir al Anterior Subtítulo',
 			'hotkeys.actions.shaderToggle' => 'Alternar Shaders',
 			'hotkeys.actions.skipMarker' => 'Saltar Intro/Créditos',
+			'hotkeys.actions.screenshot' => 'Tomar captura de pantalla',
 			'fileInfo.title' => 'Información del Archivo',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Audio',
@@ -2198,6 +2201,7 @@ extension on TranslationsEs {
 			'videoControls.endsAt' => ({required Object time}) => 'Termina a las ${time}',
 			'videoControls.pipActive' => 'Reproduciendo en Imagen en Imagen',
 			'videoControls.pipFailed' => 'Error al iniciar Imagen en Imagen',
+			'videoControls.screenshotSaved' => 'Captura de pantalla guardada',
 			'videoControls.pipErrors.androidVersion' => 'Requiere Android 8.0 o más reciente',
 			'videoControls.pipErrors.iosVersion' => 'Requiere iOS 15.0 o más reciente',
 			'videoControls.pipErrors.permissionDisabled' => 'Picture-in-picture está desactivado. Actívalo en los ajustes del sistema.',
@@ -2303,10 +2307,10 @@ extension on TranslationsEs {
 			'profiles.summarySingle' => 'Añade perfiles para mezclar usuarios gestionados e identidades locales',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} perfiles · activo: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} perfiles',
-			'profiles.removeConnectionTitle' => '¿Eliminar conexión?',
-			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Eliminar el acceso de ${displayName} a ${connectionLabel}. Los demás perfiles lo conservan.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.removeConnectionTitle' => '¿Eliminar conexión?',
+			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Eliminar el acceso de ${displayName} a ${connectionLabel}. Los demás perfiles lo conservan.',
 			'profiles.deleteProfileTitle' => '¿Eliminar perfil?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Eliminar ${displayName} y sus conexiones. Los servidores seguirán disponibles.',
 			'profiles.profileNameLabel' => 'Nombre del perfil',
@@ -2817,10 +2821,10 @@ extension on TranslationsEs {
 			'metadataEdit.selectBackground' => 'Seleccionar fondo',
 			'metadataEdit.selectLogo' => 'Seleccionar logo',
 			'metadataEdit.selectSquareArt' => 'Seleccionar imagen cuadrada',
-			'metadataEdit.fromUrl' => 'Desde URL',
-			'metadataEdit.uploadFile' => 'Subir archivo',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.fromUrl' => 'Desde URL',
+			'metadataEdit.uploadFile' => 'Subir archivo',
 			'metadataEdit.enterImageUrl' => 'Introducir URL de imagen',
 			'metadataEdit.imageUrl' => 'URL de imagen',
 			'metadataEdit.metadataUpdated' => 'Metadatos actualizados',

@@ -595,6 +595,7 @@ class _TranslationsVideoControlsJa extends TranslationsVideoControlsEn {
 	@override String endsAt({required Object time}) => '${time}に終了';
 	@override String get pipActive => 'ピクチャーインピクチャーで再生中';
 	@override String get pipFailed => 'ピクチャーインピクチャーの開始に失敗しました';
+	@override String get screenshotSaved => 'スクリーンショットを保存しました';
 	@override late final _TranslationsVideoControlsPipErrorsJa pipErrors = _TranslationsVideoControlsPipErrorsJa._(_root);
 	@override String get chapters => 'チャプター';
 	@override String get noChaptersAvailable => 'チャプターがありません';
@@ -1556,6 +1557,7 @@ class _TranslationsHotkeysActionsJa extends TranslationsHotkeysActionsEn {
 	@override String get subSeekPrev => '前の字幕にシーク';
 	@override String get shaderToggle => 'シェーダー切替';
 	@override String get skipMarker => 'イントロ/クレジットをスキップ';
+	@override String get screenshot => 'スクリーンショットを撮る';
 }
 
 // Path: videoControls.pipErrors
@@ -2079,6 +2081,7 @@ extension on TranslationsJa {
 			'hotkeys.actions.subSeekPrev' => '前の字幕にシーク',
 			'hotkeys.actions.shaderToggle' => 'シェーダー切替',
 			'hotkeys.actions.skipMarker' => 'イントロ/クレジットをスキップ',
+			'hotkeys.actions.screenshot' => 'スクリーンショットを撮る',
 			'fileInfo.title' => 'ファイル情報',
 			'fileInfo.video' => '映像',
 			'fileInfo.audio' => '音声',
@@ -2198,6 +2201,7 @@ extension on TranslationsJa {
 			'videoControls.endsAt' => ({required Object time}) => '${time}に終了',
 			'videoControls.pipActive' => 'ピクチャーインピクチャーで再生中',
 			'videoControls.pipFailed' => 'ピクチャーインピクチャーの開始に失敗しました',
+			'videoControls.screenshotSaved' => 'スクリーンショットを保存しました',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0以降が必要です',
 			'videoControls.pipErrors.iosVersion' => 'iOS 15.0以降が必要です',
 			'videoControls.pipErrors.permissionDisabled' => 'ピクチャーインピクチャーが無効です。システム設定で有効にしてください。',
@@ -2303,10 +2307,10 @@ extension on TranslationsJa {
 			'profiles.summarySingle' => 'プロファイルを追加して、管理対象ユーザーとローカルIDを混在させます',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count}個のプロファイル · アクティブ: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count}個のプロファイル',
-			'profiles.removeConnectionTitle' => '接続を削除しますか？',
-			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => '${displayName}の${connectionLabel}へのアクセスを削除します。他のプロフィールには残ります。',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.removeConnectionTitle' => '接続を削除しますか？',
+			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => '${displayName}の${connectionLabel}へのアクセスを削除します。他のプロフィールには残ります。',
 			'profiles.deleteProfileTitle' => 'プロファイルを削除しますか？',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => '${displayName}とその接続を削除します。サーバーは引き続き利用できます。',
 			'profiles.profileNameLabel' => 'プロファイル名',
@@ -2817,10 +2821,10 @@ extension on TranslationsJa {
 			'metadataEdit.selectBackground' => '背景を選択',
 			'metadataEdit.selectLogo' => 'ロゴを選択',
 			'metadataEdit.selectSquareArt' => '正方形アートを選択',
-			'metadataEdit.fromUrl' => 'URLから',
-			'metadataEdit.uploadFile' => 'ファイルをアップロード',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.fromUrl' => 'URLから',
+			'metadataEdit.uploadFile' => 'ファイルをアップロード',
 			'metadataEdit.enterImageUrl' => '画像URLを入力',
 			'metadataEdit.imageUrl' => '画像URL',
 			'metadataEdit.metadataUpdated' => 'メタデータを更新しました',

@@ -300,7 +300,8 @@
       "subSeekNext": "Przewiń do następnego napisu",
       "subSeekPrev": "Przewiń do poprzedniego napisu",
       "shaderToggle": "Przełącz shadery",
-      "skipMarker": "Pomiń intro/napisy końcowe"
+      "skipMarker": "Pomiń intro/napisy końcowe",
+      "screenshot": "Zrób zrzut ekranu"
     }
   },
   "fileInfo": {
@@ -433,6 +434,7 @@
     "endsAt": "Kończy się o ${time}",
     "pipActive": "Odtwarzanie w trybie obraz w obrazie",
     "pipFailed": "Nie udało się uruchomić trybu obraz w obrazie",
+    "screenshotSaved": "Zrzut ekranu zapisany",
     "pipErrors": {
       "androidVersion": "Wymaga Androida 8.0 lub nowszego",
       "iosVersion": "Wymaga iOS 15.0 lub nowszego",

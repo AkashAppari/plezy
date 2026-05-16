@@ -300,7 +300,8 @@
       "subSeekNext": "Rechercher le sous-titre suivant",
       "subSeekPrev": "Rechercher le sous-titre précédent",
       "shaderToggle": "Activer/désactiver les shaders",
-      "skipMarker": "Passer l'intro/le générique"
+      "skipMarker": "Passer l'intro/le générique",
+      "screenshot": "Prendre une capture d'écran"
     }
   },
   "fileInfo": {
@@ -433,6 +434,7 @@
     "endsAt": "Fin à ${time}",
     "pipActive": "Lecture en mode image dans l'image",
     "pipFailed": "Échec du démarrage du mode image dans l'image",
+    "screenshotSaved": "Capture d'écran enregistrée",
     "pipErrors": {
       "androidVersion": "Nécessite Android 8.0 ou plus récent",
       "iosVersion": "Nécessite iOS 15.0 ou plus récent",

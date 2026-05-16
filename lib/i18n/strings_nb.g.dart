@@ -595,6 +595,7 @@ class _TranslationsVideoControlsNb extends TranslationsVideoControlsEn {
 	@override String endsAt({required Object time}) => 'Slutter kl. ${time}';
 	@override String get pipActive => 'Spiller i bilde-i-bilde';
 	@override String get pipFailed => 'Bilde-i-bilde kunne ikke starte';
+	@override String get screenshotSaved => 'Skjermbilde lagret';
 	@override late final _TranslationsVideoControlsPipErrorsNb pipErrors = _TranslationsVideoControlsPipErrorsNb._(_root);
 	@override String get chapters => 'Kapitler';
 	@override String get noChaptersAvailable => 'Ingen kapitler tilgjengelig';
@@ -1556,6 +1557,7 @@ class _TranslationsHotkeysActionsNb extends TranslationsHotkeysActionsEn {
 	@override String get subSeekPrev => 'Spol til forrige undertekst';
 	@override String get shaderToggle => 'Veksle shadere';
 	@override String get skipMarker => 'Hopp over intro/rulletekst';
+	@override String get screenshot => 'Ta skjermbilde';
 }
 
 // Path: videoControls.pipErrors
@@ -2079,6 +2081,7 @@ extension on TranslationsNb {
 			'hotkeys.actions.subSeekPrev' => 'Spol til forrige undertekst',
 			'hotkeys.actions.shaderToggle' => 'Veksle shadere',
 			'hotkeys.actions.skipMarker' => 'Hopp over intro/rulletekst',
+			'hotkeys.actions.screenshot' => 'Ta skjermbilde',
 			'fileInfo.title' => 'Filinformasjon',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Lyd',
@@ -2198,6 +2201,7 @@ extension on TranslationsNb {
 			'videoControls.endsAt' => ({required Object time}) => 'Slutter kl. ${time}',
 			'videoControls.pipActive' => 'Spiller i bilde-i-bilde',
 			'videoControls.pipFailed' => 'Bilde-i-bilde kunne ikke starte',
+			'videoControls.screenshotSaved' => 'Skjermbilde lagret',
 			'videoControls.pipErrors.androidVersion' => 'Krever Android 8.0 eller nyere',
 			'videoControls.pipErrors.iosVersion' => 'Krever iOS 15.0 eller nyere',
 			'videoControls.pipErrors.permissionDisabled' => 'Bilde-i-bilde er deaktivert. Slå det på i systeminnstillinger.',
@@ -2303,10 +2307,10 @@ extension on TranslationsNb {
 			'profiles.summarySingle' => 'Legg til profiler for å blande administrerte brukere og lokale identiteter',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} profiler · aktiv: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profiler',
-			'profiles.removeConnectionTitle' => 'Fjerne tilkobling?',
-			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Fjern ${displayName}s tilgang til ${connectionLabel}. Andre profiler beholder den.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.removeConnectionTitle' => 'Fjerne tilkobling?',
+			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Fjern ${displayName}s tilgang til ${connectionLabel}. Andre profiler beholder den.',
 			'profiles.deleteProfileTitle' => 'Slette profil?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Fjern ${displayName} og tilkoblingene. Servere forblir tilgjengelige.',
 			'profiles.profileNameLabel' => 'Profilnavn',
@@ -2817,10 +2821,10 @@ extension on TranslationsNb {
 			'metadataEdit.selectBackground' => 'Velg bakgrunn',
 			'metadataEdit.selectLogo' => 'Velg logo',
 			'metadataEdit.selectSquareArt' => 'Velg kvadratisk bilde',
-			'metadataEdit.fromUrl' => 'Fra URL',
-			'metadataEdit.uploadFile' => 'Last opp fil',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.fromUrl' => 'Fra URL',
+			'metadataEdit.uploadFile' => 'Last opp fil',
 			'metadataEdit.enterImageUrl' => 'Skriv inn bilde-URL',
 			'metadataEdit.imageUrl' => 'Bilde-URL',
 			'metadataEdit.metadataUpdated' => 'Metadata oppdatert',

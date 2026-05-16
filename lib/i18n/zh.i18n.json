@@ -300,7 +300,8 @@
       "subSeekNext": "跳转到下一字幕",
       "subSeekPrev": "跳转到上一字幕",
       "shaderToggle": "切换着色器",
-      "skipMarker": "跳过片头/片尾"
+      "skipMarker": "跳过片头/片尾",
+      "screenshot": "截图"
     }
   },
   "fileInfo": {
@@ -433,6 +434,7 @@
     "endsAt": "${time} 结束",
     "pipActive": "正在画中画模式中播放",
     "pipFailed": "画中画启动失败",
+    "screenshotSaved": "截图已保存",
     "pipErrors": {
       "androidVersion": "需要 Android 8.0 或更高版本",
       "iosVersion": "需要 iOS 15.0 或更高版本",

@@ -300,7 +300,8 @@
       "subSeekNext": "Seek to Next Subtitle",
       "subSeekPrev": "Seek to Previous Subtitle",
       "shaderToggle": "Toggle Shaders",
-      "skipMarker": "Skip Intro/Credits"
+      "skipMarker": "Skip Intro/Credits",
+      "screenshot": "Take Screenshot"
     }
   },
   "fileInfo": {
@@ -433,6 +434,7 @@
     "endsAt": "Ends at ${time}",
     "pipActive": "Playing in Picture-in-Picture",
     "pipFailed": "Picture-in-picture failed to start",
+    "screenshotSaved": "Screenshot saved",
     "pipErrors": {
       "androidVersion": "Requires Android 8.0 or newer",
       "iosVersion": "Requires iOS 15.0 or newer",

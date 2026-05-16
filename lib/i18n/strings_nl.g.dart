@@ -595,6 +595,7 @@ class _TranslationsVideoControlsNl extends TranslationsVideoControlsEn {
 	@override String endsAt({required Object time}) => 'Eindigt om ${time}';
 	@override String get pipActive => 'Afspelen in beeld-in-beeld';
 	@override String get pipFailed => 'Beeld-in-beeld kon niet worden gestart';
+	@override String get screenshotSaved => 'Schermafbeelding opgeslagen';
 	@override late final _TranslationsVideoControlsPipErrorsNl pipErrors = _TranslationsVideoControlsPipErrorsNl._(_root);
 	@override String get chapters => 'Hoofdstukken';
 	@override String get noChaptersAvailable => 'Geen hoofdstukken beschikbaar';
@@ -1556,6 +1557,7 @@ class _TranslationsHotkeysActionsNl extends TranslationsHotkeysActionsEn {
 	@override String get subSeekPrev => 'Naar vorige ondertitel';
 	@override String get shaderToggle => 'Shaders aan/uit';
 	@override String get skipMarker => 'Intro/aftiteling overslaan';
+	@override String get screenshot => 'Schermafbeelding maken';
 }
 
 // Path: videoControls.pipErrors
@@ -2079,6 +2081,7 @@ extension on TranslationsNl {
 			'hotkeys.actions.subSeekPrev' => 'Naar vorige ondertitel',
 			'hotkeys.actions.shaderToggle' => 'Shaders aan/uit',
 			'hotkeys.actions.skipMarker' => 'Intro/aftiteling overslaan',
+			'hotkeys.actions.screenshot' => 'Schermafbeelding maken',
 			'fileInfo.title' => 'Bestand info',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Audio',
@@ -2198,6 +2201,7 @@ extension on TranslationsNl {
 			'videoControls.endsAt' => ({required Object time}) => 'Eindigt om ${time}',
 			'videoControls.pipActive' => 'Afspelen in beeld-in-beeld',
 			'videoControls.pipFailed' => 'Beeld-in-beeld kon niet worden gestart',
+			'videoControls.screenshotSaved' => 'Schermafbeelding opgeslagen',
 			'videoControls.pipErrors.androidVersion' => 'Vereist Android 8.0 of nieuwer',
 			'videoControls.pipErrors.iosVersion' => 'Vereist iOS 15.0 of nieuwer',
 			'videoControls.pipErrors.permissionDisabled' => 'Picture-in-picture is uitgeschakeld. Schakel het in via systeeminstellingen.',
@@ -2303,10 +2307,10 @@ extension on TranslationsNl {
 			'profiles.summarySingle' => 'Voeg profielen toe om beheerde gebruikers en lokale identiteiten te combineren',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} profielen · actief: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profielen',
-			'profiles.removeConnectionTitle' => 'Verbinding verwijderen?',
-			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Verwijder ${displayName}s toegang tot ${connectionLabel}. Andere profielen behouden die.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.removeConnectionTitle' => 'Verbinding verwijderen?',
+			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Verwijder ${displayName}s toegang tot ${connectionLabel}. Andere profielen behouden die.',
 			'profiles.deleteProfileTitle' => 'Profiel verwijderen?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Verwijder ${displayName} en de verbindingen. Servers blijven beschikbaar.',
 			'profiles.profileNameLabel' => 'Profielnaam',
@@ -2817,10 +2821,10 @@ extension on TranslationsNl {
 			'metadataEdit.selectBackground' => 'Achtergrond selecteren',
 			'metadataEdit.selectLogo' => 'Logo selecteren',
 			'metadataEdit.selectSquareArt' => 'Vierkante afbeelding selecteren',
-			'metadataEdit.fromUrl' => 'Vanaf URL',
-			'metadataEdit.uploadFile' => 'Bestand uploaden',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.fromUrl' => 'Vanaf URL',
+			'metadataEdit.uploadFile' => 'Bestand uploaden',
 			'metadataEdit.enterImageUrl' => 'Voer afbeeldings-URL in',
 			'metadataEdit.imageUrl' => 'Afbeeldings-URL',
 			'metadataEdit.metadataUpdated' => 'Metadata bijgewerkt',

@@ -300,7 +300,8 @@
       "subSeekNext": "Hoppa till nästa undertext",
       "subSeekPrev": "Hoppa till föregående undertext",
       "shaderToggle": "Växla shaders",
-      "skipMarker": "Hoppa över intro/eftertexter"
+      "skipMarker": "Hoppa över intro/eftertexter",
+      "screenshot": "Ta skärmbild"
     }
   },
   "fileInfo": {
@@ -433,6 +434,7 @@
     "endsAt": "Slutar ${time}",
     "pipActive": "Spelar i bild-i-bild",
     "pipFailed": "Bild-i-bild kunde inte starta",
+    "screenshotSaved": "Skärmbild sparad",
     "pipErrors": {
       "androidVersion": "Kräver Android 8.0 eller nyare",
       "iosVersion": "Kräver iOS 15.0 eller nyare",

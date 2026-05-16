@@ -207,6 +207,7 @@ Map<String, String> _defaultKeyboardShortcuts() => {
   'speed_reset': 'R',
   'sub_seek_next': 'Ctrl+Right',
   'sub_seek_prev': 'Ctrl+Left',
+  'screenshot': 'Ctrl+S',
 };
 
 Map<String, HotKey> _defaultKeyboardHotkeys() => {
@@ -233,6 +234,7 @@ Map<String, HotKey> _defaultKeyboardHotkeys() => {
   'sub_seek_prev': const HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.control]),
   'shader_toggle': const HotKey(key: PhysicalKeyboardKey.keyG),
   'skip_marker': const HotKey(key: PhysicalKeyboardKey.enter),
+  'screenshot': const HotKey(key: PhysicalKeyboardKey.keyS, modifiers: [HotKeyModifier.control]),
 };
 
 Map<String, String> _decodeKeyboardShortcuts(dynamic raw) {

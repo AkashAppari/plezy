@@ -300,7 +300,8 @@
       "subSeekNext": "Zum nächsten Untertitel springen",
       "subSeekPrev": "Zum vorherigen Untertitel springen",
       "shaderToggle": "Shader umschalten",
-      "skipMarker": "Intro/Abspann überspringen"
+      "skipMarker": "Intro/Abspann überspringen",
+      "screenshot": "Screenshot aufnehmen"
     }
   },
   "fileInfo": {
@@ -433,6 +434,7 @@
     "endsAt": "Endet um ${time}",
     "pipActive": "Wiedergabe im Bild-in-Bild-Modus",
     "pipFailed": "Bild-in-Bild konnte nicht gestartet werden",
+    "screenshotSaved": "Screenshot gespeichert",
     "pipErrors": {
       "androidVersion": "Erfordert Android 8.0 oder neuer",
       "iosVersion": "Erfordert iOS 15.0 oder neuer",

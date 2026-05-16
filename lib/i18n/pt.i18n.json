@@ -300,7 +300,8 @@
       "subSeekNext": "Ir para Próxima Legenda",
       "subSeekPrev": "Ir para Legenda Anterior",
       "shaderToggle": "Alternar Shaders",
-      "skipMarker": "Pular Intro/Créditos"
+      "skipMarker": "Pular Intro/Créditos",
+      "screenshot": "Capturar tela"
     }
   },
   "fileInfo": {
@@ -433,6 +434,7 @@
     "endsAt": "Termina às ${time}",
     "pipActive": "Reproduzindo em Picture-in-Picture",
     "pipFailed": "Falha ao iniciar picture-in-picture",
+    "screenshotSaved": "Captura de tela salva",
     "pipErrors": {
       "androidVersion": "Requer Android 8.0 ou superior",
       "iosVersion": "Requer iOS 15.0 ou superior",

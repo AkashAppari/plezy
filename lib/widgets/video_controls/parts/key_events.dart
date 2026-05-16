@@ -5,6 +5,10 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     _keyboardService = await KeyboardShortcutsService.getInstance();
   }
 
+  void _showScreenshotToast() {
+    widget.toastController.show(Symbols.photo_camera_rounded, t.videoControls.screenshotSaved);
+  }
+
   bool _isDirectionalKey(LogicalKeyboardKey key) {
     return key == LogicalKeyboardKey.arrowUp ||
         key == LogicalKeyboardKey.arrowDown ||
@@ -151,6 +155,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
         onToggleShader: _toggleShader,
         onNextEpisode: widget.onNext,
         onPreviousEpisode: widget.onPrevious,
+        onScreenshot: _showScreenshotToast,
         currentPositionEpoch: widget.currentPositionEpoch,
         onLiveSeek: widget.onLiveSeek,
       );
@@ -298,6 +303,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       onSkipMarker: _performAutoSkip,
       onNextEpisode: widget.onNext,
       onPreviousEpisode: widget.onPrevious,
+      onScreenshot: _showScreenshotToast,
       currentPositionEpoch: widget.currentPositionEpoch,
       onLiveSeek: widget.onLiveSeek,
     );

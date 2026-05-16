@@ -300,7 +300,8 @@
       "subSeekNext": "Vai al sottotitolo successivo",
       "subSeekPrev": "Vai al sottotitolo precedente",
       "shaderToggle": "Attiva/disattiva shader",
-      "skipMarker": "Salta intro/titoli di coda"
+      "skipMarker": "Salta intro/titoli di coda",
+      "screenshot": "Cattura schermata"
     }
   },
   "fileInfo": {
@@ -433,6 +434,7 @@
     "endsAt": "Finisce alle ${time}",
     "pipActive": "Riproduzione in Picture-in-Picture",
     "pipFailed": "Impossibile avviare la modalità Picture-in-Picture",
+    "screenshotSaved": "Schermata salvata",
     "pipErrors": {
       "androidVersion": "Richiede Android 8.0 o versioni successive",
       "iosVersion": "Richiede iOS 15.0 o versioni successive",

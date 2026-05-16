@@ -733,6 +733,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         await currentPlayer.setProperty('af', 'loudnorm=I=-14:TP=-3:LRA=4');
       }
 
+      if (PlatformDetector.isDesktopOS()) {
+        await currentPlayer.setProperty('screenshot-directory', '~/Pictures');
+      }
+
       final customMpvConfig = SettingsService.parseMpvConfigText(settingsService.read(SettingsService.mpvConfigText));
       for (final entry in customMpvConfig.entries) {
         try {

@@ -300,7 +300,8 @@
       "subSeekNext": "Naar volgende ondertitel",
       "subSeekPrev": "Naar vorige ondertitel",
       "shaderToggle": "Shaders aan/uit",
-      "skipMarker": "Intro/aftiteling overslaan"
+      "skipMarker": "Intro/aftiteling overslaan",
+      "screenshot": "Schermafbeelding maken"
     }
   },
   "fileInfo": {
@@ -433,6 +434,7 @@
     "endsAt": "Eindigt om ${time}",
     "pipActive": "Afspelen in beeld-in-beeld",
     "pipFailed": "Beeld-in-beeld kon niet worden gestart",
+    "screenshotSaved": "Schermafbeelding opgeslagen",
     "pipErrors": {
       "androidVersion": "Vereist Android 8.0 of nieuwer",
       "iosVersion": "Vereist iOS 15.0 of nieuwer",

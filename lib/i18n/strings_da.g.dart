@@ -595,6 +595,7 @@ class _TranslationsVideoControlsDa extends TranslationsVideoControlsEn {
 	@override String endsAt({required Object time}) => 'Slutter kl. ${time}';
 	@override String get pipActive => 'Afspiller i billede-i-billede';
 	@override String get pipFailed => 'Billede-i-billede kunne ikke starte';
+	@override String get screenshotSaved => 'Skærmbillede gemt';
 	@override late final _TranslationsVideoControlsPipErrorsDa pipErrors = _TranslationsVideoControlsPipErrorsDa._(_root);
 	@override String get chapters => 'Kapitler';
 	@override String get noChaptersAvailable => 'Ingen kapitler tilgængelige';
@@ -1556,6 +1557,7 @@ class _TranslationsHotkeysActionsDa extends TranslationsHotkeysActionsEn {
 	@override String get subSeekPrev => 'Søg til forrige undertekst';
 	@override String get shaderToggle => 'Skift shadere';
 	@override String get skipMarker => 'Spring intro/rulletekster over';
+	@override String get screenshot => 'Tag skærmbillede';
 }
 
 // Path: videoControls.pipErrors
@@ -2079,6 +2081,7 @@ extension on TranslationsDa {
 			'hotkeys.actions.subSeekPrev' => 'Søg til forrige undertekst',
 			'hotkeys.actions.shaderToggle' => 'Skift shadere',
 			'hotkeys.actions.skipMarker' => 'Spring intro/rulletekster over',
+			'hotkeys.actions.screenshot' => 'Tag skærmbillede',
 			'fileInfo.title' => 'Filinfo',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Lyd',
@@ -2198,6 +2201,7 @@ extension on TranslationsDa {
 			'videoControls.endsAt' => ({required Object time}) => 'Slutter kl. ${time}',
 			'videoControls.pipActive' => 'Afspiller i billede-i-billede',
 			'videoControls.pipFailed' => 'Billede-i-billede kunne ikke starte',
+			'videoControls.screenshotSaved' => 'Skærmbillede gemt',
 			'videoControls.pipErrors.androidVersion' => 'Kræver Android 8.0 eller nyere',
 			'videoControls.pipErrors.iosVersion' => 'Kræver iOS 15.0 eller nyere',
 			'videoControls.pipErrors.permissionDisabled' => 'Billede-i-billede er deaktiveret. Slå det til i systemindstillinger.',
@@ -2303,10 +2307,10 @@ extension on TranslationsDa {
 			'profiles.summarySingle' => 'Tilføj profiler for at blande administrerede brugere og lokale identiteter',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} profiler · aktiv: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profiler',
-			'profiles.removeConnectionTitle' => 'Fjern forbindelse?',
-			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Fjern ${displayName}s adgang til ${connectionLabel}. Andre profiler beholder den.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.removeConnectionTitle' => 'Fjern forbindelse?',
+			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Fjern ${displayName}s adgang til ${connectionLabel}. Andre profiler beholder den.',
 			'profiles.deleteProfileTitle' => 'Slet profil?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Fjern ${displayName} og forbindelserne. Servere forbliver tilgængelige.',
 			'profiles.profileNameLabel' => 'Profilnavn',
@@ -2817,10 +2821,10 @@ extension on TranslationsDa {
 			'metadataEdit.selectBackground' => 'Vælg baggrund',
 			'metadataEdit.selectLogo' => 'Vælg logo',
 			'metadataEdit.selectSquareArt' => 'Vælg kvadratisk billede',
-			'metadataEdit.fromUrl' => 'Fra URL',
-			'metadataEdit.uploadFile' => 'Upload fil',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.fromUrl' => 'Fra URL',
+			'metadataEdit.uploadFile' => 'Upload fil',
 			'metadataEdit.enterImageUrl' => 'Indtast billed-URL',
 			'metadataEdit.imageUrl' => 'Billed-URL',
 			'metadataEdit.metadataUpdated' => 'Metadata opdateret',

@@ -595,6 +595,7 @@ class _TranslationsVideoControlsKo extends TranslationsVideoControlsEn {
 	@override String endsAt({required Object time}) => '${time}에 종료';
 	@override String get pipActive => '화면 속 화면으로 재생 중';
 	@override String get pipFailed => '화면 속 화면 모드를 시작할 수 없습니다';
+	@override String get screenshotSaved => '스크린샷 저장됨';
 	@override late final _TranslationsVideoControlsPipErrorsKo pipErrors = _TranslationsVideoControlsPipErrorsKo._(_root);
 	@override String get chapters => '챕터';
 	@override String get noChaptersAvailable => '사용 가능한 챕터가 없습니다';
@@ -1556,6 +1557,7 @@ class _TranslationsHotkeysActionsKo extends TranslationsHotkeysActionsEn {
 	@override String get subSeekPrev => '이전 자막으로 이동';
 	@override String get shaderToggle => '셰이더 전환';
 	@override String get skipMarker => '인트로/크레딧 건너뛰기';
+	@override String get screenshot => '스크린샷 찍기';
 }
 
 // Path: videoControls.pipErrors
@@ -2079,6 +2081,7 @@ extension on TranslationsKo {
 			'hotkeys.actions.subSeekPrev' => '이전 자막으로 이동',
 			'hotkeys.actions.shaderToggle' => '셰이더 전환',
 			'hotkeys.actions.skipMarker' => '인트로/크레딧 건너뛰기',
+			'hotkeys.actions.screenshot' => '스크린샷 찍기',
 			'fileInfo.title' => '파일 정보',
 			'fileInfo.video' => '비디오',
 			'fileInfo.audio' => '오디오',
@@ -2198,6 +2201,7 @@ extension on TranslationsKo {
 			'videoControls.endsAt' => ({required Object time}) => '${time}에 종료',
 			'videoControls.pipActive' => '화면 속 화면으로 재생 중',
 			'videoControls.pipFailed' => '화면 속 화면 모드를 시작할 수 없습니다',
+			'videoControls.screenshotSaved' => '스크린샷 저장됨',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0 이상이 필요합니다',
 			'videoControls.pipErrors.iosVersion' => 'iOS 15.0 이상이 필요합니다',
 			'videoControls.pipErrors.permissionDisabled' => '화면 속 화면이 비활성화되어 있습니다. 시스템 설정에서 활성화하세요.',
@@ -2303,10 +2307,10 @@ extension on TranslationsKo {
 			'profiles.summarySingle' => '관리되는 사용자와 로컬 ID를 혼합하려면 프로필을 추가하세요',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count}개 프로필 · 활성: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count}개 프로필',
-			'profiles.removeConnectionTitle' => '연결을 제거하시겠습니까?',
-			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => '${displayName}의 ${connectionLabel} 접근 권한을 제거합니다. 다른 프로필에는 유지됩니다.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.removeConnectionTitle' => '연결을 제거하시겠습니까?',
+			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => '${displayName}의 ${connectionLabel} 접근 권한을 제거합니다. 다른 프로필에는 유지됩니다.',
 			'profiles.deleteProfileTitle' => '프로필을 삭제하시겠습니까?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => '${displayName} 및 해당 연결을 제거합니다. 서버는 계속 사용할 수 있습니다.',
 			'profiles.profileNameLabel' => '프로필 이름',
@@ -2817,10 +2821,10 @@ extension on TranslationsKo {
 			'metadataEdit.selectBackground' => '배경 선택',
 			'metadataEdit.selectLogo' => '로고 선택',
 			'metadataEdit.selectSquareArt' => '정사각형 아트 선택',
-			'metadataEdit.fromUrl' => 'URL에서',
-			'metadataEdit.uploadFile' => '파일 업로드',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.fromUrl' => 'URL에서',
+			'metadataEdit.uploadFile' => '파일 업로드',
 			'metadataEdit.enterImageUrl' => '이미지 URL 입력',
 			'metadataEdit.imageUrl' => '이미지 URL',
 			'metadataEdit.metadataUpdated' => '메타데이터가 업데이트되었습니다',
