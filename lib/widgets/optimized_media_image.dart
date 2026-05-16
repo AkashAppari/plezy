@@ -101,6 +101,7 @@ class OptimizedMediaImage extends StatelessWidget {
     bool enableTranscoding = true,
     String? cacheKey,
     Alignment alignment = Alignment.center,
+    IconData? fallbackIcon,
     String? localFilePath,
   }) : this._(
          key: key,
@@ -116,7 +117,7 @@ class OptimizedMediaImage extends StatelessWidget {
          enableTranscoding: enableTranscoding,
          cacheKey: cacheKey,
          alignment: alignment,
-         fallbackIcon: Symbols.movie_rounded,
+         fallbackIcon: fallbackIcon ?? Symbols.movie_rounded,
          imageType: ImageType.poster,
          localFilePath: localFilePath,
        );
@@ -136,6 +137,7 @@ class OptimizedMediaImage extends StatelessWidget {
     bool enableTranscoding = true,
     String? cacheKey,
     Alignment alignment = Alignment.center,
+    IconData? fallbackIcon,
     String? localFilePath,
   }) : this._(
          key: key,
@@ -151,7 +153,7 @@ class OptimizedMediaImage extends StatelessWidget {
          enableTranscoding: enableTranscoding,
          cacheKey: cacheKey,
          alignment: alignment,
-         fallbackIcon: Symbols.video_library_rounded,
+         fallbackIcon: fallbackIcon ?? Symbols.video_library_rounded,
          imageType: ImageType.thumb,
          localFilePath: localFilePath,
        );
@@ -328,7 +330,7 @@ class OptimizedMediaImage extends StatelessWidget {
         if (wasSynchronouslyLoaded) return child;
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
-          child: frame != null ? child : _buildPlaceholder(context),
+          child: frame != null ? child : _buildPlaceholder(context, imageUrl),
         );
       },
     );
@@ -346,8 +348,10 @@ class OptimizedMediaImage extends StatelessWidget {
     );
   }
 
-  Widget _buildPlaceholder(BuildContext context) =>
-      _surfacePlaceholder(context, icon: fallbackIcon, iconColor: Colors.white54);
+  Widget _buildPlaceholder(BuildContext context, String imageUrl) {
+    if (placeholder != null) return placeholder!(context, imageUrl);
+    return _surfacePlaceholder(context, icon: fallbackIcon, iconColor: Colors.white54);
+  }
 
   Widget _buildErrorWidget(BuildContext context, dynamic _) =>
       _surfacePlaceholder(context, icon: fallbackIcon ?? Symbols.broken_image_rounded, fillParent: true);

@@ -650,6 +650,15 @@ class _MediaCardList extends StatelessWidget {
   }
 }
 
+Widget _buildPosterLoadingPlaceholder(BuildContext context, String _) {
+  return ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest, child: const SizedBox.expand());
+}
+
+IconData _mediaPosterFallbackIcon(MediaItem item) {
+  if (item.isShow || item.isSeason || item.isEpisode) return Symbols.tv_rounded;
+  return Symbols.movie_rounded;
+}
+
 Widget _buildPosterImage(
   BuildContext context,
   Object item, {
@@ -660,11 +669,9 @@ Widget _buildPosterImage(
   double? knownHeight,
 }) {
   String? posterUrl;
-  IconData fallbackIcon = Symbols.movie_rounded;
 
   if (item is MediaPlaylist) {
     posterUrl = item.displayImagePath;
-    fallbackIcon = Symbols.playlist_play_rounded;
 
     return OptimizedMediaImage.playlist(
       client: isOffline ? null : context.tryGetMediaClientWithFallback(item.serverId),
@@ -672,6 +679,7 @@ Widget _buildPosterImage(
       width: knownWidth ?? double.infinity,
       height: knownHeight ?? double.infinity,
       fit: BoxFit.cover,
+      placeholder: _buildPosterLoadingPlaceholder,
       localFilePath: localPosterPath,
     );
   } else if (item is MediaItem) {
@@ -684,6 +692,7 @@ Widget _buildPosterImage(
     final useRememberedFallback = posterFallbackUrl != null && _hasFailedPosterUrl(primaryPosterUrl);
     posterUrl = useRememberedFallback ? posterFallbackUrl : primaryPosterUrl;
     final mediaClient = isOffline ? null : context.tryGetMediaClientWithFallback(item.serverId);
+    final fallbackIcon = _mediaPosterFallbackIcon(item);
 
     Widget image;
 
@@ -695,6 +704,8 @@ Widget _buildPosterImage(
         width: knownWidth ?? double.infinity,
         height: knownHeight ?? double.infinity,
         fit: BoxFit.cover,
+        placeholder: _buildPosterLoadingPlaceholder,
+        fallbackIcon: fallbackIcon,
         localFilePath: localPosterPath,
       );
     } else {
@@ -704,6 +715,8 @@ Widget _buildPosterImage(
         width: knownWidth ?? double.infinity,
         height: knownHeight ?? double.infinity,
         fit: BoxFit.cover,
+        placeholder: _buildPosterLoadingPlaceholder,
+        fallbackIcon: fallbackIcon,
         errorWidget: posterFallbackUrl == null || useRememberedFallback
             ? null
             : (_, _, _) {
@@ -714,6 +727,8 @@ Widget _buildPosterImage(
                   width: knownWidth ?? double.infinity,
                   height: knownHeight ?? double.infinity,
                   fit: BoxFit.cover,
+                  placeholder: _buildPosterLoadingPlaceholder,
+                  fallbackIcon: fallbackIcon,
                 );
               },
         localFilePath: localPosterPath,
@@ -729,7 +744,7 @@ Widget _buildPosterImage(
   }
 
   return SkeletonLoader(
-    child: Center(child: AppIcon(fallbackIcon, fill: 1, size: 40, color: Colors.white54)),
+    child: const Center(child: AppIcon(Symbols.movie_rounded, fill: 1, size: 40, color: Colors.white54)),
   );
 }
 
