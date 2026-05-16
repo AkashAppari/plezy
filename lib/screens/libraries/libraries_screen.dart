@@ -526,16 +526,14 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     _initializeWithLibraries();
   }
 
-  // Refresh the currently active tab
-  void _refreshCurrentTab() {
-    if (tabController.index < 0 || tabController.index >= _visibleTabs.length) return;
-    final key = switch (_visibleTabs[tabController.index]) {
-      LibraryTabType.recommended => _recommendedTabKey,
-      LibraryTabType.browse => _browseTabKey,
-      LibraryTabType.collections => _collectionsTabKey,
-      LibraryTabType.playlists => _playlistsTabKey,
-    };
-    (key.currentState as dynamic)?.refresh();
+  // Refresh every loaded tab for the selected library.
+  void _refreshSelectedLibraryTabs() {
+    for (var i = 0; i < _visibleTabs.length; i++) {
+      final Object? tabState = _getTabState(i);
+      if (tabState is Refreshable) {
+        tabState.refresh();
+      }
+    }
   }
 
   // Public method to fully reload all content (for profile switches)
@@ -1053,7 +1051,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                 tooltip: t.libraries.manageLibraries,
                 onPressed: _showLibraryManagementSheet,
               ),
-            FocusableAction(icon: Symbols.refresh_rounded, tooltip: t.common.refresh, onPressed: _refreshCurrentTab),
+            FocusableAction(
+              icon: Symbols.refresh_rounded,
+              tooltip: t.common.refresh,
+              onPressed: _refreshSelectedLibraryTabs,
+            ),
           ],
         ),
       ],
@@ -1095,7 +1097,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                 FocusableAction(
                   icon: Symbols.refresh_rounded,
                   tooltip: t.common.refresh,
-                  onPressed: _refreshCurrentTab,
+                  onPressed: _refreshSelectedLibraryTabs,
                 ),
               ],
             ),
