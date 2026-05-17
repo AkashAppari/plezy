@@ -3,7 +3,7 @@
   Plezy
 </h1>
 
-A modern client for Plex and Jellyfin on desktop and mobile. Built with Flutter for native performance and a clean interface.
+A modern client for Plex and Jellyfin on desktop, mobile, and TV. Built with Flutter for native performance and a clean interface.
 
 <p align="center">
   <img src="assets/screenshots/macos-home.png" alt="Plezy macOS Home Screen" width="800" />
@@ -46,22 +46,22 @@ A modern client for Plex and Jellyfin on desktop and mobile. Built with Flutter 
 
 ### <img src="assets/readme_icons/playback.svg" height="20" alt="" align="center" /> Playback
 - Wide codec support (HEVC, AV1, VP9, and more)
-- HDR and Dolby Vision (not Linux)
+- HDR and Dolby Vision[^1]
 - Full ASS/SSA subtitles with customizable styling
-- Online subtitle search & download
-- Audio & subtitle preferences synced with your server profile
+- Online subtitle search & download[^2]
+- Audio & subtitle choices remembered per title
 - Progress sync and resume
 - Auto-play next episode with skip intro / skip credits
 - Chapter navigation with thumbnail scrub previews
 - Playback speed, audio sync offset, sleep timer
-- Ambient lighting and GLSL shader presets
-- Picture-in-Picture on Android, iOS, and macOS
-- Refresh-rate matching on Windows and Android
+- Ambient lighting and GLSL shader presets[^3]
+- Picture-in-Picture[^4]
+- Refresh-rate matching[^5]
 - External player launch (VLC, MX Player, etc.)
 
 ### <img src="assets/readme_icons/live-tv.svg" height="20" alt="" align="center" /> Live TV & DVR
 - Live TV channel browsing with favorites
-- Plex DVR support with EPG guide, recording rules, and scheduled recordings
+- DVR support with EPG guide, recording rules, and scheduled recordings[^2]
 - Multi-server Live TV support where available
 
 ### <img src="assets/readme_icons/downloads.svg" height="20" alt="" align="center" /> Downloads & Offline
@@ -75,21 +75,30 @@ A modern client for Plex and Jellyfin on desktop and mobile. Built with Flutter 
 - Real-time play / pause / seek sync
 
 ### <img src="assets/readme_icons/integrations.svg" height="20" alt="" align="center" /> Integrations
-- Discord Rich Presence for Plex
-- Trakt scrobbling
+- Discord Rich Presence[^7]
+- Trakt, MyAnimeList, AniList, and Simkl tracking & rating
 - Plezy Remote — control desktop and TV from mobile
-- Android TV Watch Next row
+- Watch Next row[^6]
 
 ### <img src="assets/readme_icons/customization.svg" height="20" alt="" align="center" /> Platform & Customization
 - Desktop, mobile, and TV — full D-pad, keyboard, and gamepad support
-- Customizable keyboard shortcuts on desktop
-- Plex metadata and artwork editing
-- Localized in 14 languages
+- Customizable keyboard shortcuts[^7]
+- Metadata and artwork editing[^2]
+- Settings import/export
+- Localized in English plus 14 translations
+
+[^1]: Not available on Linux.
+[^2]: Plex only.
+[^3]: Not available on iOS or tvOS.
+[^4]: Android, iOS, and macOS.
+[^5]: Windows, Android, and tvOS.
+[^6]: Android TV only.
+[^7]: Desktop only.
 
 ## Building from Source
 
 ### Prerequisites
-- Flutter SDK 3.8.1+
+- Flutter SDK 3.38.4+
 - A Plex account or Jellyfin server with user credentials
 
 ### Setup
