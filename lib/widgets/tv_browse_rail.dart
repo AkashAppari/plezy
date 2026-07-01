@@ -23,6 +23,7 @@ import '../utils/media_image_helper.dart';
 import '../utils/media_navigation_helper.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/layout_constants.dart';
+import 'animated_dim_scrim.dart';
 import 'app_icon.dart';
 import 'clickable_cursor.dart';
 import 'focus_builders.dart';
@@ -388,7 +389,10 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   static const _navigationScrollDuration = Duration(milliseconds: 130);
   static const _repeatNavigationScrollDuration = Duration(milliseconds: 65);
   static const _scrollCatchUpViewportDistance = 2.5;
-  static const _inactiveHubContentOpacity = 0.7;
+  // Dim strengths as scrim alphas (see AnimatedDimScrim): equivalent to the
+  // former whole-rail Opacity(0.6) and inactive-row Opacity(0.7) layers.
+  static const _unfocusedRailDimAlpha = 0.4;
+  static const _inactiveHubDimAlpha = 0.3;
 
   final FocusNode _focusNode = FocusNode(debugLabel: 'tv_browse_rail');
   final Map<String, ScrollController> _scrollControllers = {};
@@ -402,10 +406,11 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   int _hubIndex = 0;
   int _itemIndex = 0;
 
-  /// Mirrors (_hubIndex, _itemIndex) for the per-card focus selectors, so
-  /// plain left/right moves repaint only the two affected cards instead of
-  /// setState-rebuilding every visible row (expensive on low-end TVs).
-  final _RailFocusPosition _focusPosition = _RailFocusPosition();
+  /// Mirrors (_hubIndex, _itemIndex) plus the rail's focus state for the
+  /// per-card/header/dim selectors, so d-pad moves and focus flips repaint
+  /// only the affected subtrees instead of setState-rebuilding every visible
+  /// row (expensive on low-end TVs).
+  final _RailFocusModel _focusModel = _RailFocusModel();
   List<double> _sectionOffsets = const [];
   double _sectionMaxScrollExtent = 0;
   Timer? _longPressTimer;
@@ -460,7 +465,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     _focusNode.addListener(_handleFocusChange);
     _selectInitialHubIfPossible();
     final selectedInitialItem = _selectInitialItemIfPossible();
-    _focusPosition.set(_hubIndex, _itemIndex, notify: false);
+    _focusModel.set(_hubIndex, _itemIndex, notify: false);
     _rememberTrailingStates();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || widget.hubs.isEmpty) return;
@@ -497,7 +502,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     if (widget.hubs.isEmpty) {
       _hubIndex = 0;
       _itemIndex = 0;
-      _focusPosition.set(_hubIndex, _itemIndex, notify: false);
+      _focusModel.set(_hubIndex, _itemIndex, notify: false);
       _rememberTrailingStates();
       return;
     }
@@ -520,7 +525,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     final selectedInitialItem = _selectInitialItemIfPossible();
     // notify:false — this runs during the build phase and the enclosing
     // rebuild already refreshes every selector.
-    _focusPosition.set(_hubIndex, _itemIndex, notify: false);
+    _focusModel.set(_hubIndex, _itemIndex, notify: false);
     final newActiveHub = _activeHub;
     final activeHubChanged = oldActiveHubKey != (newActiveHub == null ? null : _hubKey(newActiveHub));
     final activeHubStateChanged =
@@ -592,7 +597,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     _detachGestureSignalListener();
     _focusNode.removeListener(_handleFocusChange);
     _focusNode.dispose();
-    _focusPosition.dispose();
+    _focusModel.dispose();
     for (final controller in _scrollControllers.values) {
       controller.dispose();
     }
@@ -603,7 +608,10 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   void _handleFocusChange() {
     if (!_focusNode.hasFocus) _resetLongPressState();
     if (_focusNode.hasFocus) _notifyFocusedItem();
-    setState(() {});
+    // No setState: rail focus is observed through _focusModel selectors
+    // (per-card focus wrappers, headers and the dim layer), so a focus flip
+    // repaints only those subtrees instead of rebuilding every visible row.
+    _focusModel.setRailFocus(_focusNode.hasFocus);
   }
 
   void _resetLongPressState() {
@@ -721,10 +729,10 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     if (key.isLeftKey) {
       if (_itemIndex > 0) {
         // No setState: the per-card focus selectors repaint the two affected
-        // cards via _focusPosition; nothing else in the rail depends on it.
+        // cards via _focusModel; nothing else in the rail depends on it.
         _itemIndex--;
         _hasUserChangedItem = true;
-        _focusPosition.set(_hubIndex, _itemIndex);
+        _focusModel.set(_hubIndex, _itemIndex);
         _rememberFocus(hub);
         _notifyFocusedItem();
         _scrollToItem(duration: event is KeyRepeatEvent ? _repeatNavigationScrollDuration : _navigationScrollDuration);
@@ -738,7 +746,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
       if (_itemIndex < _totalItemCount(hub) - 1) {
         _itemIndex++;
         _hasUserChangedItem = true;
-        _focusPosition.set(_hubIndex, _itemIndex);
+        _focusModel.set(_hubIndex, _itemIndex);
         _rememberFocus(hub);
         _notifyFocusedItem();
         _scrollToItem(duration: event is KeyRepeatEvent ? _repeatNavigationScrollDuration : _navigationScrollDuration);
@@ -776,12 +784,14 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     if (currentHub != null) _rememberFocus(currentHub);
     final nextHub = widget.hubs[next];
     final remembered = HubFocusMemory.getForHubOnly(_hubKey(nextHub), _totalItemCount(nextHub));
-    setState(() {
-      _hubIndex = next;
-      _itemIndex = remembered.clamp(0, _totalItemCount(nextHub) == 0 ? 0 : _totalItemCount(nextHub) - 1);
-      _hasUserChangedHub = true;
-      _focusPosition.set(_hubIndex, _itemIndex, notify: false);
-    });
+    // No setState: the active-hub change is observed through _focusModel
+    // selectors (cards, headers, row dim), so a hub move repaints only the
+    // two affected rows instead of rebuilding every visible card. Section
+    // extents don't depend on the active hub, so no relayout is needed.
+    _hubIndex = next;
+    _itemIndex = remembered.clamp(0, _totalItemCount(nextHub) == 0 ? 0 : _totalItemCount(nextHub) - 1);
+    _hasUserChangedHub = true;
+    _focusModel.set(_hubIndex, _itemIndex);
     _notifyFocusedItem();
     _notifyActiveHubChanged();
     _scrollToItemAfterLayout(animate: false);
@@ -829,7 +839,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     }
     _itemIndex = index;
     _hasUserChangedItem = true;
-    _focusPosition.set(_hubIndex, _itemIndex);
+    _focusModel.set(_hubIndex, _itemIndex);
     _rememberFocus(hub);
     _notifyFocusedItem();
   }
@@ -842,13 +852,12 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     final hubChanged = _hubIndex != hubIndex;
     final previousHub = _activeHub;
     if (hubChanged && previousHub != null) _rememberFocus(previousHub);
-    setState(() {
-      _hubIndex = hubIndex;
-      _itemIndex = clampedItemIndex;
-      _hasUserChangedHub = true;
-      _hasUserChangedItem = true;
-      _focusPosition.set(_hubIndex, _itemIndex, notify: false);
-    });
+    // No setState: observed through _focusModel selectors (see _moveHub).
+    _hubIndex = hubIndex;
+    _itemIndex = clampedItemIndex;
+    _hasUserChangedHub = true;
+    _hasUserChangedItem = true;
+    _focusModel.set(_hubIndex, _itemIndex);
     _rememberFocus(hub);
     _notifyFocusedItem();
     if (hubChanged) _notifyActiveHubChanged();
@@ -1010,7 +1019,6 @@ class TvBrowseRailState extends State<TvBrowseRail> {
       builder: (context) => LayoutBuilder(
         builder: (context, constraints) {
           final svc = SettingsService.instance;
-          final hasFocus = _focusNode.hasFocus;
           final theme = Theme.of(context);
           final scale = _scale(context);
           final horizontalInset = _horizontalInset(context);
@@ -1092,28 +1100,44 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                         0,
                         TvBrowseRailLayout.railBottomPaddingForScale(scale),
                       ),
-                      child: AnimatedOpacity(
-                        opacity: hasFocus ? 1 : 0.6,
-                        duration: FocusTheme.getAnimationDuration(context),
-                        curve: Curves.easeOutCubic,
-                        child: ClipRect(
-                          clipper: _RailClipper(leftOverflow: horizontalInset, rightOverflow: 0),
-                          child: SizedBox(
-                            height: viewportHeight,
-                            child: _buildHubSectionList(
-                              hasFocus: hasFocus,
-                              modes: modes,
-                              metricsByHub: metricsByHub,
-                              sectionHeights: sectionHeights,
-                              scale: scale,
-                              fullCardLayout: fullCardLayout,
-                              leftOverflow: horizontalInset,
-                              interactionExpansion: interactionExpansion,
-                              railViewportWidth: railViewportWidth,
-                              bottomPadding: bottomPadding,
+                      // Unfocused-rail dim: a scrim quad on top instead of
+                      // AnimatedOpacity, which would keep a full-viewport
+                      // saveLayer alive every frame (see AnimatedDimScrim).
+                      // The scrim extends into the clipper's left overflow so
+                      // partially scrolled-out cards dim too.
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          ClipRect(
+                            clipper: _RailClipper(leftOverflow: horizontalInset, rightOverflow: 0),
+                            child: SizedBox(
+                              height: viewportHeight,
+                              child: _buildHubSectionList(
+                                modes: modes,
+                                metricsByHub: metricsByHub,
+                                sectionHeights: sectionHeights,
+                                scale: scale,
+                                fullCardLayout: fullCardLayout,
+                                leftOverflow: horizontalInset,
+                                interactionExpansion: interactionExpansion,
+                                railViewportWidth: railViewportWidth,
+                                bottomPadding: bottomPadding,
+                              ),
                             ),
                           ),
-                        ),
+                          Positioned.fill(
+                            left: -horizontalInset,
+                            child: ListenableSelector<bool>(
+                              listenable: _focusModel,
+                              selector: () => _focusModel.railHasFocus,
+                              builder: (context, railHasFocus, _) => AnimatedDimScrim(
+                                dimmed: !railHasFocus,
+                                color: theme.scaffoldBackgroundColor,
+                                alpha: _unfocusedRailDimAlpha,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -1127,7 +1151,6 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   }
 
   Widget _buildHubSectionList({
-    required bool hasFocus,
     required List<EpisodePosterMode> modes,
     required List<TvBrowseRailLayoutMetrics> metricsByHub,
     required List<double> sectionHeights,
@@ -1148,9 +1171,12 @@ class TvBrowseRailState extends State<TvBrowseRail> {
       itemCount: widget.hubs.length,
       itemBuilder: (context, hubIndex) {
         final hub = widget.hubs[hubIndex];
-        final isActive = hubIndex == _hubIndex;
         final metrics = metricsByHub[hubIndex];
         final sectionHeight = sectionHeights[hubIndex];
+        // Active-hub state is observed through _focusModel so a hub move
+        // repaints only the two affected headers/dim layers; the row content
+        // below is passed through as a stable child.
+        bool isActiveHub() => _focusModel.hubIndex == hubIndex;
 
         return SizedBox(
           key: _hubSectionKeys.putIfAbsent(hubIndex, () => GlobalKey()),
@@ -1158,24 +1184,23 @@ class TvBrowseRailState extends State<TvBrowseRail> {
           child: Column(
             crossAxisAlignment: .stretch,
             children: [
-              _buildHubHeader(context, hub: hub, hubIndex: hubIndex, isActive: isActive, scale: scale),
+              ListenableSelector<bool>(
+                listenable: _focusModel,
+                selector: isActiveHub,
+                builder: (context, isActive, _) =>
+                    _buildHubHeader(context, hub: hub, hubIndex: hubIndex, isActive: isActive, scale: scale),
+              ),
               SizedBox(height: TvBrowseRailLayout.hubStripGapForScale(scale)),
-              AnimatedOpacity(
-                opacity: isActive ? 1 : _inactiveHubContentOpacity,
-                duration: FocusTheme.getAnimationDuration(context),
-                curve: Curves.easeOutCubic,
-                child: _buildHubRail(
-                  hub: hub,
-                  hubIndex: hubIndex,
-                  hasFocus: hasFocus,
-                  episodePosterMode: modes[hubIndex],
-                  metrics: metrics,
-                  scale: scale,
-                  fullCardLayout: fullCardLayout,
-                  leftOverflow: leftOverflow,
-                  interactionExpansion: interactionExpansion,
-                  railViewportWidth: railViewportWidth,
-                ),
+              _buildHubRail(
+                hub: hub,
+                hubIndex: hubIndex,
+                episodePosterMode: modes[hubIndex],
+                metrics: metrics,
+                scale: scale,
+                fullCardLayout: fullCardLayout,
+                leftOverflow: leftOverflow,
+                interactionExpansion: interactionExpansion,
+                railViewportWidth: railViewportWidth,
               ),
             ],
           ),
@@ -1251,7 +1276,6 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   Widget _buildHubRail({
     required MediaHub hub,
     required int hubIndex,
-    required bool hasFocus,
     required EpisodePosterMode episodePosterMode,
     required TvBrowseRailLayoutMetrics metrics,
     required double scale,
@@ -1268,6 +1292,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     _metricsByHub[_hubKey(hub)] = metrics;
     _scaleByHub[_hubKey(hub)] = scale;
 
+    final rightOverflow = metrics.railEdgePadding + metrics.cardWidth + metrics.itemGap;
     return Transform.translate(
       offset: Offset(-interactionExpansion, 0),
       child: SizedBox(
@@ -1276,112 +1301,159 @@ class TvBrowseRailState extends State<TvBrowseRail> {
         child: ClipRect(
           clipper: _RailClipper(
             leftOverflow: leftOverflow,
-            rightOverflow: metrics.railEdgePadding + metrics.cardWidth + metrics.itemGap,
+            rightOverflow: rightOverflow,
             verticalOverflow: metrics.focusExtra,
           ),
-          child: HorizontalScrollWithArrows(
-            controller: scrollController,
-            builder: (scrollController) => ListView.builder(
-              controller: scrollController,
-              scrollDirection: Axis.horizontal,
-              clipBehavior: Clip.none,
-              padding: .fromLTRB(metrics.railEdgePadding, 2 * scale, metrics.railEdgePadding, 6 * scale),
-              itemExtentBuilder: (itemIndex, _) => TvBrowseRailLayout.itemExtentForIndex(
+          // Inactive-row dim: a scrim quad on top of the row instead of
+          // AnimatedOpacity, which would keep one saveLayer per visible row
+          // alive every frame (see AnimatedDimScrim). Sized to the clip
+          // region so overflow-painted card slivers dim too.
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              _buildHubRailList(
                 hub: hub,
-                index: itemIndex,
+                hubIndex: hubIndex,
+                episodePosterMode: episodePosterMode,
                 metrics: metrics,
                 scale: scale,
-                hasTrailing: _hasTrailingFor(hub),
+                fullCardLayout: fullCardLayout,
+                scrollController: scrollController,
+                totalCount: totalCount,
               ),
-              itemCount: totalCount,
-              itemBuilder: (context, itemIndex) {
-                // Focus is observed through _focusPosition so a d-pad move
-                // rebuilds only the cheap wrapper of the two affected cards;
-                // the card content below is passed through as a stable child.
-                bool isItemFocused() => hasFocus && _focusPosition.value == (hubIndex, itemIndex);
-
-                if (itemIndex == hub.items.length) {
-                  return Padding(
-                    padding: .only(right: metrics.itemGap),
-                    child: Align(
-                      alignment: .centerLeft,
-                      child: ListenableSelector<bool>(
-                        listenable: _focusPosition,
-                        selector: isItemFocused,
-                        builder: (context, isFocused, _) =>
-                            _buildTrailingSlot(context, hub, hubIndex, itemIndex, isFocused: isFocused, scale: scale),
-                      ),
-                    ),
-                  );
-                }
-
-                final item = hub.items[itemIndex];
-                final focusableCard = ListenableSelector<bool>(
-                  listenable: _focusPosition,
-                  selector: isItemFocused,
-                  builder: (context, isFocused, child) => FocusBuilders.buildLockedFocusWrapper(
-                    context: context,
-                    isFocused: isFocused,
-                    borderRadius: tokens(context).radiusSm,
-                    focusScale: fullCardLayout ? TvBrowseRailLayout.fullCardFocusScale : FocusTheme.focusScale,
-                    useFocusGlow: fullCardLayout,
-                    // The card draws the border itself (poster rect for
-                    // standard cards, whole card when full-bleed).
-                    delegateFocusBorder: true,
-                    glowSize: fullCardLayout ? Size(metrics.cardWidth, metrics.posterHeight) : null,
-                    onTap: () {
-                      _selectHubItem(hub, hubIndex, itemIndex);
-                      unawaited(_activateCurrentItem());
-                    },
-                    onLongPress: metrics.isPersonHub
-                        ? null
-                        : () {
-                            _selectHubItem(hub, hubIndex, itemIndex);
-                            _cardKeyFor(hub, itemIndex).currentState?.showContextMenu();
-                          },
-                    child: child!,
+              Positioned.fill(
+                left: -leftOverflow,
+                right: -rightOverflow,
+                top: -metrics.focusExtra,
+                bottom: -metrics.focusExtra,
+                child: ListenableSelector<bool>(
+                  listenable: _focusModel,
+                  selector: () => _focusModel.hubIndex == hubIndex,
+                  builder: (context, isActive, _) => AnimatedDimScrim(
+                    dimmed: !isActive,
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    alpha: _inactiveHubDimAlpha,
                   ),
-                  // MergeSemantics: one node per card (MediaCard merges
-                  // internally) — the per-frame semantics pass scales with
-                  // node count on TV boxes with an accessibility service.
-                  child: metrics.isPersonHub
-                      ? MergeSemantics(
-                          child: _buildPersonCard(
-                            context,
-                            item,
-                            cardWidth: metrics.cardWidth,
-                            imageSize: metrics.posterHeight,
-                            scale: scale,
-                            fullCardLayout: fullCardLayout,
-                          ),
-                        )
-                      : MediaCard(
-                          key: _cardKeyFor(hub, itemIndex),
-                          item: item,
-                          width: metrics.cardWidth,
-                          height: metrics.posterHeight,
-                          onRefresh: widget.onRefresh,
-                          onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
-                          forceGridMode: true,
-                          fullBleedImage: fullCardLayout,
-                          isInContinueWatching: _isContinueWatchingHub(hub),
-                          usesContinueWatchingAction: _usesContinueWatchingAction(hub),
-                          mixedHubContext: metrics.isMixedHub,
-                          episodePosterModeOverride: episodePosterMode,
-                        ),
-                );
-
-                return Padding(
-                  padding: .only(right: metrics.itemGap),
-                  child: MouseRegion(
-                    onEnter: (_) => _setHoveredItem(hub, itemIndex),
-                    child: Align(alignment: .topLeft, child: focusableCard),
-                  ),
-                );
-              },
-            ),
+                ),
+              ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildHubRailList({
+    required MediaHub hub,
+    required int hubIndex,
+    required EpisodePosterMode episodePosterMode,
+    required TvBrowseRailLayoutMetrics metrics,
+    required double scale,
+    required bool fullCardLayout,
+    required ScrollController scrollController,
+    required int totalCount,
+  }) {
+    return HorizontalScrollWithArrows(
+      controller: scrollController,
+      builder: (scrollController) => ListView.builder(
+        controller: scrollController,
+        scrollDirection: Axis.horizontal,
+        clipBehavior: Clip.none,
+        padding: .fromLTRB(metrics.railEdgePadding, 2 * scale, metrics.railEdgePadding, 6 * scale),
+        itemExtentBuilder: (itemIndex, _) => TvBrowseRailLayout.itemExtentForIndex(
+          hub: hub,
+          index: itemIndex,
+          metrics: metrics,
+          scale: scale,
+          hasTrailing: _hasTrailingFor(hub),
+        ),
+        itemCount: totalCount,
+        itemBuilder: (context, itemIndex) {
+          // Focus is observed through _focusModel so a d-pad move or a
+          // rail focus flip rebuilds only the cheap wrapper of the two
+          // affected cards; the card content below is passed through as
+          // a stable child.
+          bool isItemFocused() => _focusModel.railHasFocus && _focusModel.position == (hubIndex, itemIndex);
+
+          if (itemIndex == hub.items.length) {
+            return Padding(
+              padding: .only(right: metrics.itemGap),
+              child: Align(
+                alignment: .centerLeft,
+                child: ListenableSelector<bool>(
+                  listenable: _focusModel,
+                  selector: isItemFocused,
+                  builder: (context, isFocused, _) =>
+                      _buildTrailingSlot(context, hub, hubIndex, itemIndex, isFocused: isFocused, scale: scale),
+                ),
+              ),
+            );
+          }
+
+          final item = hub.items[itemIndex];
+          final focusableCard = ListenableSelector<bool>(
+            listenable: _focusModel,
+            selector: isItemFocused,
+            builder: (context, isFocused, child) => FocusBuilders.buildLockedFocusWrapper(
+              context: context,
+              isFocused: isFocused,
+              borderRadius: tokens(context).radiusSm,
+              focusScale: fullCardLayout ? TvBrowseRailLayout.fullCardFocusScale : FocusTheme.focusScale,
+              useFocusGlow: fullCardLayout,
+              // The card draws the border itself (poster rect for
+              // standard cards, whole card when full-bleed).
+              delegateFocusBorder: true,
+              glowSize: fullCardLayout ? Size(metrics.cardWidth, metrics.posterHeight) : null,
+              onTap: () {
+                _selectHubItem(hub, hubIndex, itemIndex);
+                unawaited(_activateCurrentItem());
+              },
+              onLongPress: metrics.isPersonHub
+                  ? null
+                  : () {
+                      _selectHubItem(hub, hubIndex, itemIndex);
+                      _cardKeyFor(hub, itemIndex).currentState?.showContextMenu();
+                    },
+              child: child!,
+            ),
+            // MergeSemantics: one node per card (MediaCard merges
+            // internally) — the per-frame semantics pass scales with
+            // node count on TV boxes with an accessibility service.
+            child: metrics.isPersonHub
+                ? MergeSemantics(
+                    child: _buildPersonCard(
+                      context,
+                      item,
+                      cardWidth: metrics.cardWidth,
+                      imageSize: metrics.posterHeight,
+                      scale: scale,
+                      fullCardLayout: fullCardLayout,
+                    ),
+                  )
+                : MediaCard(
+                    key: _cardKeyFor(hub, itemIndex),
+                    item: item,
+                    width: metrics.cardWidth,
+                    height: metrics.posterHeight,
+                    onRefresh: widget.onRefresh,
+                    onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
+                    forceGridMode: true,
+                    fullBleedImage: fullCardLayout,
+                    isInContinueWatching: _isContinueWatchingHub(hub),
+                    usesContinueWatchingAction: _usesContinueWatchingAction(hub),
+                    mixedHubContext: metrics.isMixedHub,
+                    episodePosterModeOverride: episodePosterMode,
+                  ),
+          );
+
+          return Padding(
+            padding: .only(right: metrics.itemGap),
+            child: MouseRegion(
+              onEnter: (_) => _setHoveredItem(hub, itemIndex),
+              child: Align(alignment: .topLeft, child: focusableCard),
+            ),
+          );
+        },
       ),
     );
   }
@@ -1726,20 +1798,31 @@ class _RailClipper extends CustomClipper<Rect> {
   }
 }
 
-/// (hubIndex, itemIndex) focus position observed by the per-card
-/// [ListenableSelector]s. `notify: false` covers build-phase syncs
-/// (initState/didUpdateWidget/setState), where notifying would call setState
-/// on descendants mid-build and the enclosing rebuild refreshes the selectors
-/// anyway.
-class _RailFocusPosition extends ChangeNotifier {
-  (int, int) _value = (0, 0);
+/// Hot rail focus state — (hubIndex, itemIndex) position and whether the rail
+/// itself holds focus — observed through [ListenableSelector]s so d-pad moves
+/// and rail focus flips repaint only the affected cards/headers/dim scrims
+/// instead of setState-rebuilding every visible row (expensive on low-end
+/// TVs). `notify: false` covers build-phase syncs (initState/didUpdateWidget),
+/// where notifying would call setState on descendants mid-build and the
+/// enclosing rebuild refreshes the selectors anyway.
+class _RailFocusModel extends ChangeNotifier {
+  (int, int) _position = (0, 0);
+  bool _railHasFocus = false;
 
-  (int, int) get value => _value;
+  (int, int) get position => _position;
+  int get hubIndex => _position.$1;
+  bool get railHasFocus => _railHasFocus;
 
   void set(int hubIndex, int itemIndex, {bool notify = true}) {
     final next = (hubIndex, itemIndex);
-    if (next == _value) return;
-    _value = next;
+    if (next == _position) return;
+    _position = next;
     if (notify) notifyListeners();
+  }
+
+  void setRailFocus(bool value) {
+    if (value == _railHasFocus) return;
+    _railHasFocus = value;
+    notifyListeners();
   }
 }

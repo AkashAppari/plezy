@@ -186,7 +186,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return null;
   }
 
+  // Memoized on provider list identity (the provider always replaces _onDeck/
+  // _hubs with fresh instances on change, never mutates in place) so unrelated
+  // rebuilds hand TvBrowseRail the same hubs list and its didUpdateWidget
+  // fast path — and the cached rail widget below — kick in.
+  List<MediaHub>? _tvBrowseHubsCache;
+  (List<MediaItem>, List<MediaHub>, bool, String)? _tvBrowseHubsCacheKey;
+
   List<MediaHub> get _tvBrowseHubs {
+    final key = (_onDeck, _hubs, _hasMoreContinueWatching, t.discover.continueWatching);
+    if (_tvBrowseHubsCache != null && key == _tvBrowseHubsCacheKey) return _tvBrowseHubsCache!;
     final hubs = <MediaHub>[];
     if (_onDeck.isNotEmpty) {
       hubs.add(
@@ -202,6 +211,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       );
     }
     hubs.addAll(_hubs.where((hub) => hub.items.isNotEmpty));
+    _tvBrowseHubsCache = hubs;
+    _tvBrowseHubsCacheKey = key;
     return hubs;
   }
 
@@ -379,19 +390,34 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   /// pending TV-rail focus, and keep the hero carousel index in sync — a
   /// fresh [DiscoverProvider.load] resets it, a background Continue Watching
   /// refresh only clamps it.
+  /// Everything the build reads from the provider (list identities — the
+  /// provider replaces lists on change — plus the scalar flags). Notifies
+  /// that leave this unchanged (e.g. a watch-state-driven Continue Watching
+  /// refresh that found nothing new) skip the setState so the whole screen —
+  /// TV rail included — is not rebuilt for nothing.
+  (List<MediaItem>, List<MediaHub>, bool, bool, bool, String?) get _renderSignature =>
+      (_onDeck, _hubs, _hasMoreContinueWatching, _isLoading, _areHubsLoading, _discover.errorMessage);
+
+  (List<MediaItem>, List<MediaHub>, bool, bool, bool, String?)? _seenRenderSignature;
+
   void _onDiscoverChanged() {
     if (!mounted) return;
     final generation = _discover.loadGeneration;
     final isNewLoad = generation != _seenLoadGeneration;
     _seenLoadGeneration = generation;
     final heroOutOfBounds = _currentHeroIndex >= _onDeck.length;
+    final signature = _renderSignature;
+    final renderChanged = isNewLoad || heroOutOfBounds || signature != _seenRenderSignature;
+    _seenRenderSignature = signature;
 
-    setState(() {
-      if (isNewLoad || heroOutOfBounds) {
-        _currentHeroIndex = 0;
-      }
-      _updateHubKeys();
-    });
+    if (renderChanged) {
+      setState(() {
+        if (isNewLoad || heroOutOfBounds) {
+          _currentHeroIndex = 0;
+        }
+        _updateHubKeys();
+      });
+    }
     _applyPendingTvBrowseRailFocus();
 
     if ((isNewLoad || heroOutOfBounds) && _heroController.hasClients && _onDeck.isNotEmpty) {
@@ -1205,6 +1231,37 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     );
   }
 
+  // Cached so unrelated _buildTvContent rebuilds (loading flags, spotlight
+  // geometry) hand Element.updateChild the identical widget instance and the
+  // whole rail subtree is skipped. Rebuilt only when its actual inputs change.
+  TvBrowseRail? _tvBrowseRailWidget;
+  (List<MediaHub>, bool)? _tvBrowseRailWidgetKey;
+
+  Widget _cachedTvBrowseRail(List<MediaHub> browseHubs, {required bool showServerName}) {
+    final key = (browseHubs, showServerName);
+    if (_tvBrowseRailWidget != null && key == _tvBrowseRailWidgetKey) return _tvBrowseRailWidget!;
+    _tvBrowseRailWidgetKey = key;
+    return _tvBrowseRailWidget = TvBrowseRail(
+      key: _tvBrowseRailKey,
+      hubs: browseHubs,
+      showServerName: showServerName,
+      iconForHub: (hub, _) => hub.id == 'continue_watching' ? Symbols.play_circle_rounded : _getHubIcon(hub.title),
+      onFocusedItemChanged: _setSpotlightItem,
+      onRefresh: _discover.updateItem,
+      onRemoveFromContinueWatching: _discover.refreshContinueWatching,
+      isContinueWatchingHub: (hub) => hub.isContinueWatchingHub,
+      usesContinueWatchingAction: (hub) => hub.usesContinueWatchingAction,
+      loadMoreItems: (hub) =>
+          hub.id == 'continue_watching' ? _discover.loadAllContinueWatching() : Future.value(hub.items),
+      onNavigateUp: _focusTopActions,
+      onNavigateToSidebar: _navigateToSidebar,
+      tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
+      selectSuppressionGestureSignal: PlatformDetector.isAppleTV()
+          ? AppleTvRemoteTouchService.instance.touchActiveListenable
+          : null,
+    );
+  }
+
   Widget _buildTvContent(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final theme = Theme.of(context);
@@ -1307,26 +1364,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               left: 0,
               right: 0,
               bottom: 0,
-              child: TvBrowseRail(
-                key: _tvBrowseRailKey,
-                hubs: browseHubs,
-                showServerName: showServerNameOnHubs || hubsSpanMultipleServers,
-                iconForHub: (hub, _) =>
-                    hub.id == 'continue_watching' ? Symbols.play_circle_rounded : _getHubIcon(hub.title),
-                onFocusedItemChanged: _setSpotlightItem,
-                onRefresh: _discover.updateItem,
-                onRemoveFromContinueWatching: _discover.refreshContinueWatching,
-                isContinueWatchingHub: (hub) => hub.isContinueWatchingHub,
-                usesContinueWatchingAction: (hub) => hub.usesContinueWatchingAction,
-                loadMoreItems: (hub) =>
-                    hub.id == 'continue_watching' ? _discover.loadAllContinueWatching() : Future.value(hub.items),
-                onNavigateUp: _focusTopActions,
-                onNavigateToSidebar: _navigateToSidebar,
-                tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
-                selectSuppressionGestureSignal: PlatformDetector.isAppleTV()
-                    ? AppleTvRemoteTouchService.instance.touchActiveListenable
-                    : null,
-              ),
+              child: _cachedTvBrowseRail(browseHubs, showServerName: showServerNameOnHubs || hubsSpanMultipleServers),
             ),
           Builder(
             builder: (context) => SideNavigationBleedBuilder(
