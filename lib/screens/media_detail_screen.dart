@@ -225,7 +225,13 @@ PageRoute<bool> mediaDetailRoute({
   if (!PlatformDetector.isTV()) return MaterialPageRoute<bool>(builder: (_) => page);
 
   return PageRouteBuilder<bool>(
-    opaque: false,
+    // Opaque so the covered route stops painting/building once the fade
+    // completes (the framework only offstages routes below after the
+    // transition settles, so push/pop fades still composite over live
+    // content). The detail screen paints a full-screen opaque background
+    // immediately, and the video player route is itself opaque and never
+    // sits below a detail route, so nothing can leak through.
+    opaque: true,
     pageBuilder: (_, _, _) => page,
     transitionsBuilder: (_, animation, _, child) {
       return FadeTransition(
@@ -273,7 +279,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   bool _hasLoadedEpisodes = false;
   double? _tvDetailPendingRailHeight;
   double? _tvDetailStableRailHeight;
-  MediaItem? _tvDetailFocusedEpisode;
+  // ValueNotifier (not setState) so d-pad scrubbing across episodes rebuilds
+  // only the foreground info panel, never the whole screen with its rail
+  // (same isolation pattern as DiscoverScreen._spotlightItem).
+  final ValueNotifier<MediaItem?> _tvDetailFocusedEpisode = ValueNotifier(null);
   bool _tvDetailActionRowHasFocus = false;
 
   // Inline season tabs
@@ -778,6 +787,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _routeObserver?.unsubscribe(this);
     _scrollController.dispose();
     _scrollOffset.dispose();
+    _tvDetailFocusedEpisode.dispose();
     _extrasScrollController.dispose();
     _extrasFocusNode.removeListener(_handleExtrasFocusChange);
     _extrasFocusNode.dispose();
@@ -3368,7 +3378,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           right: size.width * 0.43,
           top: spotlightTop,
           bottom: foregroundBottom,
-          child: _buildTvDetailForeground(context, metadata, hideSpoilers: hideSpoilers, scale: detailScale),
+          child: ValueListenableBuilder<MediaItem?>(
+            valueListenable: _tvDetailFocusedEpisode,
+            builder: (context, _, _) =>
+                _buildTvDetailForeground(context, metadata, hideSpoilers: hideSpoilers, scale: detailScale),
+          ),
         ),
         Positioned(
           top: 0,
@@ -3642,7 +3656,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   Widget _buildTvDetailMetadataLine(BuildContext context, MediaItem metadata, double scale) {
-    final lineMetadata = _tvDetailFocusedEpisode ?? metadata;
+    final lineMetadata = _tvDetailFocusedEpisode.value ?? metadata;
     final episodeLabel = formatSeasonEpisodeLabel(lineMetadata.parentIndex, lineMetadata.index);
     final qualityLabels = buildMediaQualityLabels(lineMetadata);
     final textStyle = TextStyle(
@@ -3705,7 +3719,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   String? _tvDetailDescription(MediaItem metadata, {required bool hideSpoilers}) {
-    final focusedEpisode = _tvDetailFocusedEpisode;
+    final focusedEpisode = _tvDetailFocusedEpisode.value;
     if (focusedEpisode == null) return _tvDetailItemDescription(metadata, hideSpoilers: hideSpoilers);
 
     final episodeDescription = _tvDetailItemDescription(
@@ -3936,10 +3950,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   void _clearTvDetailFocusedEpisode() {
-    if (_tvDetailFocusedEpisode == null) return;
-    setStateIfMounted(() {
-      _tvDetailFocusedEpisode = null;
-    });
+    _tvDetailFocusedEpisode.value = null;
   }
 
   void _setTvDetailActionRowFocus(bool hasFocus) {
@@ -3962,10 +3973,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       _clearTvDetailFocusedEpisode();
       return;
     }
-    if (_tvDetailFocusedEpisode?.id == item.id) return;
-    setStateIfMounted(() {
-      _tvDetailFocusedEpisode = item;
-    });
+    if (_tvDetailFocusedEpisode.value?.id == item.id) return;
+    _tvDetailFocusedEpisode.value = item;
     if (hub.id == 'detail_episodes') {
       if (!_allEpisodesPageError && _episodes.isNotEmpty && item.id == _episodes.last.id) {
         unawaited(_loadMoreAllEpisodes());
