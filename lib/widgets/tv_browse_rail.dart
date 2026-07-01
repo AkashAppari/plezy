@@ -1165,6 +1165,10 @@ class TvBrowseRailState extends State<TvBrowseRail> {
       key: const ValueKey('tv_browse_rail_vertical'),
       controller: _verticalController,
       physics: const NeverScrollableScrollPhysics(),
+      // Inert on media lists (no keep-alive clients): dropping the per-child
+      // wrappers shrinks build + semantics work per item.
+      addAutomaticKeepAlives: false,
+      addSemanticIndexes: false,
       clipBehavior: Clip.none,
       padding: .only(bottom: bottomPadding),
       itemExtentBuilder: (index, _) => sectionHeights[index],
@@ -1359,6 +1363,8 @@ class TvBrowseRailState extends State<TvBrowseRail> {
         controller: scrollController,
         scrollDirection: Axis.horizontal,
         clipBehavior: Clip.none,
+        addAutomaticKeepAlives: false,
+        addSemanticIndexes: false,
         padding: .fromLTRB(metrics.railEdgePadding, 2 * scale, metrics.railEdgePadding, 6 * scale),
         itemExtentBuilder: (itemIndex, _) => TvBrowseRailLayout.itemExtentForIndex(
           hub: hub,

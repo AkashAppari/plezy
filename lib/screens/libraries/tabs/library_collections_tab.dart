@@ -139,6 +139,10 @@ class _LibraryCollectionsTabState extends BaseLibraryTabState<MediaItem, Library
     return SliverPadding(
       padding: _effectivePadding,
       sliver: SliverList.builder(
+        // Inert on media lists (no keep-alive clients): dropping the
+        // per-child wrappers shrinks build + semantics work per item.
+        addAutomaticKeepAlives: false,
+        addSemanticIndexes: false,
         itemCount: totalSize,
         itemBuilder: (context, index) =>
             _buildMediaCardItem(index, isFirstRow: index == 0, isFirstColumn: true, disableScale: true),
@@ -158,6 +162,10 @@ class _LibraryCollectionsTabState extends BaseLibraryTabState<MediaItem, Library
             fullBleedImage: fullCardLayout,
           );
           return SliverGrid.builder(
+            // Inert on media lists (no keep-alive clients): dropping the
+            // per-child wrappers shrinks build + semantics work per item.
+            addAutomaticKeepAlives: false,
+            addSemanticIndexes: false,
             gridDelegate: geometry.delegate,
             itemCount: totalSize,
             itemBuilder: (context, index) => _buildMediaCardItem(

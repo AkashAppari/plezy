@@ -303,6 +303,8 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent> {
                 );
 
                 return GridView.builder(
+                  addAutomaticKeepAlives: false,
+                  addSemanticIndexes: false,
                   padding: effectivePadding,
                   // Allow focus decoration to render outside scroll bounds
                   clipBehavior: Clip.none,

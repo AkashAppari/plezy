@@ -248,6 +248,10 @@ class OptimizedMediaImage extends StatelessWidget {
       // Only cacheHeight: leaving cacheWidth null preserves decode aspect
       // ratio, mirroring the network branch's ResizeImage wrapper.
       cacheHeight: memHeight > 0 ? memHeight : null,
+      // Artwork is decorative: the enclosing card exposes one merged node
+      // with the title, and a per-image node just grows the semantics tree
+      // the TV a11y services make Flutter rebuild every frame.
+      excludeFromSemantics: true,
       fit: fit,
       filterQuality: filterQuality,
       alignment: alignment,
@@ -311,6 +315,8 @@ class OptimizedMediaImage extends StatelessWidget {
       image: ResizeImage.resizeIfNeeded(null, memHeight > 0 ? memHeight : null, provider),
       width: width,
       height: height,
+      // Decorative — see the Image.file branch.
+      excludeFromSemantics: true,
       fit: fit,
       filterQuality: filterQuality,
       alignment: alignment,

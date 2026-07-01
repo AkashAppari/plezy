@@ -181,6 +181,8 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
           return SliverPadding(
             padding: const EdgeInsets.all(8),
             sliver: SliverList.builder(
+              addAutomaticKeepAlives: false,
+              addSemanticIndexes: false,
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final item = items[index];
@@ -214,6 +216,8 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
                 fullBleedImage: fullCardLayout,
               );
               return SliverGrid.builder(
+                addAutomaticKeepAlives: false,
+                addSemanticIndexes: false,
                 gridDelegate: geometry.delegate,
                 itemCount: items.length,
                 itemBuilder: (context, index) {
@@ -288,6 +292,8 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
           return SliverPadding(
             padding: const EdgeInsets.all(8),
             sliver: SliverList.builder(
+              addAutomaticKeepAlives: false,
+              addSemanticIndexes: false,
               itemCount: totalItems,
               itemBuilder: (context, index) => buildTile(index, inFirstRow: index == 0, disableScale: true),
             ),
@@ -305,6 +311,8 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
                 fullBleedImage: fullCardLayout,
               );
               return SliverGrid.builder(
+                addAutomaticKeepAlives: false,
+                addSemanticIndexes: false,
                 gridDelegate: geometry.delegate,
                 itemCount: totalItems,
                 itemBuilder: (context, index) => buildTile(

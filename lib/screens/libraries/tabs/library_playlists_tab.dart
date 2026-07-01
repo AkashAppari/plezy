@@ -141,6 +141,10 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
     return SliverPadding(
       padding: _effectivePadding,
       sliver: SliverList.builder(
+        // Inert on media lists (no keep-alive clients): dropping the
+        // per-child wrappers shrinks build + semantics work per item.
+        addAutomaticKeepAlives: false,
+        addSemanticIndexes: false,
         itemCount: totalSize,
         itemBuilder: (context, index) =>
             _buildPlaylistCard(index, isFirstRow: index == 0, isFirstColumn: true, disableScale: true),
@@ -160,6 +164,10 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
             fullBleedImage: fullCardLayout,
           );
           return SliverGrid.builder(
+            // Inert on media lists (no keep-alive clients): dropping the
+            // per-child wrappers shrinks build + semantics work per item.
+            addAutomaticKeepAlives: false,
+            addSemanticIndexes: false,
             gridDelegate: geometry.delegate,
             itemCount: totalSize,
             itemBuilder: (context, index) => _buildPlaylistCard(

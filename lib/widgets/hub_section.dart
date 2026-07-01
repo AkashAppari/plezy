@@ -503,6 +503,10 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
                       child: HorizontalScrollWithArrows(
                         controller: _scrollController,
                         builder: (scrollController) => ListView.builder(
+                          // Inert on media lists (no keep-alive clients): dropping the
+                          // per-child wrappers shrinks build + semantics work per item.
+                          addAutomaticKeepAlives: false,
+                          addSemanticIndexes: false,
                           controller: scrollController,
                           scrollDirection: Axis.horizontal,
                           clipBehavior: Clip.none,

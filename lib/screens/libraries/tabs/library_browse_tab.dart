@@ -1741,6 +1741,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       return SliverPadding(
         padding: .fromLTRB(8, topPadding, rightPadding, 8),
         sliver: SliverList.builder(
+          // Inert on media lists (no keep-alive clients): dropping the
+          // per-child wrappers shrinks build + semantics work per item.
+          addAutomaticKeepAlives: false,
+          addSemanticIndexes: false,
           itemCount: itemCount,
           itemBuilder: (context, index) {
             final child = _buildMediaCardItem(
@@ -1784,6 +1788,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
               itemHeight: geometry.itemHeight,
             );
             return SliverGrid.builder(
+              // Inert on media lists (no keep-alive clients): dropping the
+              // per-child wrappers shrinks build + semantics work per item.
+              addAutomaticKeepAlives: false,
+              addSemanticIndexes: false,
               gridDelegate: geometry.delegate,
               itemCount: itemCount,
               itemBuilder: (context, index) => _buildMediaCardItem(

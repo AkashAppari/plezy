@@ -2589,6 +2589,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final client = _getMediaClientForMetadata(context);
     final hasPinnedLastEpisode = _hasPinnedLastEpisodeInList;
     return ListView.builder(
+      addAutomaticKeepAlives: false,
+      addSemanticIndexes: false,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       padding: .zero,
@@ -4347,6 +4349,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             child: HorizontalScrollWithArrows(
               controller: _castScrollController,
               builder: (scrollController) => ListView.builder(
+                addAutomaticKeepAlives: false,
+                addSemanticIndexes: false,
                 controller: scrollController,
                 scrollDirection: Axis.horizontal,
                 clipBehavior: Clip.none,
@@ -4440,6 +4444,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             child: HorizontalScrollWithArrows(
               controller: _extrasScrollController,
               builder: (scrollController) => ListView.builder(
+                addAutomaticKeepAlives: false,
+                addSemanticIndexes: false,
                 controller: scrollController,
                 scrollDirection: Axis.horizontal,
                 clipBehavior: Clip.none,

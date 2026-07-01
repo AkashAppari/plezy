@@ -538,6 +538,10 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                         return SliverPadding(
                           padding: const EdgeInsets.all(8),
                           sliver: SliverList.builder(
+                            // Inert on media lists (no keep-alive clients): dropping the
+                            // per-child wrappers shrinks build + semantics work per item.
+                            addAutomaticKeepAlives: false,
+                            addSemanticIndexes: false,
                             itemCount: _filteredItems.length,
                             itemBuilder: (context, index) {
                               final item = _filteredItems[index];
@@ -580,29 +584,34 @@ class _HubDetailScreenState extends State<HubDetailScreen>
 
                             return SliverGrid(
                               gridDelegate: geometry.delegate,
-                              delegate: SliverChildBuilderDelegate((context, index) {
-                                final item = _filteredItems[index];
-                                final focusNode = _focusNodeForIndex(index);
-                                final isFirstRow = GridSizeCalculator.isFirstRow(index, columnCount);
-                                final isFirstColumn = GridSizeCalculator.isFirstColumn(index, columnCount);
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  final item = _filteredItems[index];
+                                  final focusNode = _focusNodeForIndex(index);
+                                  final isFirstRow = GridSizeCalculator.isFirstRow(index, columnCount);
+                                  final isFirstColumn = GridSizeCalculator.isFirstColumn(index, columnCount);
 
-                                return FocusableMediaCard(
-                                  focusNode: focusNode,
-                                  item: item,
-                                  onRefresh: _handleItemRefresh,
-                                  onRemoveFromContinueWatching: widget.isInContinueWatching
-                                      ? _handleRemoveFromContinueWatching
-                                      : null,
-                                  isInContinueWatching: widget.isInContinueWatching,
-                                  usesContinueWatchingAction: widget.usesContinueWatchingAction,
-                                  onNavigateUp: isFirstRow ? navigateToAppBar : null,
-                                  onNavigateLeft: isFirstColumn ? () {} : null,
-                                  onBack: handleBackFromContent,
-                                  onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
-                                  mixedHubContext: isMixedHub,
-                                  fullBleedImage: fullCardLayout,
-                                );
-                              }, childCount: _filteredItems.length),
+                                  return FocusableMediaCard(
+                                    focusNode: focusNode,
+                                    item: item,
+                                    onRefresh: _handleItemRefresh,
+                                    onRemoveFromContinueWatching: widget.isInContinueWatching
+                                        ? _handleRemoveFromContinueWatching
+                                        : null,
+                                    isInContinueWatching: widget.isInContinueWatching,
+                                    usesContinueWatchingAction: widget.usesContinueWatchingAction,
+                                    onNavigateUp: isFirstRow ? navigateToAppBar : null,
+                                    onNavigateLeft: isFirstColumn ? () {} : null,
+                                    onBack: handleBackFromContent,
+                                    onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
+                                    mixedHubContext: isMixedHub,
+                                    fullBleedImage: fullCardLayout,
+                                  );
+                                },
+                                childCount: _filteredItems.length,
+                                addAutomaticKeepAlives: false,
+                                addSemanticIndexes: false,
+                              ),
                             );
                           },
                         ),
