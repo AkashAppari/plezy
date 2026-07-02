@@ -24,6 +24,11 @@ class LogRedactionManager {
   /// Pattern-based catch-all for Jellyfin Quick Connect auth handles.
   static final RegExp _jellyfinQuickConnectSecretQueryParam = RegExp(r'secret=[^&#\s]+', caseSensitive: false);
 
+  /// Pattern-based catch-all for the Plex Home PIN sent as a `pin=` query
+  /// param by `/home/users/{uuid}/switch`. The `\b` keeps compound params
+  /// like `checkPin=` intact.
+  static final RegExp _pinQueryParam = RegExp(r'\bpin=[^&#\s]+', caseSensitive: false);
+
   /// Pattern-based catch-all for the legacy Emby/Jellyfin header form.
   static final RegExp _embyTokenHeader = RegExp(r'X-Emby-Token[:=]\s*[^,;&#\s"]+', caseSensitive: false);
 
@@ -120,6 +125,7 @@ class LogRedactionManager {
 
     redacted = redacted.replaceAll(_jellyfinApiKeyQueryParam, 'api_key=[REDACTED]');
     redacted = redacted.replaceAll(_jellyfinQuickConnectSecretQueryParam, 'secret=[REDACTED]');
+    redacted = redacted.replaceAll(_pinQueryParam, 'pin=[REDACTED]');
     redacted = redacted.replaceAllMapped(_embyTokenHeader, (m) {
       final value = m.group(0)!;
       final separator = value.contains(':') ? ':' : '=';
