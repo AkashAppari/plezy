@@ -102,7 +102,7 @@ class TvSpotlightBackground extends StatelessWidget {
               // Expand instead of the default loose centered Stack so the
               // info keeps filling the region and bottom-left aligning.
               layoutBuilder: (currentChild, previousChildren) =>
-                  Stack(fit: StackFit.expand, children: [...previousChildren, if (currentChild != null) currentChild]),
+                  Stack(fit: StackFit.expand, children: [...previousChildren, ?currentChild]),
               child: KeyedSubtree(
                 key: ValueKey(media.globalKey),
                 child: LayoutBuilder(

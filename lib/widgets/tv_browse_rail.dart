@@ -1315,15 +1315,25 @@ class TvBrowseRailState extends State<TvBrowseRail> {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              _buildHubRailList(
-                hub: hub,
-                hubIndex: hubIndex,
-                episodePosterMode: episodePosterMode,
-                metrics: metrics,
-                scale: scale,
-                fullCardLayout: fullCardLayout,
-                scrollController: scrollController,
-                totalCount: totalCount,
+              // Inactive rows drop out of the semantics tree: their cards
+              // can't take focus until the hub is activated (locked-hub
+              // model), and the per-frame semantics pass on a11y-active TV
+              // boxes scales with node count — the active row's nodes are
+              // the only ones a screen reader can act on anyway.
+              ListenableSelector<bool>(
+                listenable: _focusModel,
+                selector: () => _focusModel.hubIndex == hubIndex,
+                builder: (context, isActive, child) => ExcludeSemantics(excluding: !isActive, child: child),
+                child: _buildHubRailList(
+                  hub: hub,
+                  hubIndex: hubIndex,
+                  episodePosterMode: episodePosterMode,
+                  metrics: metrics,
+                  scale: scale,
+                  fullCardLayout: fullCardLayout,
+                  scrollController: scrollController,
+                  totalCount: totalCount,
+                ),
               ),
               Positioned.fill(
                 left: -leftOverflow,
