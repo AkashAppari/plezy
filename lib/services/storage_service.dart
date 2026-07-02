@@ -482,6 +482,23 @@ class StorageService extends BaseSharedPreferencesService {
     await _clearKeysWithPrefix(_prefixProfileLastUsed);
   }
 
+  Future<void> clearProfileLastUsed(String profileId) async {
+    await prefs.remove('$_prefixProfileLastUsed$profileId');
+  }
+
+  /// Remove every user-scoped pref under [profileId]'s scope. For Plex Home
+  /// profiles the scope is the home-user uuid, which is shared by any borrow
+  /// of the same home user — only call when that user's access is being torn
+  /// down entirely (profile delete / account sign-out).
+  Future<void> clearUserScopedPreferencesForProfile(String profileId) async {
+    await _clearKeysWithPrefix(_userPrefixForProfileId(profileId));
+  }
+
+  /// Remove user-scoped prefs for every scope (full logout).
+  Future<void> clearAllUserScopedPreferences() async {
+    await _clearKeysWithPrefix('user_');
+  }
+
   // Private helper methods
 
   /// Helper to read and decode JSON `List<String>` from preferences

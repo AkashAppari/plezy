@@ -24,8 +24,6 @@ import '../utils/content_utils.dart';
 import '../widgets/optimized_media_image.dart' show blurArtwork;
 import '../providers/discover_provider.dart';
 import '../providers/multi_server_provider.dart';
-import '../providers/hidden_libraries_provider.dart';
-import '../providers/playback_state_provider.dart';
 import '../providers/watch_state_store.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/app_menu.dart';
@@ -33,16 +31,11 @@ import '../widgets/clickable_cursor.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/profile_switching_overlay.dart';
 import 'profile/profile_switch_screen.dart';
-import '../connection/connection_registry.dart';
+import 'profile/profile_teardown.dart';
 import '../profiles/active_profile_provider.dart';
-import '../profiles/plex_home_service.dart';
 import '../profiles/profile.dart';
 import '../profiles/profile_activation.dart';
 import '../profiles/profile_avatar.dart';
-import '../profiles/profile_connection_registry.dart';
-import '../profiles/profile_registry.dart';
-import '../providers/user_profile_provider.dart';
-import '../services/storage_service.dart';
 import '../services/settings_service.dart';
 import '../widgets/settings_builder.dart';
 import '../widgets/fitting_title_text.dart';
@@ -61,7 +54,6 @@ import '../utils/video_player_navigation.dart';
 import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
 import '../theme/mono_tokens.dart';
-import 'auth_screen.dart';
 import 'libraries/content_state_builder.dart';
 import 'main_screen.dart';
 import 'settings/settings_screen.dart';
@@ -779,39 +771,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     );
 
     if (confirm && mounted) {
-      final navigator = Navigator.of(context, rootNavigator: true);
-      // Use comprehensive logout through UserProfileProvider
-      final userProfileProvider = Provider.of<UserProfileProvider>(context, listen: false);
-      final multiServerProvider = context.read<MultiServerProvider>();
-      final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
-      final playbackStateProvider = context.read<PlaybackStateProvider>();
-      final connectionRegistry = context.read<ConnectionRegistry>();
-      final profileRegistry = context.read<ProfileRegistry>();
-      final profileConnReg = context.read<ProfileConnectionRegistry>();
-      final plexHome = context.read<PlexHomeService>();
-      final companionRemote = context.read<CompanionRemoteProvider>();
-
-      // Clear all user data and provider states
-      await companionRemote.resetForLogout();
-      await userProfileProvider.logout();
-      multiServerProvider.clearAllConnections();
-      // Drop the profile/connection rows so the next sign-in starts clean
-      // and doesn't bind to stale tokens or orphaned profile rows.
-      await profileConnReg.clear();
-      await profileRegistry.clear();
-      await connectionRegistry.clear();
-      await plexHome.clearAll();
-      final storage = await StorageService.getInstance();
-      await storage.clearActiveProfileId();
-      await storage.clearAllProfileLastUsed();
-      await hiddenLibrariesProvider.refresh();
-      playbackStateProvider.clearShuffle();
-
-      if (navigator.mounted) {
-        unawaited(
-          navigator.pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const AuthScreen()), (route) => false),
-        );
-      }
+      await logoutAllProfiles(context);
     }
   }
 

@@ -34,7 +34,7 @@ import '../settings/add_connection_screen.dart';
 import '../settings/edit_jellyfin_connection_screen.dart';
 import 'pin_entry_dialog.dart';
 import 'pin_status_row.dart';
-import 'profile_delete_flow.dart';
+import 'profile_teardown.dart';
 import 'profile_name_field.dart';
 
 /// Manage one [Profile] — rename, change PIN, list/add/remove
@@ -162,6 +162,15 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
     };
   }
 
+  /// Sign out of this virtual profile's parent Plex account. The profile
+  /// ceases to exist with the account, so pop the detail screen — unless
+  /// the teardown already reset the stack to AuthScreen (unmounted here).
+  Future<void> _signOutParentAccount(Connection parentConn) async {
+    final signedOut = await confirmAndSignOutPlexAccount(context, accountConnectionId: parentConn.id);
+    if (!signedOut || !mounted) return;
+    Navigator.of(context).pop(true);
+  }
+
   Future<void> _deleteProfile() async {
     final deleted = await confirmAndDeleteProfile(
       context,
@@ -253,7 +262,12 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
                 ],
               ),
               const SizedBox(height: 8),
-              _ConnectionsList(profile: _profile, onRemove: _removeConnection, onEdit: _editConnection),
+              _ConnectionsList(
+                profile: _profile,
+                onRemove: _removeConnection,
+                onEdit: _editConnection,
+                onSignOutParent: _signOutParentAccount,
+              ),
               const SizedBox(height: 24),
               if (isLocal)
                 FocusableButton(
@@ -277,8 +291,14 @@ class _ConnectionsList extends StatelessWidget {
   final Profile profile;
   final Future<void> Function(ProfileConnection pc, Connection conn) onRemove;
   final Future<void> Function(Connection conn) onEdit;
+  final Future<void> Function(Connection conn) onSignOutParent;
 
-  const _ConnectionsList({required this.profile, required this.onRemove, required this.onEdit});
+  const _ConnectionsList({
+    required this.profile,
+    required this.onRemove,
+    required this.onEdit,
+    required this.onSignOutParent,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -309,8 +329,9 @@ class _ConnectionsList extends StatelessWidget {
                 final byId = {for (final c in all) c.id: c};
                 // Plex Home profiles have an implicit parent connection that
                 // isn't in the join table — list it first so the user sees the
-                // full picture. It can't be removed (the profile *is* a home
-                // user of that account) and isn't shown for locals.
+                // full picture. The profile *is* a home user of that account,
+                // so the only removal is signing out of the whole account;
+                // it isn't shown for locals.
                 final parentConn = profile.isPlexHome ? byId[profile.parentConnectionId] : null;
                 final visiblePcs = visibleProfileConnections(profile, pcs);
                 if (visiblePcs.isEmpty && parentConn == null) {
@@ -330,6 +351,16 @@ class _ConnectionsList extends StatelessWidget {
                           leading: BackendBadge(backend: parentConn.backend, size: 24),
                           title: Text(parentConn.displayLabel),
                           subtitle: Text(t.profiles.plexHomeAccount),
+                          trailing: FocusablePopupMenuButton<String>(
+                            icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
+                            tooltip: t.profiles.manage,
+                            onSelected: (value) {
+                              if (value == 'sign_out') {
+                                unawaited(onSignOutParent(parentConn));
+                              }
+                            },
+                            itemBuilder: (_) => [AppMenuItem(value: 'sign_out', label: t.profiles.signOut)],
+                          ),
                         ),
                       ),
                     for (final pc in visiblePcs)

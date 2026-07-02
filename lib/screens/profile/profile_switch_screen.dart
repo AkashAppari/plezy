@@ -9,7 +9,6 @@ import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/media_backend.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
-import '../../profiles/active_profile_binder.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/plex_home_service.dart';
 import '../../profiles/profile.dart';
@@ -21,9 +20,6 @@ import '../../profiles/profile_registry.dart';
 import '../../profiles/profiles_view.dart';
 import '../../services/app_exit_service.dart';
 import '../../services/storage_service.dart';
-import '../../utils/app_logger.dart';
-import '../../utils/dialogs.dart';
-import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/backend_badge.dart';
@@ -31,9 +27,8 @@ import '../../widgets/focusable_popup_menu_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/profile_switching_overlay.dart';
 import '../libraries/state_messages.dart';
-import '../auth_screen.dart';
 import 'add_local_profile_screen.dart';
-import 'profile_delete_flow.dart';
+import 'profile_teardown.dart';
 import 'profile_detail_screen.dart';
 
 /// Flat picker showing every [Profile] in the system — Plex Home users
@@ -263,70 +258,14 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
   }
 
   /// Drop the parent Plex account [profile] hangs off — same effect as
-  /// "Forget account" elsewhere in Plex apps. The connection's join rows
-  /// cascade away (FK on connection_id), [PlexHomeService]'s
-  /// `_onChange` listener evicts the cached home users + shadow profile
-  /// rows, and a binder rebind clears the runtime client. Plex doesn't
-  /// expose a single-session revoke endpoint we can rely on, so we don't
-  /// touch the server side — the user can revoke via plex.tv if they want.
+  /// "Forget account" elsewhere in Plex apps. The shared teardown flow
+  /// removes the account, its virtual Plex Home profiles, and their
+  /// borrowed connections, then routes to auth when nothing selectable
+  /// remains (#1423).
   Future<void> _signOutPlexAccount(Profile profile) async {
     final parentId = profile.parentConnectionId;
     if (parentId == null) return;
-    final connRegistry = context.read<ConnectionRegistry>();
-    final parent = await connRegistry.getPlexAccount(parentId);
-    if (parent == null || !mounted) return;
-
-    final confirmed = await showDeleteConfirmation(
-      context,
-      title: t.profiles.signOutPlexTitle,
-      message: t.profiles.signOutPlexMessage(displayName: parent.displayLabel),
-      confirmText: t.profiles.signOut,
-    );
-    if (!confirmed || !mounted) return;
-
-    final active = context.read<ActiveProfileProvider>();
-    final activeProfile = active.active;
-    final wasActiveAccount = activeProfile?.parentConnectionId == parentId;
-    final remainingProfiles = active.profiles
-        .where((p) => p.id != activeProfile?.id && p.parentConnectionId != parentId)
-        .toList();
-    final binder = context.read<ActiveProfileBinder>();
-    final navigator = Navigator.of(context, rootNavigator: true);
-
-    try {
-      await connRegistry.remove(parentId);
-      final noConnectionsLeft = (await connRegistry.list()).isEmpty;
-      if (noConnectionsLeft) {
-        await active.clearActiveProfile();
-        unawaited(binder.rebindActive());
-        if (navigator.mounted) {
-          unawaited(navigator.pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const AuthScreen()), (_) => false));
-        }
-        return;
-      }
-      if (!mounted) return;
-      // If the active virtual profile belonged to the removed account, make
-      // the storage state explicit instead of relying on provider fallback.
-      if (wasActiveAccount) {
-        if (remainingProfiles.isNotEmpty) {
-          await active.activate(remainingProfiles.first);
-        } else {
-          await active.clearActiveProfile();
-          unawaited(binder.rebindActive());
-        }
-      } else {
-        // Active profile stayed the same, but borrowed rows for this account
-        // may have cascaded away.
-        unawaited(binder.rebindActive());
-      }
-      if (!mounted) return;
-      showSuccessSnackBar(context, t.profiles.signedOutPlex);
-    } catch (e, st) {
-      appLogger.w('Plex sign-out failed for $parentId', error: e, stackTrace: st);
-      if (mounted) {
-        showErrorSnackBar(context, t.profiles.signOutFailed);
-      }
-    }
+    await confirmAndSignOutPlexAccount(context, accountConnectionId: parentId);
   }
 
   Future<void> _deleteProfile(Profile profile) async {
