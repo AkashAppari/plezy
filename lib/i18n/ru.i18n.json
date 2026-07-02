@@ -142,7 +142,7 @@
     "hideSpoilers": "Скрыть спойлеры непросмотренных эпизодов",
     "hideSpoilersDescription": "Размывать миниатюры и описания непросмотренных серий",
     "playerBackend": "Бэкенд плеера",
-    "exoPlayer": "ExoPlayer (Рекомендуется)",
+    "exoPlayer": "ExoPlayer",
     "mpv": "mpv",
     "hardwareDecoding": "Аппаратное декодирование",
     "hardwareDecodingDescription": "Использовать аппаратное ускорение, когда доступно",

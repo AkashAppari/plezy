@@ -142,7 +142,7 @@
     "hideSpoilers": "Spoiler für nicht gesehene Episoden verbergen",
     "hideSpoilersDescription": "Vorschaubilder und Beschreibungen ungesehener Episoden verwischen",
     "playerBackend": "Player-Backend",
-    "exoPlayer": "ExoPlayer (Empfohlen)",
+    "exoPlayer": "ExoPlayer",
     "mpv": "mpv",
     "hardwareDecoding": "Hardware-Decodierung",
     "hardwareDecodingDescription": "Hardwarebeschleunigung verwenden, sofern verfügbar",

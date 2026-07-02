@@ -142,7 +142,7 @@
     "hideSpoilers": "Spoilers voor ongekeken afleveringen verbergen",
     "hideSpoilersDescription": "Vervaag miniaturen en beschrijvingen voor niet-bekeken afleveringen",
     "playerBackend": "Speler backend",
-    "exoPlayer": "ExoPlayer (Aanbevolen)",
+    "exoPlayer": "ExoPlayer",
     "mpv": "mpv",
     "hardwareDecoding": "Hardware decodering",
     "hardwareDecodingDescription": "Gebruik hardware versnelling indien beschikbaar",

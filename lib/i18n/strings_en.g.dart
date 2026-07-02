@@ -555,8 +555,8 @@ class TranslationsSettingsEn {
 	/// en: 'Player Backend'
 	String get playerBackend => 'Player Backend';
 
-	/// en: 'ExoPlayer (Recommended)'
-	String get exoPlayer => 'ExoPlayer (Recommended)';
+	/// en: 'ExoPlayer'
+	String get exoPlayer => 'ExoPlayer';
 
 	/// en: 'mpv'
 	String get mpv => 'mpv';
@@ -4663,7 +4663,7 @@ extension on Translations {
 			'settings.hideSpoilers' => 'Hide Spoilers for Unwatched Episodes',
 			'settings.hideSpoilersDescription' => 'Blur thumbnails and descriptions for unwatched episodes',
 			'settings.playerBackend' => 'Player Backend',
-			'settings.exoPlayer' => 'ExoPlayer (Recommended)',
+			'settings.exoPlayer' => 'ExoPlayer',
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Hardware Decoding',
 			'settings.hardwareDecodingDescription' => 'Use hardware acceleration when available',

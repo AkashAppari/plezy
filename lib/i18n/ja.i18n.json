@@ -142,7 +142,7 @@
     "hideSpoilers": "未視聴エピソードのネタバレを非表示",
     "hideSpoilersDescription": "未視聴エピソードのサムネイルと説明をぼかします",
     "playerBackend": "プレーヤーバックエンド",
-    "exoPlayer": "ExoPlayer（推奨）",
+    "exoPlayer": "ExoPlayer",
     "mpv": "mpv",
     "hardwareDecoding": "ハードウェアデコード",
     "hardwareDecodingDescription": "利用可能な場合にハードウェアアクセラレーションを使用",

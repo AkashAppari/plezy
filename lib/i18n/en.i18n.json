@@ -148,7 +148,7 @@
     "hideSpoilers": "Hide Spoilers for Unwatched Episodes",
     "hideSpoilersDescription": "Blur thumbnails and descriptions for unwatched episodes",
     "playerBackend": "Player Backend",
-    "exoPlayer": "ExoPlayer (Recommended)",
+    "exoPlayer": "ExoPlayer",
     "mpv": "mpv",
     "hardwareDecoding": "Hardware Decoding",
     "hardwareDecodingDescription": "Use hardware acceleration when available",

@@ -142,7 +142,7 @@
     "hideSpoilers": "Ukryj spoilery nieobejrzanych odcinków",
     "hideSpoilersDescription": "Rozmywaj miniatury i opisy nieobejrzanych odcinków",
     "playerBackend": "Backend odtwarzacza",
-    "exoPlayer": "ExoPlayer (Zalecany)",
+    "exoPlayer": "ExoPlayer",
     "mpv": "mpv",
     "hardwareDecoding": "Dekodowanie sprzętowe",
     "hardwareDecodingDescription": "Użyj akceleracji sprzętowej, gdy dostępna",

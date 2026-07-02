@@ -68,6 +68,10 @@ class FocusableWrapper extends StatefulWidget {
   /// Border radius for the focus indicator.
   final double borderRadius;
 
+  /// Per-corner radii for the focus indicator; overrides [borderRadius] when
+  /// set (M3E grouped cards: large outer / small inner corners).
+  final BorderRadius? borderRadii;
+
   /// Whether to scroll the widget into view when focused.
   final bool autoScroll;
 
@@ -138,6 +142,7 @@ class FocusableWrapper extends StatefulWidget {
     this.autofocus = false,
     this.focusNode,
     this.borderRadius = FocusTheme.defaultBorderRadius,
+    this.borderRadii,
     this.autoScroll = true,
     this.scrollAlignment = 0.5,
     this.useComfortableZone = false,
@@ -487,11 +492,16 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
             card = CardFocusScope(showFocus: showFocus, child: widget.child);
           } else {
             final focusDecoration = widget.useBackgroundFocus
-                ? FocusTheme.focusBackgroundDecoration(isFocused: showFocus, borderRadius: widget.borderRadius)
+                ? FocusTheme.focusBackgroundDecoration(
+                    isFocused: showFocus,
+                    borderRadius: widget.borderRadius,
+                    radii: widget.borderRadii,
+                  )
                 : FocusTheme.focusDecoration(
                     context,
                     isFocused: showFocus,
                     borderRadius: widget.borderRadius,
+                    radii: widget.borderRadii,
                     color: widget.focusColor,
                   );
             card = AnimatedContainer(

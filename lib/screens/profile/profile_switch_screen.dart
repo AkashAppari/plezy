@@ -20,6 +20,7 @@ import '../../profiles/profile_registry.dart';
 import '../../profiles/profiles_view.dart';
 import '../../services/app_exit_service.dart';
 import '../../services/storage_service.dart';
+import '../../theme/mono_tokens.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/backend_badge.dart';
@@ -223,6 +224,13 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
       delegate: SliverChildBuilderDelegate((context, index) {
         final profile = profiles[index];
         final isActive = profile.id == activeId;
+        // M3E connected-group geometry: large outer corners, small inner
+        // corners, hairline gaps between tiles.
+        final tokensRef = tokens(context);
+        final tileRadii = BorderRadius.vertical(
+          top: Radius.circular(index == 0 ? tokensRef.radiusLg : tokensRef.radiusXs),
+          bottom: Radius.circular(index == profiles.length - 1 ? tokensRef.radiusLg : tokensRef.radiusXs),
+        );
         final isFirstSelectable = autofocusFirst && index == 0;
         final profileFocusNode = _profileFocusNode(profile);
         final menuFocusNode = _profileMenuFocusNode(profile);
@@ -247,17 +255,21 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
         }
 
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          padding: EdgeInsets.fromLTRB(16, index == 0 ? 4 : tokensRef.groupGap, 16, 0),
           child: FocusableWrapper(
             autofocus: isFirstSelectable,
             focusNode: profileFocusNode,
             disableScale: true,
+            borderRadii: tileRadii,
             enableLongPress: hasMenu,
             onLongPress: hasMenu ? () => _openProfileMenu(profile) : null,
             onNavigateRight: hasMenu ? () => menuFocusNode.requestFocus() : null,
             onSelect: _switching || (isActive && !widget.requireSelection) ? null : () => _switchTo(profile),
             child: Card(
+              shape: RoundedRectangleBorder(borderRadius: tileRadii),
+              clipBehavior: Clip.antiAlias,
               child: _ProfileTile(
+                borderRadius: tileRadii,
                 profile: profile,
                 isActive: isActive && !widget.requireSelection,
                 chips: _chipsFor(profile, view),
@@ -356,6 +368,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
 class _ProfileTile extends StatelessWidget {
   final Profile profile;
   final bool isActive;
+  final BorderRadius borderRadius;
   final List<_ChipData> chips;
   final VoidCallback onTap;
   final VoidCallback? onManage;
@@ -368,6 +381,7 @@ class _ProfileTile extends StatelessWidget {
   const _ProfileTile({
     required this.profile,
     required this.isActive,
+    required this.borderRadius,
     required this.chips,
     required this.onTap,
     this.onManage,
@@ -384,7 +398,7 @@ class _ProfileTile extends StatelessWidget {
     final hasMenu = onManage != null || onDelete != null || onSignOut != null;
     return InkWell(
       onTap: isActive ? null : onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: borderRadius,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(

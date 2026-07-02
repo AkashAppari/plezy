@@ -142,7 +142,7 @@
     "hideSpoilers": "Skjul spoilere for usete episoder",
     "hideSpoilersDescription": "Slør miniaturebilleder og beskrivelser for usete episoder",
     "playerBackend": "Afspillerbackend",
-    "exoPlayer": "ExoPlayer (Anbefalet)",
+    "exoPlayer": "ExoPlayer",
     "mpv": "mpv",
     "hardwareDecoding": "Hardwaredekodning",
     "hardwareDecodingDescription": "Brug hardwareacceleration når tilgængelig",

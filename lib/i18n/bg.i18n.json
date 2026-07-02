@@ -142,7 +142,7 @@
     "hideSpoilers": "Скривай спойлери за негледани епизоди",
     "hideSpoilersDescription": "Замазвай миниатюри и описания за негледани епизоди",
     "playerBackend": "Енджин на плеъра",
-    "exoPlayer": "ExoPlayer (препоръчително)",
+    "exoPlayer": "ExoPlayer",
     "mpv": "mpv",
     "hardwareDecoding": "Хардуерно декодиране",
     "hardwareDecodingDescription": "Използвай хардуерно ускорение, когато е налично",

@@ -142,7 +142,7 @@
     "hideSpoilers": "Nascondi spoiler per episodi non visti",
     "hideSpoilersDescription": "Sfoca miniature e descrizioni degli episodi non visti",
     "playerBackend": "Motore di riproduzione",
-    "exoPlayer": "ExoPlayer (Consigliato)",
+    "exoPlayer": "ExoPlayer",
     "mpv": "mpv",
     "hardwareDecoding": "Decodifica Hardware",
     "hardwareDecodingDescription": "Utilizza l'accelerazione hardware quando disponibile",

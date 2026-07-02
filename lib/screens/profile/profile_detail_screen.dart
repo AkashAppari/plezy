@@ -29,6 +29,7 @@ import '../../widgets/app_menu.dart';
 import '../../widgets/backend_badge.dart';
 import '../../widgets/focusable_popup_menu_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/settings_section.dart';
 import '../../utils/dialogs.dart';
 import '../settings/add_connection_screen.dart';
 import '../settings/edit_jellyfin_connection_screen.dart';
@@ -439,51 +440,50 @@ class _ConnectionsListState extends State<_ConnectionsList> {
                     ),
                   );
                 }
-                return Column(
+                // The screen already pads its content; SettingsGroup supplies
+                // the M3E connected-group card geometry.
+                return SettingsGroup(
+                  margin: EdgeInsets.zero,
                   children: [
                     if (parentConn != null)
-                      Card(
-                        child: ListTile(
-                          leading: BackendBadge(backend: parentConn.backend, size: 24),
-                          title: Text(parentConn.displayLabel),
-                          subtitle: Text(t.profiles.plexHomeAccount),
-                          trailing: FocusablePopupMenuButton<String>(
-                            icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
-                            tooltip: t.profiles.manage,
-                            onSelected: (value) {
-                              if (value == 'sign_out') {
-                                unawaited(widget.onSignOutParent(parentConn));
-                              }
-                            },
-                            itemBuilder: (_) => [AppMenuItem(value: 'sign_out', label: t.profiles.signOut)],
-                          ),
+                      ListTile(
+                        leading: BackendBadge(backend: parentConn.backend, size: 24),
+                        title: Text(parentConn.displayLabel),
+                        subtitle: Text(t.profiles.plexHomeAccount),
+                        trailing: FocusablePopupMenuButton<String>(
+                          icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
+                          tooltip: t.profiles.manage,
+                          onSelected: (value) {
+                            if (value == 'sign_out') {
+                              unawaited(widget.onSignOutParent(parentConn));
+                            }
+                          },
+                          itemBuilder: (_) => [AppMenuItem(value: 'sign_out', label: t.profiles.signOut)],
                         ),
                       ),
                     for (final pc in visiblePcs)
                       if (byId[pc.connectionId] case final conn?)
-                        Card(
-                          child: ListTile(
-                            leading: BackendBadge(backend: conn.backend, size: 24),
-                            title: Text(conn.displayLabel),
-                            subtitle: _ConnectionSubtitle.build(conn: conn, pc: pc, homeCache: homeCache, theme: theme),
-                            trailing: FocusablePopupMenuButton<String>(
-                              icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
-                              tooltip: t.profiles.manage,
-                              onSelected: (value) {
-                                if (value == 'default') {
-                                  unawaited(pcRegistry.setDefault(profile.id, pc.connectionId));
-                                } else if (value == 'edit') {
-                                  unawaited(widget.onEdit(conn));
-                                } else if (value == 'remove') {
-                                  unawaited(widget.onRemove(pc, conn));
-                                }
-                              },
-                              itemBuilder: (_) => [
-                                if (!pc.isDefault) AppMenuItem(value: 'default', label: t.profiles.makeDefault),
-                                if (conn is JellyfinConnection) AppMenuItem(value: 'edit', label: t.common.edit),
-                                AppMenuItem(value: 'remove', label: t.profiles.removeConnection),
-                              ],
-                            ),
+                        ListTile(
+                          leading: BackendBadge(backend: conn.backend, size: 24),
+                          title: Text(conn.displayLabel),
+                          subtitle: _ConnectionSubtitle.build(conn: conn, pc: pc, homeCache: homeCache, theme: theme),
+                          trailing: FocusablePopupMenuButton<String>(
+                            icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
+                            tooltip: t.profiles.manage,
+                            onSelected: (value) {
+                              if (value == 'default') {
+                                unawaited(pcRegistry.setDefault(profile.id, pc.connectionId));
+                              } else if (value == 'edit') {
+                                unawaited(widget.onEdit(conn));
+                              } else if (value == 'remove') {
+                                unawaited(widget.onRemove(pc, conn));
+                              }
+                            },
+                            itemBuilder: (_) => [
+                              if (!pc.isDefault) AppMenuItem(value: 'default', label: t.profiles.makeDefault),
+                              if (conn is JellyfinConnection) AppMenuItem(value: 'edit', label: t.common.edit),
+                              AppMenuItem(value: 'remove', label: t.profiles.removeConnection),
+                            ],
                           ),
                         ),
                   ],

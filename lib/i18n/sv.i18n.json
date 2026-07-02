@@ -142,7 +142,7 @@
     "hideSpoilers": "Dölj spoilers för osedda avsnitt",
     "hideSpoilersDescription": "Sudda miniatyrbilder och beskrivningar för osedda avsnitt",
     "playerBackend": "Spelarmotor",
-    "exoPlayer": "ExoPlayer (Rekommenderad)",
+    "exoPlayer": "ExoPlayer",
     "mpv": "mpv",
     "hardwareDecoding": "Hårdvaruavkodning",
     "hardwareDecodingDescription": "Använd hårdvaruacceleration när tillgängligt",

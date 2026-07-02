@@ -142,7 +142,7 @@
     "hideSpoilers": "隐藏未看剧集的剧透内容",
     "hideSpoilersDescription": "模糊未观看剧集的缩略图和描述",
     "playerBackend": "播放器引擎",
-    "exoPlayer": "ExoPlayer（推荐）",
+    "exoPlayer": "ExoPlayer",
     "mpv": "mpv",
     "hardwareDecoding": "硬件解码",
     "hardwareDecodingDescription": "如果可用，使用硬件加速",
