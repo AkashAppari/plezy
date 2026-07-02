@@ -388,7 +388,10 @@ class CompanionRemotePeerService with KeepaliveMixin {
       onDone: () {
         authTimeout?.cancel();
         appLogger.d('CompanionRemote: WebSocket connection closed');
-        if (isAuthenticated) {
+        // A replaced client's socket closes AFTER the new client already took
+        // over `_clientSocket`; only the socket that still owns the session may
+        // tear it down, or we'd clobber the live connection.
+        if (isAuthenticated && identical(_clientSocket, socket)) {
           _clientSocket = null;
           _sessionEncKey = null;
           _isAuthenticated = false;

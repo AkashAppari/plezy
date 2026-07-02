@@ -3,10 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../connection/connection_registry.dart';
 import '../focus/key_event_utils.dart';
 import '../media/ids.dart';
 import '../media/media_server_client.dart';
 import '../profiles/active_profile_provider.dart';
+import '../profiles/plex_home_service.dart';
+import '../profiles/profile_connection_registry.dart';
 import '../providers/companion_remote_provider.dart';
 import '../providers/discover_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
@@ -159,7 +162,21 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
               ),
               ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),
               ChangeNotifierProvider(create: (context) => WatchTogetherProvider()),
-              ChangeNotifierProvider(create: (context) => CompanionRemoteProvider()),
+              ChangeNotifierProvider(
+                create: (context) {
+                  final provider = CompanionRemoteProvider();
+                  // Keep a running host's crypto identity live: a home user
+                  // removed or a borrowed connection revoked mid-session must
+                  // stop controlling the broadcast.
+                  provider.bindProfileServices(
+                    connections: context.read<ConnectionRegistry>(),
+                    activeProfile: context.read<ActiveProfileProvider>(),
+                    profileConnections: context.read<ProfileConnectionRegistry>(),
+                    plexHome: context.read<PlexHomeService>(),
+                  );
+                  return provider;
+                },
+              ),
             ],
             child: _ProfileSessionNavigator(
               isOfflineMode: widget.isOfflineMode,
