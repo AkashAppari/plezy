@@ -829,7 +829,9 @@ class _TranslationsProfilesKo extends TranslationsProfilesEn {
 	@override String get borrowConnectionBorrowed => '연결을 빌렸습니다.';
 	@override String get borrowFailed => '연결을 빌리지 못했습니다.';
 	@override String get incorrectPin => 'PIN이 올바르지 않습니다.';
+	@override String get incorrectPinTryAgain => 'PIN이 올바르지 않습니다. 다시 시도하세요.';
 	@override String get sourceProfileMissingParentAccount => '원본 프로필에 상위 계정이 없습니다.';
+	@override String get failedToLoadHomeUsers => 'Plex Home 사용자를 불러올 수 없습니다. 연결을 확인하고 다시 시도하세요.';
 	@override String get failedToVerifyPin => 'PIN을 확인하지 못했습니다.';
 	@override String get newProfile => '새 프로필';
 	@override String get profileNameHint => '예: 손님, 어린이, 가족실';
@@ -2524,7 +2526,9 @@ extension on TranslationsKo {
 			'profiles.borrowConnectionBorrowed' => '연결을 빌렸습니다.',
 			'profiles.borrowFailed' => '연결을 빌리지 못했습니다.',
 			'profiles.incorrectPin' => 'PIN이 올바르지 않습니다.',
+			'profiles.incorrectPinTryAgain' => 'PIN이 올바르지 않습니다. 다시 시도하세요.',
 			'profiles.sourceProfileMissingParentAccount' => '원본 프로필에 상위 계정이 없습니다.',
+			'profiles.failedToLoadHomeUsers' => 'Plex Home 사용자를 불러올 수 없습니다. 연결을 확인하고 다시 시도하세요.',
 			'profiles.failedToVerifyPin' => 'PIN을 확인하지 못했습니다.',
 			'profiles.newProfile' => '새 프로필',
 			'profiles.profileNameHint' => '예: 손님, 어린이, 가족실',
@@ -2952,10 +2956,10 @@ extension on TranslationsKo {
 			'companionRemote.pairing.validationHostRequired' => '호스트 주소를 입력하세요',
 			'companionRemote.pairing.validationHostFormat' => '형식은 IP:포트여야 합니다 (예: 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => '연결 시간이 초과되었습니다. 두 기기에서 같은 네트워크를 사용하세요.',
-			'companionRemote.pairing.sessionNotFound' => '기기를 찾을 수 없습니다. 호스트에서 Plezy가 실행 중인지 확인하세요.',
-			'companionRemote.pairing.authFailed' => '인증에 실패했습니다. 두 기기 모두 같은 Plex 계정이 필요합니다.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.sessionNotFound' => '기기를 찾을 수 없습니다. 호스트에서 Plezy가 실행 중인지 확인하세요.',
+			'companionRemote.pairing.authFailed' => '인증에 실패했습니다. 두 기기 모두 같은 Plex 계정이 필요합니다.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '연결 실패: ${error}',
 			'companionRemote.remote.disconnectConfirm' => '원격 세션 연결을 해제하시겠습니까?',
 			'companionRemote.remote.reconnecting' => '재연결 중...',

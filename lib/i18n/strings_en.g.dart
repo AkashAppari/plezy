@@ -1975,8 +1975,14 @@ class TranslationsProfilesEn {
 	/// en: 'Incorrect PIN.'
 	String get incorrectPin => 'Incorrect PIN.';
 
+	/// en: 'Incorrect PIN. Please try again.'
+	String get incorrectPinTryAgain => 'Incorrect PIN. Please try again.';
+
 	/// en: 'Source profile is missing its parent account.'
 	String get sourceProfileMissingParentAccount => 'Source profile is missing its parent account.';
+
+	/// en: 'Could not load your Plex Home users. Check your connection and try again.'
+	String get failedToLoadHomeUsers => 'Could not load your Plex Home users. Check your connection and try again.';
 
 	/// en: 'Failed to verify PIN.'
 	String get failedToVerifyPin => 'Failed to verify PIN.';
@@ -5121,7 +5127,9 @@ extension on Translations {
 			'profiles.borrowConnectionBorrowed' => 'Connection borrowed.',
 			'profiles.borrowFailed' => 'Failed to borrow connection.',
 			'profiles.incorrectPin' => 'Incorrect PIN.',
+			'profiles.incorrectPinTryAgain' => 'Incorrect PIN. Please try again.',
 			'profiles.sourceProfileMissingParentAccount' => 'Source profile is missing its parent account.',
+			'profiles.failedToLoadHomeUsers' => 'Could not load your Plex Home users. Check your connection and try again.',
 			'profiles.failedToVerifyPin' => 'Failed to verify PIN.',
 			'profiles.newProfile' => 'New profile',
 			'profiles.profileNameHint' => 'e.g. Guests, Kids, Family Room',
@@ -5543,10 +5551,10 @@ extension on Translations {
 			'companionRemote.pairing.discoveryDescription' => 'Plezy devices with the same Plex account appear here',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Connecting...',
-			'companionRemote.pairing.searchingForDevices' => 'Looking for devices...',
-			'companionRemote.pairing.noDevicesFound' => 'No devices found on your network',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.searchingForDevices' => 'Looking for devices...',
+			'companionRemote.pairing.noDevicesFound' => 'No devices found on your network',
 			'companionRemote.pairing.noDevicesHint' => 'Open Plezy on desktop and use the same WiFi',
 			'companionRemote.pairing.availableDevices' => 'Available Devices',
 			'companionRemote.pairing.manualConnection' => 'Manual Connection',

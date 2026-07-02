@@ -168,12 +168,15 @@ class PlexHomeService {
   }
 
   /// Force-refresh a single account. Useful after sign-in / borrow flows.
-  Future<void> refresh(PlexAccountConnection conn) => _fetchAndCache(conn);
+  /// Returns whether the fetch succeeded (callers that REQUIRE home users —
+  /// e.g. first sign-in, which can't build any profile without them — must
+  /// not conflate a failed fetch with "no users").
+  Future<bool> refresh(PlexAccountConnection conn) => _fetchAndCache(conn);
 
-  Future<void> _fetchAndCache(PlexAccountConnection conn) async {
+  Future<bool> _fetchAndCache(PlexAccountConnection conn) async {
     if (conn.accountToken.isEmpty) {
       appLogger.w('PlexHomeService: skipping fetch for ${conn.accountLabel} (${conn.id}) — empty token');
-      return;
+      return false;
     }
     final storage = _storage ?? await StorageService.getInstance();
     _storage = storage;
@@ -184,7 +187,7 @@ class PlexHomeService {
       // as ghosts until the next removal event.
       if (await _connections.get(conn.id) == null) {
         appLogger.d('PlexHomeService: dropping fetch result for removed account ${conn.accountLabel}');
-        return;
+        return false;
       }
       final encoded = users.map((u) => u.toJson()).toList();
       // Unchanged fetches (the hourly ticker, mostly) must not emit: every
@@ -192,14 +195,16 @@ class PlexHomeService {
       // recompute/notify cascade across the app.
       if (_byConnection.containsKey(conn.id) && storage.getPlexHomeUsersCacheJson(conn.id) == jsonEncode(encoded)) {
         appLogger.d('PlexHomeService: home users unchanged for ${conn.accountLabel}');
-        return;
+        return true;
       }
       _byConnection[conn.id] = users;
       await storage.savePlexHomeUsersCache(conn.id, encoded);
       _emit();
       appLogger.d('PlexHomeService: cached ${users.length} home users for ${conn.accountLabel}');
+      return true;
     } catch (e, st) {
       appLogger.w('PlexHomeService: refresh failed for ${conn.accountLabel}', error: e, stackTrace: st);
+      return false;
     }
   }
 

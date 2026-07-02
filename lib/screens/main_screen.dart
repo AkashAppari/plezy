@@ -30,6 +30,7 @@ import '../mixins/tab_visibility_aware.dart';
 import '../navigation/navigation_tabs.dart';
 import '../navigation/profile_navigation_scope.dart';
 import '../profiles/active_profile_binder.dart';
+import '../connection/connection_registry.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/plex_home_service.dart';
 import '../providers/download_provider.dart';
@@ -60,6 +61,7 @@ import 'search_screen.dart';
 import 'downloads/downloads_screen.dart';
 import 'settings/settings_screen.dart';
 import 'profile/profile_switch_screen.dart';
+import 'profile/profile_teardown.dart';
 import '../services/system_shelf_service.dart';
 import '../watch_together/watch_together.dart';
 
@@ -242,6 +244,7 @@ class _MainScreenState extends State<MainScreen>
   // we only invalidate on id change and the libraries sidebar keeps
   // stale entries until the user switches profiles.
   bool _wasBindingPrev = false;
+  bool _hadProfiles = false;
 
   /// Subscription to MultiServerManager status changes. Used to resume any
   /// queued downloads as soon as a Plex client comes online for the first
@@ -510,6 +513,16 @@ class _MainScreenState extends State<MainScreen>
     _lastSeenProfileId = id;
     _wasBindingPrev = isBindingNow;
 
+    // Re-arm the initial-profile prompt when profiles arrive late (e.g. a
+    // slow home-user fetch landing after the empty first snapshot) while
+    // nothing is active — otherwise the one-shot post-frame prompt has
+    // already passed and the user is stuck in a session with no picker.
+    final hasProfilesNow = activeProfile.profiles.isNotEmpty;
+    if (!_hadProfiles && hasProfilesNow && id == null && !_isShowingProfileSelection) {
+      unawaited(_promptForInitialProfileSelection());
+    }
+    _hadProfiles = hasProfilesNow;
+
     // Same active id, but a rebind cycle for that profile just settled
     // (true → false transition). Fires after borrow / connection-removal
     // flows trigger ActiveProfileBinder.rebindIfActive, so the libraries
@@ -524,6 +537,7 @@ class _MainScreenState extends State<MainScreen>
     if (widget.initialPromptHandled) return;
 
     final activeProfile = context.read<ActiveProfileProvider>();
+    final connections = context.read<ConnectionRegistry>();
     // The provider's initialize() is fire-and-forget from MultiProvider —
     // wait for it to settle so `active` and `profiles` reflect storage
     // before we decide whether to prompt.
@@ -532,6 +546,20 @@ class _MainScreenState extends State<MainScreen>
 
     final settingsService = await SettingsService.getInstance();
     if (!mounted) return;
+
+    // Connections but ZERO resolvable profiles (e.g. the home-user fetch
+    // failed at sign-in): a session with nothing to select and no picker is
+    // a dead end. Mirror the boot guard — prune orphans and route to auth
+    // when nothing selectable remains.
+    if (activeProfile.active == null && activeProfile.profiles.isEmpty) {
+      // Offline, "unresolvable" may just be an unreachable plex.tv — don't
+      // kick the user to auth over it.
+      if (!widget.isOfflineMode && (await connections.list()).isNotEmpty && mounted) {
+        appLogger.w('MainScreen: connections exist but no profiles resolved — settling session');
+        await settleSessionAfterRemoval(SessionTeardownScope.of(context));
+      }
+      return;
+    }
 
     // Always prompt when there's no active profile but profiles exist
     // (fresh sign-in with multiple Plex Home users): otherwise the binder

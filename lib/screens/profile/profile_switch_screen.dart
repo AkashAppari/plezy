@@ -106,8 +106,11 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
       },
       child: StreamBuilder<ProfilesView>(
         stream: _viewStream,
-        initialData: ProfilesView.empty,
         builder: (context, snapshot) {
+          // No initialData: rendering ProfilesView.empty while the first
+          // combine is in flight flashes the "No profiles available" error
+          // state on every open.
+          final loading = snapshot.data == null;
           final view = snapshot.data ?? ProfilesView.empty;
           _pruneProfileFocusResources(view.profiles.map((p) => p.id).toSet());
           // `context.select` only rebuilds when `activeId` actually
@@ -124,11 +127,13 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
                 slivers: [
                   if (view.profiles.isEmpty)
                     SliverFillRemaining(
-                      child: EmptyStateWidget(
-                        message: t.messages.noProfilesAvailable,
-                        subtitle: t.messages.contactAdminForProfiles,
-                        icon: Symbols.person_off_rounded,
-                      ),
+                      child: loading
+                          ? const Center(child: CircularProgressIndicator())
+                          : EmptyStateWidget(
+                              message: t.messages.noProfilesAvailable,
+                              subtitle: t.messages.contactAdminForProfiles,
+                              icon: Symbols.person_off_rounded,
+                            ),
                     )
                   else
                     ..._buildSections(view, activeId),
@@ -172,20 +177,36 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
   }
 
   void _pruneProfileFocusResources(Set<String> activeIds) {
+    // Runs during build (from the StreamBuilder). Detach the map entries
+    // synchronously so tiles never receive a stale node, but defer the
+    // actual dispose to after the frame: on TV the pruned tile's node is
+    // often the one holding primary focus (the profile just signed out /
+    // deleted), and disposing the focused node mid-build wedges the focus
+    // system on DPAD-only devices.
+    final removed = <FocusNode>[];
     for (final id in _profileFocusNodes.keys.toList()) {
       if (!activeIds.contains(id)) {
-        _profileFocusNodes.remove(id)?.dispose();
+        final node = _profileFocusNodes.remove(id);
+        if (node != null) removed.add(node);
       }
     }
     for (final id in _profileMenuFocusNodes.keys.toList()) {
       if (!activeIds.contains(id)) {
-        _profileMenuFocusNodes.remove(id)?.dispose();
+        final node = _profileMenuFocusNodes.remove(id);
+        if (node != null) removed.add(node);
       }
     }
     for (final id in _profileMenuKeys.keys.toList()) {
       if (!activeIds.contains(id)) {
         _profileMenuKeys.remove(id);
       }
+    }
+    if (removed.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        for (final node in removed) {
+          node.dispose();
+        }
+      });
     }
   }
 
@@ -206,9 +227,14 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
         final profileFocusNode = _profileFocusNode(profile);
         final menuFocusNode = _profileMenuFocusNode(profile);
         final menuKey = _profileMenuKey(profile);
-        final onManage = !widget.requireSelection ? () => _manageProfile(profile) : null;
-        final onDelete = profile.isLocal && !widget.requireSelection ? () => _deleteProfile(profile) : null;
-        final onSignOut = profile.isPlexHome && profile.parentConnectionId != null && !widget.requireSelection
+        // All tile actions are disabled while a switch is binding: the
+        // overlay's barrier blocks pointers but not DPAD key events, and a
+        // Manage/Delete flow racing the in-flight switch corrupts state
+        // (e.g. a delete confirmation left open when the switch settles).
+        final actionsEnabled = !widget.requireSelection && !_switching;
+        final onManage = actionsEnabled ? () => _manageProfile(profile) : null;
+        final onDelete = profile.isLocal && actionsEnabled ? () => _deleteProfile(profile) : null;
+        final onSignOut = profile.isPlexHome && profile.parentConnectionId != null && actionsEnabled
             ? () => _signOutPlexAccount(profile)
             : null;
         final hasMenu = onManage != null || onDelete != null || onSignOut != null;
@@ -307,13 +333,20 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
     if (_switching) return;
     setState(() => _switching = true);
     try {
+      final route = ModalRoute.of(context);
       final navigator = Navigator.of(context, rootNavigator: true);
       final switched = await switchProfileFromUi(context, profile);
       if (!mounted || !switched) return;
       if (widget.requireSelection) {
         setState(() => _allowPop = true);
       }
-      navigator.pop(true);
+      // Pop only when this screen is still the top route. A blind
+      // `navigator.pop(true)` after the unbounded switch-await pops
+      // whatever is topmost — it can dismiss a confirmation dialog WITH
+      // `true` (auto-confirming a delete) or close the wrong screen.
+      if (route != null && route.isCurrent) {
+        navigator.pop(true);
+      }
     } finally {
       setStateIfMounted(() => _switching = false);
     }

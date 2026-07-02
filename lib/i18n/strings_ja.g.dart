@@ -829,7 +829,9 @@ class _TranslationsProfilesJa extends TranslationsProfilesEn {
 	@override String get borrowConnectionBorrowed => '接続を借用しました。';
 	@override String get borrowFailed => '接続を借用できませんでした。';
 	@override String get incorrectPin => 'PINが正しくありません。';
+	@override String get incorrectPinTryAgain => 'PINが正しくありません。もう一度お試しください。';
 	@override String get sourceProfileMissingParentAccount => 'ソースプロフィールに親アカウントがありません。';
+	@override String get failedToLoadHomeUsers => 'Plex Homeユーザーを読み込めませんでした。接続を確認して、もう一度お試しください。';
 	@override String get failedToVerifyPin => 'PINを確認できませんでした。';
 	@override String get newProfile => '新しいプロファイル';
 	@override String get profileNameHint => '例：ゲスト、キッズ、ファミリールーム';
@@ -2524,7 +2526,9 @@ extension on TranslationsJa {
 			'profiles.borrowConnectionBorrowed' => '接続を借用しました。',
 			'profiles.borrowFailed' => '接続を借用できませんでした。',
 			'profiles.incorrectPin' => 'PINが正しくありません。',
+			'profiles.incorrectPinTryAgain' => 'PINが正しくありません。もう一度お試しください。',
 			'profiles.sourceProfileMissingParentAccount' => 'ソースプロフィールに親アカウントがありません。',
+			'profiles.failedToLoadHomeUsers' => 'Plex Homeユーザーを読み込めませんでした。接続を確認して、もう一度お試しください。',
 			'profiles.failedToVerifyPin' => 'PINを確認できませんでした。',
 			'profiles.newProfile' => '新しいプロファイル',
 			'profiles.profileNameHint' => '例：ゲスト、キッズ、ファミリールーム',
@@ -2952,10 +2956,10 @@ extension on TranslationsJa {
 			'companionRemote.pairing.validationHostRequired' => 'ホストアドレスを入力してください',
 			'companionRemote.pairing.validationHostFormat' => '形式はIP:ポートである必要があります（例: 192.168.1.100:48632）',
 			'companionRemote.pairing.connectionTimedOut' => '接続がタイムアウトしました。両方のデバイスで同じネットワークを使用してください。',
-			'companionRemote.pairing.sessionNotFound' => 'デバイスが見つかりません。ホストでPlezyが実行中か確認してください。',
-			'companionRemote.pairing.authFailed' => '認証に失敗しました。両方のデバイスで同じPlexアカウントが必要です。',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.sessionNotFound' => 'デバイスが見つかりません。ホストでPlezyが実行中か確認してください。',
+			'companionRemote.pairing.authFailed' => '認証に失敗しました。両方のデバイスで同じPlexアカウントが必要です。',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '接続に失敗しました: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'リモートセッションから切断しますか？',
 			'companionRemote.remote.reconnecting' => '再接続中...',

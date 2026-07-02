@@ -829,7 +829,9 @@ class _TranslationsProfilesPl extends TranslationsProfilesEn {
 	@override String get borrowConnectionBorrowed => 'Połączenie pożyczone.';
 	@override String get borrowFailed => 'Nie udało się pożyczyć połączenia.';
 	@override String get incorrectPin => 'Nieprawidłowy PIN.';
+	@override String get incorrectPinTryAgain => 'Nieprawidłowy PIN. Spróbuj ponownie.';
 	@override String get sourceProfileMissingParentAccount => 'Profil źródłowy nie ma konta nadrzędnego.';
+	@override String get failedToLoadHomeUsers => 'Nie udało się wczytać użytkowników Plex Home. Sprawdź połączenie i spróbuj ponownie.';
 	@override String get failedToVerifyPin => 'Nie udało się zweryfikować PIN-u.';
 	@override String get newProfile => 'Nowy profil';
 	@override String get profileNameHint => 'np. Goście, Dzieci, Salon';
@@ -2524,7 +2526,9 @@ extension on TranslationsPl {
 			'profiles.borrowConnectionBorrowed' => 'Połączenie pożyczone.',
 			'profiles.borrowFailed' => 'Nie udało się pożyczyć połączenia.',
 			'profiles.incorrectPin' => 'Nieprawidłowy PIN.',
+			'profiles.incorrectPinTryAgain' => 'Nieprawidłowy PIN. Spróbuj ponownie.',
 			'profiles.sourceProfileMissingParentAccount' => 'Profil źródłowy nie ma konta nadrzędnego.',
+			'profiles.failedToLoadHomeUsers' => 'Nie udało się wczytać użytkowników Plex Home. Sprawdź połączenie i spróbuj ponownie.',
 			'profiles.failedToVerifyPin' => 'Nie udało się zweryfikować PIN-u.',
 			'profiles.newProfile' => 'Nowy profil',
 			'profiles.profileNameHint' => 'np. Goście, Dzieci, Salon',
@@ -2952,10 +2956,10 @@ extension on TranslationsPl {
 			'companionRemote.pairing.validationHostRequired' => 'Wprowadź adres hosta',
 			'companionRemote.pairing.validationHostFormat' => 'Format musi być IP:port (np. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Limit czasu połączenia. Użyj tej samej sieci na obu urządzeniach.',
-			'companionRemote.pairing.sessionNotFound' => 'Nie znaleziono urządzenia. Upewnij się, że Plezy działa na hoście.',
-			'companionRemote.pairing.authFailed' => 'Uwierzytelnianie nie powiodło się. Oba urządzenia muszą używać tego samego konta Plex.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.sessionNotFound' => 'Nie znaleziono urządzenia. Upewnij się, że Plezy działa na hoście.',
+			'companionRemote.pairing.authFailed' => 'Uwierzytelnianie nie powiodło się. Oba urządzenia muszą używać tego samego konta Plex.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Nie udało się połączyć: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Czy chcesz się rozłączyć od sesji zdalnej?',
 			'companionRemote.remote.reconnecting' => 'Ponowne łączenie...',

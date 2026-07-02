@@ -40,7 +40,6 @@ import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/profile.dart';
-import '../../profiles/profile_registry.dart';
 import 'about_screen.dart';
 import 'add_connection_screen.dart';
 import 'appearance_settings_screen.dart';
@@ -276,29 +275,26 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   Widget _buildProfilesSection() {
-    return StreamBuilder<List<Profile>>(
-      stream: context.read<ProfileRegistry>().watchProfiles(),
-      builder: (context, snapshot) {
-        final count = snapshot.data?.length ?? 0;
-        // `context.select` so this StreamBuilder doesn't rebuild on every
-        // ActiveProfileProvider notification — only when the active
-        // profile's display name actually changes.
-        final activeName = context.select<ActiveProfileProvider, String?>((p) => p.active?.displayName);
-        final subtitle = count <= 1
-            ? t.profiles.summarySingle
-            : (activeName != null
-                  ? t.profiles.summaryMultipleWithActive(count: count, activeName: activeName)
-                  : t.profiles.summaryMultiple(count: count));
-        return SettingNavigationTile(
-          icon: Symbols.group_rounded,
-          title: t.profiles.sectionTitle,
-          subtitle: subtitle,
-          onTap: () => Navigator.of(
-            context,
-            rootNavigator: true,
-          ).push(MaterialPageRoute(builder: (_) => const ProfileSwitchScreen())),
-        );
-      },
+    // ActiveProfileProvider already merges local rows with virtual Plex
+    // Home profiles — counting only the local DB rows made every Plex Home
+    // household read as a single profile here. `context.select` keeps
+    // rebuilds scoped to actual count/name changes (a StreamBuilder here
+    // was also re-created on every settings rebuild).
+    final count = context.select<ActiveProfileProvider, int>((p) => p.profiles.length);
+    final activeName = context.select<ActiveProfileProvider, String?>((p) => p.active?.displayName);
+    final subtitle = count <= 1
+        ? t.profiles.summarySingle
+        : (activeName != null
+              ? t.profiles.summaryMultipleWithActive(count: count, activeName: activeName)
+              : t.profiles.summaryMultiple(count: count));
+    return SettingNavigationTile(
+      icon: Symbols.group_rounded,
+      title: t.profiles.sectionTitle,
+      subtitle: subtitle,
+      onTap: () => Navigator.of(
+        context,
+        rootNavigator: true,
+      ).push(MaterialPageRoute(builder: (_) => const ProfileSwitchScreen())),
     );
   }
 

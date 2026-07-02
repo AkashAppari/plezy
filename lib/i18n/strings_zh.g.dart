@@ -829,7 +829,9 @@ class _TranslationsProfilesZh extends TranslationsProfilesEn {
 	@override String get borrowConnectionBorrowed => '已借用连接。';
 	@override String get borrowFailed => '无法借用连接。';
 	@override String get incorrectPin => 'PIN 不正确。';
+	@override String get incorrectPinTryAgain => 'PIN 不正确。请重试。';
 	@override String get sourceProfileMissingParentAccount => '源个人资料缺少其父账号。';
+	@override String get failedToLoadHomeUsers => '无法加载您的 Plex Home 用户。请检查网络连接后重试。';
 	@override String get failedToVerifyPin => '无法验证 PIN。';
 	@override String get newProfile => '新建配置文件';
 	@override String get profileNameHint => '例如：访客、儿童、家庭房';
@@ -2524,7 +2526,9 @@ extension on TranslationsZh {
 			'profiles.borrowConnectionBorrowed' => '已借用连接。',
 			'profiles.borrowFailed' => '无法借用连接。',
 			'profiles.incorrectPin' => 'PIN 不正确。',
+			'profiles.incorrectPinTryAgain' => 'PIN 不正确。请重试。',
 			'profiles.sourceProfileMissingParentAccount' => '源个人资料缺少其父账号。',
+			'profiles.failedToLoadHomeUsers' => '无法加载您的 Plex Home 用户。请检查网络连接后重试。',
 			'profiles.failedToVerifyPin' => '无法验证 PIN。',
 			'profiles.newProfile' => '新建配置文件',
 			'profiles.profileNameHint' => '例如：访客、儿童、家庭房',
@@ -2952,10 +2956,10 @@ extension on TranslationsZh {
 			'companionRemote.pairing.validationHostRequired' => '请输入主机地址',
 			'companionRemote.pairing.validationHostFormat' => '格式必须为IP:端口（例如 192.168.1.100:48632）',
 			'companionRemote.pairing.connectionTimedOut' => '连接超时。请在两台设备上使用同一网络。',
-			'companionRemote.pairing.sessionNotFound' => '未找到设备。请确认 Plezy 正在主机上运行。',
-			'companionRemote.pairing.authFailed' => '认证失败。两台设备需要使用同一 Plex 账号。',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.sessionNotFound' => '未找到设备。请确认 Plezy 正在主机上运行。',
+			'companionRemote.pairing.authFailed' => '认证失败。两台设备需要使用同一 Plex 账号。',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '连接失败：${error}',
 			'companionRemote.remote.disconnectConfirm' => '是否要断开远程会话的连接？',
 			'companionRemote.remote.reconnecting' => '重新连接中...',

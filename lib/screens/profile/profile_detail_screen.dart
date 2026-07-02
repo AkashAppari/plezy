@@ -57,21 +57,45 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
   final _nameFocusNode = FocusNode(debugLabel: 'ProfileDetail:Name');
   final _saveNameFocusNode = FocusNode(debugLabel: 'ProfileDetail:SaveName');
   final _setPinFocusNode = FocusNode(debugLabel: 'ProfileDetail:SetPin');
+  final _changePinFocusNode = FocusNode(debugLabel: 'ProfileDetail:ChangePin');
   final _addConnectionFocusNode = FocusNode(debugLabel: 'ProfileDetail:AddConnection');
   final _deleteProfileFocusNode = FocusNode(debugLabel: 'ProfileDetail:DeleteProfile');
   late Profile _profile;
+  StreamSubscription<List<Profile>>? _profileSub;
 
   @override
   void initState() {
     super.initState();
     _profile = widget.profile;
+    // Keep the snapshot live: the registry row can change underneath this
+    // screen (rename from another surface, PIN cleared elsewhere) and the
+    // header/PIN section would otherwise show stale state until reopened.
+    if (_profile.isLocal) {
+      _profileSub = context.read<ProfileRegistry>().watchProfiles().listen((locals) {
+        Profile? updated;
+        for (final p in locals) {
+          if (p.id == _profile.id) {
+            updated = p;
+            break;
+          }
+        }
+        if (updated == null || updated == _profile || !mounted) return;
+        final namePristine = _nameController.text.trim() == _profile.displayName;
+        setState(() {
+          _profile = updated!;
+          if (namePristine) _nameController.text = updated.displayName;
+        });
+      });
+    }
   }
 
   @override
   void dispose() {
+    _profileSub?.cancel();
     _nameFocusNode.dispose();
     _saveNameFocusNode.dispose();
     _setPinFocusNode.dispose();
+    _changePinFocusNode.dispose();
     _addConnectionFocusNode.dispose();
     _deleteProfileFocusNode.dispose();
     super.dispose();
@@ -95,10 +119,18 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
     if (pin == null || !mounted) return;
     final profile = _profile;
     if (profile is! LocalProfile) return;
+    final hadPin = profile.pinHash != null;
     final updated = profile.copyWith(pinHash: computePinHash(pin));
     await context.read<ProfileRegistry>().upsert(updated);
     if (!mounted) return;
     setState(() => _profile = updated);
+    if (!hadPin) {
+      // The Set PIN button (and its focus node) just left the tree — hand
+      // DPAD focus to the replacing row instead of dropping it.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _changePinFocusNode.requestFocus();
+      });
+    }
   }
 
   Future<void> _clearPin() async {
@@ -108,6 +140,11 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
     await context.read<ProfileRegistry>().upsert(updated);
     if (!mounted) return;
     setState(() => _profile = updated);
+    // Reverse swap of _setPin: the row (and the focused Remove button)
+    // just left the tree.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _setPinFocusNode.requestFocus();
+    });
   }
 
   Future<void> _addConnection() async {
@@ -126,23 +163,60 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
       isDestructive: true,
     );
     if (!confirmed || !mounted) return;
-    await context.read<DownloadProvider>().releaseDownloadsForProfileServers(
-      _profile.id,
-      _serverIdsForConnection(conn),
+    final downloads = context.read<DownloadProvider>();
+    final pcRegistry = context.read<ProfileConnectionRegistry>();
+    final connRegistry = context.read<ConnectionRegistry>();
+    final storage = context.read<StorageService>();
+    final serverManager = context.read<MultiServerProvider>().serverManager;
+    final hiddenLibraries = context.read<HiddenLibrariesProvider?>();
+    final binder = context.read<ActiveProfileBinder>();
+
+    // Release downloads only for servers the profile actually loses — the
+    // same server can stay reachable through another connection (a second
+    // Plex account sharing the server, another Jellyfin user).
+    final retainedServerIds = await _retainedServerIds(
+      excludingConnectionId: conn.id,
+      profileConnections: pcRegistry,
+      connections: connRegistry,
     );
-    if (!mounted) return;
+    await downloads.releaseDownloadsForProfileServers(
+      _profile.id,
+      _serverIdsForConnection(conn).difference(retainedServerIds),
+    );
     await removeProfileConnectionAndCleanup(
       profileId: _profile.id,
       connection: conn,
-      profileConnections: context.read<ProfileConnectionRegistry>(),
-      connections: context.read<ConnectionRegistry>(),
-      storage: context.read<StorageService>(),
-      serverManager: context.read<MultiServerProvider>().serverManager,
+      profileConnections: pcRegistry,
+      connections: connRegistry,
+      storage: storage,
+      serverManager: serverManager,
     );
-    if (!mounted) return;
-    await context.read<HiddenLibrariesProvider?>()?.refresh();
-    if (!mounted) return;
-    unawaited(context.read<ActiveProfileBinder>().rebindIfActive(_profile.id));
+    await hiddenLibraries?.refresh();
+    unawaited(binder.rebindIfActive(_profile.id));
+  }
+
+  /// Server ids the profile keeps after removing [excludingConnectionId]:
+  /// its other join rows plus, for Plex Home profiles, the implicit parent
+  /// account.
+  Future<Set<String>> _retainedServerIds({
+    required String excludingConnectionId,
+    required ProfileConnectionRegistry profileConnections,
+    required ConnectionRegistry connections,
+  }) async {
+    final rows = await profileConnections.listForProfile(_profile.id);
+    final byId = {for (final c in await connections.list()) c.id: c};
+    final retained = <String>{};
+    for (final row in rows) {
+      if (row.connectionId == excludingConnectionId) continue;
+      final other = byId[row.connectionId];
+      if (other != null) retained.addAll(_serverIdsForConnection(other));
+    }
+    final parentId = _profile.isPlexHome ? _profile.parentConnectionId : null;
+    if (parentId != null && parentId != excludingConnectionId) {
+      final parent = byId[parentId];
+      if (parent != null) retained.addAll(_serverIdsForConnection(parent));
+    }
+    return retained;
   }
 
   Future<void> _editConnection(Connection conn) async {
@@ -245,7 +319,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
                   ),
                 )
               else
-                PinStatusRow(onChange: _setPin, onRemove: _clearPin),
+                PinStatusRow(onChange: _setPin, onRemove: _clearPin, changeFocusNode: _changePinFocusNode),
               const SizedBox(height: 32),
               Row(
                 children: [
@@ -287,7 +361,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
   }
 }
 
-class _ConnectionsList extends StatelessWidget {
+class _ConnectionsList extends StatefulWidget {
   final Profile profile;
   final Future<void> Function(ProfileConnection pc, Connection conn) onRemove;
   final Future<void> Function(Connection conn) onEdit;
@@ -301,14 +375,36 @@ class _ConnectionsList extends StatelessWidget {
   });
 
   @override
+  State<_ConnectionsList> createState() => _ConnectionsListState();
+}
+
+class _ConnectionsListState extends State<_ConnectionsList> {
+  // Created once: building streams/futures inside build re-subscribes and
+  // refetches on every parent rebuild (each keystroke in the name field),
+  // flashing the spinner and hammering the DB.
+  Stream<List<ProfileConnection>>? _pcsStream;
+  Stream<Map<String, List<PlexHomeUser>>>? _homeStream;
+  Map<String, List<PlexHomeUser>>? _homeInitial;
+  Stream<List<Connection>>? _connectionsStream;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _pcsStream ??= context.read<ProfileConnectionRegistry>().watchForProfile(widget.profile.id);
+    final plexHome = context.read<PlexHomeService>();
+    _homeStream ??= plexHome.stream;
+    _homeInitial ??= plexHome.current;
+    _connectionsStream ??= context.read<ConnectionRegistry>().watchConnections();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final profile = widget.profile;
     final pcRegistry = context.read<ProfileConnectionRegistry>();
-    final connRegistry = context.read<ConnectionRegistry>();
-    final plexHome = context.read<PlexHomeService>();
 
     return StreamBuilder<List<ProfileConnection>>(
-      stream: pcRegistry.watchForProfile(profile.id),
+      stream: _pcsStream,
       builder: (context, snapshot) {
         final pcs = snapshot.data ?? const <ProfileConnection>[];
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -318,12 +414,12 @@ class _ConnectionsList extends StatelessWidget {
           );
         }
         return StreamBuilder<Map<String, List<PlexHomeUser>>>(
-          stream: plexHome.stream,
-          initialData: plexHome.current,
+          stream: _homeStream,
+          initialData: _homeInitial,
           builder: (context, homeSnap) {
             final homeCache = homeSnap.data ?? const <String, List<PlexHomeUser>>{};
-            return FutureBuilder<List<Connection>>(
-              future: connRegistry.list(),
+            return StreamBuilder<List<Connection>>(
+              stream: _connectionsStream,
               builder: (context, snap) {
                 final all = snap.data ?? const <Connection>[];
                 final byId = {for (final c in all) c.id: c};
@@ -356,7 +452,7 @@ class _ConnectionsList extends StatelessWidget {
                             tooltip: t.profiles.manage,
                             onSelected: (value) {
                               if (value == 'sign_out') {
-                                unawaited(onSignOutParent(parentConn));
+                                unawaited(widget.onSignOutParent(parentConn));
                               }
                             },
                             itemBuilder: (_) => [AppMenuItem(value: 'sign_out', label: t.profiles.signOut)],
@@ -377,9 +473,9 @@ class _ConnectionsList extends StatelessWidget {
                                 if (value == 'default') {
                                   unawaited(pcRegistry.setDefault(profile.id, pc.connectionId));
                                 } else if (value == 'edit') {
-                                  unawaited(onEdit(conn));
+                                  unawaited(widget.onEdit(conn));
                                 } else if (value == 'remove') {
-                                  unawaited(onRemove(pc, conn));
+                                  unawaited(widget.onRemove(pc, conn));
                                 }
                               },
                               itemBuilder: (_) => [

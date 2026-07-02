@@ -829,7 +829,9 @@ class _TranslationsProfilesFr extends TranslationsProfilesEn {
 	@override String get borrowConnectionBorrowed => 'Connexion empruntée.';
 	@override String get borrowFailed => 'Impossible d\'emprunter la connexion.';
 	@override String get incorrectPin => 'PIN incorrect.';
+	@override String get incorrectPinTryAgain => 'PIN incorrect. Veuillez réessayer.';
 	@override String get sourceProfileMissingParentAccount => 'Le profil source n\'a pas son compte parent.';
+	@override String get failedToLoadHomeUsers => 'Impossible de charger vos utilisateurs Plex Home. Vérifiez votre connexion et réessayez.';
 	@override String get failedToVerifyPin => 'Impossible de vérifier le PIN.';
 	@override String get newProfile => 'Nouveau profil';
 	@override String get profileNameHint => 'ex. Invités, Enfants, Salon familial';
@@ -2524,7 +2526,9 @@ extension on TranslationsFr {
 			'profiles.borrowConnectionBorrowed' => 'Connexion empruntée.',
 			'profiles.borrowFailed' => 'Impossible d\'emprunter la connexion.',
 			'profiles.incorrectPin' => 'PIN incorrect.',
+			'profiles.incorrectPinTryAgain' => 'PIN incorrect. Veuillez réessayer.',
 			'profiles.sourceProfileMissingParentAccount' => 'Le profil source n\'a pas son compte parent.',
+			'profiles.failedToLoadHomeUsers' => 'Impossible de charger vos utilisateurs Plex Home. Vérifiez votre connexion et réessayez.',
 			'profiles.failedToVerifyPin' => 'Impossible de vérifier le PIN.',
 			'profiles.newProfile' => 'Nouveau profil',
 			'profiles.profileNameHint' => 'ex. Invités, Enfants, Salon familial',
@@ -2952,10 +2956,10 @@ extension on TranslationsFr {
 			'companionRemote.pairing.validationHostRequired' => 'Veuillez entrer l\'adresse de l\'hôte',
 			'companionRemote.pairing.validationHostFormat' => 'Le format doit être IP:port (ex. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Connexion expirée. Utilisez le même réseau sur les deux appareils.',
-			'companionRemote.pairing.sessionNotFound' => 'Appareil introuvable. Assurez-vous que Plezy fonctionne sur l\'hôte.',
-			'companionRemote.pairing.authFailed' => 'Échec de l\'authentification. Les deux appareils doivent utiliser le même compte Plex.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.sessionNotFound' => 'Appareil introuvable. Assurez-vous que Plezy fonctionne sur l\'hôte.',
+			'companionRemote.pairing.authFailed' => 'Échec de l\'authentification. Les deux appareils doivent utiliser le même compte Plex.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Échec de la connexion : ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Voulez-vous vous déconnecter de la session distante ?',
 			'companionRemote.remote.reconnecting' => 'Reconnexion...',

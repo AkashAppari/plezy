@@ -17,7 +17,6 @@ import '../../profiles/profile_connection.dart';
 import '../../profiles/profile_connection_registry.dart';
 import '../../profiles/profile_merge.dart';
 import '../../profiles/profile_registry.dart';
-import '../../services/plex_auth_service.dart';
 import '../../services/storage_service.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/snackbar_helper.dart';
@@ -214,6 +213,13 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
         case JellyfinConnection():
           await _borrowJellyfin(cand);
       }
+    } catch (e, st) {
+      // Without this, a throw from the verify/borrow steps (network, DB)
+      // dies in the unawaited caller and the user gets no feedback.
+      appLogger.w('Borrow failed', error: e, stackTrace: st);
+      if (mounted) {
+        showErrorSnackBar(context, t.profiles.borrowFailed);
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -257,77 +263,53 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
       if (mounted) showErrorSnackBar(context, t.profiles.sourceProfileMissingParentAccount);
       return false;
     }
-    final auth = await PlexAuthService.create();
-    try {
-      final result = await switchPlexHomeUserWithPin(
-        auth: auth,
-        accountToken: parent.accountToken,
-        homeUserUuid: homeUuid,
-        requiresPin: true,
-        promptForPin: ({String? errorMessage}) async {
-          if (!mounted) return null;
-          return showPinEntryDialog(context, cand.source.displayName, errorMessage: errorMessage);
-        },
-        logLabel: cand.source.displayName,
-      );
-      if (!result.succeeded) {
-        if (result.status == PlexHomeSwitchStatus.failed && mounted) {
-          showErrorSnackBar(context, t.profiles.failedToVerifyPin);
-        }
-        return false;
+    final result = await mintPlexHomeUserToken(
+      account: parent,
+      homeUserUuid: homeUuid,
+      requiresPin: true,
+      promptForPin: ({String? errorMessage}) async {
+        if (!mounted) return null;
+        return showPinEntryDialog(context, cand.source.displayName, errorMessage: errorMessage);
+      },
+      logLabel: cand.source.displayName,
+    );
+    if (!result.succeeded) {
+      if (result.status == PlexHomeSwitchStatus.failed && mounted) {
+        showErrorSnackBar(context, t.profiles.failedToVerifyPin);
       }
-      return true;
-    } finally {
-      auth.dispose();
+      return false;
     }
+    return true;
   }
 
   Future<void> _borrowPlex(_BorrowCandidate cand) async {
     final pcRegistry = context.read<ProfileConnectionRegistry>();
-    final auth = await PlexAuthService.create();
-    try {
-      final account = cand.connection as PlexAccountConnection;
-      final result = await switchPlexHomeUserWithPin(
-        auth: auth,
-        accountToken: account.accountToken,
-        homeUserUuid: cand.pc.userIdentifier,
-        requiresPin: cand.source.plexProtected,
-        promptForPin: ({String? errorMessage}) async {
-          if (!mounted) return null;
-          return showPinEntryDialog(context, cand.source.displayName, errorMessage: errorMessage);
-        },
-        logLabel: cand.source.displayName,
-      );
-      if (!result.succeeded) {
-        if (result.status == PlexHomeSwitchStatus.failed && mounted) {
-          showErrorSnackBar(context, t.profiles.borrowFailed);
-        }
-        return;
-      }
-      await pcRegistry.upsert(
-        ProfileConnection(
-          profileId: widget.targetProfile.id,
-          connectionId: account.id,
-          userToken: result.userToken!,
-          userIdentifier: cand.pc.userIdentifier,
-          tokenAcquiredAt: DateTime.now(),
-        ),
-      );
-      if (mounted) {
-        unawaited(context.read<ActiveProfileBinder>().rebindIfActive(widget.targetProfile.id));
-        if (widget.popOnSuccess) {
-          Navigator.of(context).pop(true);
-          return;
-        }
-        showSuccessSnackBar(context, t.profiles.borrowConnectionBorrowed);
-      }
-    } catch (e, st) {
-      appLogger.w('Borrow failed', error: e, stackTrace: st);
-      if (mounted) {
+    final account = cand.connection as PlexAccountConnection;
+    final result = await mintPlexHomeUserToken(
+      account: account,
+      homeUserUuid: cand.pc.userIdentifier,
+      requiresPin: cand.source.plexProtected,
+      promptForPin: ({String? errorMessage}) async {
+        if (!mounted) return null;
+        return showPinEntryDialog(context, cand.source.displayName, errorMessage: errorMessage);
+      },
+      persistTo: pcRegistry,
+      persistProfileId: widget.targetProfile.id,
+      logLabel: cand.source.displayName,
+    );
+    if (!result.succeeded) {
+      if (result.status == PlexHomeSwitchStatus.failed && mounted) {
         showErrorSnackBar(context, t.profiles.borrowFailed);
       }
-    } finally {
-      auth.dispose();
+      return;
+    }
+    if (mounted) {
+      unawaited(context.read<ActiveProfileBinder>().rebindIfActive(widget.targetProfile.id));
+      if (widget.popOnSuccess) {
+        Navigator.of(context).pop(true);
+        return;
+      }
+      showSuccessSnackBar(context, t.profiles.borrowConnectionBorrowed);
     }
   }
 

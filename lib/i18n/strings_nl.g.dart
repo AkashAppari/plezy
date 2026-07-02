@@ -829,7 +829,9 @@ class _TranslationsProfilesNl extends TranslationsProfilesEn {
 	@override String get borrowConnectionBorrowed => 'Verbinding geleend.';
 	@override String get borrowFailed => 'Kan verbinding niet lenen.';
 	@override String get incorrectPin => 'Onjuiste PIN.';
+	@override String get incorrectPinTryAgain => 'Onjuiste PIN. Probeer het opnieuw.';
 	@override String get sourceProfileMissingParentAccount => 'Het bronprofiel mist het bovenliggende account.';
+	@override String get failedToLoadHomeUsers => 'Kan je Plex Home-gebruikers niet laden. Controleer je verbinding en probeer het opnieuw.';
 	@override String get failedToVerifyPin => 'Kan PIN niet verifiëren.';
 	@override String get newProfile => 'Nieuw profiel';
 	@override String get profileNameHint => 'bijv. Gasten, Kinderen, Woonkamer';
@@ -2524,7 +2526,9 @@ extension on TranslationsNl {
 			'profiles.borrowConnectionBorrowed' => 'Verbinding geleend.',
 			'profiles.borrowFailed' => 'Kan verbinding niet lenen.',
 			'profiles.incorrectPin' => 'Onjuiste PIN.',
+			'profiles.incorrectPinTryAgain' => 'Onjuiste PIN. Probeer het opnieuw.',
 			'profiles.sourceProfileMissingParentAccount' => 'Het bronprofiel mist het bovenliggende account.',
+			'profiles.failedToLoadHomeUsers' => 'Kan je Plex Home-gebruikers niet laden. Controleer je verbinding en probeer het opnieuw.',
 			'profiles.failedToVerifyPin' => 'Kan PIN niet verifiëren.',
 			'profiles.newProfile' => 'Nieuw profiel',
 			'profiles.profileNameHint' => 'bijv. Gasten, Kinderen, Woonkamer',
@@ -2952,10 +2956,10 @@ extension on TranslationsNl {
 			'companionRemote.pairing.validationHostRequired' => 'Voer het hostadres in',
 			'companionRemote.pairing.validationHostFormat' => 'Formaat moet IP:poort zijn (bijv. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Verbinding verlopen. Gebruik hetzelfde netwerk op beide apparaten.',
-			'companionRemote.pairing.sessionNotFound' => 'Apparaat niet gevonden. Zorg dat Plezy op de host draait.',
-			'companionRemote.pairing.authFailed' => 'Authenticatie mislukt. Beide apparaten hebben hetzelfde Plex-account nodig.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.sessionNotFound' => 'Apparaat niet gevonden. Zorg dat Plezy op de host draait.',
+			'companionRemote.pairing.authFailed' => 'Authenticatie mislukt. Beide apparaten hebben hetzelfde Plex-account nodig.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kan niet verbinden: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Wil je de verbinding met de externe sessie verbreken?',
 			'companionRemote.remote.reconnecting' => 'Opnieuw verbinden...',

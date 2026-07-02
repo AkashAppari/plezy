@@ -829,7 +829,9 @@ class _TranslationsProfilesDa extends TranslationsProfilesEn {
 	@override String get borrowConnectionBorrowed => 'Forbindelse lånt.';
 	@override String get borrowFailed => 'Kunne ikke låne forbindelse.';
 	@override String get incorrectPin => 'Forkert PIN.';
+	@override String get incorrectPinTryAgain => 'Forkert PIN. Prøv igen.';
 	@override String get sourceProfileMissingParentAccount => 'Kildeprofilen mangler sin overordnede konto.';
+	@override String get failedToLoadHomeUsers => 'Kunne ikke indlæse dine Plex Home-brugere. Tjek din forbindelse, og prøv igen.';
 	@override String get failedToVerifyPin => 'Kunne ikke bekræfte PIN.';
 	@override String get newProfile => 'Ny profil';
 	@override String get profileNameHint => 'fx. Gæster, Børn, Familiens stue';
@@ -2524,7 +2526,9 @@ extension on TranslationsDa {
 			'profiles.borrowConnectionBorrowed' => 'Forbindelse lånt.',
 			'profiles.borrowFailed' => 'Kunne ikke låne forbindelse.',
 			'profiles.incorrectPin' => 'Forkert PIN.',
+			'profiles.incorrectPinTryAgain' => 'Forkert PIN. Prøv igen.',
 			'profiles.sourceProfileMissingParentAccount' => 'Kildeprofilen mangler sin overordnede konto.',
+			'profiles.failedToLoadHomeUsers' => 'Kunne ikke indlæse dine Plex Home-brugere. Tjek din forbindelse, og prøv igen.',
 			'profiles.failedToVerifyPin' => 'Kunne ikke bekræfte PIN.',
 			'profiles.newProfile' => 'Ny profil',
 			'profiles.profileNameHint' => 'fx. Gæster, Børn, Familiens stue',
@@ -2952,10 +2956,10 @@ extension on TranslationsDa {
 			'companionRemote.pairing.validationHostRequired' => 'Angiv venligst værtsadresse',
 			'companionRemote.pairing.validationHostFormat' => 'Format skal være IP:port (f.eks. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Forbindelsen fik timeout. Brug samme netværk på begge enheder.',
-			'companionRemote.pairing.sessionNotFound' => 'Enhed ikke fundet. Sørg for, at Plezy kører på værten.',
-			'companionRemote.pairing.authFailed' => 'Godkendelse mislykkedes. Begge enheder skal bruge samme Plex-konto.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.sessionNotFound' => 'Enhed ikke fundet. Sørg for, at Plezy kører på værten.',
+			'companionRemote.pairing.authFailed' => 'Godkendelse mislykkedes. Begge enheder skal bruge samme Plex-konto.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunne ikke oprette forbindelse: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vil du afbryde fra fjernsessionen?',
 			'companionRemote.remote.reconnecting' => 'Genopretter forbindelse...',

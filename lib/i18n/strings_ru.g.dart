@@ -829,7 +829,9 @@ class _TranslationsProfilesRu extends TranslationsProfilesEn {
 	@override String get borrowConnectionBorrowed => 'Подключение заимствовано.';
 	@override String get borrowFailed => 'Не удалось заимствовать подключение.';
 	@override String get incorrectPin => 'Неверный PIN.';
+	@override String get incorrectPinTryAgain => 'Неверный PIN. Попробуйте ещё раз.';
 	@override String get sourceProfileMissingParentAccount => 'У исходного профиля отсутствует родительская учетная запись.';
+	@override String get failedToLoadHomeUsers => 'Не удалось загрузить пользователей Plex Home. Проверьте подключение и попробуйте ещё раз.';
 	@override String get failedToVerifyPin => 'Не удалось проверить PIN.';
 	@override String get newProfile => 'Новый профиль';
 	@override String get profileNameHint => 'например, Гости, Дети, Семейная комната';
@@ -2524,7 +2526,9 @@ extension on TranslationsRu {
 			'profiles.borrowConnectionBorrowed' => 'Подключение заимствовано.',
 			'profiles.borrowFailed' => 'Не удалось заимствовать подключение.',
 			'profiles.incorrectPin' => 'Неверный PIN.',
+			'profiles.incorrectPinTryAgain' => 'Неверный PIN. Попробуйте ещё раз.',
 			'profiles.sourceProfileMissingParentAccount' => 'У исходного профиля отсутствует родительская учетная запись.',
+			'profiles.failedToLoadHomeUsers' => 'Не удалось загрузить пользователей Plex Home. Проверьте подключение и попробуйте ещё раз.',
 			'profiles.failedToVerifyPin' => 'Не удалось проверить PIN.',
 			'profiles.newProfile' => 'Новый профиль',
 			'profiles.profileNameHint' => 'например, Гости, Дети, Семейная комната',
@@ -2952,10 +2956,10 @@ extension on TranslationsRu {
 			'companionRemote.pairing.validationHostRequired' => 'Введите адрес хоста',
 			'companionRemote.pairing.validationHostFormat' => 'Формат должен быть IP:порт (например, 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Время подключения истекло. Используйте одну сеть на обоих устройствах.',
-			'companionRemote.pairing.sessionNotFound' => 'Устройство не найдено. Убедитесь, что Plezy запущен на хосте.',
-			'companionRemote.pairing.authFailed' => 'Аутентификация не удалась. На обоих устройствах нужен один аккаунт Plex.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.sessionNotFound' => 'Устройство не найдено. Убедитесь, что Plezy запущен на хосте.',
+			'companionRemote.pairing.authFailed' => 'Аутентификация не удалась. На обоих устройствах нужен один аккаунт Plex.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Не удалось подключиться: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Отключиться от удалённой сессии?',
 			'companionRemote.remote.reconnecting' => 'Переподключение...',

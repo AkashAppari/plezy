@@ -829,7 +829,9 @@ class _TranslationsProfilesSv extends TranslationsProfilesEn {
 	@override String get borrowConnectionBorrowed => 'Anslutning lånad.';
 	@override String get borrowFailed => 'Kunde inte låna anslutningen.';
 	@override String get incorrectPin => 'Fel PIN.';
+	@override String get incorrectPinTryAgain => 'Fel PIN. Försök igen.';
 	@override String get sourceProfileMissingParentAccount => 'Källprofilen saknar sitt överordnade konto.';
+	@override String get failedToLoadHomeUsers => 'Kunde inte läsa in dina Plex Home-användare. Kontrollera anslutningen och försök igen.';
 	@override String get failedToVerifyPin => 'Kunde inte verifiera PIN.';
 	@override String get newProfile => 'Ny profil';
 	@override String get profileNameHint => 't.ex. Gäster, Barn, Familjerum';
@@ -2524,7 +2526,9 @@ extension on TranslationsSv {
 			'profiles.borrowConnectionBorrowed' => 'Anslutning lånad.',
 			'profiles.borrowFailed' => 'Kunde inte låna anslutningen.',
 			'profiles.incorrectPin' => 'Fel PIN.',
+			'profiles.incorrectPinTryAgain' => 'Fel PIN. Försök igen.',
 			'profiles.sourceProfileMissingParentAccount' => 'Källprofilen saknar sitt överordnade konto.',
+			'profiles.failedToLoadHomeUsers' => 'Kunde inte läsa in dina Plex Home-användare. Kontrollera anslutningen och försök igen.',
 			'profiles.failedToVerifyPin' => 'Kunde inte verifiera PIN.',
 			'profiles.newProfile' => 'Ny profil',
 			'profiles.profileNameHint' => 't.ex. Gäster, Barn, Familjerum',
@@ -2952,10 +2956,10 @@ extension on TranslationsSv {
 			'companionRemote.pairing.validationHostRequired' => 'Ange värdadress',
 			'companionRemote.pairing.validationHostFormat' => 'Format måste vara IP:port (t.ex. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Anslutningen tog för lång tid. Använd samma nätverk på båda enheter.',
-			'companionRemote.pairing.sessionNotFound' => 'Enhet hittades inte. Kontrollera att Plezy körs på värden.',
-			'companionRemote.pairing.authFailed' => 'Autentisering misslyckades. Båda enheter behöver samma Plex-konto.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.sessionNotFound' => 'Enhet hittades inte. Kontrollera att Plezy körs på värden.',
+			'companionRemote.pairing.authFailed' => 'Autentisering misslyckades. Båda enheter behöver samma Plex-konto.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunde inte ansluta: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vill du koppla från fjärrsessionen?',
 			'companionRemote.remote.reconnecting' => 'Återansluter...',
