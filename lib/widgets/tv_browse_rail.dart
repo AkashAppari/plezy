@@ -1089,10 +1089,16 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    _RailBackgroundBleed(
+                    _RailBleedPositioned(
                       width: width,
                       targetBleedLeft: widget.backgroundBleedLeft,
-                      backgroundColor: theme.scaffoldBackgroundColor,
+                      child: RasterizedGradient(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.transparent, theme.scaffoldBackgroundColor.withValues(alpha: 0.7)],
+                        ),
+                      ),
                     ),
                     Padding(
                       padding: .fromLTRB(
@@ -1101,47 +1107,43 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                         0,
                         TvBrowseRailLayout.railBottomPaddingForScale(scale),
                       ),
-                      // Unfocused-rail dim: a scrim quad on top instead of
-                      // AnimatedOpacity, which would keep a full-viewport
-                      // saveLayer alive every frame (see AnimatedDimScrim).
-                      // The scrim extends into the clipper's left overflow so
-                      // partially scrolled-out cards dim too.
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          ClipRect(
-                            clipper: _RailClipper(leftOverflow: horizontalInset, rightOverflow: 0),
-                            child: SizedBox(
-                              height: viewportHeight,
-                              child: _buildHubSectionList(
-                                modes: modes,
-                                metricsByHub: metricsByHub,
-                                sectionHeights: sectionHeights,
-                                scale: scale,
-                                fullCardLayout: fullCardLayout,
-                                leftOverflow: horizontalInset,
-                                interactionExpansion: interactionExpansion,
-                                railViewportWidth: railViewportWidth,
-                                bottomPadding: bottomPadding,
-                              ),
-                            ),
+                      child: ClipRect(
+                        clipper: _RailClipper(leftOverflow: horizontalInset, rightOverflow: 0),
+                        child: SizedBox(
+                          height: viewportHeight,
+                          child: _buildHubSectionList(
+                            modes: modes,
+                            metricsByHub: metricsByHub,
+                            sectionHeights: sectionHeights,
+                            scale: scale,
+                            fullCardLayout: fullCardLayout,
+                            leftOverflow: horizontalInset,
+                            interactionExpansion: interactionExpansion,
+                            railViewportWidth: railViewportWidth,
+                            bottomPadding: bottomPadding,
                           ),
-                          Positioned.fill(
-                            left: -horizontalInset,
-                            child: ListenableSelector<bool>(
-                              listenable: _focusModel,
-                              selector: () => _focusModel.railHasFocus,
-                              builder: (context, railHasFocus, _) => AnimatedDimScrim(
-                                dimmed: !railHasFocus,
-                                color: theme.scaffoldBackgroundColor,
-                                alpha: _unfocusedRailDimAlpha,
-                                // The viewport's top edge cuts across the
-                                // spotlight artwork; ramp the dim in instead.
-                                fadeTop: 36 * scale,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
+                      ),
+                    ),
+                    // Unfocused-rail dim: a scrim quad on top instead of
+                    // AnimatedOpacity, which would keep a full-viewport
+                    // saveLayer alive every frame (see AnimatedDimScrim).
+                    // Bled under the side nav like the background gradient,
+                    // so its edge doesn't seam against the nav.
+                    _RailBleedPositioned(
+                      width: width,
+                      targetBleedLeft: widget.backgroundBleedLeft,
+                      child: ListenableSelector<bool>(
+                        listenable: _focusModel,
+                        selector: () => _focusModel.railHasFocus,
+                        builder: (context, railHasFocus, _) => AnimatedDimScrim(
+                          dimmed: !railHasFocus,
+                          color: theme.scaffoldBackgroundColor,
+                          alpha: _unfocusedRailDimAlpha,
+                          // The band's top edge cuts across the spotlight
+                          // artwork; ramp the dim in instead.
+                          fadeTop: 36 * scale,
+                        ),
                       ),
                     ),
                   ],
@@ -1346,9 +1348,13 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                 bottom: -metrics.focusExtra,
                 child: ListenableSelector<bool>(
                   listenable: _focusModel,
-                  selector: () => _focusModel.hubIndex == hubIndex,
-                  builder: (context, isActive, _) => AnimatedDimScrim(
-                    dimmed: !isActive,
+                  // Only stripe rows while the rail itself is focused: when
+                  // it isn't, the full-width rail dim covers the band
+                  // uniformly, and per-row scrims (clipped to the rail's
+                  // footprint) would seam against it at the side-nav edge.
+                  selector: () => _focusModel.railHasFocus && _focusModel.hubIndex != hubIndex,
+                  builder: (context, dimmed, _) => AnimatedDimScrim(
+                    dimmed: dimmed,
                     color: Theme.of(context).scaffoldBackgroundColor,
                     alpha: _inactiveHubDimAlpha,
                     // Soften the quad's boundary so it doesn't draw a hard
@@ -1758,15 +1764,20 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   }
 }
 
-class _RailBackgroundBleed extends StatelessWidget {
+/// Positions [child] over the rail's full band, bled left under the side
+/// navigation (animated with the nav's expansion). Full-width layers — the
+/// background gradient and the unfocused-rail dim — must live here: anything
+/// clipped to the rail's own footprint terminates in a visible vertical seam
+/// at the nav edge, since the backdrop artwork continues behind the nav.
+class _RailBleedPositioned extends StatelessWidget {
   final double width;
 
   /// Explicit target; when null the value comes from [MainScreenFocusScope]
   /// (offset aspect) so sidebar flips rebuild only this widget, not the rail.
   final double? targetBleedLeft;
-  final Color backgroundColor;
+  final Widget child;
 
-  const _RailBackgroundBleed({required this.width, required this.targetBleedLeft, required this.backgroundColor});
+  const _RailBleedPositioned({required this.width, required this.targetBleedLeft, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -1775,13 +1786,7 @@ class _RailBackgroundBleed extends StatelessWidget {
       tween: Tween(end: target),
       duration: FocusTheme.getAnimationDuration(context),
       curve: Curves.easeOutCubic,
-      child: RasterizedGradient(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.transparent, backgroundColor.withValues(alpha: 0.7)],
-        ),
-      ),
+      child: child,
       builder: (context, bleedLeft, child) {
         final backgroundWidth = math.max(width + bleedLeft, MediaQuery.sizeOf(context).width);
         return Positioned(top: 0, bottom: 0, left: -bleedLeft, width: backgroundWidth, child: child!);
