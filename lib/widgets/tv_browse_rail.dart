@@ -1135,6 +1135,9 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                                 dimmed: !railHasFocus,
                                 color: theme.scaffoldBackgroundColor,
                                 alpha: _unfocusedRailDimAlpha,
+                                // The viewport's top edge cuts across the
+                                // spotlight artwork; ramp the dim in instead.
+                                fadeTop: 36 * scale,
                               ),
                             ),
                           ),
@@ -1348,6 +1351,10 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                     dimmed: !isActive,
                     color: Theme.of(context).scaffoldBackgroundColor,
                     alpha: _inactiveHubDimAlpha,
+                    // Soften the quad's boundary so it doesn't draw a hard
+                    // line across the artwork showing through around the row.
+                    fadeTop: 20 * scale,
+                    fadeBottom: 20 * scale,
                   ),
                 ),
               ),
