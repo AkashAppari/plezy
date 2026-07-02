@@ -46,6 +46,43 @@ class StorageService extends BaseSharedPreferencesService {
     // migration ran (after migration the slot is empty so this is a no-op).
     // ignore: deprecated_member_use_from_same_package
     LogRedactionManager.registerToken(getPlexToken());
+    await _migratePlexHomeUserScopes();
+  }
+
+  /// One-time repair for prefs scoped by a full `plex-home-…` profile id.
+  /// [parsePlexHomeProfileId] historically rejected real 16-hex home-user
+  /// uuids, so `_userPrefix` fell back to the full profile id and wrote
+  /// `user_plex-home-{acct}-{uuid}_*` keys instead of the intended
+  /// `user_{uuid}_*`. Move them onto the uuid scope. On conflict the
+  /// full-id value wins: it is the more recently written one (uuid-scoped
+  /// keys can only predate the profiles migration).
+  Future<void> _migratePlexHomeUserScopes() async {
+    const scopePrefix = 'user_plex-home-';
+    final keys = prefs.keys.where((k) => k.startsWith(scopePrefix)).toList(growable: false);
+    for (final key in keys) {
+      final withoutUserPrefix = key.substring('user_'.length);
+      // Profile ids contain no underscores, so the first `_` ends the scope.
+      final sep = withoutUserPrefix.indexOf('_');
+      if (sep <= 0) continue;
+      final parsed = parsePlexHomeProfileId(withoutUserPrefix.substring(0, sep));
+      if (parsed == null) continue;
+      final newKey = 'user_${parsed.homeUserUuid}_${withoutUserPrefix.substring(sep + 1)}';
+      switch (prefs.get(key)) {
+        case final List<Object?> v:
+          await prefs.setStringList(newKey, v.cast<String>());
+        case final String v:
+          await prefs.setString(newKey, v);
+        case final bool v:
+          await prefs.setBool(newKey, v);
+        case final int v:
+          await prefs.setInt(newKey, v);
+        case final double v:
+          await prefs.setDouble(newKey, v);
+        default:
+          continue; // Unknown shape — leave the old key untouched.
+      }
+      await prefs.remove(key);
+    }
   }
 
   // User-scoped storage for per-profile library settings
