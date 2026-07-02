@@ -363,6 +363,7 @@ class PlayerNative extends PlayerBase {
 
   bool _passthroughRequested = false;
   bool _passthroughActive = false;
+  bool _normalizationRequested = false;
   double _currentRate = 1.0;
 
   @override
@@ -383,6 +384,11 @@ class PlayerNative extends PlayerBase {
 
   Future<void> _applyPassthrough(bool enabled) async {
     _passthroughActive = enabled;
+    // loudnorm decodes to PCM, which defeats bitstream passthrough; the
+    // filter yields while passthrough is active and returns when it ends.
+    if (enabled && _normalizationRequested) {
+      await super.setAudioNormalization(false);
+    }
     await setProperty('audio-spdif', enabled ? _passthroughCodecs : '');
     // audio-exclusive redirects coreaudio to coreaudio_exclusive on macOS
     // (and exclusive WASAPI on Windows); on iOS/tvOS it is set once at
@@ -390,6 +396,16 @@ class PlayerNative extends PlayerBase {
     if (!Platform.isIOS) {
       await setProperty('audio-exclusive', enabled ? 'yes' : 'no');
     }
+    if (!enabled && _normalizationRequested) {
+      await super.setAudioNormalization(true);
+    }
+  }
+
+  @override
+  Future<void> setAudioNormalization(bool enabled) async {
+    _normalizationRequested = enabled;
+    if (enabled && _passthroughActive) return; // deferred until passthrough ends
+    await super.setAudioNormalization(enabled);
   }
 
   @override

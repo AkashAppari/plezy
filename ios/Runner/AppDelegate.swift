@@ -36,6 +36,10 @@ import MediaPlayer
       MpvPlayerPlugin.register(with: registrar)
     }
 
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AtmosProbePlugin") {
+      AtmosProbePlugin.register(with: registrar)
+    }
+
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "DeviceAdjustmentChannel") {
       registerDeviceAdjustmentChannel(messenger: registrar.messenger())
     }

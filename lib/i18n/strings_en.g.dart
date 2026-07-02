@@ -921,6 +921,54 @@ class TranslationsSettingsEn {
 	/// en: 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.'
 	String get audioPassthroughDescription => 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.';
 
+	/// en: 'Hand Dolby Digital Plus (including Atmos) to the system for bitstream output. DTS and TrueHD still play as multichannel PCM. Brief audio gaps can occur when seeking.'
+	String get audioPassthroughDescriptionAppleTv => 'Hand Dolby Digital Plus (including Atmos) to the system for bitstream output. DTS and TrueHD still play as multichannel PCM. Brief audio gaps can occur when seeking.';
+
+	/// en: 'Atmos Output Test'
+	String get atmosDiagnostics => 'Atmos Output Test';
+
+	/// en: 'Diagnose Dolby Atmos output by playing test signals through the system player'
+	String get atmosDiagnosticsDescription => 'Diagnose Dolby Atmos output by playing test signals through the system player';
+
+	/// en: 'Apple Atmos stream'
+	String get atmosTestHlsAtmos => 'Apple Atmos stream';
+
+	/// en: 'Known-good Dolby Atmos stream. The receiver should show Dolby Atmos.'
+	String get atmosTestHlsAtmosDescription => 'Known-good Dolby Atmos stream. The receiver should show Dolby Atmos.';
+
+	/// en: 'Apple surround stream'
+	String get atmosTestHlsControl => 'Apple surround stream';
+
+	/// en: 'Non-Atmos control stream. The receiver should show surround without Atmos.'
+	String get atmosTestHlsControlDescription => 'Non-Atmos control stream. The receiver should show surround without Atmos.';
+
+	/// en: 'Raw EAC3 stream'
+	String get atmosTestRawStream => 'Raw EAC3 stream';
+
+	/// en: 'Streams the test file exactly like in-player Atmos playback. Needs the test file URL.'
+	String get atmosTestRawStreamDescription => 'Streams the test file exactly like in-player Atmos playback. Needs the test file URL.';
+
+	/// en: 'Raw EAC3 file'
+	String get atmosTestRawFile => 'Raw EAC3 file';
+
+	/// en: 'Plays the test file with a known length. Needs the test file URL.'
+	String get atmosTestRawFileDescription => 'Plays the test file with a known length. Needs the test file URL.';
+
+	/// en: 'Stop test'
+	String get atmosTestStop => 'Stop test';
+
+	/// en: 'Test file URL'
+	String get atmosTestUrl => 'Test file URL';
+
+	/// en: 'HTTP URL of a raw .ec3 Dolby Atmos file (e.g. extracted with ffmpeg)'
+	String get atmosTestUrlDescription => 'HTTP URL of a raw .ec3 Dolby Atmos file (e.g. extracted with ffmpeg)';
+
+	/// en: 'Set the test file URL first'
+	String get atmosTestUrlMissing => 'Set the test file URL first';
+
+	/// en: 'Status'
+	String get atmosTestStatus => 'Status';
+
 	/// en: 'Dolby Vision Conversion'
 	String get dvConversionMode => 'Dolby Vision Conversion';
 
@@ -4785,6 +4833,22 @@ extension on Translations {
 			'settings.tunneledPlaybackDescription' => 'Use video tunneling. Disable if HDR playback shows black video.',
 			'settings.audioPassthrough' => 'Audio Passthrough',
 			'settings.audioPassthroughDescription' => 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.',
+			'settings.audioPassthroughDescriptionAppleTv' => 'Hand Dolby Digital Plus (including Atmos) to the system for bitstream output. DTS and TrueHD still play as multichannel PCM. Brief audio gaps can occur when seeking.',
+			'settings.atmosDiagnostics' => 'Atmos Output Test',
+			'settings.atmosDiagnosticsDescription' => 'Diagnose Dolby Atmos output by playing test signals through the system player',
+			'settings.atmosTestHlsAtmos' => 'Apple Atmos stream',
+			'settings.atmosTestHlsAtmosDescription' => 'Known-good Dolby Atmos stream. The receiver should show Dolby Atmos.',
+			'settings.atmosTestHlsControl' => 'Apple surround stream',
+			'settings.atmosTestHlsControlDescription' => 'Non-Atmos control stream. The receiver should show surround without Atmos.',
+			'settings.atmosTestRawStream' => 'Raw EAC3 stream',
+			'settings.atmosTestRawStreamDescription' => 'Streams the test file exactly like in-player Atmos playback. Needs the test file URL.',
+			'settings.atmosTestRawFile' => 'Raw EAC3 file',
+			'settings.atmosTestRawFileDescription' => 'Plays the test file with a known length. Needs the test file URL.',
+			'settings.atmosTestStop' => 'Stop test',
+			'settings.atmosTestUrl' => 'Test file URL',
+			'settings.atmosTestUrlDescription' => 'HTTP URL of a raw .ec3 Dolby Atmos file (e.g. extracted with ffmpeg)',
+			'settings.atmosTestUrlMissing' => 'Set the test file URL first',
+			'settings.atmosTestStatus' => 'Status',
 			'settings.dvConversionMode' => 'Dolby Vision Conversion',
 			'settings.dvConversionModeDescription' => 'Choose how ExoPlayer handles Dolby Vision Profile 7 files.',
 			'settings.dvConversionAuto' => 'Auto',
@@ -5021,6 +5085,8 @@ extension on Translations {
 			'messages.unableToDetermineLibrarySection' => 'Unable to determine library section for this item',
 			'messages.logsCleared' => 'Logs cleared',
 			'messages.logsCopied' => 'Logs copied to clipboard',
+			_ => null,
+		} ?? switch (path) {
 			'messages.noLogsAvailable' => 'No logs available',
 			'messages.libraryScanning' => ({required Object title}) => 'Scanning "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Library scan started for "${title}"',
@@ -5037,8 +5103,6 @@ extension on Translations {
 			'messages.noResultsFound' => 'No results found',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sleep timer set for ${label}',
 			'messages.noItemsAvailable' => 'No items available',
-			_ => null,
-		} ?? switch (path) {
 			'messages.failedToCreatePlayQueueNoItems' => 'Failed to create play queue - no items',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Failed to ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
@@ -5535,6 +5599,8 @@ extension on Translations {
 			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
 			'companionRemote.title' => 'Companion Remote',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Connected to ${name}',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.unknownDevice' => 'Unknown Device',
 			'companionRemote.session.startingServer' => 'Starting remote server...',
 			'companionRemote.session.failedToCreate' => 'Failed to start remote server:',
@@ -5551,8 +5617,6 @@ extension on Translations {
 			'companionRemote.pairing.discoveryDescription' => 'Plezy devices with the same Plex account appear here',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Connecting...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.searchingForDevices' => 'Looking for devices...',
 			'companionRemote.pairing.noDevicesFound' => 'No devices found on your network',
 			'companionRemote.pairing.noDevicesHint' => 'Open Plezy on desktop and use the same WiFi',

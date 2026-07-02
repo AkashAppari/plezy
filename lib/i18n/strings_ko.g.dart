@@ -393,6 +393,22 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => '비디오 터널링을 사용합니다. HDR 재생 시 검은 화면이 보이면 비활성화하세요.';
 	@override String get audioPassthrough => '오디오 패스스루';
 	@override String get audioPassthroughDescription => 'Dolby/DTS 오디오를 재인코딩 없이 리시버나 TV로 전송하여 서라운드 사운드를 유지합니다. 소리가 나지 않으면 비활성화하세요.';
+	@override String get audioPassthroughDescriptionAppleTv => 'Dolby Digital Plus(Atmos 포함)를 비트스트림으로 시스템에 전달합니다. DTS와 TrueHD는 계속 멀티채널 PCM으로 재생됩니다. 탐색 시 짧은 소리 끊김이 발생할 수 있습니다.';
+	@override String get atmosDiagnostics => 'Atmos 출력 테스트';
+	@override String get atmosDiagnosticsDescription => '시스템 플레이어로 테스트 신호를 재생하여 Dolby Atmos 출력을 진단합니다';
+	@override String get atmosTestHlsAtmos => 'Apple Atmos 스트림';
+	@override String get atmosTestHlsAtmosDescription => '검증된 Dolby Atmos 스트림입니다. 리시버에 Dolby Atmos가 표시되어야 합니다.';
+	@override String get atmosTestHlsControl => 'Apple 서라운드 스트림';
+	@override String get atmosTestHlsControlDescription => 'Atmos 없는 대조용 스트림입니다. 리시버에 Atmos 없는 서라운드가 표시되어야 합니다.';
+	@override String get atmosTestRawStream => '원시 EAC3 스트림';
+	@override String get atmosTestRawStreamDescription => '플레이어 내 Atmos 재생과 동일한 방식으로 테스트 파일을 스트리밍합니다. 테스트 파일 URL이 필요합니다.';
+	@override String get atmosTestRawFile => '원시 EAC3 파일';
+	@override String get atmosTestRawFileDescription => '길이가 알려진 테스트 파일을 재생합니다. 테스트 파일 URL이 필요합니다.';
+	@override String get atmosTestStop => '테스트 중지';
+	@override String get atmosTestUrl => '테스트 파일 URL';
+	@override String get atmosTestUrlDescription => '원시 .ec3 Dolby Atmos 파일의 HTTP URL(예: ffmpeg로 추출)';
+	@override String get atmosTestUrlMissing => '먼저 테스트 파일 URL을 설정하세요';
+	@override String get atmosTestStatus => '상태';
 	@override String get dvConversionMode => 'Dolby Vision 변환';
 	@override String get dvConversionModeDescription => 'ExoPlayer가 Dolby Vision Profile 7 파일을 처리하는 방식을 선택합니다.';
 	@override String get dvConversionAuto => '자동';
@@ -2184,6 +2200,22 @@ extension on TranslationsKo {
 			'settings.tunneledPlaybackDescription' => '비디오 터널링을 사용합니다. HDR 재생 시 검은 화면이 보이면 비활성화하세요.',
 			'settings.audioPassthrough' => '오디오 패스스루',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS 오디오를 재인코딩 없이 리시버나 TV로 전송하여 서라운드 사운드를 유지합니다. 소리가 나지 않으면 비활성화하세요.',
+			'settings.audioPassthroughDescriptionAppleTv' => 'Dolby Digital Plus(Atmos 포함)를 비트스트림으로 시스템에 전달합니다. DTS와 TrueHD는 계속 멀티채널 PCM으로 재생됩니다. 탐색 시 짧은 소리 끊김이 발생할 수 있습니다.',
+			'settings.atmosDiagnostics' => 'Atmos 출력 테스트',
+			'settings.atmosDiagnosticsDescription' => '시스템 플레이어로 테스트 신호를 재생하여 Dolby Atmos 출력을 진단합니다',
+			'settings.atmosTestHlsAtmos' => 'Apple Atmos 스트림',
+			'settings.atmosTestHlsAtmosDescription' => '검증된 Dolby Atmos 스트림입니다. 리시버에 Dolby Atmos가 표시되어야 합니다.',
+			'settings.atmosTestHlsControl' => 'Apple 서라운드 스트림',
+			'settings.atmosTestHlsControlDescription' => 'Atmos 없는 대조용 스트림입니다. 리시버에 Atmos 없는 서라운드가 표시되어야 합니다.',
+			'settings.atmosTestRawStream' => '원시 EAC3 스트림',
+			'settings.atmosTestRawStreamDescription' => '플레이어 내 Atmos 재생과 동일한 방식으로 테스트 파일을 스트리밍합니다. 테스트 파일 URL이 필요합니다.',
+			'settings.atmosTestRawFile' => '원시 EAC3 파일',
+			'settings.atmosTestRawFileDescription' => '길이가 알려진 테스트 파일을 재생합니다. 테스트 파일 URL이 필요합니다.',
+			'settings.atmosTestStop' => '테스트 중지',
+			'settings.atmosTestUrl' => '테스트 파일 URL',
+			'settings.atmosTestUrlDescription' => '원시 .ec3 Dolby Atmos 파일의 HTTP URL(예: ffmpeg로 추출)',
+			'settings.atmosTestUrlMissing' => '먼저 테스트 파일 URL을 설정하세요',
+			'settings.atmosTestStatus' => '상태',
 			'settings.dvConversionMode' => 'Dolby Vision 변환',
 			'settings.dvConversionModeDescription' => 'ExoPlayer가 Dolby Vision Profile 7 파일을 처리하는 방식을 선택합니다.',
 			'settings.dvConversionAuto' => '자동',
@@ -2426,6 +2458,8 @@ extension on TranslationsKo {
 			'messages.libraryScanFailed' => ({required Object error}) => '미디어 라이브러리 스캔 실패: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}" 메타데이터 새로고침 중...',
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}" 메타데이터 새로고침 시작됨',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshFailed' => ({required Object error}) => '메타데이터 새로고침 실패: ${error}',
 			'messages.logoutConfirm' => '로그아웃 하시겠습니까?',
 			'messages.noSeasonsFound' => '시즌을 찾을 수 없음',
@@ -2442,8 +2476,6 @@ extension on TranslationsKo {
 			'messages.serverLimitTitle' => '재생 실패',
 			'messages.serverLimitBody' => '서버 오류(HTTP 500). 대역폭/트랜스코딩 제한으로 세션이 거부된 것 같습니다. 소유자에게 조정을 요청하세요.',
 			'messages.logsUploaded' => '로그 업로드 완료',
-			_ => null,
-		} ?? switch (path) {
 			'messages.logsUploadFailed' => '로그 업로드 실패',
 			'messages.logId' => '로그 ID',
 			'subtitlingStyling.text' => '텍스트',
@@ -2940,6 +2972,8 @@ extension on TranslationsKo {
 			'companionRemote.session.serverStopped' => '원격 서버 중지됨',
 			'companionRemote.session.serverRunningDescription' => '네트워크의 모바일 기기가 이 앱에 연결할 수 있습니다',
 			'companionRemote.session.serverStoppedDescription' => '모바일 기기의 연결을 허용하려면 서버를 시작하세요',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.usePhoneToControl' => '모바일 기기로 이 앱을 제어하세요',
 			'companionRemote.session.startServer' => '서버 시작',
 			'companionRemote.session.stopServer' => '서버 중지',
@@ -2956,8 +2990,6 @@ extension on TranslationsKo {
 			'companionRemote.pairing.validationHostRequired' => '호스트 주소를 입력하세요',
 			'companionRemote.pairing.validationHostFormat' => '형식은 IP:포트여야 합니다 (예: 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => '연결 시간이 초과되었습니다. 두 기기에서 같은 네트워크를 사용하세요.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.sessionNotFound' => '기기를 찾을 수 없습니다. 호스트에서 Plezy가 실행 중인지 확인하세요.',
 			'companionRemote.pairing.authFailed' => '인증에 실패했습니다. 두 기기 모두 같은 Plex 계정이 필요합니다.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '연결 실패: ${error}',

@@ -393,6 +393,22 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => 'Gebruik videotunneling. Schakel uit als HDR-afspelen zwart beeld geeft.';
 	@override String get audioPassthrough => 'Audio-doorvoer';
 	@override String get audioPassthroughDescription => 'Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.';
+	@override String get audioPassthroughDescriptionAppleTv => 'Geeft Dolby Digital Plus (incl. Atmos) als bitstream aan het systeem door. DTS en TrueHD worden nog steeds als meerkanaals PCM afgespeeld. Bij zoeken kunnen korte geluidsonderbrekingen optreden.';
+	@override String get atmosDiagnostics => 'Atmos-uitvoertest';
+	@override String get atmosDiagnosticsDescription => 'Diagnosticeer de Dolby Atmos-uitvoer door testsignalen via de systeemspeler af te spelen';
+	@override String get atmosTestHlsAtmos => 'Apple Atmos-stream';
+	@override String get atmosTestHlsAtmosDescription => 'Bewezen werkende Dolby Atmos-stream. De receiver zou Dolby Atmos moeten tonen.';
+	@override String get atmosTestHlsControl => 'Apple surround-stream';
+	@override String get atmosTestHlsControlDescription => 'Controlestream zonder Atmos. De receiver zou surround zonder Atmos moeten tonen.';
+	@override String get atmosTestRawStream => 'Ruwe EAC3-stream';
+	@override String get atmosTestRawStreamDescription => 'Streamt het testbestand precies zoals Atmos-weergave in de speler. Vereist de URL van het testbestand.';
+	@override String get atmosTestRawFile => 'Ruw EAC3-bestand';
+	@override String get atmosTestRawFileDescription => 'Speelt het testbestand met bekende lengte af. Vereist de URL van het testbestand.';
+	@override String get atmosTestStop => 'Test stoppen';
+	@override String get atmosTestUrl => 'URL van testbestand';
+	@override String get atmosTestUrlDescription => 'HTTP-URL van een ruw .ec3 Dolby Atmos-bestand (bijv. uitgepakt met ffmpeg)';
+	@override String get atmosTestUrlMissing => 'Stel eerst de URL van het testbestand in';
+	@override String get atmosTestStatus => 'Status';
 	@override String get dvConversionMode => 'Dolby Vision-conversie';
 	@override String get dvConversionModeDescription => 'Kies hoe ExoPlayer Dolby Vision Profile 7-bestanden verwerkt.';
 	@override String get dvConversionAuto => 'Auto';
@@ -2184,6 +2200,22 @@ extension on TranslationsNl {
 			'settings.tunneledPlaybackDescription' => 'Gebruik videotunneling. Schakel uit als HDR-afspelen zwart beeld geeft.',
 			'settings.audioPassthrough' => 'Audio-doorvoer',
 			'settings.audioPassthroughDescription' => 'Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.',
+			'settings.audioPassthroughDescriptionAppleTv' => 'Geeft Dolby Digital Plus (incl. Atmos) als bitstream aan het systeem door. DTS en TrueHD worden nog steeds als meerkanaals PCM afgespeeld. Bij zoeken kunnen korte geluidsonderbrekingen optreden.',
+			'settings.atmosDiagnostics' => 'Atmos-uitvoertest',
+			'settings.atmosDiagnosticsDescription' => 'Diagnosticeer de Dolby Atmos-uitvoer door testsignalen via de systeemspeler af te spelen',
+			'settings.atmosTestHlsAtmos' => 'Apple Atmos-stream',
+			'settings.atmosTestHlsAtmosDescription' => 'Bewezen werkende Dolby Atmos-stream. De receiver zou Dolby Atmos moeten tonen.',
+			'settings.atmosTestHlsControl' => 'Apple surround-stream',
+			'settings.atmosTestHlsControlDescription' => 'Controlestream zonder Atmos. De receiver zou surround zonder Atmos moeten tonen.',
+			'settings.atmosTestRawStream' => 'Ruwe EAC3-stream',
+			'settings.atmosTestRawStreamDescription' => 'Streamt het testbestand precies zoals Atmos-weergave in de speler. Vereist de URL van het testbestand.',
+			'settings.atmosTestRawFile' => 'Ruw EAC3-bestand',
+			'settings.atmosTestRawFileDescription' => 'Speelt het testbestand met bekende lengte af. Vereist de URL van het testbestand.',
+			'settings.atmosTestStop' => 'Test stoppen',
+			'settings.atmosTestUrl' => 'URL van testbestand',
+			'settings.atmosTestUrlDescription' => 'HTTP-URL van een ruw .ec3 Dolby Atmos-bestand (bijv. uitgepakt met ffmpeg)',
+			'settings.atmosTestUrlMissing' => 'Stel eerst de URL van het testbestand in',
+			'settings.atmosTestStatus' => 'Status',
 			'settings.dvConversionMode' => 'Dolby Vision-conversie',
 			'settings.dvConversionModeDescription' => 'Kies hoe ExoPlayer Dolby Vision Profile 7-bestanden verwerkt.',
 			'settings.dvConversionAuto' => 'Auto',
@@ -2426,6 +2458,8 @@ extension on TranslationsNl {
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kon bibliotheek niet scannen: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Metadata vernieuwen voor "${title}"...',
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadata vernieuwen gestart voor "${title}"',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Kon metadata niet vernieuwen: ${error}',
 			'messages.logoutConfirm' => 'Weet je zeker dat je wilt uitloggen?',
 			'messages.noSeasonsFound' => 'Geen seizoenen gevonden',
@@ -2442,8 +2476,6 @@ extension on TranslationsNl {
 			'messages.serverLimitTitle' => 'Afspelen mislukt',
 			'messages.serverLimitBody' => 'Serverfout (HTTP 500). Waarschijnlijk weigerde een bandbreedte-/transcodeerlimiet deze sessie. Vraag de eigenaar dit aan te passen.',
 			'messages.logsUploaded' => 'Logs geüpload',
-			_ => null,
-		} ?? switch (path) {
 			'messages.logsUploadFailed' => 'Uploaden van logs mislukt',
 			'messages.logId' => 'Log-ID',
 			'subtitlingStyling.text' => 'Tekst',
@@ -2940,6 +2972,8 @@ extension on TranslationsNl {
 			'companionRemote.session.serverStopped' => 'Externe server gestopt',
 			'companionRemote.session.serverRunningDescription' => 'Mobiele apparaten op je netwerk kunnen met deze app verbinden',
 			'companionRemote.session.serverStoppedDescription' => 'Start de server om mobiele apparaten te laten verbinden',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.usePhoneToControl' => 'Gebruik je mobiele apparaat om deze app te bedienen',
 			'companionRemote.session.startServer' => 'Server starten',
 			'companionRemote.session.stopServer' => 'Server stoppen',
@@ -2956,8 +2990,6 @@ extension on TranslationsNl {
 			'companionRemote.pairing.validationHostRequired' => 'Voer het hostadres in',
 			'companionRemote.pairing.validationHostFormat' => 'Formaat moet IP:poort zijn (bijv. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Verbinding verlopen. Gebruik hetzelfde netwerk op beide apparaten.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.sessionNotFound' => 'Apparaat niet gevonden. Zorg dat Plezy op de host draait.',
 			'companionRemote.pairing.authFailed' => 'Authenticatie mislukt. Beide apparaten hebben hetzelfde Plex-account nodig.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kan niet verbinden: ${error}',

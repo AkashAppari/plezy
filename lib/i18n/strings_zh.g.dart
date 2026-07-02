@@ -393,6 +393,22 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => '使用视频隧道。若 HDR 播放出现黑屏，请禁用。';
 	@override String get audioPassthrough => '音频直通';
 	@override String get audioPassthroughDescription => '将 Dolby/DTS 音频不经重新编码直接发送到功放或电视，保留环绕声。如果没有声音，请关闭。';
+	@override String get audioPassthroughDescriptionAppleTv => '将 Dolby Digital Plus（含 Atmos）以比特流方式交给系统输出。DTS 和 TrueHD 仍以多声道 PCM 播放。快进快退时可能出现短暂声音中断。';
+	@override String get atmosDiagnostics => 'Atmos 输出测试';
+	@override String get atmosDiagnosticsDescription => '通过系统播放器播放测试信号，诊断 Dolby Atmos 输出';
+	@override String get atmosTestHlsAtmos => 'Apple Atmos 流';
+	@override String get atmosTestHlsAtmosDescription => '已知正常的 Dolby Atmos 流。功放应显示 Dolby Atmos。';
+	@override String get atmosTestHlsControl => 'Apple 环绕声流';
+	@override String get atmosTestHlsControlDescription => '不含 Atmos 的对照流。功放应显示不带 Atmos 的环绕声。';
+	@override String get atmosTestRawStream => '原始 EAC3 流';
+	@override String get atmosTestRawStreamDescription => '以与播放器内 Atmos 播放完全相同的方式串流测试文件。需要测试文件 URL。';
+	@override String get atmosTestRawFile => '原始 EAC3 文件';
+	@override String get atmosTestRawFileDescription => '以已知长度播放测试文件。需要测试文件 URL。';
+	@override String get atmosTestStop => '停止测试';
+	@override String get atmosTestUrl => '测试文件 URL';
+	@override String get atmosTestUrlDescription => '原始 .ec3 Dolby Atmos 文件的 HTTP URL（例如用 ffmpeg 提取）';
+	@override String get atmosTestUrlMissing => '请先设置测试文件 URL';
+	@override String get atmosTestStatus => '状态';
 	@override String get dvConversionMode => 'Dolby Vision 转换';
 	@override String get dvConversionModeDescription => '选择 ExoPlayer 如何处理 Dolby Vision Profile 7 文件。';
 	@override String get dvConversionAuto => '自动';
@@ -2184,6 +2200,22 @@ extension on TranslationsZh {
 			'settings.tunneledPlaybackDescription' => '使用视频隧道。若 HDR 播放出现黑屏，请禁用。',
 			'settings.audioPassthrough' => '音频直通',
 			'settings.audioPassthroughDescription' => '将 Dolby/DTS 音频不经重新编码直接发送到功放或电视，保留环绕声。如果没有声音，请关闭。',
+			'settings.audioPassthroughDescriptionAppleTv' => '将 Dolby Digital Plus（含 Atmos）以比特流方式交给系统输出。DTS 和 TrueHD 仍以多声道 PCM 播放。快进快退时可能出现短暂声音中断。',
+			'settings.atmosDiagnostics' => 'Atmos 输出测试',
+			'settings.atmosDiagnosticsDescription' => '通过系统播放器播放测试信号，诊断 Dolby Atmos 输出',
+			'settings.atmosTestHlsAtmos' => 'Apple Atmos 流',
+			'settings.atmosTestHlsAtmosDescription' => '已知正常的 Dolby Atmos 流。功放应显示 Dolby Atmos。',
+			'settings.atmosTestHlsControl' => 'Apple 环绕声流',
+			'settings.atmosTestHlsControlDescription' => '不含 Atmos 的对照流。功放应显示不带 Atmos 的环绕声。',
+			'settings.atmosTestRawStream' => '原始 EAC3 流',
+			'settings.atmosTestRawStreamDescription' => '以与播放器内 Atmos 播放完全相同的方式串流测试文件。需要测试文件 URL。',
+			'settings.atmosTestRawFile' => '原始 EAC3 文件',
+			'settings.atmosTestRawFileDescription' => '以已知长度播放测试文件。需要测试文件 URL。',
+			'settings.atmosTestStop' => '停止测试',
+			'settings.atmosTestUrl' => '测试文件 URL',
+			'settings.atmosTestUrlDescription' => '原始 .ec3 Dolby Atmos 文件的 HTTP URL（例如用 ffmpeg 提取）',
+			'settings.atmosTestUrlMissing' => '请先设置测试文件 URL',
+			'settings.atmosTestStatus' => '状态',
 			'settings.dvConversionMode' => 'Dolby Vision 转换',
 			'settings.dvConversionModeDescription' => '选择 ExoPlayer 如何处理 Dolby Vision Profile 7 文件。',
 			'settings.dvConversionAuto' => '自动',
@@ -2426,6 +2458,8 @@ extension on TranslationsZh {
 			'messages.libraryScanFailed' => ({required Object error}) => '无法扫描媒体库: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '正在刷新 “${title}” 的元数据...',
 			'messages.metadataRefreshStarted' => ({required Object title}) => '已开始刷新 “${title}” 的元数据',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshFailed' => ({required Object error}) => '无法刷新元数据: ${error}',
 			'messages.logoutConfirm' => '你确定要登出吗？',
 			'messages.noSeasonsFound' => '未找到季',
@@ -2442,8 +2476,6 @@ extension on TranslationsZh {
 			'messages.serverLimitTitle' => '播放失败',
 			'messages.serverLimitBody' => '服务器错误 (HTTP 500)。带宽/转码限制可能拒绝了此会话。请让所有者调整。',
 			'messages.logsUploaded' => '日志已上传',
-			_ => null,
-		} ?? switch (path) {
 			'messages.logsUploadFailed' => '上传日志失败',
 			'messages.logId' => '日志 ID',
 			'subtitlingStyling.text' => '文本',
@@ -2940,6 +2972,8 @@ extension on TranslationsZh {
 			'companionRemote.session.serverStopped' => '远程服务器已停止',
 			'companionRemote.session.serverRunningDescription' => '网络上的移动设备可以连接到此应用',
 			'companionRemote.session.serverStoppedDescription' => '启动服务器以允许移动设备连接',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.usePhoneToControl' => '使用移动设备控制此应用',
 			'companionRemote.session.startServer' => '启动服务器',
 			'companionRemote.session.stopServer' => '停止服务器',
@@ -2956,8 +2990,6 @@ extension on TranslationsZh {
 			'companionRemote.pairing.validationHostRequired' => '请输入主机地址',
 			'companionRemote.pairing.validationHostFormat' => '格式必须为IP:端口（例如 192.168.1.100:48632）',
 			'companionRemote.pairing.connectionTimedOut' => '连接超时。请在两台设备上使用同一网络。',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.sessionNotFound' => '未找到设备。请确认 Plezy 正在主机上运行。',
 			'companionRemote.pairing.authFailed' => '认证失败。两台设备需要使用同一 Plex 账号。',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '连接失败：${error}',

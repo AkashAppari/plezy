@@ -393,6 +393,22 @@ class _TranslationsSettingsEs extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => 'Usar tunelización de video. Desactívala si HDR muestra video negro.';
 	@override String get audioPassthrough => 'Audio Passthrough';
 	@override String get audioPassthroughDescription => 'Envía el audio Dolby/DTS a tu receptor o TV sin recodificar, conservando el sonido envolvente. Desactívalo si no tienes sonido.';
+	@override String get audioPassthroughDescriptionAppleTv => 'Entrega Dolby Digital Plus (incluido Atmos) al sistema como bitstream. DTS y TrueHD se siguen reproduciendo como PCM multicanal. Pueden producirse breves cortes de audio al buscar.';
+	@override String get atmosDiagnostics => 'Prueba de salida Atmos';
+	@override String get atmosDiagnosticsDescription => 'Diagnostica la salida Dolby Atmos reproduciendo señales de prueba con el reproductor del sistema';
+	@override String get atmosTestHlsAtmos => 'Stream Atmos de Apple';
+	@override String get atmosTestHlsAtmosDescription => 'Stream Dolby Atmos de referencia. El receptor debería mostrar Dolby Atmos.';
+	@override String get atmosTestHlsControl => 'Stream surround de Apple';
+	@override String get atmosTestHlsControlDescription => 'Stream de control sin Atmos. El receptor debería mostrar surround sin Atmos.';
+	@override String get atmosTestRawStream => 'Stream EAC3 sin procesar';
+	@override String get atmosTestRawStreamDescription => 'Transmite el archivo de prueba igual que la reproducción Atmos del reproductor. Necesita la URL del archivo de prueba.';
+	@override String get atmosTestRawFile => 'Archivo EAC3 sin procesar';
+	@override String get atmosTestRawFileDescription => 'Reproduce el archivo de prueba con longitud conocida. Necesita la URL del archivo de prueba.';
+	@override String get atmosTestStop => 'Detener prueba';
+	@override String get atmosTestUrl => 'URL del archivo de prueba';
+	@override String get atmosTestUrlDescription => 'URL HTTP de un archivo .ec3 Dolby Atmos sin procesar (p. ej., extraído con ffmpeg)';
+	@override String get atmosTestUrlMissing => 'Configura primero la URL del archivo de prueba';
+	@override String get atmosTestStatus => 'Estado';
 	@override String get dvConversionMode => 'Conversión de Dolby Vision';
 	@override String get dvConversionModeDescription => 'Elige cómo ExoPlayer gestiona archivos Dolby Vision Profile 7.';
 	@override String get dvConversionAuto => 'Automático';
@@ -2184,6 +2200,22 @@ extension on TranslationsEs {
 			'settings.tunneledPlaybackDescription' => 'Usar tunelización de video. Desactívala si HDR muestra video negro.',
 			'settings.audioPassthrough' => 'Audio Passthrough',
 			'settings.audioPassthroughDescription' => 'Envía el audio Dolby/DTS a tu receptor o TV sin recodificar, conservando el sonido envolvente. Desactívalo si no tienes sonido.',
+			'settings.audioPassthroughDescriptionAppleTv' => 'Entrega Dolby Digital Plus (incluido Atmos) al sistema como bitstream. DTS y TrueHD se siguen reproduciendo como PCM multicanal. Pueden producirse breves cortes de audio al buscar.',
+			'settings.atmosDiagnostics' => 'Prueba de salida Atmos',
+			'settings.atmosDiagnosticsDescription' => 'Diagnostica la salida Dolby Atmos reproduciendo señales de prueba con el reproductor del sistema',
+			'settings.atmosTestHlsAtmos' => 'Stream Atmos de Apple',
+			'settings.atmosTestHlsAtmosDescription' => 'Stream Dolby Atmos de referencia. El receptor debería mostrar Dolby Atmos.',
+			'settings.atmosTestHlsControl' => 'Stream surround de Apple',
+			'settings.atmosTestHlsControlDescription' => 'Stream de control sin Atmos. El receptor debería mostrar surround sin Atmos.',
+			'settings.atmosTestRawStream' => 'Stream EAC3 sin procesar',
+			'settings.atmosTestRawStreamDescription' => 'Transmite el archivo de prueba igual que la reproducción Atmos del reproductor. Necesita la URL del archivo de prueba.',
+			'settings.atmosTestRawFile' => 'Archivo EAC3 sin procesar',
+			'settings.atmosTestRawFileDescription' => 'Reproduce el archivo de prueba con longitud conocida. Necesita la URL del archivo de prueba.',
+			'settings.atmosTestStop' => 'Detener prueba',
+			'settings.atmosTestUrl' => 'URL del archivo de prueba',
+			'settings.atmosTestUrlDescription' => 'URL HTTP de un archivo .ec3 Dolby Atmos sin procesar (p. ej., extraído con ffmpeg)',
+			'settings.atmosTestUrlMissing' => 'Configura primero la URL del archivo de prueba',
+			'settings.atmosTestStatus' => 'Estado',
 			'settings.dvConversionMode' => 'Conversión de Dolby Vision',
 			'settings.dvConversionModeDescription' => 'Elige cómo ExoPlayer gestiona archivos Dolby Vision Profile 7.',
 			'settings.dvConversionAuto' => 'Automático',
@@ -2426,6 +2458,8 @@ extension on TranslationsEs {
 			'messages.libraryScanFailed' => ({required Object error}) => 'Error al escanear biblioteca: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Actualizando metadatos de "${title}"...',
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Actualización de metadatos iniciada para "${title}"',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Error al actualizar metadatos: ${error}',
 			'messages.logoutConfirm' => '¿Estás seguro de que quieres cerrar sesión?',
 			'messages.noSeasonsFound' => 'No se encontraron temporadas',
@@ -2442,8 +2476,6 @@ extension on TranslationsEs {
 			'messages.serverLimitTitle' => 'Error de reproducción',
 			'messages.serverLimitBody' => 'Error del servidor (HTTP 500). Un límite de ancho de banda/transcodificación probablemente rechazó esta sesión. Pide al propietario que lo ajuste.',
 			'messages.logsUploaded' => 'Registros subidos',
-			_ => null,
-		} ?? switch (path) {
 			'messages.logsUploadFailed' => 'Error al subir registros',
 			'messages.logId' => 'ID de registro',
 			'subtitlingStyling.text' => 'Texto',
@@ -2940,6 +2972,8 @@ extension on TranslationsEs {
 			'companionRemote.session.serverStopped' => 'Servidor remoto detenido',
 			'companionRemote.session.serverRunningDescription' => 'Los dispositivos móviles de tu red pueden conectarse a esta app',
 			'companionRemote.session.serverStoppedDescription' => 'Inicia el servidor para permitir que los dispositivos móviles se conecten',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.usePhoneToControl' => 'Usa tu dispositivo móvil para controlar esta aplicación',
 			'companionRemote.session.startServer' => 'Iniciar servidor',
 			'companionRemote.session.stopServer' => 'Detener servidor',
@@ -2956,8 +2990,6 @@ extension on TranslationsEs {
 			'companionRemote.pairing.validationHostRequired' => 'Ingresa la dirección del host',
 			'companionRemote.pairing.validationHostFormat' => 'El formato debe ser IP:puerto (ej. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Tiempo de conexión agotado. Usa la misma red en ambos dispositivos.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.sessionNotFound' => 'Dispositivo no encontrado. Asegúrate de que Plezy esté en ejecución en el host.',
 			'companionRemote.pairing.authFailed' => 'Autenticación fallida. Ambos dispositivos necesitan la misma cuenta Plex.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Error al conectar: ${error}',

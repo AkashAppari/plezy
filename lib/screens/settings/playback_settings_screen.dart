@@ -17,6 +17,7 @@ import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_page.dart';
 import '../../widgets/settings_section.dart';
+import 'atmos_diagnostics_screen.dart';
 import 'external_player_screen.dart';
 import 'mpv_config_screen.dart';
 import 'settings_utils.dart';
@@ -81,6 +82,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                 if (showDisplaySwitchDelay) _displaySwitchDelayTile(),
                 if (exoActive) _tunneledPlaybackTile(),
                 if (PlatformDetector.supportsAudioPassthrough()) _audioPassthroughTile(),
+                if (PlatformDetector.isAppleTV()) _atmosDiagnosticsTile(),
                 if (exoActive) _dvConversionModeTile(),
                 _bufferSizeTile(),
                 _defaultQualityTile(),
@@ -325,7 +327,16 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     pref: SettingsService.audioPassthrough,
     icon: Symbols.surround_sound_rounded,
     title: t.settings.audioPassthrough,
-    subtitle: t.settings.audioPassthroughDescription,
+    subtitle: PlatformDetector.isAppleTV()
+        ? t.settings.audioPassthroughDescriptionAppleTv
+        : t.settings.audioPassthroughDescription,
+  );
+
+  Widget _atmosDiagnosticsTile() => SettingNavigationTile(
+    icon: Symbols.spatial_audio_rounded,
+    title: t.settings.atmosDiagnostics,
+    subtitle: t.settings.atmosDiagnosticsDescription,
+    destinationBuilder: (_) => const AtmosDiagnosticsScreen(),
   );
 
   // Visibility for this and the three tiles below is decided by the hoisted

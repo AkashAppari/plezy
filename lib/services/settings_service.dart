@@ -188,8 +188,9 @@ class _UseExternalPlayerPref extends Pref<bool> {
   Future<void> writeTo(BaseSharedPreferencesService svc, bool value) => svc.writeBool(key, value);
 }
 
-/// Experimental Dolby passthrough. Keep opt-in everywhere, including Apple TV,
-/// until the AVFoundation EAC3 path is verified across real receiver setups.
+/// Experimental Dolby passthrough. Keep opt-in on Apple TV until the
+/// AVPlayer Atmos sink (EAC3+JOC → Dolby MAT, #1300) is verified on real
+/// receiver setups; non-JOC content still decodes to multichannel PCM there.
 class _AudioPassthroughPref extends Pref<bool> {
   const _AudioPassthroughPref() : super('audio_passthrough');
 
@@ -201,7 +202,7 @@ class _AudioPassthroughPref extends Pref<bool> {
     // (Media3 picks bitstream vs PCM via AudioCapabilities), preserving surround.
     // Scoped to ExoPlayer — the mpv backend force-sets audio-spdif with no decode
     // fallback. (#1458)
-    // TODO: Default Apple TV to on once EAC3 passthrough is hardware-verified.
+    // TODO: Default Apple TV to on once the #1300 Atmos sink is hardware-verified.
     return Platform.isAndroid && PlatformDetector.isTV() && svc.read(SettingsService.useExoPlayer);
   }
 
@@ -337,6 +338,9 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String defaultCreditsPattern = r'(?:^|\b)(?:outro|closing|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$';
 
   static const enableDebugLogging = BoolPref('enable_debug_logging', onWrite: setLoggerLevel);
+  // Source URL for the Apple TV Atmos diagnostics screen; deliberately not
+  // resettable so a tester keeps it across "Reset All Settings".
+  static const atmosProbeUrl = StringPref('atmos_probe_url', defaultValue: '');
   static const crashReporting = BoolPref('crash_reporting', defaultValue: true);
   static const enableHardwareDecoding = BoolPref('enable_hardware_decoding', defaultValue: true);
   static const enableHDR = BoolPref('enable_hdr', defaultValue: true);

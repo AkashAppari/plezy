@@ -393,6 +393,22 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => 'Использовать видеотуннелирование. Отключите, если HDR показывает черный экран.';
 	@override String get audioPassthrough => 'Сквозной вывод аудио';
 	@override String get audioPassthroughDescription => 'Передавать звук Dolby/DTS на ресивер или телевизор без перекодирования, сохраняя объёмный звук. Отключите, если нет звука.';
+	@override String get audioPassthroughDescriptionAppleTv => 'Передаёт Dolby Digital Plus (включая Atmos) системе в виде битового потока. DTS и TrueHD по-прежнему воспроизводятся как многоканальный PCM. При перемотке возможны короткие пропадания звука.';
+	@override String get atmosDiagnostics => 'Тест вывода Atmos';
+	@override String get atmosDiagnosticsDescription => 'Диагностика вывода Dolby Atmos воспроизведением тестовых сигналов через системный проигрыватель';
+	@override String get atmosTestHlsAtmos => 'Atmos-поток Apple';
+	@override String get atmosTestHlsAtmosDescription => 'Заведомо рабочий поток Dolby Atmos. Ресивер должен показать Dolby Atmos.';
+	@override String get atmosTestHlsControl => 'Surround-поток Apple';
+	@override String get atmosTestHlsControlDescription => 'Контрольный поток без Atmos. Ресивер должен показать объёмный звук без Atmos.';
+	@override String get atmosTestRawStream => 'Сырой поток EAC3';
+	@override String get atmosTestRawStreamDescription => 'Транслирует тестовый файл точно так же, как Atmos-воспроизведение в проигрывателе. Требуется URL тестового файла.';
+	@override String get atmosTestRawFile => 'Сырой файл EAC3';
+	@override String get atmosTestRawFileDescription => 'Воспроизводит тестовый файл с известной длиной. Требуется URL тестового файла.';
+	@override String get atmosTestStop => 'Остановить тест';
+	@override String get atmosTestUrl => 'URL тестового файла';
+	@override String get atmosTestUrlDescription => 'HTTP-URL сырого файла .ec3 Dolby Atmos (например, извлечённого через ffmpeg)';
+	@override String get atmosTestUrlMissing => 'Сначала укажите URL тестового файла';
+	@override String get atmosTestStatus => 'Статус';
 	@override String get dvConversionMode => 'Преобразование Dolby Vision';
 	@override String get dvConversionModeDescription => 'Выберите, как ExoPlayer обрабатывает файлы Dolby Vision Profile 7.';
 	@override String get dvConversionAuto => 'Авто';
@@ -2184,6 +2200,22 @@ extension on TranslationsRu {
 			'settings.tunneledPlaybackDescription' => 'Использовать видеотуннелирование. Отключите, если HDR показывает черный экран.',
 			'settings.audioPassthrough' => 'Сквозной вывод аудио',
 			'settings.audioPassthroughDescription' => 'Передавать звук Dolby/DTS на ресивер или телевизор без перекодирования, сохраняя объёмный звук. Отключите, если нет звука.',
+			'settings.audioPassthroughDescriptionAppleTv' => 'Передаёт Dolby Digital Plus (включая Atmos) системе в виде битового потока. DTS и TrueHD по-прежнему воспроизводятся как многоканальный PCM. При перемотке возможны короткие пропадания звука.',
+			'settings.atmosDiagnostics' => 'Тест вывода Atmos',
+			'settings.atmosDiagnosticsDescription' => 'Диагностика вывода Dolby Atmos воспроизведением тестовых сигналов через системный проигрыватель',
+			'settings.atmosTestHlsAtmos' => 'Atmos-поток Apple',
+			'settings.atmosTestHlsAtmosDescription' => 'Заведомо рабочий поток Dolby Atmos. Ресивер должен показать Dolby Atmos.',
+			'settings.atmosTestHlsControl' => 'Surround-поток Apple',
+			'settings.atmosTestHlsControlDescription' => 'Контрольный поток без Atmos. Ресивер должен показать объёмный звук без Atmos.',
+			'settings.atmosTestRawStream' => 'Сырой поток EAC3',
+			'settings.atmosTestRawStreamDescription' => 'Транслирует тестовый файл точно так же, как Atmos-воспроизведение в проигрывателе. Требуется URL тестового файла.',
+			'settings.atmosTestRawFile' => 'Сырой файл EAC3',
+			'settings.atmosTestRawFileDescription' => 'Воспроизводит тестовый файл с известной длиной. Требуется URL тестового файла.',
+			'settings.atmosTestStop' => 'Остановить тест',
+			'settings.atmosTestUrl' => 'URL тестового файла',
+			'settings.atmosTestUrlDescription' => 'HTTP-URL сырого файла .ec3 Dolby Atmos (например, извлечённого через ffmpeg)',
+			'settings.atmosTestUrlMissing' => 'Сначала укажите URL тестового файла',
+			'settings.atmosTestStatus' => 'Статус',
 			'settings.dvConversionMode' => 'Преобразование Dolby Vision',
 			'settings.dvConversionModeDescription' => 'Выберите, как ExoPlayer обрабатывает файлы Dolby Vision Profile 7.',
 			'settings.dvConversionAuto' => 'Авто',
@@ -2426,6 +2458,8 @@ extension on TranslationsRu {
 			'messages.libraryScanFailed' => ({required Object error}) => 'Не удалось отсканировать библиотеку: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Обновление метаданных "${title}"...',
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Обновление метаданных начато для "${title}"',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Не удалось обновить метаданные: ${error}',
 			'messages.logoutConfirm' => 'Вы уверены, что хотите выйти?',
 			'messages.noSeasonsFound' => 'Сезоны не найдены',
@@ -2442,8 +2476,6 @@ extension on TranslationsRu {
 			'messages.serverLimitTitle' => 'Ошибка воспроизведения',
 			'messages.serverLimitBody' => 'Ошибка сервера (HTTP 500). Лимит пропускной способности/транскодирования, вероятно, отклонил сессию. Попросите владельца изменить настройки.',
 			'messages.logsUploaded' => 'Логи загружены',
-			_ => null,
-		} ?? switch (path) {
 			'messages.logsUploadFailed' => 'Не удалось загрузить логи',
 			'messages.logId' => 'ID лога',
 			'subtitlingStyling.text' => 'Текст',
@@ -2940,6 +2972,8 @@ extension on TranslationsRu {
 			'companionRemote.session.serverStopped' => 'Удалённый сервер остановлен',
 			'companionRemote.session.serverRunningDescription' => 'Мобильные устройства в вашей сети могут подключаться к этому приложению',
 			'companionRemote.session.serverStoppedDescription' => 'Запустите сервер, чтобы разрешить подключение мобильных устройств',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.usePhoneToControl' => 'Используйте мобильное устройство для управления этим приложением',
 			'companionRemote.session.startServer' => 'Запустить сервер',
 			'companionRemote.session.stopServer' => 'Остановить сервер',
@@ -2956,8 +2990,6 @@ extension on TranslationsRu {
 			'companionRemote.pairing.validationHostRequired' => 'Введите адрес хоста',
 			'companionRemote.pairing.validationHostFormat' => 'Формат должен быть IP:порт (например, 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Время подключения истекло. Используйте одну сеть на обоих устройствах.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.sessionNotFound' => 'Устройство не найдено. Убедитесь, что Plezy запущен на хосте.',
 			'companionRemote.pairing.authFailed' => 'Аутентификация не удалась. На обоих устройствах нужен один аккаунт Plex.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Не удалось подключиться: ${error}',

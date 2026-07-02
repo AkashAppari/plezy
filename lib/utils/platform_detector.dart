@@ -211,8 +211,10 @@ class PlatformDetector {
   }
 
   static bool supportsAudioPassthrough() {
-    if (isAppleTV()) return false;
-    return isDesktopOS() || (Platform.isAndroid && isTV());
+    // Apple TV: EAC3+JOC rides the AVPlayer Atmos sink in the mpv fork's
+    // ao_avfoundation; other Dolby content decodes to multichannel PCM.
+    // Route capability is gated at runtime inside the AO itself.
+    return isAppleTV() || isDesktopOS() || (Platform.isAndroid && isTV());
   }
 
   static bool supportsPictureInPicture() {

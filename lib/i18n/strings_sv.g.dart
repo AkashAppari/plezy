@@ -393,6 +393,22 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => 'Använd videotunnling. Inaktivera om HDR-uppspelning visar svart video.';
 	@override String get audioPassthrough => 'Ljudgenomkoppling';
 	@override String get audioPassthroughDescription => 'Skicka Dolby/DTS-ljud till din receiver eller TV utan omkodning och bevara surroundljudet. Stäng av om du inte har något ljud.';
+	@override String get audioPassthroughDescriptionAppleTv => 'Lämnar Dolby Digital Plus (inkl. Atmos) till systemet som bitstream. DTS och TrueHD spelas fortfarande upp som flerkanals-PCM. Korta ljudavbrott kan förekomma vid sökning.';
+	@override String get atmosDiagnostics => 'Atmos-utgångstest';
+	@override String get atmosDiagnosticsDescription => 'Diagnostisera Dolby Atmos-utgången genom att spela testsignaler via systemspelaren';
+	@override String get atmosTestHlsAtmos => 'Apple Atmos-ström';
+	@override String get atmosTestHlsAtmosDescription => 'Känd fungerande Dolby Atmos-ström. Receivern bör visa Dolby Atmos.';
+	@override String get atmosTestHlsControl => 'Apple surround-ström';
+	@override String get atmosTestHlsControlDescription => 'Kontrollström utan Atmos. Receivern bör visa surround utan Atmos.';
+	@override String get atmosTestRawStream => 'Rå EAC3-ström';
+	@override String get atmosTestRawStreamDescription => 'Strömmar testfilen precis som Atmos-uppspelning i spelaren. Kräver testfilens URL.';
+	@override String get atmosTestRawFile => 'Rå EAC3-fil';
+	@override String get atmosTestRawFileDescription => 'Spelar upp testfilen med känd längd. Kräver testfilens URL.';
+	@override String get atmosTestStop => 'Stoppa test';
+	@override String get atmosTestUrl => 'Testfilens URL';
+	@override String get atmosTestUrlDescription => 'HTTP-URL till en rå .ec3 Dolby Atmos-fil (t.ex. extraherad med ffmpeg)';
+	@override String get atmosTestUrlMissing => 'Ange testfilens URL först';
+	@override String get atmosTestStatus => 'Status';
 	@override String get dvConversionMode => 'Dolby Vision-konvertering';
 	@override String get dvConversionModeDescription => 'Välj hur ExoPlayer hanterar Dolby Vision Profile 7-filer.';
 	@override String get dvConversionAuto => 'Auto';
@@ -2184,6 +2200,22 @@ extension on TranslationsSv {
 			'settings.tunneledPlaybackDescription' => 'Använd videotunnling. Inaktivera om HDR-uppspelning visar svart video.',
 			'settings.audioPassthrough' => 'Ljudgenomkoppling',
 			'settings.audioPassthroughDescription' => 'Skicka Dolby/DTS-ljud till din receiver eller TV utan omkodning och bevara surroundljudet. Stäng av om du inte har något ljud.',
+			'settings.audioPassthroughDescriptionAppleTv' => 'Lämnar Dolby Digital Plus (inkl. Atmos) till systemet som bitstream. DTS och TrueHD spelas fortfarande upp som flerkanals-PCM. Korta ljudavbrott kan förekomma vid sökning.',
+			'settings.atmosDiagnostics' => 'Atmos-utgångstest',
+			'settings.atmosDiagnosticsDescription' => 'Diagnostisera Dolby Atmos-utgången genom att spela testsignaler via systemspelaren',
+			'settings.atmosTestHlsAtmos' => 'Apple Atmos-ström',
+			'settings.atmosTestHlsAtmosDescription' => 'Känd fungerande Dolby Atmos-ström. Receivern bör visa Dolby Atmos.',
+			'settings.atmosTestHlsControl' => 'Apple surround-ström',
+			'settings.atmosTestHlsControlDescription' => 'Kontrollström utan Atmos. Receivern bör visa surround utan Atmos.',
+			'settings.atmosTestRawStream' => 'Rå EAC3-ström',
+			'settings.atmosTestRawStreamDescription' => 'Strömmar testfilen precis som Atmos-uppspelning i spelaren. Kräver testfilens URL.',
+			'settings.atmosTestRawFile' => 'Rå EAC3-fil',
+			'settings.atmosTestRawFileDescription' => 'Spelar upp testfilen med känd längd. Kräver testfilens URL.',
+			'settings.atmosTestStop' => 'Stoppa test',
+			'settings.atmosTestUrl' => 'Testfilens URL',
+			'settings.atmosTestUrlDescription' => 'HTTP-URL till en rå .ec3 Dolby Atmos-fil (t.ex. extraherad med ffmpeg)',
+			'settings.atmosTestUrlMissing' => 'Ange testfilens URL först',
+			'settings.atmosTestStatus' => 'Status',
 			'settings.dvConversionMode' => 'Dolby Vision-konvertering',
 			'settings.dvConversionModeDescription' => 'Välj hur ExoPlayer hanterar Dolby Vision Profile 7-filer.',
 			'settings.dvConversionAuto' => 'Auto',
@@ -2426,6 +2458,8 @@ extension on TranslationsSv {
 			'messages.libraryScanFailed' => ({required Object error}) => 'Misslyckades att skanna bibliotek: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Uppdaterar metadata för "${title}"...',
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadata-uppdatering startad för "${title}"',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Misslyckades att uppdatera metadata: ${error}',
 			'messages.logoutConfirm' => 'Är du säker på att du vill logga ut?',
 			'messages.noSeasonsFound' => 'Inga säsonger hittades',
@@ -2442,8 +2476,6 @@ extension on TranslationsSv {
 			'messages.serverLimitTitle' => 'Uppspelningen misslyckades',
 			'messages.serverLimitBody' => 'Serverfel (HTTP 500). En bandbredds-/transkodningsgräns avvisade troligen sessionen. Be ägaren justera den.',
 			'messages.logsUploaded' => 'Loggar uppladdade',
-			_ => null,
-		} ?? switch (path) {
 			'messages.logsUploadFailed' => 'Uppladdning av loggar misslyckades',
 			'messages.logId' => 'Logg-ID',
 			'subtitlingStyling.text' => 'Text',
@@ -2940,6 +2972,8 @@ extension on TranslationsSv {
 			'companionRemote.session.serverStopped' => 'Fjärrserver stoppad',
 			'companionRemote.session.serverRunningDescription' => 'Mobila enheter i ditt nätverk kan ansluta till den här appen',
 			'companionRemote.session.serverStoppedDescription' => 'Starta servern för att tillåta mobila enheter att ansluta',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.usePhoneToControl' => 'Använd din mobila enhet för att styra denna app',
 			'companionRemote.session.startServer' => 'Starta server',
 			'companionRemote.session.stopServer' => 'Stoppa server',
@@ -2956,8 +2990,6 @@ extension on TranslationsSv {
 			'companionRemote.pairing.validationHostRequired' => 'Ange värdadress',
 			'companionRemote.pairing.validationHostFormat' => 'Format måste vara IP:port (t.ex. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Anslutningen tog för lång tid. Använd samma nätverk på båda enheter.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.sessionNotFound' => 'Enhet hittades inte. Kontrollera att Plezy körs på värden.',
 			'companionRemote.pairing.authFailed' => 'Autentisering misslyckades. Båda enheter behöver samma Plex-konto.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunde inte ansluta: ${error}',

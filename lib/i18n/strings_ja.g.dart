@@ -393,6 +393,22 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => '動画トンネリングを使用します。HDR再生で画面が黒くなる場合は無効にしてください。';
 	@override String get audioPassthrough => 'オーディオパススルー';
 	@override String get audioPassthroughDescription => 'Dolby/DTS音声を再エンコードせずにレシーバーやテレビに送り、サラウンドを維持します。音が出ない場合は無効にしてください。';
+	@override String get audioPassthroughDescriptionAppleTv => 'Dolby Digital Plus（Atmos含む）をビットストリームとしてシステムに渡します。DTSとTrueHDは引き続きマルチチャンネルPCMで再生されます。シーク時に短い音切れが発生することがあります。';
+	@override String get atmosDiagnostics => 'Atmos出力テスト';
+	@override String get atmosDiagnosticsDescription => 'システムプレイヤーでテスト信号を再生してDolby Atmos出力を診断します';
+	@override String get atmosTestHlsAtmos => 'Apple Atmosストリーム';
+	@override String get atmosTestHlsAtmosDescription => '動作確認済みのDolby Atmosストリーム。レシーバーにDolby Atmosと表示されるはずです。';
+	@override String get atmosTestHlsControl => 'Appleサラウンドストリーム';
+	@override String get atmosTestHlsControlDescription => 'Atmosなしの比較用ストリーム。レシーバーにAtmosなしのサラウンドが表示されるはずです。';
+	@override String get atmosTestRawStream => '生EAC3ストリーム';
+	@override String get atmosTestRawStreamDescription => 'プレイヤー内のAtmos再生と同じ方式でテストファイルをストリーミングします。テストファイルのURLが必要です。';
+	@override String get atmosTestRawFile => '生EAC3ファイル';
+	@override String get atmosTestRawFileDescription => '長さが既知のテストファイルを再生します。テストファイルのURLが必要です。';
+	@override String get atmosTestStop => 'テストを停止';
+	@override String get atmosTestUrl => 'テストファイルのURL';
+	@override String get atmosTestUrlDescription => '生の.ec3 Dolby AtmosファイルのHTTP URL（例: ffmpegで抽出）';
+	@override String get atmosTestUrlMissing => '先にテストファイルのURLを設定してください';
+	@override String get atmosTestStatus => 'ステータス';
 	@override String get dvConversionMode => 'Dolby Vision 変換';
 	@override String get dvConversionModeDescription => 'ExoPlayer が Dolby Vision Profile 7 ファイルを処理する方法を選択します。';
 	@override String get dvConversionAuto => '自動';
@@ -2184,6 +2200,22 @@ extension on TranslationsJa {
 			'settings.tunneledPlaybackDescription' => '動画トンネリングを使用します。HDR再生で画面が黒くなる場合は無効にしてください。',
 			'settings.audioPassthrough' => 'オーディオパススルー',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS音声を再エンコードせずにレシーバーやテレビに送り、サラウンドを維持します。音が出ない場合は無効にしてください。',
+			'settings.audioPassthroughDescriptionAppleTv' => 'Dolby Digital Plus（Atmos含む）をビットストリームとしてシステムに渡します。DTSとTrueHDは引き続きマルチチャンネルPCMで再生されます。シーク時に短い音切れが発生することがあります。',
+			'settings.atmosDiagnostics' => 'Atmos出力テスト',
+			'settings.atmosDiagnosticsDescription' => 'システムプレイヤーでテスト信号を再生してDolby Atmos出力を診断します',
+			'settings.atmosTestHlsAtmos' => 'Apple Atmosストリーム',
+			'settings.atmosTestHlsAtmosDescription' => '動作確認済みのDolby Atmosストリーム。レシーバーにDolby Atmosと表示されるはずです。',
+			'settings.atmosTestHlsControl' => 'Appleサラウンドストリーム',
+			'settings.atmosTestHlsControlDescription' => 'Atmosなしの比較用ストリーム。レシーバーにAtmosなしのサラウンドが表示されるはずです。',
+			'settings.atmosTestRawStream' => '生EAC3ストリーム',
+			'settings.atmosTestRawStreamDescription' => 'プレイヤー内のAtmos再生と同じ方式でテストファイルをストリーミングします。テストファイルのURLが必要です。',
+			'settings.atmosTestRawFile' => '生EAC3ファイル',
+			'settings.atmosTestRawFileDescription' => '長さが既知のテストファイルを再生します。テストファイルのURLが必要です。',
+			'settings.atmosTestStop' => 'テストを停止',
+			'settings.atmosTestUrl' => 'テストファイルのURL',
+			'settings.atmosTestUrlDescription' => '生の.ec3 Dolby AtmosファイルのHTTP URL（例: ffmpegで抽出）',
+			'settings.atmosTestUrlMissing' => '先にテストファイルのURLを設定してください',
+			'settings.atmosTestStatus' => 'ステータス',
 			'settings.dvConversionMode' => 'Dolby Vision 変換',
 			'settings.dvConversionModeDescription' => 'ExoPlayer が Dolby Vision Profile 7 ファイルを処理する方法を選択します。',
 			'settings.dvConversionAuto' => '自動',
@@ -2426,6 +2458,8 @@ extension on TranslationsJa {
 			'messages.libraryScanFailed' => ({required Object error}) => 'ライブラリのスキャンに失敗しました: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}"のメタデータを更新中...',
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}"のメタデータ更新を開始しました',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'メタデータの更新に失敗しました: ${error}',
 			'messages.logoutConfirm' => 'ログアウトしてもよろしいですか？',
 			'messages.noSeasonsFound' => 'シーズンが見つかりません',
@@ -2442,8 +2476,6 @@ extension on TranslationsJa {
 			'messages.serverLimitTitle' => '再生に失敗しました',
 			'messages.serverLimitBody' => 'サーバーエラー（HTTP 500）。帯域幅/トランスコード制限により拒否された可能性があります。所有者に調整を依頼してください。',
 			'messages.logsUploaded' => 'ログをアップロードしました',
-			_ => null,
-		} ?? switch (path) {
 			'messages.logsUploadFailed' => 'ログのアップロードに失敗しました',
 			'messages.logId' => 'ログID',
 			'subtitlingStyling.text' => 'テキスト',
@@ -2940,6 +2972,8 @@ extension on TranslationsJa {
 			'companionRemote.session.serverStopped' => 'リモートサーバー停止中',
 			'companionRemote.session.serverRunningDescription' => 'ネットワーク上のモバイルデバイスがこのアプリに接続できます',
 			'companionRemote.session.serverStoppedDescription' => 'モバイルデバイスの接続を許可するにはサーバーを起動してください',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.usePhoneToControl' => 'モバイルデバイスでこのアプリを操作できます',
 			'companionRemote.session.startServer' => 'サーバーを起動',
 			'companionRemote.session.stopServer' => 'サーバーを停止',
@@ -2956,8 +2990,6 @@ extension on TranslationsJa {
 			'companionRemote.pairing.validationHostRequired' => 'ホストアドレスを入力してください',
 			'companionRemote.pairing.validationHostFormat' => '形式はIP:ポートである必要があります（例: 192.168.1.100:48632）',
 			'companionRemote.pairing.connectionTimedOut' => '接続がタイムアウトしました。両方のデバイスで同じネットワークを使用してください。',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.sessionNotFound' => 'デバイスが見つかりません。ホストでPlezyが実行中か確認してください。',
 			'companionRemote.pairing.authFailed' => '認証に失敗しました。両方のデバイスで同じPlexアカウントが必要です。',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '接続に失敗しました: ${error}',
