@@ -100,6 +100,9 @@ bool MpvPlayer::Initialize(HWND view) {
   mpv_set_option_string(mpv_, "idle", "yes");
   mpv_set_option_string(mpv_, "input-default-bindings", "no");
   mpv_set_option_string(mpv_, "input-vo-keyboard", "no");
+  // Hardware media keys are owned by the SMTC integration (os_media_controls);
+  // mpv's default handling would double-handle Play/Pause.
+  mpv_set_option_string(mpv_, "input-media-keys", "no");
   mpv_set_option_string(mpv_, "osc", "no");
 
   // Let mpv use display/context detection instead of forcing HDR signaling.
