@@ -76,6 +76,7 @@ import 'widgets/mobile_skip_zones.dart';
 import 'widgets/skip_marker_button.dart';
 import 'widgets/track_chapter_controls.dart';
 import 'widgets/performance_overlay/performance_overlay.dart';
+import '../rasterized_gradient.dart';
 import 'mobile_video_controls.dart';
 import 'desktop_video_controls.dart';
 import 'package:provider/provider.dart';
@@ -804,24 +805,25 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                 child: ValueListenableBuilder<bool>(
                                   valueListenable: widget.hasFirstFrame ?? _fallbackHasFirstFrame,
                                   builder: (context, hasFrame, child) {
-                                    return Container(
-                                      decoration: BoxDecoration(
-                                        // Use solid black when loading, gradient when loaded
-                                        color: hasFrame ? null : Colors.black,
-                                        gradient: hasFrame
-                                            ? LinearGradient(
-                                                begin: Alignment.topCenter,
-                                                end: Alignment.bottomCenter,
-                                                colors: [
-                                                  Colors.black.withValues(alpha: 0.7),
-                                                  Colors.transparent,
-                                                  Colors.transparent,
-                                                  Colors.black.withValues(alpha: 0.7),
-                                                ],
-                                                stops: const [0.0, 0.2, 0.8, 1.0],
-                                              )
-                                            : null,
-                                      ),
+                                    // Solid black while loading, scrim once frames flow.
+                                    // Both states share one widget type: hasFrame flips
+                                    // on every in-place episode switch / live-TV zap, and
+                                    // a runtimeType change here would re-inflate the whole
+                                    // controls subtree and drop its state.
+                                    return RasterizedGradient(
+                                      gradient: hasFrame
+                                          ? LinearGradient(
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                              colors: [
+                                                Colors.black.withValues(alpha: 0.7),
+                                                Colors.transparent,
+                                                Colors.transparent,
+                                                Colors.black.withValues(alpha: 0.7),
+                                              ],
+                                              stops: const [0.0, 0.2, 0.8, 1.0],
+                                            )
+                                          : const LinearGradient(colors: [Colors.black, Colors.black]),
                                       child: child,
                                     );
                                   },

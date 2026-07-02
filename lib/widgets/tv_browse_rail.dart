@@ -31,6 +31,7 @@ import 'horizontal_scroll_with_arrows.dart';
 import 'listenable_selector.dart';
 import 'media_card.dart';
 import 'optimized_media_image.dart';
+import 'rasterized_gradient.dart';
 import 'settings_builder.dart';
 
 class TvBrowseRailLayoutMetrics {
@@ -1505,14 +1506,12 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                   imageType: ImageType.avatar,
                   fallbackIcon: Symbols.person_rounded,
                 ),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, Colors.black.withValues(alpha: 0.78)],
-                      stops: const [0.45, 1.0],
-                    ),
+                RasterizedGradient(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.78)],
+                    stops: const [0.45, 1.0],
                   ),
                 ),
                 Positioned(
@@ -1769,13 +1768,11 @@ class _RailBackgroundBleed extends StatelessWidget {
       tween: Tween(end: target),
       duration: FocusTheme.getAnimationDuration(context),
       curve: Curves.easeOutCubic,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.transparent, backgroundColor.withValues(alpha: 0.7)],
-          ),
+      child: RasterizedGradient(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.transparent, backgroundColor.withValues(alpha: 0.7)],
         ),
       ),
       builder: (context, bleedLeft, child) {

@@ -83,6 +83,7 @@ import '../widgets/focusable_tab_chip.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/ios_status_bar_tap_scroll_to_top.dart';
 import '../widgets/loading_indicator_box.dart';
+import '../widgets/rasterized_gradient.dart';
 import '../widgets/tv_browse_rail.dart';
 import '../widgets/tv_spotlight_background.dart';
 
@@ -3309,9 +3310,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           child: child!,
                         ),
                       ),
-                      child: Container(
+                      child: SizedBox(
                         height: MediaQuery.paddingOf(context).top + 58,
-                        decoration: BoxDecoration(
+                        child: RasterizedGradient(
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
@@ -4130,14 +4131,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           child: Builder(
             builder: (context) {
               final bgColor = Theme.of(context).scaffoldBackgroundColor;
-              return Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor],
-                    stops: const [0.3, 0.8, 1.0],
-                  ),
+              return RasterizedGradient(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor],
+                  stops: const [0.3, 0.8, 1.0],
                 ),
               );
             },

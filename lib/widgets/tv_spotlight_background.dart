@@ -19,6 +19,7 @@ import 'app_icon.dart';
 import 'fitting_title_text.dart';
 import 'media_rating_badge.dart';
 import 'optimized_media_image.dart' show blurArtwork;
+import 'rasterized_gradient.dart';
 
 class TvSpotlightBackground extends StatelessWidget {
   final MediaItem? item;
@@ -77,14 +78,12 @@ class TvSpotlightBackground extends StatelessWidget {
           ),
         ),
         _buildHorizontalScrim(bgColor),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.black.withValues(alpha: 0.45), Colors.transparent, bgColor.withValues(alpha: 0.96)],
-              stops: const [0.0, 0.38, 1.0],
-            ),
+        RasterizedGradient(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.black.withValues(alpha: 0.45), Colors.transparent, bgColor.withValues(alpha: 0.96)],
+            stops: const [0.0, 0.38, 1.0],
           ),
         ),
         if (media != null && showInfo)
@@ -176,14 +175,12 @@ class TvSpotlightBackground extends StatelessWidget {
   }
 
   Widget _buildHorizontalScrim(Color bgColor) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [bgColor.withValues(alpha: 0.86), bgColor.withValues(alpha: 0.32), Colors.transparent],
-          stops: const [0.0, 0.56, 1.0],
-        ),
+    return RasterizedGradient(
+      gradient: LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: [bgColor.withValues(alpha: 0.86), bgColor.withValues(alpha: 0.32), Colors.transparent],
+        stops: const [0.0, 0.56, 1.0],
       ),
     );
   }

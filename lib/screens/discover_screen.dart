@@ -22,6 +22,7 @@ import '../media/media_hub.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/content_utils.dart';
 import '../widgets/optimized_media_image.dart' show blurArtwork;
+import '../widgets/rasterized_gradient.dart';
 import '../providers/discover_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/watch_state_store.dart';
@@ -882,19 +883,17 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final colorScheme = Theme.of(context).colorScheme;
     final overlayColor = colorScheme.brightness == Brightness.dark ? Colors.black : colorScheme.surface;
     final foregroundColor = colorScheme.onSurface;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            overlayColor.withValues(alpha: 0.7),
-            overlayColor.withValues(alpha: 0.5),
-            overlayColor.withValues(alpha: 0.3),
-            Colors.transparent,
-          ],
-          stops: const [0.0, 0.3, 0.6, 1.0],
-        ),
+    return RasterizedGradient(
+      gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          overlayColor.withValues(alpha: 0.7),
+          overlayColor.withValues(alpha: 0.5),
+          overlayColor.withValues(alpha: 0.3),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.3, 0.6, 1.0],
       ),
       child: Padding(
         padding: .only(top: statusBarHeight, left: 16, right: 16, bottom: 8),
