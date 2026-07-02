@@ -179,8 +179,23 @@ class PlexHomeService {
     _storage = storage;
     try {
       final users = await _fetchHomeUsers(conn.accountToken);
+      // The account may have been removed while the fetch was in flight —
+      // caching now would resurrect its home users (and virtual profiles)
+      // as ghosts until the next removal event.
+      if (await _connections.get(conn.id) == null) {
+        appLogger.d('PlexHomeService: dropping fetch result for removed account ${conn.accountLabel}');
+        return;
+      }
+      final encoded = users.map((u) => u.toJson()).toList();
+      // Unchanged fetches (the hourly ticker, mostly) must not emit: every
+      // emission fans out through ActiveProfileProvider into a full
+      // recompute/notify cascade across the app.
+      if (_byConnection.containsKey(conn.id) && storage.getPlexHomeUsersCacheJson(conn.id) == jsonEncode(encoded)) {
+        appLogger.d('PlexHomeService: home users unchanged for ${conn.accountLabel}');
+        return;
+      }
       _byConnection[conn.id] = users;
-      await storage.savePlexHomeUsersCache(conn.id, users.map((u) => u.toJson()).toList());
+      await storage.savePlexHomeUsersCache(conn.id, encoded);
       _emit();
       appLogger.d('PlexHomeService: cached ${users.length} home users for ${conn.accountLabel}');
     } catch (e, st) {

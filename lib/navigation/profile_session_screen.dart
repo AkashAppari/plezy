@@ -17,6 +17,7 @@ import '../providers/trakt_account_provider.dart';
 import '../providers/trackers_provider.dart';
 import '../providers/watch_state_store.dart';
 import '../screens/main_screen.dart';
+import '../services/api_cache.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
 import '../watch_together/providers/watch_together_provider.dart';
@@ -60,6 +61,9 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
   // callback rather than during build to avoid mutating state mid-build.
   bool _hasBuiltSession = false;
 
+  bool _seenFirstActiveId = false;
+  String? _lastSessionActiveId;
+
   @override
   void initState() {
     super.initState();
@@ -68,11 +72,30 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
     });
   }
 
+  /// The keyed remount below recreates every session-scoped provider on a
+  /// profile switch, but [ApiCache] is app-global and its Plex rows are
+  /// keyed by server only — one home user's cached responses would serve
+  /// the next user's session. Clear the volatile rows at the seam itself;
+  /// doing it from inside MainScreen can't work, the remount unmounts it
+  /// before any settle-await completes.
+  void _onSessionProfileChanged(String? activeId) {
+    if (!_seenFirstActiveId) {
+      _seenFirstActiveId = true;
+      _lastSessionActiveId = activeId;
+      return;
+    }
+    if (_lastSessionActiveId == activeId) return;
+    _lastSessionActiveId = activeId;
+    final cache = ApiCache.maybeInstance;
+    if (cache != null) unawaited(cache.clearVolatile());
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<ActiveProfileProvider>(
       builder: (context, activeProfile, _) {
         final activeId = activeProfile.activeId;
+        _onSessionProfileChanged(activeId);
         final initialPromptHandled = widget.initialPromptHandled || _hasBuiltSession;
         return KeyedSubtree(
           key: ValueKey<String?>('profile-session:$activeId'),

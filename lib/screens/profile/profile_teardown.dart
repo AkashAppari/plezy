@@ -105,6 +105,10 @@ Future<bool> settleSessionAfterRemoval(SessionTeardownScope scope, {bool rebindI
         break;
       }
     }
+    // The removal was a user action: mark the hand-off activation as
+    // user-initiated so the binder binds it (bypassing the initial-bind
+    // defer and any suppressed failed-bind marker).
+    if (next != null) scope.binder.markUserInitiatedActivation(next.id);
     final activated = next != null && await scope.active.activate(next);
     if (!activated) {
       await scope.active.clearActiveProfile();

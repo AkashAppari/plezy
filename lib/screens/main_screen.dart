@@ -133,7 +133,7 @@ bool shouldPassTvosMenuToSystem({
 }
 
 @visibleForTesting
-enum ProfileInvalidationAction { none, waitForProfileSwitch, invalidateNow }
+enum ProfileInvalidationAction { none, invalidateNow }
 
 @visibleForTesting
 ProfileInvalidationAction profileInvalidationAction({
@@ -141,13 +141,13 @@ ProfileInvalidationAction profileInvalidationAction({
   required String? currentProfileId,
   required bool wasBindingPreviously,
   required bool isBindingNow,
-  required bool hasPendingProfileSwitchInvalidation,
-  required String? pendingProfileSwitchInvalidationId,
 }) {
+  // An active-id change remounts the whole session subtree
+  // ([ProfileSessionScreen] keys on the id), recreating this screen and
+  // every session-scoped provider — nothing to invalidate from here. The
+  // app-global pieces (ApiCache volatile rows) are cleared at that remount
+  // seam, where the unmount can't outrun the work.
   if (currentProfileId != previousProfileId) {
-    return ProfileInvalidationAction.waitForProfileSwitch;
-  }
-  if (hasPendingProfileSwitchInvalidation && pendingProfileSwitchInvalidationId == currentProfileId) {
     return ProfileInvalidationAction.none;
   }
   if (wasBindingPreviously && !isBindingNow) {
@@ -242,8 +242,6 @@ class _MainScreenState extends State<MainScreen>
   // we only invalidate on id change and the libraries sidebar keeps
   // stale entries until the user switches profiles.
   bool _wasBindingPrev = false;
-  bool _hasPendingProfileSwitchInvalidation = false;
-  String? _pendingProfileSwitchInvalidationId;
 
   /// Subscription to MultiServerManager status changes. Used to resume any
   /// queued downloads as soon as a Plex client comes online for the first
@@ -508,53 +506,17 @@ class _MainScreenState extends State<MainScreen>
       currentProfileId: id,
       wasBindingPreviously: _wasBindingPrev,
       isBindingNow: isBindingNow,
-      hasPendingProfileSwitchInvalidation: _hasPendingProfileSwitchInvalidation,
-      pendingProfileSwitchInvalidationId: _pendingProfileSwitchInvalidationId,
     );
-
-    if (action == ProfileInvalidationAction.waitForProfileSwitch) {
-      _lastSeenProfileId = id;
-      _wasBindingPrev = isBindingNow;
-      _hasPendingProfileSwitchInvalidation = true;
-      _pendingProfileSwitchInvalidationId = id;
-      // We're called inside the synchronous notify cascade *before* the
-      // binder's listener has fired (registration order). At this exact
-      // instant `_isBinding` is still false, so calling awaitBindingSettle
-      // here would resolve immediately. Hop to a microtask so the binder's
-      // listener gets to flip the flag first, then wait properly.
-      unawaited(
-        Future.microtask(() async {
-          final scheduledProfileId = id;
-          if (!mounted) return;
-          await activeProfile.awaitBindingSettle();
-          if (!mounted) return;
-          try {
-            if (_hasPendingProfileSwitchInvalidation &&
-                _pendingProfileSwitchInvalidationId == scheduledProfileId &&
-                activeProfile.activeId == scheduledProfileId) {
-              await _invalidateAllScreens();
-            }
-          } finally {
-            if (_hasPendingProfileSwitchInvalidation && _pendingProfileSwitchInvalidationId == scheduledProfileId) {
-              _hasPendingProfileSwitchInvalidation = false;
-              _pendingProfileSwitchInvalidationId = null;
-            }
-          }
-        }),
-      );
-      return;
-    }
+    _lastSeenProfileId = id;
+    _wasBindingPrev = isBindingNow;
 
     // Same active id, but a rebind cycle for that profile just settled
     // (true → false transition). Fires after borrow / connection-removal
     // flows trigger ActiveProfileBinder.rebindIfActive, so the libraries
     // sidebar reflects the new server set without an app restart.
     if (action == ProfileInvalidationAction.invalidateNow) {
-      _wasBindingPrev = isBindingNow;
       unawaited(_invalidateAllScreens());
-      return;
     }
-    _wasBindingPrev = isBindingNow;
   }
 
   Future<void> _promptForInitialProfileSelection() async {
