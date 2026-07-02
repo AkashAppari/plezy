@@ -55,6 +55,14 @@ MpvPlayerPlugin::MpvPlayerPlugin(flutter::PluginRegistrarWindows* registrar)
 }
 
 MpvPlayerPlugin::~MpvPlayerPlugin() {
+  // Join the mpv event thread before draining: it enqueues platform tasks,
+  // and platform_tasks_/platform_tasks_mutex_ are destroyed before player_
+  // (reverse declaration order).
+  if (player_) {
+    player_->Dispose();
+    player_.reset();
+  }
+
   DrainPlatformTasks();
 
   // Unregister window proc delegate.
@@ -74,13 +82,21 @@ void MpvPlayerPlugin::PostToPlatformThread(std::function<void()> task) {
     return;
   }
 
+  bool post_wakeup = false;
   {
     std::lock_guard<std::mutex> lock(platform_tasks_mutex_);
     platform_tasks_.push(std::move(task));
+    if (!wakeup_posted_ && flutter_window_) {
+      wakeup_posted_ = true;
+      post_wakeup = true;
+    }
   }
 
-  if (flutter_window_) {
-    ::PostMessage(flutter_window_, kPlatformTaskMessage, 0, 0);
+  if (post_wakeup && !::PostMessage(flutter_window_, kPlatformTaskMessage, 0, 0)) {
+    // Wakeup lost (e.g. message queue full during a log storm); let the next
+    // enqueue retry instead of stranding the queue.
+    std::lock_guard<std::mutex> lock(platform_tasks_mutex_);
+    wakeup_posted_ = false;
   }
 }
 
@@ -89,6 +105,7 @@ void MpvPlayerPlugin::DrainPlatformTasks() {
   {
     std::lock_guard<std::mutex> lock(platform_tasks_mutex_);
     tasks.swap(platform_tasks_);
+    wakeup_posted_ = false;
   }
 
   while (!tasks.empty()) {
@@ -450,9 +467,14 @@ void MpvPlayerPlugin::HandleMethodCall(
 }
 
 void MpvPlayerPlugin::SendEvent(const flutter::EncodableValue& event) {
-  if (event_sink_) {
-    event_sink_->Success(event);
-  }
+  // mpv events arrive on the mpv event thread; Flutter channel APIs are
+  // platform-thread-only, so marshal onto the platform thread (the sink
+  // null-check then also runs on the same thread as onListen/onCancel).
+  PostToPlatformThread([this, event]() {
+    if (event_sink_) {
+      event_sink_->Success(event);
+    }
+  });
 }
 
 }  // namespace mpv
