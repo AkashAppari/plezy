@@ -235,6 +235,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     // active server cannot perform.
     final mediaClient = _itemServerId != null ? multiServerProvider.getClientForServer(ServerId(_itemServerId!)) : null;
     final canTranscode = mediaClient?.capabilities.videoTranscoding ?? false;
+    // Static capabilities stay truthy while the server is unreachable, so
+    // version/quality choices need a liveness check on top.
+    final itemServerOnline =
+        _itemServerId != null && multiServerProvider.serverManager.isClientOnline(ServerId(_itemServerId!));
     final canRemoveFromContinueWatching = mediaClient?.capabilities.continueWatchingRemoval ?? false;
     final canEditMetadata = isAdmin && supportsMetadataEdit(mediaClient, mediaKind);
 
@@ -385,10 +389,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       // settings, which is what the regular Play action already does.
       // Both backends inline their version list in browse responses
       // (`Media[]` for Plex, `MediaSources` for Jellyfin), so the count
-      // is known up front.
+      // is known up front. Also hidden while the item's server is
+      // unreachable: at most one version exists locally and plain Play
+      // already targets it, so the picker would be a no-op detour
+      // offering versions that can't play (issue #1440).
       final versionCount = (mediaItem.mediaVersions ?? const []).length;
       final hasVersionChoice = versionCount > 1;
-      if ((mediaKind == MediaKind.episode || mediaKind == MediaKind.movie) && (hasVersionChoice || canTranscode)) {
+      if ((mediaKind == MediaKind.episode || mediaKind == MediaKind.movie) &&
+          (hasVersionChoice || canTranscode) &&
+          itemServerOnline) {
         menuActions.add(
           _MenuAction(value: 'play_version', icon: Symbols.video_file_rounded, label: t.mediaMenu.playVersion),
         );
@@ -861,10 +870,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   Future<bool> _handlePlayVersion(BuildContext context) async {
     final item = _mediaItem!;
-    final client = context.tryGetMediaClientForServer(serverIdOrNull(_itemServerId));
+    final itemServerId = serverIdOrNull(_itemServerId);
+    final client = context.tryGetMediaClientForServer(itemServerId);
+    final itemServerOnline =
+        itemServerId != null && context.read<MultiServerProvider>().serverManager.isClientOnline(itemServerId);
     // Same flag the in-player Version & Quality sheet reads — keeps both
-    // surfaces honest about what the active backend can actually do.
-    final canTranscode = client?.capabilities.videoTranscoding ?? false;
+    // surfaces honest about what the active backend can actually do. Also
+    // requires a reachable server: capabilities are static, and a server
+    // dropping between menu open and tap must not offer transcodes.
+    final canTranscode = itemServerOnline && (client?.capabilities.videoTranscoding ?? false);
     final versions = client == null ? item.mediaVersions ?? const [] : await resolveMediaVersions(item, client);
     if (!context.mounted) return false;
 
