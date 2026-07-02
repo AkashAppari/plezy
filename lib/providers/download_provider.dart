@@ -23,6 +23,7 @@ import '../media/media_server_client.dart';
 import '../services/sync_rule_executor.dart';
 import '../utils/app_logger.dart';
 import '../utils/deletion_notifier.dart';
+import '../utils/downloaded_version_match.dart';
 import '../media/episode_collection.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/watch_state_notifier.dart';
@@ -784,6 +785,19 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// Check if an item is currently being queued (building download queue)
   bool isQueueing(String globalKey) => _queueing.contains(globalKey);
 
+  /// Get the completed download record for an item, or null when the item
+  /// isn't fully downloaded or isn't owned by the active profile. Callers use
+  /// the row's mediaIndex/mediaSourceId to target the version actually on
+  /// disk instead of assuming the server default.
+  Future<DownloadedMediaItem?> getCompletedDownload(String globalKey) async {
+    if (!_ownsDownloadKey(globalKey)) return null;
+    final downloadedItem = await _downloadManager.getDownloadedMedia(globalKey);
+    if (downloadedItem == null || downloadedItem.status != DownloadStatus.completed.index) {
+      return null;
+    }
+    return downloadedItem;
+  }
+
   /// Get the local video file path for a downloaded item
   /// Returns null if not downloaded or file doesn't exist
   Future<String?> getVideoFilePath(String globalKey, {int? mediaIndex, String? mediaSourceId}) async {
@@ -802,22 +816,15 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       appLogger.w('Download not complete. Status: ${downloadedItem.status}');
       return null;
     }
-    final expectedSourceId = mediaSourceId?.trim();
-    final downloadedSourceId = downloadedItem.mediaSourceId;
-    final comparedBySourceId =
-        expectedSourceId != null &&
-        expectedSourceId.isNotEmpty &&
-        downloadedSourceId != null &&
-        downloadedSourceId.isNotEmpty;
-    if (comparedBySourceId && expectedSourceId != downloadedSourceId) {
+    if (!downloadedVersionMatches(
+      downloadedItem,
+      requestedMediaIndex: mediaIndex,
+      requestedMediaSourceId: mediaSourceId,
+    )) {
       appLogger.w(
-        'Downloaded media source mismatch for $globalKey: have $downloadedSourceId, expected $expectedSourceId',
-      );
-      return null;
-    }
-    if (!comparedBySourceId && mediaIndex != null && downloadedItem.mediaIndex != mediaIndex) {
-      appLogger.w(
-        'Downloaded media index mismatch for $globalKey: have ${downloadedItem.mediaIndex}, expected $mediaIndex',
+        'Downloaded version mismatch for $globalKey: have index ${downloadedItem.mediaIndex} '
+        '(source ${downloadedItem.mediaSourceId}), expected index $mediaIndex '
+        '(source ${mediaSourceId?.trim()})',
       );
       return null;
     }

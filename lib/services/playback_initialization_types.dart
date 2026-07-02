@@ -80,6 +80,13 @@ class PlaybackInitializationResult {
   /// Effective media version after backend clamping/fallback.
   final int selectedMediaIndex;
 
+  /// Stable source id of the effective media version, when known without a
+  /// version list. Set by the offline path (where [availableVersions] is
+  /// empty) so the session reflects the downloaded version actually played,
+  /// even when it differs from the requested one. Online backends leave this
+  /// null and the id is derived from [availableVersions] instead.
+  final String? selectedMediaSourceId;
+
   /// True when [videoUrl] points at a downloaded/local copy. This is a media
   /// source detail, not a statement about whether server reporting is possible.
   bool get usesLocalMedia => isOffline;
@@ -102,6 +109,7 @@ class PlaybackInitializationResult {
     this.playSessionId,
     this.playMethod,
     this.selectedMediaIndex = 0,
+    this.selectedMediaSourceId,
   });
 }
 

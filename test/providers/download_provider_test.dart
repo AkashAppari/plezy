@@ -157,6 +157,59 @@ void main() {
 
       p.dispose();
     });
+
+    test('getCompletedDownload exposes the downloaded version for owned completed rows', () async {
+      const globalKey = 'srv:movie-1';
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'movie-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+        mediaIndex: 1,
+        mediaSourceId: 'source-b',
+      );
+
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(ownedDownloadKeys: {globalKey});
+
+      final row = await p.getCompletedDownload(globalKey);
+      expect(row, isNotNull);
+      expect(row!.mediaIndex, 1);
+      expect(row.mediaSourceId, 'source-b');
+
+      p.dispose();
+    });
+
+    test('getCompletedDownload returns null for unowned or incomplete rows', () async {
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'unowned',
+        globalKey: 'srv:unowned',
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+      );
+      // Owned by another profile — otherwise legacy adoption claims fully
+      // ownerless rows for the active profile during initialization.
+      await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'srv:unowned');
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'partial',
+        globalKey: 'srv:partial',
+        type: 'movie',
+        status: DownloadStatus.downloading.index,
+      );
+
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(ownedDownloadKeys: {'srv:partial'});
+
+      expect(await p.getCompletedDownload('srv:unowned'), isNull);
+      expect(await p.getCompletedDownload('srv:partial'), isNull);
+
+      p.dispose();
+    });
   });
 
   group('DownloadProvider — sync rule CRUD', () {

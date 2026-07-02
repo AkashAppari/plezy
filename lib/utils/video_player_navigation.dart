@@ -163,14 +163,30 @@ Future<bool?> navigateToVideoPlayer(
       ? manager.getClient(serverId)
       : null;
 
-  final mediaIndex = selectedMediaIndex ?? await savedMediaVersionIndexFor(metadata) ?? 0;
+  // Plain Play on a downloaded item must target the version actually on
+  // disk. Only one version can be downloaded per item, and saved version
+  // preferences describe online intent — they may point at a version that
+  // was never downloaded (issue #1440). Explicit caller selections still win.
+  int? downloadedMediaIndex;
+  String? downloadedMediaSourceId;
+  if (isOffline && selectedMediaIndex == null && selectedMediaSourceId == null) {
+    final downloaded = await downloadProvider.getCompletedDownload(metadata.globalKey);
+    if (downloaded != null) {
+      downloadedMediaIndex = downloaded.mediaIndex;
+      downloadedMediaSourceId = downloaded.mediaSourceId;
+    }
+  }
+
+  final mediaIndex =
+      selectedMediaIndex ?? downloadedMediaIndex ?? await savedMediaVersionIndexFor(metadata) ?? 0;
+  final mediaSourceId = selectedMediaSourceId ?? downloadedMediaSourceId;
 
   var markedInFlight = false;
   if (!usePushReplacement) {
     markedInFlight = _videoPlayerNavigationInFlightGuard.tryStart(
       metadata,
       mediaIndex: mediaIndex,
-      selectedMediaSourceId: selectedMediaSourceId,
+      selectedMediaSourceId: mediaSourceId,
       selectedQualityPreset: selectedQualityPreset,
       isOffline: isOffline,
     );
@@ -195,7 +211,7 @@ Future<bool?> navigateToVideoPlayer(
           final videoPath = await downloadProvider.getVideoFilePath(
             globalKey,
             mediaIndex: mediaIndex,
-            mediaSourceId: selectedMediaSourceId,
+            mediaSourceId: mediaSourceId,
           );
           if (videoPath != null && context.mounted) {
             final videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';
@@ -206,7 +222,7 @@ Future<bool?> navigateToVideoPlayer(
               client: mediaClient,
               offlineWatchService: offlineWatchService,
               mediaIndex: mediaIndex,
-              mediaSourceId: selectedMediaSourceId,
+              mediaSourceId: mediaSourceId,
             );
           }
         } else if (context.mounted) {
@@ -216,7 +232,7 @@ Future<bool?> navigateToVideoPlayer(
             client: mediaClient,
             offlineWatchService: offlineWatchService,
             mediaIndex: mediaIndex,
-            mediaSourceId: selectedMediaSourceId,
+            mediaSourceId: mediaSourceId,
           );
         }
 
@@ -244,7 +260,7 @@ Future<bool?> navigateToVideoPlayer(
         preferredSubtitleTrack: preferredSubtitleTrack,
         preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
         selectedMediaIndex: mediaIndex,
-        selectedMediaSourceId: selectedMediaSourceId,
+        selectedMediaSourceId: mediaSourceId,
         selectedQualityPreset: selectedQualityPreset,
         isOffline: isOffline,
       ),
@@ -258,7 +274,7 @@ Future<bool?> navigateToVideoPlayer(
       _videoPlayerNavigationInFlightGuard.finish(
         metadata,
         mediaIndex: mediaIndex,
-        selectedMediaSourceId: selectedMediaSourceId,
+        selectedMediaSourceId: mediaSourceId,
         selectedQualityPreset: selectedQualityPreset,
         isOffline: isOffline,
       );
