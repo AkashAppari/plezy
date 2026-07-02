@@ -165,10 +165,13 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   bool _ownsProgressEntry(MapEntry<String, DownloadProgress> entry) => _ownsDownloadKey(entry.key);
 
-  Future<bool> _claimDownloadForActiveProfile(String globalKey) async {
-    final profileId = _requireActiveProfileId();
-    if (_ownedDownloadKeys.contains(globalKey)) return false;
+  /// Claim [globalKey] for an explicit [profileId] — sync rules claim for
+  /// the RULE'S owner, not whoever is active when the pass lands, so a
+  /// mid-run profile switch can't leak ownership across profiles.
+  Future<bool> _claimDownloadForProfile(String globalKey, String profileId) async {
+    if (_activeProfileId == profileId && _ownedDownloadKeys.contains(globalKey)) return false;
     await _database.addDownloadOwner(profileId: profileId, globalKey: globalKey);
+    // _ownedDownloadKeys mirrors only the active profile's rows.
     if (_activeProfileId != profileId) return false;
     _ownedDownloadKeys.add(globalKey);
     return true;
@@ -469,15 +472,24 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // (`_loadPersistedDownloads` rehydrates `_metadata` from the cache).
     if (shouldPersistToCache) {
       unawaited(
-        ApiCache.forBackend(base.backend)
-            .applyWatchState(
-              serverId: ServerId(event.cacheServerId ?? event.serverId),
-              itemId: event.itemId,
-              isWatched: isWatched,
-            )
-            .catchError((Object e) {
-              appLogger.w('Failed to apply watch state to cache for $globalKey', error: e);
-            }),
+        () async {
+          // Jellyfin cache rows are per-user (cacheServerId embeds the user);
+          // Plex rows are keyed by server only, so persisting one user's flip
+          // into a download SHARED with another profile would surface as that
+          // profile's watch state too. Skip the shared case — each profile's
+          // own queued watch actions still re-apply its state on reload.
+          if (base.backend == MediaBackend.plex &&
+              await _database.hasDownloadOwner(globalKey, excludingProfileId: _activeProfileId)) {
+            return;
+          }
+          await ApiCache.forBackend(base.backend).applyWatchState(
+            serverId: ServerId(event.cacheServerId ?? event.serverId),
+            itemId: event.itemId,
+            isWatched: isWatched,
+          );
+        }().catchError((Object e) {
+          appLogger.w('Failed to apply watch state to cache for $globalKey', error: e);
+        }),
       );
     }
     safeNotifyListeners();
@@ -968,21 +980,22 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     int mediaIndex = 0,
     DownloadVersionConfig? versionConfig,
     _RelatedMetadataDownloadContext? relatedContext,
+    String? claimForProfileId,
   }) async {
     if (!_downloadManager.downloadsSupported) return false;
 
-    _requireActiveProfileId();
+    final ownerProfileId = claimForProfileId ?? _requireActiveProfileId();
     final globalKey = metadata.globalKey;
 
     // Don't duplicate the physical download. If another profile already owns
-    // the shared row, claiming it makes it visible for the active profile.
+    // the shared row, claiming it makes it visible for the owning profile.
     if (_downloads.containsKey(globalKey)) {
       final existing = _downloads[globalKey]!;
       if (existing.status == DownloadStatus.downloading ||
           existing.status == DownloadStatus.completed ||
           existing.status == DownloadStatus.queued ||
           existing.status == DownloadStatus.paused) {
-        final claimed = await _claimDownloadForActiveProfile(globalKey);
+        final claimed = await _claimDownloadForProfile(globalKey, ownerProfileId);
         if (claimed) safeNotifyListeners();
         return claimed;
       }
@@ -1044,7 +1057,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // Store full metadata for display
     _metadata[globalKey] = metadataToStore;
 
-    await _claimDownloadForActiveProfile(globalKey);
+    await _claimDownloadForProfile(globalKey, ownerProfileId);
 
     // Update local state immediately for UI feedback
     _downloads[globalKey] = DownloadProgress(globalKey: globalKey, status: DownloadStatus.queued);
@@ -1681,8 +1694,19 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       serverManager: serverManager,
       downloads: downloads,
       metadata: Map.unmodifiable(_metadata),
-      queueSingleDownload: (episode, client, {int mediaIndex = 0}) =>
-          _queueSingleDownload(episode, client, mediaIndex: mediaIndex, relatedContext: relatedContext),
+      queueSingleDownload: (episode, client, {int mediaIndex = 0}) async {
+        // A profile switch mid-pass must not keep queueing the old
+        // profile's rules; whatever does get queued is claimed for the
+        // rule's owner, never the new active profile.
+        if (_activeProfileId != profileId) return false;
+        return _queueSingleDownload(
+          episode,
+          client,
+          mediaIndex: mediaIndex,
+          relatedContext: relatedContext,
+          claimForProfileId: profileId,
+        );
+      },
       isOffline: _offlineSource?.isOffline ?? false,
       force: force,
     );
@@ -1709,8 +1733,16 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       serverManager: serverManager,
       downloads: downloads,
       metadata: Map.unmodifiable(_metadata),
-      queueSingleDownload: (episode, client, {int mediaIndex = 0}) =>
-          _queueSingleDownload(episode, client, mediaIndex: mediaIndex, relatedContext: relatedContext),
+      queueSingleDownload: (episode, client, {int mediaIndex = 0}) async {
+        if (_activeProfileId != profileId) return false;
+        return _queueSingleDownload(
+          episode,
+          client,
+          mediaIndex: mediaIndex,
+          relatedContext: relatedContext,
+          claimForProfileId: profileId,
+        );
+      },
       isOffline: _offlineSource?.isOffline ?? false,
     );
   }

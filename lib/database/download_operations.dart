@@ -65,12 +65,33 @@ extension DownloadDatabaseOperations on AppDatabase {
   }
 
   /// Claim pre-v17 shared download rows for [profileId]. Rows that already
-  /// have any owner are left untouched so later profiles do not inherit them.
+  /// have any valid owner are left untouched so later profiles do not
+  /// inherit them.
+  ///
+  /// Runs on every profile switch — validity context is computed once and
+  /// applied in memory instead of the per-download full-table rescan
+  /// `getDownloadOwnerCount` would do.
   Future<void> adoptLegacyDownloadsForProfile(String profileId) async {
     if (profileId.isEmpty) return;
     final rows = await select(downloadedMedia).get();
+    if (rows.isEmpty) return;
+
+    final owners = await select(downloadOwners).get();
+    final localProfileIds = (await select(profiles).get()).map((row) => row.id).toSet();
+    final connectionIds = (await select(connections).get()).map((row) => row.id).toSet();
+    bool valid(DownloadOwnerItem owner) {
+      if (localProfileIds.contains(owner.profileId)) return true;
+      final plexHome = parsePlexHomeProfileId(owner.profileId);
+      if (plexHome != null) return connectionIds.contains(plexHome.accountConnectionId);
+      return localProfileIds.isEmpty;
+    }
+
+    final ownedKeys = <String>{
+      for (final owner in owners)
+        if (valid(owner)) owner.globalKey,
+    };
     for (final row in rows) {
-      if (await getDownloadOwnerCount(row.globalKey) == 0) {
+      if (!ownedKeys.contains(row.globalKey)) {
         await addDownloadOwner(profileId: profileId, globalKey: row.globalKey);
       }
     }

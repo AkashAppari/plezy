@@ -631,6 +631,11 @@ class AppDatabase extends _$AppDatabase {
     await (delete(syncRules)..where((t) => t.profileId.equals(profileId))).go();
   }
 
+  /// Drop every sync rule (full logout).
+  Future<void> clearAllSyncRules() async {
+    await delete(syncRules).go();
+  }
+
   /// Get all downloaded media items (for syncing watch states)
   Future<List<DownloadedMediaItem>> getAllDownloadedMetadata() {
     return (select(downloadedMedia)..where((t) => t.status.equals(DownloadStatus.completed.index))).get();

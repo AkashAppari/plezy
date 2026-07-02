@@ -780,7 +780,11 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             final activeProfile = context.read<ActiveProfileProvider>();
             _offlineWatchSyncService.setActiveProfileId(
               activeProfile.activeId,
-              availableProfileCount: activeProfile.profiles.length,
+              // Legacy-adoption gate: only trust the count once the provider
+              // has hydrated (locals + cached home users) — a transient
+              // count of 1 mid-load would permanently mis-adopt pre-profile
+              // watch actions.
+              availableProfileCount: activeProfile.isInitialized ? activeProfile.profiles.length : null,
             );
 
             // Offline-sync drain replays a batch of queued watch actions without
@@ -818,7 +822,10 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           },
           update: (_, activeProfile, previous) {
             final provider = previous ?? _offlineWatchSyncService;
-            provider.setActiveProfileId(activeProfile.activeId, availableProfileCount: activeProfile.profiles.length);
+            provider.setActiveProfileId(
+              activeProfile.activeId,
+              availableProfileCount: activeProfile.isInitialized ? activeProfile.profiles.length : null,
+            );
             return provider;
           },
         ),

@@ -240,6 +240,11 @@ Future<void> logoutAllProfiles(BuildContext context) async {
   await scope.storage.clearActiveProfileId();
   await scope.storage.clearAllProfileLastUsed();
   await scope.storage.clearAllUserScopedPreferences();
+  // Queued watch actions and sync rules are keyed by the profiles that just
+  // ceased to exist; left behind they'd strand forever (or worse, replay
+  // through the next sign-in's clients).
+  await scope.database.clearAllWatchActions();
+  await scope.database.clearAllSyncRules();
   // The API cache is app-global and Plex rows are keyed by server only, so
   // a later sign-in as a different user must not inherit them.
   await ApiCache.instance.clearVolatile();

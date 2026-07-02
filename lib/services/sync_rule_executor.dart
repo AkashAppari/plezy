@@ -39,7 +39,10 @@ class SyncRuleResult {
 class SyncRuleExecutor {
   final AppDatabase _database;
   bool _isExecuting = false;
-  DateTime? _lastFullRunAt;
+
+  /// Per profile: one profile's background pass must not consume another
+  /// profile's cooldown window after a switch.
+  final Map<String, DateTime> _lastFullRunAtByProfile = {};
 
   static const Duration _cooldownWifi = Duration(minutes: 30);
   static const Duration _cooldownCellular = Duration(hours: 3);
@@ -85,11 +88,12 @@ class SyncRuleExecutor {
       return [];
     }
 
-    if (!force && _lastFullRunAt != null) {
+    final lastFullRunAt = _lastFullRunAtByProfile[profileId];
+    if (!force && lastFullRunAt != null) {
       final hasWifi =
           connectivity.contains(ConnectivityResult.wifi) || connectivity.contains(ConnectivityResult.ethernet);
       final cooldown = hasWifi ? _cooldownWifi : _cooldownCellular;
-      final elapsed = DateTime.now().difference(_lastFullRunAt!);
+      final elapsed = DateTime.now().difference(lastFullRunAt);
       if (elapsed < cooldown) {
         appLogger.d(
           'Sync rules cooldown active (${elapsed.inMinutes}m < ${cooldown.inMinutes}m, hasWifi=$hasWifi) — skipping',
@@ -124,7 +128,7 @@ class SyncRuleExecutor {
         }
       }
 
-      _lastFullRunAt = DateTime.now();
+      _lastFullRunAtByProfile[profileId] = DateTime.now();
       return results;
     } finally {
       _isExecuting = false;
