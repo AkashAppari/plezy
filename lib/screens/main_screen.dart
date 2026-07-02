@@ -617,9 +617,9 @@ class _MainScreenState extends State<MainScreen>
   void _setupWatchTogetherCallback() {
     try {
       final watchTogether = context.read<WatchTogetherProvider>();
-      watchTogether.onMediaSwitched = (ratingKey, serverId, mediaTitle) async {
+      watchTogether.onMediaSwitched = (ratingKey, serverId, mediaTitle) {
         appLogger.d('WatchTogether: Media switch received - navigating to $mediaTitle');
-        await _navigateToWatchTogetherMedia(ratingKey, serverId);
+        return _navigateToWatchTogetherMedia(ratingKey, serverId);
       };
       watchTogether.onHostExitedPlayer = () {
         appLogger.d('WatchTogether: Host exited player - exiting player for guest');
@@ -696,14 +696,17 @@ class _MainScreenState extends State<MainScreen>
     }
   }
 
-  /// Navigate to media when host switches content in Watch Together session
-  Future<void> _navigateToWatchTogetherMedia(String ratingKey, ServerId serverId) async {
-    if (!mounted) return; // Check before any context usage
+  /// Navigate to media when host switches content in Watch Together session.
+  /// Returns whether navigation was initiated; failures are re-dispatched on
+  /// the host's next state heartbeat.
+  Future<bool> _navigateToWatchTogetherMedia(String ratingKey, ServerId serverId) async {
+    if (!mounted) return false; // Check before any context usage
 
     try {
-      await navigateToWatchTogetherPlayback(context, ratingKey: ratingKey, serverId: serverId);
+      return await navigateToWatchTogetherPlayback(context, ratingKey: ratingKey, serverId: serverId);
     } catch (e) {
       appLogger.e('WatchTogether: Failed to navigate to media', error: e);
+      return false;
     }
   }
 

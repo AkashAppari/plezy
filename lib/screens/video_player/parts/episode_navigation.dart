@@ -211,6 +211,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     Duration? resumePosition,
     bool preserveCurrentTrackSelection = false,
     bool useCurrentAudioStreamSelection = true,
+    bool showErrorUi = true,
     String reason = 'media reload',
   }) async {
     if (widget.isLive) {
@@ -536,7 +537,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       });
       if (isItemChange) _showChromeForSwappedItem();
       appLogger.e('Failed to reload media in-place during $reason', error: e);
-      if (mounted) {
+      if (mounted && showErrorUi) {
         showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
       return true;

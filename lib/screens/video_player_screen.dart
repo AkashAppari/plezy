@@ -256,6 +256,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   _PlaybackTransition _playbackTransition = _PlaybackTransition.idle;
   bool _playbackIntentShouldPlay = true;
 
+  /// Media key of the last Watch Together switch failure the user was
+  /// toasted about — the heartbeat retry loop must not re-toast every 2s.
+  String? _wtSwitchToastShownForKey;
+
   bool _showPlayNextDialog = false;
   bool _isPhone = false;
   late int _effectiveSelectedMediaIndex;
