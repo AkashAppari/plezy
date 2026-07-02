@@ -446,6 +446,8 @@ class _SpotlightArtworkCrossfadeState extends State<_SpotlightArtworkCrossfade> 
   ImageProvider? _incoming;
   bool _incomingIsColor = false;
   Color _incomingColor = Colors.transparent;
+  bool _incomingErrored = false;
+  bool _incomingHasFrame = false;
   bool _fadeStarted = false;
 
   @override
@@ -471,6 +473,8 @@ class _SpotlightArtworkCrossfadeState extends State<_SpotlightArtworkCrossfade> 
       _fade.stop();
       _fade.value = 0;
       _fadeStarted = false;
+      _incomingErrored = false;
+      _incomingHasFrame = false;
       if (widget.image != null) {
         _incoming = widget.image;
         _incomingIsColor = false;
@@ -501,6 +505,11 @@ class _SpotlightArtworkCrossfadeState extends State<_SpotlightArtworkCrossfade> 
       if (_incomingIsColor) {
         _base = null;
         _baseColor = _incomingColor;
+      } else if (_incomingErrored || !_incomingHasFrame) {
+        // Never promote a provider that produced no frame: the base would
+        // re-resolve (and re-fail) it. Settle on the fallback box instead.
+        _base = null;
+        _baseColor = widget.fallbackColor;
       } else {
         _base = _incoming;
       }
@@ -511,32 +520,50 @@ class _SpotlightArtworkCrossfadeState extends State<_SpotlightArtworkCrossfade> 
   void _dropIncoming() {
     _incoming = null;
     _incomingIsColor = false;
+    _incomingErrored = false;
+    _incomingHasFrame = false;
     _fadeStarted = false;
     _fade.value = 0;
   }
 
   Widget _image(ImageProvider provider, {Animation<double>? opacity}) {
+    final isIncoming = opacity != null;
     return Image(
+      // Keyed by provider so a replaced incoming gets a fresh element — the
+      // framework never clears a retained error on provider swap, which would
+      // flash the previous item's failure at the next fade.
+      key: isIncoming ? ValueKey<ImageProvider>(provider) : null,
       image: provider,
       fit: BoxFit.cover,
       excludeFromSemantics: true,
       // Keeps the previous frame on provider promotion instead of flashing.
       gaplessPlayback: true,
       opacity: opacity,
-      frameBuilder: opacity == null
+      frameBuilder: !isIncoming
           ? null
           : (context, child, frame, wasSynchronouslyLoaded) {
-              if (frame != null || wasSynchronouslyLoaded) _startFade();
+              if (frame != null || wasSynchronouslyLoaded) {
+                _incomingHasFrame = true;
+                _startFade();
+              }
               return child;
             },
-      errorBuilder: (context, error, stackTrace) {
-        // Broken art: fade a plain box in instead (bounded to the error case).
-        _startFade();
-        return FadeTransition(
-          opacity: _fade,
-          child: ColoredBox(color: widget.fallbackColor),
-        );
-      },
+      errorBuilder: !isIncoming
+          // The settled base must show a static fallback: anything riding
+          // _fade here would flash transparent when the controller resets
+          // for the next swap.
+          ? (context, error, stackTrace) => ColoredBox(color: widget.fallbackColor)
+          : (context, error, stackTrace) {
+              // Broken incoming art: fade a plain box in instead (bounded to
+              // the error case); promotion then settles on the color, not
+              // the dead provider.
+              _incomingErrored = true;
+              _startFade();
+              return FadeTransition(
+                opacity: _fade,
+                child: ColoredBox(color: widget.fallbackColor),
+              );
+            },
     );
   }
 
