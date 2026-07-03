@@ -547,10 +547,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       WidgetsBinding.instance.addPostFrameCallback((_) {
         // Keep the queue when this item belongs to it — that covers both
         // server-side queues (Plex `playQueueItemId`) and client-side
-        // launcher-seeded queues (Jellyfin playlist/collection, with
-        // synthetic ids tracked in the provider). For genuine standalone
-        // playback (continue-watching, direct episode tap with no queue
-        // launcher) clear any stale queue so prev/next stays consistent.
+        // launcher-seeded queues (Jellyfin playlist/collection/shuffled
+        // show, with synthetic ids tracked in the provider). For genuine
+        // standalone playback (continue-watching, direct episode tap with no
+        // queue launcher) clear any stale queue so prev/next stays consistent.
         final meta = _currentMetadata;
         if (playbackState.isItemInActiveQueue(meta)) {
           playbackState.setCurrentItem(meta);

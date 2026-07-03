@@ -69,11 +69,14 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
 
   /// Whether [item] belongs to the currently active queue. True for Plex
   /// items the server-side queue stamped with a `playQueueItemId`, and for
-  /// items present in a Jellyfin local queue (synthetic id). Gates the
-  /// player's "preserve vs. wipe launcher-set queue" decision in both
-  /// [VideoPlayerScreen.initState] and `_ensurePlayQueue`, so a playlist
-  /// or collection queue survives entry into the player instead of being
-  /// replaced with a show queue.
+  /// items present in a Jellyfin local queue (synthetic id). Membership for
+  /// local queues is by object identity — [MediaItem] is `@Freezed(equal:
+  /// false)` — so only the exact instances stored in the queue match.
+  /// Gates the player's "preserve vs. wipe launcher-set queue" decision in
+  /// [VideoPlayerScreen.initState], `_ensurePlayQueue`, and
+  /// [EpisodeNavigationService]'s `_ensureLocalEpisodeQueue`, so a
+  /// playlist, collection, or shuffled show queue survives entry into the
+  /// player instead of being replaced with a sequential show queue.
   bool isItemInActiveQueue(MediaItem item) => isQueueActive && playQueueItemIdFor(item) != null;
 
   /// The context key (show/season/playlist ratingKey) for the current session
@@ -87,6 +90,11 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
 
   /// The current play queue item ID
   int? get currentPlayQueueItemID => _currentPlayQueueItemID;
+
+  /// The queue item the cursor currently points at, or null when no queue
+  /// is active or the cursor is outside the loaded window.
+  MediaItem? get currentQueueItem =>
+      _currentPlayQueueItemID == null ? null : _findLoadedItem(_currentPlayQueueItemID!);
 
   /// Set the client reference for loading more items
   void setPlayQueueWindowFetcher(PlayQueueWindowFetcher? fetcher) {
