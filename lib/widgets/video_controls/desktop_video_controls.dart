@@ -195,7 +195,10 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   Duration? _timelinePreviewPosition;
   Duration? _lastFlushedTimelinePreviewPosition;
   static const _keyRepeatThumbnailTimeout = Duration(milliseconds: 400);
-  static const _timelineSeekDebounce = Duration(milliseconds: 350);
+  // Must exceed the OS initial key-repeat delay (~400-500ms on Android/TV),
+  // or a held key commits an extra seek in the gap before repeats begin.
+  // Release still flushes synchronously, so this adds no tap latency.
+  static const _timelineSeekDebounce = Duration(milliseconds: 800);
   static const _timelinePreviewClearDelay = Duration(seconds: 2);
 
   // Content strip state
