@@ -1214,23 +1214,29 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   Future<void> _handleAppleTvRemotePlayPause(AppleTvRemotePlayPauseAction action) async {
-    if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
-
-    final currentPlayer = player;
-    if (!_isPlayerInitialized || currentPlayer == null) {
-      appLogger.d('Apple TV remote play/pause ignored: player not ready');
-      return;
-    }
-
-    if (!_canControlPlaybackFromRemote()) {
-      appLogger.d('Apple TV remote play/pause ignored: playback control unavailable');
-      return;
-    }
-
     appLogger.d(
       'Apple TV remote play/pause received source=${action.source}'
       '${action.detail == null ? '' : ' detail=${action.detail}'}',
     );
+    await _toggleRemotePlayPause(source: 'Apple TV remote');
+  }
+
+  /// Toggle play/pause on behalf of a hardware remote (Apple TV bridge or a
+  /// hardware media key). Mirrors the controls path: rewind-on-resume, then
+  /// play/pause with playback intent.
+  Future<void> _toggleRemotePlayPause({required String source}) async {
+    if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+
+    final currentPlayer = player;
+    if (!_isPlayerInitialized || currentPlayer == null) {
+      appLogger.d('$source play/pause ignored: player not ready');
+      return;
+    }
+
+    if (!_canControlPlaybackFromRemote()) {
+      appLogger.d('$source play/pause ignored: playback control unavailable');
+      return;
+    }
 
     try {
       if (!currentPlayer.state.playing) {
@@ -1239,9 +1245,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
       await _playOrPauseWithPlaybackIntent(currentPlayer);
     } catch (e, st) {
-      appLogger.w('Apple TV remote play/pause failed', error: e, stackTrace: st);
+      appLogger.w('$source play/pause failed', error: e, stackTrace: st);
     }
   }
+
+  /// Hardware media play/pause keys (Android TV remotes). Deliberately not
+  /// space/configured hotkeys — text fields must still receive those.
+  static bool _isHardwarePlayPauseKey(LogicalKeyboardKey key) =>
+      key == LogicalKeyboardKey.mediaPlayPause ||
+      key == LogicalKeyboardKey.mediaPlay ||
+      key == LogicalKeyboardKey.mediaPause;
 
   bool _canControlPlaybackFromRemote() {
     try {
@@ -1330,6 +1343,23 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // Back keys pass through — handled by PopScope (system back
         // gesture) or overlay sheet's onKeyEvent.
         if (event.logicalKey.isBackKey) return KeyEventResult.ignored;
+        // Hardware media play/pause must act even when focus rests on this
+        // node or a sibling overlay — otherwise the key only reveals the
+        // chrome and leaks to the (possibly stale/suspended) Android
+        // MediaSession (#1375). Gated to TV-style nav: on desktop the global
+        // HardwareKeyboard handler already acts (handlers don't stop focus
+        // dispatch), and Apple TV delivers play/pause via its native bridge.
+        if (_videoPlayerNavigationEnabled &&
+            !PlatformDetector.isAppleTV() &&
+            _isHardwarePlayPauseKey(event.logicalKey)) {
+          if (event is KeyDownEvent) {
+            unawaited(_toggleRemotePlayPause(source: 'Hardware media key'));
+            if (node.hasPrimaryFocus) {
+              _chromeController.show(focusTarget: PlayerChromeFocusTarget.playPause);
+            }
+          }
+          return KeyEventResult.handled; // consume down, repeat, and up
+        }
         // Self-heal: if this node itself has primary focus (no descendant
         // focused, e.g. after controls auto-hide), redirect to first descendant.
         if (node.hasPrimaryFocus) {
