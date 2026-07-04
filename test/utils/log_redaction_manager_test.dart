@@ -177,6 +177,16 @@ void main() {
       expect(r1.contains('server.example.com'), isFalse);
       expect(r2.contains('server.example.com'), isFalse);
     });
+
+    test('redacts the mpv-escaped form used in option-value logs', () {
+      LogRedactionManager.registerServerUrl('https://server.example.com');
+      // mpv echoes list options like sub-files with ':' escaped as '\:'.
+      final result = LogRedactionManager.redact(
+        r"Setting option 'sub-files' = 'https\://server.example.com/Videos/1/Subtitles/0/0/Stream.srt' (flags = 16)",
+      );
+      expect(result.contains('server.example.com'), isFalse);
+      expect(result.contains('[REDACTED_URL]'), isTrue);
+    });
   });
 
   group('registerCustomValue', () {

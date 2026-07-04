@@ -3,7 +3,9 @@ import 'url_utils.dart';
 class LogRedactionManager {
   // Size limits for bounded sets (FIFO eviction when exceeded)
   static const int _maxTokens = 50;
-  static const int _maxUrls = 20;
+  // Each server registers up to 8 literals (slash/origin/mpv-escaped
+  // variants), so keep headroom for several servers before FIFO eviction.
+  static const int _maxUrls = 40;
   static const int _maxCustomValues = 50;
 
   // Use LinkedHashSet for FIFO ordering
@@ -74,20 +76,31 @@ class LogRedactionManager {
     final strippedSlash = stripTrailingSlash(normalized);
 
     if (strippedSlash.isNotEmpty) {
-      _addWithLimit(_urls, strippedSlash, _maxUrls);
-      _addWithLimit(_urls, '$strippedSlash/', _maxUrls);
+      _addUrl(strippedSlash);
+      _addUrl('$strippedSlash/');
     }
 
     // Capture origin and host-level strings as well to cover most cases.
     if (uri != null && uri.host.isNotEmpty) {
       final origin = '${uri.scheme.isEmpty ? 'https' : uri.scheme}://${uri.host}${uri.hasPort ? ':${uri.port}' : ''}';
-      _addWithLimit(_urls, origin, _maxUrls);
+      _addUrl(origin);
       if (origin.endsWith('/')) {
-        _addWithLimit(_urls, origin.substring(0, origin.length - 1), _maxUrls);
+        _addUrl(origin.substring(0, origin.length - 1));
       }
     }
 
     _rebuildCombinedPattern();
+  }
+
+  /// Registers a URL literal plus the form mpv uses when echoing list-option
+  /// values (`:` escaped as `\:`, e.g. `sub-files=https\://host/...`), which
+  /// would otherwise slip past the literal match and leak the host.
+  static void _addUrl(String url) {
+    _addWithLimit(_urls, url, _maxUrls);
+    final escaped = url.replaceAll(':', r'\:');
+    if (escaped != url) {
+      _addWithLimit(_urls, escaped, _maxUrls);
+    }
   }
 
   /// Convenience: register a server's URL and access token together.

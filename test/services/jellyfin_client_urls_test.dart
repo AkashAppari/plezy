@@ -84,6 +84,16 @@ void main() {
       expect(Uri.parse(url).path, '/Videos/folder%2Fitem%20%231%3Fx/stream');
     });
 
+    test('buildDirectStreamUrl canonicalizes a mixed-case scheme from stored config', () async {
+      // This URL bypasses Dart's Uri normalization on its way to the player,
+      // and FFmpeg's protocol lookup is case-sensitive — a stored
+      // "Https://..." base URL fails with "Protocol not found" (#1465).
+      final mixedCase = await JellyfinClient.create(_conn(baseUrl: 'Https://jf.example.com/'));
+      addTearDown(mixedCase.close);
+      final url = mixedCase.buildDirectStreamUrl('item-99');
+      expect(url, startsWith('https://jf.example.com/Videos/'));
+    });
+
     test('fetchSortOptions exposes the broad Jellyfin sort set', () async {
       final sorts = await client.fetchSortOptions('lib-1');
       expect(sorts.map((sort) => sort.key).toList(), [
