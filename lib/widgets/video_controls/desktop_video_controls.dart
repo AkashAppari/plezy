@@ -200,6 +200,8 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   // Release still flushes synchronously, so this adds no tap latency.
   static const _timelineSeekDebounce = Duration(milliseconds: 800);
   static const _timelinePreviewClearDelay = Duration(seconds: 2);
+  static const _timelinePreviewSettleTolerance = Duration(seconds: 3);
+  static const _timelinePreviewClearCeiling = Duration(seconds: 10);
 
   // Content strip state
   bool _contentStripVisible = false;
@@ -472,14 +474,30 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     }
   }
 
-  void _clearTimelinePreviewIfStill(Duration target) {
+  void _clearTimelinePreviewIfStill(Duration target, Duration elapsed) {
     if (!mounted || _timelinePreviewPosition != target) return;
+    // Hold the preview until playback has actually reached the committed
+    // target: clearing while a slow device is still buffering re-bases the
+    // next key-seek off the stale live position, silently discarding the
+    // seek that was just committed. The ceiling is a backstop for streams
+    // that never settle (mirrors LiveSeekAccumulator._scheduleClear).
+    final live = widget.player.state.position;
+    if ((live - target).abs() > _timelinePreviewSettleTolerance && elapsed < _timelinePreviewClearCeiling) {
+      _timelinePreviewClearTimer = Timer(
+        _timelinePreviewClearDelay,
+        () => _clearTimelinePreviewIfStill(target, elapsed + _timelinePreviewClearDelay),
+      );
+      return;
+    }
     setState(() => _timelinePreviewPosition = null);
   }
 
   void _scheduleTimelinePreviewClear(Duration target) {
     _timelinePreviewClearTimer?.cancel();
-    _timelinePreviewClearTimer = Timer(_timelinePreviewClearDelay, () => _clearTimelinePreviewIfStill(target));
+    _timelinePreviewClearTimer = Timer(
+      _timelinePreviewClearDelay,
+      () => _clearTimelinePreviewIfStill(target, Duration.zero),
+    );
   }
 
   void _flushTimelinePreviewSeek() {
