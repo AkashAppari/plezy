@@ -10,12 +10,15 @@ import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/screens/settings/add_jellyfin_screen.dart';
 import 'package:plezy/services/jellyfin_auth_service.dart';
 import 'package:plezy/services/jellyfin_lan_discovery_service.dart';
+import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
 
 import '../../test_helpers/prefs.dart';
 
 Profile _profile(String id) =>
     Profile.local(id: id, displayName: id, sortOrder: 0, createdAt: DateTime.fromMillisecondsSinceEpoch(0));
+
+Widget _testApp(Widget home) => MaterialApp(theme: monoTheme(dark: true), home: home);
 
 JellyfinConnectionAuthService _jellyfinAuthService({bool quickConnectEnabled = false, Duration? initiateDelay}) {
   return JellyfinConnectionAuthService(
@@ -85,7 +88,7 @@ void main() {
   });
 
   testWidgets('autofocuses the server URL field', (tester) async {
-    await tester.pumpWidget(MaterialApp(home: AddJellyfinScreen(localDiscoveryFactory: _noLocalServers)));
+    await tester.pumpWidget(_testApp(AddJellyfinScreen(localDiscoveryFactory: _noLocalServers)));
     await tester.pump();
 
     final field = tester.widget<TextField>(find.byType(TextField));
@@ -97,9 +100,7 @@ void main() {
     TvDetectionService.debugSetAppleTVOverride(true);
 
     await tester.pumpWidget(
-      InputModeTracker(
-        child: MaterialApp(home: AddJellyfinScreen(localDiscoveryFactory: _noLocalServers)),
-      ),
+      InputModeTracker(child: _testApp(AddJellyfinScreen(localDiscoveryFactory: _noLocalServers))),
     );
     await tester.pumpAndSettle();
 
@@ -113,9 +114,7 @@ void main() {
     TvDetectionService.setForceTVSync(true);
 
     await tester.pumpWidget(
-      InputModeTracker(
-        child: MaterialApp(home: AddJellyfinScreen(localDiscoveryFactory: _noLocalServers)),
-      ),
+      InputModeTracker(child: _testApp(AddJellyfinScreen(localDiscoveryFactory: _noLocalServers))),
     );
     await tester.pumpAndSettle();
 
@@ -139,8 +138,8 @@ void main() {
 
     await tester.pumpWidget(
       InputModeTracker(
-        child: MaterialApp(
-          home: AddJellyfinScreen(
+        child: _testApp(
+          AddJellyfinScreen(
             localDiscoveryFactory: () async => [
               DiscoveredJellyfinServer(address: 'http://192.168.1.20:8096', id: 'srv-1', name: 'Home'),
             ],
@@ -168,11 +167,8 @@ void main() {
 
   testWidgets('D-pad moves from URL through Change to credentials after server is found', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: AddJellyfinScreen(
-          authServiceFactory: () => _jellyfinAuthService(),
-          localDiscoveryFactory: _noLocalServers,
-        ),
+      _testApp(
+        AddJellyfinScreen(authServiceFactory: () => _jellyfinAuthService(), localDiscoveryFactory: _noLocalServers),
       ),
     );
     await tester.pump();
@@ -211,8 +207,8 @@ void main() {
 
   testWidgets('accepts a bare Jellyfin host and expands it before probing', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: AddJellyfinScreen(
+      _testApp(
+        AddJellyfinScreen(
           authServiceFactory: () => _jellyfinAuthServiceForBareHost(),
           localDiscoveryFactory: _noLocalServers,
         ),
@@ -232,8 +228,8 @@ void main() {
   testWidgets('Quick Connect shows the code prominently and cancel returns to the form', (tester) async {
     resetSharedPreferencesForTest();
     await tester.pumpWidget(
-      MaterialApp(
-        home: AddJellyfinScreen(
+      _testApp(
+        AddJellyfinScreen(
           authServiceFactory: () => _jellyfinAuthService(quickConnectEnabled: true),
           localDiscoveryFactory: _noLocalServers,
         ),
@@ -276,8 +272,8 @@ void main() {
 
     await tester.pumpWidget(
       InputModeTracker(
-        child: MaterialApp(
-          home: AddJellyfinScreen(
+        child: _testApp(
+          AddJellyfinScreen(
             // Hold /QuickConnect/Initiate open so the frames between probe
             // success and the panel swap are observable — that window is
             // where the focus fallback used to auto-open the keyboard.
@@ -331,8 +327,8 @@ void main() {
 
   testWidgets('selecting a discovered Jellyfin server probes that address', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: AddJellyfinScreen(
+      _testApp(
+        AddJellyfinScreen(
           authServiceFactory: () => _jellyfinAuthService(),
           localDiscoveryFactory: () async => [
             DiscoveredJellyfinServer(address: 'http://192.168.1.20:8096', id: 'srv-1', name: 'Home'),
@@ -355,8 +351,8 @@ void main() {
   testWidgets('D-pad can navigate through discovered Jellyfin servers', (tester) async {
     await tester.pumpWidget(
       InputModeTracker(
-        child: MaterialApp(
-          home: AddJellyfinScreen(
+        child: _testApp(
+          AddJellyfinScreen(
             localDiscoveryFactory: () async => [
               DiscoveredJellyfinServer(address: 'http://192.168.1.20:8096', id: 'srv-1', name: 'Home'),
               DiscoveredJellyfinServer(address: 'http://192.168.1.30:8096', id: 'srv-2', name: 'Office'),
