@@ -1373,8 +1373,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   return _buildHeroItem(_onDeck[index], heroHeight);
                 },
               ),
-              // Page indicators with animated progress and pause/play button
-              if (!InputModeTracker.isKeyboardMode(context))
+              // Page indicators with animated progress and pause/play button.
+              // Hidden on TV only (issue #600: pointer-only control unreachable
+              // via d-pad) — never gated on transient input mode, which back-key
+              // events, BT keyboards, and gamepads can flip on phones/desktop.
+              if (!isTv)
                 Positioned(
                   bottom: 16,
                   left: -26,
@@ -1586,8 +1589,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor],
-                            stops: isTv ? const [0.25, 0.78, 1.0] : const [0.5, 0.85, 1.0],
+                            // Reach full bg before the bottom edge so the hero
+                            // blends seamlessly into the content below and the
+                            // page dots sit on a solid band.
+                            colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor, bgColor],
+                            stops: isTv ? const [0.25, 0.78, 0.94, 1.0] : const [0.5, 0.85, 0.94, 1.0],
                           ),
                         ),
                       );
