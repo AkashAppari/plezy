@@ -981,10 +981,19 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                       curve: Curves.easeInOut,
                       top: _showControls ? (isMobile ? 100.0 : 60.0) : 16.0,
                       left: 16,
-                      child: AnimatedOpacity(
-                        opacity: (!_autoHidePerformanceOverlay || _showControls) ? 1.0 : 0.0,
-                        duration: const Duration(milliseconds: 200),
-                        child: IgnorePointer(child: PlayerPerformanceOverlay(player: widget.player)),
+                      right: 16,
+                      // Clear the bottom controls (same clearance as the skip button) so the
+                      // overlay can shrink to fit instead of being clipped by the screen edge.
+                      bottom: !_showControls ? 16.0 : (isMobile ? 80.0 : 115.0),
+                      // Align loosens the tight constraints from the fully-anchored Positioned;
+                      // without it the card would stretch to fill the whole region.
+                      child: Align(
+                        alignment: Alignment.topLeft,
+                        child: AnimatedOpacity(
+                          opacity: (!_autoHidePerformanceOverlay || _showControls) ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 200),
+                          child: IgnorePointer(child: PlayerPerformanceOverlay(player: widget.player)),
+                        ),
                       ),
                     ),
                   if (_isScreenLocked)
