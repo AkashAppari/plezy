@@ -107,6 +107,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   /// Track which tabs have loaded data (used to trigger focus after tab restore)
   final Set<int> _loadedTabs = {};
 
+  /// Whether the browse tab has active filters (badges the Library options icon)
+  bool _browseFiltersActive = false;
+
   /// Key for the library dropdown menu button.
   final _libraryDropdownKey = GlobalKey<AppMenuButtonState<String>>();
 
@@ -324,6 +327,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     (tabState as dynamic).showBrowseOptionsSheet();
   }
 
+  /// Handle when the browse tab's active-filter state changes
+  void _handleBrowseFiltersActiveChanged(bool active) {
+    if (_browseFiltersActive == active) return;
+    setState(() => _browseFiltersActive = active);
+  }
+
   /// Handle when a tab's data has finished loading
   void _handleTabDataLoaded(int tabIndex) {
     // Track that this tab has loaded
@@ -426,6 +435,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         onDataLoaded: () => _handleTabDataLoaded(tabIndex),
         onBack: focusTabBar,
         onResetScroll: _resetOuterScroll,
+        onFiltersActiveChanged: _handleBrowseFiltersActiveChanged,
       ),
       LibraryTabType.collections => LibraryCollectionsTab(
         key: _collectionsTabKey,
@@ -1031,6 +1041,32 @@ class _LibrariesScreenState extends State<LibrariesScreen>
           icon: Symbols.tune_rounded,
           tooltip: t.libraries.libraryOptions,
           onPressed: _showBrowseOptionsForCurrentTab,
+          // Badge the icon with a dot while the browse tab has active filters
+          // (issue #1470). A null child keeps the default rendering.
+          child: _browseFiltersActive
+              ? IconButton(
+                  tooltip: t.libraries.libraryOptions,
+                  onPressed: _showBrowseOptionsForCurrentTab,
+                  icon: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      const AppIcon(Symbols.tune_rounded, fill: 1),
+                      Positioned(
+                        top: -2,
+                        right: -2,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : null,
         ),
       FocusableAction(icon: Symbols.refresh_rounded, tooltip: t.common.refresh, onPressed: _refreshSelectedLibraryTabs),
     ];

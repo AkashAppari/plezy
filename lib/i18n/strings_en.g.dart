@@ -2269,6 +2269,12 @@ class TranslationsLibrariesEn {
 	/// en: 'This library is empty'
 	String get thisLibraryIsEmpty => 'This library is empty';
 
+	/// en: 'No items match the active filters'
+	String get noItemsMatchFilters => 'No items match the active filters';
+
+	/// en: 'Reset filters'
+	String get resetFilters => 'Reset filters';
+
 	/// en: 'All'
 	String get all => 'All';
 
@@ -5261,6 +5267,8 @@ extension on Translations {
 			'libraries.allLibrariesHidden' => 'All libraries are hidden',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Hidden libraries (${count})',
 			'libraries.thisLibraryIsEmpty' => 'This library is empty',
+			'libraries.noItemsMatchFilters' => 'No items match the active filters',
+			'libraries.resetFilters' => 'Reset filters',
 			'libraries.all' => 'All',
 			'libraries.clearAll' => 'Clear All',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Are you sure you want to scan "${title}"?',
@@ -5597,10 +5605,10 @@ extension on Translations {
 			'shaders.shaderImportFailed' => 'Failed to import shader',
 			'shaders.deleteShader' => 'Delete Shader',
 			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
-			'companionRemote.title' => 'Companion Remote',
-			'companionRemote.connectedTo' => ({required Object name}) => 'Connected to ${name}',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.title' => 'Companion Remote',
+			'companionRemote.connectedTo' => ({required Object name}) => 'Connected to ${name}',
 			'companionRemote.unknownDevice' => 'Unknown Device',
 			'companionRemote.session.startingServer' => 'Starting remote server...',
 			'companionRemote.session.failedToCreate' => 'Failed to start remote server:',

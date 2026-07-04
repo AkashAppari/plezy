@@ -73,6 +73,10 @@ class LibraryBrowseTab extends BaseLibraryTab<MediaItem> {
   /// (filter/sort change, library reload, etc.). Lets the parent resync the
   /// outer floating header — see `_resetOuterScroll` in libraries_screen.
   final VoidCallback? onResetScroll;
+
+  /// Notifies the parent when the active-filter state changes so the app
+  /// bar can badge the Library options action on mobile.
+  final ValueChanged<bool>? onFiltersActiveChanged;
   final bool canGroupByFolders;
 
   const LibraryBrowseTab({
@@ -86,6 +90,7 @@ class LibraryBrowseTab extends BaseLibraryTab<MediaItem> {
     super.suppressAutoFocus,
     super.onBack,
     this.onResetScroll,
+    this.onFiltersActiveChanged,
   });
 
   @override
@@ -566,6 +571,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
           }
         }
       });
+      _notifyFiltersActive();
 
       if (_isJellyfinLibrary) {
         _loadJellyfinFiltersInBackground(generation);
@@ -601,6 +607,18 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     );
   }
 
+  /// Reports `_selectedFilters.isNotEmpty` to the parent post-frame, since
+  /// filter state also mutates during load paths driven by initState /
+  /// didUpdateWidget where a synchronous parent setState would throw.
+  void _notifyFiltersActive() {
+    final cb = widget.onFiltersActiveChanged;
+    if (cb == null) return;
+    final active = _selectedFilters.isNotEmpty;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) cb(active);
+    });
+  }
+
   /// Initial UI state both Plex and Jellyfin paths need before fetching:
   /// loading flag set, lists cleared, filter/sort caches reset.
   void _resetTopOfPageState() {
@@ -622,6 +640,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       _scrollMetrics = LibraryAlphaScrollMetrics.empty;
       _measuredListRowHeight = null;
     });
+    _notifyFiltersActive();
   }
 
   /// Build the filter params map for API calls
@@ -916,21 +935,26 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       // with the category listing (Jellyfin's `/Items/Filters`). The empty
       // map for Plex libraries falls through to lazy `getFilterValues`.
       cachedValues: _jellyfinFilterValues.isEmpty ? null : _jellyfinFilterValues,
-      onFiltersChanged: (filters) async {
-        setState(() {
-          _selectedFilters.clear();
-          _selectedFilters.addAll(filters);
-        });
-
-        // Save filters to storage
-        final storage = await StorageService.getInstance();
-        await storage.saveLibraryFilters(filters, sectionId: widget.library.globalKey);
-
-        unawaited(_loadItems());
-        unawaited(_loadFirstCharacters());
-      },
+      onFiltersChanged: _applyFilters,
     );
   }
+
+  Future<void> _applyFilters(Map<String, String> filters) async {
+    setState(() {
+      _selectedFilters.clear();
+      _selectedFilters.addAll(filters);
+    });
+    _notifyFiltersActive();
+
+    // Save filters to storage
+    final storage = await StorageService.getInstance();
+    await storage.saveLibraryFilters(filters, sectionId: widget.library.globalKey);
+
+    unawaited(_loadItems());
+    unawaited(_loadFirstCharacters());
+  }
+
+  void _resetFilters() => unawaited(_applyFilters(const {}));
 
   Future<List<MediaFilterValue>> _loadFilterValues(MediaFilter filter) async {
     if (!mounted) return const [];
@@ -1659,6 +1683,17 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     }
 
     if (totalSize == 0 && !isLoading) {
+      if (_selectedFilters.isNotEmpty) {
+        return [
+          SliverEmptyState(
+            message: t.libraries.noItemsMatchFilters,
+            icon: Symbols.filter_alt_off_rounded,
+            onAction: _resetFilters,
+            actionLabel: t.libraries.resetFilters,
+            actionIcon: Symbols.clear_all_rounded,
+          ),
+        ];
+      }
       return [SliverEmptyState(message: t.libraries.thisLibraryIsEmpty, icon: Symbols.folder_open_rounded)];
     }
 

@@ -736,6 +736,8 @@
     "allLibrariesHidden": "All libraries are hidden",
     "hiddenLibrariesCount": "Hidden libraries (${count})",
     "thisLibraryIsEmpty": "This library is empty",
+    "noItemsMatchFilters": "No items match the active filters",
+    "resetFilters": "Reset filters",
     "all": "All",
     "clearAll": "Clear All",
     "scanLibraryConfirm": "Are you sure you want to scan \"${title}\"?",
