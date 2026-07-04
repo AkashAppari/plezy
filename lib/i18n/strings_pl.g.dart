@@ -544,9 +544,6 @@ class _TranslationsRateSheetPl extends TranslationsRateSheetEn {
 	@override String starValue({required Object rating}) => '${rating} / 5';
 	@override String scoreValue({required Object score}) => '${score} / 10';
 	@override String get setScore => 'Ustaw ocenę';
-	@override String get notRated => 'Nie oceniono';
-	@override String get liked => 'Polubione';
-	@override String get notLiked => 'Nie polubiono';
 	@override String get saved => 'Zapisano';
 	@override String get notAvailable => 'Nie znaleziono dopasowania';
 	@override String get noConnectedTrackers => 'Połącz tracker w Ustawieniach, aby tam oceniać.';
@@ -2330,9 +2327,6 @@ extension on TranslationsPl {
 			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
 			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
 			'rateSheet.setScore' => 'Ustaw ocenę',
-			'rateSheet.notRated' => 'Nie oceniono',
-			'rateSheet.liked' => 'Polubione',
-			'rateSheet.notLiked' => 'Nie polubiono',
 			'rateSheet.saved' => 'Zapisano',
 			'rateSheet.notAvailable' => 'Nie znaleziono dopasowania',
 			'rateSheet.noConnectedTrackers' => 'Połącz tracker w Ustawieniach, aby tam oceniać.',
@@ -2458,11 +2452,11 @@ extension on TranslationsPl {
 			'messages.libraryScanFailed' => ({required Object error}) => 'Nie udało się zeskanować biblioteki: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Odświeżanie metadanych "${title}"...',
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Rozpoczęto odświeżanie metadanych "${title}"',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Nie udało się odświeżyć metadanych: ${error}',
 			'messages.logoutConfirm' => 'Czy na pewno chcesz się wylogować?',
 			'messages.noSeasonsFound' => 'Nie znaleziono sezonów',
+			_ => null,
+		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => 'Nie udało się załadować sezonów',
 			'messages.noEpisodesFound' => 'Nie znaleziono odcinków w pierwszym sezonie',
 			'messages.noEpisodesFoundGeneral' => 'Nie znaleziono odcinków',
@@ -2972,11 +2966,11 @@ extension on TranslationsPl {
 			'companionRemote.session.serverStopped' => 'Serwer zdalny zatrzymany',
 			'companionRemote.session.serverRunningDescription' => 'Urządzenia mobilne w Twojej sieci mogą łączyć się z tą aplikacją',
 			'companionRemote.session.serverStoppedDescription' => 'Uruchom serwer, aby umożliwić połączenie urządzeń mobilnych',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.usePhoneToControl' => 'Użyj urządzenia mobilnego, aby sterować tą aplikacją',
 			'companionRemote.session.startServer' => 'Uruchom serwer',
 			'companionRemote.session.stopServer' => 'Zatrzymaj serwer',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.minimize' => 'Minimalizuj',
 			'companionRemote.pairing.discoveryDescription' => 'Urządzenia Plezy z tym samym kontem Plex pojawią się tutaj',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',

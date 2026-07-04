@@ -208,6 +208,13 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         title: t.libraries.filterCategories.unwatched,
         type: 'filter',
       ),
+      MediaFilter(
+        filter: 'favorite',
+        filterType: 'boolean',
+        key: 'jellyfin:favorite',
+        title: t.libraries.filterCategories.favorites,
+        type: 'filter',
+      ),
     ];
     final data = await _safeFetchFilterPayload(libraryId);
     if (data == null) return LibraryFilterResult(filters: filters, cachedValues: const {});

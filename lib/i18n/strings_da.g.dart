@@ -544,9 +544,6 @@ class _TranslationsRateSheetDa extends TranslationsRateSheetEn {
 	@override String starValue({required Object rating}) => '${rating} / 5';
 	@override String scoreValue({required Object score}) => '${score} / 10';
 	@override String get setScore => 'Angiv en score';
-	@override String get notRated => 'Ikke bedømt';
-	@override String get liked => 'Synes godt om';
-	@override String get notLiked => 'Ikke liket';
 	@override String get saved => 'Gemt';
 	@override String get notAvailable => 'Intet match fundet';
 	@override String get noConnectedTrackers => 'Forbind en tracker i Indstillinger for at bedømme der.';
@@ -2330,9 +2327,6 @@ extension on TranslationsDa {
 			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
 			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
 			'rateSheet.setScore' => 'Angiv en score',
-			'rateSheet.notRated' => 'Ikke bedømt',
-			'rateSheet.liked' => 'Synes godt om',
-			'rateSheet.notLiked' => 'Ikke liket',
 			'rateSheet.saved' => 'Gemt',
 			'rateSheet.notAvailable' => 'Intet match fundet',
 			'rateSheet.noConnectedTrackers' => 'Forbind en tracker i Indstillinger for at bedømme der.',
@@ -2458,11 +2452,11 @@ extension on TranslationsDa {
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kunne ikke scanne bibliotek: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Opdaterer metadata for "${title}"...',
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadataopdatering startet for "${title}"',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Kunne ikke opdatere metadata: ${error}',
 			'messages.logoutConfirm' => 'Er du sikker på, at du vil logge ud?',
 			'messages.noSeasonsFound' => 'Ingen sæsoner fundet',
+			_ => null,
+		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => 'Kunne ikke indlæse sæsoner',
 			'messages.noEpisodesFound' => 'Ingen episoder fundet i første sæson',
 			'messages.noEpisodesFoundGeneral' => 'Ingen episoder fundet',
@@ -2972,11 +2966,11 @@ extension on TranslationsDa {
 			'companionRemote.session.serverStopped' => 'Fjernserver stoppet',
 			'companionRemote.session.serverRunningDescription' => 'Mobile enheder på dit netværk kan oprette forbindelse til denne app',
 			'companionRemote.session.serverStoppedDescription' => 'Start serveren for at tillade mobilenheder at oprette forbindelse',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.usePhoneToControl' => 'Brug din mobilenhed til at styre denne app',
 			'companionRemote.session.startServer' => 'Start server',
 			'companionRemote.session.stopServer' => 'Stop server',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.minimize' => 'Minimér',
 			'companionRemote.pairing.discoveryDescription' => 'Plezy-enheder med samme Plex-konto vises her',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',

@@ -3766,6 +3766,11 @@ class PlexClient
   }
 
   @override
+  Future<void> setFavorite(MediaItem item, bool isFavorite) async {
+    throw UnsupportedError('Plex does not support user favorites.');
+  }
+
+  @override
   Future<List<MediaPlaylist>> fetchPlaylists({String playlistType = 'video', bool? smart}) async {
     final playlists = await _getPlaylists(playlistType: playlistType, smart: smart);
     return playlists.map((p) => PlexMappers.mediaPlaylist(p)).toList();

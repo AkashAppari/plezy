@@ -953,11 +953,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final isNumeric = mediaClient?.capabilities.numericUserRating ?? true;
     final hasRating = metadata.userRating != null && metadata.userRating! > 0;
     final starValue = hasRating ? metadata.userRating! / 2.0 : 0.0;
+    final active = isNumeric ? hasRating : metadata.isFavorite == true;
 
-    final iconData = isNumeric ? Symbols.star_rounded : Symbols.thumb_up_rounded;
-    final activeIconColor = isNumeric ? Colors.amber : Colors.teal;
-    // Numeric backends show the formatted rating when set; binary backends
-    // rely on the filled icon to communicate the like state and keep the
+    final iconData = isNumeric ? Symbols.star_rounded : Symbols.favorite_rounded;
+    final activeIconColor = isNumeric ? Colors.amber : Colors.redAccent;
+    // Numeric backends show the formatted rating when set; favorite backends
+    // rely on the filled heart to communicate the favorite state and keep the
     // "Rate" label as the action prompt either way.
     final label = isNumeric && hasRating ? formatRating(starValue) : t.mediaMenu.rate;
 
@@ -1004,8 +1005,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 children: [
                   AppIcon(
                     iconData,
-                    fill: hasRating ? 1 : 0,
-                    color: showFocus ? fgColor : (hasRating ? activeIconColor : fgColor),
+                    fill: active ? 1 : 0,
+                    color: showFocus ? fgColor : (active ? activeIconColor : fgColor),
                     size: 16,
                   ),
                   const SizedBox(width: 4),
@@ -1031,6 +1032,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         onServerRatingChanged: (rating) {
           setStateIfMounted(() {
             _fullMetadata = (_fullMetadata ?? widget.metadata).copyWith(userRating: rating);
+          });
+        },
+        onServerFavoriteChanged: (favorite) {
+          setStateIfMounted(() {
+            _fullMetadata = (_fullMetadata ?? widget.metadata).copyWith(isFavorite: favorite);
           });
         },
       ),

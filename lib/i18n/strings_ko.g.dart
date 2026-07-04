@@ -544,9 +544,6 @@ class _TranslationsRateSheetKo extends TranslationsRateSheetEn {
 	@override String starValue({required Object rating}) => '${rating} / 5';
 	@override String scoreValue({required Object score}) => '${score} / 10';
 	@override String get setScore => '점수 설정';
-	@override String get notRated => '평가 없음';
-	@override String get liked => '좋아요';
-	@override String get notLiked => '좋아요 아님';
 	@override String get saved => '저장됨';
 	@override String get notAvailable => '일치 항목 없음';
 	@override String get noConnectedTrackers => '설정에서 트래커를 연결하면 거기에도 평가할 수 있습니다.';
@@ -2330,9 +2327,6 @@ extension on TranslationsKo {
 			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
 			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
 			'rateSheet.setScore' => '점수 설정',
-			'rateSheet.notRated' => '평가 없음',
-			'rateSheet.liked' => '좋아요',
-			'rateSheet.notLiked' => '좋아요 아님',
 			'rateSheet.saved' => '저장됨',
 			'rateSheet.notAvailable' => '일치 항목 없음',
 			'rateSheet.noConnectedTrackers' => '설정에서 트래커를 연결하면 거기에도 평가할 수 있습니다.',
@@ -2458,11 +2452,11 @@ extension on TranslationsKo {
 			'messages.libraryScanFailed' => ({required Object error}) => '미디어 라이브러리 스캔 실패: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}" 메타데이터 새로고침 중...',
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}" 메타데이터 새로고침 시작됨',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshFailed' => ({required Object error}) => '메타데이터 새로고침 실패: ${error}',
 			'messages.logoutConfirm' => '로그아웃 하시겠습니까?',
 			'messages.noSeasonsFound' => '시즌을 찾을 수 없음',
+			_ => null,
+		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => '시즌을 불러오지 못했습니다',
 			'messages.noEpisodesFound' => '시즌 1에서 에피소드를 찾을 수 없습니다',
 			'messages.noEpisodesFoundGeneral' => '에피소드를 찾을 수 없습니다',
@@ -2972,11 +2966,11 @@ extension on TranslationsKo {
 			'companionRemote.session.serverStopped' => '원격 서버 중지됨',
 			'companionRemote.session.serverRunningDescription' => '네트워크의 모바일 기기가 이 앱에 연결할 수 있습니다',
 			'companionRemote.session.serverStoppedDescription' => '모바일 기기의 연결을 허용하려면 서버를 시작하세요',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.usePhoneToControl' => '모바일 기기로 이 앱을 제어하세요',
 			'companionRemote.session.startServer' => '서버 시작',
 			'companionRemote.session.stopServer' => '서버 중지',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.minimize' => '최소화',
 			'companionRemote.pairing.discoveryDescription' => '같은 Plex 계정의 Plezy 기기가 여기에 표시됩니다',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',

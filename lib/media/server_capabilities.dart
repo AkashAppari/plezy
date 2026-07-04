@@ -56,9 +56,13 @@ class ServerCapabilities {
   /// returns synthesized hubs but with sparser categorisation.
   final bool richHubs;
 
-  /// Numeric ratings (Plex 0–10 via [Item.userRating]). Jellyfin offers
-  /// only a binary like/dislike, so star sliders should be hidden.
+  /// Numeric ratings (Plex 0–10 via [Item.userRating]). Jellyfin has no
+  /// numeric user rating, so star sliders should be hidden.
   final bool numericUserRating;
+
+  /// Per-user favorite flag ("heart") on media items. Jellyfin exposes it via
+  /// `/Users/{userId}/FavoriteItems/{itemId}`; Plex has no equivalent.
+  final bool userFavorites;
 
   /// Hide an item from Continue Watching without changing watch state or
   /// playback progress. Plex exposes this directly; Jellyfin does not.
@@ -115,6 +119,7 @@ class ServerCapabilities {
     this.serverSideSync = false,
     this.richHubs = false,
     this.numericUserRating = false,
+    this.userFavorites = false,
     this.continueWatchingRemoval = false,
     this.externalSubtitleSearch = false,
     this.trackPreferencePersistence = false,
@@ -138,6 +143,7 @@ class ServerCapabilities {
     serverSideSync: true,
     richHubs: true,
     numericUserRating: true,
+    userFavorites: false,
     continueWatchingRemoval: true,
     externalSubtitleSearch: true,
     trackPreferencePersistence: true,
@@ -169,6 +175,7 @@ class ServerCapabilities {
     serverSideSync: false,
     richHubs: false,
     numericUserRating: false,
+    userFavorites: true,
     externalSubtitleSearch: false,
     trackPreferencePersistence: true,
     endpointFailover: true,
@@ -190,6 +197,7 @@ class ServerCapabilities {
     bool? serverSideSync,
     bool? richHubs,
     bool? numericUserRating,
+    bool? userFavorites,
     bool? continueWatchingRemoval,
     bool? externalSubtitleSearch,
     bool? trackPreferencePersistence,
@@ -211,6 +219,7 @@ class ServerCapabilities {
       serverSideSync: serverSideSync ?? this.serverSideSync,
       richHubs: richHubs ?? this.richHubs,
       numericUserRating: numericUserRating ?? this.numericUserRating,
+      userFavorites: userFavorites ?? this.userFavorites,
       continueWatchingRemoval: continueWatchingRemoval ?? this.continueWatchingRemoval,
       externalSubtitleSearch: externalSubtitleSearch ?? this.externalSubtitleSearch,
       trackPreferencePersistence: trackPreferencePersistence ?? this.trackPreferencePersistence,

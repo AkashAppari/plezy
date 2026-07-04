@@ -544,9 +544,6 @@ class _TranslationsRateSheetSv extends TranslationsRateSheetEn {
 	@override String starValue({required Object rating}) => '${rating} / 5';
 	@override String scoreValue({required Object score}) => '${score} / 10';
 	@override String get setScore => 'Ange betyg';
-	@override String get notRated => 'Inte betygsatt';
-	@override String get liked => 'Gillad';
-	@override String get notLiked => 'Inte gillad';
 	@override String get saved => 'Sparat';
 	@override String get notAvailable => 'Ingen matchning hittades';
 	@override String get noConnectedTrackers => 'Anslut en spårare i Inställningar för att betygsätta där.';
@@ -2330,9 +2327,6 @@ extension on TranslationsSv {
 			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
 			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
 			'rateSheet.setScore' => 'Ange betyg',
-			'rateSheet.notRated' => 'Inte betygsatt',
-			'rateSheet.liked' => 'Gillad',
-			'rateSheet.notLiked' => 'Inte gillad',
 			'rateSheet.saved' => 'Sparat',
 			'rateSheet.notAvailable' => 'Ingen matchning hittades',
 			'rateSheet.noConnectedTrackers' => 'Anslut en spårare i Inställningar för att betygsätta där.',
@@ -2458,11 +2452,11 @@ extension on TranslationsSv {
 			'messages.libraryScanFailed' => ({required Object error}) => 'Misslyckades att skanna bibliotek: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Uppdaterar metadata för "${title}"...',
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadata-uppdatering startad för "${title}"',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Misslyckades att uppdatera metadata: ${error}',
 			'messages.logoutConfirm' => 'Är du säker på att du vill logga ut?',
 			'messages.noSeasonsFound' => 'Inga säsonger hittades',
+			_ => null,
+		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => 'Det gick inte att läsa in säsonger',
 			'messages.noEpisodesFound' => 'Inga avsnitt hittades i första säsongen',
 			'messages.noEpisodesFoundGeneral' => 'Inga avsnitt hittades',
@@ -2972,11 +2966,11 @@ extension on TranslationsSv {
 			'companionRemote.session.serverStopped' => 'Fjärrserver stoppad',
 			'companionRemote.session.serverRunningDescription' => 'Mobila enheter i ditt nätverk kan ansluta till den här appen',
 			'companionRemote.session.serverStoppedDescription' => 'Starta servern för att tillåta mobila enheter att ansluta',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.usePhoneToControl' => 'Använd din mobila enhet för att styra denna app',
 			'companionRemote.session.startServer' => 'Starta server',
 			'companionRemote.session.stopServer' => 'Stoppa server',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.minimize' => 'Minimera',
 			'companionRemote.pairing.discoveryDescription' => 'Plezy-enheter med samma Plex-konto visas här',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',

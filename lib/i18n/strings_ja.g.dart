@@ -544,9 +544,6 @@ class _TranslationsRateSheetJa extends TranslationsRateSheetEn {
 	@override String starValue({required Object rating}) => '${rating} / 5';
 	@override String scoreValue({required Object score}) => '${score} / 10';
 	@override String get setScore => 'スコアを設定';
-	@override String get notRated => '未評価';
-	@override String get liked => 'いいね済み';
-	@override String get notLiked => 'いいねなし';
 	@override String get saved => '保存済み';
 	@override String get notAvailable => '一致なし';
 	@override String get noConnectedTrackers => '設定でトラッカーを接続すると、そこで評価できます。';
@@ -2330,9 +2327,6 @@ extension on TranslationsJa {
 			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
 			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
 			'rateSheet.setScore' => 'スコアを設定',
-			'rateSheet.notRated' => '未評価',
-			'rateSheet.liked' => 'いいね済み',
-			'rateSheet.notLiked' => 'いいねなし',
 			'rateSheet.saved' => '保存済み',
 			'rateSheet.notAvailable' => '一致なし',
 			'rateSheet.noConnectedTrackers' => '設定でトラッカーを接続すると、そこで評価できます。',
@@ -2458,11 +2452,11 @@ extension on TranslationsJa {
 			'messages.libraryScanFailed' => ({required Object error}) => 'ライブラリのスキャンに失敗しました: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}"のメタデータを更新中...',
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}"のメタデータ更新を開始しました',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'メタデータの更新に失敗しました: ${error}',
 			'messages.logoutConfirm' => 'ログアウトしてもよろしいですか？',
 			'messages.noSeasonsFound' => 'シーズンが見つかりません',
+			_ => null,
+		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => 'シーズンを読み込めませんでした',
 			'messages.noEpisodesFound' => '最初のシーズンにエピソードが見つかりません',
 			'messages.noEpisodesFoundGeneral' => 'エピソードが見つかりません',
@@ -2972,11 +2966,11 @@ extension on TranslationsJa {
 			'companionRemote.session.serverStopped' => 'リモートサーバー停止中',
 			'companionRemote.session.serverRunningDescription' => 'ネットワーク上のモバイルデバイスがこのアプリに接続できます',
 			'companionRemote.session.serverStoppedDescription' => 'モバイルデバイスの接続を許可するにはサーバーを起動してください',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.usePhoneToControl' => 'モバイルデバイスでこのアプリを操作できます',
 			'companionRemote.session.startServer' => 'サーバーを起動',
 			'companionRemote.session.stopServer' => 'サーバーを停止',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.minimize' => '最小化',
 			'companionRemote.pairing.discoveryDescription' => '同じPlexアカウントのPlezyデバイスがここに表示されます',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',

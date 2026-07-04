@@ -412,9 +412,8 @@
     "starValue": "${rating} / 5",
     "scoreValue": "${score} / 10",
     "setScore": "Set a score",
-    "notRated": "Not rated",
-    "liked": "Liked",
-    "notLiked": "Not liked",
+    "favorite": "Favorite",
+    "favorited": "Favorited",
     "saved": "Saved",
     "notAvailable": "No match found",
     "noConnectedTrackers": "Connect a tracker in Settings to rate there."
@@ -778,7 +777,8 @@
       "year": "Year",
       "contentRating": "Content Rating",
       "tag": "Tag",
-      "unwatched": "Unwatched"
+      "unwatched": "Unwatched",
+      "favorites": "Favorites"
     },
     "sortLabels": {
       "title": "Title",

@@ -544,9 +544,6 @@ class _TranslationsRateSheetBg extends TranslationsRateSheetEn {
 	@override String starValue({required Object rating}) => '${rating} / 5';
 	@override String scoreValue({required Object score}) => '${score} / 10';
 	@override String get setScore => 'Задай оценка';
-	@override String get notRated => 'Без оценка';
-	@override String get liked => 'Харесано';
-	@override String get notLiked => 'Не е харесано';
 	@override String get saved => 'Запазено';
 	@override String get notAvailable => 'Няма намерено съвпадение';
 	@override String get noConnectedTrackers => 'Свържете тракер в Настройки, за да оценявате там.';
@@ -2330,9 +2327,6 @@ extension on TranslationsBg {
 			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
 			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
 			'rateSheet.setScore' => 'Задай оценка',
-			'rateSheet.notRated' => 'Без оценка',
-			'rateSheet.liked' => 'Харесано',
-			'rateSheet.notLiked' => 'Не е харесано',
 			'rateSheet.saved' => 'Запазено',
 			'rateSheet.notAvailable' => 'Няма намерено съвпадение',
 			'rateSheet.noConnectedTrackers' => 'Свържете тракер в Настройки, за да оценявате там.',
@@ -2458,11 +2452,11 @@ extension on TranslationsBg {
 			'messages.libraryScanFailed' => ({required Object error}) => 'Неуспешно сканиране на библиотеката: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Опресняване на метаданни за "${title}"...',
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Опресняването на метаданни е стартирано за "${title}"',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Неуспешно опресняване на метаданни: ${error}',
 			'messages.logoutConfirm' => 'Сигурни ли сте, че искате да излезете?',
 			'messages.noSeasonsFound' => 'Не са намерени сезони',
+			_ => null,
+		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => 'Неуспешно зареждане на сезони',
 			'messages.noEpisodesFound' => 'Не са намерени епизоди в първия сезон',
 			'messages.noEpisodesFoundGeneral' => 'Не са намерени епизоди',
@@ -2972,11 +2966,11 @@ extension on TranslationsBg {
 			'companionRemote.session.serverStopped' => 'Сървърът за дистанционно управление е спрян',
 			'companionRemote.session.serverRunningDescription' => 'Мобилни устройства във вашата мрежа могат да се свързват с това приложение',
 			'companionRemote.session.serverStoppedDescription' => 'Стартирайте сървъра, за да позволите на мобилни устройства да се свързват',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.usePhoneToControl' => 'Използвайте мобилното си устройство, за да управлявате това приложение',
 			'companionRemote.session.startServer' => 'Стартирай сървър',
 			'companionRemote.session.stopServer' => 'Спри сървър',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.minimize' => 'Минимизирай',
 			'companionRemote.pairing.discoveryDescription' => 'Plezy устройства със същия Plex акаунт се показват тук',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',

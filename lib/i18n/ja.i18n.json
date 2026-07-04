@@ -406,9 +406,6 @@
     "starValue": "${rating} / 5",
     "scoreValue": "${score} / 10",
     "setScore": "スコアを設定",
-    "notRated": "未評価",
-    "liked": "いいね済み",
-    "notLiked": "いいねなし",
     "saved": "保存済み",
     "notAvailable": "一致なし",
     "noConnectedTrackers": "設定でトラッカーを接続すると、そこで評価できます。"

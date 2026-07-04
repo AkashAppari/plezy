@@ -406,9 +406,6 @@
     "starValue": "${rating} / 5",
     "scoreValue": "${score} / 10",
     "setScore": "Angiv en score",
-    "notRated": "Ikke bedømt",
-    "liked": "Synes godt om",
-    "notLiked": "Ikke liket",
     "saved": "Gemt",
     "notAvailable": "Intet match fundet",
     "noConnectedTrackers": "Forbind en tracker i Indstillinger for at bedømme der."

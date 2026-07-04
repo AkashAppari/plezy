@@ -310,6 +310,11 @@ abstract class MediaServerClient {
   /// awaited call in `try/catch` and surface a snackbar on the catch arm.
   Future<void> rate(MediaItem item, double rating);
 
+  /// Set or clear the per-user favorite flag ("heart") for [item]. Only call
+  /// when [ServerCapabilities.userFavorites] is true; unsupported backends
+  /// throw [UnsupportedError]. Throws [MediaServerHttpException] on failure.
+  Future<void> setFavorite(MediaItem item, bool isFavorite);
+
   Future<List<MediaPlaylist>> fetchPlaylists({String playlistType = 'video', bool? smart});
 
   /// Page through server playlists. Used by the library Playlists tab so large

@@ -544,9 +544,6 @@ class _TranslationsRateSheetZh extends TranslationsRateSheetEn {
 	@override String starValue({required Object rating}) => '${rating} / 5';
 	@override String scoreValue({required Object score}) => '${score} / 10';
 	@override String get setScore => '设置分数';
-	@override String get notRated => '未评分';
-	@override String get liked => '已喜欢';
-	@override String get notLiked => '未喜欢';
 	@override String get saved => '已保存';
 	@override String get notAvailable => '未找到匹配项';
 	@override String get noConnectedTrackers => '在设置中连接跟踪器即可在那里评分。';
@@ -2330,9 +2327,6 @@ extension on TranslationsZh {
 			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
 			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
 			'rateSheet.setScore' => '设置分数',
-			'rateSheet.notRated' => '未评分',
-			'rateSheet.liked' => '已喜欢',
-			'rateSheet.notLiked' => '未喜欢',
 			'rateSheet.saved' => '已保存',
 			'rateSheet.notAvailable' => '未找到匹配项',
 			'rateSheet.noConnectedTrackers' => '在设置中连接跟踪器即可在那里评分。',
@@ -2458,11 +2452,11 @@ extension on TranslationsZh {
 			'messages.libraryScanFailed' => ({required Object error}) => '无法扫描媒体库: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '正在刷新 “${title}” 的元数据...',
 			'messages.metadataRefreshStarted' => ({required Object title}) => '已开始刷新 “${title}” 的元数据',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshFailed' => ({required Object error}) => '无法刷新元数据: ${error}',
 			'messages.logoutConfirm' => '你确定要登出吗？',
 			'messages.noSeasonsFound' => '未找到季',
+			_ => null,
+		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => '无法加载季',
 			'messages.noEpisodesFound' => '在第一季中未找到剧集',
 			'messages.noEpisodesFoundGeneral' => '未找到剧集',
@@ -2972,11 +2966,11 @@ extension on TranslationsZh {
 			'companionRemote.session.serverStopped' => '远程服务器已停止',
 			'companionRemote.session.serverRunningDescription' => '网络上的移动设备可以连接到此应用',
 			'companionRemote.session.serverStoppedDescription' => '启动服务器以允许移动设备连接',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.usePhoneToControl' => '使用移动设备控制此应用',
 			'companionRemote.session.startServer' => '启动服务器',
 			'companionRemote.session.stopServer' => '停止服务器',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.minimize' => '最小化',
 			'companionRemote.pairing.discoveryDescription' => '使用同一 Plex 账号的 Plezy 设备会显示在这里',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',

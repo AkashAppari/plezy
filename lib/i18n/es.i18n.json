@@ -406,9 +406,6 @@
     "starValue": "${rating} / 5",
     "scoreValue": "${score} / 10",
     "setScore": "Establecer puntuación",
-    "notRated": "Sin calificar",
-    "liked": "Me gusta",
-    "notLiked": "Sin Me gusta",
     "saved": "Guardado",
     "notAvailable": "No se encontró coincidencia",
     "noConnectedTrackers": "Conecta un tracker en Ajustes para calificar allí."

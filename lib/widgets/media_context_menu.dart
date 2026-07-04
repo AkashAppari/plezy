@@ -1137,8 +1137,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     await OverlaySheetController.showAdaptive(
       context,
       showDragHandle: true,
-      builder: (context) =>
-          RatingBottomSheet(item: item, serverClient: client, onServerRatingChanged: (_) => _notifyRefresh(item.id)),
+      builder: (context) => RatingBottomSheet(
+        item: item,
+        serverClient: client,
+        onServerRatingChanged: (_) => _notifyRefresh(item.id),
+        onServerFavoriteChanged: (_) => _notifyRefresh(item.id),
+      ),
     );
   }
 

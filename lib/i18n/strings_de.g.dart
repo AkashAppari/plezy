@@ -544,9 +544,6 @@ class _TranslationsRateSheetDe extends TranslationsRateSheetEn {
 	@override String starValue({required Object rating}) => '${rating} / 5';
 	@override String scoreValue({required Object score}) => '${score} / 10';
 	@override String get setScore => 'Eine Wertung festlegen';
-	@override String get notRated => 'Nicht bewertet';
-	@override String get liked => 'Gefällt mir';
-	@override String get notLiked => 'Nicht geliket';
 	@override String get saved => 'Gespeichert';
 	@override String get notAvailable => 'Keine Übereinstimmung gefunden';
 	@override String get noConnectedTrackers => 'Verbinde einen Tracker in den Einstellungen, um dort zu bewerten.';
@@ -2330,9 +2327,6 @@ extension on TranslationsDe {
 			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
 			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
 			'rateSheet.setScore' => 'Eine Wertung festlegen',
-			'rateSheet.notRated' => 'Nicht bewertet',
-			'rateSheet.liked' => 'Gefällt mir',
-			'rateSheet.notLiked' => 'Nicht geliket',
 			'rateSheet.saved' => 'Gespeichert',
 			'rateSheet.notAvailable' => 'Keine Übereinstimmung gefunden',
 			'rateSheet.noConnectedTrackers' => 'Verbinde einen Tracker in den Einstellungen, um dort zu bewerten.',
@@ -2458,11 +2452,11 @@ extension on TranslationsDe {
 			'messages.libraryScanFailed' => ({required Object error}) => 'Fehler beim Scannen der Mediathek: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Metadaten werden aktualisiert für „${title}“...',
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadaten-Aktualisierung gestartet für „${title}“',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Metadaten konnten nicht aktualisiert werden: ${error}',
 			'messages.logoutConfirm' => 'Abmeldung wirklich durchführen?',
 			'messages.noSeasonsFound' => 'Keine Staffeln gefunden',
+			_ => null,
+		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => 'Staffeln konnten nicht geladen werden',
 			'messages.noEpisodesFound' => 'Keine Episoden in der ersten Staffel gefunden',
 			'messages.noEpisodesFoundGeneral' => 'Keine Episoden gefunden',
@@ -2972,11 +2966,11 @@ extension on TranslationsDe {
 			'companionRemote.session.serverStopped' => 'Remote-Server gestoppt',
 			'companionRemote.session.serverRunningDescription' => 'Mobilgeräte in deinem Netzwerk können sich mit dieser App verbinden',
 			'companionRemote.session.serverStoppedDescription' => 'Starte den Server, um Mobilgeräten die Verbindung zu ermöglichen',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.usePhoneToControl' => 'Verwende dein Mobilgerät, um diese App zu steuern',
 			'companionRemote.session.startServer' => 'Server starten',
 			'companionRemote.session.stopServer' => 'Server stoppen',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.minimize' => 'Minimieren',
 			'companionRemote.pairing.discoveryDescription' => 'Plezy-Geräte mit demselben Plex-Konto erscheinen hier',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',

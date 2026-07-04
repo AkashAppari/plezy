@@ -544,9 +544,6 @@ class _TranslationsRateSheetNl extends TranslationsRateSheetEn {
 	@override String starValue({required Object rating}) => '${rating} / 5';
 	@override String scoreValue({required Object score}) => '${score} / 10';
 	@override String get setScore => 'Score instellen';
-	@override String get notRated => 'Niet beoordeeld';
-	@override String get liked => 'Geliket';
-	@override String get notLiked => 'Niet geliket';
 	@override String get saved => 'Opgeslagen';
 	@override String get notAvailable => 'Geen match gevonden';
 	@override String get noConnectedTrackers => 'Verbind een tracker in Instellingen om daar te beoordelen.';
@@ -2330,9 +2327,6 @@ extension on TranslationsNl {
 			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
 			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
 			'rateSheet.setScore' => 'Score instellen',
-			'rateSheet.notRated' => 'Niet beoordeeld',
-			'rateSheet.liked' => 'Geliket',
-			'rateSheet.notLiked' => 'Niet geliket',
 			'rateSheet.saved' => 'Opgeslagen',
 			'rateSheet.notAvailable' => 'Geen match gevonden',
 			'rateSheet.noConnectedTrackers' => 'Verbind een tracker in Instellingen om daar te beoordelen.',
@@ -2458,11 +2452,11 @@ extension on TranslationsNl {
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kon bibliotheek niet scannen: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Metadata vernieuwen voor "${title}"...',
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadata vernieuwen gestart voor "${title}"',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Kon metadata niet vernieuwen: ${error}',
 			'messages.logoutConfirm' => 'Weet je zeker dat je wilt uitloggen?',
 			'messages.noSeasonsFound' => 'Geen seizoenen gevonden',
+			_ => null,
+		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => 'Kan seizoenen niet laden',
 			'messages.noEpisodesFound' => 'Geen afleveringen gevonden in eerste seizoen',
 			'messages.noEpisodesFoundGeneral' => 'Geen afleveringen gevonden',
@@ -2972,11 +2966,11 @@ extension on TranslationsNl {
 			'companionRemote.session.serverStopped' => 'Externe server gestopt',
 			'companionRemote.session.serverRunningDescription' => 'Mobiele apparaten op je netwerk kunnen met deze app verbinden',
 			'companionRemote.session.serverStoppedDescription' => 'Start de server om mobiele apparaten te laten verbinden',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.usePhoneToControl' => 'Gebruik je mobiele apparaat om deze app te bedienen',
 			'companionRemote.session.startServer' => 'Server starten',
 			'companionRemote.session.stopServer' => 'Server stoppen',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.minimize' => 'Minimaliseren',
 			'companionRemote.pairing.discoveryDescription' => 'Plezy-apparaten met hetzelfde Plex-account verschijnen hier',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',

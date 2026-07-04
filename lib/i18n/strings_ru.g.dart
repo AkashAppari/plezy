@@ -544,9 +544,6 @@ class _TranslationsRateSheetRu extends TranslationsRateSheetEn {
 	@override String starValue({required Object rating}) => '${rating} / 5';
 	@override String scoreValue({required Object score}) => '${score} / 10';
 	@override String get setScore => 'Установить оценку';
-	@override String get notRated => 'Без оценки';
-	@override String get liked => 'Понравилось';
-	@override String get notLiked => 'Не отмечено понравившимся';
 	@override String get saved => 'Сохранено';
 	@override String get notAvailable => 'Совпадений не найдено';
 	@override String get noConnectedTrackers => 'Подключите трекер в настройках, чтобы оценивать там.';
@@ -2330,9 +2327,6 @@ extension on TranslationsRu {
 			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
 			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
 			'rateSheet.setScore' => 'Установить оценку',
-			'rateSheet.notRated' => 'Без оценки',
-			'rateSheet.liked' => 'Понравилось',
-			'rateSheet.notLiked' => 'Не отмечено понравившимся',
 			'rateSheet.saved' => 'Сохранено',
 			'rateSheet.notAvailable' => 'Совпадений не найдено',
 			'rateSheet.noConnectedTrackers' => 'Подключите трекер в настройках, чтобы оценивать там.',
@@ -2458,11 +2452,11 @@ extension on TranslationsRu {
 			'messages.libraryScanFailed' => ({required Object error}) => 'Не удалось отсканировать библиотеку: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Обновление метаданных "${title}"...',
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Обновление метаданных начато для "${title}"',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Не удалось обновить метаданные: ${error}',
 			'messages.logoutConfirm' => 'Вы уверены, что хотите выйти?',
 			'messages.noSeasonsFound' => 'Сезоны не найдены',
+			_ => null,
+		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => 'Не удалось загрузить сезоны',
 			'messages.noEpisodesFound' => 'Эпизоды в первом сезоне не найдены',
 			'messages.noEpisodesFoundGeneral' => 'Эпизоды не найдены',
@@ -2972,11 +2966,11 @@ extension on TranslationsRu {
 			'companionRemote.session.serverStopped' => 'Удалённый сервер остановлен',
 			'companionRemote.session.serverRunningDescription' => 'Мобильные устройства в вашей сети могут подключаться к этому приложению',
 			'companionRemote.session.serverStoppedDescription' => 'Запустите сервер, чтобы разрешить подключение мобильных устройств',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.usePhoneToControl' => 'Используйте мобильное устройство для управления этим приложением',
 			'companionRemote.session.startServer' => 'Запустить сервер',
 			'companionRemote.session.stopServer' => 'Остановить сервер',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.minimize' => 'Свернуть',
 			'companionRemote.pairing.discoveryDescription' => 'Устройства Plezy с тем же аккаунтом Plex появятся здесь',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',

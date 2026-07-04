@@ -1598,11 +1598,22 @@ void main() {
       expect(captured!.path, '/Items/Filters');
       expect(captured!.queryParameters['ParentId'], 'lib-1');
       expect(captured!.queryParameters['userId'], 'user-1');
-      expect(result.filters.map((filter) => filter.filter), ['unwatched', 'genre', 'year', 'contentRating', 'tag']);
+      expect(result.filters.map((filter) => filter.filter), [
+        'unwatched',
+        'favorite',
+        'genre',
+        'year',
+        'contentRating',
+        'tag',
+      ]);
       expect(result.filters.first.filterType, 'boolean');
       expect(result.filters.first.key, 'jellyfin:unwatched');
       expect(result.filters.first.title, 'Unwatched');
+      expect(result.filters[1].filterType, 'boolean');
+      expect(result.filters[1].key, 'jellyfin:favorite');
+      expect(result.filters[1].title, 'Favorites');
       expect(result.cachedValues.containsKey('unwatched'), isFalse);
+      expect(result.cachedValues.containsKey('favorite'), isFalse);
       expect(result.cachedValues['genre']!.map((value) => value.key), ['Action', 'Drama']);
       expect(result.cachedValues['year']!.map((value) => value.key), ['2024', '1999']);
     });

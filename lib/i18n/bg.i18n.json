@@ -406,9 +406,6 @@
     "starValue": "${rating} / 5",
     "scoreValue": "${score} / 10",
     "setScore": "Задай оценка",
-    "notRated": "Без оценка",
-    "liked": "Харесано",
-    "notLiked": "Не е харесано",
     "saved": "Запазено",
     "notAvailable": "Няма намерено съвпадение",
     "noConnectedTrackers": "Свържете тракер в Настройки, за да оценявате там."

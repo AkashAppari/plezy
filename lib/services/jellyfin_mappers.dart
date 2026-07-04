@@ -198,14 +198,7 @@ class JellyfinMappers {
       addedAt: jellyfinIsoToEpochSeconds(item['DateCreated'] as String?),
       updatedAt: jellyfinIsoToEpochSeconds(item['DateLastSaved'] as String? ?? item['DateModified'] as String?),
       rating: (item['CommunityRating'] as num?)?.toDouble(),
-      // Jellyfin stores a binary `Likes` flag rather than a numeric rating.
-      // Map true → 10 / false → 0 so the existing UI's `userRating > 0`
-      // check renders the chip as filled for liked items.
-      userRating: switch (_userData(item)?['Likes']) {
-        true => 10.0,
-        false => 0.0,
-        _ => null,
-      },
+      isFavorite: _userData(item)?['IsFavorite'] as bool?,
       genres: _stringList(item['Genres']),
       directors: _peopleByType(item['People'], 'Director'),
       writers: _peopleByType(item['People'], 'Writer'),

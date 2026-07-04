@@ -544,9 +544,6 @@ class _TranslationsRateSheetNb extends TranslationsRateSheetEn {
 	@override String starValue({required Object rating}) => '${rating} / 5';
 	@override String scoreValue({required Object score}) => '${score} / 10';
 	@override String get setScore => 'Sett en poengsum';
-	@override String get notRated => 'Ikke vurdert';
-	@override String get liked => 'Likt';
-	@override String get notLiked => 'Ikke likt';
 	@override String get saved => 'Lagret';
 	@override String get notAvailable => 'Ingen treff';
 	@override String get noConnectedTrackers => 'Koble til en sporer i Innstillinger for å vurdere der.';
@@ -2330,9 +2327,6 @@ extension on TranslationsNb {
 			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
 			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
 			'rateSheet.setScore' => 'Sett en poengsum',
-			'rateSheet.notRated' => 'Ikke vurdert',
-			'rateSheet.liked' => 'Likt',
-			'rateSheet.notLiked' => 'Ikke likt',
 			'rateSheet.saved' => 'Lagret',
 			'rateSheet.notAvailable' => 'Ingen treff',
 			'rateSheet.noConnectedTrackers' => 'Koble til en sporer i Innstillinger for å vurdere der.',
@@ -2458,11 +2452,11 @@ extension on TranslationsNb {
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kunne ikke skanne bibliotek: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Oppdaterer metadata for "${title}"...',
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadataoppdatering startet for "${title}"',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Kunne ikke oppdatere metadata: ${error}',
 			'messages.logoutConfirm' => 'Er du sikker på at du vil logge ut?',
 			'messages.noSeasonsFound' => 'Ingen sesonger funnet',
+			_ => null,
+		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => 'Kunne ikke laste sesonger',
 			'messages.noEpisodesFound' => 'Ingen episoder funnet i første sesong',
 			'messages.noEpisodesFoundGeneral' => 'Ingen episoder funnet',
@@ -2972,11 +2966,11 @@ extension on TranslationsNb {
 			'companionRemote.session.serverStopped' => 'Fjernserver stoppet',
 			'companionRemote.session.serverRunningDescription' => 'Mobile enheter på nettverket ditt kan koble til denne appen',
 			'companionRemote.session.serverStoppedDescription' => 'Start serveren for å la mobilenheter koble til',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.usePhoneToControl' => 'Bruk mobilenheten din til å styre denne appen',
 			'companionRemote.session.startServer' => 'Start server',
 			'companionRemote.session.stopServer' => 'Stopp server',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.minimize' => 'Minimer',
 			'companionRemote.pairing.discoveryDescription' => 'Plezy-enheter med samme Plex-konto vises her',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',

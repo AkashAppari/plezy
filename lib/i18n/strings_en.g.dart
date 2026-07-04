@@ -1283,14 +1283,11 @@ class TranslationsRateSheetEn {
 	/// en: 'Set a score'
 	String get setScore => 'Set a score';
 
-	/// en: 'Not rated'
-	String get notRated => 'Not rated';
+	/// en: 'Favorite'
+	String get favorite => 'Favorite';
 
-	/// en: 'Liked'
-	String get liked => 'Liked';
-
-	/// en: 'Not liked'
-	String get notLiked => 'Not liked';
+	/// en: 'Favorited'
+	String get favorited => 'Favorited';
 
 	/// en: 'Saved'
 	String get saved => 'Saved';
@@ -4167,6 +4164,9 @@ class TranslationsLibrariesFilterCategoriesEn {
 
 	/// en: 'Unwatched'
 	String get unwatched => 'Unwatched';
+
+	/// en: 'Favorites'
+	String get favorites => 'Favorites';
 }
 
 // Path: libraries.sortLabels
@@ -4963,9 +4963,8 @@ extension on Translations {
 			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
 			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
 			'rateSheet.setScore' => 'Set a score',
-			'rateSheet.notRated' => 'Not rated',
-			'rateSheet.liked' => 'Liked',
-			'rateSheet.notLiked' => 'Not liked',
+			'rateSheet.favorite' => 'Favorite',
+			'rateSheet.favorited' => 'Favorited',
 			'rateSheet.saved' => 'Saved',
 			'rateSheet.notAvailable' => 'No match found',
 			'rateSheet.noConnectedTrackers' => 'Connect a tracker in Settings to rate there.',
@@ -5085,9 +5084,9 @@ extension on Translations {
 			'messages.unableToDetermineLibrarySection' => 'Unable to determine library section for this item',
 			'messages.logsCleared' => 'Logs cleared',
 			'messages.logsCopied' => 'Logs copied to clipboard',
+			'messages.noLogsAvailable' => 'No logs available',
 			_ => null,
 		} ?? switch (path) {
-			'messages.noLogsAvailable' => 'No logs available',
 			'messages.libraryScanning' => ({required Object title}) => 'Scanning "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Library scan started for "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Failed to scan library: ${error}',
@@ -5299,6 +5298,7 @@ extension on Translations {
 			'libraries.filterCategories.contentRating' => 'Content Rating',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Unwatched',
+			'libraries.filterCategories.favorites' => 'Favorites',
 			'libraries.sortLabels.title' => 'Title',
 			'libraries.sortLabels.dateAdded' => 'Date Added',
 			'libraries.sortLabels.releaseDate' => 'Release Date',
