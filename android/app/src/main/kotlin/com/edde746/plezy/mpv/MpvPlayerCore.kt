@@ -53,6 +53,12 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
   @Volatile private var player: MpvPlayer? = null
   private var scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
+  // mpv writes must stay off the main thread but run in submission order:
+  // setupMpvFallback sets vo/ao/hwdec immediately before the loadfile command,
+  // and an unordered pool can run loadfile first, leaving mpv with no video
+  // output (#1482).
+  private val mpvWriteDispatcher = Dispatchers.IO.limitedParallelism(1)
+
   // Frame rate matching
   private var frameRateManager: FrameRateManager? = null
   private val handler = Handler(Looper.getMainLooper())
@@ -76,7 +82,6 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
 
   @Volatile private var videoOutputEpoch: Long = 0L
   private val videoOutputMutex = Mutex()
-  private val commandMutex = Mutex()
   private var pendingVideoOutputDisableJob: Job? = null
   private var pendingVideoOutputRefreshJob: Job? = null
 
@@ -124,7 +129,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
       return
     }
 
-    scope.launch(Dispatchers.IO) {
+    scope.launch(mpvWriteDispatcher) {
       try {
         p.setProperty("display-fps-override", fps)
         Log.d(TAG, "Updated display-fps-override=$fps ($reason)")
@@ -685,7 +690,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
         Log.d(TAG, "Public pause state updated: paused=false")
       }
     }
-    scope.launch(Dispatchers.IO) {
+    scope.launch(mpvWriteDispatcher) {
       var success = false
       try {
         player?.setProperty(name, value)
@@ -803,13 +808,11 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
       onComplete?.invoke(false)
       return
     }
-    scope.launch(Dispatchers.IO) {
+    scope.launch(mpvWriteDispatcher) {
       var success = false
       try {
-        commandMutex.withLock {
-          player?.command(*args)
-          success = true
-        }
+        player?.command(*args)
+        success = true
       } catch (e: Exception) {
         Log.w(TAG, "command failed", e)
       } finally {
