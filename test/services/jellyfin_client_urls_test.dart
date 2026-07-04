@@ -12,6 +12,7 @@ import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
+import 'package:plezy/utils/device_identity.dart';
 
 JellyfinConnection _conn({String accessToken = 'tok-abc', String baseUrl = 'https://jf.example.com'}) =>
     JellyfinConnection(
@@ -32,6 +33,11 @@ JellyfinConnection _conn({String accessToken = 'tok-abc', String baseUrl = 'http
 /// tests pin the contract so the next iteration of the player (Task 8 wiring)
 /// has something to point at.
 void main() {
+  // Pin device identity so JellyfinClient.create's MediaBrowser header falls
+  // back to Device="Plezy" instead of resolving the host machine's name.
+  setUpAll(() => DeviceIdentityService.debugOverride(const DeviceIdentity(platform: 'Test')));
+  tearDownAll(() => DeviceIdentityService.debugOverride(null));
+
   group('JellyfinClient URL builders', () {
     late JellyfinClient client;
 

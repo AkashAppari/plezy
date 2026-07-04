@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 
 import '../connection/connection.dart';
 import '../connection/connection_registry.dart';
@@ -20,7 +18,7 @@ import '../services/companion_remote/lan_discovery_service.dart';
 import '../services/companion_remote/remote_auth_context.dart';
 import '../services/companion_remote/remote_auth_service.dart';
 import '../utils/app_logger.dart';
-import '../utils/platform_detector.dart';
+import '../utils/device_identity.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 
 export '../services/companion_remote/lan_discovery_service.dart' show DiscoveredHost;
@@ -91,36 +89,9 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   }
 
   Future<void> _initializeDeviceInfo() async {
-    final deviceInfo = DeviceInfoPlugin();
-
-    try {
-      if (Platform.isAndroid) {
-        final androidInfo = await deviceInfo.androidInfo;
-        final osName = await TvDetectionService.getAndroidDeviceName();
-        _deviceName = osName ?? '${androidInfo.brand} ${androidInfo.model}';
-        _platform = 'Android';
-      } else if (Platform.isIOS) {
-        final iosInfo = await deviceInfo.iosInfo;
-        _deviceName = iosInfo.name;
-        _platform = 'iOS';
-      } else if (Platform.isMacOS) {
-        final macInfo = await deviceInfo.macOsInfo;
-        _deviceName = macInfo.computerName;
-        _platform = 'macOS';
-      } else if (Platform.isWindows) {
-        final windowsInfo = await deviceInfo.windowsInfo;
-        _deviceName = windowsInfo.computerName;
-        _platform = 'Windows';
-      } else if (Platform.isLinux) {
-        final host = Platform.localHostname.trim();
-        _deviceName = (host.isNotEmpty && host != 'localhost') ? host : (await deviceInfo.linuxInfo).name;
-        _platform = 'Linux';
-      }
-    } catch (e) {
-      appLogger.e('CompanionRemote: Failed to get device info', error: e);
-      _deviceName = t.companionRemote.unknownDevice;
-      _platform = Platform.operatingSystem;
-    }
+    final identity = await DeviceIdentityService.resolve();
+    _deviceName = identity.deviceName ?? t.companionRemote.unknownDevice;
+    _platform = identity.platform;
 
     safeNotifyListeners();
   }

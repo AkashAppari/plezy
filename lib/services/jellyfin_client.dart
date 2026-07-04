@@ -41,6 +41,7 @@ import '../models/media_subscription.dart';
 import '../media/media_source_info.dart';
 import '../media/media_sort.dart';
 import '../utils/app_logger.dart';
+import '../utils/device_identity.dart';
 import '../utils/failover_http_client.dart';
 import '../utils/media_server_retry.dart';
 import '../utils/media_server_timeouts.dart';
@@ -125,10 +126,16 @@ class JellyfinClient
     } catch (_) {
       // Tests / non-platform contexts — keep the fallback version.
     }
+    String? deviceName;
+    try {
+      deviceName = sanitizeHeaderValue((await DeviceIdentityService.resolve()).deviceName);
+    } catch (_) {
+      // Tests / non-platform contexts — keep the fallback name.
+    }
     final authHeader = buildJellyfinAuthHeader(
       clientName: 'Plezy',
       clientVersion: version,
-      deviceName: 'Plezy',
+      deviceName: deviceName ?? 'Plezy',
       deviceId: connection.deviceId,
       accessToken: connection.accessToken,
     );

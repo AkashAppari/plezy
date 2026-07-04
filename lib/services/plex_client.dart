@@ -52,6 +52,7 @@ import '../utils/content_utils.dart';
 import '../media/media_sort.dart';
 import '../models/plex/plex_video_playback_data.dart';
 import '../models/transcode_quality_preset.dart';
+import '../utils/device_identity.dart';
 import '../utils/failover_http_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_retry.dart';
@@ -551,6 +552,8 @@ class PlexClient
     Duration timeout = const Duration(seconds: 5),
     String? clientIdentifier,
   }) async {
+    // Memoized after the first call — resolve outside the latency window.
+    final identity = await DeviceIdentityService.resolve();
     final stopwatch = Stopwatch()..start();
     MediaServerHttpClient? client;
 
@@ -561,7 +564,7 @@ class PlexClient
       if (clientIdentifier != null) {
         headers['X-Plex-Client-Identifier'] = clientIdentifier;
         headers['X-Plex-Product'] = 'Plezy';
-        headers['X-Plex-Device-Name'] = 'Plezy';
+        headers['X-Plex-Device-Name'] = sanitizeHeaderValue(identity.deviceName) ?? 'Plezy';
       }
 
       final response = await client.get('/', headers: headers);
@@ -3138,6 +3141,7 @@ class PlexClient
       // [_transcodePlatformName] for the mapping.
       'X-Plex-Platform': _transcodePlatformName(),
       if (config.device != null) 'X-Plex-Device': config.device!,
+      if (config.deviceName != null) 'X-Plex-Device-Name': config.deviceName!,
       if (offsetMs != null) 'offset': (offsetMs ~/ 1000).toString(),
       if (config.token != null) 'X-Plex-Token': config.token!,
     };

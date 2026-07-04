@@ -26,6 +26,7 @@ import '../../services/jellyfin_lan_discovery_service.dart';
 import '../../services/storage_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/device_identity.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../profile/profile_switch_screen.dart';
@@ -436,10 +437,8 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   }
 
   Future<String> _resolveDeviceName() async {
-    // PackageInfo doesn't expose a device name; fall back to a generic label.
-    // Jellyfin only shows this in the admin "Devices" list — fine to keep
-    // simple until we add proper device_info_plus integration.
-    return 'Plezy';
+    final identity = await DeviceIdentityService.resolve();
+    return sanitizeHeaderValue(identity.deviceName) ?? 'Plezy';
   }
 
   @override
