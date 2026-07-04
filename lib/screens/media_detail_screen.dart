@@ -4137,12 +4137,28 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           child: Builder(
             builder: (context) {
               final bgColor = Theme.of(context).scaffoldBackgroundColor;
+              // Full-height eased scrim. The light global dim (alpha 0.2 at
+              // the very top) lowers the contrast the ramp has to bridge on
+              // bright artwork — without it, any fade to solid compresses
+              // into a visible band above the content stack. The body samples
+              // easeInOut (continuous curvature — hand-picked stops kink at
+              // every boundary); the tail instead decays the remaining
+              // transparency geometrically (~1/8 per sample) because an eased
+              // zero-slope landing leaves a faint artwork glow that pure-black
+              // (OLED) backgrounds expose. Solid bg from 94% so nothing ghosts
+              // at the header/content boundary on any theme.
+              const scrimAlphas = [0.20, 0.234, 0.325, 0.453, 0.60, 0.747, 0.875, 0.985, 0.998, 1.0];
+              const scrimXs = [0.0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.9375, 1.0];
+              const solidStop = 0.94;
               return RasterizedGradient(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor],
-                  stops: const [0.3, 0.8, 1.0],
+                  colors: [
+                    for (final a in scrimAlphas) bgColor.withValues(alpha: a),
+                    bgColor,
+                  ],
+                  stops: [for (final x in scrimXs) solidStop * x, 1.0],
                 ),
               );
             },
