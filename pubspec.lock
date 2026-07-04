@@ -1473,10 +1473,10 @@ packages:
     dependency: "direct main"
     description:
       name: win_http
-      sha256: a50a14f1bf32bc5c9b39add9baa01658b97146b21de25237810ca6b850a6704e
+      sha256: ebc4d37e2c0e6800cc200e40d289d3bac22fc17d40fce3ae7909d49a20da77bc
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.1"
+    version: "0.2.2"
   window_manager:
     dependency: "direct main"
     description:
