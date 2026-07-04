@@ -57,6 +57,8 @@ class _FakeAggregationService extends DataAggregationService {
   Set<String>? lastHubsServerIds;
   Set<String>? onDeckSucceededServerIds;
   Set<String>? hubSucceededServerIds;
+  Set<String> onDeckCancelledServerIds = const {};
+  Set<String> hubCancelledServerIds = const {};
   List<MediaItem> Function() onDeckResult = () => const [];
   List<MediaHub> Function() hubsResult = () => const [];
 
@@ -72,6 +74,7 @@ class _FakeAggregationService extends DataAggregationService {
     return (
       items: limit != null && items.length > limit ? items.sublist(0, limit) : items,
       succeededServerIds: onDeckSucceededServerIds ?? serverIds ?? const {'server_1'},
+      cancelledServerIds: onDeckCancelledServerIds,
     );
   }
 
@@ -85,7 +88,11 @@ class _FakeAggregationService extends DataAggregationService {
   }) async {
     hubCalls++;
     lastHubsServerIds = serverIds;
-    return (hubs: hubsResult(), succeededServerIds: hubSucceededServerIds ?? serverIds ?? const {'server_1'});
+    return (
+      hubs: hubsResult(),
+      succeededServerIds: hubSucceededServerIds ?? serverIds ?? const {'server_1'},
+      cancelledServerIds: hubCancelledServerIds,
+    );
   }
 }
 
@@ -286,6 +293,112 @@ void main() {
     await binderProvider.load();
     expect(binderProvider.isLoading, isFalse);
     expect(binderProvider.errorMessage, isNotNull);
+  });
+
+  // A pass in which zero servers succeeded is never authoritative: it must
+  // not wipe existing content, and it may only commit "loaded, empty" when
+  // the failure is settled (no cancellations, binder not running). The
+  // sign-in empty-flash regression: a rebind tore down the client mid-fetch,
+  // the aborted pass committed loaded-empty, and the screen flashed
+  // "no content available" until the follow-up load landed.
+
+  test('zero-success pass with cancellations stays loading instead of committing empty', () async {
+    aggregation.onDeckSucceededServerIds = const {};
+    aggregation.hubSucceededServerIds = const {};
+    aggregation.onDeckCancelledServerIds = const {'server_1'};
+    aggregation.hubCancelledServerIds = const {'server_1'};
+
+    await provider.load();
+
+    expect(provider.isLoading, isTrue);
+    expect(provider.areHubsLoading, isTrue);
+    expect(provider.errorMessage, isNull);
+    expect(provider.loadGeneration, 0);
+
+    // The guaranteed follow-up load lands the real content.
+    aggregation.onDeckSucceededServerIds = null;
+    aggregation.hubSucceededServerIds = null;
+    aggregation.onDeckCancelledServerIds = const {};
+    aggregation.hubCancelledServerIds = const {};
+    aggregation.onDeckResult = () => [_item('a')];
+    aggregation.hubsResult = () => [_hub('hub-1')];
+    await provider.load();
+
+    expect(provider.onDeck.map((i) => i.id), ['a']);
+    expect(provider.hubs.map((h) => h.id), ['hub-1']);
+    expect(provider.isLoading, isFalse);
+    expect(provider.areHubsLoading, isFalse);
+  });
+
+  test('zero-success pass during profile binding stays loading (no cancellations)', () async {
+    // Covers the timeout-during-bind window: every fetch failed while the
+    // binder was still wiring servers, with no cancellation marker.
+    isBinding = true;
+    aggregation.onDeckSucceededServerIds = const {};
+    aggregation.hubSucceededServerIds = const {};
+
+    await provider.load();
+
+    expect(provider.isLoading, isTrue);
+    expect(provider.areHubsLoading, isTrue);
+    expect(provider.errorMessage, isNull);
+  });
+
+  test('settled zero-success pass with no prior content commits loaded-empty', () async {
+    // Locks the no-eternal-spinner constraint: a genuinely dead server
+    // outside any disruption window keeps today's empty state.
+    aggregation.onDeckSucceededServerIds = const {};
+    aggregation.hubSucceededServerIds = const {};
+
+    await provider.load();
+
+    expect(provider.isLoading, isFalse);
+    expect(provider.areHubsLoading, isFalse);
+    expect(provider.onDeck, isEmpty);
+    expect(provider.hubs, isEmpty);
+    expect(provider.errorMessage, isNull);
+  });
+
+  test('totally failed refresh keeps previous content instead of wiping it', () async {
+    aggregation.onDeckResult = () => [_item('a')];
+    aggregation.hubsResult = () => [_hub('hub-1')];
+    await provider.load();
+    final generationBefore = provider.loadGeneration;
+
+    aggregation.onDeckSucceededServerIds = const {};
+    aggregation.hubSucceededServerIds = const {};
+    aggregation.onDeckResult = () => const [];
+    aggregation.hubsResult = () => const [];
+    await provider.load();
+
+    expect(provider.onDeck.map((i) => i.id), ['a']);
+    expect(provider.hubs.map((h) => h.id), ['hub-1']);
+    expect(provider.isLoading, isFalse);
+    expect(provider.areHubsLoading, isFalse);
+    // No new data: a failed pass must not reset the hero carousel.
+    expect(provider.loadGeneration, generationBefore);
+
+    // The kept content does not count as covering the failed servers — the
+    // next status emission refetches them.
+    aggregation.onDeckSucceededServerIds = null;
+    aggregation.hubSucceededServerIds = null;
+    aggregation.onDeckResult = () => [_item('b')];
+    final callsBefore = aggregation.onDeckCalls;
+    await provider.syncToOnlineServers({'server_1'});
+    expect(aggregation.onDeckCalls, greaterThan(callsBefore));
+  });
+
+  test('a disrupted half is independent: on-deck commits while hubs stay loading', () async {
+    aggregation.onDeckResult = () => [_item('a')];
+    aggregation.hubSucceededServerIds = const {};
+    aggregation.hubCancelledServerIds = const {'server_1'};
+
+    await provider.load();
+
+    expect(provider.isLoading, isFalse);
+    expect(provider.onDeck.map((i) => i.id), ['a']);
+    expect(provider.areHubsLoading, isTrue);
+    expect(provider.hubs, isEmpty);
   });
 
   test('updateItem refetches one item and swaps it in place', () async {

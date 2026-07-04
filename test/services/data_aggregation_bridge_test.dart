@@ -7,6 +7,9 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/exceptions/media_server_exceptions.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
@@ -28,6 +31,34 @@ JellyfinConnection _conn() => JellyfinConnection(
 );
 
 http.Response _json(Object body) => http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'});
+
+/// Minimal client whose `fetchLibraries` either returns canned libraries or
+/// throws [error] — enough surface to exercise the fan-out's per-server
+/// failure classification without a real backend.
+class _LibrariesClient implements MediaServerClient {
+  _LibrariesClient(this.serverId, {this.error, this.libraries = const []});
+
+  @override
+  final ServerId serverId;
+
+  @override
+  final String serverName = 'Server';
+
+  final Object? error;
+  final List<MediaLibrary> libraries;
+
+  @override
+  Future<List<MediaLibrary>> fetchLibraries() async {
+    if (error != null) throw error!;
+    return libraries;
+  }
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 /// Smoke tests for the surviving cross-server aggregation surface on
 /// [DataAggregationService]. Single-server passthroughs were removed in
@@ -63,6 +94,37 @@ void main() {
       final onDeck = await service.getOnDeckFromAllServers();
       expect(onDeck.items, isEmpty);
       expect(onDeck.succeededServerIds, isEmpty);
+    });
+
+    test('classifies cancelled per-server failures apart from settled ones', () async {
+      // A cancelled fetch (our own client torn down mid-request) says nothing
+      // about the server's content; consumers use cancelledServerIds to keep
+      // a disrupted pass from being committed as authoritative. A settled
+      // failure (server down) lands in neither set.
+      manager.debugRegisterClientForTesting(
+        _LibrariesClient(
+          ServerId('ok'),
+          libraries: [MediaLibrary(id: '1', backend: MediaBackend.plex, title: 'Movies', serverId: ServerId('ok'))],
+        ),
+      );
+      manager.debugRegisterClientForTesting(
+        _LibrariesClient(
+          ServerId('torn-down'),
+          error: MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'HTTP client is closing'),
+        ),
+      );
+      manager.debugRegisterClientForTesting(
+        _LibrariesClient(
+          ServerId('down'),
+          error: MediaServerHttpException(type: MediaServerHttpErrorType.connectionError, message: 'refused'),
+        ),
+      );
+
+      final result = await service.getMediaLibrariesFromAllServers();
+
+      expect(result.libraries.map((l) => l.title), ['Movies']);
+      expect(result.succeededServerIds, {'ok'});
+      expect(result.cancelledServerIds, {'torn-down'});
     });
 
     test('searchAcrossServers overfetches and ranks before trimming across backends', () async {

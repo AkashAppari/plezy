@@ -144,10 +144,14 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                 lazy: true,
               ),
               ChangeNotifierProvider(
-                create: (context) => LibrariesProvider(
-                  storageService: context.read<StorageService>(),
-                  multiServer: context.read<MultiServerProvider>(),
-                ),
+                create: (context) {
+                  final activeProfile = context.read<ActiveProfileProvider>();
+                  return LibrariesProvider(
+                    storageService: context.read<StorageService>(),
+                    multiServer: context.read<MultiServerProvider>(),
+                    isProfileBinding: () => activeProfile.isBinding,
+                  );
+                },
               ),
               ChangeNotifierProvider(
                 create: (context) {

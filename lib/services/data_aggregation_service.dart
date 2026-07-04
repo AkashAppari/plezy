@@ -6,14 +6,22 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_server_client.dart';
+import '../exceptions/media_server_exceptions.dart';
 import '../utils/app_logger.dart';
 import '../utils/external_ids.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/search_relevance.dart';
 import 'multi_server_manager.dart';
 
-typedef OnDeckAggregationResult = ({List<MediaItem> items, Set<String> succeededServerIds});
-typedef HubAggregationResult = ({List<MediaHub> hubs, Set<String> succeededServerIds});
+typedef OnDeckAggregationResult = ({List<MediaItem> items, Set<String> succeededServerIds, Set<String> cancelledServerIds});
+typedef HubAggregationResult = ({List<MediaHub> hubs, Set<String> succeededServerIds, Set<String> cancelledServerIds});
+typedef LibraryAggregationResult = ({List<MediaLibrary> libraries, Set<String> succeededServerIds, Set<String> cancelledServerIds});
+
+/// Whether [error] is a client-side abort (client teardown mid-request)
+/// rather than a genuine server failure. Aggregation reports these servers
+/// in `cancelledServerIds` so callers can tell a *disrupted* pass — whose
+/// results say nothing about actual content — from a settled failure.
+bool _isCancellation(Object error) => error is MediaServerHttpException && error.isCancellation;
 
 /// Cross-server aggregation: fans calls out to every online client and
 /// merges the results. Single-server operations now go through the
@@ -47,28 +55,34 @@ class DataAggregationService {
   /// list. [succeededServerIds] lets callers tell a *failed* fetch apart from a
   /// server that genuinely has no libraries — both contribute nothing, so
   /// conflating them would let a transient failure be cached as "loaded" and
-  /// never retried.
-  Future<({List<MediaLibrary> libraries, Set<String> succeededServerIds})> getMediaLibrariesFromAllServers({
-    Set<String>? serverIds,
-  }) async {
+  /// never retried. Servers whose fetch was aborted client-side land in
+  /// `cancelledServerIds` — a disrupted pass, unlike a settled failure, must
+  /// never be committed as authoritative.
+  Future<LibraryAggregationResult> getMediaLibrariesFromAllServers({Set<String>? serverIds}) async {
     final clients = _clientsFor(serverIds);
     if (clients.isEmpty) {
       appLogger.w('No online servers available for fetching libraries (neutral)');
-      return (libraries: const <MediaLibrary>[], succeededServerIds: const <String>{});
+      return (libraries: const <MediaLibrary>[], succeededServerIds: const <String>{}, cancelledServerIds: const <String>{});
     }
     final succeededServerIds = <String>{};
+    final cancelledServerIds = <String>{};
     final futures = clients.entries.map((entry) async {
       try {
         final libraries = await entry.value.fetchLibraries();
         succeededServerIds.add(entry.key);
         return libraries;
       } catch (e, stackTrace) {
+        if (_isCancellation(e)) cancelledServerIds.add(entry.key);
         appLogger.e('Failed neutral library fetch from ${entry.key}', error: e, stackTrace: stackTrace);
         return <MediaLibrary>[];
       }
     });
     final results = await Future.wait(futures);
-    return (libraries: [for (final list in results) ...list], succeededServerIds: succeededServerIds);
+    return (
+      libraries: [for (final list in results) ...list],
+      succeededServerIds: succeededServerIds,
+      cancelledServerIds: cancelledServerIds,
+    );
   }
 
   /// Fetch "On Deck" (Continue Watching) from all servers and merge by recency.
@@ -83,15 +97,17 @@ class DataAggregationService {
     final clients = _clientsFor(serverIds);
     if (clients.isEmpty) {
       appLogger.w('No online servers available for fetching on deck');
-      return (items: const <MediaItem>[], succeededServerIds: const <String>{});
+      return (items: const <MediaItem>[], succeededServerIds: const <String>{}, cancelledServerIds: const <String>{});
     }
 
+    final cancelledServerIds = <String>{};
     final futures = clients.entries.map((entry) async {
       final client = entry.value;
       try {
         final items = await client.fetchContinueWatching(count: limit);
         return (serverId: entry.key, items: items);
       } catch (e, st) {
+        if (_isCancellation(e)) cancelledServerIds.add(entry.key);
         appLogger.e('Failed on-deck fetch from ${entry.key}', error: e, stackTrace: st);
         return (serverId: null, items: <MediaItem>[]);
       }
@@ -125,7 +141,7 @@ class DataAggregationService {
 
     appLogger.i('Fetched ${items.length} on deck items from all servers');
 
-    return (items: items, succeededServerIds: succeededServerIds);
+    return (items: items, succeededServerIds: succeededServerIds, cancelledServerIds: cancelledServerIds);
   }
 
   /// Merge an [existing] Continue Watching list with [fresh] rows from
@@ -289,7 +305,7 @@ class DataAggregationService {
     final clients = _clientsFor(serverIds);
     if (clients.isEmpty) {
       appLogger.w('No online servers available for fetching hubs');
-      return (hubs: const <MediaHub>[], succeededServerIds: const <String>{});
+      return (hubs: const <MediaHub>[], succeededServerIds: const <String>{}, cancelledServerIds: const <String>{});
     }
 
     // Only fallback clients need a library prefetch when home layout is on;
@@ -299,6 +315,7 @@ class DataAggregationService {
         ? _groupLibrariesByServer((await getMediaLibrariesFromAllServers(serverIds: serverIds)).libraries)
         : null;
 
+    final cancelledServerIds = <String>{};
     final futures = clients.entries.map((entry) async {
       final serverId = entry.key;
       final client = entry.value;
@@ -320,6 +337,7 @@ class DataAggregationService {
           hubs: _postProcessHubs(hubs, serverId: ServerId(serverId), hiddenLibraryKeys: hiddenLibraryKeys),
         );
       } catch (e, stackTrace) {
+        if (_isCancellation(e)) cancelledServerIds.add(serverId);
         appLogger.e('Failed to fetch hubs from server $serverId', error: e, stackTrace: stackTrace);
         return (serverId: null, hubs: <MediaHub>[]);
       }
@@ -335,7 +353,7 @@ class DataAggregationService {
       all.addAll(result.hubs);
     }
     final hubs = limit != null && limit < all.length ? all.sublist(0, limit) : all;
-    return (hubs: hubs, succeededServerIds: succeededServerIds);
+    return (hubs: hubs, succeededServerIds: succeededServerIds, cancelledServerIds: cancelledServerIds);
   }
 
   /// Per-library hub fetch for a single client. Filters to visible

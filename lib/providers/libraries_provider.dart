@@ -15,9 +15,13 @@ enum LibrariesLoadState { initial, loading, loaded, error }
 /// Both SideNavigationRail and LibrariesScreen consume this provider
 /// instead of independently fetching library data.
 class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
-  LibrariesProvider({StorageService? storageService, MultiServerProvider? multiServer})
-    : _storageService = storageService,
-      _multiServer = multiServer {
+  LibrariesProvider({
+    StorageService? storageService,
+    MultiServerProvider? multiServer,
+    bool Function()? isProfileBinding,
+  }) : _storageService = storageService,
+       _multiServer = multiServer,
+       _isProfileBinding = isProfileBinding ?? _neverBinding {
     // Reload libraries when a new server comes online. Servers bind in waves
     // on sign-in / profile switch and slow ones reconnect after the initial
     // load; without this they stay missing from the sidebar until a re-switch
@@ -26,7 +30,16 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
     _multiServer?.addOnlineServersListener(syncToOnlineServers);
   }
 
+  static bool _neverBinding() => false;
+
   final MultiServerProvider? _multiServer;
+
+  /// Whether the profile binder is still wiring servers — a zero-success
+  /// first load during binding stays in the loading state instead of
+  /// flashing "no libraries" (main_screen primes another load once binding
+  /// settles).
+  final bool Function() _isProfileBinding;
+
   StorageService? _storageService;
   DataAggregationService? _aggregationService;
   List<MediaLibrary> _libraries = [];
@@ -193,6 +206,28 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
       // The aggregation service converts Plex-typed responses to MediaLibrary
       // internally; Jellyfin clients return MediaLibrary natively.
       final result = await _aggregationService!.getMediaLibrariesFromAllServers();
+
+      // A pass in which zero servers succeeded is never authoritative — it
+      // must not replace existing data, and it may only commit "loaded,
+      // empty" when the failure is settled (not a client-side abort, not
+      // mid-binding). Recovery is guaranteed: the binding-settle prime and
+      // the next status emission both re-drive a load while state isn't a
+      // fully-covered `loaded`.
+      if (result.succeededServerIds.isEmpty) {
+        if (reloadInPlace) {
+          // A totally-failed silent refresh keeps the last good list instead
+          // of wiping the sidebar. Clear the succeeded set so the next
+          // status emission refetches rather than treating the stale list as
+          // covering those servers.
+          appLogger.w('LibrariesProvider: refresh failed on all servers; keeping previous libraries');
+          _loadedServerIds = result.succeededServerIds;
+          return false;
+        }
+        if (result.cancelledServerIds.isNotEmpty || _isProfileBinding()) {
+          appLogger.d('LibrariesProvider: first load disrupted (zero successful servers); staying in loading state');
+          return false;
+        }
+      }
 
       // Filter out music libraries (not supported)
       final filteredLibraries = result.libraries.where((lib) => !ContentTypeHelper.isMusicLibrary(lib)).toList();

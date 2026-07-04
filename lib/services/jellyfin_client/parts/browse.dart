@@ -1279,6 +1279,9 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       final page = await fetchMoreHubItemsPage(hubId, start: 0, size: limit ?? 50);
       return page.items;
     } catch (e, st) {
+      // A cancelled request says nothing about the hub's contents — let it
+      // propagate so the caller classifies the fetch as disrupted, not empty.
+      if (e is MediaServerHttpException && e.isCancellation) rethrow;
       appLogger.w('JellyfinClient: failed to fetch hub items for $hubId (treating as empty)', error: e, stackTrace: st);
       return const [];
     }
@@ -1598,6 +1601,10 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       }
       return _itemsArray(data);
     } catch (e, st) {
+      // A cancelled request says nothing about the endpoint's contents — let
+      // it propagate so the caller classifies the fetch as disrupted, not
+      // empty.
+      if (e is MediaServerHttpException && e.isCancellation) rethrow;
       appLogger.w('JellyfinClient: $path failed (treating as empty)', error: e, stackTrace: st);
       return const [];
     }

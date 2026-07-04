@@ -61,8 +61,10 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   final LibrariesProvider _libraries;
 
   /// Whether the profile binder is still wiring servers — a no-servers load
-  /// during binding stays in the loading state instead of flashing an error
-  /// (main_screen primes another load once binding settles).
+  /// during binding stays in the loading state instead of flashing an error,
+  /// and a zero-success pass during binding stays in the loading state
+  /// instead of flashing the empty placeholder (main_screen primes another
+  /// load once binding settles).
   final bool Function() isProfileBinding;
 
   StreamSubscription<WatchStateEvent>? _watchStateSubscription;
@@ -198,17 +200,51 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         includePlaybackHubs: false,
       );
 
+      // A pass in which zero servers succeeded is never authoritative: it
+      // must not wipe existing content, and it may only commit "loaded,
+      // empty" when the failure is settled — not a client-side abort
+      // (teardown mid-fetch) and not mid-binding. In both of those cases a
+      // follow-up load is guaranteed (binding-settle prime, or
+      // syncToOnlineServers falling through to load() while not loaded).
       final fetchedOnDeck = await onDeckFuture;
       if (isDisposed) return;
-      _applyOnDeck(fetchedOnDeck.items);
-      _onDeckState = DiscoverLoadState.loaded;
-      _loadedOnDeckServerIds = fetchedOnDeck.succeededServerIds;
-      _loadGeneration++;
-      safeNotifyListeners();
-      unawaited(_syncSystemShelf(_onDeck));
+      if (fetchedOnDeck.succeededServerIds.isEmpty && _onDeck.isNotEmpty) {
+        // Keep the stale rows; the empty succeeded set makes the next status
+        // emission refetch every server.
+        appLogger.w('DiscoverProvider: on-deck pass failed on all servers; keeping previous items');
+        _onDeckState = DiscoverLoadState.loaded;
+        _loadedOnDeckServerIds = fetchedOnDeck.succeededServerIds;
+        safeNotifyListeners();
+      } else if (fetchedOnDeck.succeededServerIds.isEmpty &&
+          (fetchedOnDeck.cancelledServerIds.isNotEmpty || isProfileBinding())) {
+        // Disrupted with nothing to show yet: stay in loading so the screen
+        // keeps its skeleton instead of flashing the empty placeholder.
+        // Don't return — the hubs fetch is still in flight below.
+        appLogger.d('DiscoverProvider: on-deck pass disrupted with no prior content; keeping loading state');
+      } else {
+        _applyOnDeck(fetchedOnDeck.items);
+        _onDeckState = DiscoverLoadState.loaded;
+        _loadedOnDeckServerIds = fetchedOnDeck.succeededServerIds;
+        _loadGeneration++;
+        safeNotifyListeners();
+        unawaited(_syncSystemShelf(_onDeck));
+      }
 
       final fetchedHubs = await hubsFuture;
       if (isDisposed) return;
+
+      if (fetchedHubs.succeededServerIds.isEmpty && _hubs.isNotEmpty) {
+        appLogger.w('DiscoverProvider: hub pass failed on all servers; keeping previous hubs');
+        _hubsState = DiscoverLoadState.loaded;
+        _loadedHubServerIds = fetchedHubs.succeededServerIds;
+        safeNotifyListeners();
+        return;
+      }
+      if (fetchedHubs.succeededServerIds.isEmpty &&
+          (fetchedHubs.cancelledServerIds.isNotEmpty || isProfileBinding())) {
+        appLogger.d('DiscoverProvider: hub pass disrupted with no prior content; keeping loading state');
+        return;
+      }
 
       final filteredHubs = _filterDiscoverHubs(fetchedHubs.hubs);
       sortMediaHubsByLibraryOrder(filteredHubs, _libraries.libraries);
