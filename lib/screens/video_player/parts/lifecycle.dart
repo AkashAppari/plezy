@@ -143,6 +143,21 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       _recordLifecycleState('resumed', action: 'render_restored');
     }
 
+    // TV never hides the render layer on background (_handleAppHidden returns
+    // early without setting _hiddenForBackground), but the screensaver can
+    // still destroy the surface. Kick the video output so a missed surface
+    // callback can't leave the picture black: mpv re-attaches via
+    // refreshVideoOutput, ExoPlayer just reapplies sizing/z-order.
+    if (!_hiddenForBackground &&
+        Platform.isAndroid &&
+        PlatformDetector.isTV() &&
+        currentPlayer != null &&
+        _isPlayerInitialized) {
+      await currentPlayer.updateFrame();
+      if (!mounted || currentPlayer != player) return;
+      _recordLifecycleState('resumed', action: 'tv_video_output_kick');
+    }
+
     // Restore media controls and wakelock when app is resumed.
     if (_isPlayerInitialized && mounted) {
       _resumeMediaControlsAfterTvBackground('app_resumed');
