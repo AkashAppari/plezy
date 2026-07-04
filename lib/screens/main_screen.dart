@@ -280,6 +280,7 @@ class _MainScreenState extends State<MainScreen>
     _offlineUntilConnected = widget.isOfflineMode;
 
     WidgetsBinding.instance.addObserver(this);
+    _contentFocusScope.addListener(_syncSidebarFocusWithContent);
 
     if (PlatformDetector.isDesktopOS()) {
       windowManager.addListener(this);
@@ -823,6 +824,7 @@ class _MainScreenState extends State<MainScreen>
     _startupSettleTimeout?.cancel();
     _startupSettleTimeout = null;
     _sidebarFocusScope.dispose();
+    _contentFocusScope.removeListener(_syncSidebarFocusWithContent);
     _contentFocusScope.dispose();
     _setTvosMenuPassthrough(false);
 
@@ -1089,6 +1091,15 @@ class _MainScreenState extends State<MainScreen>
     });
   }
 
+  /// _isSidebarFocused is hand-toggled; if anything moves real focus into the
+  /// content scope without going through _focusContent (e.g. a deferred
+  /// focusActiveTabIfReady), collapse the rail to match reality (#1411).
+  void _syncSidebarFocusWithContent() {
+    if (!mounted || !_isSidebarFocused || !_contentFocusScope.hasFocus) return;
+    setState(() => _isSidebarFocused = false);
+    _updateTvosMenuPassthrough();
+  }
+
   void _handleSidebarInteractionExpandedChanged(bool expanded) {
     if (_isSidebarInteractionExpanded == expanded) return;
     setState(() => _isSidebarInteractionExpanded = expanded);
@@ -1142,6 +1153,9 @@ class _MainScreenState extends State<MainScreen>
     final homeTab = tabs.first.id;
     if (_currentTab != homeTab) {
       _selectTab(homeTab);
+      // Keep the focus ring in step with the new selection; the sidebar scope
+      // already has focus, so no post-frame deferral is needed.
+      _sideNavKey.currentState?.focusHomeItem();
       _lastBackPressAt = null;
       return KeyEventResult.handled;
     }
@@ -1390,8 +1404,13 @@ class _MainScreenState extends State<MainScreen>
       if (newState case final TabVisibilityAware aware) {
         aware.onTabShown();
       }
-      if (newState case final FocusableTab focusable) {
-        focusable.focusActiveTabIfReady();
+      // Back-to-home keeps the sidebar focused (chain: content → sidebar →
+      // home → exit); stealing focus here left _isSidebarFocused stuck true
+      // while real focus sat on a content card (#1411).
+      if (!_isSidebarFocused) {
+        if (newState case final FocusableTab focusable) {
+          focusable.focusActiveTabIfReady();
+        }
       }
     }
 

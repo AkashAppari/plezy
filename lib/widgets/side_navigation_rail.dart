@@ -341,6 +341,13 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     _requestFocusAndReveal(node);
   }
 
+  /// Focus the Home nav item (Back returning to the home tab).
+  void focusHomeItem() {
+    final node = _mountedFocusNodeFor(_kHome);
+    if (node == null) return;
+    _requestFocusAndReveal(node);
+  }
+
   /// Resolve the best mounted focus node in priority order:
   /// 1. Explicit [targetKey] (captured before scope switch)
   /// 2. Last focused key still in the tracker
