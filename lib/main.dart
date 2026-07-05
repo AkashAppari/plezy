@@ -224,6 +224,11 @@ Future<void> _bootstrapApp() async {
     'Plezy v${packageInfo.version}+${packageInfo.buildNumber}$commitSuffix$renderer'
     ' [effects: ${DevicePerformance.describeSync()}]',
   );
+  if (Platform.isAndroid) {
+    // Baseline for the RSS watchdog thresholds and a sanity anchor against
+    // `adb shell dumpsys meminfo` when tuning them.
+    appLogger.i('Startup RSS: ${ProcessInfo.currentRss >> 20}MB');
+  }
 
   await DownloadStorageService.instance.initialize(settings);
 
@@ -461,24 +466,20 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   /// Last time server health probes ran from a resume event (cooldown for desktop)
   DateTime _lastResumeProbe = DateTime(0);
 
-  /// Periodic memory check timer for desktop platforms
+  /// Periodic RSS watchdog timer (desktop + Android).
   Timer? _memoryCheckTimer;
+
+  /// Last watchdog eviction, for the cooldown; RSS at that moment so a
+  /// still-climbing RSS can re-evict inside the cooldown window.
+  DateTime _lastRssEviction = DateTime(0);
+  int _lastEvictionRss = 0;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    if (PlatformDetector.isDesktopOS()) {
-      _memoryCheckTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-        final rss = ProcessInfo.currentRss;
-        if (rss > 1536 * 1024 * 1024) {
-          // 1.5GB
-          appLogger.w('RSS high ($rss bytes), evicting image caches');
-          _evictImageCaches();
-        }
-      });
-    }
+    _startRssWatchdog();
 
     _serverManager = MultiServerManager();
     _aggregationService = DataAggregationService(_serverManager);
@@ -554,6 +555,48 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     super.didHaveMemoryPressure();
     appLogger.w('System memory pressure, evicting image caches');
     _evictImageCaches();
+  }
+
+  /// RSS-based image-cache eviction. Desktop keeps its fixed 1.5GB bar;
+  /// Android scales to the device because LMK on a 2GB TV box kills well
+  /// below any fixed desktop threshold — and Android trim callbacks
+  /// ([didHaveMemoryPressure]) are best-effort, LMK can kill without ever
+  /// delivering one (#1349).
+  void _startRssWatchdog() {
+    final int threshold;
+    final Duration period;
+    if (PlatformDetector.isDesktopOS()) {
+      threshold = 1536 << 20; // 1.5GB
+      period = const Duration(seconds: 30);
+    } else if (Platform.isAndroid) {
+      final totalMem = DevicePerformance.totalMemBytes;
+      threshold = totalMem != null ? (totalMem * 0.45).round().clamp(512 << 20, 1536 << 20) : 1 << 30;
+      // Decode bursts can spike RSS in seconds on low-end boxes; the read
+      // itself is an in-process syscall, cheap enough for a short period.
+      period = DevicePerformance.isLowEndHardware ? const Duration(seconds: 15) : const Duration(seconds: 30);
+    } else {
+      return; // iOS/tvOS: jetsam pressure arrives via didHaveMemoryPressure.
+    }
+
+    _memoryCheckTimer = Timer.periodic(period, (_) {
+      final rss = ProcessInfo.currentRss;
+      if (rss <= threshold) return;
+      final cache = PaintingBinding.instance.imageCache;
+      // Floor + cooldown: clearing an already-small cache buys nothing, and
+      // refetch churn is its own memory-spike and jank source. Inside the
+      // cooldown, re-evict only if RSS kept climbing past the last eviction.
+      if (cache.currentSizeBytes < (8 << 20)) return;
+      final now = DateTime.now();
+      final inCooldown = now.difference(_lastRssEviction) < const Duration(seconds: 60);
+      if (inCooldown && rss <= _lastEvictionRss) return;
+      _lastRssEviction = now;
+      _lastEvictionRss = rss;
+      appLogger.w(
+        'RSS high (${rss >> 20}MB > ${threshold >> 20}MB), evicting image caches '
+        '(cache ${cache.currentSizeBytes >> 20}MB/${cache.currentSize} images, ${cache.liveImageCount} live)',
+      );
+      _evictImageCaches();
+    });
   }
 
   void _evictImageCaches() {
@@ -669,6 +712,15 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         if (PlatformDetector.isDesktopOS()) {
           if (ProcessInfo.currentRss > 1024 * 1024 * 1024) {
             // 1GB
+            _evictImageCaches();
+          }
+        } else if (Platform.isAndroid) {
+          // A backgrounded app is LMK's first candidate; shed the image
+          // caches at a lower bar than the foreground watchdog to survive
+          // the HOME press on low-RAM boxes.
+          final totalMem = DevicePerformance.totalMemBytes;
+          final bar = totalMem != null ? (totalMem * 0.35).round() : 768 << 20;
+          if (ProcessInfo.currentRss > bar) {
             _evictImageCaches();
           }
         }
