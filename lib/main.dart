@@ -217,7 +217,8 @@ Future<void> _bootstrapApp() async {
     renderer = ' [$rendererName]';
     // Tag crash reports with the active renderer while Impeller rolls back
     // out to Android TV, so device-specific regressions are attributable.
-    unawaited(Sentry.configureScope((scope) => scope.setTag('renderer', rendererName ?? 'unknown')));
+    // configureScope returns FutureOr<void>; Future.sync flattens it for unawaited.
+    unawaited(Future.sync(() => Sentry.configureScope((scope) => scope.setTag('renderer', rendererName ?? 'unknown'))));
   }
   appLogger.i(
     'Plezy v${packageInfo.version}+${packageInfo.buildNumber}$commitSuffix$renderer'
