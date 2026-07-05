@@ -983,7 +983,23 @@
     "trackCount": {
       "one": "${n} track",
       "other": "${n} tracks"
-    }
+    },
+    "nowPlaying": "Now Playing",
+    "playingFrom": "Playing from ${title}",
+    "queue": "Queue",
+    "upNext": "Up next",
+    "clearQueue": "Clear queue",
+    "lyrics": "Lyrics",
+    "noLyrics": "No lyrics available",
+    "sleepTimer": "Sleep timer",
+    "sleepTimerEndOfTrack": "End of track",
+    "sleepTimerMinutes": "${n} minutes",
+    "stopPlayback": "Stop playback",
+    "previousTrack": "Previous track",
+    "nextTrack": "Next track",
+    "repeat": "Repeat",
+    "repeatAll": "Repeat all",
+    "repeatOne": "Repeat one"
   },
   "watchTogether": {
     "title": "Watch Together",
@@ -1055,6 +1071,8 @@
     "manage": "Manage",
     "tvShows": "TV Shows",
     "movies": "Movies",
+    "music": "Music",
+    "tracksQueued": "${count} tracks queued for download",
     "noDownloads": "No downloads yet",
     "noDownloadsDescription": "Downloaded content will appear here for offline viewing",
     "downloadNow": "Download",

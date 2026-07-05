@@ -82,6 +82,16 @@ bool isAdminActionAllowedForMediaItem({
 
 /// A reusable wrapper widget that adds a context menu (long press / right click)
 /// to any media item with appropriate actions based on the item type.
+/// Caller-supplied entry appended to a [MediaContextMenu] (e.g. the
+/// now-playing screen's Sleep timer). Selection runs [onSelected].
+class MediaMenuExtraEntry {
+  final IconData icon;
+  final String label;
+  final VoidCallback onSelected;
+
+  const MediaMenuExtraEntry({required this.icon, required this.label, required this.onSelected});
+}
+
 class MediaContextMenu extends StatefulWidget {
   /// Either a [MediaItem] or a [MediaPlaylist]. Typed as [Object] because
   /// Dart has no nominal union type — guarded at runtime via the
@@ -102,6 +112,9 @@ class MediaContextMenu extends StatefulWidget {
   final bool isInContinueWatching;
   final String? collectionId; // The collection ID if displaying within a collection
 
+  /// Extra entries appended after the standard actions.
+  final List<MediaMenuExtraEntry> extraEntries;
+
   const MediaContextMenu({
     super.key,
     required this.item,
@@ -113,6 +126,7 @@ class MediaContextMenu extends StatefulWidget {
     required this.child,
     this.isInContinueWatching = false,
     this.collectionId,
+    this.extraEntries = const [],
   });
 
   @override
@@ -253,10 +267,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       menuActions.add(_MenuAction(value: 'shuffle', icon: Symbols.shuffle_rounded, label: t.mediaMenu.shufflePlay));
 
-      // Download + sync-rule management. Video playlists and any collection
-      // qualify — collections can contain movies, episodes, and shows.
-      final isVideoPlaylist = isPlaylist && playlist.playlistType == 'video';
-      if ((isVideoPlaylist || isCollection) && !PlatformDetector.isAppleTV()) {
+      // Download + sync-rule management. Video and audio playlists and any
+      // collection qualify — collections can contain movies, episodes,
+      // shows, albums, and artists; audio playlists queue their tracks.
+      final isDownloadablePlaylist =
+          isPlaylist && (playlist.playlistType == 'video' || playlist.playlistType == 'audio');
+      if ((isDownloadablePlaylist || isCollection) && !PlatformDetector.isAppleTV()) {
         final hasRule = Provider.of<DownloadProvider>(context, listen: false).hasSyncRule(_itemSyncRuleKey(context));
         if (hasRule) {
           menuActions.add(
@@ -473,13 +489,17 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
-      // Download options (for episodes, movies, shows, and seasons).
-      // Apple TV has no user-accessible file storage — skip entirely.
+      // Download options (for episodes, movies, shows, seasons, albums, and
+      // tracks — not artists, whose full discography is too large for a
+      // one-tap download). Apple TV has no user-accessible file storage —
+      // skip entirely.
       if (!PlatformDetector.isAppleTV() &&
           (mediaKind == MediaKind.episode ||
               mediaKind == MediaKind.movie ||
               mediaKind == MediaKind.show ||
-              mediaKind == MediaKind.season)) {
+              mediaKind == MediaKind.season ||
+              mediaKind == MediaKind.album ||
+              mediaKind == MediaKind.track)) {
         final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
         final globalKey = mediaItem.globalKey;
         final hasSyncRule = downloadProvider.hasSyncRule(_itemSyncRuleKey(context));
@@ -549,6 +569,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     }
 
+    for (var i = 0; i < widget.extraEntries.length; i++) {
+      final entry = widget.extraEntries[i];
+      menuActions.add(_MenuAction(value: 'extra_$i', icon: entry.icon, label: entry.label));
+    }
+
     String? selected;
 
     final openedFromKeyboard = _openedFromKeyboard;
@@ -584,6 +609,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
     try {
       if (!context.mounted) return;
+
+      // Caller-supplied extra entries dispatch straight to their callback.
+      if (selected != null && selected.startsWith('extra_')) {
+        final index = int.tryParse(selected.substring('extra_'.length));
+        if (index != null && index >= 0 && index < widget.extraEntries.length) {
+          widget.extraEntries[index].onSelected();
+        }
+        return;
+      }
 
       switch (selected) {
         case 'play_from_beginning':

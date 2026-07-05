@@ -50,6 +50,7 @@ import '../services/companion_remote/companion_remote_receiver.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../providers/companion_remote_provider.dart';
 import '../utils/desktop_window_padding.dart';
+import '../widgets/music/mini_player.dart';
 import '../widgets/side_navigation_rail.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/key_event_utils.dart';
@@ -223,6 +224,10 @@ class _MainScreenState extends State<MainScreen>
   final GlobalKey<State<DownloadsScreen>> _downloadsKey = GlobalKey();
   final GlobalKey<State<SettingsScreen>> _settingsKey = GlobalKey();
   final GlobalKey<SideNavigationRailState> _sideNavKey = GlobalKey();
+
+  /// Measures the mobile bottom navigation area for the music mini-player.
+  final GlobalKey _bottomBarKey = GlobalKey();
+  MiniPlayerInsetController? _miniPlayerInsets;
 
   // Focus management for sidebar/content switching
   final FocusScopeNode _sidebarFocusScope = FocusScopeNode(debugLabel: 'Sidebar');
@@ -745,6 +750,8 @@ class _MainScreenState extends State<MainScreen>
       _companionRemoteSetup = true;
       _setupCompanionRemote();
     }
+
+    _miniPlayerInsets = context.read<MiniPlayerInsetController?>();
 
     final scopedRouteObserver = ProfileNavigationScope.of(context).routeObserver;
     if (scopedRouteObserver != _profileRouteObserver) {
@@ -1281,6 +1288,9 @@ class _MainScreenState extends State<MainScreen>
   @override
   void didPushNext() {
     _setTvosMenuPassthrough(false);
+    // A pushed detail route covers the bottom bar — drop the mini-player to
+    // the true (safe-area) bottom while it's hidden.
+    _miniPlayerInsets?.setNavBarSuspended(true);
     // Called when a child route is pushed on top (e.g., video player)
     if (_currentTab == NavigationTabId.discover) {
       if (_discoverKey.currentState case final TabVisibilityAware aware) {
@@ -1302,6 +1312,7 @@ class _MainScreenState extends State<MainScreen>
 
     // Called when returning to this route from a child route (e.g., from video player)
     _updateTvosMenuPassthrough();
+    _miniPlayerInsets?.setNavBarSuspended(false);
     if (_currentTab == NavigationTabId.discover) {
       if (_discoverKey.currentState case final TabVisibilityAware aware) {
         aware.onTabShown();
@@ -1589,6 +1600,19 @@ class _MainScreenState extends State<MainScreen>
     );
   }
 
+  /// Report the mobile bottom bar's rendered height to the mini-player inset
+  /// controller after this frame (the bar mixes NavigationBar, optional
+  /// offline banner, and label modes — measuring beats re-deriving).
+  void _scheduleBottomBarMeasure() {
+    final controller = _miniPlayerInsets;
+    if (controller == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final box = _bottomBarKey.currentContext?.findRenderObject() as RenderBox?;
+      if (box != null && box.hasSize) controller.setNavBarInset(box.size.height);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
@@ -1732,6 +1756,7 @@ class _MainScreenState extends State<MainScreen>
         child: Scaffold(
           body: _buildTickerAwareStack(),
           bottomNavigationBar: Column(
+            key: _bottomBarKey,
             mainAxisSize: .min,
             children: [
               // Reconnect bar when offline
@@ -1774,6 +1799,10 @@ class _MainScreenState extends State<MainScreen>
                 pref: SettingsService.showNavBarLabels,
                 builder: (context, showNavBarLabels, _) {
                   final hideLabels = !showNavBarLabels;
+                  // Re-measure whenever the bar's composition can change:
+                  // this builder reruns on label toggles AND on every
+                  // MainScreen rebuild (offline bar appearing/disappearing).
+                  _scheduleBottomBarMeasure();
                   return NavigationBarTheme(
                     data: NavigationBarTheme.of(context).copyWith(height: hideLabels ? 56 : null),
                     child: _buildBottomNavigationBar(context, hideLabels: hideLabels),

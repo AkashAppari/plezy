@@ -79,4 +79,21 @@ class FocusTheme {
       color: isFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
     );
   }
+
+  /// Focus background fill derived from the theme's text color, so it stays
+  /// visible on BOTH light and dark surfaces — the white-based
+  /// [focusBackgroundDecoration] disappears on light ones. This is the mono
+  /// convention used by [TrackRow], the navigation rail, and the music player
+  /// surfaces. Prefer this for any new mono-themed surface.
+  static BoxDecoration textFillFocusDecoration(
+    BuildContext context, {
+    required bool isFocused,
+    double borderRadius = defaultBorderRadius,
+    BorderRadius? radii,
+  }) {
+    return BoxDecoration(
+      borderRadius: radii ?? BorderRadius.circular(borderRadius),
+      color: isFocused ? tokens(context).text.withValues(alpha: 0.12) : Colors.transparent,
+    );
+  }
 }

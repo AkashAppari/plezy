@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
 
 import '../../focus/focus_theme.dart';
 import '../../focus/focusable_action_bar.dart';
@@ -11,9 +12,12 @@ import '../../i18n/strings.g.dart';
 import '../../media/ids.dart';
 import '../../media/media_item.dart';
 import '../../mixins/grid_focus_node_mixin.dart';
+import '../../models/download_models.dart';
+import '../../providers/download_provider.dart';
 import '../../services/music/music_playback_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/dialogs.dart';
 import '../../utils/formatters.dart';
 import '../../utils/layout_constants.dart';
 import '../../utils/media_image_helper.dart';
@@ -23,8 +27,10 @@ import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/desktop_app_bar.dart';
+import '../../widgets/download_status_icon.dart';
 import '../../widgets/ios_status_bar_tap_scroll_to_top.dart';
 import '../../widgets/media_context_menu.dart';
+import '../../widgets/music/mini_player.dart';
 import '../../widgets/music/music_actions.dart';
 import '../../widgets/music/track_row.dart';
 import '../../widgets/optimized_media_image.dart';
@@ -149,6 +155,98 @@ class _AlbumDetailScreenState extends BaseMediaListDetailScreen<AlbumDetailScree
     );
   }
 
+  /// Queue the album (expands to its tracks) or, when fully downloaded,
+  /// offer deletion. Queued/downloading states are inert — the button just
+  /// reflects progress.
+  Future<void> _handleDownloadPressed() async {
+    final downloadProvider = context.read<DownloadProvider>();
+    final globalKey = widget.album.globalKey;
+    final progress = downloadProvider.getProgress(globalKey);
+
+    if (downloadProvider.isQueueing(globalKey) ||
+        progress?.status == DownloadStatus.queued ||
+        progress?.status == DownloadStatus.downloading) {
+      return;
+    }
+
+    if (downloadProvider.isDownloaded(globalKey)) {
+      final confirmed = await showDeleteConfirmation(
+        context,
+        title: t.downloads.deleteDownload,
+        message: t.downloads.deleteConfirm(title: widget.album.displayTitle),
+      );
+      if (!confirmed || !mounted) return;
+      await downloadProvider.deleteDownload(globalKey);
+      if (mounted) showSuccessSnackBar(context, t.downloads.downloadDeleted);
+      return;
+    }
+
+    // Not downloaded (or partial/failed): queue the album — already-active
+    // tracks are skipped inside the provider, so this also fills gaps.
+    try {
+      final count = await downloadProvider.queueDownload(widget.album, mediaClient);
+      if (!mounted) return;
+      showSuccessSnackBar(context, count > 1 ? t.downloads.tracksQueued(count: count) : t.downloads.downloadQueued);
+    } on CellularDownloadBlockedException {
+      if (mounted) showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
+    } catch (e) {
+      appLogger.e('Failed to queue album download', error: e);
+      if (mounted) showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+    }
+  }
+
+  /// Album download button — mirrors the media-detail download action's
+  /// states in compact form. Hidden on Apple TV (no user-accessible storage)
+  /// and when no [DownloadProvider] is in scope.
+  FocusableAction? _downloadAction() {
+    if (PlatformDetector.isAppleTV()) return null;
+    if (widget.album.serverId == null || context.read<DownloadProvider?>() == null) return null;
+
+    return FocusableAction(
+      debugLabel: 'album_download',
+      onPressed: () => unawaited(_handleDownloadPressed()),
+      builder: (context, state) => Consumer<DownloadProvider>(
+        builder: (context, downloadProvider, _) {
+          final globalKey = widget.album.globalKey;
+          final progress = downloadProvider.getProgress(globalKey);
+          final isQueueing = downloadProvider.isQueueing(globalKey);
+          final status = progress?.status;
+
+          final Widget icon;
+          final String tooltip;
+          if (isQueueing) {
+            icon = const DownloadQueueingSpinner(size: 20);
+            tooltip = t.downloads.downloadingTooltip;
+          } else if (status == DownloadStatus.queued) {
+            icon = const AppIcon(Symbols.schedule_rounded, fill: 1);
+            tooltip = t.downloads.queuedTooltip;
+          } else if (status == DownloadStatus.downloading) {
+            icon = DownloadStatusIcon(
+              status: DownloadStatus.downloading,
+              size: 20,
+              progress: progress?.progressPercent,
+            );
+            tooltip = t.downloads.downloadingTooltip;
+          } else if (status == DownloadStatus.completed) {
+            icon = const AppIcon(Symbols.download_done_rounded, fill: 1);
+            tooltip = t.downloads.deleteDownload;
+          } else if (status == DownloadStatus.partial) {
+            icon = const AppIcon(Symbols.downloading_rounded, fill: 1);
+            tooltip = t.downloads.partialDownloadClickToComplete;
+          } else {
+            icon = const AppIcon(Symbols.download_rounded, fill: 1);
+            tooltip = t.downloads.downloadNow;
+          }
+
+          return Container(
+            decoration: FocusTheme.focusBackgroundDecoration(isFocused: state.showFocus, borderRadius: 20),
+            child: IconButton(icon: icon, tooltip: tooltip, onPressed: () => unawaited(_handleDownloadPressed())),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   List<FocusableAction> getAppBarActions() {
     final client = context.tryGetMediaClientWithFallback(serverIdOrNull(widget.album.serverId));
@@ -158,6 +256,7 @@ class _AlbumDetailScreenState extends BaseMediaListDetailScreen<AlbumDetailScree
       onInstantMix: (client?.capabilities.instantMix ?? false)
           ? () => unawaited(playInstantMix(context, widget.album))
           : null,
+      download: _downloadAction(),
       trailing: _overflowAction(),
     );
   }
@@ -301,6 +400,7 @@ class _AlbumDetailScreenState extends BaseMediaListDetailScreen<AlbumDetailScree
               item: item,
               isFirst: row.isFirst,
               isLast: row.isLast,
+              showDownloadStatus: true,
               focusNode: focusNodeForIndex(trackIndex, firstItemFocusNode, prefix: 'detail_grid_item'),
               onNavigateUp: trackIndex == 0 ? navigateToAppBar : null,
               onBack: handleBackFromContent,
@@ -336,6 +436,10 @@ class _AlbumDetailScreenState extends BaseMediaListDetailScreen<AlbumDetailScree
                 SliverToBoxAdapter(child: _buildHeader()),
                 ...buildStateSlivers(),
                 if (hasItems) _buildTrackList(),
+                // Keep the last rows reachable above the floating mini-player.
+                SliverToBoxAdapter(
+                  child: SizedBox(height: context.watch<MiniPlayerInsetController?>()?.overlayHeight ?? 0),
+                ),
               ],
             ),
           ),

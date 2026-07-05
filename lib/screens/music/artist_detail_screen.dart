@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
 
 import '../../focus/focusable_action_bar.dart';
 import '../../focus/key_event_utils.dart';
@@ -20,6 +21,7 @@ import '../../utils/snackbar_helper.dart';
 import '../../widgets/collapsible_text.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/ios_status_bar_tap_scroll_to_top.dart';
+import '../../widgets/music/mini_player.dart';
 import '../../widgets/music/music_actions.dart';
 import '../../widgets/optimized_media_image.dart';
 import '../../widgets/overlay_sheet.dart';
@@ -198,6 +200,10 @@ class _ArtistDetailScreenState extends BaseMediaListDetailScreen<ArtistDetailScr
                 ...buildStateSlivers(),
                 // Albums arrive newest-first from both backends — no client-side sort.
                 if (hasItems) buildFocusableGrid(items: items, onRefresh: updateItem, shape: CardShape.square),
+                // Keep the last rows reachable above the floating mini-player.
+                SliverToBoxAdapter(
+                  child: SizedBox(height: context.watch<MiniPlayerInsetController?>()?.overlayHeight ?? 0),
+                ),
               ],
             ),
           ),

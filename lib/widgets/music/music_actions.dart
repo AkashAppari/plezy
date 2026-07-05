@@ -7,13 +7,15 @@ import '../app_icon.dart';
 
 /// Standard action list for the music detail screens (album/artist):
 /// a labeled Play pill, a shuffle icon, an optional Instant Mix icon (pass
-/// null when the server lacks the capability), and an optional [trailing]
-/// action (the album overflow ⋮). Render inside a [FocusableActionBar] —
+/// null when the server lacks the capability), an optional [download]
+/// action (the album download button), and an optional [trailing] action
+/// (the album overflow ⋮). Render inside a [FocusableActionBar] —
 /// icon actions get the bar's default focus-background treatment.
 List<FocusableAction> buildMusicActions({
   required VoidCallback onPlay,
   required VoidCallback onShuffle,
   VoidCallback? onInstantMix,
+  FocusableAction? download,
   FocusableAction? trailing,
 }) {
   return [
@@ -35,6 +37,7 @@ List<FocusableAction> buildMusicActions({
         tooltip: t.music.instantMix,
         onPressed: onInstantMix,
       ),
+    ?download,
     ?trailing,
   ];
 }

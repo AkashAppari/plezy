@@ -2895,6 +2895,54 @@ class TranslationsMusicEn {
 		one: '${n} track',
 		other: '${n} tracks',
 	);
+
+	/// en: 'Now Playing'
+	String get nowPlaying => 'Now Playing';
+
+	/// en: 'Playing from ${title}'
+	String playingFrom({required Object title}) => 'Playing from ${title}';
+
+	/// en: 'Queue'
+	String get queue => 'Queue';
+
+	/// en: 'Up next'
+	String get upNext => 'Up next';
+
+	/// en: 'Clear queue'
+	String get clearQueue => 'Clear queue';
+
+	/// en: 'Lyrics'
+	String get lyrics => 'Lyrics';
+
+	/// en: 'No lyrics available'
+	String get noLyrics => 'No lyrics available';
+
+	/// en: 'Sleep timer'
+	String get sleepTimer => 'Sleep timer';
+
+	/// en: 'End of track'
+	String get sleepTimerEndOfTrack => 'End of track';
+
+	/// en: '${n} minutes'
+	String sleepTimerMinutes({required Object n}) => '${n} minutes';
+
+	/// en: 'Stop playback'
+	String get stopPlayback => 'Stop playback';
+
+	/// en: 'Previous track'
+	String get previousTrack => 'Previous track';
+
+	/// en: 'Next track'
+	String get nextTrack => 'Next track';
+
+	/// en: 'Repeat'
+	String get repeat => 'Repeat';
+
+	/// en: 'Repeat all'
+	String get repeatAll => 'Repeat all';
+
+	/// en: 'Repeat one'
+	String get repeatOne => 'Repeat one';
 }
 
 // Path: watchTogether
@@ -3114,6 +3162,12 @@ class TranslationsDownloadsEn {
 
 	/// en: 'Movies'
 	String get movies => 'Movies';
+
+	/// en: 'Music'
+	String get music => 'Music';
+
+	/// en: '${count} tracks queued for download'
+	String tracksQueued({required Object count}) => '${count} tracks queued for download';
 
 	/// en: 'No downloads yet'
 	String get noDownloads => 'No downloads yet';
@@ -5566,6 +5620,22 @@ extension on Translations {
 			'music.addToQueue' => 'Add to queue',
 			'music.discNumber' => ({required Object n}) => 'Disc ${n}',
 			'music.trackCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} track', other: '${n} tracks', ), 
+			'music.nowPlaying' => 'Now Playing',
+			'music.playingFrom' => ({required Object title}) => 'Playing from ${title}',
+			'music.queue' => 'Queue',
+			'music.upNext' => 'Up next',
+			'music.clearQueue' => 'Clear queue',
+			'music.lyrics' => 'Lyrics',
+			'music.noLyrics' => 'No lyrics available',
+			'music.sleepTimer' => 'Sleep timer',
+			'music.sleepTimerEndOfTrack' => 'End of track',
+			'music.sleepTimerMinutes' => ({required Object n}) => '${n} minutes',
+			'music.stopPlayback' => 'Stop playback',
+			'music.previousTrack' => 'Previous track',
+			'music.nextTrack' => 'Next track',
+			'music.repeat' => 'Repeat',
+			'music.repeatAll' => 'Repeat all',
+			'music.repeatOne' => 'Repeat one',
 			'watchTogether.title' => 'Watch Together',
 			'watchTogether.description' => 'Watch content in sync with friends and family',
 			'watchTogether.createSession' => 'Create Session',
@@ -5633,6 +5703,8 @@ extension on Translations {
 			'downloads.manage' => 'Manage',
 			'downloads.tvShows' => 'TV Shows',
 			'downloads.movies' => 'Movies',
+			'downloads.music' => 'Music',
+			'downloads.tracksQueued' => ({required Object count}) => '${count} tracks queued for download',
 			'downloads.noDownloads' => 'No downloads yet',
 			'downloads.noDownloadsDescription' => 'Downloaded content will appear here for offline viewing',
 			'downloads.downloadNow' => 'Download',
@@ -5669,6 +5741,8 @@ extension on Translations {
 			'downloads.customAmount' => 'Custom amount...',
 			'downloads.includeSpecials' => 'Include Specials',
 			'downloads.howManyEpisodes' => 'How many episodes?',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.itemsQueued' => ({required Object count}) => '${count} items queued for download',
 			'downloads.keepSynced' => 'Keep synced',
 			'downloads.downloadOnce' => 'Download once',
@@ -5687,8 +5761,6 @@ extension on Translations {
 			'downloads.editSyncFilter' => 'Sync filter',
 			'downloads.syncAllItems' => 'Syncing all items',
 			'downloads.syncUnwatchedItems' => 'Syncing unwatched items',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
 			'downloads.syncRuleAvailable' => 'Available',
 			'downloads.syncRuleOffline' => 'Offline',
