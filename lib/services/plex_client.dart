@@ -1927,6 +1927,12 @@ class PlexClient
           sname,
           librarySectionID: _librarySectionIdFromString(sectionId),
           librarySectionTitle: libraryName,
+          // Music-section hubs carry artist/album/track items — the default
+          // video-only filter would empty them out.
+          filter: (item) {
+            final type = item.type?.toLowerCase();
+            return ContentTypes.videoTypes.contains(type) || ContentTypes.musicTypes.contains(type);
+          },
         ),
       );
     } catch (e) {

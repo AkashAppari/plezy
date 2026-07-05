@@ -103,6 +103,36 @@ void main() {
     expect(result.mediaInfo?.audioTracks.single.languageCode, 'eng');
   });
 
+  test('downloaded track resolves to its local file through the offline path', () async {
+    // Same globalKey shape queueDownload writes (`serverId:ratingKey`) —
+    // the music resolver reaches this via preferOffline=true (original
+    // audio preset), so a downloaded track must play from disk.
+    await _insertDownloaded(
+      db,
+      serverId: ServerId('srv-1'),
+      ratingKey: 'track-1',
+      type: 'track',
+      videoFilePath: 'content://offline/track-1',
+    );
+    final client = _FailingPlaybackClient(serverId: ServerId('srv-1'));
+
+    final result = await PlaybackInitializationService(client: client, database: db).getPlaybackData(
+      metadata: MediaItem(
+        id: 'track-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.track,
+        serverId: ServerId('srv-1'),
+      ),
+      selectedMediaIndex: 0,
+      preferOffline: true,
+    );
+
+    expect(client.playbackInitializationCalls, 0);
+    expect(result.isOffline, isTrue);
+    expect(result.videoUrl, 'content://offline/track-1');
+    expect(result.playMethod, 'DirectPlay');
+  });
+
   test('preferOffline uses cache without calling live client when local file exists', () async {
     await _insertDownloaded(
       db,
@@ -489,6 +519,7 @@ Future<void> _insertDownloaded(
   String? clientScopeId,
   required String ratingKey,
   required String videoFilePath,
+  String type = 'movie',
   int mediaIndex = 0,
   String? mediaSourceId,
 }) async {
@@ -500,7 +531,7 @@ Future<void> _insertDownloaded(
           clientScopeId: Value(clientScopeId),
           ratingKey: ratingKey,
           globalKey: '$serverId:$ratingKey',
-          type: 'movie',
+          type: type,
           status: DownloadStatus.completed.index,
           videoFilePath: Value(videoFilePath),
           mediaIndex: Value(mediaIndex),

@@ -726,7 +726,7 @@ void main() {
       );
     });
 
-    test('per-library home rows include clip libraries and skip music/photo (#1476)', () async {
+    test('per-library home rows include clip and music libraries and skip photo (#1476)', () async {
       final captured = <Uri>[];
 
       final client = JellyfinClient.forTesting(
@@ -762,8 +762,18 @@ void main() {
                   {'Id': 'vid-1', 'Type': 'Video', 'Name': 'Latest Home Video', 'ParentLibraryId': 'home-vids'},
                 ],
               }),
+              'music' => _json({
+                'Items': [
+                  {'Id': 'album-1', 'Type': 'MusicAlbum', 'Name': 'Latest Album', 'ParentLibraryId': 'music'},
+                ],
+              }),
               _ => http.Response('latest should not be requested for $parentId', 500),
             };
+          }
+          // Music library's played-track rows — empty so only the Latest
+          // Albums hub survives.
+          if (req.url.path == '/Items' && req.url.queryParameters['Filters'] == 'IsPlayed') {
+            return _json({'Items': const <Object>[]});
           }
           return http.Response('unexpected request', 500);
         }),
@@ -775,11 +785,17 @@ void main() {
       final hubs = result.hubs;
 
       expect(result.succeededServerIds, {'srv-1'});
-      expect(hubs.map((h) => h.identifier), ['library.movies.recent', 'library.mv.recent', 'library.home-vids.recent']);
+      expect(hubs.map((h) => h.identifier), [
+        'library.movies.recent',
+        'library.mv.recent',
+        'library.home-vids.recent',
+        'library.music.recent',
+      ]);
       expect(hubs[1].items.single.kind, MediaKind.clip);
+      expect(hubs[3].items.single.kind, MediaKind.album);
       expect(
         captured.where((uri) => uri.path == '/Users/user-1/Items/Latest').map((uri) => uri.queryParameters['ParentId']),
-        ['movies', 'mv', 'home-vids'],
+        ['movies', 'mv', 'home-vids', 'music'],
       );
     });
 
@@ -799,6 +815,15 @@ void main() {
         promotedHubKey: '/hubs/promoted',
         httpClient: MockClient((req) async {
           captured.add(req.url);
+          if (req.url.path == '/library/sections') {
+            return _json({
+              'MediaContainer': {
+                'Directory': [
+                  {'key': '2', 'type': 'show', 'title': 'TV Shows'},
+                ],
+              },
+            });
+          }
           if (req.url.path == '/hubs/promoted') {
             return _json({
               'MediaContainer': {
@@ -840,8 +865,94 @@ void main() {
       expect(hubs.single.identifier, 'home.television.recent');
       expect(hubs.single.libraryId, isNull);
       expect(hubs.single.items, hasLength(7));
-      expect(captured.map((uri) => uri.path), ['/hubs/promoted']);
-      expect(captured.single.queryParameters['count'], defaultHubPreviewLimit.toString());
+      // Library prefetch (music detection) + the promoted hubs — no
+      // per-library hub calls without a music section.
+      expect(captured.map((uri) => uri.path), ['/library/sections', '/hubs/promoted']);
+      expect(
+        captured.singleWhere((uri) => uri.path == '/hubs/promoted').queryParameters['count'],
+        defaultHubPreviewLimit.toString(),
+      );
+    });
+
+    test('Plex home layout appends music library hubs the promoted endpoint excludes', () async {
+      final captured = <Uri>[];
+
+      final client = PlexClient.forTesting(
+        config: PlexConfig(
+          baseUrl: 'https://plex.example.com',
+          token: 'token',
+          clientIdentifier: 'client-id',
+          product: 'Plezy',
+          version: 'test',
+        ),
+        serverId: ServerId('plex-1'),
+        serverName: 'Plex',
+        promotedHubKey: '/hubs/promoted',
+        httpClient: MockClient((req) async {
+          captured.add(req.url);
+          if (req.url.path == '/library/sections') {
+            return _json({
+              'MediaContainer': {
+                'Directory': [
+                  {'key': '1', 'type': 'movie', 'title': 'Movies'},
+                  {'key': '9', 'type': 'artist', 'title': 'Music'},
+                ],
+              },
+            });
+          }
+          if (req.url.path == '/hubs/promoted') {
+            return _json({
+              'MediaContainer': {
+                'Hub': [
+                  {
+                    'key': '/hubs/home/recentlyAdded?type=1',
+                    'title': 'Recently Added Movies',
+                    'type': 'movie',
+                    'hubIdentifier': 'home.movies.recent',
+                    'size': 1,
+                    'Metadata': [
+                      {'ratingKey': 'movie-1', 'type': 'movie', 'title': 'Movie', 'librarySectionID': 1},
+                    ],
+                  },
+                ],
+              },
+            });
+          }
+          if (req.url.path == '/hubs/sections/9') {
+            return _json({
+              'MediaContainer': {
+                'Hub': [
+                  {
+                    'key': '/library/sections/9/recentlyAdded',
+                    'title': 'Recently Added Music',
+                    'type': 'album',
+                    'hubIdentifier': 'music.recent',
+                    'size': 1,
+                    'Metadata': [
+                      {'ratingKey': 'album-1', 'type': 'album', 'title': 'Album', 'librarySectionID': 9},
+                    ],
+                  },
+                ],
+              },
+            });
+          }
+          return http.Response('unexpected request', 500);
+        }),
+      );
+      addTearDown(client.close);
+      manager.debugRegisterClientForTesting(client);
+
+      final result = await service.getHubsFromAllServers(useGlobalHubs: true, includePlaybackHubs: false);
+      final hubs = result.hubs;
+
+      expect(result.succeededServerIds, {'plex-1'});
+      expect(hubs.map((h) => h.identifier), ['home.movies.recent', 'music.recent']);
+      expect(hubs[1].items.single.kind, MediaKind.album);
+      // Only the music section gets a per-library hub call — the movie
+      // library's rows already came from the promoted endpoint.
+      expect(captured.where((uri) => uri.path.startsWith('/hubs/sections/')).map((uri) => uri.path), [
+        '/hubs/sections/9',
+      ]);
     });
   });
 }

@@ -259,6 +259,43 @@ extension DownloadDatabaseOperations on AppDatabase {
         .get();
   }
 
+  /// Downloaded tracks belonging to an album (parentRatingKey). Mirrors
+  /// [getEpisodesBySeason] but filters on type so an id collision with a
+  /// season key can never mix media kinds.
+  Future<List<DownloadedMediaItem>> getTracksByAlbum(
+    String albumKey, {
+    ServerId? serverId,
+    String? clientScopeId,
+    bool filterClientScope = false,
+  }) {
+    return (select(downloadedMedia)..where(
+          (t) =>
+              t.type.equals('track') &
+              t.parentRatingKey.equals(albumKey) &
+              _optionalServerPredicate(t.serverId, serverIdOrNull(serverId)) &
+              _optionalClientScopePredicate(t.clientScopeId, clientScopeId, filterClientScope: filterClientScope),
+        ))
+        .get();
+  }
+
+  /// Downloaded tracks belonging to an artist (grandparentRatingKey). Mirrors
+  /// [getEpisodesByShow] with the same type filter as [getTracksByAlbum].
+  Future<List<DownloadedMediaItem>> getTracksByArtist(
+    String artistKey, {
+    ServerId? serverId,
+    String? clientScopeId,
+    bool filterClientScope = false,
+  }) {
+    return (select(downloadedMedia)..where(
+          (t) =>
+              t.type.equals('track') &
+              t.grandparentRatingKey.equals(artistKey) &
+              _optionalServerPredicate(t.serverId, serverIdOrNull(serverId)) &
+              _optionalClientScopePredicate(t.clientScopeId, clientScopeId, filterClientScope: filterClientScope),
+        ))
+        .get();
+  }
+
   Future<List<DownloadedMediaItem>> getDownloadsByServerId(ServerId serverId) {
     return (select(downloadedMedia)..where((t) => t.serverId.equals(serverId))).get();
   }

@@ -373,10 +373,12 @@ class DataAggregationService {
       return (hubs: const <MediaHub>[], succeededServerIds: const <String>{}, cancelledServerIds: const <String>{});
     }
 
-    // Only fallback clients need a library prefetch when home layout is on;
-    // rich-hub backends return the intended home rows directly.
-    final needsLibraryPrefetch = useGlobalHubs && clients.values.any((client) => !client.capabilities.richHubs);
-    final libraries = needsLibraryPrefetch
+    // Home layout needs the library list for every client: fallback backends
+    // build all their rows from per-library hubs, and rich-hub backends
+    // (Plex) need it to detect visible music libraries, whose hubs the
+    // global-hub endpoint excludes. One `fetchLibraries` per server, served
+    // from the per-backend API cache when warm.
+    final libraries = useGlobalHubs
         ? _groupLibrariesByServer((await getMediaLibrariesFromAllServers(serverIds: serverIds)).libraries)
         : null;
 
@@ -389,7 +391,21 @@ class DataAggregationService {
         final shouldUseGlobalHubs = useGlobalHubs && client.capabilities.richHubs;
         final hubItemLimit = limit ?? defaultHubPreviewLimit;
         final hubs = shouldUseGlobalHubs
-            ? await client.fetchGlobalHubs(limit: hubItemLimit, includePlaybackHubs: includePlaybackHubs)
+            ? [
+                ...await client.fetchGlobalHubs(limit: hubItemLimit, includePlaybackHubs: includePlaybackHubs),
+                // Plex's promoted/global hub endpoint never includes music
+                // libraries — append their per-library hubs so music rows
+                // reach home. No-op (zero extra calls) without a visible
+                // music library.
+                ...await _fetchLibraryHubsForClient(
+                  client,
+                  limit: hubItemLimit,
+                  hiddenLibraryKeys: hiddenLibraryKeys,
+                  includePlaybackHubs: includePlaybackHubs,
+                  libraries: serverLibraries ?? const [],
+                  kinds: const {MediaKind.artist},
+                ),
+              ]
             : await _fetchLibraryHubsForClient(
                 client,
                 limit: hubItemLimit,
@@ -421,20 +437,22 @@ class DataAggregationService {
     return (hubs: hubs, succeededServerIds: succeededServerIds, cancelledServerIds: cancelledServerIds);
   }
 
-  /// Per-library hub fetch for a single client. Filters to visible
-  /// movie/show/clip libraries (Plex hides music libraries from this surface;
-  /// clip covers Jellyfin musicvideos/homevideos, #1476) and concatenates the
-  /// results.
+  /// Per-library hub fetch for a single client. Filters to visible libraries
+  /// of [kinds] (movie/show/clip/artist by default — clip covers Jellyfin
+  /// musicvideos/homevideos, #1476; artist brings music rows to home) and
+  /// concatenates the results. The rich-hub music append passes
+  /// `{MediaKind.artist}` to fetch only what the global endpoint misses.
   Future<List<MediaHub>> _fetchLibraryHubsForClient(
     MediaServerClient client, {
     required int limit,
     Set<String>? hiddenLibraryKeys,
     required bool includePlaybackHubs,
     List<MediaLibrary>? libraries,
+    Set<MediaKind> kinds = const {MediaKind.movie, MediaKind.show, MediaKind.clip, MediaKind.artist},
   }) async {
     final libs = libraries ?? await client.fetchLibraries();
     final visible = libs.where((l) {
-      if (l.kind != MediaKind.movie && l.kind != MediaKind.show && l.kind != MediaKind.clip) return false;
+      if (!kinds.contains(l.kind)) return false;
       if (l.hidden) return false;
       if (hiddenLibraryKeys != null && hiddenLibraryKeys.contains(l.globalKey)) return false;
       return true;

@@ -1,4 +1,5 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 import '../media/ids.dart';
 
 import '../database/app_database.dart';
@@ -363,7 +364,7 @@ class SyncRuleExecutor {
 
     final unwatchedOnly = rule.downloadFilter == SyncRuleFilter.unwatched;
     final collected = <MediaItem>[];
-    await _collectItemsForList(client, rootItems, unwatchedOnly: unwatchedOnly, out: collected);
+    await collectItemsForList(client, rootItems, unwatchedOnly: unwatchedOnly, out: collected);
 
     final candidates = unwatchedOnly
         ? await _excludeLocallyWatched(
@@ -420,10 +421,14 @@ class SyncRuleExecutor {
     libraryTitle: source?.libraryTitle,
   );
 
-  /// Walks [items] and collects playable movie/episode entries into [out].
-  /// Shows and seasons are expanded into their episodes; music and nested
-  /// collections/playlists are skipped.
-  Future<void> _collectItemsForList(
+  /// Walks [items] and collects playable movie/episode/track entries into
+  /// [out]. Shows and seasons are expanded into their episodes; albums and
+  /// artists are expanded into their tracks (audio playlists/collections in
+  /// sync rules). Clips, nested collections/playlists, and unknown types are
+  /// skipped. [unwatchedOnly] applies the same played-state filter to every
+  /// kind — for tracks that means Plex/Jellyfin play counts.
+  @visibleForTesting
+  Future<void> collectItemsForList(
     MediaServerClient client,
     List<MediaItem> items, {
     required bool unwatchedOnly,
@@ -433,14 +438,23 @@ class SyncRuleExecutor {
       switch (item.kind) {
         case MediaKind.movie:
         case MediaKind.episode:
+        case MediaKind.track:
           if (unwatchedOnly && !item.isUnwatchedOrInProgress) break;
           out.add(item);
         case MediaKind.show:
           await collectEpisodesForShow(client, item.id, unwatchedOnly: unwatchedOnly, out: out, fallback: item);
         case MediaKind.season:
           await collectEpisodesForSeason(client, item.id, unwatchedOnly: unwatchedOnly, out: out, fallback: item);
+        case MediaKind.album:
+        case MediaKind.artist:
+          // One recursive-leaves call per container on both backends
+          // (Jellyfin retries tag-only artists by album-artist credit).
+          for (final track in await client.fetchPlayableDescendants(item.id)) {
+            if (unwatchedOnly && !track.isUnwatchedOrInProgress) continue;
+            out.add(track);
+          }
         default:
-          // Skip music, clips, nested collections/playlists, unknown types.
+          // Skip clips, nested collections/playlists, unknown types.
           break;
       }
     }
