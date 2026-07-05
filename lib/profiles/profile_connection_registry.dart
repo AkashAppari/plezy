@@ -131,6 +131,14 @@ class ProfileConnectionRegistry {
     );
   }
 
+  /// Reset the stored token to the empty-string lazy-fetch sentinel (used
+  /// when the vault can no longer decrypt it).
+  Future<void> _clearToken(String profileId, String connectionId) async {
+    await (_db.update(_db.profileConnections)
+          ..where((t) => t.profileId.equals(profileId) & t.connectionId.equals(connectionId)))
+        .write(const ProfileConnectionsCompanion(userToken: Value(''), tokenAcquiredAt: Value(null)));
+  }
+
   /// Mark the row as recently used.
   Future<void> markUsed(String profileId, String connectionId) async {
     await (_db.update(_db.profileConnections)
@@ -204,6 +212,14 @@ class ProfileConnectionRegistry {
     final userToken = row.userToken.isEmpty ? null : await CredentialVault.reveal(row.userToken);
     if (hasPlaintextToken) {
       unawaited(recordToken(row.profileId, row.connectionId, userToken!));
+    } else if (userToken == null && row.userToken.isNotEmpty) {
+      // Vault couldn't decrypt the stored token (key/ciphertext divergence).
+      // Clear it to the empty-string lazy-fetch sentinel so the binder
+      // re-acquires a token on next use instead of re-failing every boot.
+      appLogger.w(
+        'ProfileConnectionRegistry: clearing undecryptable token for ${row.profileId}/${row.connectionId}',
+      );
+      unawaited(_clearToken(row.profileId, row.connectionId));
     }
     return ProfileConnection(
       profileId: row.profileId,
