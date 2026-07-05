@@ -63,6 +63,25 @@ List<String>? flexibleStringList(Object? v) {
   return result.isEmpty ? null : result;
 }
 
+/// Coerce a comma-separated String ("en,sv"), a bare String, a List of
+/// Strings, or null into `List<String>?`. Since ~July 2026 the Plex account
+/// API (clients.plex.tv `/api/v2/user` and `/home/users/{uuid}/switch`)
+/// returns the profile language-list fields as CSV strings instead of arrays
+/// (#1488) — this tolerates both shapes. Parts are trimmed and empties
+/// dropped; an empty result (or null input) yields `null`. CSV-splitting
+/// sibling of [flexibleStringList], kept separate so that caller's strings
+/// (Fribb IMDb ids) stay verbatim.
+List<String>? flexibleCsvStringList(Object? v) {
+  final strings = flexibleStringList(v);
+  if (strings == null) return null;
+  final result = [
+    for (final s in strings)
+      for (final part in s.split(','))
+        if (part.trim().isNotEmpty) part.trim(),
+  ];
+  return result.isEmpty ? null : result;
+}
+
 List<String>? stringListFromRaw(Object? raw, {String? mapKey, bool stringify = false, bool nullIfEmpty = false}) {
   if (raw is! List) return null;
   final result = <String>[];

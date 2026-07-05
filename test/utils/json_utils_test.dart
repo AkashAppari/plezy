@@ -177,4 +177,34 @@ void main() {
       expect(flexibleStringList(<dynamic>[1, 2, 3]), isNull);
     });
   });
+
+  group('flexibleCsvStringList', () {
+    test('passes a list of strings through', () {
+      expect(flexibleCsvStringList(<dynamic>['en', 'sv']), ['en', 'sv']);
+    });
+
+    test('wraps a bare string in a list', () {
+      expect(flexibleCsvStringList('en'), ['en']);
+    });
+
+    test('splits a CSV string', () {
+      expect(flexibleCsvStringList('en,sv'), ['en', 'sv']);
+    });
+
+    test('trims parts and drops empties', () {
+      expect(flexibleCsvStringList('en, sv , ,fr'), ['en', 'sv', 'fr']);
+      expect(flexibleCsvStringList(','), isNull);
+      expect(flexibleCsvStringList(''), isNull);
+    });
+
+    test('splits CSV inside list elements and drops non-strings', () {
+      expect(flexibleCsvStringList(<dynamic>['en,sv', 'fr']), ['en', 'sv', 'fr']);
+      expect(flexibleCsvStringList(<dynamic>[1, 'en']), ['en']);
+    });
+
+    test('returns null for null and empty input', () {
+      expect(flexibleCsvStringList(null), isNull);
+      expect(flexibleCsvStringList(<dynamic>[]), isNull);
+    });
+  });
 }
