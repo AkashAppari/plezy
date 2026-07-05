@@ -46,9 +46,12 @@ class ResumeStallPolicyTest {
     assertEquals(
       Verdict.HEALTHY,
       ResumeStallPolicy.evaluate(
-        baselineFrames = 100, currentFrames = 124,
-        baselinePositionMs = 60_000, currentPositionMs = 61_000,
-        durationMs = 3_600_000, windowMs = 1000
+        baselineFrames = 100,
+        currentFrames = 124,
+        baselinePositionMs = 60_000,
+        currentPositionMs = 61_000,
+        durationMs = 3_600_000,
+        windowMs = 1000
       )
     )
   }
@@ -59,9 +62,12 @@ class ResumeStallPolicyTest {
     assertEquals(
       Verdict.HEALTHY,
       ResumeStallPolicy.evaluate(
-        baselineFrames = 100, currentFrames = 3,
-        baselinePositionMs = 60_000, currentPositionMs = 61_000,
-        durationMs = 3_600_000, windowMs = 1000
+        baselineFrames = 100,
+        currentFrames = 3,
+        baselinePositionMs = 60_000,
+        currentPositionMs = 61_000,
+        durationMs = 3_600_000,
+        windowMs = 1000
       )
     )
   }
@@ -73,9 +79,12 @@ class ResumeStallPolicyTest {
     assertEquals(
       Verdict.RECHECK,
       ResumeStallPolicy.evaluate(
-        baselineFrames = 100, currentFrames = 100,
-        baselinePositionMs = 60_000, currentPositionMs = 60_200,
-        durationMs = 3_600_000, windowMs = 1000
+        baselineFrames = 100,
+        currentFrames = 100,
+        baselinePositionMs = 60_000,
+        currentPositionMs = 60_200,
+        durationMs = 3_600_000,
+        windowMs = 1000
       )
     )
   }
@@ -86,9 +95,12 @@ class ResumeStallPolicyTest {
     assertEquals(
       Verdict.SKIP_NEAR_EOF,
       ResumeStallPolicy.evaluate(
-        baselineFrames = 100, currentFrames = 100,
-        baselinePositionMs = 3_598_000, currentPositionMs = 3_599_000,
-        durationMs = 3_600_000, windowMs = 1000
+        baselineFrames = 100,
+        currentFrames = 100,
+        baselinePositionMs = 3_598_000,
+        currentPositionMs = 3_599_000,
+        durationMs = 3_600_000,
+        windowMs = 1000
       )
     )
   }
@@ -98,9 +110,12 @@ class ResumeStallPolicyTest {
     assertEquals(
       Verdict.STALLED,
       ResumeStallPolicy.evaluate(
-        baselineFrames = 100, currentFrames = 100,
-        baselinePositionMs = 60_000, currentPositionMs = 61_000,
-        durationMs = 3_600_000, windowMs = 1000
+        baselineFrames = 100,
+        currentFrames = 100,
+        baselinePositionMs = 60_000,
+        currentPositionMs = 61_000,
+        durationMs = 3_600_000,
+        windowMs = 1000
       )
     )
   }
@@ -111,9 +126,12 @@ class ResumeStallPolicyTest {
     assertEquals(
       Verdict.STALLED,
       ResumeStallPolicy.evaluate(
-        baselineFrames = 100, currentFrames = 100,
-        baselinePositionMs = 60_000, currentPositionMs = 61_000,
-        durationMs = C.TIME_UNSET, windowMs = 1000
+        baselineFrames = 100,
+        currentFrames = 100,
+        baselinePositionMs = 60_000,
+        currentPositionMs = 61_000,
+        durationMs = C.TIME_UNSET,
+        windowMs = 1000
       )
     )
   }

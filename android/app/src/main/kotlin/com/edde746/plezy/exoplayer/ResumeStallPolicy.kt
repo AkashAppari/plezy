@@ -47,7 +47,7 @@ internal object ResumeStallPolicy {
     baselinePositionMs: Long,
     currentPositionMs: Long,
     durationMs: Long,
-    windowMs: Long,
+    windowMs: Long
   ): Verdict = when {
     // Any counter movement counts as healthy, including a renderer re-enable
     // resetting DecoderCounters below the baseline.

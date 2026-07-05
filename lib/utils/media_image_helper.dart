@@ -249,11 +249,7 @@ class MediaImageHelper {
   /// bound is harmless — but an oversized original (failed server transcode,
   /// local artwork file, ultra-wide banner) can no longer decode past the
   /// display budget the way a single-axis bound allows.
-  static ImageProvider boundedDecode(
-    ImageProvider provider, {
-    required int memWidth,
-    required int memHeight,
-  }) {
+  static ImageProvider boundedDecode(ImageProvider provider, {required int memWidth, required int memHeight}) {
     final width = memWidth > 0 ? memWidth : null;
     final height = memHeight > 0 ? memHeight : null;
     if (width == null && height == null) return provider;

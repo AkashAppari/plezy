@@ -563,8 +563,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     final showHandle = _showDragHandle && !isTV && !isTop;
 
     final effectiveConstraints =
-        _constraints ??
-        BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: size.height * 0.75);
+        _constraints ?? BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: size.height * 0.75);
 
     // Slide direction depends on alignment: bottom sheets slide up, top sheets slide down.
     // Use a pixel transform instead of FractionalTranslation so mouse-tracker
