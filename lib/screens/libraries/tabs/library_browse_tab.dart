@@ -57,7 +57,9 @@ import '../../../mixins/item_updatable.dart';
 import '../../../mixins/watch_state_aware.dart';
 import '../../../mixins/deletion_aware.dart';
 import '../../../mixins/paginated_item_loader.dart';
+import '../../../widgets/card_inflation_budget.dart';
 import '../../../widgets/skeleton_media_card.dart';
+import '../../../widgets/sliver_child_memo.dart';
 import '../../../utils/deletion_notifier.dart';
 import '../../../utils/global_key_utils.dart';
 import '../../../utils/watch_state_notifier.dart';
@@ -104,7 +106,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         GridFocusNodeMixin,
         WatchStateAware,
         DeletionAware,
-        PaginatedItemLoader<MediaItem, LibraryBrowseTab> {
+        PaginatedItemLoader<MediaItem, LibraryBrowseTab>,
+        SkeletonUpgradeScheduler {
   @override
   String? get itemServerId => widget.library.serverId;
 
@@ -249,6 +252,15 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   Map<String, List<MediaFilterValue>> _jellyfinFilterValues = const {};
   final ValueNotifier<int> _currentFirstVisibleIndex = ValueNotifier<int>(0);
   LibraryAlphaScrollMetrics _scrollMetrics = LibraryAlphaScrollMetrics.empty;
+
+  /// Reuses card widgets across delegate swaps so tab-level setStates
+  /// (pagination, watch state, deletions) don't rebuild every realized card
+  /// inside grid layout.
+  final SliverChildMemo<MediaItem> _cardMemo = SliverChildMemo<MediaItem>();
+
+  /// Shared by focus-node eviction and card-memo pruning so the memo can
+  /// never outlive the focus nodes its cached cards capture.
+  static const int _focusNodeKeepCount = 200;
   double _effectiveTopPadding = _gridTopPadding;
   final GlobalKey _firstListItemKey = GlobalKey(debugLabel: 'first_library_list_item');
   double? _measuredListRowHeight;
@@ -684,6 +696,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       // This invalidates the last focused index
       gridContentVersion++;
       cleanupGridFocusNodes(0);
+      // All focus nodes were just disposed; cached cards captured them.
+      _cardMemo.clear();
     });
 
     try {
@@ -1204,7 +1218,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       if (range != null) {
         ensureRangeLoaded(range.firstIndex, range.visibleCount, buffer: _activeFetchSize ~/ 2);
         evictDistantItems(range.firstIndex, maxKeep: 500, threshold: 600);
-        evictDistantFocusNodes(range.firstIndex);
+        evictDistantFocusNodes(range.firstIndex, keepCount: _focusNodeKeepCount);
+        // Cached card widgets capture their focus node — drop them in lockstep
+        // with node eviction so a cache hit can't resurrect a disposed node.
+        _cardMemo.removeOutsideRange(range.firstIndex, halfWindow: _focusNodeKeepCount ~/ 2);
       }
     });
 
@@ -1782,14 +1799,24 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
           addSemanticIndexes: false,
           itemCount: itemCount,
           itemBuilder: (context, index) {
-            final child = _buildMediaCardItem(
+            final item = loadedItems[index];
+            if (item == null) {
+              _scheduleRangeLoad();
+              return const SkeletonMediaCard();
+            }
+            final child = _cardMemo.widgetFor(
               index,
-              isFirstRow: index == 0,
-              isFirstColumn: true, // List view = single column
-              isLastColumn: true,
-              disableScale: true,
-              columnCount: 1,
-              itemCount: itemCount,
+              item,
+              epoch: (ViewMode.list, itemCount, libraryDensity, useWideRatio, _shouldShowAlphaJumpBar, isPhone),
+              build: () => _buildMediaCardItem(
+                index,
+                isFirstRow: index == 0,
+                isFirstColumn: true, // List view = single column
+                isLastColumn: true,
+                disableScale: true,
+                columnCount: 1,
+                itemCount: itemCount,
+              ),
             );
             return index == 0 ? _buildMeasuredFirstListItem(child) : child;
           },
@@ -1822,6 +1849,18 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
               itemWidth: geometry.itemWidth,
               itemHeight: geometry.itemHeight,
             );
+            // Everything the card closures capture; a change flushes the memo
+            // so stale nav closures can't misroute d-pad focus.
+            final cardEpoch = (
+              ViewMode.grid,
+              columnCount,
+              itemCount,
+              fullCardLayout,
+              useWideRatio,
+              libraryDensity,
+              _shouldShowAlphaJumpBar,
+              isPhone,
+            );
             return SliverGrid.builder(
               // Inert on media lists (no keep-alive clients): dropping the
               // per-child wrappers shrinks build + semantics work per item.
@@ -1829,15 +1868,41 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
               addSemanticIndexes: false,
               gridDelegate: geometry.delegate,
               itemCount: itemCount,
-              itemBuilder: (context, index) => _buildMediaCardItem(
-                index,
-                isFirstRow: GridSizeCalculator.isFirstRow(index, columnCount),
-                isFirstColumn: GridSizeCalculator.isFirstColumn(index, columnCount),
-                isLastColumn: (index % columnCount) == (columnCount - 1),
-                columnCount: columnCount,
-                itemCount: itemCount,
-                fullBleedImage: fullCardLayout,
-              ),
+              itemBuilder: (context, index) {
+                final item = loadedItems[index];
+                if (item == null) {
+                  _scheduleRangeLoad();
+                  return const SkeletonMediaCard();
+                }
+                final cached = _cardMemo.tryGet(index, item, epoch: cardEpoch);
+                if (cached != null) return cached;
+                // Fresh inflation. While the grid is actually scrolling in
+                // pointer/touch mode, respect the global per-frame budget:
+                // over-budget cards render as skeletons and upgrade a frame
+                // later, so a row entering the viewport can't drop a frame.
+                // Keyboard/d-pad mode is exempt — skeletons aren't focusable
+                // and would break traversal; idle fills stay instant.
+                if (CardInflationBudget.isScrollingContext(context) &&
+                    !InputModeTracker.isKeyboardMode(context) &&
+                    !CardInflationBudget.tryTake()) {
+                  scheduleSkeletonUpgrade();
+                  return const SkeletonMediaCard();
+                }
+                return _cardMemo.widgetFor(
+                  index,
+                  item,
+                  epoch: cardEpoch,
+                  build: () => _buildMediaCardItem(
+                    index,
+                    isFirstRow: GridSizeCalculator.isFirstRow(index, columnCount),
+                    isFirstColumn: GridSizeCalculator.isFirstColumn(index, columnCount),
+                    isLastColumn: (index % columnCount) == (columnCount - 1),
+                    columnCount: columnCount,
+                    itemCount: itemCount,
+                    fullBleedImage: fullCardLayout,
+                  ),
+                );
+              },
             );
           },
         ),

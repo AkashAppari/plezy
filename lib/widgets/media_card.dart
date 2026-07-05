@@ -976,9 +976,11 @@ class SkeletonLoader extends StatelessWidget {
   }
 }
 
-/// Tap surface for a card: a full [InkWell] (ripple, hover, cursor) where a
-/// pointer exists, a bare [GestureDetector] on TV where the d-pad drives
-/// activation and the per-card ink/hover/focus machinery is dead weight.
+/// Tap surface for a card: a full [InkWell] (ripple, hover, cursor) on
+/// desktop where hover feedback matters, a bare [GestureDetector] on TV and
+/// touch handhelds — the ripple is invisible under poster art and the
+/// per-card ink/hover/focus machinery (~15 elements each) is dead weight
+/// that adds up while scrolling card grids.
 /// Keyboard focus is handled by the focus wrappers either way
 /// (canRequestFocus stays false on the InkWell).
 class _CardTapRegion extends StatelessWidget {
@@ -1002,7 +1004,7 @@ class _CardTapRegion extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (PlatformDetector.isTV()) {
+    if (!PlatformDetector.isDesktopOS()) {
       return GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,

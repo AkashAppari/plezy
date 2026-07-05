@@ -10,9 +10,10 @@ class ClickableCursor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // No pointer on TV: skip the MouseRegion entirely — one exists per card
-    // and they add up on low-end devices.
-    if (PlatformDetector.isTV()) return child;
+    // Cursor feedback only matters where a pointer exists: skip the
+    // MouseRegion on TV and touch handhelds — one exists per card and they
+    // add up on low-end devices.
+    if (!PlatformDetector.isDesktopOS()) return child;
     return MouseRegion(cursor: enabled ? SystemMouseCursors.click : MouseCursor.defer, child: child);
   }
 }
