@@ -110,14 +110,22 @@ class PlayerNative extends PlayerBase {
     return 'sub-files=${_fixedLengthQuote(escapedUris.join(separator))}';
   }
 
-  /// Per-entry `http-header-fields` for a `loadfile ... append` options arg.
-  /// The fixed-length quote shields the whole value from the key=value list
-  /// parser; mpv then splits the headers on commas, the same separator the
-  /// `setProperty('http-header-fields', ...)` path in [open] relies on.
+  /// Per-entry `http-header-fields` options for a `loadfile ... append`
+  /// options arg. Every header rides its own `-append` entry because mpv's
+  /// string-LIST parser splits a plain `http-header-fields=a,b` value on
+  /// commas with no way to escape them — a header value containing a comma
+  /// (`X-Plex-Device: Mac17,9` on Apple hardware) would be split into a
+  /// colon-less garbage line that Plex rejects with 400 "Error parsing HTTP
+  /// request". `-append` takes a single verbatim item; the fixed-length
+  /// quote shields it from the outer key=value list split. The leading
+  /// `-clr` stops the file-local list from inheriting (and duplicating) the
+  /// current track's global headers set by [open].
   static String? _httpHeaderFieldsLoadfileOption(Map<String, String>? headers) {
     if (headers == null || headers.isEmpty) return null;
-    final headerList = headers.entries.map((e) => '${e.key}: ${e.value}').join(',');
-    return 'http-header-fields=${_fixedLengthQuote(headerList)}';
+    final appends = headers.entries
+        .map((e) => 'http-header-fields-append=${_fixedLengthQuote('${e.key}: ${e.value}')}')
+        .join(',');
+    return 'http-header-fields-clr=,$appends';
   }
 
   MediaDisplayCriteria? _effectiveDisplayCriteria(MediaDisplayCriteria? criteria) {
@@ -238,9 +246,17 @@ class PlayerNative extends PlayerBase {
 
     if (!audioOnly) await setVisible(true);
 
+    // Rebuild the header list via `change-list` items — a plain
+    // `setProperty('http-header-fields', joined)` splits on commas inside
+    // header VALUES (`X-Plex-Device: Mac17,9` on Apple hardware), producing a
+    // malformed request Plex rejects with 400. `append` takes each item
+    // verbatim. Always clear first so a previous open's headers never leak
+    // into header-less media.
+    await command(['change-list', 'http-header-fields', 'clr', '']);
     if (media.headers != null && media.headers!.isNotEmpty) {
-      final headerList = media.headers!.entries.map((e) => '${e.key}: ${e.value}').toList();
-      await setProperty('http-header-fields', headerList.join(','));
+      for (final entry in media.headers!.entries) {
+        await command(['change-list', 'http-header-fields', 'append', '${entry.key}: ${entry.value}']);
+      }
     }
 
     // 'start' must be set before loadfile.
