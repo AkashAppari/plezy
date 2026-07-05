@@ -72,6 +72,7 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsLiveTvNl liveTv = _TranslationsLiveTvNl._(_root);
 	@override late final _TranslationsCollectionsNl collections = _TranslationsCollectionsNl._(_root);
 	@override late final _TranslationsPlaylistsNl playlists = _TranslationsPlaylistsNl._(_root);
+	@override late final _TranslationsMusicNl music = _TranslationsMusicNl._(_root);
 	@override late final _TranslationsWatchTogetherNl watchTogether = _TranslationsWatchTogetherNl._(_root);
 	@override late final _TranslationsDownloadsNl downloads = _TranslationsDownloadsNl._(_root);
 	@override late final _TranslationsShadersNl shaders = _TranslationsShadersNl._(_root);
@@ -898,6 +899,9 @@ class _TranslationsDiscoverNl extends TranslationsDiscoverEn {
 	@override String nextUpIn({required Object library}) => 'Volgende in ${library}';
 	@override String get recentlyAdded => 'Recent toegevoegd';
 	@override String recentlyAddedIn({required Object library}) => 'Recent toegevoegd in ${library}';
+	@override String latestAlbumsIn({required Object library}) => 'Nieuwste albums in ${library}';
+	@override String recentlyPlayedIn({required Object library}) => 'Onlangs afgespeeld in ${library}';
+	@override String mostPlayedIn({required Object library}) => 'Meest afgespeeld in ${library}';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Overzicht';
 	@override String get cast => 'Acteurs';
@@ -1199,6 +1203,41 @@ class _TranslationsPlaylistsNl extends TranslationsPlaylistsEn {
 	@override String get errorRemoving => 'Fout bij verwijderen uit afspeellijst';
 }
 
+// Path: music
+class _TranslationsMusicNl extends TranslationsMusicEn {
+	_TranslationsMusicNl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get goToAlbum => 'Ga naar album';
+	@override String get goToArtist => 'Ga naar artiest';
+	@override String get instantMix => 'Instant Mix';
+	@override String get playNext => 'Hierna afspelen';
+	@override String get addToQueue => 'Toevoegen aan wachtrij';
+	@override String discNumber({required Object n}) => 'Schijf ${n}';
+	@override String trackCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n,
+		one: '${n} nummer',
+		other: '${n} nummers',
+	);
+	@override String get nowPlaying => 'Nu afspelen';
+	@override String playingFrom({required Object title}) => 'Afspelen vanaf ${title}';
+	@override String get queue => 'Wachtrij';
+	@override String get upNext => 'Volgende nummers';
+	@override String get clearQueue => 'Wachtrij wissen';
+	@override String get lyrics => 'Songtekst';
+	@override String get noLyrics => 'Geen songtekst beschikbaar';
+	@override String get sleepTimer => 'Slaaptimer';
+	@override String get sleepTimerEndOfTrack => 'Einde van nummer';
+	@override String sleepTimerMinutes({required Object n}) => '${n} minuten';
+	@override String get stopPlayback => 'Afspelen stoppen';
+	@override String get previousTrack => 'Vorig nummer';
+	@override String get nextTrack => 'Volgend nummer';
+	@override String get repeat => 'Herhalen';
+	@override String get repeatAll => 'Alles herhalen';
+	@override String get repeatOne => 'Eén herhalen';
+}
+
 // Path: watchTogether
 class _TranslationsWatchTogetherNl extends TranslationsWatchTogetherEn {
 	_TranslationsWatchTogetherNl._(TranslationsNl root) : this._root = root, super.internal(root);
@@ -1279,6 +1318,8 @@ class _TranslationsDownloadsNl extends TranslationsDownloadsEn {
 	@override String get manage => 'Beheren';
 	@override String get tvShows => 'Series';
 	@override String get movies => 'Films';
+	@override String get music => 'Muziek';
+	@override String tracksQueued({required Object count}) => '${count} nummers in wachtrij voor download';
 	@override String get noDownloads => 'Nog geen downloads';
 	@override String get noDownloadsDescription => 'Gedownloade content verschijnt hier voor offline weergave';
 	@override String get downloadNow => 'Download';
@@ -1741,6 +1782,9 @@ class _TranslationsLibrariesGroupingsNl extends TranslationsLibrariesGroupingsEn
 	@override String get shows => 'Series';
 	@override String get seasons => 'Seizoenen';
 	@override String get episodes => 'Afleveringen';
+	@override String get artists => 'Artiesten';
+	@override String get albums => 'Albums';
+	@override String get tracks => 'Nummers';
 	@override String get folders => 'Mappen';
 }
 
@@ -2599,6 +2643,9 @@ extension on TranslationsNl {
 			'discover.nextUpIn' => ({required Object library}) => 'Volgende in ${library}',
 			'discover.recentlyAdded' => 'Recent toegevoegd',
 			'discover.recentlyAddedIn' => ({required Object library}) => 'Recent toegevoegd in ${library}',
+			'discover.latestAlbumsIn' => ({required Object library}) => 'Nieuwste albums in ${library}',
+			'discover.recentlyPlayedIn' => ({required Object library}) => 'Onlangs afgespeeld in ${library}',
+			'discover.mostPlayedIn' => ({required Object library}) => 'Meest afgespeeld in ${library}',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Overzicht',
 			'discover.cast' => 'Acteurs',
@@ -2671,6 +2718,9 @@ extension on TranslationsNl {
 			'libraries.groupings.shows' => 'Series',
 			'libraries.groupings.seasons' => 'Seizoenen',
 			'libraries.groupings.episodes' => 'Afleveringen',
+			'libraries.groupings.artists' => 'Artiesten',
+			'libraries.groupings.albums' => 'Albums',
+			'libraries.groupings.tracks' => 'Nummers',
 			'libraries.groupings.folders' => 'Mappen',
 			'libraries.filterCategories.genre' => 'Genre',
 			'libraries.filterCategories.year' => 'Jaar',
@@ -2832,6 +2882,29 @@ extension on TranslationsNl {
 			'playlists.errorAdding' => 'Fout bij toevoegen aan afspeellijst',
 			'playlists.errorReordering' => 'Fout bij herschikken van afspeellijstitem',
 			'playlists.errorRemoving' => 'Fout bij verwijderen uit afspeellijst',
+			'music.goToAlbum' => 'Ga naar album',
+			'music.goToArtist' => 'Ga naar artiest',
+			'music.instantMix' => 'Instant Mix',
+			'music.playNext' => 'Hierna afspelen',
+			'music.addToQueue' => 'Toevoegen aan wachtrij',
+			'music.discNumber' => ({required Object n}) => 'Schijf ${n}',
+			'music.trackCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n, one: '${n} nummer', other: '${n} nummers', ), 
+			'music.nowPlaying' => 'Nu afspelen',
+			'music.playingFrom' => ({required Object title}) => 'Afspelen vanaf ${title}',
+			'music.queue' => 'Wachtrij',
+			'music.upNext' => 'Volgende nummers',
+			'music.clearQueue' => 'Wachtrij wissen',
+			'music.lyrics' => 'Songtekst',
+			'music.noLyrics' => 'Geen songtekst beschikbaar',
+			'music.sleepTimer' => 'Slaaptimer',
+			'music.sleepTimerEndOfTrack' => 'Einde van nummer',
+			'music.sleepTimerMinutes' => ({required Object n}) => '${n} minuten',
+			'music.stopPlayback' => 'Afspelen stoppen',
+			'music.previousTrack' => 'Vorig nummer',
+			'music.nextTrack' => 'Volgend nummer',
+			'music.repeat' => 'Herhalen',
+			'music.repeatAll' => 'Alles herhalen',
+			'music.repeatOne' => 'Eén herhalen',
 			'watchTogether.title' => 'Samen Kijken',
 			'watchTogether.description' => 'Kijk synchroon met vrienden en familie',
 			'watchTogether.createSession' => 'Sessie Maken',
@@ -2896,6 +2969,8 @@ extension on TranslationsNl {
 			'downloads.manage' => 'Beheren',
 			'downloads.tvShows' => 'Series',
 			'downloads.movies' => 'Films',
+			'downloads.music' => 'Muziek',
+			'downloads.tracksQueued' => ({required Object count}) => '${count} nummers in wachtrij voor download',
 			'downloads.noDownloads' => 'Nog geen downloads',
 			'downloads.noDownloadsDescription' => 'Gedownloade content verschijnt hier voor offline weergave',
 			'downloads.downloadNow' => 'Download',
@@ -2947,6 +3022,8 @@ extension on TranslationsNl {
 			'downloads.noSyncRules' => 'Geen synchronisatieregels',
 			'downloads.manageSyncRule' => 'Synchronisatie beheren',
 			'downloads.editEpisodeCount' => 'Aantal afleveringen',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.editSyncFilter' => 'Synchronisatiefilter',
 			'downloads.syncAllItems' => 'Alle items synchroniseren',
 			'downloads.syncUnwatchedItems' => 'Ongekeken items synchroniseren',
@@ -2978,8 +3055,6 @@ extension on TranslationsNl {
 			'companionRemote.session.startingServer' => 'Externe server starten...',
 			'companionRemote.session.failedToCreate' => 'Kan externe server niet starten:',
 			'companionRemote.session.hostAddress' => 'Hostadres',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.connected' => 'Verbonden',
 			'companionRemote.session.serverRunning' => 'Externe server actief',
 			'companionRemote.session.serverStopped' => 'Externe server gestopt',

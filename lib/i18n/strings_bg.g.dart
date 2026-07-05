@@ -72,6 +72,7 @@ class TranslationsBg extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsLiveTvBg liveTv = _TranslationsLiveTvBg._(_root);
 	@override late final _TranslationsCollectionsBg collections = _TranslationsCollectionsBg._(_root);
 	@override late final _TranslationsPlaylistsBg playlists = _TranslationsPlaylistsBg._(_root);
+	@override late final _TranslationsMusicBg music = _TranslationsMusicBg._(_root);
 	@override late final _TranslationsWatchTogetherBg watchTogether = _TranslationsWatchTogetherBg._(_root);
 	@override late final _TranslationsDownloadsBg downloads = _TranslationsDownloadsBg._(_root);
 	@override late final _TranslationsShadersBg shaders = _TranslationsShadersBg._(_root);
@@ -898,6 +899,9 @@ class _TranslationsDiscoverBg extends TranslationsDiscoverEn {
 	@override String nextUpIn({required Object library}) => 'Следва в ${library}';
 	@override String get recentlyAdded => 'Наскоро добавени';
 	@override String recentlyAddedIn({required Object library}) => 'Наскоро добавени в ${library}';
+	@override String latestAlbumsIn({required Object library}) => 'Последни албуми в ${library}';
+	@override String recentlyPlayedIn({required Object library}) => 'Наскоро възпроизведени в ${library}';
+	@override String mostPlayedIn({required Object library}) => 'Най-възпроизвеждани в ${library}';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Обзор';
 	@override String get cast => 'Актьори';
@@ -1199,6 +1203,41 @@ class _TranslationsPlaylistsBg extends TranslationsPlaylistsEn {
 	@override String get errorRemoving => 'Неуспешно премахване от плейлист';
 }
 
+// Path: music
+class _TranslationsMusicBg extends TranslationsMusicEn {
+	_TranslationsMusicBg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get goToAlbum => 'Към албума';
+	@override String get goToArtist => 'Към изпълнителя';
+	@override String get instantMix => 'Мигновен микс';
+	@override String get playNext => 'Пусни следващото';
+	@override String get addToQueue => 'Добави към опашката';
+	@override String discNumber({required Object n}) => 'Диск ${n}';
+	@override String trackCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bg'))(n,
+		one: '${n} песен',
+		other: '${n} песни',
+	);
+	@override String get nowPlaying => 'Сега се възпроизвежда';
+	@override String playingFrom({required Object title}) => 'Възпроизвеждане от ${title}';
+	@override String get queue => 'Опашка';
+	@override String get upNext => 'Следва';
+	@override String get clearQueue => 'Изчисти опашката';
+	@override String get lyrics => 'Текст';
+	@override String get noLyrics => 'Няма наличен текст';
+	@override String get sleepTimer => 'Таймер за заспиване';
+	@override String get sleepTimerEndOfTrack => 'Край на песента';
+	@override String sleepTimerMinutes({required Object n}) => '${n} минути';
+	@override String get stopPlayback => 'Спри възпроизвеждането';
+	@override String get previousTrack => 'Предишна песен';
+	@override String get nextTrack => 'Следваща песен';
+	@override String get repeat => 'Повтори';
+	@override String get repeatAll => 'Повтори всички';
+	@override String get repeatOne => 'Повтори една';
+}
+
 // Path: watchTogether
 class _TranslationsWatchTogetherBg extends TranslationsWatchTogetherEn {
 	_TranslationsWatchTogetherBg._(TranslationsBg root) : this._root = root, super.internal(root);
@@ -1279,6 +1318,8 @@ class _TranslationsDownloadsBg extends TranslationsDownloadsEn {
 	@override String get manage => 'Управление';
 	@override String get tvShows => 'ТВ сериали';
 	@override String get movies => 'Филми';
+	@override String get music => 'Музика';
+	@override String tracksQueued({required Object count}) => '${count} песни в опашката за изтегляне';
 	@override String get noDownloads => 'Все още няма изтегляния';
 	@override String get noDownloadsDescription => 'Изтегленото съдържание ще се показва тук за офлайн гледане';
 	@override String get downloadNow => 'Изтегли';
@@ -1741,6 +1782,9 @@ class _TranslationsLibrariesGroupingsBg extends TranslationsLibrariesGroupingsEn
 	@override String get shows => 'ТВ сериали';
 	@override String get seasons => 'Сезони';
 	@override String get episodes => 'Епизоди';
+	@override String get artists => 'Изпълнители';
+	@override String get albums => 'Албуми';
+	@override String get tracks => 'Песни';
 	@override String get folders => 'Папки';
 }
 
@@ -2599,6 +2643,9 @@ extension on TranslationsBg {
 			'discover.nextUpIn' => ({required Object library}) => 'Следва в ${library}',
 			'discover.recentlyAdded' => 'Наскоро добавени',
 			'discover.recentlyAddedIn' => ({required Object library}) => 'Наскоро добавени в ${library}',
+			'discover.latestAlbumsIn' => ({required Object library}) => 'Последни албуми в ${library}',
+			'discover.recentlyPlayedIn' => ({required Object library}) => 'Наскоро възпроизведени в ${library}',
+			'discover.mostPlayedIn' => ({required Object library}) => 'Най-възпроизвеждани в ${library}',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Обзор',
 			'discover.cast' => 'Актьори',
@@ -2671,6 +2718,9 @@ extension on TranslationsBg {
 			'libraries.groupings.shows' => 'ТВ сериали',
 			'libraries.groupings.seasons' => 'Сезони',
 			'libraries.groupings.episodes' => 'Епизоди',
+			'libraries.groupings.artists' => 'Изпълнители',
+			'libraries.groupings.albums' => 'Албуми',
+			'libraries.groupings.tracks' => 'Песни',
 			'libraries.groupings.folders' => 'Папки',
 			'libraries.filterCategories.genre' => 'Жанр',
 			'libraries.filterCategories.year' => 'Година',
@@ -2832,6 +2882,29 @@ extension on TranslationsBg {
 			'playlists.errorAdding' => 'Неуспешно добавяне към плейлист',
 			'playlists.errorReordering' => 'Неуспешно пренареждане на елемент в плейлиста',
 			'playlists.errorRemoving' => 'Неуспешно премахване от плейлист',
+			'music.goToAlbum' => 'Към албума',
+			'music.goToArtist' => 'Към изпълнителя',
+			'music.instantMix' => 'Мигновен микс',
+			'music.playNext' => 'Пусни следващото',
+			'music.addToQueue' => 'Добави към опашката',
+			'music.discNumber' => ({required Object n}) => 'Диск ${n}',
+			'music.trackCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bg'))(n, one: '${n} песен', other: '${n} песни', ), 
+			'music.nowPlaying' => 'Сега се възпроизвежда',
+			'music.playingFrom' => ({required Object title}) => 'Възпроизвеждане от ${title}',
+			'music.queue' => 'Опашка',
+			'music.upNext' => 'Следва',
+			'music.clearQueue' => 'Изчисти опашката',
+			'music.lyrics' => 'Текст',
+			'music.noLyrics' => 'Няма наличен текст',
+			'music.sleepTimer' => 'Таймер за заспиване',
+			'music.sleepTimerEndOfTrack' => 'Край на песента',
+			'music.sleepTimerMinutes' => ({required Object n}) => '${n} минути',
+			'music.stopPlayback' => 'Спри възпроизвеждането',
+			'music.previousTrack' => 'Предишна песен',
+			'music.nextTrack' => 'Следваща песен',
+			'music.repeat' => 'Повтори',
+			'music.repeatAll' => 'Повтори всички',
+			'music.repeatOne' => 'Повтори една',
 			'watchTogether.title' => 'Гледане заедно',
 			'watchTogether.description' => 'Гледайте съдържание синхронизирано с приятели и семейство',
 			'watchTogether.createSession' => 'Създай сесия',
@@ -2896,6 +2969,8 @@ extension on TranslationsBg {
 			'downloads.manage' => 'Управление',
 			'downloads.tvShows' => 'ТВ сериали',
 			'downloads.movies' => 'Филми',
+			'downloads.music' => 'Музика',
+			'downloads.tracksQueued' => ({required Object count}) => '${count} песни в опашката за изтегляне',
 			'downloads.noDownloads' => 'Все още няма изтегляния',
 			'downloads.noDownloadsDescription' => 'Изтегленото съдържание ще се показва тук за офлайн гледане',
 			'downloads.downloadNow' => 'Изтегли',
@@ -2947,6 +3022,8 @@ extension on TranslationsBg {
 			'downloads.noSyncRules' => 'Няма правила за синхронизация',
 			'downloads.manageSyncRule' => 'Управление на синхронизацията',
 			'downloads.editEpisodeCount' => 'Брой епизоди',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.editSyncFilter' => 'Филтър за синхронизация',
 			'downloads.syncAllItems' => 'Синхронизират се всички елементи',
 			'downloads.syncUnwatchedItems' => 'Синхронизират се негледаните елементи',
@@ -2978,8 +3055,6 @@ extension on TranslationsBg {
 			'companionRemote.session.startingServer' => 'Стартиране на сървър за дистанционно управление...',
 			'companionRemote.session.failedToCreate' => 'Неуспешно стартиране на сървър за дистанционно управление:',
 			'companionRemote.session.hostAddress' => 'Адрес на хоста',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.connected' => 'Свързан',
 			'companionRemote.session.serverRunning' => 'Сървърът за дистанционно управление е активен',
 			'companionRemote.session.serverStopped' => 'Сървърът за дистанционно управление е спрян',

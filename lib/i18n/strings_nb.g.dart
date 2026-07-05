@@ -72,6 +72,7 @@ class TranslationsNb extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsLiveTvNb liveTv = _TranslationsLiveTvNb._(_root);
 	@override late final _TranslationsCollectionsNb collections = _TranslationsCollectionsNb._(_root);
 	@override late final _TranslationsPlaylistsNb playlists = _TranslationsPlaylistsNb._(_root);
+	@override late final _TranslationsMusicNb music = _TranslationsMusicNb._(_root);
 	@override late final _TranslationsWatchTogetherNb watchTogether = _TranslationsWatchTogetherNb._(_root);
 	@override late final _TranslationsDownloadsNb downloads = _TranslationsDownloadsNb._(_root);
 	@override late final _TranslationsShadersNb shaders = _TranslationsShadersNb._(_root);
@@ -898,6 +899,9 @@ class _TranslationsDiscoverNb extends TranslationsDiscoverEn {
 	@override String nextUpIn({required Object library}) => 'Neste opp i ${library}';
 	@override String get recentlyAdded => 'Nylig lagt til';
 	@override String recentlyAddedIn({required Object library}) => 'Nylig lagt til i ${library}';
+	@override String latestAlbumsIn({required Object library}) => 'Nyeste album i ${library}';
+	@override String recentlyPlayedIn({required Object library}) => 'Nylig spilt i ${library}';
+	@override String mostPlayedIn({required Object library}) => 'Mest spilt i ${library}';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Oversikt';
 	@override String get cast => 'Skuespillere';
@@ -1199,6 +1203,41 @@ class _TranslationsPlaylistsNb extends TranslationsPlaylistsEn {
 	@override String get errorRemoving => 'Kunne ikke fjerne fra spilleliste';
 }
 
+// Path: music
+class _TranslationsMusicNb extends TranslationsMusicEn {
+	_TranslationsMusicNb._(TranslationsNb root) : this._root = root, super.internal(root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String get goToAlbum => 'Gå til album';
+	@override String get goToArtist => 'Gå til artist';
+	@override String get instantMix => 'Direktemiks';
+	@override String get playNext => 'Spill neste';
+	@override String get addToQueue => 'Legg til i kø';
+	@override String discNumber({required Object n}) => 'Plate ${n}';
+	@override String trackCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nb'))(n,
+		one: '${n} spor',
+		other: '${n} spor',
+	);
+	@override String get nowPlaying => 'Spilles nå';
+	@override String playingFrom({required Object title}) => 'Spiller fra ${title}';
+	@override String get queue => 'Kø';
+	@override String get upNext => 'Neste i køen';
+	@override String get clearQueue => 'Tøm kø';
+	@override String get lyrics => 'Sangtekst';
+	@override String get noLyrics => 'Ingen sangtekst tilgjengelig';
+	@override String get sleepTimer => 'Innsovningstimer';
+	@override String get sleepTimerEndOfTrack => 'Slutten av sporet';
+	@override String sleepTimerMinutes({required Object n}) => '${n} minutter';
+	@override String get stopPlayback => 'Stopp avspilling';
+	@override String get previousTrack => 'Forrige spor';
+	@override String get nextTrack => 'Neste spor';
+	@override String get repeat => 'Gjenta';
+	@override String get repeatAll => 'Gjenta alle';
+	@override String get repeatOne => 'Gjenta ett spor';
+}
+
 // Path: watchTogether
 class _TranslationsWatchTogetherNb extends TranslationsWatchTogetherEn {
 	_TranslationsWatchTogetherNb._(TranslationsNb root) : this._root = root, super.internal(root);
@@ -1279,6 +1318,8 @@ class _TranslationsDownloadsNb extends TranslationsDownloadsEn {
 	@override String get manage => 'Administrer';
 	@override String get tvShows => 'TV-serier';
 	@override String get movies => 'Filmer';
+	@override String get music => 'Musikk';
+	@override String tracksQueued({required Object count}) => '${count} spor i nedlastingskø';
 	@override String get noDownloads => 'Ingen nedlastinger ennå';
 	@override String get noDownloadsDescription => 'Nedlastet innhold vil vises her for frakoblet visning';
 	@override String get downloadNow => 'Last ned';
@@ -1741,6 +1782,9 @@ class _TranslationsLibrariesGroupingsNb extends TranslationsLibrariesGroupingsEn
 	@override String get shows => 'TV-serier';
 	@override String get seasons => 'Sesonger';
 	@override String get episodes => 'Episoder';
+	@override String get artists => 'Artister';
+	@override String get albums => 'Album';
+	@override String get tracks => 'Spor';
 	@override String get folders => 'Mapper';
 }
 
@@ -2599,6 +2643,9 @@ extension on TranslationsNb {
 			'discover.nextUpIn' => ({required Object library}) => 'Neste opp i ${library}',
 			'discover.recentlyAdded' => 'Nylig lagt til',
 			'discover.recentlyAddedIn' => ({required Object library}) => 'Nylig lagt til i ${library}',
+			'discover.latestAlbumsIn' => ({required Object library}) => 'Nyeste album i ${library}',
+			'discover.recentlyPlayedIn' => ({required Object library}) => 'Nylig spilt i ${library}',
+			'discover.mostPlayedIn' => ({required Object library}) => 'Mest spilt i ${library}',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Oversikt',
 			'discover.cast' => 'Skuespillere',
@@ -2671,6 +2718,9 @@ extension on TranslationsNb {
 			'libraries.groupings.shows' => 'TV-serier',
 			'libraries.groupings.seasons' => 'Sesonger',
 			'libraries.groupings.episodes' => 'Episoder',
+			'libraries.groupings.artists' => 'Artister',
+			'libraries.groupings.albums' => 'Album',
+			'libraries.groupings.tracks' => 'Spor',
 			'libraries.groupings.folders' => 'Mapper',
 			'libraries.filterCategories.genre' => 'Sjanger',
 			'libraries.filterCategories.year' => 'År',
@@ -2832,6 +2882,29 @@ extension on TranslationsNb {
 			'playlists.errorAdding' => 'Kunne ikke legge til i spilleliste',
 			'playlists.errorReordering' => 'Kunne ikke omorganisere spillelisteelement',
 			'playlists.errorRemoving' => 'Kunne ikke fjerne fra spilleliste',
+			'music.goToAlbum' => 'Gå til album',
+			'music.goToArtist' => 'Gå til artist',
+			'music.instantMix' => 'Direktemiks',
+			'music.playNext' => 'Spill neste',
+			'music.addToQueue' => 'Legg til i kø',
+			'music.discNumber' => ({required Object n}) => 'Plate ${n}',
+			'music.trackCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nb'))(n, one: '${n} spor', other: '${n} spor', ), 
+			'music.nowPlaying' => 'Spilles nå',
+			'music.playingFrom' => ({required Object title}) => 'Spiller fra ${title}',
+			'music.queue' => 'Kø',
+			'music.upNext' => 'Neste i køen',
+			'music.clearQueue' => 'Tøm kø',
+			'music.lyrics' => 'Sangtekst',
+			'music.noLyrics' => 'Ingen sangtekst tilgjengelig',
+			'music.sleepTimer' => 'Innsovningstimer',
+			'music.sleepTimerEndOfTrack' => 'Slutten av sporet',
+			'music.sleepTimerMinutes' => ({required Object n}) => '${n} minutter',
+			'music.stopPlayback' => 'Stopp avspilling',
+			'music.previousTrack' => 'Forrige spor',
+			'music.nextTrack' => 'Neste spor',
+			'music.repeat' => 'Gjenta',
+			'music.repeatAll' => 'Gjenta alle',
+			'music.repeatOne' => 'Gjenta ett spor',
 			'watchTogether.title' => 'Se sammen',
 			'watchTogether.description' => 'Se innhold synkronisert med venner og familie',
 			'watchTogether.createSession' => 'Opprett økt',
@@ -2896,6 +2969,8 @@ extension on TranslationsNb {
 			'downloads.manage' => 'Administrer',
 			'downloads.tvShows' => 'TV-serier',
 			'downloads.movies' => 'Filmer',
+			'downloads.music' => 'Musikk',
+			'downloads.tracksQueued' => ({required Object count}) => '${count} spor i nedlastingskø',
 			'downloads.noDownloads' => 'Ingen nedlastinger ennå',
 			'downloads.noDownloadsDescription' => 'Nedlastet innhold vil vises her for frakoblet visning',
 			'downloads.downloadNow' => 'Last ned',
@@ -2947,6 +3022,8 @@ extension on TranslationsNb {
 			'downloads.noSyncRules' => 'Ingen synkroniseringsregler',
 			'downloads.manageSyncRule' => 'Administrer synkronisering',
 			'downloads.editEpisodeCount' => 'Antall episoder',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.editSyncFilter' => 'Synkroniseringsfilter',
 			'downloads.syncAllItems' => 'Synkroniserer alle elementer',
 			'downloads.syncUnwatchedItems' => 'Synkroniserer usette elementer',
@@ -2978,8 +3055,6 @@ extension on TranslationsNb {
 			'companionRemote.session.startingServer' => 'Starter fjernserver...',
 			'companionRemote.session.failedToCreate' => 'Kunne ikke starte fjernserver:',
 			'companionRemote.session.hostAddress' => 'Vertsadresse',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.connected' => 'Tilkoblet',
 			'companionRemote.session.serverRunning' => 'Fjernserver aktiv',
 			'companionRemote.session.serverStopped' => 'Fjernserver stoppet',

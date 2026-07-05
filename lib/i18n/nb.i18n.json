@@ -691,6 +691,9 @@
     "nextUpIn": "Neste opp i ${library}",
     "recentlyAdded": "Nylig lagt til",
     "recentlyAddedIn": "Nylig lagt til i ${library}",
+    "latestAlbumsIn": "Nyeste album i ${library}",
+    "recentlyPlayedIn": "Nylig spilt i ${library}",
+    "mostPlayedIn": "Mest spilt i ${library}",
     "playEpisode": "S${season}E${episode}",
     "overview": "Oversikt",
     "cast": "Skuespillere",
@@ -770,6 +773,9 @@
       "shows": "TV-serier",
       "seasons": "Sesonger",
       "episodes": "Episoder",
+      "artists": "Artister",
+      "albums": "Album",
+      "tracks": "Spor",
       "folders": "Mapper"
     },
     "filterCategories": {
@@ -955,6 +961,34 @@
     "errorReordering": "Kunne ikke omorganisere spillelisteelement",
     "errorRemoving": "Kunne ikke fjerne fra spilleliste"
   },
+  "music": {
+    "goToAlbum": "Gå til album",
+    "goToArtist": "Gå til artist",
+    "instantMix": "Direktemiks",
+    "playNext": "Spill neste",
+    "addToQueue": "Legg til i kø",
+    "discNumber": "Plate ${n}",
+    "trackCount": {
+      "one": "${n} spor",
+      "other": "${n} spor"
+    },
+    "nowPlaying": "Spilles nå",
+    "playingFrom": "Spiller fra ${title}",
+    "queue": "Kø",
+    "upNext": "Neste i køen",
+    "clearQueue": "Tøm kø",
+    "lyrics": "Sangtekst",
+    "noLyrics": "Ingen sangtekst tilgjengelig",
+    "sleepTimer": "Innsovningstimer",
+    "sleepTimerEndOfTrack": "Slutten av sporet",
+    "sleepTimerMinutes": "${n} minutter",
+    "stopPlayback": "Stopp avspilling",
+    "previousTrack": "Forrige spor",
+    "nextTrack": "Neste spor",
+    "repeat": "Gjenta",
+    "repeatAll": "Gjenta alle",
+    "repeatOne": "Gjenta ett spor"
+  },
   "watchTogether": {
     "title": "Se sammen",
     "description": "Se innhold synkronisert med venner og familie",
@@ -1022,6 +1056,8 @@
     "manage": "Administrer",
     "tvShows": "TV-serier",
     "movies": "Filmer",
+    "music": "Musikk",
+    "tracksQueued": "${count} spor i nedlastingskø",
     "noDownloads": "Ingen nedlastinger ennå",
     "noDownloadsDescription": "Nedlastet innhold vil vises her for frakoblet visning",
     "downloadNow": "Last ned",

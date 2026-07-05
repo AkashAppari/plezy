@@ -691,6 +691,9 @@
     "nextUpIn": "Næste op i ${library}",
     "recentlyAdded": "Nyligt tilføjet",
     "recentlyAddedIn": "Nyligt tilføjet i ${library}",
+    "latestAlbumsIn": "Nyeste album i ${library}",
+    "recentlyPlayedIn": "Senest afspillet i ${library}",
+    "mostPlayedIn": "Mest afspillet i ${library}",
     "playEpisode": "S${season}E${episode}",
     "overview": "Oversigt",
     "cast": "Rollebesætning",
@@ -770,6 +773,9 @@
       "shows": "TV-serier",
       "seasons": "Sæsoner",
       "episodes": "Episoder",
+      "artists": "Kunstnere",
+      "albums": "Album",
+      "tracks": "Numre",
       "folders": "Mapper"
     },
     "filterCategories": {
@@ -955,6 +961,34 @@
     "errorReordering": "Kunne ikke ændre rækkefølge på playlisteelement",
     "errorRemoving": "Kunne ikke fjerne fra playliste"
   },
+  "music": {
+    "goToAlbum": "Gå til album",
+    "goToArtist": "Gå til kunstner",
+    "instantMix": "Direkte miks",
+    "playNext": "Afspil næste",
+    "addToQueue": "Føj til kø",
+    "discNumber": "Disk ${n}",
+    "trackCount": {
+      "one": "${n} nummer",
+      "other": "${n} numre"
+    },
+    "nowPlaying": "Afspiller nu",
+    "playingFrom": "Afspiller fra ${title}",
+    "queue": "Kø",
+    "upNext": "Næste i køen",
+    "clearQueue": "Ryd kø",
+    "lyrics": "Sangtekst",
+    "noLyrics": "Ingen sangtekst tilgængelig",
+    "sleepTimer": "Sovetimer",
+    "sleepTimerEndOfTrack": "Slutningen af nummeret",
+    "sleepTimerMinutes": "${n} minutter",
+    "stopPlayback": "Stop afspilning",
+    "previousTrack": "Forrige nummer",
+    "nextTrack": "Næste nummer",
+    "repeat": "Gentag",
+    "repeatAll": "Gentag alle",
+    "repeatOne": "Gentag ét nummer"
+  },
   "watchTogether": {
     "title": "Se sammen",
     "description": "Se indhold synkroniseret med venner og familie",
@@ -1022,6 +1056,8 @@
     "manage": "Administrer",
     "tvShows": "TV-serier",
     "movies": "Film",
+    "music": "Musik",
+    "tracksQueued": "${count} numre i kø til download",
     "noDownloads": "Ingen downloads endnu",
     "noDownloadsDescription": "Downloadet indhold vises her til offlinevisning",
     "downloadNow": "Download",

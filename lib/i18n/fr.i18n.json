@@ -691,6 +691,9 @@
     "nextUpIn": "À suivre dans ${library}",
     "recentlyAdded": "Récemment ajouté",
     "recentlyAddedIn": "Récemment ajouté dans ${library}",
+    "latestAlbumsIn": "Derniers albums dans ${library}",
+    "recentlyPlayedIn": "Récemment lus dans ${library}",
+    "mostPlayedIn": "Les plus lus dans ${library}",
     "playEpisode": "S${season}E${episode}",
     "overview": "Aperçu",
     "cast": "Cast",
@@ -770,6 +773,9 @@
       "shows": "Show TV",
       "seasons": "Saisons",
       "episodes": "Épisodes",
+      "artists": "Artistes",
+      "albums": "Albums",
+      "tracks": "Titres",
       "folders": "Dossiers"
     },
     "filterCategories": {
@@ -955,6 +961,34 @@
     "errorReordering": "Échec de réordonnacement d'élément de playlist",
     "errorRemoving": "Échec de suppression depuis la playlist"
   },
+  "music": {
+    "goToAlbum": "Aller à l'album",
+    "goToArtist": "Aller à l'artiste",
+    "instantMix": "Mix instantané",
+    "playNext": "Lire ensuite",
+    "addToQueue": "Ajouter à la file d'attente",
+    "discNumber": "Disque ${n}",
+    "trackCount": {
+      "one": "${n} titre",
+      "other": "${n} titres"
+    },
+    "nowPlaying": "Lecture en cours",
+    "playingFrom": "Lecture depuis ${title}",
+    "queue": "File d'attente",
+    "upNext": "À suivre",
+    "clearQueue": "Vider la file d'attente",
+    "lyrics": "Paroles",
+    "noLyrics": "Aucune parole disponible",
+    "sleepTimer": "Minuterie de veille",
+    "sleepTimerEndOfTrack": "Fin du titre",
+    "sleepTimerMinutes": "${n} minutes",
+    "stopPlayback": "Arrêter la lecture",
+    "previousTrack": "Titre précédent",
+    "nextTrack": "Titre suivant",
+    "repeat": "Répéter",
+    "repeatAll": "Tout répéter",
+    "repeatOne": "Répéter le titre"
+  },
   "watchTogether": {
     "title": "Regarder ensemble",
     "description": "Regardez du contenu en synchronisation avec vos amis et votre famille",
@@ -1022,6 +1056,8 @@
     "manage": "Gérer",
     "tvShows": "Show TV",
     "movies": "Films",
+    "music": "Musique",
+    "tracksQueued": "${count} titres en file d'attente de téléchargement",
     "noDownloads": "Aucun téléchargement pour le moment",
     "noDownloadsDescription": "Le contenu téléchargé apparaîtra ici pour être consulté hors ligne.",
     "downloadNow": "Télécharger",

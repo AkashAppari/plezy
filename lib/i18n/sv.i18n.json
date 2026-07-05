@@ -691,6 +691,9 @@
     "nextUpIn": "Nästa i ${library}",
     "recentlyAdded": "Nyligen tillagda",
     "recentlyAddedIn": "Nyligen tillagda i ${library}",
+    "latestAlbumsIn": "Senaste albumen i ${library}",
+    "recentlyPlayedIn": "Nyligen spelade i ${library}",
+    "mostPlayedIn": "Mest spelade i ${library}",
     "playEpisode": "S${season}E${episode}",
     "overview": "Översikt",
     "cast": "Rollbesättning",
@@ -770,6 +773,9 @@
       "shows": "Serier",
       "seasons": "Säsonger",
       "episodes": "Avsnitt",
+      "artists": "Artister",
+      "albums": "Album",
+      "tracks": "Låtar",
       "folders": "Mappar"
     },
     "filterCategories": {
@@ -955,6 +961,34 @@
     "errorReordering": "Det gick inte att omordna spellisteobjekt",
     "errorRemoving": "Det gick inte att ta bort från spellista"
   },
+  "music": {
+    "goToAlbum": "Gå till album",
+    "goToArtist": "Gå till artist",
+    "instantMix": "Snabbmix",
+    "playNext": "Spela härnäst",
+    "addToQueue": "Lägg till i kö",
+    "discNumber": "Skiva ${n}",
+    "trackCount": {
+      "one": "${n} låt",
+      "other": "${n} låtar"
+    },
+    "nowPlaying": "Spelas nu",
+    "playingFrom": "Spelar från ${title}",
+    "queue": "Kö",
+    "upNext": "Näst på tur",
+    "clearQueue": "Rensa kön",
+    "lyrics": "Låttext",
+    "noLyrics": "Ingen låttext tillgänglig",
+    "sleepTimer": "Insomningstimer",
+    "sleepTimerEndOfTrack": "Slutet av låten",
+    "sleepTimerMinutes": "${n} minuter",
+    "stopPlayback": "Stoppa uppspelning",
+    "previousTrack": "Föregående låt",
+    "nextTrack": "Nästa låt",
+    "repeat": "Upprepa",
+    "repeatAll": "Upprepa alla",
+    "repeatOne": "Upprepa en låt"
+  },
   "watchTogether": {
     "title": "Titta Tillsammans",
     "description": "Titta på innehåll synkroniserat med vänner och familj",
@@ -1022,6 +1056,8 @@
     "manage": "Hantera",
     "tvShows": "TV-serier",
     "movies": "Filmer",
+    "music": "Musik",
+    "tracksQueued": "${count} låtar i nedladdningskö",
     "noDownloads": "Inga nedladdningar ännu",
     "noDownloadsDescription": "Nedladdat innehåll visas här för offline-visning",
     "downloadNow": "Ladda ner",

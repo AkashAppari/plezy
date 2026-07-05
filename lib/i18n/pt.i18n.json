@@ -691,6 +691,9 @@
     "nextUpIn": "A seguir em ${library}",
     "recentlyAdded": "Adicionados recentemente",
     "recentlyAddedIn": "Adicionados recentemente em ${library}",
+    "latestAlbumsIn": "Álbuns mais recentes em ${library}",
+    "recentlyPlayedIn": "Reproduzidos recentemente em ${library}",
+    "mostPlayedIn": "Mais reproduzidos em ${library}",
     "playEpisode": "S${season}E${episode}",
     "overview": "Sinopse",
     "cast": "Elenco",
@@ -770,6 +773,9 @@
       "shows": "Séries de TV",
       "seasons": "Temporadas",
       "episodes": "Episódios",
+      "artists": "Artistas",
+      "albums": "Álbuns",
+      "tracks": "Faixas",
       "folders": "Pastas"
     },
     "filterCategories": {
@@ -955,6 +961,34 @@
     "errorReordering": "Falha ao reordenar item da playlist",
     "errorRemoving": "Falha ao remover da playlist"
   },
+  "music": {
+    "goToAlbum": "Ir para o álbum",
+    "goToArtist": "Ir para o artista",
+    "instantMix": "Mix instantâneo",
+    "playNext": "Reproduzir a seguir",
+    "addToQueue": "Adicionar à fila",
+    "discNumber": "Disco ${n}",
+    "trackCount": {
+      "one": "${n} faixa",
+      "other": "${n} faixas"
+    },
+    "nowPlaying": "Reproduzindo agora",
+    "playingFrom": "Reproduzindo de ${title}",
+    "queue": "Fila",
+    "upNext": "A seguir",
+    "clearQueue": "Limpar fila",
+    "lyrics": "Letra",
+    "noLyrics": "Nenhuma letra disponível",
+    "sleepTimer": "Temporizador de suspensão",
+    "sleepTimerEndOfTrack": "Fim da faixa",
+    "sleepTimerMinutes": "${n} minutos",
+    "stopPlayback": "Parar reprodução",
+    "previousTrack": "Faixa anterior",
+    "nextTrack": "Próxima faixa",
+    "repeat": "Repetir",
+    "repeatAll": "Repetir tudo",
+    "repeatOne": "Repetir uma"
+  },
   "watchTogether": {
     "title": "Assistir Juntos",
     "description": "Assista conteúdo sincronizado com amigos e família",
@@ -1022,6 +1056,8 @@
     "manage": "Gerenciar",
     "tvShows": "Séries de TV",
     "movies": "Filmes",
+    "music": "Música",
+    "tracksQueued": "${count} faixas na fila para download",
     "noDownloads": "Nenhum download ainda",
     "noDownloadsDescription": "Conteúdo baixado aparecerá aqui para visualização offline",
     "downloadNow": "Baixar",

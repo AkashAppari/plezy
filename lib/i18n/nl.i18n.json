@@ -691,6 +691,9 @@
     "nextUpIn": "Volgende in ${library}",
     "recentlyAdded": "Recent toegevoegd",
     "recentlyAddedIn": "Recent toegevoegd in ${library}",
+    "latestAlbumsIn": "Nieuwste albums in ${library}",
+    "recentlyPlayedIn": "Onlangs afgespeeld in ${library}",
+    "mostPlayedIn": "Meest afgespeeld in ${library}",
     "playEpisode": "S${season}E${episode}",
     "overview": "Overzicht",
     "cast": "Acteurs",
@@ -770,6 +773,9 @@
       "shows": "Series",
       "seasons": "Seizoenen",
       "episodes": "Afleveringen",
+      "artists": "Artiesten",
+      "albums": "Albums",
+      "tracks": "Nummers",
       "folders": "Mappen"
     },
     "filterCategories": {
@@ -955,6 +961,34 @@
     "errorReordering": "Fout bij herschikken van afspeellijstitem",
     "errorRemoving": "Fout bij verwijderen uit afspeellijst"
   },
+  "music": {
+    "goToAlbum": "Ga naar album",
+    "goToArtist": "Ga naar artiest",
+    "instantMix": "Instant Mix",
+    "playNext": "Hierna afspelen",
+    "addToQueue": "Toevoegen aan wachtrij",
+    "discNumber": "Schijf ${n}",
+    "trackCount": {
+      "one": "${n} nummer",
+      "other": "${n} nummers"
+    },
+    "nowPlaying": "Nu afspelen",
+    "playingFrom": "Afspelen vanaf ${title}",
+    "queue": "Wachtrij",
+    "upNext": "Volgende nummers",
+    "clearQueue": "Wachtrij wissen",
+    "lyrics": "Songtekst",
+    "noLyrics": "Geen songtekst beschikbaar",
+    "sleepTimer": "Slaaptimer",
+    "sleepTimerEndOfTrack": "Einde van nummer",
+    "sleepTimerMinutes": "${n} minuten",
+    "stopPlayback": "Afspelen stoppen",
+    "previousTrack": "Vorig nummer",
+    "nextTrack": "Volgend nummer",
+    "repeat": "Herhalen",
+    "repeatAll": "Alles herhalen",
+    "repeatOne": "Eén herhalen"
+  },
   "watchTogether": {
     "title": "Samen Kijken",
     "description": "Kijk synchroon met vrienden en familie",
@@ -1022,6 +1056,8 @@
     "manage": "Beheren",
     "tvShows": "Series",
     "movies": "Films",
+    "music": "Muziek",
+    "tracksQueued": "${count} nummers in wachtrij voor download",
     "noDownloads": "Nog geen downloads",
     "noDownloadsDescription": "Gedownloade content verschijnt hier voor offline weergave",
     "downloadNow": "Download",

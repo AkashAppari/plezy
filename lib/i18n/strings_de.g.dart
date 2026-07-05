@@ -72,6 +72,7 @@ class TranslationsDe extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsLiveTvDe liveTv = _TranslationsLiveTvDe._(_root);
 	@override late final _TranslationsCollectionsDe collections = _TranslationsCollectionsDe._(_root);
 	@override late final _TranslationsPlaylistsDe playlists = _TranslationsPlaylistsDe._(_root);
+	@override late final _TranslationsMusicDe music = _TranslationsMusicDe._(_root);
 	@override late final _TranslationsWatchTogetherDe watchTogether = _TranslationsWatchTogetherDe._(_root);
 	@override late final _TranslationsDownloadsDe downloads = _TranslationsDownloadsDe._(_root);
 	@override late final _TranslationsShadersDe shaders = _TranslationsShadersDe._(_root);
@@ -898,6 +899,9 @@ class _TranslationsDiscoverDe extends TranslationsDiscoverEn {
 	@override String nextUpIn({required Object library}) => 'Als Nächstes in ${library}';
 	@override String get recentlyAdded => 'Kürzlich hinzugefügt';
 	@override String recentlyAddedIn({required Object library}) => 'Kürzlich hinzugefügt in ${library}';
+	@override String latestAlbumsIn({required Object library}) => 'Neueste Alben in ${library}';
+	@override String recentlyPlayedIn({required Object library}) => 'Kürzlich gespielt in ${library}';
+	@override String mostPlayedIn({required Object library}) => 'Am häufigsten gespielt in ${library}';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Übersicht';
 	@override String get cast => 'Besetzung';
@@ -1199,6 +1203,41 @@ class _TranslationsPlaylistsDe extends TranslationsPlaylistsEn {
 	@override String get errorRemoving => 'Konnte nicht aus der Wiedergabeliste entfernt werden';
 }
 
+// Path: music
+class _TranslationsMusicDe extends TranslationsMusicEn {
+	_TranslationsMusicDe._(TranslationsDe root) : this._root = root, super.internal(root);
+
+	final TranslationsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get goToAlbum => 'Zum Album';
+	@override String get goToArtist => 'Zum Interpreten';
+	@override String get instantMix => 'Instant-Mix';
+	@override String get playNext => 'Als Nächstes abspielen';
+	@override String get addToQueue => 'Zur Warteschlange hinzufügen';
+	@override String discNumber({required Object n}) => 'Disc ${n}';
+	@override String trackCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('de'))(n,
+		one: '${n} Titel',
+		other: '${n} Titel',
+	);
+	@override String get nowPlaying => 'Wird wiedergegeben';
+	@override String playingFrom({required Object title}) => 'Wiedergabe aus ${title}';
+	@override String get queue => 'Warteschlange';
+	@override String get upNext => 'Als Nächstes';
+	@override String get clearQueue => 'Warteschlange leeren';
+	@override String get lyrics => 'Songtext';
+	@override String get noLyrics => 'Kein Songtext verfügbar';
+	@override String get sleepTimer => 'Einschlaf-Timer';
+	@override String get sleepTimerEndOfTrack => 'Ende des Titels';
+	@override String sleepTimerMinutes({required Object n}) => '${n} Minuten';
+	@override String get stopPlayback => 'Wiedergabe stoppen';
+	@override String get previousTrack => 'Vorheriger Titel';
+	@override String get nextTrack => 'Nächster Titel';
+	@override String get repeat => 'Wiederholen';
+	@override String get repeatAll => 'Alle wiederholen';
+	@override String get repeatOne => 'Titel wiederholen';
+}
+
 // Path: watchTogether
 class _TranslationsWatchTogetherDe extends TranslationsWatchTogetherEn {
 	_TranslationsWatchTogetherDe._(TranslationsDe root) : this._root = root, super.internal(root);
@@ -1279,6 +1318,8 @@ class _TranslationsDownloadsDe extends TranslationsDownloadsEn {
 	@override String get manage => 'Verwalten';
 	@override String get tvShows => 'Serien';
 	@override String get movies => 'Filme';
+	@override String get music => 'Musik';
+	@override String tracksQueued({required Object count}) => '${count} Titel zum Download in Warteschlange';
 	@override String get noDownloads => 'Noch keine Downloads';
 	@override String get noDownloadsDescription => 'Heruntergeladene Inhalte werden hier für die Offline-Wiedergabe angezeigt';
 	@override String get downloadNow => 'Herunterladen';
@@ -1741,6 +1782,9 @@ class _TranslationsLibrariesGroupingsDe extends TranslationsLibrariesGroupingsEn
 	@override String get shows => 'Serien';
 	@override String get seasons => 'Staffeln';
 	@override String get episodes => 'Episoden';
+	@override String get artists => 'Interpreten';
+	@override String get albums => 'Alben';
+	@override String get tracks => 'Titel';
 	@override String get folders => 'Ordner';
 }
 
@@ -2599,6 +2643,9 @@ extension on TranslationsDe {
 			'discover.nextUpIn' => ({required Object library}) => 'Als Nächstes in ${library}',
 			'discover.recentlyAdded' => 'Kürzlich hinzugefügt',
 			'discover.recentlyAddedIn' => ({required Object library}) => 'Kürzlich hinzugefügt in ${library}',
+			'discover.latestAlbumsIn' => ({required Object library}) => 'Neueste Alben in ${library}',
+			'discover.recentlyPlayedIn' => ({required Object library}) => 'Kürzlich gespielt in ${library}',
+			'discover.mostPlayedIn' => ({required Object library}) => 'Am häufigsten gespielt in ${library}',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Übersicht',
 			'discover.cast' => 'Besetzung',
@@ -2671,6 +2718,9 @@ extension on TranslationsDe {
 			'libraries.groupings.shows' => 'Serien',
 			'libraries.groupings.seasons' => 'Staffeln',
 			'libraries.groupings.episodes' => 'Episoden',
+			'libraries.groupings.artists' => 'Interpreten',
+			'libraries.groupings.albums' => 'Alben',
+			'libraries.groupings.tracks' => 'Titel',
 			'libraries.groupings.folders' => 'Ordner',
 			'libraries.filterCategories.genre' => 'Genre',
 			'libraries.filterCategories.year' => 'Jahr',
@@ -2832,6 +2882,29 @@ extension on TranslationsDe {
 			'playlists.errorAdding' => 'Konnte nicht zur Wiedergabeliste hinzugefügt werden',
 			'playlists.errorReordering' => 'Element der Wiedergabeliste konnte nicht neu geordnet werden',
 			'playlists.errorRemoving' => 'Konnte nicht aus der Wiedergabeliste entfernt werden',
+			'music.goToAlbum' => 'Zum Album',
+			'music.goToArtist' => 'Zum Interpreten',
+			'music.instantMix' => 'Instant-Mix',
+			'music.playNext' => 'Als Nächstes abspielen',
+			'music.addToQueue' => 'Zur Warteschlange hinzufügen',
+			'music.discNumber' => ({required Object n}) => 'Disc ${n}',
+			'music.trackCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('de'))(n, one: '${n} Titel', other: '${n} Titel', ), 
+			'music.nowPlaying' => 'Wird wiedergegeben',
+			'music.playingFrom' => ({required Object title}) => 'Wiedergabe aus ${title}',
+			'music.queue' => 'Warteschlange',
+			'music.upNext' => 'Als Nächstes',
+			'music.clearQueue' => 'Warteschlange leeren',
+			'music.lyrics' => 'Songtext',
+			'music.noLyrics' => 'Kein Songtext verfügbar',
+			'music.sleepTimer' => 'Einschlaf-Timer',
+			'music.sleepTimerEndOfTrack' => 'Ende des Titels',
+			'music.sleepTimerMinutes' => ({required Object n}) => '${n} Minuten',
+			'music.stopPlayback' => 'Wiedergabe stoppen',
+			'music.previousTrack' => 'Vorheriger Titel',
+			'music.nextTrack' => 'Nächster Titel',
+			'music.repeat' => 'Wiederholen',
+			'music.repeatAll' => 'Alle wiederholen',
+			'music.repeatOne' => 'Titel wiederholen',
 			'watchTogether.title' => 'Gemeinsam Schauen',
 			'watchTogether.description' => 'Inhalte synchron mit Freunden und Familie schauen',
 			'watchTogether.createSession' => 'Sitzung Erstellen',
@@ -2896,6 +2969,8 @@ extension on TranslationsDe {
 			'downloads.manage' => 'Verwalten',
 			'downloads.tvShows' => 'Serien',
 			'downloads.movies' => 'Filme',
+			'downloads.music' => 'Musik',
+			'downloads.tracksQueued' => ({required Object count}) => '${count} Titel zum Download in Warteschlange',
 			'downloads.noDownloads' => 'Noch keine Downloads',
 			'downloads.noDownloadsDescription' => 'Heruntergeladene Inhalte werden hier für die Offline-Wiedergabe angezeigt',
 			'downloads.downloadNow' => 'Herunterladen',
@@ -2947,6 +3022,8 @@ extension on TranslationsDe {
 			'downloads.noSyncRules' => 'Keine Sync-Regeln',
 			'downloads.manageSyncRule' => 'Synchronisierung verwalten',
 			'downloads.editEpisodeCount' => 'Episodenanzahl',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.editSyncFilter' => 'Synchronisierungsfilter',
 			'downloads.syncAllItems' => 'Alle Einträge synchronisieren',
 			'downloads.syncUnwatchedItems' => 'Ungesehene Einträge synchronisieren',
@@ -2978,8 +3055,6 @@ extension on TranslationsDe {
 			'companionRemote.session.startingServer' => 'Remote-Server wird gestartet...',
 			'companionRemote.session.failedToCreate' => 'Remote-Server konnte nicht gestartet werden:',
 			'companionRemote.session.hostAddress' => 'Host-Adresse',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.connected' => 'Verbunden',
 			'companionRemote.session.serverRunning' => 'Remote-Server aktiv',
 			'companionRemote.session.serverStopped' => 'Remote-Server gestoppt',

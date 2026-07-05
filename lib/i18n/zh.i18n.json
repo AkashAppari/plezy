@@ -691,6 +691,9 @@
     "nextUpIn": "${library} 中接下来",
     "recentlyAdded": "最近添加",
     "recentlyAddedIn": "${library} 中最近添加",
+    "latestAlbumsIn": "${library} 中的最新专辑",
+    "recentlyPlayedIn": "${library} 中最近播放",
+    "mostPlayedIn": "${library} 中最常播放",
     "playEpisode": "S${season}E${episode}",
     "overview": "概述",
     "cast": "演员表",
@@ -770,6 +773,9 @@
       "shows": "剧集",
       "seasons": "季",
       "episodes": "集",
+      "artists": "艺术家",
+      "albums": "专辑",
+      "tracks": "曲目",
       "folders": "文件夹"
     },
     "filterCategories": {
@@ -955,6 +961,33 @@
     "errorReordering": "重新排序播放列表项目失败",
     "errorRemoving": "从播放列表中移除失败"
   },
+  "music": {
+    "goToAlbum": "前往专辑",
+    "goToArtist": "前往艺术家",
+    "instantMix": "即时混音",
+    "playNext": "下一首播放",
+    "addToQueue": "添加到队列",
+    "discNumber": "碟片 ${n}",
+    "trackCount": {
+      "other": "${n} 首"
+    },
+    "nowPlaying": "正在播放",
+    "playingFrom": "来自 ${title}",
+    "queue": "播放队列",
+    "upNext": "即将播放",
+    "clearQueue": "清空队列",
+    "lyrics": "歌词",
+    "noLyrics": "暂无歌词",
+    "sleepTimer": "睡眠定时器",
+    "sleepTimerEndOfTrack": "曲目结束时",
+    "sleepTimerMinutes": "${n} 分钟",
+    "stopPlayback": "停止播放",
+    "previousTrack": "上一首",
+    "nextTrack": "下一首",
+    "repeat": "循环",
+    "repeatAll": "列表循环",
+    "repeatOne": "单曲循环"
+  },
   "watchTogether": {
     "title": "一起看",
     "description": "与朋友和家人同步观看内容",
@@ -1022,6 +1055,8 @@
     "manage": "管理",
     "tvShows": "电视剧",
     "movies": "电影",
+    "music": "音乐",
+    "tracksQueued": "${count} 首曲目已加入下载队列",
     "noDownloads": "暂无下载",
     "noDownloadsDescription": "下载的内容将在此处显示以供离线观看",
     "downloadNow": "下载",

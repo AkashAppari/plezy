@@ -691,6 +691,9 @@
     "nextUpIn": "Als Nächstes in ${library}",
     "recentlyAdded": "Kürzlich hinzugefügt",
     "recentlyAddedIn": "Kürzlich hinzugefügt in ${library}",
+    "latestAlbumsIn": "Neueste Alben in ${library}",
+    "recentlyPlayedIn": "Kürzlich gespielt in ${library}",
+    "mostPlayedIn": "Am häufigsten gespielt in ${library}",
     "playEpisode": "S${season}E${episode}",
     "overview": "Übersicht",
     "cast": "Besetzung",
@@ -770,6 +773,9 @@
       "shows": "Serien",
       "seasons": "Staffeln",
       "episodes": "Episoden",
+      "artists": "Interpreten",
+      "albums": "Alben",
+      "tracks": "Titel",
       "folders": "Ordner"
     },
     "filterCategories": {
@@ -955,6 +961,34 @@
     "errorReordering": "Element der Wiedergabeliste konnte nicht neu geordnet werden",
     "errorRemoving": "Konnte nicht aus der Wiedergabeliste entfernt werden"
   },
+  "music": {
+    "goToAlbum": "Zum Album",
+    "goToArtist": "Zum Interpreten",
+    "instantMix": "Instant-Mix",
+    "playNext": "Als Nächstes abspielen",
+    "addToQueue": "Zur Warteschlange hinzufügen",
+    "discNumber": "Disc ${n}",
+    "trackCount": {
+      "one": "${n} Titel",
+      "other": "${n} Titel"
+    },
+    "nowPlaying": "Wird wiedergegeben",
+    "playingFrom": "Wiedergabe aus ${title}",
+    "queue": "Warteschlange",
+    "upNext": "Als Nächstes",
+    "clearQueue": "Warteschlange leeren",
+    "lyrics": "Songtext",
+    "noLyrics": "Kein Songtext verfügbar",
+    "sleepTimer": "Einschlaf-Timer",
+    "sleepTimerEndOfTrack": "Ende des Titels",
+    "sleepTimerMinutes": "${n} Minuten",
+    "stopPlayback": "Wiedergabe stoppen",
+    "previousTrack": "Vorheriger Titel",
+    "nextTrack": "Nächster Titel",
+    "repeat": "Wiederholen",
+    "repeatAll": "Alle wiederholen",
+    "repeatOne": "Titel wiederholen"
+  },
   "watchTogether": {
     "title": "Gemeinsam Schauen",
     "description": "Inhalte synchron mit Freunden und Familie schauen",
@@ -1022,6 +1056,8 @@
     "manage": "Verwalten",
     "tvShows": "Serien",
     "movies": "Filme",
+    "music": "Musik",
+    "tracksQueued": "${count} Titel zum Download in Warteschlange",
     "noDownloads": "Noch keine Downloads",
     "noDownloadsDescription": "Heruntergeladene Inhalte werden hier für die Offline-Wiedergabe angezeigt",
     "downloadNow": "Herunterladen",

@@ -72,6 +72,7 @@ class TranslationsPt extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsLiveTvPt liveTv = _TranslationsLiveTvPt._(_root);
 	@override late final _TranslationsCollectionsPt collections = _TranslationsCollectionsPt._(_root);
 	@override late final _TranslationsPlaylistsPt playlists = _TranslationsPlaylistsPt._(_root);
+	@override late final _TranslationsMusicPt music = _TranslationsMusicPt._(_root);
 	@override late final _TranslationsWatchTogetherPt watchTogether = _TranslationsWatchTogetherPt._(_root);
 	@override late final _TranslationsDownloadsPt downloads = _TranslationsDownloadsPt._(_root);
 	@override late final _TranslationsShadersPt shaders = _TranslationsShadersPt._(_root);
@@ -898,6 +899,9 @@ class _TranslationsDiscoverPt extends TranslationsDiscoverEn {
 	@override String nextUpIn({required Object library}) => 'A seguir em ${library}';
 	@override String get recentlyAdded => 'Adicionados recentemente';
 	@override String recentlyAddedIn({required Object library}) => 'Adicionados recentemente em ${library}';
+	@override String latestAlbumsIn({required Object library}) => 'Álbuns mais recentes em ${library}';
+	@override String recentlyPlayedIn({required Object library}) => 'Reproduzidos recentemente em ${library}';
+	@override String mostPlayedIn({required Object library}) => 'Mais reproduzidos em ${library}';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Sinopse';
 	@override String get cast => 'Elenco';
@@ -1199,6 +1203,41 @@ class _TranslationsPlaylistsPt extends TranslationsPlaylistsEn {
 	@override String get errorRemoving => 'Falha ao remover da playlist';
 }
 
+// Path: music
+class _TranslationsMusicPt extends TranslationsMusicEn {
+	_TranslationsMusicPt._(TranslationsPt root) : this._root = root, super.internal(root);
+
+	final TranslationsPt _root; // ignore: unused_field
+
+	// Translations
+	@override String get goToAlbum => 'Ir para o álbum';
+	@override String get goToArtist => 'Ir para o artista';
+	@override String get instantMix => 'Mix instantâneo';
+	@override String get playNext => 'Reproduzir a seguir';
+	@override String get addToQueue => 'Adicionar à fila';
+	@override String discNumber({required Object n}) => 'Disco ${n}';
+	@override String trackCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('pt'))(n,
+		one: '${n} faixa',
+		other: '${n} faixas',
+	);
+	@override String get nowPlaying => 'Reproduzindo agora';
+	@override String playingFrom({required Object title}) => 'Reproduzindo de ${title}';
+	@override String get queue => 'Fila';
+	@override String get upNext => 'A seguir';
+	@override String get clearQueue => 'Limpar fila';
+	@override String get lyrics => 'Letra';
+	@override String get noLyrics => 'Nenhuma letra disponível';
+	@override String get sleepTimer => 'Temporizador de suspensão';
+	@override String get sleepTimerEndOfTrack => 'Fim da faixa';
+	@override String sleepTimerMinutes({required Object n}) => '${n} minutos';
+	@override String get stopPlayback => 'Parar reprodução';
+	@override String get previousTrack => 'Faixa anterior';
+	@override String get nextTrack => 'Próxima faixa';
+	@override String get repeat => 'Repetir';
+	@override String get repeatAll => 'Repetir tudo';
+	@override String get repeatOne => 'Repetir uma';
+}
+
 // Path: watchTogether
 class _TranslationsWatchTogetherPt extends TranslationsWatchTogetherEn {
 	_TranslationsWatchTogetherPt._(TranslationsPt root) : this._root = root, super.internal(root);
@@ -1279,6 +1318,8 @@ class _TranslationsDownloadsPt extends TranslationsDownloadsEn {
 	@override String get manage => 'Gerenciar';
 	@override String get tvShows => 'Séries de TV';
 	@override String get movies => 'Filmes';
+	@override String get music => 'Música';
+	@override String tracksQueued({required Object count}) => '${count} faixas na fila para download';
 	@override String get noDownloads => 'Nenhum download ainda';
 	@override String get noDownloadsDescription => 'Conteúdo baixado aparecerá aqui para visualização offline';
 	@override String get downloadNow => 'Baixar';
@@ -1741,6 +1782,9 @@ class _TranslationsLibrariesGroupingsPt extends TranslationsLibrariesGroupingsEn
 	@override String get shows => 'Séries de TV';
 	@override String get seasons => 'Temporadas';
 	@override String get episodes => 'Episódios';
+	@override String get artists => 'Artistas';
+	@override String get albums => 'Álbuns';
+	@override String get tracks => 'Faixas';
 	@override String get folders => 'Pastas';
 }
 
@@ -2599,6 +2643,9 @@ extension on TranslationsPt {
 			'discover.nextUpIn' => ({required Object library}) => 'A seguir em ${library}',
 			'discover.recentlyAdded' => 'Adicionados recentemente',
 			'discover.recentlyAddedIn' => ({required Object library}) => 'Adicionados recentemente em ${library}',
+			'discover.latestAlbumsIn' => ({required Object library}) => 'Álbuns mais recentes em ${library}',
+			'discover.recentlyPlayedIn' => ({required Object library}) => 'Reproduzidos recentemente em ${library}',
+			'discover.mostPlayedIn' => ({required Object library}) => 'Mais reproduzidos em ${library}',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Sinopse',
 			'discover.cast' => 'Elenco',
@@ -2671,6 +2718,9 @@ extension on TranslationsPt {
 			'libraries.groupings.shows' => 'Séries de TV',
 			'libraries.groupings.seasons' => 'Temporadas',
 			'libraries.groupings.episodes' => 'Episódios',
+			'libraries.groupings.artists' => 'Artistas',
+			'libraries.groupings.albums' => 'Álbuns',
+			'libraries.groupings.tracks' => 'Faixas',
 			'libraries.groupings.folders' => 'Pastas',
 			'libraries.filterCategories.genre' => 'Gênero',
 			'libraries.filterCategories.year' => 'Ano',
@@ -2832,6 +2882,29 @@ extension on TranslationsPt {
 			'playlists.errorAdding' => 'Falha ao adicionar à playlist',
 			'playlists.errorReordering' => 'Falha ao reordenar item da playlist',
 			'playlists.errorRemoving' => 'Falha ao remover da playlist',
+			'music.goToAlbum' => 'Ir para o álbum',
+			'music.goToArtist' => 'Ir para o artista',
+			'music.instantMix' => 'Mix instantâneo',
+			'music.playNext' => 'Reproduzir a seguir',
+			'music.addToQueue' => 'Adicionar à fila',
+			'music.discNumber' => ({required Object n}) => 'Disco ${n}',
+			'music.trackCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('pt'))(n, one: '${n} faixa', other: '${n} faixas', ), 
+			'music.nowPlaying' => 'Reproduzindo agora',
+			'music.playingFrom' => ({required Object title}) => 'Reproduzindo de ${title}',
+			'music.queue' => 'Fila',
+			'music.upNext' => 'A seguir',
+			'music.clearQueue' => 'Limpar fila',
+			'music.lyrics' => 'Letra',
+			'music.noLyrics' => 'Nenhuma letra disponível',
+			'music.sleepTimer' => 'Temporizador de suspensão',
+			'music.sleepTimerEndOfTrack' => 'Fim da faixa',
+			'music.sleepTimerMinutes' => ({required Object n}) => '${n} minutos',
+			'music.stopPlayback' => 'Parar reprodução',
+			'music.previousTrack' => 'Faixa anterior',
+			'music.nextTrack' => 'Próxima faixa',
+			'music.repeat' => 'Repetir',
+			'music.repeatAll' => 'Repetir tudo',
+			'music.repeatOne' => 'Repetir uma',
 			'watchTogether.title' => 'Assistir Juntos',
 			'watchTogether.description' => 'Assista conteúdo sincronizado com amigos e família',
 			'watchTogether.createSession' => 'Criar Sessão',
@@ -2896,6 +2969,8 @@ extension on TranslationsPt {
 			'downloads.manage' => 'Gerenciar',
 			'downloads.tvShows' => 'Séries de TV',
 			'downloads.movies' => 'Filmes',
+			'downloads.music' => 'Música',
+			'downloads.tracksQueued' => ({required Object count}) => '${count} faixas na fila para download',
 			'downloads.noDownloads' => 'Nenhum download ainda',
 			'downloads.noDownloadsDescription' => 'Conteúdo baixado aparecerá aqui para visualização offline',
 			'downloads.downloadNow' => 'Baixar',
@@ -2947,6 +3022,8 @@ extension on TranslationsPt {
 			'downloads.noSyncRules' => 'Nenhuma regra de sincronização',
 			'downloads.manageSyncRule' => 'Gerenciar sincronização',
 			'downloads.editEpisodeCount' => 'Número de episódios',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.editSyncFilter' => 'Filtro de sincronização',
 			'downloads.syncAllItems' => 'Sincronizando todos os itens',
 			'downloads.syncUnwatchedItems' => 'Sincronizando itens não vistos',
@@ -2978,8 +3055,6 @@ extension on TranslationsPt {
 			'companionRemote.session.startingServer' => 'A iniciar servidor remoto...',
 			'companionRemote.session.failedToCreate' => 'Falha ao iniciar o servidor remoto:',
 			'companionRemote.session.hostAddress' => 'Endereço do host',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.connected' => 'Conectado',
 			'companionRemote.session.serverRunning' => 'Servidor remoto ativo',
 			'companionRemote.session.serverStopped' => 'Servidor remoto parado',

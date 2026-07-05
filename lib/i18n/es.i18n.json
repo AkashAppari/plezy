@@ -691,6 +691,9 @@
     "nextUpIn": "A continuación en ${library}",
     "recentlyAdded": "Añadido recientemente",
     "recentlyAddedIn": "Añadido recientemente en ${library}",
+    "latestAlbumsIn": "Últimos álbumes en ${library}",
+    "recentlyPlayedIn": "Reproducido recientemente en ${library}",
+    "mostPlayedIn": "Más reproducido en ${library}",
     "playEpisode": "T${season}E${episode}",
     "overview": "Resumen",
     "cast": "Reparto",
@@ -770,6 +773,9 @@
       "shows": "Series",
       "seasons": "Temporadas",
       "episodes": "Episodios",
+      "artists": "Artistas",
+      "albums": "Álbumes",
+      "tracks": "Canciones",
       "folders": "Carpetas"
     },
     "filterCategories": {
@@ -955,6 +961,34 @@
     "errorReordering": "Error al reordenar los elementos de la lista",
     "errorRemoving": "Error al eliminar de la lista"
   },
+  "music": {
+    "goToAlbum": "Ir al álbum",
+    "goToArtist": "Ir al artista",
+    "instantMix": "Mezcla instantánea",
+    "playNext": "Reproducir a continuación",
+    "addToQueue": "Añadir a la cola",
+    "discNumber": "Disco ${n}",
+    "trackCount": {
+      "one": "${n} canción",
+      "other": "${n} canciones"
+    },
+    "nowPlaying": "Reproduciendo ahora",
+    "playingFrom": "Reproduciendo desde ${title}",
+    "queue": "Cola",
+    "upNext": "A continuación",
+    "clearQueue": "Vaciar la cola",
+    "lyrics": "Letra",
+    "noLyrics": "No hay letra disponible",
+    "sleepTimer": "Temporizador de apagado",
+    "sleepTimerEndOfTrack": "Fin de la canción",
+    "sleepTimerMinutes": "${n} minutos",
+    "stopPlayback": "Detener reproducción",
+    "previousTrack": "Canción anterior",
+    "nextTrack": "Canción siguiente",
+    "repeat": "Repetir",
+    "repeatAll": "Repetir todo",
+    "repeatOne": "Repetir una"
+  },
   "watchTogether": {
     "title": "Ver Juntos",
     "description": "Mira contenido en sincronía con amigos y familiares",
@@ -1022,6 +1056,8 @@
     "manage": "Gestionar",
     "tvShows": "Series de TV",
     "movies": "Películas",
+    "music": "Música",
+    "tracksQueued": "${count} canciones en cola para descargar",
     "noDownloads": "No hay descargas aún",
     "noDownloadsDescription": "El contenido descargado aparecerá aquí para verlo sin conexión",
     "downloadNow": "Descargar",

@@ -691,6 +691,9 @@
     "nextUpIn": "Следва в ${library}",
     "recentlyAdded": "Наскоро добавени",
     "recentlyAddedIn": "Наскоро добавени в ${library}",
+    "latestAlbumsIn": "Последни албуми в ${library}",
+    "recentlyPlayedIn": "Наскоро възпроизведени в ${library}",
+    "mostPlayedIn": "Най-възпроизвеждани в ${library}",
     "playEpisode": "S${season}E${episode}",
     "overview": "Обзор",
     "cast": "Актьори",
@@ -770,6 +773,9 @@
       "shows": "ТВ сериали",
       "seasons": "Сезони",
       "episodes": "Епизоди",
+      "artists": "Изпълнители",
+      "albums": "Албуми",
+      "tracks": "Песни",
       "folders": "Папки"
     },
     "filterCategories": {
@@ -955,6 +961,34 @@
     "errorReordering": "Неуспешно пренареждане на елемент в плейлиста",
     "errorRemoving": "Неуспешно премахване от плейлист"
   },
+  "music": {
+    "goToAlbum": "Към албума",
+    "goToArtist": "Към изпълнителя",
+    "instantMix": "Мигновен микс",
+    "playNext": "Пусни следващото",
+    "addToQueue": "Добави към опашката",
+    "discNumber": "Диск ${n}",
+    "trackCount": {
+      "one": "${n} песен",
+      "other": "${n} песни"
+    },
+    "nowPlaying": "Сега се възпроизвежда",
+    "playingFrom": "Възпроизвеждане от ${title}",
+    "queue": "Опашка",
+    "upNext": "Следва",
+    "clearQueue": "Изчисти опашката",
+    "lyrics": "Текст",
+    "noLyrics": "Няма наличен текст",
+    "sleepTimer": "Таймер за заспиване",
+    "sleepTimerEndOfTrack": "Край на песента",
+    "sleepTimerMinutes": "${n} минути",
+    "stopPlayback": "Спри възпроизвеждането",
+    "previousTrack": "Предишна песен",
+    "nextTrack": "Следваща песен",
+    "repeat": "Повтори",
+    "repeatAll": "Повтори всички",
+    "repeatOne": "Повтори една"
+  },
   "watchTogether": {
     "title": "Гледане заедно",
     "description": "Гледайте съдържание синхронизирано с приятели и семейство",
@@ -1022,6 +1056,8 @@
     "manage": "Управление",
     "tvShows": "ТВ сериали",
     "movies": "Филми",
+    "music": "Музика",
+    "tracksQueued": "${count} песни в опашката за изтегляне",
     "noDownloads": "Все още няма изтегляния",
     "noDownloadsDescription": "Изтегленото съдържание ще се показва тук за офлайн гледане",
     "downloadNow": "Изтегли",

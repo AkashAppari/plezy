@@ -72,6 +72,7 @@ class TranslationsJa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsLiveTvJa liveTv = _TranslationsLiveTvJa._(_root);
 	@override late final _TranslationsCollectionsJa collections = _TranslationsCollectionsJa._(_root);
 	@override late final _TranslationsPlaylistsJa playlists = _TranslationsPlaylistsJa._(_root);
+	@override late final _TranslationsMusicJa music = _TranslationsMusicJa._(_root);
 	@override late final _TranslationsWatchTogetherJa watchTogether = _TranslationsWatchTogetherJa._(_root);
 	@override late final _TranslationsDownloadsJa downloads = _TranslationsDownloadsJa._(_root);
 	@override late final _TranslationsShadersJa shaders = _TranslationsShadersJa._(_root);
@@ -898,6 +899,9 @@ class _TranslationsDiscoverJa extends TranslationsDiscoverEn {
 	@override String nextUpIn({required Object library}) => '${library}の次のエピソード';
 	@override String get recentlyAdded => '最近追加';
 	@override String recentlyAddedIn({required Object library}) => '${library}に最近追加';
+	@override String latestAlbumsIn({required Object library}) => '${library}の最新アルバム';
+	@override String recentlyPlayedIn({required Object library}) => '${library}で最近再生';
+	@override String mostPlayedIn({required Object library}) => '${library}で最も再生';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'あらすじ';
 	@override String get cast => 'キャスト';
@@ -1199,6 +1203,40 @@ class _TranslationsPlaylistsJa extends TranslationsPlaylistsEn {
 	@override String get errorRemoving => 'プレイリストからの削除に失敗しました';
 }
 
+// Path: music
+class _TranslationsMusicJa extends TranslationsMusicEn {
+	_TranslationsMusicJa._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get goToAlbum => 'アルバムへ移動';
+	@override String get goToArtist => 'アーティストへ移動';
+	@override String get instantMix => 'インスタントミックス';
+	@override String get playNext => '次に再生';
+	@override String get addToQueue => 'キューに追加';
+	@override String discNumber({required Object n}) => 'ディスク ${n}';
+	@override String trackCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n,
+		other: '${n} 曲',
+	);
+	@override String get nowPlaying => '再生中';
+	@override String playingFrom({required Object title}) => '${title} から再生';
+	@override String get queue => '再生キュー';
+	@override String get upNext => '次はこちら';
+	@override String get clearQueue => 'キューをクリア';
+	@override String get lyrics => '歌詞';
+	@override String get noLyrics => '歌詞がありません';
+	@override String get sleepTimer => 'スリープタイマー';
+	@override String get sleepTimerEndOfTrack => '曲の終わり';
+	@override String sleepTimerMinutes({required Object n}) => '${n} 分';
+	@override String get stopPlayback => '再生を停止';
+	@override String get previousTrack => '前の曲';
+	@override String get nextTrack => '次の曲';
+	@override String get repeat => 'リピート';
+	@override String get repeatAll => '全曲リピート';
+	@override String get repeatOne => '1曲リピート';
+}
+
 // Path: watchTogether
 class _TranslationsWatchTogetherJa extends TranslationsWatchTogetherEn {
 	_TranslationsWatchTogetherJa._(TranslationsJa root) : this._root = root, super.internal(root);
@@ -1279,6 +1317,8 @@ class _TranslationsDownloadsJa extends TranslationsDownloadsEn {
 	@override String get manage => '管理';
 	@override String get tvShows => 'テレビ番組';
 	@override String get movies => '映画';
+	@override String get music => '音楽';
+	@override String tracksQueued({required Object count}) => '${count} 曲をダウンロード待機中';
 	@override String get noDownloads => 'ダウンロードなし';
 	@override String get noDownloadsDescription => 'ダウンロードしたコンテンツはここに表示され、オフラインで視聴できます';
 	@override String get downloadNow => 'ダウンロード';
@@ -1741,6 +1781,9 @@ class _TranslationsLibrariesGroupingsJa extends TranslationsLibrariesGroupingsEn
 	@override String get shows => 'テレビ番組';
 	@override String get seasons => 'シーズン';
 	@override String get episodes => 'エピソード';
+	@override String get artists => 'アーティスト';
+	@override String get albums => 'アルバム';
+	@override String get tracks => '曲';
 	@override String get folders => 'フォルダ';
 }
 
@@ -2599,6 +2642,9 @@ extension on TranslationsJa {
 			'discover.nextUpIn' => ({required Object library}) => '${library}の次のエピソード',
 			'discover.recentlyAdded' => '最近追加',
 			'discover.recentlyAddedIn' => ({required Object library}) => '${library}に最近追加',
+			'discover.latestAlbumsIn' => ({required Object library}) => '${library}の最新アルバム',
+			'discover.recentlyPlayedIn' => ({required Object library}) => '${library}で最近再生',
+			'discover.mostPlayedIn' => ({required Object library}) => '${library}で最も再生',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'あらすじ',
 			'discover.cast' => 'キャスト',
@@ -2671,6 +2717,9 @@ extension on TranslationsJa {
 			'libraries.groupings.shows' => 'テレビ番組',
 			'libraries.groupings.seasons' => 'シーズン',
 			'libraries.groupings.episodes' => 'エピソード',
+			'libraries.groupings.artists' => 'アーティスト',
+			'libraries.groupings.albums' => 'アルバム',
+			'libraries.groupings.tracks' => '曲',
 			'libraries.groupings.folders' => 'フォルダ',
 			'libraries.filterCategories.genre' => 'ジャンル',
 			'libraries.filterCategories.year' => '年',
@@ -2832,6 +2881,29 @@ extension on TranslationsJa {
 			'playlists.errorAdding' => 'プレイリストへの追加に失敗しました',
 			'playlists.errorReordering' => 'プレイリストアイテムの並べ替えに失敗しました',
 			'playlists.errorRemoving' => 'プレイリストからの削除に失敗しました',
+			'music.goToAlbum' => 'アルバムへ移動',
+			'music.goToArtist' => 'アーティストへ移動',
+			'music.instantMix' => 'インスタントミックス',
+			'music.playNext' => '次に再生',
+			'music.addToQueue' => 'キューに追加',
+			'music.discNumber' => ({required Object n}) => 'ディスク ${n}',
+			'music.trackCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, other: '${n} 曲', ), 
+			'music.nowPlaying' => '再生中',
+			'music.playingFrom' => ({required Object title}) => '${title} から再生',
+			'music.queue' => '再生キュー',
+			'music.upNext' => '次はこちら',
+			'music.clearQueue' => 'キューをクリア',
+			'music.lyrics' => '歌詞',
+			'music.noLyrics' => '歌詞がありません',
+			'music.sleepTimer' => 'スリープタイマー',
+			'music.sleepTimerEndOfTrack' => '曲の終わり',
+			'music.sleepTimerMinutes' => ({required Object n}) => '${n} 分',
+			'music.stopPlayback' => '再生を停止',
+			'music.previousTrack' => '前の曲',
+			'music.nextTrack' => '次の曲',
+			'music.repeat' => 'リピート',
+			'music.repeatAll' => '全曲リピート',
+			'music.repeatOne' => '1曲リピート',
 			'watchTogether.title' => '一緒に見る',
 			'watchTogether.description' => '友達や家族と同期してコンテンツを視聴',
 			'watchTogether.createSession' => 'セッションを作成',
@@ -2896,6 +2968,8 @@ extension on TranslationsJa {
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => 'テレビ番組',
 			'downloads.movies' => '映画',
+			'downloads.music' => '音楽',
+			'downloads.tracksQueued' => ({required Object count}) => '${count} 曲をダウンロード待機中',
 			'downloads.noDownloads' => 'ダウンロードなし',
 			'downloads.noDownloadsDescription' => 'ダウンロードしたコンテンツはここに表示され、オフラインで視聴できます',
 			'downloads.downloadNow' => 'ダウンロード',
@@ -2947,6 +3021,8 @@ extension on TranslationsJa {
 			'downloads.noSyncRules' => '同期ルールなし',
 			'downloads.manageSyncRule' => '同期を管理',
 			'downloads.editEpisodeCount' => 'エピソード数',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.editSyncFilter' => '同期フィルター',
 			'downloads.syncAllItems' => 'すべてのアイテムを同期中',
 			'downloads.syncUnwatchedItems' => '未視聴のアイテムを同期中',
@@ -2978,8 +3054,6 @@ extension on TranslationsJa {
 			'companionRemote.session.startingServer' => 'リモートサーバーを起動中...',
 			'companionRemote.session.failedToCreate' => 'リモートサーバーの起動に失敗しました:',
 			'companionRemote.session.hostAddress' => 'ホストアドレス',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.connected' => '接続済み',
 			'companionRemote.session.serverRunning' => 'リモートサーバー稼働中',
 			'companionRemote.session.serverStopped' => 'リモートサーバー停止中',

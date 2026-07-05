@@ -691,6 +691,9 @@
     "nextUpIn": "${library}의 다음 에피소드",
     "recentlyAdded": "최근에 추가됨",
     "recentlyAddedIn": "${library}에 최근에 추가됨",
+    "latestAlbumsIn": "${library}의 최신 앨범",
+    "recentlyPlayedIn": "${library}에서 최근 재생",
+    "mostPlayedIn": "${library}에서 가장 많이 재생",
     "playEpisode": "S${season}E${episode}",
     "overview": "개요",
     "cast": "출연진",
@@ -770,6 +773,9 @@
       "shows": "TV 프로그램",
       "seasons": "시즌",
       "episodes": "화",
+      "artists": "아티스트",
+      "albums": "앨범",
+      "tracks": "트랙",
       "folders": "폴더"
     },
     "filterCategories": {
@@ -955,6 +961,33 @@
     "errorReordering": "재생 목록 항목 재정렬 실패",
     "errorRemoving": "재생 목록에서 제거 실패"
   },
+  "music": {
+    "goToAlbum": "앨범으로 이동",
+    "goToArtist": "아티스트로 이동",
+    "instantMix": "인스턴트 믹스",
+    "playNext": "다음에 재생",
+    "addToQueue": "대기열에 추가",
+    "discNumber": "디스크 ${n}",
+    "trackCount": {
+      "other": "${n}곡"
+    },
+    "nowPlaying": "재생 중",
+    "playingFrom": "${title}에서 재생 중",
+    "queue": "재생 대기열",
+    "upNext": "다음 항목",
+    "clearQueue": "대기열 비우기",
+    "lyrics": "가사",
+    "noLyrics": "가사 없음",
+    "sleepTimer": "취침 타이머",
+    "sleepTimerEndOfTrack": "곡 종료 시",
+    "sleepTimerMinutes": "${n}분",
+    "stopPlayback": "재생 중지",
+    "previousTrack": "이전 곡",
+    "nextTrack": "다음 곡",
+    "repeat": "반복",
+    "repeatAll": "전체 반복",
+    "repeatOne": "한 곡 반복"
+  },
   "watchTogether": {
     "title": "함께 보기",
     "description": "친구 및 가족과 콘텐츠를 동시에 시청하세요",
@@ -1022,6 +1055,8 @@
     "manage": "관리",
     "tvShows": "TV 프로그램",
     "movies": "영화",
+    "music": "음악",
+    "tracksQueued": "${count}곡 다운로드 대기 중",
     "noDownloads": "다운로드 없음",
     "noDownloadsDescription": "다운로드한 콘텐츠는 오프라인 시청을 위해 여기에 표시됩니다",
     "downloadNow": "다운로드",

@@ -691,6 +691,9 @@
     "nextUpIn": "${library}の次のエピソード",
     "recentlyAdded": "最近追加",
     "recentlyAddedIn": "${library}に最近追加",
+    "latestAlbumsIn": "${library}の最新アルバム",
+    "recentlyPlayedIn": "${library}で最近再生",
+    "mostPlayedIn": "${library}で最も再生",
     "playEpisode": "S${season}E${episode}",
     "overview": "あらすじ",
     "cast": "キャスト",
@@ -770,6 +773,9 @@
       "shows": "テレビ番組",
       "seasons": "シーズン",
       "episodes": "エピソード",
+      "artists": "アーティスト",
+      "albums": "アルバム",
+      "tracks": "曲",
       "folders": "フォルダ"
     },
     "filterCategories": {
@@ -955,6 +961,33 @@
     "errorReordering": "プレイリストアイテムの並べ替えに失敗しました",
     "errorRemoving": "プレイリストからの削除に失敗しました"
   },
+  "music": {
+    "goToAlbum": "アルバムへ移動",
+    "goToArtist": "アーティストへ移動",
+    "instantMix": "インスタントミックス",
+    "playNext": "次に再生",
+    "addToQueue": "キューに追加",
+    "discNumber": "ディスク ${n}",
+    "trackCount": {
+      "other": "${n} 曲"
+    },
+    "nowPlaying": "再生中",
+    "playingFrom": "${title} から再生",
+    "queue": "再生キュー",
+    "upNext": "次はこちら",
+    "clearQueue": "キューをクリア",
+    "lyrics": "歌詞",
+    "noLyrics": "歌詞がありません",
+    "sleepTimer": "スリープタイマー",
+    "sleepTimerEndOfTrack": "曲の終わり",
+    "sleepTimerMinutes": "${n} 分",
+    "stopPlayback": "再生を停止",
+    "previousTrack": "前の曲",
+    "nextTrack": "次の曲",
+    "repeat": "リピート",
+    "repeatAll": "全曲リピート",
+    "repeatOne": "1曲リピート"
+  },
   "watchTogether": {
     "title": "一緒に見る",
     "description": "友達や家族と同期してコンテンツを視聴",
@@ -1022,6 +1055,8 @@
     "manage": "管理",
     "tvShows": "テレビ番組",
     "movies": "映画",
+    "music": "音楽",
+    "tracksQueued": "${count} 曲をダウンロード待機中",
     "noDownloads": "ダウンロードなし",
     "noDownloadsDescription": "ダウンロードしたコンテンツはここに表示され、オフラインで視聴できます",
     "downloadNow": "ダウンロード",

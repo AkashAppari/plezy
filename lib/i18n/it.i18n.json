@@ -691,6 +691,9 @@
     "nextUpIn": "Prossimi in ${library}",
     "recentlyAdded": "Aggiunti di recente",
     "recentlyAddedIn": "Aggiunti di recente in ${library}",
+    "latestAlbumsIn": "Ultimi album in ${library}",
+    "recentlyPlayedIn": "Riprodotti di recente in ${library}",
+    "mostPlayedIn": "Più riprodotti in ${library}",
     "playEpisode": "S${season}E${episode}",
     "overview": "Panoramica",
     "cast": "Attori",
@@ -770,6 +773,9 @@
       "shows": "Serie TV",
       "seasons": "Stagioni",
       "episodes": "Episodi",
+      "artists": "Artisti",
+      "albums": "Album",
+      "tracks": "Brani",
       "folders": "Cartelle"
     },
     "filterCategories": {
@@ -955,6 +961,34 @@
     "errorReordering": "Errore durante il riordino dell'elemento della playlist",
     "errorRemoving": "Errore durante la rimozione dalla playlist"
   },
+  "music": {
+    "goToAlbum": "Vai all'album",
+    "goToArtist": "Vai all'artista",
+    "instantMix": "Mix istantaneo",
+    "playNext": "Riproduci dopo",
+    "addToQueue": "Aggiungi alla coda",
+    "discNumber": "Disco ${n}",
+    "trackCount": {
+      "one": "${n} brano",
+      "other": "${n} brani"
+    },
+    "nowPlaying": "In riproduzione",
+    "playingFrom": "Riproduzione da ${title}",
+    "queue": "Coda",
+    "upNext": "Da riprodurre",
+    "clearQueue": "Svuota la coda",
+    "lyrics": "Testo",
+    "noLyrics": "Nessun testo disponibile",
+    "sleepTimer": "Timer di spegnimento",
+    "sleepTimerEndOfTrack": "Fine del brano",
+    "sleepTimerMinutes": "${n} minuti",
+    "stopPlayback": "Interrompi riproduzione",
+    "previousTrack": "Brano precedente",
+    "nextTrack": "Brano successivo",
+    "repeat": "Ripeti",
+    "repeatAll": "Ripeti tutto",
+    "repeatOne": "Ripeti uno"
+  },
   "watchTogether": {
     "title": "Guarda Insieme",
     "description": "Guarda contenuti in sincronia con amici e familiari",
@@ -1022,6 +1056,8 @@
     "manage": "Gestisci",
     "tvShows": "Serie TV",
     "movies": "Film",
+    "music": "Musica",
+    "tracksQueued": "${count} brani in coda per il download",
     "noDownloads": "Nessun download",
     "noDownloadsDescription": "I contenuti scaricati appariranno qui per la visualizzazione offline",
     "downloadNow": "Scarica",
