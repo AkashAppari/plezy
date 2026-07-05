@@ -50,7 +50,10 @@ dependencies:
   crypto: ^3.0.7
   cryptography: ^2.9.0
   file_picker: ^10.3.10
-  saf_util: ^2.0.0
+  saf_util:
+    # Vendored 2.0.0 with a pendingResult lifecycle fix (see its CHANGELOG) —
+    # upstream double-replies MethodChannel results and crashes the activity.
+    path: packages/saf_util
   saf_stream: ^2.0.0
   material_symbols_icons: ^4.2906.0
   web_socket_channel: ^3.0.1

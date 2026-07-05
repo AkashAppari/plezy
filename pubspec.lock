@@ -984,10 +984,9 @@ packages:
   saf_util:
     dependency: "direct main"
     description:
-      name: saf_util
-      sha256: "0cf5fc462fc7e466e1d5608dd5a331d88d6dd6c7b01f62a305aaf469bf3309ea"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/saf_util"
+      relative: true
+    source: path
     version: "2.0.0"
   screen_retriever:
     dependency: transitive
