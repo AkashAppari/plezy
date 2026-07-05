@@ -234,6 +234,19 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var frameWatchdogRunnable: Runnable? = null
   private var frameWatchdogStartTime: Long = 0L
 
+  // Post-resume video stall watchdog (#1454): some TV SoCs (Amlogic Mi Box class)
+  // stall the MediaCodec output path after pause→resume — the clock and audio keep
+  // advancing but the picture freezes until a seek flushes the codec. Armed on every
+  // transition to playing with a warm decoder; recovers with a micro seek-back,
+  // capped per session.
+  private var resumeStallRunnable: Runnable? = null
+  private var resumeStallVerifyRunnable: Runnable? = null
+  private var resumeStallBaselineFrames = 0
+  private var resumeStallBaselinePositionMs = 0L
+  private var resumeStallRechecksLeft = 0
+  private var resumeStallRecoveryCount = 0
+  private var loggedResumeStallCap = false
+
   // Decoder hang detection: tracks gap between decoder init and first rendered frame
   private var decoderHangRunnable: Runnable? = null
   private var decoderInitName: String? = null
@@ -1026,6 +1039,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   override fun onIsPlayingChanged(isPlaying: Boolean) {
     Log.d(TAG, "onIsPlayingChanged: $isPlaying")
     if (isPlaying) pendingPlayWhenReady = null
+    if (isPlaying) armResumeStallWatchdog() else cancelResumeStallWatchdog()
     delegate?.onPropertyChange("pause", !isPlaying)
   }
 
@@ -1163,6 +1177,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     emitLog("error", "player", "Error code=${error.errorCode}: ${error.message}, cause=${causeChain.ifEmpty { "none" }}")
     stopFrameWatchdog()
     cancelDecoderHangCheck()
+    cancelResumeStallWatchdog()
     emitSeekable(false, force = true)
 
     // If native DV7 failed, retry with conversion before falling to MPV
@@ -1258,6 +1273,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     stopFrameWatchdog()
     cancelDecoderHangCheck()
+    cancelResumeStallWatchdog()
     applyTrackSelectorPolicy(reason = "audio recovery", forceSelector = true)
 
     emitLog(
@@ -2704,6 +2720,124 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     frameWatchdogRunnable = null
   }
 
+  // Post-resume video stall watchdog (#1454) — see the field comment. Decision
+  // logic lives in ResumeStallPolicy; this wiring is main-thread only, like the
+  // frame watchdog above.
+
+  private fun armResumeStallWatchdog() {
+    cancelResumeStallCheck()
+    val player = exoPlayer ?: return
+    if (resumeStallRecoveryCount >= ResumeStallPolicy.MAX_RECOVERIES_PER_SESSION) {
+      if (!loggedResumeStallCap) {
+        loggedResumeStallCap = true
+        emitLog("warn", "resume-stall", "Recovery cap reached ($resumeStallRecoveryCount) — watchdog disabled for this session")
+      }
+      return
+    }
+    // A cold decoder (0 frames ever rendered) is the startup watchdog's territory.
+    val baselineFrames = player.videoDecoderCounters?.renderedOutputBufferCount ?: return
+    if (baselineFrames <= 0) return
+    val hasVideoTrack = player.currentTracks.groups.any {
+      it.type == C.TRACK_TYPE_VIDEO && it.isSelected
+    }
+    if (!hasVideoTrack) return
+
+    resumeStallBaselineFrames = baselineFrames
+    resumeStallBaselinePositionMs = player.currentPosition
+    resumeStallRechecksLeft = ResumeStallPolicy.MAX_RECHECKS
+    val windowMs = ResumeStallPolicy.checkWindowMs(
+      currentVideoFormat?.frameRate,
+      detectedFrameRate,
+      player.playbackParameters.speed
+    )
+    emitLog("debug", "resume-stall", "Armed (baselineFrames=$baselineFrames, windowMs=$windowMs)")
+    resumeStallRunnable = Runnable { checkResumeStall(windowMs) }
+    handler.postDelayed(resumeStallRunnable!!, windowMs)
+  }
+
+  /** Cancels a pending stall check but keeps a recovery verification alive: the
+   * recovery seek itself flickers isPlaying through buffering, which must not
+   * silence its own confirmation log. */
+  private fun cancelResumeStallCheck() {
+    resumeStallRunnable?.let { handler.removeCallbacks(it) }
+    resumeStallRunnable = null
+  }
+
+  private fun cancelResumeStallWatchdog() {
+    cancelResumeStallCheck()
+    resumeStallVerifyRunnable?.let { handler.removeCallbacks(it) }
+    resumeStallVerifyRunnable = null
+  }
+
+  private fun checkResumeStall(windowMs: Long) {
+    resumeStallRunnable = null
+    if (disposing || !isInitialized) return
+    val player = exoPlayer ?: return
+    if (!player.isPlaying || player.playbackState != Player.STATE_READY) return
+    val hasVideoTrack = player.currentTracks.groups.any {
+      it.type == C.TRACK_TYPE_VIDEO && it.isSelected
+    }
+    if (!hasVideoTrack) return
+    val currentFrames = player.videoDecoderCounters?.renderedOutputBufferCount ?: return
+
+    val verdict = ResumeStallPolicy.evaluate(
+      baselineFrames = resumeStallBaselineFrames,
+      currentFrames = currentFrames,
+      baselinePositionMs = resumeStallBaselinePositionMs,
+      currentPositionMs = player.currentPosition,
+      durationMs = player.duration,
+      windowMs = windowMs
+    )
+    when (verdict) {
+      ResumeStallPolicy.Verdict.HEALTHY ->
+        emitLog("debug", "resume-stall", "Cleared (frames $resumeStallBaselineFrames→$currentFrames)")
+      ResumeStallPolicy.Verdict.SKIP_NEAR_EOF ->
+        emitLog("debug", "resume-stall", "Skipped (near end of stream)")
+      ResumeStallPolicy.Verdict.RECHECK -> {
+        if (resumeStallRechecksLeft-- > 0) {
+          resumeStallRunnable = Runnable { checkResumeStall(windowMs) }
+          handler.postDelayed(resumeStallRunnable!!, windowMs)
+        } else {
+          emitLog("debug", "resume-stall", "Gave up (clock not advancing — not a decoder stall)")
+        }
+      }
+      ResumeStallPolicy.Verdict.STALLED -> recoverFromResumeStall(player, windowMs, currentFrames)
+    }
+  }
+
+  private fun recoverFromResumeStall(player: ExoPlayer, windowMs: Long, stalledFrames: Int) {
+    resumeStallRecoveryCount++
+    val positionMs = player.currentPosition
+    // The clock-advance guard guarantees positionMs ≥ windowMs/2 here, so the
+    // target never resolves to the current position (which ExoPlayer would
+    // short-circuit without the codec flush this recovery exists for).
+    val targetMs = (positionMs - ResumeStallPolicy.SEEK_BACK_MS).coerceAtLeast(0L)
+    emitLog(
+      "warn",
+      "resume-stall",
+      "Video frozen after resume: no new frames in ${windowMs}ms at ${positionMs}ms " +
+        "(frames=$stalledFrames, tunneling=$currentTunneledPlayback, decoder=${decoderInitName ?: "unknown"}, " +
+        "model=${Build.MODEL}) — recovering with seek to ${targetMs}ms " +
+        "($resumeStallRecoveryCount/${ResumeStallPolicy.MAX_RECOVERIES_PER_SESSION})"
+    )
+    seekTo(targetMs)
+    resumeStallVerifyRunnable = Runnable { verifyResumeStallRecovery(stalledFrames, windowMs) }
+    handler.postDelayed(resumeStallVerifyRunnable!!, windowMs)
+  }
+
+  private fun verifyResumeStallRecovery(stalledFrames: Int, windowMs: Long) {
+    resumeStallVerifyRunnable = null
+    if (disposing || !isInitialized) return
+    val player = exoPlayer ?: return
+    if (!player.isPlaying) return // paused or reloaded since; nothing to verify
+    val frames = player.videoDecoderCounters?.renderedOutputBufferCount ?: return
+    if (frames != stalledFrames) {
+      emitLog("info", "resume-stall", "Recovery confirmed: video frames advancing again (frames $stalledFrames→$frames)")
+    } else {
+      emitLog("warn", "resume-stall", "Recovery seek did not restart video frames (still $frames after ${windowMs}ms)")
+    }
+  }
+
   // Public API
 
   fun open(
@@ -2718,6 +2852,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     stopFrameWatchdog()
     cancelDecoderHangCheck()
+    cancelResumeStallWatchdog()
+    resumeStallRecoveryCount = 0
+    loggedResumeStallCap = false
 
     // Reset FPS detection for new content
     detectedFrameRate = -1f
@@ -3005,6 +3142,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     activeDoviMp4Wrapper = null
     stopFrameWatchdog()
     cancelDecoderHangCheck()
+    cancelResumeStallWatchdog()
 
     applyTrackSelectorPolicy(
       reason = "DV reload",
@@ -3034,6 +3172,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   fun stop() {
     stopFrameWatchdog()
     cancelDecoderHangCheck()
+    cancelResumeStallWatchdog()
     exoPlayer?.stop()
     emitSeekable(false, force = true)
     setVisible(false)
@@ -3383,6 +3522,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       "videoDecoderName" to videoDecoderName,
       "videoDroppedFrames" to player.videoDecoderCounters?.droppedBufferCount,
       "videoRenderedFrames" to player.videoDecoderCounters?.renderedOutputBufferCount,
+      "videoResumeStallRecoveries" to resumeStallRecoveryCount,
       // ASS overlay swap timing (vsync-pinned; late = past the swap-time budget)
       "subSwapCount" to assSubtitleView?.swapCount,
       "subLateSwaps" to assSubtitleView?.lateSwapCount,
@@ -3544,6 +3684,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     stopFrameWatchdog()
     cancelDecoderHangCheck()
+    cancelResumeStallWatchdog()
     stopPositionUpdates()
     handler.removeCallbacksAndMessages(null)
     // releasePending (not clearVideoFrameRate): on the ExoPlayer→MPV fallback
