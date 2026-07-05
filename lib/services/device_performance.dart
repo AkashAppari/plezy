@@ -103,6 +103,10 @@ class DevicePerformance {
     } else if (isReduced) {
       cache.maximumSize = 400;
       cache.maximumSizeBytes = 48 << 20; // 48MB
+    } else if (PlatformDetector.isTV()) {
+      // TV boxes share limited RAM with 4K video decode buffers.
+      cache.maximumSize = 500;
+      cache.maximumSizeBytes = 64 << 20; // 64MB
     } else {
       cache.maximumSize = 800;
       cache.maximumSizeBytes = 100 << 20; // 100MB
