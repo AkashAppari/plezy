@@ -93,8 +93,7 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
 
   /// The queue item the cursor currently points at, or null when no queue
   /// is active or the cursor is outside the loaded window.
-  MediaItem? get currentQueueItem =>
-      _currentPlayQueueItemID == null ? null : _findLoadedItem(_currentPlayQueueItemID!);
+  MediaItem? get currentQueueItem => _currentPlayQueueItemID == null ? null : _findLoadedItem(_currentPlayQueueItemID!);
 
   /// Set the client reference for loading more items
   void setPlayQueueWindowFetcher(PlayQueueWindowFetcher? fetcher) {

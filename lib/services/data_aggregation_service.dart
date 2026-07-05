@@ -13,9 +13,17 @@ import '../utils/global_key_utils.dart';
 import '../utils/search_relevance.dart';
 import 'multi_server_manager.dart';
 
-typedef OnDeckAggregationResult = ({List<MediaItem> items, Set<String> succeededServerIds, Set<String> cancelledServerIds});
+typedef OnDeckAggregationResult = ({
+  List<MediaItem> items,
+  Set<String> succeededServerIds,
+  Set<String> cancelledServerIds,
+});
 typedef HubAggregationResult = ({List<MediaHub> hubs, Set<String> succeededServerIds, Set<String> cancelledServerIds});
-typedef LibraryAggregationResult = ({List<MediaLibrary> libraries, Set<String> succeededServerIds, Set<String> cancelledServerIds});
+typedef LibraryAggregationResult = ({
+  List<MediaLibrary> libraries,
+  Set<String> succeededServerIds,
+  Set<String> cancelledServerIds,
+});
 
 /// Whether [error] is a client-side abort (client teardown mid-request)
 /// rather than a genuine server failure. Aggregation reports these servers
@@ -62,7 +70,11 @@ class DataAggregationService {
     final clients = _clientsFor(serverIds);
     if (clients.isEmpty) {
       appLogger.w('No online servers available for fetching libraries (neutral)');
-      return (libraries: const <MediaLibrary>[], succeededServerIds: const <String>{}, cancelledServerIds: const <String>{});
+      return (
+        libraries: const <MediaLibrary>[],
+        succeededServerIds: const <String>{},
+        cancelledServerIds: const <String>{},
+      );
     }
     final succeededServerIds = <String>{};
     final cancelledServerIds = <String>{};

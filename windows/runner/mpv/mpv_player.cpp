@@ -385,8 +385,9 @@ void MpvPlayer::TryAudioReload(const char* reason, int attempt) {
   std::string reason_str = reason;
   CommandAsync({"ao-reload"}, [this, reason_str, attempt](int error) {
     audio_reload_pending_ = false;
-    LogRecovery("ao-reload completed (reason=" + reason_str + ", attempt " + std::to_string(attempt) +
-                ", error=" + std::to_string(error) + ")");
+    LogRecovery(
+        "ao-reload completed (reason=" + reason_str + ", attempt " + std::to_string(attempt) +
+        ", error=" + std::to_string(error) + ")");
   });
 }
 
@@ -397,8 +398,7 @@ void MpvPlayer::MaybeRunAudioRecovery() {
     if (file_loaded_) {
       resume_attempts_left_ = kResumeReloadAttempts;
       resume_next_attempt_ = now + kResumeFirstDelay;
-      LogRecovery("power resume detected; scheduling ao-reload in " + std::to_string(kResumeFirstDelay.count()) +
-                  "ms");
+      LogRecovery("power resume detected; scheduling ao-reload in " + std::to_string(kResumeFirstDelay.count()) + "ms");
     } else {
       LogRecovery("power resume detected; no file loaded, nothing to recover");
     }
@@ -545,8 +545,8 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
           null_attempts_left_ = kNullRetryBudget;
           null_backoff_ = kNullFirstDelay;
           null_next_attempt_ = std::chrono::steady_clock::now() + kNullFirstDelay;
-          LogRecovery("current-ao fell back to null; starting recovery (budget " + std::to_string(kNullRetryBudget) +
-                      ")");
+          LogRecovery(
+              "current-ao fell back to null; starting recovery (budget " + std::to_string(kNullRetryBudget) + ")");
         } else if (!is_null && current_ao_is_null_) {
           null_attempts_left_ = 0;
           LogRecovery(std::string("current-ao is now '") + (current_ao ? current_ao : "") + "'");

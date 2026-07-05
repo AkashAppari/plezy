@@ -105,9 +105,7 @@ class DeviceIdentityService {
 /// usable remains.
 String? sanitizeHeaderValue(String? value) {
   if (value == null) return null;
-  final filtered = String.fromCharCodes(
-    value.codeUnits.where((unit) => unit != 0x0D && unit != 0x0A && unit <= 0xFF),
-  );
+  final filtered = String.fromCharCodes(value.codeUnits.where((unit) => unit != 0x0D && unit != 0x0A && unit <= 0xFF));
   final trimmed = filtered.trim();
   return trimmed.isEmpty ? null : trimmed;
 }

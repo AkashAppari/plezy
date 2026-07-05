@@ -252,8 +252,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         safeNotifyListeners();
         return;
       }
-      if (fetchedHubs.succeededServerIds.isEmpty &&
-          (fetchedHubs.cancelledServerIds.isNotEmpty || isProfileBinding())) {
+      if (fetchedHubs.succeededServerIds.isEmpty && (fetchedHubs.cancelledServerIds.isNotEmpty || isProfileBinding())) {
         appLogger.d('DiscoverProvider: hub pass disrupted with no prior content; keeping loading state');
         return;
       }

@@ -8,14 +8,10 @@ import 'package:plezy/focus/input_mode_tracker.dart';
 /// must only exist in keyboard/d-pad mode: on touch it is pure dead weight
 /// multiplied by every card in a grid (see library scroll jank).
 void main() {
-  Finder chromeIn(Type type) =>
-      find.descendant(of: find.byType(FocusableWrapper), matching: find.byType(type));
+  Finder chromeIn(Type type) => find.descendant(of: find.byType(FocusableWrapper), matching: find.byType(type));
 
   Widget buildWrapper() => Scaffold(
-    body: FocusableWrapper(
-      onSelect: () {},
-      child: const SizedBox(width: 10, height: 10),
-    ),
+    body: FocusableWrapper(onSelect: () {}, child: const SizedBox(width: 10, height: 10)),
   );
 
   testWidgets('pointer mode builds no focus chrome around the child', (tester) async {
@@ -46,11 +42,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: FocusableWrapper(
-            focusNode: node,
-            onSelect: () {},
-            child: const SizedBox(width: 10, height: 10),
-          ),
+          body: FocusableWrapper(focusNode: node, onSelect: () {}, child: const SizedBox(width: 10, height: 10)),
         ),
       ),
     );

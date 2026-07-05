@@ -390,14 +390,20 @@ void main() {
 
     test('changed access token requires recreation', () {
       expect(
-        MultiServerManager.canReuseJellyfinClient(live: base, incoming: base.copyWith(accessToken: 'rotated')),
+        MultiServerManager.canReuseJellyfinClient(
+          live: base,
+          incoming: base.copyWith(accessToken: 'rotated'),
+        ),
         isFalse,
       );
     });
 
     test('changed device id requires recreation', () {
       expect(
-        MultiServerManager.canReuseJellyfinClient(live: base, incoming: base.copyWith(deviceId: 'other-device')),
+        MultiServerManager.canReuseJellyfinClient(
+          live: base,
+          incoming: base.copyWith(deviceId: 'other-device'),
+        ),
         isFalse,
       );
     });

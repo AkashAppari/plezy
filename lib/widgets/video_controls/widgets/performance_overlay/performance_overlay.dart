@@ -118,7 +118,9 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
         // On height-limited screens (landscape phones) widen the card so the Wrap
         // packs sections side by side instead of stacking into an off-screen column.
         final compactHeight = constraints.hasBoundedHeight && constraints.maxHeight < 500;
-        final cardMaxWidth = compactHeight && constraints.hasBoundedWidth ? math.min(constraints.maxWidth, 560.0) : 400.0;
+        final cardMaxWidth = compactHeight && constraints.hasBoundedWidth
+            ? math.min(constraints.maxWidth, 560.0)
+            : 400.0;
 
         // Text scaling only inflates the intrinsic size that FittedBox scales right
         // back down, trading layout sharpness for nothing on this diagnostics card.

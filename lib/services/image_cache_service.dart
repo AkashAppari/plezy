@@ -118,6 +118,7 @@ class _SharedHttpClient extends http.BaseClient {
   void close() {}
 }
 
+// ignore: unused-code
 /// Test hook: builds the throttled artwork client with an isolated limiter.
 @visibleForTesting
 http.Client createArtworkHttpClientForTest(http.Client inner, {int maxConcurrent = 6}) =>

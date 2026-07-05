@@ -360,7 +360,10 @@ void main() {
     final heroFades = tester
         .widgetList<Container>(
           find.byWidgetPredicate(
-            (w) => w is Container && w.decoration is BoxDecoration && (w.decoration! as BoxDecoration).gradient is LinearGradient,
+            (w) =>
+                w is Container &&
+                w.decoration is BoxDecoration &&
+                (w.decoration! as BoxDecoration).gradient is LinearGradient,
           ),
         )
         .map((c) => (c.decoration! as BoxDecoration).gradient! as LinearGradient)

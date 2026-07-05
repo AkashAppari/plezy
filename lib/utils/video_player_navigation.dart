@@ -177,8 +177,7 @@ Future<bool?> navigateToVideoPlayer(
     }
   }
 
-  final mediaIndex =
-      selectedMediaIndex ?? downloadedMediaIndex ?? await savedMediaVersionIndexFor(metadata) ?? 0;
+  final mediaIndex = selectedMediaIndex ?? downloadedMediaIndex ?? await savedMediaVersionIndexFor(metadata) ?? 0;
   final mediaSourceId = selectedMediaSourceId ?? downloadedMediaSourceId;
 
   var markedInFlight = false;

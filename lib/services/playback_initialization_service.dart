@@ -136,11 +136,7 @@ class PlaybackInitializationService {
       }
 
       appLogger.d('Found offline video: $readablePath');
-      return (
-        path: readablePath,
-        mediaIndex: downloadedItem.mediaIndex,
-        mediaSourceId: downloadedItem.mediaSourceId,
-      );
+      return (path: readablePath, mediaIndex: downloadedItem.mediaIndex, mediaSourceId: downloadedItem.mediaSourceId);
     } catch (e) {
       appLogger.w('Error checking offline video path', error: e);
       return null;

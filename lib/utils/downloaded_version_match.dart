@@ -8,11 +8,7 @@ import '../database/app_database.dart';
 /// trustworthy discriminator there. Otherwise fall back to the media index.
 /// A null [requestedMediaIndex] means "any version" (the caller has no
 /// version opinion, e.g. external-player launches keyed by item only).
-bool downloadedVersionMatches(
-  DownloadedMediaItem row, {
-  int? requestedMediaIndex,
-  String? requestedMediaSourceId,
-}) {
+bool downloadedVersionMatches(DownloadedMediaItem row, {int? requestedMediaIndex, String? requestedMediaSourceId}) {
   final downloadedSourceId = row.mediaSourceId;
   final requestedSourceId = requestedMediaSourceId?.trim();
   final comparedBySourceId =
