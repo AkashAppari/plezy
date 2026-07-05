@@ -14,18 +14,26 @@ import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/utils/deletion_notifier.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
 
 import '../test_helpers/prefs.dart';
 
-MediaItem _item(String id, {String? parentId, String serverId = 'server_1'}) => MediaItem(
+MediaItem _item(
+  String id, {
+  String? parentId,
+  String? grandparentId,
+  MediaKind kind = MediaKind.episode,
+  String serverId = 'server_1',
+}) => MediaItem(
   id: id,
   backend: MediaBackend.plex,
-  kind: MediaKind.episode,
+  kind: kind,
   title: id,
   serverId: serverId,
   serverName: 'Server',
   parentId: parentId,
+  grandparentId: grandparentId,
 );
 
 MediaHub _hub(
@@ -221,6 +229,62 @@ void main() {
 
     expect(sawImmediateRemoval, isTrue);
     expect(provider.onDeck.map((i) => i.id), ['ep-2']);
+  });
+
+  test('deletion drops the item from on-deck and hubs, then refreshes continue watching only', () async {
+    aggregation.onDeckResult = () => [_item('ep-1'), _item('ep-2')];
+    aggregation.hubsResult = () => [
+      _hub('hub-1', items: [_item('ep-1'), _item('other')]),
+    ];
+    await provider.load();
+    final onDeckCallsBefore = aggregation.onDeckCalls;
+    final hubCallsBefore = aggregation.hubCalls;
+
+    var sawImmediateRemoval = false;
+    provider.addListener(() {
+      if (provider.onDeck.length == 1 && provider.onDeck.single.id == 'ep-2') {
+        sawImmediateRemoval = true;
+      }
+    });
+    aggregation.onDeckResult = () => [_item('ep-2')];
+
+    DeletionNotifier().notifyDeletedItem(item: _item('ep-1'));
+    await pumpEventQueue();
+
+    expect(sawImmediateRemoval, isTrue);
+    expect(provider.onDeck.map((i) => i.id), ['ep-2']);
+    expect(provider.hubs.single.items.map((i) => i.id), ['other']);
+    expect(aggregation.onDeckCalls, onDeckCallsBefore + 1);
+    expect(aggregation.hubCalls, hubCallsBefore);
+  });
+
+  test('deleting an ancestor removes its episodes from continue watching', () async {
+    aggregation.onDeckResult = () => [_item('ep-1', grandparentId: 'show-1'), _item('ep-2')];
+    await provider.load();
+    aggregation.onDeckResult = () => [_item('ep-2')];
+
+    DeletionNotifier().notifyDeletedItem(item: _item('show-1', kind: MediaKind.show));
+    await pumpEventQueue();
+
+    expect(provider.onDeck.map((i) => i.id), ['ep-2']);
+  });
+
+  test('download-only deletion leaves lists untouched and triggers no refetch', () async {
+    aggregation.onDeckResult = () => [_item('ep-1')];
+    aggregation.hubsResult = () => [
+      _hub('hub-1', items: [_item('ep-1')]),
+    ];
+    await provider.load();
+    final onDeckCallsBefore = aggregation.onDeckCalls;
+    final hubCallsBefore = aggregation.hubCalls;
+
+    DeletionNotifier().notifyDeletedItem(item: _item('ep-1'), isDownloadOnly: true);
+    await pumpEventQueue();
+
+    expect(provider.onDeck.map((i) => i.id), ['ep-1']);
+    expect(provider.hubs.single.items.map((i) => i.id), ['ep-1']);
+    expect(aggregation.onDeckCalls, onDeckCallsBefore);
+    expect(aggregation.hubCalls, hubCallsBefore);
   });
 
   test('library order change re-sorts hubs without any refetch', () async {
