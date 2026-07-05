@@ -49,6 +49,7 @@ import '../services/apple_tv_remote_touch_service.dart';
 import '../services/media_controls_manager.dart';
 import '../services/playback_initialization_service.dart';
 import '../services/playback_context.dart';
+import '../services/local_playback_history.dart';
 import '../services/playback_session.dart';
 import '../services/playback_progress_tracker.dart';
 import '../services/playback_source_resolver.dart';
@@ -196,6 +197,12 @@ class VideoPlayerScreen extends StatefulWidget {
   final SubtitleTrack? preferredSecondarySubtitleTrack;
   final int selectedMediaIndex;
   final String? selectedMediaSourceId;
+
+  /// Version signature of a saved preference backing [selectedMediaIndex]
+  /// when that index is unverified (see
+  /// [PlaybackInitializationOptions.preferredVersionSignature]). Null for
+  /// explicit user selections.
+  final String? preferredVersionSignature;
   final bool isOffline;
 
   /// Quality preset override for this playback. When `null`, the screen uses
@@ -221,6 +228,7 @@ class VideoPlayerScreen extends StatefulWidget {
     this.preferredSecondarySubtitleTrack,
     this.selectedMediaIndex = 0,
     this.selectedMediaSourceId,
+    this.preferredVersionSignature,
     this.isOffline = false,
     this.selectedQualityPreset,
     this.selectedAudioStreamId,
@@ -455,6 +463,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _requestedMediaSourceId = session.mediaSourceId;
     _selectedQualityPreset = session.qualityPreset;
     _selectedAudioStreamId = session.audioStreamId;
+    // Every successful open passes through here (never live TV), making it
+    // the chokepoint for the local last-played history. Offline plays are
+    // excluded — like version prefs, the history describes online intent.
+    if (!session.isOffline) {
+      unawaited(LocalPlaybackHistory.recordPlayback(session.metadata));
+    }
   }
 
   ScrubFrame? _getThumbnailData(Duration time) => _scrubPreviewSource?.getFrame(time);
@@ -697,6 +711,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           metadata: _currentMetadata,
           selectedMediaIndex: _effectiveSelectedMediaIndex,
           selectedMediaSourceId: _requestedMediaSourceId,
+          preferredVersionSignature: widget.preferredVersionSignature,
           offlineLibraryMode: false,
           qualityPreset: _selectedQualityPreset,
           selectedAudioStreamId: _selectedAudioStreamId,

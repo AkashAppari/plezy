@@ -902,6 +902,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       selectedQuality = picked;
     }
 
+    // Remember the pick so Continue Watching / plain Play resume this version
+    // (#1492) — same store the in-player version switch writes.
+    if (versions.length > 1) {
+      await saveMediaVersionPreferenceFor(item, index: selectedVersionIndex, versions: versions);
+      if (!context.mounted) return false;
+    }
+
     await navigateToVideoPlayer(
       context,
       metadata: item,

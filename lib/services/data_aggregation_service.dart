@@ -11,6 +11,7 @@ import '../utils/app_logger.dart';
 import '../utils/external_ids.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/search_relevance.dart';
+import 'local_playback_history.dart';
 import 'multi_server_manager.dart';
 
 typedef OnDeckAggregationResult = ({
@@ -193,7 +194,17 @@ class DataAggregationService {
     }
     await Future.wait(identityKeyLoads);
 
-    final seenKeys = <String>{};
+    // Group duplicates instead of greedily dropping them: the first item to
+    // claim an identity key anchors the group and holds its shelf slot;
+    // later items sharing a claimed key join as members without claiming
+    // their own keys (same transitive semantics as the old drop). Each slot
+    // then shows the member the user most recently played on this device —
+    // servers sync watch state across guid-linked siblings, so their
+    // lastViewedAt ties and can't tell the 4K copy from the 1080p one
+    // (#1492). Without local history the anchor (recency order) stands.
+    final keyToGroup = <String, int>{};
+    final groups = <List<MediaItem>>[];
+    final groupSlots = <int, int>{};
     final result = <MediaItem>[];
     for (var i = 0; i < items.length; i++) {
       final item = items[i];
@@ -208,13 +219,55 @@ class DataAggregationService {
         continue;
       }
 
-      if (identityKeys.any(seenKeys.contains)) continue;
+      var joined = false;
+      for (final key in identityKeys) {
+        final groupIndex = keyToGroup[key];
+        if (groupIndex != null) {
+          groups[groupIndex].add(item);
+          joined = true;
+          break;
+        }
+      }
+      if (joined) continue;
 
-      seenKeys.addAll(identityKeys);
+      final groupIndex = groups.length;
+      groups.add([item]);
+      for (final key in identityKeys) {
+        keyToGroup[key] = groupIndex;
+      }
+      groupSlots[result.length] = groupIndex;
       result.add(item);
     }
 
+    if (groupSlots.isEmpty) return result;
+    final lastPlayed = await LocalPlaybackHistory.snapshot();
+    for (final slot in groupSlots.entries) {
+      final members = groups[slot.value];
+      if (members.length > 1) {
+        result[slot.key] = _preferLocallyLastPlayed(members, lastPlayed);
+      }
+    }
     return result;
+  }
+
+  /// The duplicate-group member most recently played on this device (by item
+  /// or series key), or the anchor — `members.first`, the group's most recent
+  /// item by [MediaItem.recencySortKey] — when the local history has nothing
+  /// newer to say.
+  MediaItem _preferLocallyLastPlayed(List<MediaItem> members, Map<String, int> lastPlayed) {
+    var winner = members.first;
+    var winnerLastPlayedAt = 0;
+    for (final member in members) {
+      final itemTs = lastPlayed[member.globalKey] ?? 0;
+      final seriesKey = member.seriesGlobalKey;
+      final seriesTs = seriesKey != null ? (lastPlayed[seriesKey] ?? 0) : 0;
+      final lastPlayedAt = itemTs > seriesTs ? itemTs : seriesTs;
+      if (lastPlayedAt > winnerLastPlayedAt) {
+        winner = member;
+        winnerLastPlayedAt = lastPlayedAt;
+      }
+    }
+    return winner;
   }
 
   String? _continueWatchingTitleBucket(MediaItem item) {

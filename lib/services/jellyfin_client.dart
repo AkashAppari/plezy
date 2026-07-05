@@ -40,6 +40,7 @@ import '../models/media_provider_info.dart';
 import '../models/media_subscription.dart';
 import '../media/media_source_info.dart';
 import '../media/media_sort.dart';
+import '../media/media_version.dart';
 import '../utils/app_logger.dart';
 import '../utils/device_identity.dart';
 import '../utils/failover_http_client.dart';

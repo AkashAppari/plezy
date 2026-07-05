@@ -1,5 +1,6 @@
 import 'dart:convert';
 import '../media/ids.dart';
+import '../media/media_version_preference.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
@@ -514,8 +515,19 @@ class SettingsService extends BaseSharedPreferencesService {
     encode: (v) => json.encode(v.map((k, hk) => MapEntry(k, SettingsService.serializeHotKey(hk)))),
     decode: _decodeKeyboardHotkeys,
   );
-  static final mediaVersionPreferences = JsonPref<Map<String, int>>(
+  static final mediaVersionPreferences = JsonPref<Map<String, MediaVersionPreference>>(
     'media_version_preferences',
+    defaultValue: const {},
+    encode: (v) => json.encode(v.map((k, pref) => MapEntry(k, pref.toJson()))),
+    // Legacy values were bare ints; MediaVersionPreference.fromJson accepts both.
+    decode: (raw) => (raw as Map<String, dynamic>).map((k, v) => MapEntry(k, MediaVersionPreference.fromJson(v))),
+  );
+
+  /// Local record of when items were last played on this device
+  /// (item/show globalKey → epoch ms). Written by LocalPlaybackHistory; used
+  /// to pick the last-played sibling in the Continue Watching dedup (#1492).
+  static final localLastPlayedAt = JsonPref<Map<String, int>>(
+    'local_last_played_at',
     defaultValue: const {},
     encode: json.encode,
     decode: (raw) => (raw as Map<String, dynamic>).map((k, v) => MapEntry(k, v as int)),
@@ -857,6 +869,7 @@ class SettingsService extends BaseSharedPreferencesService {
     libraryDensity,
     episodePosterMode,
     mediaVersionPreferences,
+    localLastPlayedAt,
     appLocale,
     customDownloadPath,
     videoPlayerNavigationEnabled,

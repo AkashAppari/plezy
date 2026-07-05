@@ -2,7 +2,12 @@ part of '../../jellyfin_client.dart';
 
 mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
   JellyfinConnection get connection;
-  Future<JellyfinPlaybackBundle?> fetchPlaybackBundle(String itemId, {int sourceIndex = 0, String? sourceId});
+  Future<JellyfinPlaybackBundle?> fetchPlaybackBundle(
+    String itemId, {
+    int sourceIndex = 0,
+    String? sourceId,
+    String? preferredSignature,
+  });
   String buildDirectStreamUrl(
     String itemId, {
     String? container,

@@ -17,6 +17,13 @@ class PlaybackInitializationOptions {
   /// versions can reorder between item fetches, so this wins over index there.
   final String? selectedMediaSourceId;
 
+  /// Version signature ("res:codec:container") of a saved preference whose
+  /// [selectedMediaIndex] is a guess (stored index, or resolved on another
+  /// episode's version list). Backends re-match it against the authoritative
+  /// list. Never set alongside an explicit user selection — the priority is
+  /// sourceId > signature > index > backend fallback.
+  final String? preferredVersionSignature;
+
   /// Transcode preset. `original` means direct-play; anything else asks the
   /// server to transcode when supported.
   final TranscodeQualityPreset qualityPreset;
@@ -36,6 +43,7 @@ class PlaybackInitializationOptions {
     required this.metadata,
     required this.selectedMediaIndex,
     this.selectedMediaSourceId,
+    this.preferredVersionSignature,
     this.qualityPreset = TranscodeQualityPreset.original,
     this.selectedAudioStreamId,
     this.sessionIdentifier,

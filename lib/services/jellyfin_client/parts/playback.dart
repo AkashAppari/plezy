@@ -139,6 +139,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
       metadata.id,
       sourceIndex: options.selectedMediaIndex,
       sourceId: options.selectedMediaSourceId,
+      preferredSignature: options.preferredVersionSignature,
     );
     if (bundle == null) {
       throw PlaybackException('Item ${metadata.id} returned no MediaSources');
@@ -362,7 +363,12 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
   /// [sourceId] wins when present because Jellyfin plugins may reorder merged
   /// `MediaSources` between requests. [sourceIndex] is clamped to the valid
   /// range as a fallback to mirror Plex's `parseVideoPlaybackDataFromJson`.
-  Future<JellyfinPlaybackBundle?> fetchPlaybackBundle(String itemId, {int sourceIndex = 0, String? sourceId}) async {
+  Future<JellyfinPlaybackBundle?> fetchPlaybackBundle(
+    String itemId, {
+    int sourceIndex = 0,
+    String? sourceId,
+    String? preferredSignature,
+  }) async {
     final item = await fetchItem(itemId);
     final raw = item?.raw;
     if (raw is! Map<String, dynamic>) return null;
@@ -371,9 +377,20 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     final availableVersions = jellyfinSourcesToVersions(sources);
     var index = sourceIndex;
     final requestedSourceId = sourceId?.trim();
+    var resolvedBySourceId = false;
     if (requestedSourceId != null && requestedSourceId.isNotEmpty) {
       final byId = sources.indexWhere((source) => source is Map<String, dynamic> && source['Id'] == requestedSourceId);
-      if (byId >= 0) index = byId;
+      if (byId >= 0) {
+        index = byId;
+        resolvedBySourceId = true;
+      }
+    }
+    // Saved-preference signature: only meaningful when the id didn't pin a
+    // source (Resume rows omit MediaSources, so launch passes a signature and
+    // a stored index that may not fit this item's source ordering).
+    if (!resolvedBySourceId && preferredSignature != null && preferredSignature.isNotEmpty) {
+      final bySignature = MediaVersion.findMatchingIndex(availableVersions, {preferredSignature});
+      if (bySignature != null) index = bySignature;
     }
     if (index < 0 || index >= sources.length) index = 0;
     final source = sources[index];

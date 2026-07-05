@@ -18,6 +18,9 @@ import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
+import 'package:plezy/services/settings_service.dart';
+
+import '../test_helpers/prefs.dart';
 
 JellyfinConnection _conn() => JellyfinConnection(
   id: 'srv-1/user-1',
@@ -72,6 +75,8 @@ void main() {
   late DataAggregationService service;
 
   setUp(() {
+    resetSharedPreferencesForTest();
+    SettingsService.resetForTesting();
     db = AppDatabase.forTesting(NativeDatabase.memory());
     PlexApiCache.initialize(db);
     manager = MultiServerManager();
@@ -364,6 +369,170 @@ void main() {
 
       expect(result.items.map((item) => item.id), ['new-episode']);
       expect(result.succeededServerIds, {'plex-1'});
+    });
+
+    test('getOnDeckFromAllServers prefers the locally last-played duplicate sibling', () async {
+      // Two libraries carry the same show (1080p + 4K, matched by tvdb id);
+      // the server syncs watch state so lastViewedAt favours neither
+      // reliably. The locally recorded play must decide the surviving card —
+      // and it must keep the winner in the group's original shelf slot,
+      // ahead of the unrelated movie sorted between the two episodes (#1492).
+      final client = PlexClient.forTesting(
+        config: PlexConfig(
+          baseUrl: 'https://plex.example.com',
+          token: 'token',
+          clientIdentifier: 'client-id',
+          product: 'Plezy',
+          version: 'test',
+        ),
+        serverId: ServerId('plex-1'),
+        serverName: 'Plex',
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/hubs') {
+            return _json({
+              'MediaContainer': {
+                'Hub': [
+                  {
+                    'key': '/hubs/home/continueWatching',
+                    'title': 'Continue Watching',
+                    'type': 'mixed',
+                    'hubIdentifier': 'home.continue',
+                    'size': 3,
+                    'Metadata': [
+                      {
+                        'ratingKey': 'hd-episode',
+                        'type': 'episode',
+                        'title': 'Episode 1',
+                        'grandparentRatingKey': 'hd-show',
+                        'grandparentTitle': 'Shared Show',
+                        'guid': 'plex://episode/shared-episode-hd',
+                        'lastViewedAt': 200,
+                        'librarySectionID': 1,
+                      },
+                      {'ratingKey': 'movie-between', 'type': 'movie', 'title': 'Unrelated Movie', 'lastViewedAt': 150},
+                      {
+                        'ratingKey': 'uhd-episode',
+                        'type': 'episode',
+                        'title': 'Episode 1',
+                        'grandparentRatingKey': 'uhd-show',
+                        'grandparentTitle': 'Shared Show',
+                        'guid': 'plex://episode/shared-episode-uhd',
+                        'lastViewedAt': 100,
+                        'librarySectionID': 2,
+                      },
+                    ],
+                  },
+                ],
+              },
+            });
+          }
+          if (req.url.path == '/library/metadata/hd-show' || req.url.path == '/library/metadata/uhd-show') {
+            return _json({
+              'MediaContainer': {
+                'Metadata': [
+                  {
+                    'ratingKey': req.url.pathSegments.last,
+                    'type': 'show',
+                    'title': 'Shared Show',
+                    'Guid': [
+                      {'id': 'tvdb://12345'},
+                    ],
+                  },
+                ],
+              },
+            });
+          }
+          return http.Response('unexpected request', 500);
+        }),
+      );
+      addTearDown(client.close);
+      manager.debugRegisterClientForTesting(client);
+
+      // The user last played something in the 4K library's show tree.
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.localLastPlayedAt, {'plex-1:uhd-show': 999999});
+
+      final result = await service.getOnDeckFromAllServers(limit: 10);
+
+      // uhd-episode wins the duplicate group and takes the group's slot
+      // (before the movie); without local history hd-episode (newest
+      // lastViewedAt) would have survived.
+      expect(result.items.map((item) => item.id), ['uhd-episode', 'movie-between']);
+    });
+
+    test('getOnDeckFromAllServers prefers a duplicate recorded by item key', () async {
+      final client = PlexClient.forTesting(
+        config: PlexConfig(
+          baseUrl: 'https://plex.example.com',
+          token: 'token',
+          clientIdentifier: 'client-id',
+          product: 'Plezy',
+          version: 'test',
+        ),
+        serverId: ServerId('plex-1'),
+        serverName: 'Plex',
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/hubs') {
+            return _json({
+              'MediaContainer': {
+                'Hub': [
+                  {
+                    'key': '/hubs/home/continueWatching',
+                    'title': 'Continue Watching',
+                    'type': 'mixed',
+                    'hubIdentifier': 'home.continue',
+                    'size': 2,
+                    'Metadata': [
+                      {
+                        'ratingKey': 'movie-hd',
+                        'type': 'movie',
+                        'title': 'Shared Movie',
+                        'guid': 'plex://movie/shared-movie',
+                        'lastViewedAt': 200,
+                        'librarySectionID': 1,
+                      },
+                      {
+                        'ratingKey': 'movie-uhd',
+                        'type': 'movie',
+                        'title': 'Shared Movie',
+                        'guid': 'plex://movie/shared-movie',
+                        'lastViewedAt': 100,
+                        'librarySectionID': 2,
+                      },
+                    ],
+                  },
+                ],
+              },
+            });
+          }
+          if (req.url.path == '/library/metadata/movie-hd' || req.url.path == '/library/metadata/movie-uhd') {
+            return _json({
+              'MediaContainer': {
+                'Metadata': [
+                  {
+                    'ratingKey': req.url.pathSegments.last,
+                    'type': 'movie',
+                    'title': 'Shared Movie',
+                    'Guid': [
+                      {'id': 'tmdb://777'},
+                    ],
+                  },
+                ],
+              },
+            });
+          }
+          return http.Response('unexpected request', 500);
+        }),
+      );
+      addTearDown(client.close);
+      manager.debugRegisterClientForTesting(client);
+
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.localLastPlayedAt, {'plex-1:movie-uhd': 999999});
+
+      final result = await service.getOnDeckFromAllServers(limit: 10);
+
+      expect(result.items.map((item) => item.id), ['movie-uhd']);
     });
 
     test('getOnDeckFromAllServers keeps duplicate titles without stable ids', () async {

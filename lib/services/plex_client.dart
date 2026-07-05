@@ -1512,12 +1512,19 @@ class PlexClient
   /// Parse video playback data from raw metadata JSON (no network call).
   /// Used by [getVideoPlaybackData] to avoid redundant fetches when the
   /// response is already available.
-  PlexVideoPlaybackData parseVideoPlaybackDataFromJson(Map<String, dynamic>? metadataJson, {int mediaIndex = 0}) {
+  PlexVideoPlaybackData parseVideoPlaybackDataFromJson(
+    Map<String, dynamic>? metadataJson, {
+    int mediaIndex = 0,
+    String? selectedMediaSourceId,
+    String? preferredVersionSignature,
+  }) {
     return parsePlexVideoPlaybackDataFromJson(
       metadataJson,
       baseUrl: config.baseUrl,
       token: config.token,
       mediaIndex: mediaIndex,
+      selectedMediaSourceId: selectedMediaSourceId,
+      preferredVersionSignature: preferredVersionSignature,
       onVersionFallback: (requested, fallback) {
         appLogger.w('Version $requested inaccessible/missing — falling back to version $fallback');
       },
@@ -1527,7 +1534,12 @@ class PlexClient
   /// Get consolidated video playback data (URL, media info, versions, and markers) in a single API call.
   /// This is the primary method for playback initialization.
   /// Uses cache for offline mode support and network fallback.
-  Future<PlexVideoPlaybackData> getVideoPlaybackData(String ratingKey, {int mediaIndex = 0}) async {
+  Future<PlexVideoPlaybackData> getVideoPlaybackData(
+    String ratingKey, {
+    int mediaIndex = 0,
+    String? selectedMediaSourceId,
+    String? preferredVersionSignature,
+  }) async {
     Map<String, dynamic>? data;
     try {
       data = await fetchWithCacheFallback<Map<String, dynamic>>(
@@ -1545,7 +1557,12 @@ class PlexClient
       // Gracefully degrade: return empty playback data on total failure
     }
     final metadataJson = _getFirstMetadataJsonFromData(data);
-    return parseVideoPlaybackDataFromJson(metadataJson, mediaIndex: mediaIndex);
+    return parseVideoPlaybackDataFromJson(
+      metadataJson,
+      mediaIndex: mediaIndex,
+      selectedMediaSourceId: selectedMediaSourceId,
+      preferredVersionSignature: preferredVersionSignature,
+    );
   }
 
   /// Get file information for a media item.
@@ -3386,7 +3403,12 @@ class PlexClient
   @override
   Future<PlaybackInitializationResult> getPlaybackInitialization(PlaybackInitializationOptions options) async {
     try {
-      final data = await getVideoPlaybackData(options.metadata.id, mediaIndex: options.selectedMediaIndex);
+      final data = await getVideoPlaybackData(
+        options.metadata.id,
+        mediaIndex: options.selectedMediaIndex,
+        selectedMediaSourceId: options.selectedMediaSourceId,
+        preferredVersionSignature: options.preferredVersionSignature,
+      );
 
       if (!data.hasValidVideoUrl) {
         throw PlaybackException(t.messages.fileInfoNotAvailable);

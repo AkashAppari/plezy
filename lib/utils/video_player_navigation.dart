@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../media/media_item.dart';
+import '../media/media_version.dart';
+import '../media/media_version_preference.dart';
 import '../mpv/mpv.dart';
 import '../models/transcode_quality_preset.dart';
 import '../providers/download_provider.dart';
@@ -14,9 +16,11 @@ import '../providers/watch_state_store.dart';
 import '../watch_together/providers/watch_together_provider.dart';
 import '../screens/video_player_screen.dart';
 import '../services/external_player_service.dart';
+import '../services/local_playback_history.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/settings_service.dart';
 import 'app_logger.dart';
+import 'global_key_utils.dart';
 import 'platform_detector.dart';
 
 const String kVideoPlayerRouteName = '/video_player';
@@ -89,28 +93,82 @@ class WatchTogetherPlaybackNavigationException implements Exception {
 }
 
 /// Series (keyed by grandparent) or standalone-item key under
-/// [SettingsService.mediaVersionPreferences].
-String _mediaVersionPreferenceKey(MediaItem metadata) => metadata.grandparentId ?? metadata.id;
+/// [SettingsService.mediaVersionPreferences], scoped by server — raw Plex
+/// rating keys are small integers that can collide across servers.
+String _mediaVersionPreferenceKey(MediaItem metadata) {
+  final serverId = serverIdOrNull(metadata.serverId);
+  final id = metadata.grandparentId ?? metadata.id;
+  return serverId != null ? buildGlobalKey(serverId, id) : id;
+}
 
-/// Saved media-version preference for [metadata], or null when none is
-/// stored. Shared by launch navigation and in-player version switching so
-/// reads and writes can't drift onto different keys.
-Future<int?> savedMediaVersionIndexFor(MediaItem metadata) async {
+/// Key entries were stored under before server scoping. Reads fall back to
+/// it; writes migrate it to the scoped key.
+String _legacyMediaVersionPreferenceKey(MediaItem metadata) => metadata.grandparentId ?? metadata.id;
+
+/// Entry cap for [SettingsService.mediaVersionPreferences]; oldest entries
+/// (by write time, legacy entries first) are evicted past it.
+const _maxMediaVersionPreferences = 500;
+
+/// Saved media-version preference for [metadata]'s series/movie, or null when
+/// none is stored. Shared by launch navigation and in-player version
+/// switching so reads and writes can't drift onto different keys.
+Future<MediaVersionPreference?> savedMediaVersionPreferenceFor(MediaItem metadata) async {
   try {
     final settingsService = await SettingsService.getInstance();
-    return settingsService.read(SettingsService.mediaVersionPreferences)[_mediaVersionPreferenceKey(metadata)];
+    final prefs = settingsService.read(SettingsService.mediaVersionPreferences);
+    return prefs[_mediaVersionPreferenceKey(metadata)] ?? prefs[_legacyMediaVersionPreferenceKey(metadata)];
   } catch (_) {
     return null;
   }
 }
 
-/// Persist [index] as the preferred media version for [metadata]'s series/movie.
-Future<void> saveMediaVersionIndexFor(MediaItem metadata, int index) async {
+/// Persist the version at [index] in [versions] as the preferred media
+/// version for [metadata]'s series/movie. Callers are explicit-selection
+/// sites only — plain plays and backend fallbacks must not write, so a
+/// server-side clamp can't silently overwrite the user's choice.
+Future<void> saveMediaVersionPreferenceFor(
+  MediaItem metadata, {
+  required int index,
+  required List<MediaVersion> versions,
+}) async {
   final settingsService = await SettingsService.getInstance();
-  await settingsService.write(SettingsService.mediaVersionPreferences, {
-    ...settingsService.read(SettingsService.mediaVersionPreferences),
-    _mediaVersionPreferenceKey(metadata): index,
-  });
+  final pref = index >= 0 && index < versions.length
+      ? MediaVersionPreference.forVersion(versions[index], index)
+      : MediaVersionPreference(index: index, updatedAt: DateTime.now().millisecondsSinceEpoch);
+  final updated = {...settingsService.read(SettingsService.mediaVersionPreferences)}
+    ..remove(_legacyMediaVersionPreferenceKey(metadata))
+    ..[_mediaVersionPreferenceKey(metadata)] = pref;
+  await settingsService.write(SettingsService.mediaVersionPreferences, _pruneMediaVersionPreferences(updated));
+}
+
+Map<String, MediaVersionPreference> _pruneMediaVersionPreferences(Map<String, MediaVersionPreference> prefs) {
+  if (prefs.length <= _maxMediaVersionPreferences) return prefs;
+  final entries = prefs.entries.toList()..sort((a, b) => (b.value.updatedAt ?? 0).compareTo(a.value.updatedAt ?? 0));
+  return Map.fromEntries(entries.take(_maxMediaVersionPreferences));
+}
+
+/// A saved preference resolved for launch: the index to request plus the
+/// id/signature evidence for re-resolving it against the authoritative
+/// version list during playback initialization.
+typedef ResolvedMediaVersionPreference = ({int index, String? sourceId, String? signature});
+
+/// Resolve the saved preference for [metadata] against its version list.
+///
+/// When [MediaItem.mediaVersions] is populated (Plex hub/detail fetches) the
+/// index is verified and the matched version's real id is returned. When it
+/// isn't (Jellyfin resume rows omit `MediaSources`), the stored index and
+/// signature pass through with a null sourceId — an unverified id from a
+/// sibling episode would be meaningless downstream, while a signature is
+/// safely re-matched there.
+Future<ResolvedMediaVersionPreference?> resolveSavedMediaVersionFor(MediaItem metadata) async {
+  final pref = await savedMediaVersionPreferenceFor(metadata);
+  if (pref == null) return null;
+  final versions = metadata.mediaVersions ?? const <MediaVersion>[];
+  if (versions.isEmpty) return (index: pref.index, sourceId: null, signature: pref.signature);
+  final index = pref.resolveIndex(versions);
+  if (index == null) return null;
+  final version = versions[index];
+  return (index: index, sourceId: version.id.isEmpty ? null : version.id, signature: version.signature);
 }
 
 /// Navigates to the VideoPlayerScreen with instant transitions to prevent white flash.
@@ -177,8 +235,18 @@ Future<bool?> navigateToVideoPlayer(
     }
   }
 
-  final mediaIndex = selectedMediaIndex ?? downloadedMediaIndex ?? await savedMediaVersionIndexFor(metadata) ?? 0;
-  final mediaSourceId = selectedMediaSourceId ?? downloadedMediaSourceId;
+  // Saved preferences only apply when nothing explicit is in play — an
+  // explicit caller selection or a downloaded version must never be
+  // second-guessed by a remembered choice.
+  ResolvedMediaVersionPreference? savedVersion;
+  if (selectedMediaIndex == null &&
+      selectedMediaSourceId == null &&
+      downloadedMediaIndex == null &&
+      downloadedMediaSourceId == null) {
+    savedVersion = await resolveSavedMediaVersionFor(metadata);
+  }
+  final mediaIndex = selectedMediaIndex ?? downloadedMediaIndex ?? savedVersion?.index ?? 0;
+  final mediaSourceId = selectedMediaSourceId ?? downloadedMediaSourceId ?? savedVersion?.sourceId;
 
   var markedInFlight = false;
   if (!usePushReplacement) {
@@ -235,7 +303,12 @@ Future<bool?> navigateToVideoPlayer(
           );
         }
 
-        if (launched) return null;
+        if (launched) {
+          // External playback never reaches the in-player session commit, so
+          // record the local last-played history here.
+          if (!isOffline) unawaited(LocalPlaybackHistory.recordPlayback(metadata));
+          return null;
+        }
       }
     } catch (e) {
       appLogger.w('External player launch failed, falling back to built-in player', error: e);
@@ -260,6 +333,7 @@ Future<bool?> navigateToVideoPlayer(
         preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
         selectedMediaIndex: mediaIndex,
         selectedMediaSourceId: mediaSourceId,
+        preferredVersionSignature: savedVersion?.signature,
         selectedQualityPreset: selectedQualityPreset,
         isOffline: isOffline,
       ),

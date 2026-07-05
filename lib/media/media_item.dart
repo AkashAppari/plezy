@@ -377,6 +377,19 @@ sealed class MediaItem with _$MediaItem {
   String? get libraryGlobalKey =>
       serverId != null && libraryId != null ? buildGlobalKey(ServerId(serverId!), libraryId!) : null;
 
+  /// Global unique identifier of this item's series, for episodes/seasons.
+  /// Null for movies and shows themselves — their own [globalKey] is already
+  /// series-level.
+  String? get seriesGlobalKey {
+    final seriesId = switch (kind) {
+      MediaKind.episode => grandparentId,
+      MediaKind.season => grandparentId ?? parentId,
+      _ => null,
+    };
+    if (seriesId == null) return null;
+    return serverId != null ? buildGlobalKey(ServerId(serverId!), seriesId) : seriesId;
+  }
+
   /// Parent rating keys for hierarchical invalidation. For an episode:
   /// `[seasonId, showId]`. For a season: `[showId]`. For a movie: `[]`.
   List<String> get parentChain => [?parentId, ?grandparentId];

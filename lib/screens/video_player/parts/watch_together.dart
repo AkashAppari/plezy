@@ -172,10 +172,14 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
       return true;
     }
 
+    // fetchItem populates mediaVersions, so the saved preference resolves to
+    // a verified index/id here rather than a raw stored index.
+    final savedVersion = await resolveSavedMediaVersionFor(metadata);
     final handled = await _reloadMediaInPlace(
       metadata: metadata,
-      selectedMediaIndex: await savedMediaVersionIndexFor(metadata) ?? 0,
-      selectedMediaSourceId: null,
+      selectedMediaIndex: savedVersion?.index ?? 0,
+      selectedMediaSourceId: savedVersion?.sourceId,
+      preferredVersionSignature: savedVersion?.signature,
       qualityPreset: _selectedQualityPreset,
       preserveCurrentTrackSelection: false,
       useCurrentAudioStreamSelection: false,
