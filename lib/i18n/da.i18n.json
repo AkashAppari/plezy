@@ -265,6 +265,14 @@
     "audioPassthrough": "Lyd-passthrough",
     "audioPassthroughDescription": "Send Dolby/DTS-lyd til din receiver eller dit TV uden genkodning, så surroundlyd bevares. Slå fra, hvis du ikke har lyd.",
     "audioPassthroughDescriptionAppleTv": "Overlad Dolby Digital Plus (inkl. Atmos) til systemet som bitstream. DTS og TrueHD afspilles stadig som flerkanals PCM. Korte lydhuller kan forekomme ved søgning.",
+    "audioDownmix": "Downmix til stereo",
+    "audioDownmixDescription": "Mikser surroundlyd ned til to kanaler til stereohøjttalere eller hovedtelefoner",
+    "downmixCenterBoost": "Forstærkning af centerkanal",
+    "downmixCenterBoostValue": "${db} dB",
+    "downmixCenterBoostLabel": "Forstærkning (dB)",
+    "downmixCenterBoostShort": "dB",
+    "audioDownmixNormalize": "Normalisér lydstyrke ved downmix",
+    "audioDownmixNormalizeDescription": "Sænker mixet for at undgå clipping. Slå fra for at bevare den oprindelige lydstyrke (høje scener kan forvrænges).",
     "atmosDiagnostics": "Atmos-outputtest",
     "atmosDiagnosticsDescription": "Diagnosticér Dolby Atmos-output ved at afspille testsignaler gennem systemafspilleren",
     "atmosTestHlsAtmos": "Apple Atmos-stream",
@@ -1176,7 +1184,8 @@
     "audioOutput": "Lydoutput",
     "performanceOverlay": "Ydelsesoverlay",
     "audioPassthrough": "Lyd-passthrough",
-    "audioNormalization": "Normalisér lydstyrke"
+    "audioNormalization": "Normalisér lydstyrke",
+    "audioDownmix": "Downmix til stereo"
   },
   "performanceOverlay": {
     "color": "Farve",

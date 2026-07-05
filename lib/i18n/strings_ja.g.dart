@@ -394,6 +394,14 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get audioPassthrough => 'オーディオパススルー';
 	@override String get audioPassthroughDescription => 'Dolby/DTS音声を再エンコードせずにレシーバーやテレビに送り、サラウンドを維持します。音が出ない場合は無効にしてください。';
 	@override String get audioPassthroughDescriptionAppleTv => 'Dolby Digital Plus（Atmos含む）をビットストリームとしてシステムに渡します。DTSとTrueHDは引き続きマルチチャンネルPCMで再生されます。シーク時に短い音切れが発生することがあります。';
+	@override String get audioDownmix => 'ステレオにダウンミックス';
+	@override String get audioDownmixDescription => 'サラウンド音声をステレオスピーカーやヘッドホン用に2チャンネルへミックスします';
+	@override String get downmixCenterBoost => 'センターチャンネルブースト';
+	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
+	@override String get downmixCenterBoostLabel => 'ブースト (dB)';
+	@override String get downmixCenterBoostShort => 'dB';
+	@override String get audioDownmixNormalize => 'ダウンミックス時の音量正規化';
+	@override String get audioDownmixNormalizeDescription => 'クリッピングを防ぐためにミックス音量を下げます。オフにすると元の音量を維持します（大音量シーンで歪む場合があります）。';
 	@override String get atmosDiagnostics => 'Atmos出力テスト';
 	@override String get atmosDiagnosticsDescription => 'システムプレイヤーでテスト信号を再生してDolby Atmos出力を診断します';
 	@override String get atmosTestHlsAtmos => 'Apple Atmosストリーム';
@@ -1391,6 +1399,7 @@ class _TranslationsVideoSettingsJa extends TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => 'パフォーマンスオーバーレイ';
 	@override String get audioPassthrough => 'オーディオパススルー';
 	@override String get audioNormalization => 'ラウドネス正規化';
+	@override String get audioDownmix => 'ステレオにダウンミックス';
 }
 
 // Path: performanceOverlay
@@ -2198,6 +2207,14 @@ extension on TranslationsJa {
 			'settings.audioPassthrough' => 'オーディオパススルー',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS音声を再エンコードせずにレシーバーやテレビに送り、サラウンドを維持します。音が出ない場合は無効にしてください。',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Dolby Digital Plus（Atmos含む）をビットストリームとしてシステムに渡します。DTSとTrueHDは引き続きマルチチャンネルPCMで再生されます。シーク時に短い音切れが発生することがあります。',
+			'settings.audioDownmix' => 'ステレオにダウンミックス',
+			'settings.audioDownmixDescription' => 'サラウンド音声をステレオスピーカーやヘッドホン用に2チャンネルへミックスします',
+			'settings.downmixCenterBoost' => 'センターチャンネルブースト',
+			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
+			'settings.downmixCenterBoostLabel' => 'ブースト (dB)',
+			'settings.downmixCenterBoostShort' => 'dB',
+			'settings.audioDownmixNormalize' => 'ダウンミックス時の音量正規化',
+			'settings.audioDownmixNormalizeDescription' => 'クリッピングを防ぐためにミックス音量を下げます。オフにすると元の音量を維持します（大音量シーンで歪む場合があります）。',
 			'settings.atmosDiagnostics' => 'Atmos出力テスト',
 			'settings.atmosDiagnosticsDescription' => 'システムプレイヤーでテスト信号を再生してDolby Atmos出力を診断します',
 			'settings.atmosTestHlsAtmos' => 'Apple Atmosストリーム',
@@ -2447,6 +2464,8 @@ extension on TranslationsJa {
 			'messages.logsCleared' => 'ログをクリアしました',
 			'messages.logsCopied' => 'ログをクリップボードにコピーしました',
 			'messages.noLogsAvailable' => 'ログがありません',
+			_ => null,
+		} ?? switch (path) {
 			'messages.libraryScanning' => ({required Object title}) => '"${title}"をスキャン中...',
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}"のライブラリスキャンを開始しました',
 			'messages.libraryScanFailed' => ({required Object error}) => 'ライブラリのスキャンに失敗しました: ${error}',
@@ -2455,8 +2474,6 @@ extension on TranslationsJa {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'メタデータの更新に失敗しました: ${error}',
 			'messages.logoutConfirm' => 'ログアウトしてもよろしいですか？',
 			'messages.noSeasonsFound' => 'シーズンが見つかりません',
-			_ => null,
-		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => 'シーズンを読み込めませんでした',
 			'messages.noEpisodesFound' => '最初のシーズンにエピソードが見つかりません',
 			'messages.noEpisodesFoundGeneral' => 'エピソードが見つかりません',
@@ -2961,6 +2978,8 @@ extension on TranslationsJa {
 			'companionRemote.session.startingServer' => 'リモートサーバーを起動中...',
 			'companionRemote.session.failedToCreate' => 'リモートサーバーの起動に失敗しました:',
 			'companionRemote.session.hostAddress' => 'ホストアドレス',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.connected' => '接続済み',
 			'companionRemote.session.serverRunning' => 'リモートサーバー稼働中',
 			'companionRemote.session.serverStopped' => 'リモートサーバー停止中',
@@ -2969,8 +2988,6 @@ extension on TranslationsJa {
 			'companionRemote.session.usePhoneToControl' => 'モバイルデバイスでこのアプリを操作できます',
 			'companionRemote.session.startServer' => 'サーバーを起動',
 			'companionRemote.session.stopServer' => 'サーバーを停止',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.minimize' => '最小化',
 			'companionRemote.pairing.discoveryDescription' => '同じPlexアカウントのPlezyデバイスがここに表示されます',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -3030,6 +3047,7 @@ extension on TranslationsJa {
 			'videoSettings.performanceOverlay' => 'パフォーマンスオーバーレイ',
 			'videoSettings.audioPassthrough' => 'オーディオパススルー',
 			'videoSettings.audioNormalization' => 'ラウドネス正規化',
+			'videoSettings.audioDownmix' => 'ステレオにダウンミックス',
 			'performanceOverlay.color' => '色',
 			'performanceOverlay.performance' => 'パフォーマンス',
 			'performanceOverlay.buffer' => 'バッファ',

@@ -394,6 +394,14 @@ class _TranslationsSettingsNb extends TranslationsSettingsEn {
 	@override String get audioPassthrough => 'Lydgjennomgang';
 	@override String get audioPassthroughDescription => 'Send Dolby/DTS-lyd til mottakeren eller TV-en uten omkoding, slik at surroundlyd bevares. Slå av hvis du ikke har lyd.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Overlater Dolby Digital Plus (inkl. Atmos) til systemet som bitstream. DTS og TrueHD spilles fortsatt av som flerkanals PCM. Korte lydbrudd kan forekomme ved søking.';
+	@override String get audioDownmix => 'Nedmiks til stereo';
+	@override String get audioDownmixDescription => 'Mikser surroundlyd ned til to kanaler for stereohøyttalere eller hodetelefoner';
+	@override String get downmixCenterBoost => 'Forsterkning av senterkanal';
+	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
+	@override String get downmixCenterBoostLabel => 'Forsterkning (dB)';
+	@override String get downmixCenterBoostShort => 'dB';
+	@override String get audioDownmixNormalize => 'Normaliser lydstyrke ved nedmiks';
+	@override String get audioDownmixNormalizeDescription => 'Senker miksen for å unngå klipping. Slå av for å beholde originalvolumet (høye scener kan forvrenges).';
 	@override String get atmosDiagnostics => 'Atmos-utgangstest';
 	@override String get atmosDiagnosticsDescription => 'Diagnostiser Dolby Atmos-utgangen ved å spille testsignaler gjennom systemspilleren';
 	@override String get atmosTestHlsAtmos => 'Apple Atmos-strøm';
@@ -1391,6 +1399,7 @@ class _TranslationsVideoSettingsNb extends TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => 'Ytelsesoverlegg';
 	@override String get audioPassthrough => 'Lydgjennomgang';
 	@override String get audioNormalization => 'Normaliser lydstyrke';
+	@override String get audioDownmix => 'Nedmiks til stereo';
 }
 
 // Path: performanceOverlay
@@ -2198,6 +2207,14 @@ extension on TranslationsNb {
 			'settings.audioPassthrough' => 'Lydgjennomgang',
 			'settings.audioPassthroughDescription' => 'Send Dolby/DTS-lyd til mottakeren eller TV-en uten omkoding, slik at surroundlyd bevares. Slå av hvis du ikke har lyd.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Overlater Dolby Digital Plus (inkl. Atmos) til systemet som bitstream. DTS og TrueHD spilles fortsatt av som flerkanals PCM. Korte lydbrudd kan forekomme ved søking.',
+			'settings.audioDownmix' => 'Nedmiks til stereo',
+			'settings.audioDownmixDescription' => 'Mikser surroundlyd ned til to kanaler for stereohøyttalere eller hodetelefoner',
+			'settings.downmixCenterBoost' => 'Forsterkning av senterkanal',
+			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
+			'settings.downmixCenterBoostLabel' => 'Forsterkning (dB)',
+			'settings.downmixCenterBoostShort' => 'dB',
+			'settings.audioDownmixNormalize' => 'Normaliser lydstyrke ved nedmiks',
+			'settings.audioDownmixNormalizeDescription' => 'Senker miksen for å unngå klipping. Slå av for å beholde originalvolumet (høye scener kan forvrenges).',
 			'settings.atmosDiagnostics' => 'Atmos-utgangstest',
 			'settings.atmosDiagnosticsDescription' => 'Diagnostiser Dolby Atmos-utgangen ved å spille testsignaler gjennom systemspilleren',
 			'settings.atmosTestHlsAtmos' => 'Apple Atmos-strøm',
@@ -2447,6 +2464,8 @@ extension on TranslationsNb {
 			'messages.logsCleared' => 'Logger tømt',
 			'messages.logsCopied' => 'Logger kopiert til utklippstavle',
 			'messages.noLogsAvailable' => 'Ingen logger tilgjengelig',
+			_ => null,
+		} ?? switch (path) {
 			'messages.libraryScanning' => ({required Object title}) => 'Skanner "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Bibliotekkanning startet for "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kunne ikke skanne bibliotek: ${error}',
@@ -2455,8 +2474,6 @@ extension on TranslationsNb {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Kunne ikke oppdatere metadata: ${error}',
 			'messages.logoutConfirm' => 'Er du sikker på at du vil logge ut?',
 			'messages.noSeasonsFound' => 'Ingen sesonger funnet',
-			_ => null,
-		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => 'Kunne ikke laste sesonger',
 			'messages.noEpisodesFound' => 'Ingen episoder funnet i første sesong',
 			'messages.noEpisodesFoundGeneral' => 'Ingen episoder funnet',
@@ -2961,6 +2978,8 @@ extension on TranslationsNb {
 			'companionRemote.session.startingServer' => 'Starter fjernserver...',
 			'companionRemote.session.failedToCreate' => 'Kunne ikke starte fjernserver:',
 			'companionRemote.session.hostAddress' => 'Vertsadresse',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.connected' => 'Tilkoblet',
 			'companionRemote.session.serverRunning' => 'Fjernserver aktiv',
 			'companionRemote.session.serverStopped' => 'Fjernserver stoppet',
@@ -2969,8 +2988,6 @@ extension on TranslationsNb {
 			'companionRemote.session.usePhoneToControl' => 'Bruk mobilenheten din til å styre denne appen',
 			'companionRemote.session.startServer' => 'Start server',
 			'companionRemote.session.stopServer' => 'Stopp server',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.minimize' => 'Minimer',
 			'companionRemote.pairing.discoveryDescription' => 'Plezy-enheter med samme Plex-konto vises her',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -3030,6 +3047,7 @@ extension on TranslationsNb {
 			'videoSettings.performanceOverlay' => 'Ytelsesoverlegg',
 			'videoSettings.audioPassthrough' => 'Lydgjennomgang',
 			'videoSettings.audioNormalization' => 'Normaliser lydstyrke',
+			'videoSettings.audioDownmix' => 'Nedmiks til stereo',
 			'performanceOverlay.color' => 'Farge',
 			'performanceOverlay.performance' => 'Ytelse',
 			'performanceOverlay.buffer' => 'Buffer',

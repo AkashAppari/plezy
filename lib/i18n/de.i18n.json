@@ -265,6 +265,14 @@
     "audioPassthrough": "Audio-Durchleitung",
     "audioPassthroughDescription": "Dolby/DTS-Audio ohne Neukodierung an deinen Receiver oder Fernseher senden und Surround-Sound erhalten. Deaktivieren, wenn kein Ton zu hören ist.",
     "audioPassthroughDescriptionAppleTv": "Übergibt Dolby Digital Plus (inkl. Atmos) als Bitstream an das System. DTS und TrueHD werden weiterhin als Mehrkanal-PCM wiedergegeben. Beim Spulen können kurze Tonaussetzer auftreten.",
+    "audioDownmix": "Downmix auf Stereo",
+    "audioDownmixDescription": "Mischt Surround-Ton für Stereo-Lautsprecher oder Kopfhörer auf zwei Kanäle herunter",
+    "downmixCenterBoost": "Center-Kanal-Verstärkung",
+    "downmixCenterBoostValue": "${db} dB",
+    "downmixCenterBoostLabel": "Verstärkung (dB)",
+    "downmixCenterBoostShort": "dB",
+    "audioDownmixNormalize": "Lautstärke beim Downmix normalisieren",
+    "audioDownmixNormalizeDescription": "Senkt den Mix ab, um Übersteuerung zu vermeiden. Deaktivieren, um die Originallautstärke zu behalten (laute Szenen können verzerren).",
     "atmosDiagnostics": "Atmos-Ausgabetest",
     "atmosDiagnosticsDescription": "Dolby-Atmos-Ausgabe diagnostizieren, indem Testsignale über den Systemplayer abgespielt werden",
     "atmosTestHlsAtmos": "Apple-Atmos-Stream",
@@ -1176,7 +1184,8 @@
     "audioOutput": "Audioausgabe",
     "performanceOverlay": "Leistungsanzeige",
     "audioPassthrough": "Audio-Durchleitung",
-    "audioNormalization": "Lautstärke normalisieren"
+    "audioNormalization": "Lautstärke normalisieren",
+    "audioDownmix": "Downmix auf Stereo"
   },
   "performanceOverlay": {
     "color": "Farbe",

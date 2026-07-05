@@ -169,6 +169,7 @@ class ExoPlayerPlugin :
       "setDvConversionMode" -> handleSetDvConversionMode(call, result)
       "setAudioNormalization" -> handleSetAudioNormalization(call, result)
       "setAudioPassthrough" -> handleSetAudioPassthrough(call, result)
+      "setAudioDownmix" -> handleSetAudioDownmix(call, result)
       "observeProperty" -> handleObserveProperty(call, result)
       "setMpvProperty" -> handleSetMpvProperty(call, result)
       "setLogLevel" -> {
@@ -655,6 +656,26 @@ class ExoPlayerPlugin :
     }
     activity?.runOnUiThread {
       playerCore?.setAudioNormalization(enabled)
+      result.success(true)
+    } ?: result.error("NO_ACTIVITY", "Activity not available", null)
+  }
+
+  private fun handleSetAudioDownmix(call: MethodCall, result: MethodChannel.Result) {
+    val enabled = call.argument<Boolean>("enabled")
+    if (enabled == null) {
+      result.error("INVALID_ARGS", "Missing 'enabled'", null)
+      return
+    }
+    val centerBoostDb = call.argument<Int>("centerBoostDb") ?: 0
+    val normalize = call.argument<Boolean>("normalize") ?: true
+    if (usingMpvFallback) {
+      // mpv applies downmix via the audio-channels/audio-swresample-o
+      // properties the Dart layer also sends through setMpvProperty.
+      result.success(true)
+      return
+    }
+    activity?.runOnUiThread {
+      playerCore?.setAudioDownmix(enabled, centerBoostDb, normalize)
       result.success(true)
     } ?: result.error("NO_ACTIVITY", "Activity not available", null)
   }

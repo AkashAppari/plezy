@@ -265,6 +265,14 @@
     "audioPassthrough": "Audio Pass-Through",
     "audioPassthroughDescription": "Envoyez l'audio Dolby/DTS vers votre ampli ou téléviseur sans réencodage, en conservant le son surround. Désactivez si vous n'avez aucun son.",
     "audioPassthroughDescriptionAppleTv": "Transmet le Dolby Digital Plus (y compris Atmos) au système en bitstream. Le DTS et le TrueHD restent lus en PCM multicanal. De brèves coupures audio peuvent survenir lors des sauts.",
+    "audioDownmix": "Downmix en stéréo",
+    "audioDownmixDescription": "Réduit le son surround à deux canaux pour les enceintes stéréo ou le casque",
+    "downmixCenterBoost": "Renforcement du canal central",
+    "downmixCenterBoostValue": "${db} dB",
+    "downmixCenterBoostLabel": "Renforcement (dB)",
+    "downmixCenterBoostShort": "dB",
+    "audioDownmixNormalize": "Normaliser le volume lors du downmix",
+    "audioDownmixNormalizeDescription": "Atténue le mixage pour éviter la saturation. Désactivez pour conserver le volume d'origine (risque de distorsion sur les scènes fortes).",
     "atmosDiagnostics": "Test de sortie Atmos",
     "atmosDiagnosticsDescription": "Diagnostiquer la sortie Dolby Atmos en lisant des signaux de test via le lecteur système",
     "atmosTestHlsAtmos": "Flux Atmos d'Apple",
@@ -1176,7 +1184,8 @@
     "audioOutput": "Sortie audio",
     "performanceOverlay": "Superposition de performance",
     "audioPassthrough": "Audio Pass-Through",
-    "audioNormalization": "Normaliser le volume"
+    "audioNormalization": "Normaliser le volume",
+    "audioDownmix": "Downmix en stéréo"
   },
   "performanceOverlay": {
     "color": "Couleur",

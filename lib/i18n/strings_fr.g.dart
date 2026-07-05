@@ -394,6 +394,14 @@ class _TranslationsSettingsFr extends TranslationsSettingsEn {
 	@override String get audioPassthrough => 'Audio Pass-Through';
 	@override String get audioPassthroughDescription => 'Envoyez l\'audio Dolby/DTS vers votre ampli ou téléviseur sans réencodage, en conservant le son surround. Désactivez si vous n\'avez aucun son.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Transmet le Dolby Digital Plus (y compris Atmos) au système en bitstream. Le DTS et le TrueHD restent lus en PCM multicanal. De brèves coupures audio peuvent survenir lors des sauts.';
+	@override String get audioDownmix => 'Downmix en stéréo';
+	@override String get audioDownmixDescription => 'Réduit le son surround à deux canaux pour les enceintes stéréo ou le casque';
+	@override String get downmixCenterBoost => 'Renforcement du canal central';
+	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
+	@override String get downmixCenterBoostLabel => 'Renforcement (dB)';
+	@override String get downmixCenterBoostShort => 'dB';
+	@override String get audioDownmixNormalize => 'Normaliser le volume lors du downmix';
+	@override String get audioDownmixNormalizeDescription => 'Atténue le mixage pour éviter la saturation. Désactivez pour conserver le volume d\'origine (risque de distorsion sur les scènes fortes).';
 	@override String get atmosDiagnostics => 'Test de sortie Atmos';
 	@override String get atmosDiagnosticsDescription => 'Diagnostiquer la sortie Dolby Atmos en lisant des signaux de test via le lecteur système';
 	@override String get atmosTestHlsAtmos => 'Flux Atmos d\'Apple';
@@ -1391,6 +1399,7 @@ class _TranslationsVideoSettingsFr extends TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => 'Superposition de performance';
 	@override String get audioPassthrough => 'Audio Pass-Through';
 	@override String get audioNormalization => 'Normaliser le volume';
+	@override String get audioDownmix => 'Downmix en stéréo';
 }
 
 // Path: performanceOverlay
@@ -2198,6 +2207,14 @@ extension on TranslationsFr {
 			'settings.audioPassthrough' => 'Audio Pass-Through',
 			'settings.audioPassthroughDescription' => 'Envoyez l\'audio Dolby/DTS vers votre ampli ou téléviseur sans réencodage, en conservant le son surround. Désactivez si vous n\'avez aucun son.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Transmet le Dolby Digital Plus (y compris Atmos) au système en bitstream. Le DTS et le TrueHD restent lus en PCM multicanal. De brèves coupures audio peuvent survenir lors des sauts.',
+			'settings.audioDownmix' => 'Downmix en stéréo',
+			'settings.audioDownmixDescription' => 'Réduit le son surround à deux canaux pour les enceintes stéréo ou le casque',
+			'settings.downmixCenterBoost' => 'Renforcement du canal central',
+			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
+			'settings.downmixCenterBoostLabel' => 'Renforcement (dB)',
+			'settings.downmixCenterBoostShort' => 'dB',
+			'settings.audioDownmixNormalize' => 'Normaliser le volume lors du downmix',
+			'settings.audioDownmixNormalizeDescription' => 'Atténue le mixage pour éviter la saturation. Désactivez pour conserver le volume d\'origine (risque de distorsion sur les scènes fortes).',
 			'settings.atmosDiagnostics' => 'Test de sortie Atmos',
 			'settings.atmosDiagnosticsDescription' => 'Diagnostiquer la sortie Dolby Atmos en lisant des signaux de test via le lecteur système',
 			'settings.atmosTestHlsAtmos' => 'Flux Atmos d\'Apple',
@@ -2447,6 +2464,8 @@ extension on TranslationsFr {
 			'messages.logsCleared' => 'Logs effacés',
 			'messages.logsCopied' => 'Logs copiés dans le presse-papier',
 			'messages.noLogsAvailable' => 'Aucun log disponible',
+			_ => null,
+		} ?? switch (path) {
 			'messages.libraryScanning' => ({required Object title}) => 'Scan de "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Scan de la bibliothèque démarrée pour "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Échec du scan de la bibliothèque: ${error}',
@@ -2455,8 +2474,6 @@ extension on TranslationsFr {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Échec de l\'actualisation des métadonnées: ${error}',
 			'messages.logoutConfirm' => 'Êtes-vous sûr de vouloir vous déconnecter ?',
 			'messages.noSeasonsFound' => 'Aucune saison trouvée',
-			_ => null,
-		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => 'Impossible de charger les saisons',
 			'messages.noEpisodesFound' => 'Aucun épisode trouvé dans la première saison',
 			'messages.noEpisodesFoundGeneral' => 'Aucun épisode trouvé',
@@ -2961,6 +2978,8 @@ extension on TranslationsFr {
 			'companionRemote.session.startingServer' => 'Démarrage du serveur distant...',
 			'companionRemote.session.failedToCreate' => 'Échec du démarrage du serveur distant :',
 			'companionRemote.session.hostAddress' => 'Adresse de l\'hôte',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.connected' => 'Connecté',
 			'companionRemote.session.serverRunning' => 'Serveur distant actif',
 			'companionRemote.session.serverStopped' => 'Serveur distant arrêté',
@@ -2969,8 +2988,6 @@ extension on TranslationsFr {
 			'companionRemote.session.usePhoneToControl' => 'Utilisez votre appareil mobile pour contrôler cette application',
 			'companionRemote.session.startServer' => 'Démarrer le serveur',
 			'companionRemote.session.stopServer' => 'Arrêter le serveur',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.minimize' => 'Réduire',
 			'companionRemote.pairing.discoveryDescription' => 'Les appareils Plezy avec le même compte Plex apparaissent ici',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -3030,6 +3047,7 @@ extension on TranslationsFr {
 			'videoSettings.performanceOverlay' => 'Superposition de performance',
 			'videoSettings.audioPassthrough' => 'Audio Pass-Through',
 			'videoSettings.audioNormalization' => 'Normaliser le volume',
+			'videoSettings.audioDownmix' => 'Downmix en stéréo',
 			'performanceOverlay.color' => 'Couleur',
 			'performanceOverlay.performance' => 'Performances',
 			'performanceOverlay.buffer' => 'Tampon',

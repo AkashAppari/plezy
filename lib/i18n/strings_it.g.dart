@@ -394,6 +394,14 @@ class _TranslationsSettingsIt extends TranslationsSettingsEn {
 	@override String get audioPassthrough => 'Audio Passthrough';
 	@override String get audioPassthroughDescription => 'Invia l\'audio Dolby/DTS al ricevitore o alla TV senza ricodifica, mantenendo il suono surround. Disattiva se non senti audio.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Consegna Dolby Digital Plus (incluso Atmos) al sistema come bitstream. DTS e TrueHD vengono comunque riprodotti come PCM multicanale. Durante i salti possono verificarsi brevi interruzioni audio.';
+	@override String get audioDownmix => 'Downmix in stereo';
+	@override String get audioDownmixDescription => 'Riduce l\'audio surround a due canali per altoparlanti stereo o cuffie';
+	@override String get downmixCenterBoost => 'Amplificazione canale centrale';
+	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
+	@override String get downmixCenterBoostLabel => 'Amplificazione (dB)';
+	@override String get downmixCenterBoostShort => 'dB';
+	@override String get audioDownmixNormalize => 'Normalizza volume nel downmix';
+	@override String get audioDownmixNormalizeDescription => 'Riduce il mix per evitare distorsioni. Disattiva per mantenere il volume originale (le scene ad alto volume possono distorcere).';
 	@override String get atmosDiagnostics => 'Test uscita Atmos';
 	@override String get atmosDiagnosticsDescription => 'Diagnostica l\'uscita Dolby Atmos riproducendo segnali di prova con il lettore di sistema';
 	@override String get atmosTestHlsAtmos => 'Stream Atmos di Apple';
@@ -1391,6 +1399,7 @@ class _TranslationsVideoSettingsIt extends TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => 'Overlay prestazioni';
 	@override String get audioPassthrough => 'Audio Passthrough';
 	@override String get audioNormalization => 'Normalizza volume';
+	@override String get audioDownmix => 'Downmix in stereo';
 }
 
 // Path: performanceOverlay
@@ -2198,6 +2207,14 @@ extension on TranslationsIt {
 			'settings.audioPassthrough' => 'Audio Passthrough',
 			'settings.audioPassthroughDescription' => 'Invia l\'audio Dolby/DTS al ricevitore o alla TV senza ricodifica, mantenendo il suono surround. Disattiva se non senti audio.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Consegna Dolby Digital Plus (incluso Atmos) al sistema come bitstream. DTS e TrueHD vengono comunque riprodotti come PCM multicanale. Durante i salti possono verificarsi brevi interruzioni audio.',
+			'settings.audioDownmix' => 'Downmix in stereo',
+			'settings.audioDownmixDescription' => 'Riduce l\'audio surround a due canali per altoparlanti stereo o cuffie',
+			'settings.downmixCenterBoost' => 'Amplificazione canale centrale',
+			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
+			'settings.downmixCenterBoostLabel' => 'Amplificazione (dB)',
+			'settings.downmixCenterBoostShort' => 'dB',
+			'settings.audioDownmixNormalize' => 'Normalizza volume nel downmix',
+			'settings.audioDownmixNormalizeDescription' => 'Riduce il mix per evitare distorsioni. Disattiva per mantenere il volume originale (le scene ad alto volume possono distorcere).',
 			'settings.atmosDiagnostics' => 'Test uscita Atmos',
 			'settings.atmosDiagnosticsDescription' => 'Diagnostica l\'uscita Dolby Atmos riproducendo segnali di prova con il lettore di sistema',
 			'settings.atmosTestHlsAtmos' => 'Stream Atmos di Apple',
@@ -2447,6 +2464,8 @@ extension on TranslationsIt {
 			'messages.logsCleared' => 'Log eliminati',
 			'messages.logsCopied' => 'Log copiati negli appunti',
 			'messages.noLogsAvailable' => 'Nessun log disponibile',
+			_ => null,
+		} ?? switch (path) {
 			'messages.libraryScanning' => ({required Object title}) => 'Scansione "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Scansione libreria iniziata per "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Impossibile eseguire scansione della libreria: ${error}',
@@ -2455,8 +2474,6 @@ extension on TranslationsIt {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Errore aggiornamento metadati: ${error}',
 			'messages.logoutConfirm' => 'Sei sicuro di volerti disconnettere?',
 			'messages.noSeasonsFound' => 'Nessuna stagione trovata',
-			_ => null,
-		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => 'Impossibile caricare le stagioni',
 			'messages.noEpisodesFound' => 'Nessun episodio trovato nella prima stagione',
 			'messages.noEpisodesFoundGeneral' => 'Nessun episodio trovato',
@@ -2961,6 +2978,8 @@ extension on TranslationsIt {
 			'companionRemote.session.startingServer' => 'Avvio del server remoto...',
 			'companionRemote.session.failedToCreate' => 'Impossibile avviare il server remoto:',
 			'companionRemote.session.hostAddress' => 'Indirizzo host',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.connected' => 'Connesso',
 			'companionRemote.session.serverRunning' => 'Server remoto attivo',
 			'companionRemote.session.serverStopped' => 'Server remoto arrestato',
@@ -2969,8 +2988,6 @@ extension on TranslationsIt {
 			'companionRemote.session.usePhoneToControl' => 'Usa il tuo dispositivo mobile per controllare questa app',
 			'companionRemote.session.startServer' => 'Avvia server',
 			'companionRemote.session.stopServer' => 'Arresta server',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.minimize' => 'Riduci',
 			'companionRemote.pairing.discoveryDescription' => 'I dispositivi Plezy con lo stesso account Plex appaiono qui',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -3030,6 +3047,7 @@ extension on TranslationsIt {
 			'videoSettings.performanceOverlay' => 'Overlay prestazioni',
 			'videoSettings.audioPassthrough' => 'Audio Passthrough',
 			'videoSettings.audioNormalization' => 'Normalizza volume',
+			'videoSettings.audioDownmix' => 'Downmix in stereo',
 			'performanceOverlay.color' => 'Colore',
 			'performanceOverlay.performance' => 'Prestazioni',
 			'performanceOverlay.buffer' => 'Buffer',

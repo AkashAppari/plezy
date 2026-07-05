@@ -217,6 +217,17 @@ abstract class Player {
   /// PCM output while enabled so the effects can process the stream.
   Future<void> setAudioNormalization(bool enabled);
 
+  /// Force a stereo downmix with a Kodi-style center channel boost.
+  ///
+  /// [centerBoostDb] (0-12) raises the center channel above its standard
+  /// -3 dB downmix coefficient to improve dialogue clarity. [normalize]
+  /// attenuates the mix so it cannot clip; off keeps the original level
+  /// (Kodi's "maintain original volume"). mpv backends rebuild the audio
+  /// chain via `audio-channels`; Android ExoPlayer routes a
+  /// ChannelMixingAudioProcessor in the audio sink and force-decodes
+  /// encoded audio while enabled.
+  Future<void> setAudioDownmix({required bool enabled, required int centerBoostDb, required bool normalize});
+
   /// Show or hide the video rendering layer.
   ///
   /// On macOS, this controls the Metal layer visibility.

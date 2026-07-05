@@ -394,6 +394,14 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get audioPassthrough => 'Сквозной вывод аудио';
 	@override String get audioPassthroughDescription => 'Передавать звук Dolby/DTS на ресивер или телевизор без перекодирования, сохраняя объёмный звук. Отключите, если нет звука.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Передаёт Dolby Digital Plus (включая Atmos) системе в виде битового потока. DTS и TrueHD по-прежнему воспроизводятся как многоканальный PCM. При перемотке возможны короткие пропадания звука.';
+	@override String get audioDownmix => 'Микширование в стерео';
+	@override String get audioDownmixDescription => 'Микширует объёмный звук в два канала для стереодинамиков или наушников';
+	@override String get downmixCenterBoost => 'Усиление центрального канала';
+	@override String downmixCenterBoostValue({required Object db}) => '${db} дБ';
+	@override String get downmixCenterBoostLabel => 'Усиление (дБ)';
+	@override String get downmixCenterBoostShort => 'дБ';
+	@override String get audioDownmixNormalize => 'Нормализация громкости при микшировании';
+	@override String get audioDownmixNormalizeDescription => 'Снижает уровень микса во избежание клиппинга. Отключите, чтобы сохранить исходную громкость (возможны искажения в громких сценах).';
 	@override String get atmosDiagnostics => 'Тест вывода Atmos';
 	@override String get atmosDiagnosticsDescription => 'Диагностика вывода Dolby Atmos воспроизведением тестовых сигналов через системный проигрыватель';
 	@override String get atmosTestHlsAtmos => 'Atmos-поток Apple';
@@ -1391,6 +1399,7 @@ class _TranslationsVideoSettingsRu extends TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => 'Оверлей производительности';
 	@override String get audioPassthrough => 'Сквозной вывод аудио';
 	@override String get audioNormalization => 'Нормализация громкости';
+	@override String get audioDownmix => 'Микширование в стерео';
 }
 
 // Path: performanceOverlay
@@ -2198,6 +2207,14 @@ extension on TranslationsRu {
 			'settings.audioPassthrough' => 'Сквозной вывод аудио',
 			'settings.audioPassthroughDescription' => 'Передавать звук Dolby/DTS на ресивер или телевизор без перекодирования, сохраняя объёмный звук. Отключите, если нет звука.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Передаёт Dolby Digital Plus (включая Atmos) системе в виде битового потока. DTS и TrueHD по-прежнему воспроизводятся как многоканальный PCM. При перемотке возможны короткие пропадания звука.',
+			'settings.audioDownmix' => 'Микширование в стерео',
+			'settings.audioDownmixDescription' => 'Микширует объёмный звук в два канала для стереодинамиков или наушников',
+			'settings.downmixCenterBoost' => 'Усиление центрального канала',
+			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} дБ',
+			'settings.downmixCenterBoostLabel' => 'Усиление (дБ)',
+			'settings.downmixCenterBoostShort' => 'дБ',
+			'settings.audioDownmixNormalize' => 'Нормализация громкости при микшировании',
+			'settings.audioDownmixNormalizeDescription' => 'Снижает уровень микса во избежание клиппинга. Отключите, чтобы сохранить исходную громкость (возможны искажения в громких сценах).',
 			'settings.atmosDiagnostics' => 'Тест вывода Atmos',
 			'settings.atmosDiagnosticsDescription' => 'Диагностика вывода Dolby Atmos воспроизведением тестовых сигналов через системный проигрыватель',
 			'settings.atmosTestHlsAtmos' => 'Atmos-поток Apple',
@@ -2447,6 +2464,8 @@ extension on TranslationsRu {
 			'messages.logsCleared' => 'Логи очищены',
 			'messages.logsCopied' => 'Логи скопированы в буфер обмена',
 			'messages.noLogsAvailable' => 'Логи отсутствуют',
+			_ => null,
+		} ?? switch (path) {
 			'messages.libraryScanning' => ({required Object title}) => 'Сканирование "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Сканирование библиотеки начато для "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Не удалось отсканировать библиотеку: ${error}',
@@ -2455,8 +2474,6 @@ extension on TranslationsRu {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Не удалось обновить метаданные: ${error}',
 			'messages.logoutConfirm' => 'Вы уверены, что хотите выйти?',
 			'messages.noSeasonsFound' => 'Сезоны не найдены',
-			_ => null,
-		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => 'Не удалось загрузить сезоны',
 			'messages.noEpisodesFound' => 'Эпизоды в первом сезоне не найдены',
 			'messages.noEpisodesFoundGeneral' => 'Эпизоды не найдены',
@@ -2961,6 +2978,8 @@ extension on TranslationsRu {
 			'companionRemote.session.startingServer' => 'Запуск удалённого сервера...',
 			'companionRemote.session.failedToCreate' => 'Не удалось запустить удалённый сервер:',
 			'companionRemote.session.hostAddress' => 'Адрес хоста',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.connected' => 'Подключено',
 			'companionRemote.session.serverRunning' => 'Удалённый сервер активен',
 			'companionRemote.session.serverStopped' => 'Удалённый сервер остановлен',
@@ -2969,8 +2988,6 @@ extension on TranslationsRu {
 			'companionRemote.session.usePhoneToControl' => 'Используйте мобильное устройство для управления этим приложением',
 			'companionRemote.session.startServer' => 'Запустить сервер',
 			'companionRemote.session.stopServer' => 'Остановить сервер',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.minimize' => 'Свернуть',
 			'companionRemote.pairing.discoveryDescription' => 'Устройства Plezy с тем же аккаунтом Plex появятся здесь',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -3030,6 +3047,7 @@ extension on TranslationsRu {
 			'videoSettings.performanceOverlay' => 'Оверлей производительности',
 			'videoSettings.audioPassthrough' => 'Сквозной вывод аудио',
 			'videoSettings.audioNormalization' => 'Нормализация громкости',
+			'videoSettings.audioDownmix' => 'Микширование в стерео',
 			'performanceOverlay.color' => 'Цвет',
 			'performanceOverlay.performance' => 'Производительность',
 			'performanceOverlay.buffer' => 'Буфер',

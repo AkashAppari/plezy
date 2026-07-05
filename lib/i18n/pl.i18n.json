@@ -265,6 +265,14 @@
     "audioPassthrough": "Bezpośrednie audio",
     "audioPassthroughDescription": "Wysyłaj dźwięk Dolby/DTS do amplitunera lub telewizora bez ponownego kodowania, zachowując dźwięk przestrzenny. Wyłącz, jeśli nie ma dźwięku.",
     "audioPassthroughDescriptionAppleTv": "Przekazuje Dolby Digital Plus (w tym Atmos) do systemu jako bitstream. DTS i TrueHD nadal odtwarzane są jako wielokanałowe PCM. Podczas przewijania mogą wystąpić krótkie przerwy w dźwięku.",
+    "audioDownmix": "Miksowanie do stereo",
+    "audioDownmixDescription": "Miksuje dźwięk przestrzenny do dwóch kanałów dla głośników stereo lub słuchawek",
+    "downmixCenterBoost": "Wzmocnienie kanału centralnego",
+    "downmixCenterBoostValue": "${db} dB",
+    "downmixCenterBoostLabel": "Wzmocnienie (dB)",
+    "downmixCenterBoostShort": "dB",
+    "audioDownmixNormalize": "Normalizacja głośności przy miksowaniu",
+    "audioDownmixNormalizeDescription": "Obniża miks, aby zapobiec przesterowaniu. Wyłącz, aby zachować oryginalną głośność (głośne sceny mogą być zniekształcone).",
     "atmosDiagnostics": "Test wyjścia Atmos",
     "atmosDiagnosticsDescription": "Diagnozuj wyjście Dolby Atmos, odtwarzając sygnały testowe przez odtwarzacz systemowy",
     "atmosTestHlsAtmos": "Strumień Atmos Apple",
@@ -1176,7 +1184,8 @@
     "audioOutput": "Wyjście audio",
     "performanceOverlay": "Nakładka wydajności",
     "audioPassthrough": "Bezpośrednie audio",
-    "audioNormalization": "Normalizacja głośności"
+    "audioNormalization": "Normalizacja głośności",
+    "audioDownmix": "Miksowanie do stereo"
   },
   "performanceOverlay": {
     "color": "Kolor",

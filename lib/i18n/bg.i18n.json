@@ -265,6 +265,14 @@
     "audioPassthrough": "Аудио passthrough",
     "audioPassthroughDescription": "Изпращай Dolby/DTS звук към ресийвъра или телевизора без прекодиране, запазвайки съраунд звука. Изключете, ако няма звук.",
     "audioPassthroughDescriptionAppleTv": "Предава Dolby Digital Plus (вкл. Atmos) на системата като битов поток. DTS и TrueHD продължават да се възпроизвеждат като многоканален PCM. При превъртане може да има кратки прекъсвания на звука.",
+    "audioDownmix": "Смесване до стерео",
+    "audioDownmixDescription": "Смесва съраунд звука до два канала за стерео тонколони или слушалки",
+    "downmixCenterBoost": "Усилване на централния канал",
+    "downmixCenterBoostValue": "${db} дБ",
+    "downmixCenterBoostLabel": "Усилване (дБ)",
+    "downmixCenterBoostShort": "дБ",
+    "audioDownmixNormalize": "Нормализиране на звука при смесване",
+    "audioDownmixNormalizeDescription": "Понижава микса, за да се предотврати клипинг. Изключете, за да запазите оригиналната сила на звука (възможни изкривявания при силни сцени).",
     "atmosDiagnostics": "Тест на Atmos изхода",
     "atmosDiagnosticsDescription": "Диагностика на Dolby Atmos изхода чрез възпроизвеждане на тестови сигнали през системния плейър",
     "atmosTestHlsAtmos": "Apple Atmos поток",
@@ -1176,7 +1184,8 @@
     "audioOutput": "Аудио изход",
     "performanceOverlay": "Оверлей за производителност",
     "audioPassthrough": "Аудио passthrough",
-    "audioNormalization": "Нормализиране на силата на звука"
+    "audioNormalization": "Нормализиране на силата на звука",
+    "audioDownmix": "Смесване до стерео"
   },
   "performanceOverlay": {
     "color": "Цвят",

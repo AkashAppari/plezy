@@ -394,6 +394,14 @@ class _TranslationsSettingsEs extends TranslationsSettingsEn {
 	@override String get audioPassthrough => 'Audio Passthrough';
 	@override String get audioPassthroughDescription => 'Envía el audio Dolby/DTS a tu receptor o TV sin recodificar, conservando el sonido envolvente. Desactívalo si no tienes sonido.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Entrega Dolby Digital Plus (incluido Atmos) al sistema como bitstream. DTS y TrueHD se siguen reproduciendo como PCM multicanal. Pueden producirse breves cortes de audio al buscar.';
+	@override String get audioDownmix => 'Mezclar a estéreo';
+	@override String get audioDownmixDescription => 'Mezcla el sonido envolvente a dos canales para altavoces estéreo o auriculares';
+	@override String get downmixCenterBoost => 'Realce del canal central';
+	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
+	@override String get downmixCenterBoostLabel => 'Realce (dB)';
+	@override String get downmixCenterBoostShort => 'dB';
+	@override String get audioDownmixNormalize => 'Normalizar volumen al mezclar';
+	@override String get audioDownmixNormalizeDescription => 'Reduce la mezcla para evitar saturación. Desactívalo para mantener el volumen original (puede distorsionar escenas fuertes).';
 	@override String get atmosDiagnostics => 'Prueba de salida Atmos';
 	@override String get atmosDiagnosticsDescription => 'Diagnostica la salida Dolby Atmos reproduciendo señales de prueba con el reproductor del sistema';
 	@override String get atmosTestHlsAtmos => 'Stream Atmos de Apple';
@@ -1391,6 +1399,7 @@ class _TranslationsVideoSettingsEs extends TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => 'Indicador de rendimiento';
 	@override String get audioPassthrough => 'Audio Passthrough';
 	@override String get audioNormalization => 'Normalizar volumen';
+	@override String get audioDownmix => 'Mezclar a estéreo';
 }
 
 // Path: performanceOverlay
@@ -2198,6 +2207,14 @@ extension on TranslationsEs {
 			'settings.audioPassthrough' => 'Audio Passthrough',
 			'settings.audioPassthroughDescription' => 'Envía el audio Dolby/DTS a tu receptor o TV sin recodificar, conservando el sonido envolvente. Desactívalo si no tienes sonido.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Entrega Dolby Digital Plus (incluido Atmos) al sistema como bitstream. DTS y TrueHD se siguen reproduciendo como PCM multicanal. Pueden producirse breves cortes de audio al buscar.',
+			'settings.audioDownmix' => 'Mezclar a estéreo',
+			'settings.audioDownmixDescription' => 'Mezcla el sonido envolvente a dos canales para altavoces estéreo o auriculares',
+			'settings.downmixCenterBoost' => 'Realce del canal central',
+			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
+			'settings.downmixCenterBoostLabel' => 'Realce (dB)',
+			'settings.downmixCenterBoostShort' => 'dB',
+			'settings.audioDownmixNormalize' => 'Normalizar volumen al mezclar',
+			'settings.audioDownmixNormalizeDescription' => 'Reduce la mezcla para evitar saturación. Desactívalo para mantener el volumen original (puede distorsionar escenas fuertes).',
 			'settings.atmosDiagnostics' => 'Prueba de salida Atmos',
 			'settings.atmosDiagnosticsDescription' => 'Diagnostica la salida Dolby Atmos reproduciendo señales de prueba con el reproductor del sistema',
 			'settings.atmosTestHlsAtmos' => 'Stream Atmos de Apple',
@@ -2447,6 +2464,8 @@ extension on TranslationsEs {
 			'messages.logsCleared' => 'Logs borrados',
 			'messages.logsCopied' => 'Logs copiados al portapapeles',
 			'messages.noLogsAvailable' => 'No hay logs disponibles',
+			_ => null,
+		} ?? switch (path) {
 			'messages.libraryScanning' => ({required Object title}) => 'Escaneando "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Escaneo de biblioteca iniciado para "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Error al escanear biblioteca: ${error}',
@@ -2455,8 +2474,6 @@ extension on TranslationsEs {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Error al actualizar metadatos: ${error}',
 			'messages.logoutConfirm' => '¿Estás seguro de que quieres cerrar sesión?',
 			'messages.noSeasonsFound' => 'No se encontraron temporadas',
-			_ => null,
-		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => 'No se pudieron cargar las temporadas',
 			'messages.noEpisodesFound' => 'No se encontraron episodios en la primera temporada',
 			'messages.noEpisodesFoundGeneral' => 'No se encontraron episodios',
@@ -2961,6 +2978,8 @@ extension on TranslationsEs {
 			'companionRemote.session.startingServer' => 'Iniciando servidor remoto...',
 			'companionRemote.session.failedToCreate' => 'Error al iniciar el servidor remoto:',
 			'companionRemote.session.hostAddress' => 'Dirección del host',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.connected' => 'Conectado',
 			'companionRemote.session.serverRunning' => 'Servidor remoto activo',
 			'companionRemote.session.serverStopped' => 'Servidor remoto detenido',
@@ -2969,8 +2988,6 @@ extension on TranslationsEs {
 			'companionRemote.session.usePhoneToControl' => 'Usa tu dispositivo móvil para controlar esta aplicación',
 			'companionRemote.session.startServer' => 'Iniciar servidor',
 			'companionRemote.session.stopServer' => 'Detener servidor',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.minimize' => 'Minimizar',
 			'companionRemote.pairing.discoveryDescription' => 'Los dispositivos Plezy con la misma cuenta Plex aparecen aquí',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -3030,6 +3047,7 @@ extension on TranslationsEs {
 			'videoSettings.performanceOverlay' => 'Indicador de rendimiento',
 			'videoSettings.audioPassthrough' => 'Audio Passthrough',
 			'videoSettings.audioNormalization' => 'Normalizar volumen',
+			'videoSettings.audioDownmix' => 'Mezclar a estéreo',
 			'performanceOverlay.color' => 'Color',
 			'performanceOverlay.performance' => 'Rendimiento',
 			'performanceOverlay.buffer' => 'Búfer',

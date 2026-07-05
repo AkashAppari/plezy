@@ -56,10 +56,12 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         SettingsService.matchRefreshRate,
         SettingsService.matchDynamicRange,
         SettingsService.matchContentFrameRate,
+        SettingsService.audioDownmix,
       ],
       builder: (context) {
         final svc = SettingsService.instance;
         final exoActive = Platform.isAndroid && svc.read(SettingsService.useExoPlayer);
+        final downmixOn = svc.read(SettingsService.audioDownmix);
         final showDisplaySwitchDelay =
             PlatformDetector.isAppleTV() ||
             (Platform.isWindows &&
@@ -82,6 +84,9 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                 if (showDisplaySwitchDelay) _displaySwitchDelayTile(),
                 if (exoActive) _tunneledPlaybackTile(),
                 if (PlatformDetector.supportsAudioPassthrough()) _audioPassthroughTile(),
+                _audioDownmixTile(),
+                if (downmixOn) _downmixCenterBoostTile(),
+                if (downmixOn) _downmixNormalizeTile(),
                 if (PlatformDetector.isAppleTV()) _atmosDiagnosticsTile(),
                 if (exoActive) _dvConversionModeTile(),
                 _bufferSizeTile(),
@@ -330,6 +335,31 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     subtitle: PlatformDetector.isAppleTV()
         ? t.settings.audioPassthroughDescriptionAppleTv
         : t.settings.audioPassthroughDescription,
+  );
+
+  Widget _audioDownmixTile() => SettingSwitchTile(
+    pref: SettingsService.audioDownmix,
+    icon: Symbols.headphones_rounded,
+    title: t.settings.audioDownmix,
+    subtitle: t.settings.audioDownmixDescription,
+  );
+
+  Widget _downmixCenterBoostTile() => SettingNumberTile(
+    pref: SettingsService.downmixCenterBoost,
+    icon: Symbols.record_voice_over_rounded,
+    title: t.settings.downmixCenterBoost,
+    subtitleBuilder: (v) => t.settings.downmixCenterBoostValue(db: v.toString()),
+    labelText: t.settings.downmixCenterBoostLabel,
+    suffixText: t.settings.downmixCenterBoostShort,
+    min: 0,
+    max: 12,
+  );
+
+  Widget _downmixNormalizeTile() => SettingSwitchTile(
+    pref: SettingsService.audioDownmixNormalize,
+    icon: Symbols.graphic_eq_rounded,
+    title: t.settings.audioDownmixNormalize,
+    subtitle: t.settings.audioDownmixNormalizeDescription,
   );
 
   Widget _atmosDiagnosticsTile() => SettingNavigationTile(

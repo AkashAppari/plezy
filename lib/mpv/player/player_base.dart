@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart' show protected;
@@ -707,6 +708,27 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   @override
   Future<void> setAudioNormalization(bool enabled) async {
     await setProperty('af', enabled ? _loudnormFilter : '');
+  }
+
+  @override
+  Future<void> setAudioDownmix({required bool enabled, required int centerBoostDb, required bool normalize}) async {
+    if (enabled) {
+      // Kodi's mechanism: center coefficient = 10^((-3 + boost)/20); the
+      // surround (-3 dB) and LFE (dropped) swresample defaults already match.
+      final c = math.pow(10, (-3 + centerBoostDb.clamp(0, 12)) / 20).toStringAsFixed(4);
+      // Swresample AVOptions are read once at audio-filter creation, so they
+      // must land before audio-channels triggers the chain (re)build.
+      await setProperty('audio-swresample-o', 'center_mix_level=$c');
+      await setProperty('audio-normalize-downmix', normalize ? 'yes' : 'no');
+      // Bounce through auto-safe so boost/normalize changes re-apply while
+      // downmix is already active (same-value option sets are no-ops in mpv).
+      await setProperty('audio-channels', 'auto-safe');
+      await setProperty('audio-channels', 'stereo');
+    } else {
+      await setProperty('audio-channels', 'auto-safe');
+      await setProperty('audio-swresample-o', '');
+      await setProperty('audio-normalize-downmix', 'no');
+    }
   }
 
   @override

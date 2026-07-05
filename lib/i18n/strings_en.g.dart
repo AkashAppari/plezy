@@ -927,6 +927,30 @@ class TranslationsSettingsEn {
 	/// en: 'Hand Dolby Digital Plus (including Atmos) to the system for bitstream output. DTS and TrueHD still play as multichannel PCM. Brief audio gaps can occur when seeking.'
 	String get audioPassthroughDescriptionAppleTv => 'Hand Dolby Digital Plus (including Atmos) to the system for bitstream output. DTS and TrueHD still play as multichannel PCM. Brief audio gaps can occur when seeking.';
 
+	/// en: 'Downmix to Stereo'
+	String get audioDownmix => 'Downmix to Stereo';
+
+	/// en: 'Mix surround audio down to two channels for stereo speakers or headphones'
+	String get audioDownmixDescription => 'Mix surround audio down to two channels for stereo speakers or headphones';
+
+	/// en: 'Center Channel Boost'
+	String get downmixCenterBoost => 'Center Channel Boost';
+
+	/// en: '${db} dB'
+	String downmixCenterBoostValue({required Object db}) => '${db} dB';
+
+	/// en: 'Boost (dB)'
+	String get downmixCenterBoostLabel => 'Boost (dB)';
+
+	/// en: 'dB'
+	String get downmixCenterBoostShort => 'dB';
+
+	/// en: 'Normalize Volume on Downmix'
+	String get audioDownmixNormalize => 'Normalize Volume on Downmix';
+
+	/// en: 'Lower the mix to prevent clipping. Turn off to keep the original volume (may distort loud scenes).'
+	String get audioDownmixNormalizeDescription => 'Lower the mix to prevent clipping. Turn off to keep the original volume (may distort loud scenes).';
+
 	/// en: 'Atmos Output Test'
 	String get atmosDiagnostics => 'Atmos Output Test';
 
@@ -3346,6 +3370,9 @@ class TranslationsVideoSettingsEn {
 
 	/// en: 'Normalize Loudness'
 	String get audioNormalization => 'Normalize Loudness';
+
+	/// en: 'Downmix to Stereo'
+	String get audioDownmix => 'Downmix to Stereo';
 }
 
 // Path: performanceOverlay
@@ -4844,6 +4871,14 @@ extension on Translations {
 			'settings.audioPassthrough' => 'Audio Passthrough',
 			'settings.audioPassthroughDescription' => 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Hand Dolby Digital Plus (including Atmos) to the system for bitstream output. DTS and TrueHD still play as multichannel PCM. Brief audio gaps can occur when seeking.',
+			'settings.audioDownmix' => 'Downmix to Stereo',
+			'settings.audioDownmixDescription' => 'Mix surround audio down to two channels for stereo speakers or headphones',
+			'settings.downmixCenterBoost' => 'Center Channel Boost',
+			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
+			'settings.downmixCenterBoostLabel' => 'Boost (dB)',
+			'settings.downmixCenterBoostShort' => 'dB',
+			'settings.audioDownmixNormalize' => 'Normalize Volume on Downmix',
+			'settings.audioDownmixNormalizeDescription' => 'Lower the mix to prevent clipping. Turn off to keep the original volume (may distort loud scenes).',
 			'settings.atmosDiagnostics' => 'Atmos Output Test',
 			'settings.atmosDiagnosticsDescription' => 'Diagnose Dolby Atmos output by playing test signals through the system player',
 			'settings.atmosTestHlsAtmos' => 'Apple Atmos stream',
@@ -5086,6 +5121,8 @@ extension on Translations {
 			'messages.errorLoading' => ({required Object error}) => 'Error: ${error}',
 			'messages.fileInfoNotAvailable' => 'File information not available',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Error loading file info: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'messages.errorLoadingSeries' => 'Error loading series',
 			'messages.musicNotSupported' => 'Music playback is not yet supported',
 			'messages.noDescriptionAvailable' => 'No description available',
@@ -5094,8 +5131,6 @@ extension on Translations {
 			'messages.unableToDetermineLibrarySection' => 'Unable to determine library section for this item',
 			'messages.logsCleared' => 'Logs cleared',
 			'messages.logsCopied' => 'Logs copied to clipboard',
-			_ => null,
-		} ?? switch (path) {
 			'messages.noLogsAvailable' => 'No logs available',
 			'messages.libraryScanning' => ({required Object title}) => 'Scanning "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Library scan started for "${title}"',
@@ -5600,6 +5635,8 @@ extension on Translations {
 			'shaders.artcnnVariantNeutral' => 'Neutral',
 			'shaders.artcnnVariantDenoise' => 'Denoise',
 			'shaders.artcnnVariantDenoiseSharpen' => 'Denoise + Sharpen',
+			_ => null,
+		} ?? switch (path) {
 			'shaders.qualityFast' => 'Fast',
 			'shaders.qualityHQ' => 'High Quality',
 			'shaders.mode' => 'Mode',
@@ -5608,8 +5645,6 @@ extension on Translations {
 			'shaders.shaderImported' => 'Shader imported',
 			'shaders.shaderImportFailed' => 'Failed to import shader',
 			'shaders.deleteShader' => 'Delete Shader',
-			_ => null,
-		} ?? switch (path) {
 			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
 			'companionRemote.title' => 'Companion Remote',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Connected to ${name}',
@@ -5684,6 +5719,7 @@ extension on Translations {
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
 			'videoSettings.audioPassthrough' => 'Audio Passthrough',
 			'videoSettings.audioNormalization' => 'Normalize Loudness',
+			'videoSettings.audioDownmix' => 'Downmix to Stereo',
 			'performanceOverlay.color' => 'Color',
 			'performanceOverlay.performance' => 'Performance',
 			'performanceOverlay.buffer' => 'Buffer',

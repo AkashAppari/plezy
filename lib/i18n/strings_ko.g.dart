@@ -394,6 +394,14 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get audioPassthrough => '오디오 패스스루';
 	@override String get audioPassthroughDescription => 'Dolby/DTS 오디오를 재인코딩 없이 리시버나 TV로 전송하여 서라운드 사운드를 유지합니다. 소리가 나지 않으면 비활성화하세요.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Dolby Digital Plus(Atmos 포함)를 비트스트림으로 시스템에 전달합니다. DTS와 TrueHD는 계속 멀티채널 PCM으로 재생됩니다. 탐색 시 짧은 소리 끊김이 발생할 수 있습니다.';
+	@override String get audioDownmix => '스테레오로 다운믹스';
+	@override String get audioDownmixDescription => '서라운드 오디오를 스테레오 스피커나 헤드폰용 2채널로 믹스합니다';
+	@override String get downmixCenterBoost => '센터 채널 부스트';
+	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
+	@override String get downmixCenterBoostLabel => '부스트 (dB)';
+	@override String get downmixCenterBoostShort => 'dB';
+	@override String get audioDownmixNormalize => '다운믹스 시 음량 정규화';
+	@override String get audioDownmixNormalizeDescription => '클리핑을 방지하기 위해 믹스 음량을 낮춥니다. 원래 음량을 유지하려면 끄세요(큰 소리 장면에서 왜곡될 수 있음).';
 	@override String get atmosDiagnostics => 'Atmos 출력 테스트';
 	@override String get atmosDiagnosticsDescription => '시스템 플레이어로 테스트 신호를 재생하여 Dolby Atmos 출력을 진단합니다';
 	@override String get atmosTestHlsAtmos => 'Apple Atmos 스트림';
@@ -1391,6 +1399,7 @@ class _TranslationsVideoSettingsKo extends TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => '성능 오버레이';
 	@override String get audioPassthrough => '오디오 패스스루';
 	@override String get audioNormalization => '음량 정규화';
+	@override String get audioDownmix => '스테레오로 다운믹스';
 }
 
 // Path: performanceOverlay
@@ -2198,6 +2207,14 @@ extension on TranslationsKo {
 			'settings.audioPassthrough' => '오디오 패스스루',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS 오디오를 재인코딩 없이 리시버나 TV로 전송하여 서라운드 사운드를 유지합니다. 소리가 나지 않으면 비활성화하세요.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Dolby Digital Plus(Atmos 포함)를 비트스트림으로 시스템에 전달합니다. DTS와 TrueHD는 계속 멀티채널 PCM으로 재생됩니다. 탐색 시 짧은 소리 끊김이 발생할 수 있습니다.',
+			'settings.audioDownmix' => '스테레오로 다운믹스',
+			'settings.audioDownmixDescription' => '서라운드 오디오를 스테레오 스피커나 헤드폰용 2채널로 믹스합니다',
+			'settings.downmixCenterBoost' => '센터 채널 부스트',
+			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
+			'settings.downmixCenterBoostLabel' => '부스트 (dB)',
+			'settings.downmixCenterBoostShort' => 'dB',
+			'settings.audioDownmixNormalize' => '다운믹스 시 음량 정규화',
+			'settings.audioDownmixNormalizeDescription' => '클리핑을 방지하기 위해 믹스 음량을 낮춥니다. 원래 음량을 유지하려면 끄세요(큰 소리 장면에서 왜곡될 수 있음).',
 			'settings.atmosDiagnostics' => 'Atmos 출력 테스트',
 			'settings.atmosDiagnosticsDescription' => '시스템 플레이어로 테스트 신호를 재생하여 Dolby Atmos 출력을 진단합니다',
 			'settings.atmosTestHlsAtmos' => 'Apple Atmos 스트림',
@@ -2447,6 +2464,8 @@ extension on TranslationsKo {
 			'messages.logsCleared' => '로그가 삭제 되었습니다',
 			'messages.logsCopied' => '로그가 클립보드에 복사 되었습니다',
 			'messages.noLogsAvailable' => '사용 가능한 로그가 없습니다',
+			_ => null,
+		} ?? switch (path) {
 			'messages.libraryScanning' => ({required Object title}) => '"${title}"을(를) 스캔 중입니다...',
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}" 미디어 라이브러리 스캔 시작',
 			'messages.libraryScanFailed' => ({required Object error}) => '미디어 라이브러리 스캔 실패: ${error}',
@@ -2455,8 +2474,6 @@ extension on TranslationsKo {
 			'messages.metadataRefreshFailed' => ({required Object error}) => '메타데이터 새로고침 실패: ${error}',
 			'messages.logoutConfirm' => '로그아웃 하시겠습니까?',
 			'messages.noSeasonsFound' => '시즌을 찾을 수 없음',
-			_ => null,
-		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => '시즌을 불러오지 못했습니다',
 			'messages.noEpisodesFound' => '시즌 1에서 에피소드를 찾을 수 없습니다',
 			'messages.noEpisodesFoundGeneral' => '에피소드를 찾을 수 없습니다',
@@ -2961,6 +2978,8 @@ extension on TranslationsKo {
 			'companionRemote.session.startingServer' => '원격 서버 시작 중...',
 			'companionRemote.session.failedToCreate' => '원격 서버를 시작하지 못했습니다:',
 			'companionRemote.session.hostAddress' => '호스트 주소',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.connected' => '연결됨',
 			'companionRemote.session.serverRunning' => '원격 서버 활성',
 			'companionRemote.session.serverStopped' => '원격 서버 중지됨',
@@ -2969,8 +2988,6 @@ extension on TranslationsKo {
 			'companionRemote.session.usePhoneToControl' => '모바일 기기로 이 앱을 제어하세요',
 			'companionRemote.session.startServer' => '서버 시작',
 			'companionRemote.session.stopServer' => '서버 중지',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.minimize' => '최소화',
 			'companionRemote.pairing.discoveryDescription' => '같은 Plex 계정의 Plezy 기기가 여기에 표시됩니다',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -3030,6 +3047,7 @@ extension on TranslationsKo {
 			'videoSettings.performanceOverlay' => '성능 오버레이',
 			'videoSettings.audioPassthrough' => '오디오 패스스루',
 			'videoSettings.audioNormalization' => '음량 정규화',
+			'videoSettings.audioDownmix' => '스테레오로 다운믹스',
 			'performanceOverlay.color' => '색상',
 			'performanceOverlay.performance' => '성능',
 			'performanceOverlay.buffer' => '버퍼',

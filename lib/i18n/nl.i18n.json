@@ -265,6 +265,14 @@
     "audioPassthrough": "Audio-doorvoer",
     "audioPassthroughDescription": "Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.",
     "audioPassthroughDescriptionAppleTv": "Geeft Dolby Digital Plus (incl. Atmos) als bitstream aan het systeem door. DTS en TrueHD worden nog steeds als meerkanaals PCM afgespeeld. Bij zoeken kunnen korte geluidsonderbrekingen optreden.",
+    "audioDownmix": "Downmix naar stereo",
+    "audioDownmixDescription": "Mixt surroundgeluid naar twee kanalen voor stereoluidsprekers of een koptelefoon",
+    "downmixCenterBoost": "Versterking middenkanaal",
+    "downmixCenterBoostValue": "${db} dB",
+    "downmixCenterBoostLabel": "Versterking (dB)",
+    "downmixCenterBoostShort": "dB",
+    "audioDownmixNormalize": "Volume normaliseren bij downmix",
+    "audioDownmixNormalizeDescription": "Verlaagt de mix om clipping te voorkomen. Zet uit om het originele volume te behouden (kan vervormen bij luide scènes).",
     "atmosDiagnostics": "Atmos-uitvoertest",
     "atmosDiagnosticsDescription": "Diagnosticeer de Dolby Atmos-uitvoer door testsignalen via de systeemspeler af te spelen",
     "atmosTestHlsAtmos": "Apple Atmos-stream",
@@ -1176,7 +1184,8 @@
     "audioOutput": "Audio-uitvoer",
     "performanceOverlay": "Prestatie-overlay",
     "audioPassthrough": "Audio-doorvoer",
-    "audioNormalization": "Volume normaliseren"
+    "audioNormalization": "Volume normaliseren",
+    "audioDownmix": "Downmix naar stereo"
   },
   "performanceOverlay": {
     "color": "Kleur",

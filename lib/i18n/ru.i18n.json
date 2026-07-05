@@ -265,6 +265,14 @@
     "audioPassthrough": "Сквозной вывод аудио",
     "audioPassthroughDescription": "Передавать звук Dolby/DTS на ресивер или телевизор без перекодирования, сохраняя объёмный звук. Отключите, если нет звука.",
     "audioPassthroughDescriptionAppleTv": "Передаёт Dolby Digital Plus (включая Atmos) системе в виде битового потока. DTS и TrueHD по-прежнему воспроизводятся как многоканальный PCM. При перемотке возможны короткие пропадания звука.",
+    "audioDownmix": "Микширование в стерео",
+    "audioDownmixDescription": "Микширует объёмный звук в два канала для стереодинамиков или наушников",
+    "downmixCenterBoost": "Усиление центрального канала",
+    "downmixCenterBoostValue": "${db} дБ",
+    "downmixCenterBoostLabel": "Усиление (дБ)",
+    "downmixCenterBoostShort": "дБ",
+    "audioDownmixNormalize": "Нормализация громкости при микшировании",
+    "audioDownmixNormalizeDescription": "Снижает уровень микса во избежание клиппинга. Отключите, чтобы сохранить исходную громкость (возможны искажения в громких сценах).",
     "atmosDiagnostics": "Тест вывода Atmos",
     "atmosDiagnosticsDescription": "Диагностика вывода Dolby Atmos воспроизведением тестовых сигналов через системный проигрыватель",
     "atmosTestHlsAtmos": "Atmos-поток Apple",
@@ -1176,7 +1184,8 @@
     "audioOutput": "Аудиовыход",
     "performanceOverlay": "Оверлей производительности",
     "audioPassthrough": "Сквозной вывод аудио",
-    "audioNormalization": "Нормализация громкости"
+    "audioNormalization": "Нормализация громкости",
+    "audioDownmix": "Микширование в стерео"
   },
   "performanceOverlay": {
     "color": "Цвет",

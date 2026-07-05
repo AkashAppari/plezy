@@ -394,6 +394,14 @@ class _TranslationsSettingsDe extends TranslationsSettingsEn {
 	@override String get audioPassthrough => 'Audio-Durchleitung';
 	@override String get audioPassthroughDescription => 'Dolby/DTS-Audio ohne Neukodierung an deinen Receiver oder Fernseher senden und Surround-Sound erhalten. Deaktivieren, wenn kein Ton zu hören ist.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Übergibt Dolby Digital Plus (inkl. Atmos) als Bitstream an das System. DTS und TrueHD werden weiterhin als Mehrkanal-PCM wiedergegeben. Beim Spulen können kurze Tonaussetzer auftreten.';
+	@override String get audioDownmix => 'Downmix auf Stereo';
+	@override String get audioDownmixDescription => 'Mischt Surround-Ton für Stereo-Lautsprecher oder Kopfhörer auf zwei Kanäle herunter';
+	@override String get downmixCenterBoost => 'Center-Kanal-Verstärkung';
+	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
+	@override String get downmixCenterBoostLabel => 'Verstärkung (dB)';
+	@override String get downmixCenterBoostShort => 'dB';
+	@override String get audioDownmixNormalize => 'Lautstärke beim Downmix normalisieren';
+	@override String get audioDownmixNormalizeDescription => 'Senkt den Mix ab, um Übersteuerung zu vermeiden. Deaktivieren, um die Originallautstärke zu behalten (laute Szenen können verzerren).';
 	@override String get atmosDiagnostics => 'Atmos-Ausgabetest';
 	@override String get atmosDiagnosticsDescription => 'Dolby-Atmos-Ausgabe diagnostizieren, indem Testsignale über den Systemplayer abgespielt werden';
 	@override String get atmosTestHlsAtmos => 'Apple-Atmos-Stream';
@@ -1391,6 +1399,7 @@ class _TranslationsVideoSettingsDe extends TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => 'Leistungsanzeige';
 	@override String get audioPassthrough => 'Audio-Durchleitung';
 	@override String get audioNormalization => 'Lautstärke normalisieren';
+	@override String get audioDownmix => 'Downmix auf Stereo';
 }
 
 // Path: performanceOverlay
@@ -2198,6 +2207,14 @@ extension on TranslationsDe {
 			'settings.audioPassthrough' => 'Audio-Durchleitung',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS-Audio ohne Neukodierung an deinen Receiver oder Fernseher senden und Surround-Sound erhalten. Deaktivieren, wenn kein Ton zu hören ist.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Übergibt Dolby Digital Plus (inkl. Atmos) als Bitstream an das System. DTS und TrueHD werden weiterhin als Mehrkanal-PCM wiedergegeben. Beim Spulen können kurze Tonaussetzer auftreten.',
+			'settings.audioDownmix' => 'Downmix auf Stereo',
+			'settings.audioDownmixDescription' => 'Mischt Surround-Ton für Stereo-Lautsprecher oder Kopfhörer auf zwei Kanäle herunter',
+			'settings.downmixCenterBoost' => 'Center-Kanal-Verstärkung',
+			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
+			'settings.downmixCenterBoostLabel' => 'Verstärkung (dB)',
+			'settings.downmixCenterBoostShort' => 'dB',
+			'settings.audioDownmixNormalize' => 'Lautstärke beim Downmix normalisieren',
+			'settings.audioDownmixNormalizeDescription' => 'Senkt den Mix ab, um Übersteuerung zu vermeiden. Deaktivieren, um die Originallautstärke zu behalten (laute Szenen können verzerren).',
 			'settings.atmosDiagnostics' => 'Atmos-Ausgabetest',
 			'settings.atmosDiagnosticsDescription' => 'Dolby-Atmos-Ausgabe diagnostizieren, indem Testsignale über den Systemplayer abgespielt werden',
 			'settings.atmosTestHlsAtmos' => 'Apple-Atmos-Stream',
@@ -2447,6 +2464,8 @@ extension on TranslationsDe {
 			'messages.logsCleared' => 'Protokolle gelöscht',
 			'messages.logsCopied' => 'Protokolle in Zwischenablage kopiert',
 			'messages.noLogsAvailable' => 'Keine Protokolle verfügbar',
+			_ => null,
+		} ?? switch (path) {
 			'messages.libraryScanning' => ({required Object title}) => 'Scanne „${title}“...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Mediathekscan gestartet für „${title}“',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Fehler beim Scannen der Mediathek: ${error}',
@@ -2455,8 +2474,6 @@ extension on TranslationsDe {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Metadaten konnten nicht aktualisiert werden: ${error}',
 			'messages.logoutConfirm' => 'Abmeldung wirklich durchführen?',
 			'messages.noSeasonsFound' => 'Keine Staffeln gefunden',
-			_ => null,
-		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => 'Staffeln konnten nicht geladen werden',
 			'messages.noEpisodesFound' => 'Keine Episoden in der ersten Staffel gefunden',
 			'messages.noEpisodesFoundGeneral' => 'Keine Episoden gefunden',
@@ -2961,6 +2978,8 @@ extension on TranslationsDe {
 			'companionRemote.session.startingServer' => 'Remote-Server wird gestartet...',
 			'companionRemote.session.failedToCreate' => 'Remote-Server konnte nicht gestartet werden:',
 			'companionRemote.session.hostAddress' => 'Host-Adresse',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.connected' => 'Verbunden',
 			'companionRemote.session.serverRunning' => 'Remote-Server aktiv',
 			'companionRemote.session.serverStopped' => 'Remote-Server gestoppt',
@@ -2969,8 +2988,6 @@ extension on TranslationsDe {
 			'companionRemote.session.usePhoneToControl' => 'Verwende dein Mobilgerät, um diese App zu steuern',
 			'companionRemote.session.startServer' => 'Server starten',
 			'companionRemote.session.stopServer' => 'Server stoppen',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.minimize' => 'Minimieren',
 			'companionRemote.pairing.discoveryDescription' => 'Plezy-Geräte mit demselben Plex-Konto erscheinen hier',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -3030,6 +3047,7 @@ extension on TranslationsDe {
 			'videoSettings.performanceOverlay' => 'Leistungsanzeige',
 			'videoSettings.audioPassthrough' => 'Audio-Durchleitung',
 			'videoSettings.audioNormalization' => 'Lautstärke normalisieren',
+			'videoSettings.audioDownmix' => 'Downmix auf Stereo',
 			'performanceOverlay.color' => 'Farbe',
 			'performanceOverlay.performance' => 'Leistung',
 			'performanceOverlay.buffer' => 'Puffer',

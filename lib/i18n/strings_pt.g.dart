@@ -394,6 +394,14 @@ class _TranslationsSettingsPt extends TranslationsSettingsEn {
 	@override String get audioPassthrough => 'Passagem de Áudio';
 	@override String get audioPassthroughDescription => 'Envie áudio Dolby/DTS para o seu receptor ou TV sem recodificar, preservando o som surround. Desative se não tiver som.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Entrega Dolby Digital Plus (incluindo Atmos) ao sistema como bitstream. DTS e TrueHD continuam sendo reproduzidos como PCM multicanal. Podem ocorrer breves cortes de áudio ao buscar.';
+	@override String get audioDownmix => 'Downmix para Estéreo';
+	@override String get audioDownmixDescription => 'Mistura o áudio surround em dois canais para alto-falantes estéreo ou fones de ouvido';
+	@override String get downmixCenterBoost => 'Reforço do Canal Central';
+	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
+	@override String get downmixCenterBoostLabel => 'Reforço (dB)';
+	@override String get downmixCenterBoostShort => 'dB';
+	@override String get audioDownmixNormalize => 'Normalizar Volume no Downmix';
+	@override String get audioDownmixNormalizeDescription => 'Reduz a mixagem para evitar saturação. Desative para manter o volume original (cenas altas podem distorcer).';
 	@override String get atmosDiagnostics => 'Teste de saída Atmos';
 	@override String get atmosDiagnosticsDescription => 'Diagnostique a saída Dolby Atmos reproduzindo sinais de teste pelo player do sistema';
 	@override String get atmosTestHlsAtmos => 'Stream Atmos da Apple';
@@ -1391,6 +1399,7 @@ class _TranslationsVideoSettingsPt extends TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => 'Overlay de Desempenho';
 	@override String get audioPassthrough => 'Passagem de Áudio';
 	@override String get audioNormalization => 'Normalizar Volume';
+	@override String get audioDownmix => 'Downmix para Estéreo';
 }
 
 // Path: performanceOverlay
@@ -2198,6 +2207,14 @@ extension on TranslationsPt {
 			'settings.audioPassthrough' => 'Passagem de Áudio',
 			'settings.audioPassthroughDescription' => 'Envie áudio Dolby/DTS para o seu receptor ou TV sem recodificar, preservando o som surround. Desative se não tiver som.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Entrega Dolby Digital Plus (incluindo Atmos) ao sistema como bitstream. DTS e TrueHD continuam sendo reproduzidos como PCM multicanal. Podem ocorrer breves cortes de áudio ao buscar.',
+			'settings.audioDownmix' => 'Downmix para Estéreo',
+			'settings.audioDownmixDescription' => 'Mistura o áudio surround em dois canais para alto-falantes estéreo ou fones de ouvido',
+			'settings.downmixCenterBoost' => 'Reforço do Canal Central',
+			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
+			'settings.downmixCenterBoostLabel' => 'Reforço (dB)',
+			'settings.downmixCenterBoostShort' => 'dB',
+			'settings.audioDownmixNormalize' => 'Normalizar Volume no Downmix',
+			'settings.audioDownmixNormalizeDescription' => 'Reduz a mixagem para evitar saturação. Desative para manter o volume original (cenas altas podem distorcer).',
 			'settings.atmosDiagnostics' => 'Teste de saída Atmos',
 			'settings.atmosDiagnosticsDescription' => 'Diagnostique a saída Dolby Atmos reproduzindo sinais de teste pelo player do sistema',
 			'settings.atmosTestHlsAtmos' => 'Stream Atmos da Apple',
@@ -2447,6 +2464,8 @@ extension on TranslationsPt {
 			'messages.logsCleared' => 'Logs limpos',
 			'messages.logsCopied' => 'Logs copiados para a área de transferência',
 			'messages.noLogsAvailable' => 'Nenhum log disponível',
+			_ => null,
+		} ?? switch (path) {
 			'messages.libraryScanning' => ({required Object title}) => 'Escaneando "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Escaneamento da biblioteca iniciado para "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Falha ao escanear biblioteca: ${error}',
@@ -2455,8 +2474,6 @@ extension on TranslationsPt {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Falha ao atualizar metadados: ${error}',
 			'messages.logoutConfirm' => 'Tem certeza que deseja sair?',
 			'messages.noSeasonsFound' => 'Nenhuma temporada encontrada',
-			_ => null,
-		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => 'Não foi possível carregar as temporadas',
 			'messages.noEpisodesFound' => 'Nenhum episódio encontrado na primeira temporada',
 			'messages.noEpisodesFoundGeneral' => 'Nenhum episódio encontrado',
@@ -2961,6 +2978,8 @@ extension on TranslationsPt {
 			'companionRemote.session.startingServer' => 'A iniciar servidor remoto...',
 			'companionRemote.session.failedToCreate' => 'Falha ao iniciar o servidor remoto:',
 			'companionRemote.session.hostAddress' => 'Endereço do host',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.connected' => 'Conectado',
 			'companionRemote.session.serverRunning' => 'Servidor remoto ativo',
 			'companionRemote.session.serverStopped' => 'Servidor remoto parado',
@@ -2969,8 +2988,6 @@ extension on TranslationsPt {
 			'companionRemote.session.usePhoneToControl' => 'Use o seu dispositivo móvel para controlar esta aplicação',
 			'companionRemote.session.startServer' => 'Iniciar servidor',
 			'companionRemote.session.stopServer' => 'Parar servidor',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.minimize' => 'Minimizar',
 			'companionRemote.pairing.discoveryDescription' => 'Dispositivos Plezy com a mesma conta Plex aparecem aqui',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -3030,6 +3047,7 @@ extension on TranslationsPt {
 			'videoSettings.performanceOverlay' => 'Overlay de Desempenho',
 			'videoSettings.audioPassthrough' => 'Passagem de Áudio',
 			'videoSettings.audioNormalization' => 'Normalizar Volume',
+			'videoSettings.audioDownmix' => 'Downmix para Estéreo',
 			'performanceOverlay.color' => 'Cor',
 			'performanceOverlay.performance' => 'Desempenho',
 			'performanceOverlay.buffer' => 'Buffer',

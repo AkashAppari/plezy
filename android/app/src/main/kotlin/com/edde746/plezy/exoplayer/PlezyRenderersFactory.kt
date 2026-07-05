@@ -8,6 +8,8 @@ import androidx.annotation.OptIn
 import androidx.media3.common.Format
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackParameters
+import androidx.media3.common.audio.ChannelMixingAudioProcessor
+import androidx.media3.common.audio.ChannelMixingMatrix
 import androidx.media3.common.util.Clock
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.decoder.DecoderInputBuffer
@@ -42,6 +44,16 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
 
   /** Audio delay in microseconds. Shared with PositionFixAudioSink for live updates. */
   val audioDelayUs = AtomicLong(0L)
+
+  /**
+   * Stereo-downmix processor; inactive while every registered matrix is identity.
+   * Pre-populated for counts 1..12 so sink configure can never hit
+   * "No mixing matrix for input channel count". ExoPlayerCore swaps in
+   * downmix matrices via [DownmixMatrices] when the setting is enabled.
+   */
+  val channelMixProcessor = ChannelMixingAudioProcessor().apply {
+    for (count in 1..12) putChannelMixingMatrix(ChannelMixingMatrix.create(count, count))
+  }
 
   /** Returns whether direct encoded output should be hidden so decoded PCM output can be selected. */
   var shouldBlockDirectAudioOutput: ((Format) -> Boolean)? = null
@@ -116,6 +128,9 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
     val defaultSink = DefaultAudioSink.Builder(context)
       .setEnableFloatOutput(enableFloatOutput)
       .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams)
+      // Wraps in DefaultAudioProcessorChain, keeping stock silence-skip +
+      // Sonic; the downmix runs first and only in the decoded-PCM path.
+      .setAudioProcessors(arrayOf(channelMixProcessor))
       .setAudioOutputProvider(RawPositionOutputProvider(realProvider, rawPositionUs, audioDiagnosticsLogger))
       .build()
 

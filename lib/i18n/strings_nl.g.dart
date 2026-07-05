@@ -394,6 +394,14 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get audioPassthrough => 'Audio-doorvoer';
 	@override String get audioPassthroughDescription => 'Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Geeft Dolby Digital Plus (incl. Atmos) als bitstream aan het systeem door. DTS en TrueHD worden nog steeds als meerkanaals PCM afgespeeld. Bij zoeken kunnen korte geluidsonderbrekingen optreden.';
+	@override String get audioDownmix => 'Downmix naar stereo';
+	@override String get audioDownmixDescription => 'Mixt surroundgeluid naar twee kanalen voor stereoluidsprekers of een koptelefoon';
+	@override String get downmixCenterBoost => 'Versterking middenkanaal';
+	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
+	@override String get downmixCenterBoostLabel => 'Versterking (dB)';
+	@override String get downmixCenterBoostShort => 'dB';
+	@override String get audioDownmixNormalize => 'Volume normaliseren bij downmix';
+	@override String get audioDownmixNormalizeDescription => 'Verlaagt de mix om clipping te voorkomen. Zet uit om het originele volume te behouden (kan vervormen bij luide scènes).';
 	@override String get atmosDiagnostics => 'Atmos-uitvoertest';
 	@override String get atmosDiagnosticsDescription => 'Diagnosticeer de Dolby Atmos-uitvoer door testsignalen via de systeemspeler af te spelen';
 	@override String get atmosTestHlsAtmos => 'Apple Atmos-stream';
@@ -1391,6 +1399,7 @@ class _TranslationsVideoSettingsNl extends TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => 'Prestatie-overlay';
 	@override String get audioPassthrough => 'Audio-doorvoer';
 	@override String get audioNormalization => 'Volume normaliseren';
+	@override String get audioDownmix => 'Downmix naar stereo';
 }
 
 // Path: performanceOverlay
@@ -2198,6 +2207,14 @@ extension on TranslationsNl {
 			'settings.audioPassthrough' => 'Audio-doorvoer',
 			'settings.audioPassthroughDescription' => 'Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Geeft Dolby Digital Plus (incl. Atmos) als bitstream aan het systeem door. DTS en TrueHD worden nog steeds als meerkanaals PCM afgespeeld. Bij zoeken kunnen korte geluidsonderbrekingen optreden.',
+			'settings.audioDownmix' => 'Downmix naar stereo',
+			'settings.audioDownmixDescription' => 'Mixt surroundgeluid naar twee kanalen voor stereoluidsprekers of een koptelefoon',
+			'settings.downmixCenterBoost' => 'Versterking middenkanaal',
+			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
+			'settings.downmixCenterBoostLabel' => 'Versterking (dB)',
+			'settings.downmixCenterBoostShort' => 'dB',
+			'settings.audioDownmixNormalize' => 'Volume normaliseren bij downmix',
+			'settings.audioDownmixNormalizeDescription' => 'Verlaagt de mix om clipping te voorkomen. Zet uit om het originele volume te behouden (kan vervormen bij luide scènes).',
 			'settings.atmosDiagnostics' => 'Atmos-uitvoertest',
 			'settings.atmosDiagnosticsDescription' => 'Diagnosticeer de Dolby Atmos-uitvoer door testsignalen via de systeemspeler af te spelen',
 			'settings.atmosTestHlsAtmos' => 'Apple Atmos-stream',
@@ -2447,6 +2464,8 @@ extension on TranslationsNl {
 			'messages.logsCleared' => 'Logs gewist',
 			'messages.logsCopied' => 'Logs gekopieerd naar klembord',
 			'messages.noLogsAvailable' => 'Geen logs beschikbaar',
+			_ => null,
+		} ?? switch (path) {
 			'messages.libraryScanning' => ({required Object title}) => 'Scannen "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Bibliotheek scan gestart voor "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kon bibliotheek niet scannen: ${error}',
@@ -2455,8 +2474,6 @@ extension on TranslationsNl {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Kon metadata niet vernieuwen: ${error}',
 			'messages.logoutConfirm' => 'Weet je zeker dat je wilt uitloggen?',
 			'messages.noSeasonsFound' => 'Geen seizoenen gevonden',
-			_ => null,
-		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => 'Kan seizoenen niet laden',
 			'messages.noEpisodesFound' => 'Geen afleveringen gevonden in eerste seizoen',
 			'messages.noEpisodesFoundGeneral' => 'Geen afleveringen gevonden',
@@ -2961,6 +2978,8 @@ extension on TranslationsNl {
 			'companionRemote.session.startingServer' => 'Externe server starten...',
 			'companionRemote.session.failedToCreate' => 'Kan externe server niet starten:',
 			'companionRemote.session.hostAddress' => 'Hostadres',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.connected' => 'Verbonden',
 			'companionRemote.session.serverRunning' => 'Externe server actief',
 			'companionRemote.session.serverStopped' => 'Externe server gestopt',
@@ -2969,8 +2988,6 @@ extension on TranslationsNl {
 			'companionRemote.session.usePhoneToControl' => 'Gebruik je mobiele apparaat om deze app te bedienen',
 			'companionRemote.session.startServer' => 'Server starten',
 			'companionRemote.session.stopServer' => 'Server stoppen',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.minimize' => 'Minimaliseren',
 			'companionRemote.pairing.discoveryDescription' => 'Plezy-apparaten met hetzelfde Plex-account verschijnen hier',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -3030,6 +3047,7 @@ extension on TranslationsNl {
 			'videoSettings.performanceOverlay' => 'Prestatie-overlay',
 			'videoSettings.audioPassthrough' => 'Audio-doorvoer',
 			'videoSettings.audioNormalization' => 'Volume normaliseren',
+			'videoSettings.audioDownmix' => 'Downmix naar stereo',
 			'performanceOverlay.color' => 'Kleur',
 			'performanceOverlay.performance' => 'Prestaties',
 			'performanceOverlay.buffer' => 'Buffer',

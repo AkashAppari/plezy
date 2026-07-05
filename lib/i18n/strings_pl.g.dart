@@ -394,6 +394,14 @@ class _TranslationsSettingsPl extends TranslationsSettingsEn {
 	@override String get audioPassthrough => 'Bezpośrednie audio';
 	@override String get audioPassthroughDescription => 'Wysyłaj dźwięk Dolby/DTS do amplitunera lub telewizora bez ponownego kodowania, zachowując dźwięk przestrzenny. Wyłącz, jeśli nie ma dźwięku.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Przekazuje Dolby Digital Plus (w tym Atmos) do systemu jako bitstream. DTS i TrueHD nadal odtwarzane są jako wielokanałowe PCM. Podczas przewijania mogą wystąpić krótkie przerwy w dźwięku.';
+	@override String get audioDownmix => 'Miksowanie do stereo';
+	@override String get audioDownmixDescription => 'Miksuje dźwięk przestrzenny do dwóch kanałów dla głośników stereo lub słuchawek';
+	@override String get downmixCenterBoost => 'Wzmocnienie kanału centralnego';
+	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
+	@override String get downmixCenterBoostLabel => 'Wzmocnienie (dB)';
+	@override String get downmixCenterBoostShort => 'dB';
+	@override String get audioDownmixNormalize => 'Normalizacja głośności przy miksowaniu';
+	@override String get audioDownmixNormalizeDescription => 'Obniża miks, aby zapobiec przesterowaniu. Wyłącz, aby zachować oryginalną głośność (głośne sceny mogą być zniekształcone).';
 	@override String get atmosDiagnostics => 'Test wyjścia Atmos';
 	@override String get atmosDiagnosticsDescription => 'Diagnozuj wyjście Dolby Atmos, odtwarzając sygnały testowe przez odtwarzacz systemowy';
 	@override String get atmosTestHlsAtmos => 'Strumień Atmos Apple';
@@ -1391,6 +1399,7 @@ class _TranslationsVideoSettingsPl extends TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => 'Nakładka wydajności';
 	@override String get audioPassthrough => 'Bezpośrednie audio';
 	@override String get audioNormalization => 'Normalizacja głośności';
+	@override String get audioDownmix => 'Miksowanie do stereo';
 }
 
 // Path: performanceOverlay
@@ -2198,6 +2207,14 @@ extension on TranslationsPl {
 			'settings.audioPassthrough' => 'Bezpośrednie audio',
 			'settings.audioPassthroughDescription' => 'Wysyłaj dźwięk Dolby/DTS do amplitunera lub telewizora bez ponownego kodowania, zachowując dźwięk przestrzenny. Wyłącz, jeśli nie ma dźwięku.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Przekazuje Dolby Digital Plus (w tym Atmos) do systemu jako bitstream. DTS i TrueHD nadal odtwarzane są jako wielokanałowe PCM. Podczas przewijania mogą wystąpić krótkie przerwy w dźwięku.',
+			'settings.audioDownmix' => 'Miksowanie do stereo',
+			'settings.audioDownmixDescription' => 'Miksuje dźwięk przestrzenny do dwóch kanałów dla głośników stereo lub słuchawek',
+			'settings.downmixCenterBoost' => 'Wzmocnienie kanału centralnego',
+			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
+			'settings.downmixCenterBoostLabel' => 'Wzmocnienie (dB)',
+			'settings.downmixCenterBoostShort' => 'dB',
+			'settings.audioDownmixNormalize' => 'Normalizacja głośności przy miksowaniu',
+			'settings.audioDownmixNormalizeDescription' => 'Obniża miks, aby zapobiec przesterowaniu. Wyłącz, aby zachować oryginalną głośność (głośne sceny mogą być zniekształcone).',
 			'settings.atmosDiagnostics' => 'Test wyjścia Atmos',
 			'settings.atmosDiagnosticsDescription' => 'Diagnozuj wyjście Dolby Atmos, odtwarzając sygnały testowe przez odtwarzacz systemowy',
 			'settings.atmosTestHlsAtmos' => 'Strumień Atmos Apple',
@@ -2447,6 +2464,8 @@ extension on TranslationsPl {
 			'messages.logsCleared' => 'Logi wyczyszczone',
 			'messages.logsCopied' => 'Logi skopiowane do schowka',
 			'messages.noLogsAvailable' => 'Brak dostępnych logów',
+			_ => null,
+		} ?? switch (path) {
 			'messages.libraryScanning' => ({required Object title}) => 'Skanowanie "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Rozpoczęto skanowanie biblioteki "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Nie udało się zeskanować biblioteki: ${error}',
@@ -2455,8 +2474,6 @@ extension on TranslationsPl {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Nie udało się odświeżyć metadanych: ${error}',
 			'messages.logoutConfirm' => 'Czy na pewno chcesz się wylogować?',
 			'messages.noSeasonsFound' => 'Nie znaleziono sezonów',
-			_ => null,
-		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => 'Nie udało się załadować sezonów',
 			'messages.noEpisodesFound' => 'Nie znaleziono odcinków w pierwszym sezonie',
 			'messages.noEpisodesFoundGeneral' => 'Nie znaleziono odcinków',
@@ -2961,6 +2978,8 @@ extension on TranslationsPl {
 			'companionRemote.session.startingServer' => 'Uruchamianie serwera zdalnego...',
 			'companionRemote.session.failedToCreate' => 'Nie udało się uruchomić serwera zdalnego:',
 			'companionRemote.session.hostAddress' => 'Adres hosta',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.connected' => 'Połączono',
 			'companionRemote.session.serverRunning' => 'Serwer zdalny aktywny',
 			'companionRemote.session.serverStopped' => 'Serwer zdalny zatrzymany',
@@ -2969,8 +2988,6 @@ extension on TranslationsPl {
 			'companionRemote.session.usePhoneToControl' => 'Użyj urządzenia mobilnego, aby sterować tą aplikacją',
 			'companionRemote.session.startServer' => 'Uruchom serwer',
 			'companionRemote.session.stopServer' => 'Zatrzymaj serwer',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.minimize' => 'Minimalizuj',
 			'companionRemote.pairing.discoveryDescription' => 'Urządzenia Plezy z tym samym kontem Plex pojawią się tutaj',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -3030,6 +3047,7 @@ extension on TranslationsPl {
 			'videoSettings.performanceOverlay' => 'Nakładka wydajności',
 			'videoSettings.audioPassthrough' => 'Bezpośrednie audio',
 			'videoSettings.audioNormalization' => 'Normalizacja głośności',
+			'videoSettings.audioDownmix' => 'Miksowanie do stereo',
 			'performanceOverlay.color' => 'Kolor',
 			'performanceOverlay.performance' => 'Wydajność',
 			'performanceOverlay.buffer' => 'Bufor',

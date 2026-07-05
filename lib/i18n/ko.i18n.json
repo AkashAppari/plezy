@@ -265,6 +265,14 @@
     "audioPassthrough": "오디오 패스스루",
     "audioPassthroughDescription": "Dolby/DTS 오디오를 재인코딩 없이 리시버나 TV로 전송하여 서라운드 사운드를 유지합니다. 소리가 나지 않으면 비활성화하세요.",
     "audioPassthroughDescriptionAppleTv": "Dolby Digital Plus(Atmos 포함)를 비트스트림으로 시스템에 전달합니다. DTS와 TrueHD는 계속 멀티채널 PCM으로 재생됩니다. 탐색 시 짧은 소리 끊김이 발생할 수 있습니다.",
+    "audioDownmix": "스테레오로 다운믹스",
+    "audioDownmixDescription": "서라운드 오디오를 스테레오 스피커나 헤드폰용 2채널로 믹스합니다",
+    "downmixCenterBoost": "센터 채널 부스트",
+    "downmixCenterBoostValue": "${db} dB",
+    "downmixCenterBoostLabel": "부스트 (dB)",
+    "downmixCenterBoostShort": "dB",
+    "audioDownmixNormalize": "다운믹스 시 음량 정규화",
+    "audioDownmixNormalizeDescription": "클리핑을 방지하기 위해 믹스 음량을 낮춥니다. 원래 음량을 유지하려면 끄세요(큰 소리 장면에서 왜곡될 수 있음).",
     "atmosDiagnostics": "Atmos 출력 테스트",
     "atmosDiagnosticsDescription": "시스템 플레이어로 테스트 신호를 재생하여 Dolby Atmos 출력을 진단합니다",
     "atmosTestHlsAtmos": "Apple Atmos 스트림",
@@ -1176,7 +1184,8 @@
     "audioOutput": "오디오 출력",
     "performanceOverlay": "성능 오버레이",
     "audioPassthrough": "오디오 패스스루",
-    "audioNormalization": "음량 정규화"
+    "audioNormalization": "음량 정규화",
+    "audioDownmix": "스테레오로 다운믹스"
   },
   "performanceOverlay": {
     "color": "색상",

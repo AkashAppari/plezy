@@ -31,6 +31,7 @@ import androidx.media3.common.TrackGroup
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
+import androidx.media3.common.audio.ChannelMixingMatrix
 import androidx.media3.common.text.Cue
 import androidx.media3.common.text.CueGroup
 import androidx.media3.common.util.UnstableApi
@@ -220,6 +221,12 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   // disable tunneling.
   private var audioPassthroughEnabled: Boolean = false
   private var audioNormalizationEnabled: Boolean = false
+
+  // Stereo downmix: runs as a ChannelMixingAudioProcessor inside the sink's
+  // decoded-PCM pipeline, so encoded audio is force-decoded while enabled.
+  private var audioDownmixEnabled: Boolean = false
+  private var audioDownmixCenterBoostDb: Int = 0
+  private var audioDownmixNormalize: Boolean = true
   private val audioNormalization = AudioNormalizationEffect(::emitLog)
   private var pendingAudioRendererBounce: Boolean = false
   private val audioBounceTimeout = Runnable { completeAudioRendererBounce("audio renderer bounce timeout") }
@@ -1997,6 +2004,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     val mimeType = format.sampleMimeType ?: return false
     // Loudness normalization needs decoded PCM for the audiofx chain to act on.
     if (audioNormalizationEnabled && isEncodedAudioMimeType(mimeType)) return true
+    // Stereo downmix runs in the sink's PCM pipeline; bitstream output would
+    // bypass it, so encoded audio is force-decoded while downmix is on
+    // (overrides the passthrough preference — Android TV defaults it on).
+    if (audioDownmixEnabled && isEncodedAudioMimeType(mimeType)) return true
     if (shouldBlockDirectOutputForPassthrough(mimeType, audioPassthroughEnabled)) return true
     if (directAudioOutputBlockedAfterFailure.contains(mimeType)) {
       if (loggedDirectAudioRecoveryBlocks.add("$mimeType|$reason")) {
@@ -2997,7 +3008,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     val tunnelingWillFlip = calculateTunnelingEnabled() != currentTunneledPlayback
     val outputEncoding = lastAudioTrackConfig?.encoding
     val selectedMime = selectedAudioFormat()?.sampleMimeType
+    // While downmix holds the output on decoded PCM the verdict cannot flip.
     val needsBounce = !tunnelingWillFlip &&
+      !audioDownmixEnabled &&
       outputEncoding != null &&
       selectedMime != null &&
       isEncodedAudioMimeType(selectedMime) &&
@@ -3017,7 +3030,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     if (exoPlayer == null) return
     val outputEncoding = lastAudioTrackConfig?.encoding
     val selectedMime = selectedAudioFormat()?.sampleMimeType
-    val needsBounce = outputEncoding != null &&
+    // While downmix holds the output on decoded PCM the verdict cannot flip.
+    val needsBounce = !audioDownmixEnabled &&
+      outputEncoding != null &&
       selectedMime != null &&
       isPassthroughAudioMimeType(selectedMime) &&
       (if (enabled) isPcmEncoding(outputEncoding) else !isPcmEncoding(outputEncoding))
@@ -3025,6 +3040,48 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       startAudioRendererBounce("audio-passthrough")
     } else {
       updateTunnelingState("audio-passthrough")
+    }
+  }
+
+  fun setAudioDownmix(enabled: Boolean, centerBoostDb: Int, normalize: Boolean) {
+    val boost = centerBoostDb.coerceIn(0, DownmixMatrices.MAX_CENTER_BOOST_DB)
+    val enabledChanged = audioDownmixEnabled != enabled
+    if (!enabledChanged && audioDownmixCenterBoostDb == boost && audioDownmixNormalize == normalize) return
+    audioDownmixEnabled = enabled
+    audioDownmixCenterBoostDb = boost
+    audioDownmixNormalize = normalize
+    emitLog(
+      "info",
+      "audio-downmix",
+      if (enabled) "Stereo downmix enabled (centerBoost=${boost}dB, normalize=$normalize)" else "Stereo downmix disabled"
+    )
+    applyDownmixMatrices()
+    if (exoPlayer == null || !enabledChanged) return
+    // Before the first audio track is up (apply-at-open) the initial sink
+    // configure picks the matrices up on its own; no bounce needed.
+    if (lastAudioTrackConfig == null) return
+    // The processor's active/inactive state (identity vs downmix matrix) and
+    // the sink's direct-output verdict are both latched at configure time —
+    // bounce the renderer to re-evaluate. Coefficient-only changes are picked
+    // up live by queueInput without a bounce.
+    startAudioRendererBounce("audio-downmix")
+  }
+
+  private fun applyDownmixMatrices() {
+    val processor = renderersFactory?.channelMixProcessor ?: return
+    for (count in DownmixMatrices.MIN_DOWNMIX_INPUT_CHANNELS..DownmixMatrices.MAX_DOWNMIX_INPUT_CHANNELS) {
+      val coefficients = if (audioDownmixEnabled) {
+        DownmixMatrices.stereoCoefficients(count, audioDownmixCenterBoostDb, audioDownmixNormalize)
+      } else {
+        null
+      }
+      processor.putChannelMixingMatrix(
+        if (coefficients != null) {
+          ChannelMixingMatrix(count, 2, coefficients)
+        } else {
+          ChannelMixingMatrix.create(count, count)
+        }
+      )
     }
   }
 

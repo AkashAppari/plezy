@@ -444,6 +444,8 @@ class SettingsService extends BaseSharedPreferencesService {
   static const ambientLighting = BoolPref('ambient_lighting');
   static const audioPassthrough = _AudioPassthroughPref();
   static const audioNormalization = BoolPref('audio_normalization');
+  static const audioDownmix = BoolPref('audio_downmix');
+  static const audioDownmixNormalize = BoolPref('audio_downmix_normalize', defaultValue: true);
   static const liveTvDefaultFavorites = BoolPref('live_tv_default_favorites');
   static const matchRefreshRate = BoolPref('match_refresh_rate');
   static const matchDynamicRange = BoolPref('match_dynamic_range');
@@ -458,6 +460,7 @@ class SettingsService extends BaseSharedPreferencesService {
   );
 
   static final maxVolume = IntPref('max_volume', defaultValue: 100, transform: (v) => v.clamp(100, 300));
+  static final downmixCenterBoost = IntPref('downmix_center_boost', transform: (v) => v.clamp(0, 12));
   static final subtitlePosition = IntPref('subtitle_position', defaultValue: 100, transform: (v) => v.clamp(0, 100));
   static final defaultPlaybackSpeed = DoublePref(
     'default_playback_speed',
@@ -845,6 +848,9 @@ class SettingsService extends BaseSharedPreferencesService {
     ambientLighting,
     audioPassthrough,
     audioNormalization,
+    audioDownmix,
+    audioDownmixNormalize,
+    downmixCenterBoost,
     themeMode,
     keyboardShortcuts,
     keyboardHotkeys,

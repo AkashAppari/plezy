@@ -265,6 +265,14 @@
     "audioPassthrough": "オーディオパススルー",
     "audioPassthroughDescription": "Dolby/DTS音声を再エンコードせずにレシーバーやテレビに送り、サラウンドを維持します。音が出ない場合は無効にしてください。",
     "audioPassthroughDescriptionAppleTv": "Dolby Digital Plus（Atmos含む）をビットストリームとしてシステムに渡します。DTSとTrueHDは引き続きマルチチャンネルPCMで再生されます。シーク時に短い音切れが発生することがあります。",
+    "audioDownmix": "ステレオにダウンミックス",
+    "audioDownmixDescription": "サラウンド音声をステレオスピーカーやヘッドホン用に2チャンネルへミックスします",
+    "downmixCenterBoost": "センターチャンネルブースト",
+    "downmixCenterBoostValue": "${db} dB",
+    "downmixCenterBoostLabel": "ブースト (dB)",
+    "downmixCenterBoostShort": "dB",
+    "audioDownmixNormalize": "ダウンミックス時の音量正規化",
+    "audioDownmixNormalizeDescription": "クリッピングを防ぐためにミックス音量を下げます。オフにすると元の音量を維持します（大音量シーンで歪む場合があります）。",
     "atmosDiagnostics": "Atmos出力テスト",
     "atmosDiagnosticsDescription": "システムプレイヤーでテスト信号を再生してDolby Atmos出力を診断します",
     "atmosTestHlsAtmos": "Apple Atmosストリーム",
@@ -1176,7 +1184,8 @@
     "audioOutput": "音声出力",
     "performanceOverlay": "パフォーマンスオーバーレイ",
     "audioPassthrough": "オーディオパススルー",
-    "audioNormalization": "ラウドネス正規化"
+    "audioNormalization": "ラウドネス正規化",
+    "audioDownmix": "ステレオにダウンミックス"
   },
   "performanceOverlay": {
     "color": "色",

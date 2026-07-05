@@ -265,6 +265,14 @@
     "audioPassthrough": "音频直通",
     "audioPassthroughDescription": "将 Dolby/DTS 音频不经重新编码直接发送到功放或电视，保留环绕声。如果没有声音，请关闭。",
     "audioPassthroughDescriptionAppleTv": "将 Dolby Digital Plus（含 Atmos）以比特流方式交给系统输出。DTS 和 TrueHD 仍以多声道 PCM 播放。快进快退时可能出现短暂声音中断。",
+    "audioDownmix": "下混为立体声",
+    "audioDownmixDescription": "将环绕声混合为双声道，适用于立体声音箱或耳机",
+    "downmixCenterBoost": "中置声道增强",
+    "downmixCenterBoostValue": "${db} dB",
+    "downmixCenterBoostLabel": "增强 (dB)",
+    "downmixCenterBoostShort": "dB",
+    "audioDownmixNormalize": "下混时音量标准化",
+    "audioDownmixNormalizeDescription": "降低混音电平以防止削波。关闭可保持原始音量（大音量场景可能失真）。",
     "atmosDiagnostics": "Atmos 输出测试",
     "atmosDiagnosticsDescription": "通过系统播放器播放测试信号，诊断 Dolby Atmos 输出",
     "atmosTestHlsAtmos": "Apple Atmos 流",
@@ -1176,7 +1184,8 @@
     "audioOutput": "音频输出",
     "performanceOverlay": "性能监控",
     "audioPassthrough": "音频直通",
-    "audioNormalization": "响度标准化"
+    "audioNormalization": "响度标准化",
+    "audioDownmix": "下混为立体声"
   },
   "performanceOverlay": {
     "color": "颜色",

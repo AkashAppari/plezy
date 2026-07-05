@@ -394,6 +394,14 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get audioPassthrough => '音频直通';
 	@override String get audioPassthroughDescription => '将 Dolby/DTS 音频不经重新编码直接发送到功放或电视，保留环绕声。如果没有声音，请关闭。';
 	@override String get audioPassthroughDescriptionAppleTv => '将 Dolby Digital Plus（含 Atmos）以比特流方式交给系统输出。DTS 和 TrueHD 仍以多声道 PCM 播放。快进快退时可能出现短暂声音中断。';
+	@override String get audioDownmix => '下混为立体声';
+	@override String get audioDownmixDescription => '将环绕声混合为双声道，适用于立体声音箱或耳机';
+	@override String get downmixCenterBoost => '中置声道增强';
+	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
+	@override String get downmixCenterBoostLabel => '增强 (dB)';
+	@override String get downmixCenterBoostShort => 'dB';
+	@override String get audioDownmixNormalize => '下混时音量标准化';
+	@override String get audioDownmixNormalizeDescription => '降低混音电平以防止削波。关闭可保持原始音量（大音量场景可能失真）。';
 	@override String get atmosDiagnostics => 'Atmos 输出测试';
 	@override String get atmosDiagnosticsDescription => '通过系统播放器播放测试信号，诊断 Dolby Atmos 输出';
 	@override String get atmosTestHlsAtmos => 'Apple Atmos 流';
@@ -1391,6 +1399,7 @@ class _TranslationsVideoSettingsZh extends TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => '性能监控';
 	@override String get audioPassthrough => '音频直通';
 	@override String get audioNormalization => '响度标准化';
+	@override String get audioDownmix => '下混为立体声';
 }
 
 // Path: performanceOverlay
@@ -2198,6 +2207,14 @@ extension on TranslationsZh {
 			'settings.audioPassthrough' => '音频直通',
 			'settings.audioPassthroughDescription' => '将 Dolby/DTS 音频不经重新编码直接发送到功放或电视，保留环绕声。如果没有声音，请关闭。',
 			'settings.audioPassthroughDescriptionAppleTv' => '将 Dolby Digital Plus（含 Atmos）以比特流方式交给系统输出。DTS 和 TrueHD 仍以多声道 PCM 播放。快进快退时可能出现短暂声音中断。',
+			'settings.audioDownmix' => '下混为立体声',
+			'settings.audioDownmixDescription' => '将环绕声混合为双声道，适用于立体声音箱或耳机',
+			'settings.downmixCenterBoost' => '中置声道增强',
+			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
+			'settings.downmixCenterBoostLabel' => '增强 (dB)',
+			'settings.downmixCenterBoostShort' => 'dB',
+			'settings.audioDownmixNormalize' => '下混时音量标准化',
+			'settings.audioDownmixNormalizeDescription' => '降低混音电平以防止削波。关闭可保持原始音量（大音量场景可能失真）。',
 			'settings.atmosDiagnostics' => 'Atmos 输出测试',
 			'settings.atmosDiagnosticsDescription' => '通过系统播放器播放测试信号，诊断 Dolby Atmos 输出',
 			'settings.atmosTestHlsAtmos' => 'Apple Atmos 流',
@@ -2447,6 +2464,8 @@ extension on TranslationsZh {
 			'messages.logsCleared' => '日志已清除',
 			'messages.logsCopied' => '日志已复制到剪贴板',
 			'messages.noLogsAvailable' => '没有可用日志',
+			_ => null,
+		} ?? switch (path) {
 			'messages.libraryScanning' => ({required Object title}) => '正在扫描 “${title}”...',
 			'messages.libraryScanStarted' => ({required Object title}) => '已开始扫描 “${title}” 媒体库',
 			'messages.libraryScanFailed' => ({required Object error}) => '无法扫描媒体库: ${error}',
@@ -2455,8 +2474,6 @@ extension on TranslationsZh {
 			'messages.metadataRefreshFailed' => ({required Object error}) => '无法刷新元数据: ${error}',
 			'messages.logoutConfirm' => '你确定要登出吗？',
 			'messages.noSeasonsFound' => '未找到季',
-			_ => null,
-		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => '无法加载季',
 			'messages.noEpisodesFound' => '在第一季中未找到剧集',
 			'messages.noEpisodesFoundGeneral' => '未找到剧集',
@@ -2961,6 +2978,8 @@ extension on TranslationsZh {
 			'companionRemote.session.startingServer' => '正在启动远程服务器...',
 			'companionRemote.session.failedToCreate' => '启动远程服务器失败：',
 			'companionRemote.session.hostAddress' => '主机地址',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.connected' => '已连接',
 			'companionRemote.session.serverRunning' => '远程服务器已启动',
 			'companionRemote.session.serverStopped' => '远程服务器已停止',
@@ -2969,8 +2988,6 @@ extension on TranslationsZh {
 			'companionRemote.session.usePhoneToControl' => '使用移动设备控制此应用',
 			'companionRemote.session.startServer' => '启动服务器',
 			'companionRemote.session.stopServer' => '停止服务器',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.minimize' => '最小化',
 			'companionRemote.pairing.discoveryDescription' => '使用同一 Plex 账号的 Plezy 设备会显示在这里',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -3030,6 +3047,7 @@ extension on TranslationsZh {
 			'videoSettings.performanceOverlay' => '性能监控',
 			'videoSettings.audioPassthrough' => '音频直通',
 			'videoSettings.audioNormalization' => '响度标准化',
+			'videoSettings.audioDownmix' => '下混为立体声',
 			'performanceOverlay.color' => '颜色',
 			'performanceOverlay.performance' => '性能',
 			'performanceOverlay.buffer' => '缓冲',

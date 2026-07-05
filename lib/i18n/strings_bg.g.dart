@@ -394,6 +394,14 @@ class _TranslationsSettingsBg extends TranslationsSettingsEn {
 	@override String get audioPassthrough => 'Аудио passthrough';
 	@override String get audioPassthroughDescription => 'Изпращай Dolby/DTS звук към ресийвъра или телевизора без прекодиране, запазвайки съраунд звука. Изключете, ако няма звук.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Предава Dolby Digital Plus (вкл. Atmos) на системата като битов поток. DTS и TrueHD продължават да се възпроизвеждат като многоканален PCM. При превъртане може да има кратки прекъсвания на звука.';
+	@override String get audioDownmix => 'Смесване до стерео';
+	@override String get audioDownmixDescription => 'Смесва съраунд звука до два канала за стерео тонколони или слушалки';
+	@override String get downmixCenterBoost => 'Усилване на централния канал';
+	@override String downmixCenterBoostValue({required Object db}) => '${db} дБ';
+	@override String get downmixCenterBoostLabel => 'Усилване (дБ)';
+	@override String get downmixCenterBoostShort => 'дБ';
+	@override String get audioDownmixNormalize => 'Нормализиране на звука при смесване';
+	@override String get audioDownmixNormalizeDescription => 'Понижава микса, за да се предотврати клипинг. Изключете, за да запазите оригиналната сила на звука (възможни изкривявания при силни сцени).';
 	@override String get atmosDiagnostics => 'Тест на Atmos изхода';
 	@override String get atmosDiagnosticsDescription => 'Диагностика на Dolby Atmos изхода чрез възпроизвеждане на тестови сигнали през системния плейър';
 	@override String get atmosTestHlsAtmos => 'Apple Atmos поток';
@@ -1391,6 +1399,7 @@ class _TranslationsVideoSettingsBg extends TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => 'Оверлей за производителност';
 	@override String get audioPassthrough => 'Аудио passthrough';
 	@override String get audioNormalization => 'Нормализиране на силата на звука';
+	@override String get audioDownmix => 'Смесване до стерео';
 }
 
 // Path: performanceOverlay
@@ -2198,6 +2207,14 @@ extension on TranslationsBg {
 			'settings.audioPassthrough' => 'Аудио passthrough',
 			'settings.audioPassthroughDescription' => 'Изпращай Dolby/DTS звук към ресийвъра или телевизора без прекодиране, запазвайки съраунд звука. Изключете, ако няма звук.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Предава Dolby Digital Plus (вкл. Atmos) на системата като битов поток. DTS и TrueHD продължават да се възпроизвеждат като многоканален PCM. При превъртане може да има кратки прекъсвания на звука.',
+			'settings.audioDownmix' => 'Смесване до стерео',
+			'settings.audioDownmixDescription' => 'Смесва съраунд звука до два канала за стерео тонколони или слушалки',
+			'settings.downmixCenterBoost' => 'Усилване на централния канал',
+			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} дБ',
+			'settings.downmixCenterBoostLabel' => 'Усилване (дБ)',
+			'settings.downmixCenterBoostShort' => 'дБ',
+			'settings.audioDownmixNormalize' => 'Нормализиране на звука при смесване',
+			'settings.audioDownmixNormalizeDescription' => 'Понижава микса, за да се предотврати клипинг. Изключете, за да запазите оригиналната сила на звука (възможни изкривявания при силни сцени).',
 			'settings.atmosDiagnostics' => 'Тест на Atmos изхода',
 			'settings.atmosDiagnosticsDescription' => 'Диагностика на Dolby Atmos изхода чрез възпроизвеждане на тестови сигнали през системния плейър',
 			'settings.atmosTestHlsAtmos' => 'Apple Atmos поток',
@@ -2447,6 +2464,8 @@ extension on TranslationsBg {
 			'messages.logsCleared' => 'Логовете са изчистени',
 			'messages.logsCopied' => 'Логовете са копирани в клипборда',
 			'messages.noLogsAvailable' => 'Няма налични логове',
+			_ => null,
+		} ?? switch (path) {
 			'messages.libraryScanning' => ({required Object title}) => 'Сканиране на "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Сканирането на библиотеката е стартирано за "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Неуспешно сканиране на библиотеката: ${error}',
@@ -2455,8 +2474,6 @@ extension on TranslationsBg {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Неуспешно опресняване на метаданни: ${error}',
 			'messages.logoutConfirm' => 'Сигурни ли сте, че искате да излезете?',
 			'messages.noSeasonsFound' => 'Не са намерени сезони',
-			_ => null,
-		} ?? switch (path) {
 			'messages.seasonsLoadFailed' => 'Неуспешно зареждане на сезони',
 			'messages.noEpisodesFound' => 'Не са намерени епизоди в първия сезон',
 			'messages.noEpisodesFoundGeneral' => 'Не са намерени епизоди',
@@ -2961,6 +2978,8 @@ extension on TranslationsBg {
 			'companionRemote.session.startingServer' => 'Стартиране на сървър за дистанционно управление...',
 			'companionRemote.session.failedToCreate' => 'Неуспешно стартиране на сървър за дистанционно управление:',
 			'companionRemote.session.hostAddress' => 'Адрес на хоста',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.connected' => 'Свързан',
 			'companionRemote.session.serverRunning' => 'Сървърът за дистанционно управление е активен',
 			'companionRemote.session.serverStopped' => 'Сървърът за дистанционно управление е спрян',
@@ -2969,8 +2988,6 @@ extension on TranslationsBg {
 			'companionRemote.session.usePhoneToControl' => 'Използвайте мобилното си устройство, за да управлявате това приложение',
 			'companionRemote.session.startServer' => 'Стартирай сървър',
 			'companionRemote.session.stopServer' => 'Спри сървър',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.minimize' => 'Минимизирай',
 			'companionRemote.pairing.discoveryDescription' => 'Plezy устройства със същия Plex акаунт се показват тук',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -3030,6 +3047,7 @@ extension on TranslationsBg {
 			'videoSettings.performanceOverlay' => 'Оверлей за производителност',
 			'videoSettings.audioPassthrough' => 'Аудио passthrough',
 			'videoSettings.audioNormalization' => 'Нормализиране на силата на звука',
+			'videoSettings.audioDownmix' => 'Смесване до стерео',
 			'performanceOverlay.color' => 'Цвят',
 			'performanceOverlay.performance' => 'Производителност',
 			'performanceOverlay.buffer' => 'Буфер',

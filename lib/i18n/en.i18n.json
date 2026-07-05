@@ -272,6 +272,14 @@
     "audioPassthrough": "Audio Passthrough",
     "audioPassthroughDescription": "Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.",
     "audioPassthroughDescriptionAppleTv": "Hand Dolby Digital Plus (including Atmos) to the system for bitstream output. DTS and TrueHD still play as multichannel PCM. Brief audio gaps can occur when seeking.",
+    "audioDownmix": "Downmix to Stereo",
+    "audioDownmixDescription": "Mix surround audio down to two channels for stereo speakers or headphones",
+    "downmixCenterBoost": "Center Channel Boost",
+    "downmixCenterBoostValue": "${db} dB",
+    "downmixCenterBoostLabel": "Boost (dB)",
+    "downmixCenterBoostShort": "dB",
+    "audioDownmixNormalize": "Normalize Volume on Downmix",
+    "audioDownmixNormalizeDescription": "Lower the mix to prevent clipping. Turn off to keep the original volume (may distort loud scenes).",
     "atmosDiagnostics": "Atmos Output Test",
     "atmosDiagnosticsDescription": "Diagnose Dolby Atmos output by playing test signals through the system player",
     "atmosTestHlsAtmos": "Apple Atmos stream",
@@ -1191,7 +1199,8 @@
     "audioOutput": "Audio Output",
     "performanceOverlay": "Performance Overlay",
     "audioPassthrough": "Audio Passthrough",
-    "audioNormalization": "Normalize Loudness"
+    "audioNormalization": "Normalize Loudness",
+    "audioDownmix": "Downmix to Stereo"
   },
   "performanceOverlay": {
     "color": "Color",

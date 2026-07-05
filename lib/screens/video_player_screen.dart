@@ -843,6 +843,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         await currentPlayer.setAudioNormalization(true);
       }
 
+      // After the passthrough apply: downmix wins on both backends (mpv
+      // clears audio-spdif, ExoPlayer force-decodes encoded audio).
+      if (settingsService.read(SettingsService.audioDownmix)) {
+        await currentPlayer.setAudioDownmix(
+          enabled: true,
+          centerBoostDb: settingsService.read(SettingsService.downmixCenterBoost),
+          normalize: settingsService.read(SettingsService.audioDownmixNormalize),
+        );
+      }
+
       if (PlatformDetector.isDesktopOS()) {
         await currentPlayer.setProperty('screenshot-directory', '~/Pictures');
       }

@@ -564,6 +564,18 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           onAfterWrite: widget.player.setAudioNormalization,
         ),
 
+        // Stereo Downmix
+        _SettingsToggleItem(
+          pref: SettingsService.audioDownmix,
+          icon: Symbols.headphones_rounded,
+          title: t.videoSettings.audioDownmix,
+          onAfterWrite: (enabled) => widget.player.setAudioDownmix(
+            enabled: enabled,
+            centerBoostDb: SettingsService.instance.read(SettingsService.downmixCenterBoost),
+            normalize: SettingsService.instance.read(SettingsService.audioDownmixNormalize),
+          ),
+        ),
+
         // Shader Preset (MPV only)
         if (widget.shaderService != null && widget.shaderService!.isSupported)
           _SettingsMenuItem(
