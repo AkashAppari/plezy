@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:os_media_controls/os_media_controls.dart';
 
 import '../../database/app_database.dart';
@@ -10,6 +11,8 @@ import '../../media/media_server_client.dart';
 import '../../mpv/models.dart';
 import '../../mpv/player/player.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/notification_permission.dart';
+import '../../utils/platform_detector.dart';
 import '../media_controls_manager.dart';
 import '../multi_server_manager.dart';
 import '../offline_watch_sync_service.dart';
@@ -51,7 +54,7 @@ class _ArmedTrack {
 /// Player/resolver failures surface on [errors] (for a snackbar) and
 /// auto-skip to the next track; three consecutive failures without playback
 /// progress stop the session with [MusicPlaybackStatus.error].
-class MusicPlaybackServiceImpl extends MusicPlaybackService {
+class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingObserver {
   MusicPlaybackServiceImpl({
     required MultiServerManager serverManager,
     AppDatabase? database,
@@ -66,6 +69,13 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService {
        _resolver = resolver ?? ServerMusicSourceResolver(serverManager: serverManager, database: database!),
        _coordinator = coordinator ?? PlaybackCoordinator.instance {
     _coordinator.registerMusicSession(stopAndDispose: _stopForVideoClaim);
+    // tvOS has no background-audio session in v1 — pause on backgrounding so
+    // audio doesn't play over other apps / the home screen. Other platforms
+    // keep playing under their OS media session.
+    if (PlatformDetector.isAppleTV()) {
+      _observesLifecycle = true;
+      WidgetsBinding.instance.addObserver(this);
+    }
   }
 
   static const _previousRestartThreshold = Duration(seconds: 3);
@@ -108,6 +118,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService {
   int _consecutiveFailures = 0;
   bool _resumeAfterInterruption = false;
   bool _disposed = false;
+  bool _observesLifecycle = false;
 
   Timer? _sleepTimer;
   DateTime? _sleepTimerEndsAt;
@@ -215,6 +226,10 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService {
     bool autoplay = true,
   }) async {
     if (tracks.isEmpty || _disposed) return;
+    // Android 13+: the background playback notification needs
+    // POST_NOTIFICATIONS. Fire-and-forget — playback and the foreground
+    // service run regardless; a denial only hides the notification.
+    unawaited(ensureNotificationPermission());
     final generation = ++_generation;
     _finalizeCurrentTrack();
     var startIndex = 0;
@@ -246,6 +261,10 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService {
     if (generation != _generation) return;
     final player = _ensurePlayer();
     _ensureMediaControls();
+    // Re-asserted per open (cheap, idempotent): the native side drops the
+    // background-mode opt-in when the user swipes the task away, so a
+    // session that survives task removal heals itself here.
+    unawaited(_mediaControls?.setBackgroundMode(true));
 
     // Clear any native arm left over from the previous item before the open
     // replaces it, so a stray transition can't fire mid-switch.
@@ -691,6 +710,20 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService {
     return player.state.isActive ? pause() : play();
   }
 
+  /// Apple TV only (observer registered in the constructor): pause when the
+  /// app leaves the foreground — tvOS background audio is not attempted in
+  /// v1, so playback must not continue under the home screen.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (_disposed) return;
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+      if (isPlaying) {
+        appLogger.d('App backgrounded on Apple TV — pausing music playback');
+        unawaited(pause());
+      }
+    }
+  }
+
   @override
   Future<void> next() async {
     final nextCursor = _queue.nextIndex(manual: true);
@@ -908,6 +941,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService {
     final controls = _mediaControls;
     _mediaControls = null;
     if (controls != null) {
+      unawaited(controls.setBackgroundMode(false));
       unawaited(controls.clear());
       controls.dispose();
     }
@@ -939,6 +973,10 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService {
   void dispose() {
     if (_disposed) return;
     _disposed = true;
+    if (_observesLifecycle) {
+      WidgetsBinding.instance.removeObserver(this);
+      _observesLifecycle = false;
+    }
     _coordinator.unregisterMusicSession(_stopForVideoClaim);
     _completedConfirmTimer?.cancel();
     _completedConfirmTimer = null;
@@ -963,6 +1001,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService {
     final controls = _mediaControls;
     _mediaControls = null;
     if (controls != null) {
+      unawaited(controls.setBackgroundMode(false));
       unawaited(controls.clear());
       controls.dispose();
     }

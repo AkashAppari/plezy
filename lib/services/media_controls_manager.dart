@@ -152,6 +152,18 @@ class MediaControlsManager {
     }
   }
 
+  /// Enable/disable Android background playback: while enabled, the plugin
+  /// keeps audio alive with a `mediaPlayback` foreground service and shows a
+  /// MediaStyle notification for the session. No-op on other platforms.
+  Future<void> setBackgroundMode(bool enabled) async {
+    try {
+      await OsMediaControls.setBackgroundMode(enabled);
+      appLogger.d('Media controls background mode: $enabled');
+    } catch (e) {
+      appLogger.w('Failed to set media controls background mode', error: e);
+    }
+  }
+
   /// Clear all media controls
   ///
   /// Should be called when playback stops or screen is disposed.
