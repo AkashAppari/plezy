@@ -9,6 +9,7 @@ import 'package:plezy/connection/connection.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/plex/plex_config.dart';
@@ -548,6 +549,63 @@ void main() {
       expect(
         captured.where((uri) => uri.path == '/Users/user-1/Items/Latest').map((uri) => uri.queryParameters['Limit']),
         everyElement(defaultHubPreviewLimit.toString()),
+      );
+    });
+
+    test('per-library home rows include clip libraries and skip music/photo (#1476)', () async {
+      final captured = <Uri>[];
+
+      final client = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          captured.add(req.url);
+          if (req.url.path == '/Users/user-1/Views') {
+            return _json({
+              'Items': [
+                {'Id': 'movies', 'Name': 'Movies', 'CollectionType': 'movies'},
+                {'Id': 'mv', 'Name': 'Music Videos', 'CollectionType': 'musicvideos'},
+                {'Id': 'home-vids', 'Name': 'Home Videos', 'CollectionType': 'homevideos'},
+                {'Id': 'music', 'Name': 'Music', 'CollectionType': 'music'},
+                {'Id': 'photos', 'Name': 'Photos', 'CollectionType': 'photos'},
+              ],
+            });
+          }
+          if (req.url.path == '/Users/user-1/Items/Latest') {
+            final parentId = req.url.queryParameters['ParentId'];
+            return switch (parentId) {
+              'movies' => _json({
+                'Items': [
+                  {'Id': 'movie-1', 'Type': 'Movie', 'Name': 'Latest Movie', 'ParentLibraryId': 'movies'},
+                ],
+              }),
+              'mv' => _json({
+                'Items': [
+                  {'Id': 'mv-1', 'Type': 'MusicVideo', 'Name': 'Latest Music Video', 'ParentLibraryId': 'mv'},
+                ],
+              }),
+              'home-vids' => _json({
+                'Items': [
+                  {'Id': 'vid-1', 'Type': 'Video', 'Name': 'Latest Home Video', 'ParentLibraryId': 'home-vids'},
+                ],
+              }),
+              _ => http.Response('latest should not be requested for $parentId', 500),
+            };
+          }
+          return http.Response('unexpected request', 500);
+        }),
+      );
+      addTearDown(client.close);
+      manager.debugRegisterJellyfinClientForTesting(client);
+
+      final result = await service.getHubsFromAllServers(useGlobalHubs: true, includePlaybackHubs: false);
+      final hubs = result.hubs;
+
+      expect(result.succeededServerIds, {'srv-1'});
+      expect(hubs.map((h) => h.identifier), ['library.movies.recent', 'library.mv.recent', 'library.home-vids.recent']);
+      expect(hubs[1].items.single.kind, MediaKind.clip);
+      expect(
+        captured.where((uri) => uri.path == '/Users/user-1/Items/Latest').map((uri) => uri.queryParameters['ParentId']),
+        ['movies', 'mv', 'home-vids'],
       );
     });
 

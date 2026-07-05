@@ -369,8 +369,9 @@ class DataAggregationService {
   }
 
   /// Per-library hub fetch for a single client. Filters to visible
-  /// movie/show libraries (Plex hides music libraries from this surface) and
-  /// concatenates the results.
+  /// movie/show/clip libraries (Plex hides music libraries from this surface;
+  /// clip covers Jellyfin musicvideos/homevideos, #1476) and concatenates the
+  /// results.
   Future<List<MediaHub>> _fetchLibraryHubsForClient(
     MediaServerClient client, {
     required int limit,
@@ -380,7 +381,7 @@ class DataAggregationService {
   }) async {
     final libs = libraries ?? await client.fetchLibraries();
     final visible = libs.where((l) {
-      if (l.kind != MediaKind.movie && l.kind != MediaKind.show) return false;
+      if (l.kind != MediaKind.movie && l.kind != MediaKind.show && l.kind != MediaKind.clip) return false;
       if (l.hidden) return false;
       if (hiddenLibraryKeys != null && hiddenLibraryKeys.contains(l.globalKey)) return false;
       return true;
