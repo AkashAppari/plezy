@@ -802,6 +802,16 @@ class CompanionRemotePeerService with KeepaliveMixin {
         final channel = IOWebSocketChannel.connect(Uri.parse(url), connectTimeout: const Duration(seconds: 5));
         channels.add(channel);
 
+        // Losing candidates fail their `ready` future (connect timeout,
+        // no route to host, …); nothing awaits it here — the stream's
+        // onError below is the visible signal — so swallow it or every
+        // unreachable address becomes an unhandled async error.
+        unawaited(
+          channel.ready.catchError((Object e) {
+            appLogger.d('CompanionRemote: race candidate $address failed to connect', error: e);
+          }),
+        );
+
         final sub = channel.stream.listen(
           (data) {
             try {
