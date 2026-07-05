@@ -2983,6 +2983,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// resumes it. No-op once a backend on-deck episode exists, or when every
   /// loaded episode is watched (keep the default S1E1 for a rewatch).
   void _ensureFallbackOnDeckEpisode() {
+    // Reached via unawaited fetch continuations — the screen may be gone by
+    // now, and _freshAll reads providers through State.context.
+    if (!mounted) return;
     if (_onDeckEpisode != null) return;
     final next = firstUnwatchedEpisode(_freshAll(_episodes));
     if (next == null) return;
