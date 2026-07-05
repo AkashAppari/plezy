@@ -179,10 +179,10 @@ Future<void> _bootstrapApp() async {
     }
   }
 
-  // Initialize TV detection (Android leanback or Apple TV) and PiP on Android.
-  if (Platform.isAndroid || Platform.isIOS) {
-    futures.add(TvDetectionService.getInstance(forceTv: settings.read(SettingsService.forceTvMode)));
-  }
+  // Initialize TV detection on every platform: auto-detect covers Android
+  // leanback and Apple TV; the force-TV setting applies anywhere, including
+  // desktop home-theater setups.
+  futures.add(TvDetectionService.getInstance(forceTv: settings.read(SettingsService.forceTvMode)));
   // Visual-effects tier (auto-detects low-end Android; full elsewhere).
   futures.add(DevicePerformance.getInstance(override: settings.read(SettingsService.visualEffects)));
   if (Platform.isAndroid) {

@@ -102,7 +102,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
           title: t.settings.navigation,
           children: [
             _startupSectionSelector(),
-            if (Platform.isAndroid)
+            if (Platform.isAndroid || PlatformDetector.isDesktopOS())
               SettingSwitchTile(
                 pref: SettingsService.forceTvMode,
                 icon: Symbols.tv_rounded,

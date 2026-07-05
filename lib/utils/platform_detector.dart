@@ -202,7 +202,16 @@ class PlatformDetector {
   /// BuildContext. Use for OS-level capability checks (window state, native
   /// keyboard, etc.); use [isDesktop] for layout decisions.
   static bool isDesktopOS() {
-    return Platform.isWindows || Platform.isMacOS || Platform.isLinux;
+    return _debugIsDesktopOSOverride ?? (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+  }
+
+  static bool? _debugIsDesktopOSOverride;
+
+  /// Test-only: override [isDesktopOS] so device simulations (Android TV /
+  /// Apple TV) don't inherit the test host's real platform.
+  @visibleForTesting
+  static void debugSetIsDesktopOSOverride(bool? value) {
+    _debugIsDesktopOSOverride = value;
   }
 
   static bool supportsExternalPlayers() {
