@@ -8,6 +8,7 @@ import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
 import '../media/media_source_info.dart';
+import '../models/audio_quality_preset.dart';
 import '../models/download_models.dart';
 import '../models/transcode_quality_preset.dart';
 import '../mpv/models.dart';
@@ -156,6 +157,7 @@ class PlaybackInitializationService {
     String? preferredVersionSignature,
     bool preferOffline = false,
     TranscodeQualityPreset qualityPreset = TranscodeQualityPreset.original,
+    AudioQualityPreset? audioQualityPreset,
     int? selectedAudioStreamId,
     String? sessionIdentifier,
     String? transcodeSessionId,
@@ -200,6 +202,7 @@ class PlaybackInitializationService {
           selectedMediaSourceId: selectedMediaSourceId,
           preferredVersionSignature: preferredVersionSignature,
           qualityPreset: qualityPreset,
+          audioQualityPreset: audioQualityPreset,
           selectedAudioStreamId: selectedAudioStreamId,
           sessionIdentifier: sessionIdentifier,
           transcodeSessionId: transcodeSessionId,

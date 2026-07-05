@@ -876,8 +876,15 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   /// since those preserve the container shape (Series rows, PlaylistItemId).
   ///
   @override
-  Future<List<MediaItem>> fetchPlayableDescendants(String parentId) {
-    return _fetchAllPlayableDescendants(parentId, includeItemTypes: _playableDescendantTypes);
+  Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async {
+    final items = await _fetchAllPlayableDescendants(parentId, includeItemTypes: _playableDescendantTypes);
+    if (items.isNotEmpty) return items;
+    // Jellyfin links music to artists via *tags*, not the folder tree — a
+    // MusicArtist is usually not its tracks' ancestor, so the recursive
+    // `ParentId` query above comes back empty for tag-only artists (folder-
+    // backed artists resolve on the first query and never reach this).
+    // Retry once by album-artist credit, tracks only.
+    return _fetchAllPlayableDescendants(parentId, includeItemTypes: 'Audio', byAlbumArtist: true);
   }
 
   /// Playable video descendants for a folder browse row. This includes
@@ -887,7 +894,11 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     return _fetchAllPlayableDescendants(parentId, includeItemTypes: _playableFolderDescendantTypes);
   }
 
-  Future<List<MediaItem>> _fetchAllPlayableDescendants(String parentId, {required String includeItemTypes}) async {
+  Future<List<MediaItem>> _fetchAllPlayableDescendants(
+    String parentId, {
+    required String includeItemTypes,
+    bool byAlbumArtist = false,
+  }) async {
     final all = <MediaItem>[];
     var start = 0;
     while (true) {
@@ -896,6 +907,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         start: start,
         size: _pagedListPageSize,
         includeItemTypes: includeItemTypes,
+        byAlbumArtist: byAlbumArtist,
       );
       if (page.items.isEmpty) break;
       all.addAll(page.items);
@@ -927,6 +939,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     int? size,
     AbortController? abort,
     required String includeItemTypes,
+    bool byAlbumArtist = false,
   }) async {
     final offset = start ?? 0;
     final pageSize = size ?? _pagedListPageSize;
@@ -934,7 +947,9 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       '/Items',
       queryParameters: {
         'userId': connection.userId,
-        'ParentId': parentId,
+        // Tag-linked music artists have no folder descendants; the retry in
+        // [fetchPlayableDescendants] expands them by album-artist credit.
+        if (byAlbumArtist) 'AlbumArtistIds': parentId else 'ParentId': parentId,
         'Recursive': 'true',
         'IncludeItemTypes': includeItemTypes,
         'StartIndex': offset.toString(),

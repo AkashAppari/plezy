@@ -38,6 +38,11 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   @override
   bool get audioPassthroughActive => false;
 
+  /// Gapless-audio arming — meaningful only on the audio players, which
+  /// override this. Video backends ignore it.
+  @override
+  Future<void> setNext(Media? media) async {}
+
   late final PlayerStreams _streams;
 
   @override

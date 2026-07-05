@@ -73,7 +73,7 @@ void EnsureMpvInnerSubclassed(HWND host) {
 
 }  // namespace
 
-MpvPlayer::MpvPlayer() {}
+MpvPlayer::MpvPlayer(bool audio_only) : audio_only_(audio_only) {}
 
 MpvPlayer::~MpvPlayer() { Dispose(); }
 
@@ -88,31 +88,43 @@ bool MpvPlayer::Initialize(HWND view) {
     return false;
   }
 
-  // Create a child window for mpv to render into, parented to the Flutter
-  // |view|. The video child then sits in the view's own per-window layer
-  // stack, above the view's (never-painted) layer-1 content and below the
-  // engine's topmost DComp visual carrying the UI. WS_CLIPSIBLINGS keeps it
-  // from painting over neighboring view children. Mouse input over the video
-  // is delivered to mpv's own inner window (on mpv's thread); the subclass
-  // installed in EnsureMpvInnerSubclassed forwards it back to the view.
-  hwnd_ = ::CreateWindowExW(
-      WS_EX_NOPARENTNOTIFY, L"STATIC", L"", WS_CHILD | WS_CLIPSIBLINGS, 0, 0, 100, 100, view, nullptr,
-      GetModuleHandle(nullptr), nullptr);
-  if (!hwnd_) {
-    mpv_destroy(mpv_);
-    mpv_ = nullptr;
-    return false;
-  }
-  g_forward_target_view = view;
+  if (audio_only_) {
+    // Windowless music core: no HWND, no VO, no video decode. vid=no keeps
+    // embedded cover art from ever becoming a video track, and
+    // force-window/audio-display make sure mpv never opens a video output
+    // for it either.
+    mpv_set_option_string(mpv_, "vid", "no");
+    mpv_set_option_string(mpv_, "force-window", "no");
+    mpv_set_option_string(mpv_, "audio-display", "no");
+    mpv_set_option_string(mpv_, "gapless-audio", "weak");
+  } else {
+    // Create a child window for mpv to render into, parented to the Flutter
+    // |view|. The video child then sits in the view's own per-window layer
+    // stack, above the view's (never-painted) layer-1 content and below the
+    // engine's topmost DComp visual carrying the UI. WS_CLIPSIBLINGS keeps it
+    // from painting over neighboring view children. Mouse input over the video
+    // is delivered to mpv's own inner window (on mpv's thread); the subclass
+    // installed in EnsureMpvInnerSubclassed forwards it back to the view.
+    hwnd_ = ::CreateWindowExW(
+        WS_EX_NOPARENTNOTIFY, L"STATIC", L"", WS_CHILD | WS_CLIPSIBLINGS, 0, 0, 100, 100, view, nullptr,
+        GetModuleHandle(nullptr), nullptr);
+    if (!hwnd_) {
+      mpv_destroy(mpv_);
+      mpv_ = nullptr;
+      return false;
+    }
+    g_forward_target_view = view;
 
-  // Set the wid option to embed mpv in our window.
-  int64_t wid = reinterpret_cast<int64_t>(hwnd_);
-  mpv_set_option(mpv_, "wid", MPV_FORMAT_INT64, &wid);
+    // Set the wid option to embed mpv in our window.
+    int64_t wid = reinterpret_cast<int64_t>(hwnd_);
+    mpv_set_option(mpv_, "wid", MPV_FORMAT_INT64, &wid);
+
+    mpv_set_option_string(mpv_, "vo", "gpu-next");
+    mpv_set_option_string(mpv_, "gpu-api", "auto");
+    // hwdec is set from Flutter via setProperty based on user preference
+  }
 
   // Configure mpv for embedded playback.
-  mpv_set_option_string(mpv_, "vo", "gpu-next");
-  mpv_set_option_string(mpv_, "gpu-api", "auto");
-  // hwdec is set from Flutter via setProperty based on user preference
   mpv_set_option_string(mpv_, "keep-open", "yes");
   mpv_set_option_string(mpv_, "idle", "yes");
   mpv_set_option_string(mpv_, "input-default-bindings", "no");
@@ -122,12 +134,14 @@ bool MpvPlayer::Initialize(HWND view) {
   mpv_set_option_string(mpv_, "input-media-keys", "no");
   mpv_set_option_string(mpv_, "osc", "no");
 
-  // Let mpv use display/context detection instead of forcing HDR signaling.
-  mpv_set_option_string(mpv_, "target-colorspace-hint", "auto");
+  if (!audio_only_) {
+    // Let mpv use display/context detection instead of forcing HDR signaling.
+    mpv_set_option_string(mpv_, "target-colorspace-hint", "auto");
 
-  // Fallback tone mapping when display doesn't support HDR
-  mpv_set_option_string(mpv_, "tone-mapping", "auto");
-  mpv_set_option_string(mpv_, "hdr-compute-peak", "auto");
+    // Fallback tone mapping when display doesn't support HDR
+    mpv_set_option_string(mpv_, "tone-mapping", "auto");
+    mpv_set_option_string(mpv_, "hdr-compute-peak", "auto");
+  }
 
   // When WASAPI becomes unavailable (sleep, device unplug), fall back to null
   // audio output instead of permanently dropping the audio track. Recovery is
@@ -140,15 +154,19 @@ bool MpvPlayer::Initialize(HWND view) {
   // Initialize mpv.
   int err = mpv_initialize(mpv_);
   if (err < 0) {
-    ::DestroyWindow(hwnd_);
-    hwnd_ = nullptr;
+    if (hwnd_) {
+      ::DestroyWindow(hwnd_);
+      hwnd_ = nullptr;
+    }
     mpv_destroy(mpv_);
     mpv_ = nullptr;
     return false;
   }
 
-  // Observe video-params/sig-peak for HDR detection
-  mpv_observe_property(mpv_, 0, "video-params/sig-peak", MPV_FORMAT_DOUBLE);
+  // Observe video-params/sig-peak for HDR detection (video core only).
+  if (!audio_only_) {
+    mpv_observe_property(mpv_, 0, "video-params/sig-peak", MPV_FORMAT_DOUBLE);
+  }
   mpv_observe_property(mpv_, 0, "current-ao", MPV_FORMAT_STRING);
   // Native observation so audio recovery doesn't depend on the Dart side
   // choosing to observe the device list.
@@ -192,11 +210,13 @@ void MpvPlayer::Dispose() {
   if (hwnd_) {
     ::DestroyWindow(hwnd_);
     hwnd_ = nullptr;
-  }
 
-  // The subclassed inner window died with hwnd_; clear the forwarding state.
-  g_mpv_inner_hwnd = nullptr;
-  g_mpv_inner_original_proc = nullptr;
+    // The subclassed inner window died with hwnd_; clear the forwarding
+    // state. Only the owner of the window may do this: the audio-only core
+    // (which never has an hwnd_) must not wipe the video instance's state.
+    g_mpv_inner_hwnd = nullptr;
+    g_mpv_inner_original_proc = nullptr;
+  }
 
   observed_properties_.clear();
 }

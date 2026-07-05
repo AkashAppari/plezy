@@ -36,6 +36,11 @@ import MediaPlayer
       MpvPlayerPlugin.register(with: registrar)
     }
 
+    // Register the audio-only MPV player plugin (music playback)
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "MpvAudioPlayerPlugin") {
+      MpvAudioPlayerPlugin.register(with: registrar)
+    }
+
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AtmosProbePlugin") {
       AtmosProbePlugin.register(with: registrar)
     }

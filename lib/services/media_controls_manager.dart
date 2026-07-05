@@ -4,6 +4,7 @@ import 'package:rate_limiter/rate_limiter.dart';
 import '../media/media_server_client.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
+import '../media/media_kind.dart';
 import '../utils/app_logger.dart';
 
 /// Manages OS media controls integration for video playback.
@@ -59,6 +60,8 @@ class MediaControlsManager {
         MediaMetadata(
           title: metadata.title ?? '',
           artist: _buildArtist(metadata),
+          // Music-only: null for video content, so video behavior is untouched.
+          album: metadata.kind == MediaKind.track ? metadata.albumTitle : null,
           artworkUrl: artworkUrl,
           duration: duration,
         ),
@@ -185,10 +188,16 @@ class MediaControlsManager {
 
   /// Build artist string from metadata
   ///
+  /// For music tracks: the performing artist
   /// For episodes: "Show Name - Season X Episode Y"
   /// For movies: Director or studio
   /// For other content: Fallback to year or empty
   String _buildArtist(MediaItem metadata) {
+    if (metadata.kind == MediaKind.track) {
+      // Performing artist with album-artist fallback (compilations store the
+      // track's own artist separately).
+      return metadata.trackArtistTitle ?? '';
+    }
     if (metadata.isEpisode) {
       final parts = <String>[];
 

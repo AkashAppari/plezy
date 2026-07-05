@@ -23,13 +23,16 @@ class MpvPlayer {
  public:
   using EventCallback = std::function<void(const flutter::EncodableValue&)>;
 
-  MpvPlayer();
+  // |audio_only| runs mpv as a windowless music core: no child HWND, no VO,
+  // video decode disabled entirely (vid=no).
+  explicit MpvPlayer(bool audio_only = false);
   ~MpvPlayer();
 
   // Initializes mpv and creates the video window as a child of the Flutter
   // |view| window. The flutter-plezy engine presents the UI on a topmost
   // DirectComposition visual, so the video child composites beneath it in the
-  // same HWND.
+  // same HWND. In audio-only mode |view| is ignored (pass nullptr) and no
+  // window is created.
   bool Initialize(HWND view);
 
   // Disposes mpv and the video window.
@@ -97,6 +100,7 @@ class MpvPlayer {
   uint64_t RegisterGetPropertyRequest(GetPropertyCallback callback);
   GetPropertyCallback TakeGetPropertyRequest(uint64_t request_id);
 
+  const bool audio_only_;
   mpv_handle* mpv_ = nullptr;
   HWND hwnd_ = nullptr;
 

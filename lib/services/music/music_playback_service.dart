@@ -110,6 +110,22 @@ abstract class MusicPlaybackService extends ChangeNotifier {
   /// Stop playback and clear the session (mini-player disappears).
   Future<void> stop();
 
+  /// Whether a sleep timer (timed or end-of-track) is armed.
+  bool get sleepTimerActive;
+
+  /// When the timed sleep timer fires; null in end-of-track mode or when
+  /// inactive.
+  DateTime? get sleepTimerEndsAt;
+
+  /// Whether the sleep timer pauses at the end of the current track instead
+  /// of after a fixed duration.
+  bool get sleepTimerEndOfTrack;
+
+  /// Arm the sleep timer: a fixed [duration], or [endOfTrack] to pause when
+  /// the current track finishes. Pass `null` with `endOfTrack: false` to
+  /// cancel. Fires as a pause (session stays); cancelled by [stop].
+  void setSleepTimer(Duration? duration, {bool endOfTrack = false});
+
   /// Lyrics for [track] (defaults to the current track's backend). Delegates
   /// to `MediaServerClient.fetchLyrics`; null = none available.
   Future<Lyrics?> fetchLyrics(MediaItem track);
@@ -210,6 +226,18 @@ class StubMusicPlaybackService extends MusicPlaybackService {
 
   @override
   Future<void> stop() async {}
+
+  @override
+  bool get sleepTimerActive => false;
+
+  @override
+  DateTime? get sleepTimerEndsAt => null;
+
+  @override
+  bool get sleepTimerEndOfTrack => false;
+
+  @override
+  void setSleepTimer(Duration? duration, {bool endOfTrack = false}) {}
 
   @override
   Future<Lyrics?> fetchLyrics(MediaItem track) async => null;

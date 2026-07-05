@@ -1,8 +1,10 @@
 package com.edde746.plezy.mpv
 
 import android.app.Activity
+import android.content.Context
 import android.graphics.Color
 import android.graphics.PixelFormat
+import android.media.AudioAttributes
 import android.media.ImageReader
 import android.os.Handler
 import android.os.Looper
@@ -22,11 +24,30 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
+/**
+ * mpv playback core. Two modes:
+ * - Video (default): [context] is the host Activity, which is needed for the
+ *   SurfaceView/window hierarchy, display refresh-rate reads and frame-rate
+ *   matching.
+ * - Audio-only ([audioOnly]): the music core. Built on the application
+ *   context (no Activity dependency, so it survives activity teardown);
+ *   never creates a surface, view, or frame-rate manager, and mpv is
+ *   configured before init to never open a video output (`vid=no`,
+ *   `force-window=no`, `audio-display=no`, plus `gapless-audio=weak`).
+ */
+class MpvPlayerCore(
+  private val context: Context,
+  private val audioOnly: Boolean = false
+) : SurfaceHolder.Callback {
 
   companion object {
     private const val TAG = "MpvPlayerCore"
   }
+
+  /** Video-only paths. The plugin always constructs video cores with the
+   * host Activity, and audio-only mode never touches these paths. */
+  private val activity: Activity
+    get() = context as Activity
 
   private var surfaceView: SurfaceView? = null
   private var surfaceContainer: android.widget.FrameLayout? = null
@@ -63,6 +84,16 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
   private var frameRateManager: FrameRateManager? = null
   private val handler = Handler(Looper.getMainLooper())
 
+  // Result-callback marshaling. Separate from [handler], whose queued
+  // messages dispose() clears — pending method-channel results must still
+  // complete after dispose.
+  private val mainHandler = Handler(Looper.getMainLooper())
+
+  /** Same semantics as Activity.runOnUiThread, without needing an Activity. */
+  private fun runOnMain(block: () -> Unit) {
+    if (Looper.myLooper() == Looper.getMainLooper()) block() else mainHandler.post(block)
+  }
+
   // Audio focus
   private var audioFocusManager: AudioFocusManager? = null
 
@@ -88,7 +119,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
   private var flutterOverlayApplied = false
 
   private fun ensureFlutterOverlayOnTop() {
-    if (disposing || flutterOverlayApplied) return
+    if (audioOnly || disposing || flutterOverlayApplied) return
     val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
     contentView.post {
       if (disposing || !isInitialized) return@post
@@ -112,6 +143,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
   }
 
   private fun currentDisplayFpsOverride(): String? {
+    if (audioOnly) return null
     val refreshRate = activity.display?.mode?.refreshRate ?: return null
     if (refreshRate <= 0f) return null
     return refreshRate.toString()
@@ -167,12 +199,15 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
       lastAppliedSurfaceSize = null
       lastKnownSurfaceWidth = 0
       lastKnownSurfaceHeight = 0
-      ensurePlaceholderSurface()
+      if (!audioOnly) ensurePlaceholderSurface()
 
-      // Initialize audio focus handling
+      // Initialize audio focus handling. mpv has none built in, so both modes
+      // use the shared manager: pause on (transient) loss, auto-resume on
+      // regain when the loss interrupted active playback.
       audioFocusManager = AudioFocusManager(
-        context = activity,
+        context = context,
         handler = handler,
+        contentType = if (audioOnly) AudioAttributes.CONTENT_TYPE_MUSIC else AudioAttributes.CONTENT_TYPE_MOVIE,
         onPause = {
           scope.launch {
             try {
@@ -187,57 +222,59 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
         },
         isPaused = { cachedPaused }
       )
-      frameRateManager = FrameRateManager(
-        activity = activity,
-        handler = handler,
-        log = { emitLog("info", "framerate", it) }
-      )
-
-      // Create FrameLayout container for video
-      surfaceContainer = android.widget.FrameLayout(activity).apply {
-        layoutParams = ViewGroup.LayoutParams(
-          ViewGroup.LayoutParams.MATCH_PARENT,
-          ViewGroup.LayoutParams.MATCH_PARENT
+      if (!audioOnly) {
+        frameRateManager = FrameRateManager(
+          activity = activity,
+          handler = handler,
+          log = { emitLog("info", "framerate", it) }
         )
-        setBackgroundColor(Color.BLACK)
-      }
 
-      // Create SurfaceView for video rendering
-      surfaceView = SurfaceView(activity).apply {
-        layoutParams = android.widget.FrameLayout.LayoutParams(
-          android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-          android.widget.FrameLayout.LayoutParams.MATCH_PARENT
-        )
-        holder.addCallback(this@MpvPlayerCore)
-        setZOrderOnTop(false)
-        setZOrderMediaOverlay(false)
-        FlutterOverlayHelper.applyCompositionOrder(this, -2)
-      }
+        // Create FrameLayout container for video
+        surfaceContainer = android.widget.FrameLayout(activity).apply {
+          layoutParams = ViewGroup.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+          )
+          setBackgroundColor(Color.BLACK)
+        }
 
-      // Add SurfaceView to container
-      surfaceContainer!!.addView(surfaceView)
+        // Create SurfaceView for video rendering
+        surfaceView = SurfaceView(activity).apply {
+          layoutParams = android.widget.FrameLayout.LayoutParams(
+            android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+            android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+          )
+          holder.addCallback(this@MpvPlayerCore)
+          setZOrderOnTop(false)
+          setZOrderMediaOverlay(false)
+          FlutterOverlayHelper.applyCompositionOrder(this, -2)
+        }
 
-      // Insert container at bottom of view hierarchy (behind Flutter)
-      val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
-      contentView.addView(surfaceContainer, 0)
+        // Add SurfaceView to container
+        surfaceContainer!!.addView(surfaceView)
 
-      // Find FlutterView and set it on top of our video surface.
-      // compositionOrder maps directly to SurfaceView mSubLayer on API 36+:
-      // negative is hole-punched behind the parent canvas, non-negative is above.
-      // Stack (back → front): video (-2, hole-punched) → parent canvas → Flutter UI (+1).
-      FlutterOverlayHelper.findFlutterContainer(contentView, surfaceContainer)?.let { container ->
-        FlutterOverlayHelper.configureFlutterZOrder(contentView, container, compositionOrder = 1)
-        flutterOverlayApplied = true
-      }
-      ensureFlutterOverlayOnTop()
-      overlayLayoutListener = ViewTreeObserver.OnGlobalLayoutListener {
+        // Insert container at bottom of view hierarchy (behind Flutter)
+        val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
+        contentView.addView(surfaceContainer, 0)
+
+        // Find FlutterView and set it on top of our video surface.
+        // compositionOrder maps directly to SurfaceView mSubLayer on API 36+:
+        // negative is hole-punched behind the parent canvas, non-negative is above.
+        // Stack (back → front): video (-2, hole-punched) → parent canvas → Flutter UI (+1).
+        FlutterOverlayHelper.findFlutterContainer(contentView, surfaceContainer)?.let { container ->
+          FlutterOverlayHelper.configureFlutterZOrder(contentView, container, compositionOrder = 1)
+          flutterOverlayApplied = true
+        }
         ensureFlutterOverlayOnTop()
-        val sv = surfaceView
-        if (sv != null) applySurfaceSize(sv.width, sv.height)
-      }
-      contentView.viewTreeObserver.addOnGlobalLayoutListener(overlayLayoutListener)
+        overlayLayoutListener = ViewTreeObserver.OnGlobalLayoutListener {
+          ensureFlutterOverlayOnTop()
+          val sv = surfaceView
+          if (sv != null) applySurfaceSize(sv.width, sv.height)
+        }
+        contentView.viewTreeObserver.addOnGlobalLayoutListener(overlayLayoutListener)
 
-      Log.d(TAG, "SurfaceView added to content view")
+        Log.d(TAG, "SurfaceView added to content view")
+      }
 
       // Create MpvPlayer on background thread via coroutine
       scope.launch {
@@ -247,18 +284,31 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
             return@launch
           }
           val displayFpsOverride = currentDisplayFpsOverride()
-          val p = MpvPlayer.create(activity.applicationContext) {
-            setOption("vo", "gpu")
-            setOption("gpu-context", "android")
-            setOption("opengl-es", "yes")
-            setOption("vd-lavc-film-grain", "cpu")
+          val p = MpvPlayer.create(context.applicationContext) {
+            if (audioOnly) {
+              // Pure audio core (all set before mpv_initialize, mirroring the
+              // Windows/Linux audio instances): vid=no keeps embedded cover
+              // art from ever becoming a video track, force-window and
+              // audio-display make sure mpv never opens a video output for
+              // it, and gapless-audio splices the pre-armed next playlist
+              // entry into the running audio stream.
+              setOption("vid", "no")
+              setOption("force-window", "no")
+              setOption("audio-display", "no")
+              setOption("gapless-audio", "weak")
+            } else {
+              setOption("vo", "gpu")
+              setOption("gpu-context", "android")
+              setOption("opengl-es", "yes")
+              setOption("vd-lavc-film-grain", "cpu")
+              if (displayFpsOverride != null) {
+                setOption("display-fps-override", displayFpsOverride)
+              }
+            }
             setOption("ao", "audiotrack,opensles")
             // Pause on the last frame at EOF instead of unloading the file, so a
             // seek after the video ends still works (matches Linux/Windows).
             setOption("keep-open", "yes")
-            if (displayFpsOverride != null) {
-              setOption("display-fps-override", displayFpsOverride)
-            }
           }
           if (displayFpsOverride != null) {
             Log.d(TAG, "Initial display-fps-override=$displayFpsOverride")
@@ -273,7 +323,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
           player = p
           isInitialized = true
 
-          refreshVideoOutput("initialize")
+          if (!audioOnly) refreshVideoOutput("initialize")
 
           // Start collecting events/properties/logs
           collectEvents(p)
@@ -408,7 +458,9 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
 
   private fun hasAttachedRealSurface(): Boolean = hasAttachedSurface && !attachedToPlaceholder && (attachedSurface?.isValid == true)
 
-  private fun hasReadyVideoOutput(): Boolean = hasAttachedRealSurface() && !videoOutputRestoring
+  // Audio-only mode has no video output to wait for — playback and resume
+  // paths gated on output readiness must always proceed there.
+  private fun hasReadyVideoOutput(): Boolean = audioOnly || (hasAttachedRealSurface() && !videoOutputRestoring)
 
   private fun isCurrentVideoOutputEpoch(epoch: Long): Boolean = !disposing && epoch == videoOutputEpoch
 
@@ -419,7 +471,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
   }
 
   private fun refreshVideoOutput(reason: String) {
-    if (disposing) return
+    if (audioOnly || disposing) return
 
     rememberCurrentSurfaceSize()
     val p = player
@@ -730,7 +782,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
 
     Thread {
       val value = getPropertyBlocking(name)
-      activity.runOnUiThread {
+      runOnMain {
         onResult(if (!disposing && isInitialized) value else null)
       }
     }.start()
@@ -824,9 +876,10 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
   }
 
   fun setVisible(visible: Boolean) {
-    if (disposing) return
-    activity.runOnUiThread {
-      if (disposing) return@runOnUiThread
+    // Audio-only: no render layer to show or hide — tolerated no-op.
+    if (audioOnly || disposing) return
+    runOnMain {
+      if (disposing) return@runOnMain
       surfaceContainer?.visibility = if (visible) View.VISIBLE else View.INVISIBLE
       if (visible) {
         flutterOverlayApplied = false
@@ -852,16 +905,17 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
   }
 
   fun updateFrame() {
-    if (disposing) return
-    activity.runOnUiThread {
-      if (disposing) return@runOnUiThread
+    // Audio-only: no surface to refresh — tolerated no-op.
+    if (audioOnly || disposing) return
+    runOnMain {
+      if (disposing) return@runOnMain
       flutterOverlayApplied = false
       ensureFlutterOverlayOnTop()
       rememberCurrentSurfaceSize()
       val p = player
       if (p == null) {
         Log.d(TAG, "updateFrame(): skipping Android MPV surface refresh because player is not ready")
-        return@runOnUiThread
+        return@runOnMain
       }
       if (!hasReadyVideoOutput()) {
         val surface = currentCandidateSurface()
@@ -871,7 +925,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
         } else {
           Log.d(TAG, "updateFrame(): skipping Android MPV surface refresh because no surface is attached")
         }
-        return@runOnUiThread
+        return@runOnMain
       }
       scope.launch {
         try {
@@ -957,17 +1011,17 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
       videoOutputEpoch += 1L
     }
 
-    // Capture locals for deferred cleanup
+    // Capture locals for deferred cleanup (audio-only has no views)
     val sv = surfaceView
     val container = surfaceContainer
-    val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
+    val contentView = if (audioOnly) null else activity.findViewById<ViewGroup>(android.R.id.content)
 
     surfaceContainer = null
     surfaceView = null
 
     // Remove layout listener synchronously
     overlayLayoutListener?.let { listener ->
-      contentView.viewTreeObserver.removeOnGlobalLayoutListener(listener)
+      contentView?.viewTreeObserver?.removeOnGlobalLayoutListener(listener)
     }
     overlayLayoutListener = null
 
@@ -989,15 +1043,18 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
     if (p != null) {
       Thread {
         try {
-          // Detach surface BEFORE close to prevent GPU mutex contention with view removal
-          try {
-            runBlocking {
-              p.setProperty("force-window", "no")
-              p.setProperty("vo", "null")
+          // Detach surface BEFORE close to prevent GPU mutex contention with
+          // view removal (audio-only never attached one)
+          if (!audioOnly) {
+            try {
+              runBlocking {
+                p.setProperty("force-window", "no")
+                p.setProperty("vo", "null")
+              }
+              p.detachSurface()
+            } catch (e: Exception) {
+              Log.w(TAG, "Failed to detach surface during dispose", e)
             }
-            p.detachSurface()
-          } catch (e: Exception) {
-            Log.w(TAG, "Failed to detach surface during dispose", e)
           }
           p.close()
         } catch (e: Exception) {
@@ -1008,7 +1065,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
         Handler(Looper.getMainLooper()).post {
           sv?.holder?.removeCallback(this)
           if (container?.parent != null) {
-            contentView.removeView(container)
+            contentView?.removeView(container)
           }
           onComplete?.invoke()
         }
@@ -1018,7 +1075,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
       Handler(Looper.getMainLooper()).postAtFrontOfQueue {
         sv?.holder?.removeCallback(this)
         if (container?.parent != null) {
-          contentView.removeView(container)
+          contentView?.removeView(container)
         }
       }
       onComplete?.invoke()

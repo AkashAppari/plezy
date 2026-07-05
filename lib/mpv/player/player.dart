@@ -96,6 +96,16 @@ abstract class Player {
   /// Seek to a specific position.
   Future<void> seek(Duration position);
 
+  /// Arm (or replace/clear) the item the backend should auto-advance into
+  /// when the current one plays out — the gapless-audio primitive.
+  ///
+  /// Audio players keep a native playlist of `[current, next?]`: ExoPlayer
+  /// via `addMediaItem`, mpv via `loadfile append` with `gapless-audio`.
+  /// When the advance happens the backend emits
+  /// [PlayerStreams.trackTransition] with the armed [Media.uri] instead of
+  /// `completed`. Pass `null` to clear. No-op on video backends.
+  Future<void> setNext(Media? media);
+
   /// Select an audio track.
   Future<void> selectAudioTrack(AudioTrack track);
 
@@ -376,6 +386,24 @@ abstract class Player {
     }
     if (Platform.isLinux) {
       return PlayerLinux();
+    }
+    throw UnsupportedError('Player is not supported on this platform');
+  }
+
+  /// Creates the dedicated audio-only player used for music playback.
+  ///
+  /// An mpv audio-only core on every platform — regardless of the Android
+  /// video backend setting — running on its own native core and channels
+  /// (`com.plezy/mpv_audio_player`), so it never contends with the video
+  /// pipeline. Desktop and Android need none of the video plumbing (display
+  /// modes, GL textures, surfaces) — the plain mpv wrapper suffices. Only
+  /// one native player is kept alive at a time: the music service disposes
+  /// this instance when video playback claims the session (see
+  /// `PlaybackCoordinator`), and the video core only exists while the video
+  /// player screen is open.
+  factory Player.audio() {
+    if (Platform.isAndroid || Platform.isMacOS || Platform.isIOS || Platform.isWindows || Platform.isLinux) {
+      return PlayerNative.audio();
     }
     throw UnsupportedError('Player is not supported on this platform');
   }

@@ -1,32 +1,58 @@
+import 'dart:async' show unawaited;
 import 'dart:convert';
 import 'dart:io' show Platform;
 
 import 'package:flutter/services.dart';
 
 import '../../media/media_display_criteria.dart';
+import '../../utils/app_logger.dart';
 import '../models.dart';
 import 'player_base.dart';
 
 /// MPV-backed player for platforms where AetherEngine is not the native route.
 class PlayerNative extends PlayerBase {
+  /// Video player on the default mpv channels/core.
+  PlayerNative()
+    : methodChannel = const MethodChannel('com.plezy/mpv_player'),
+      eventChannel = const EventChannel('com.plezy/mpv_player/events'),
+      audioOnly = false;
+
+  /// Audio-only player on the dedicated music channels/core (see
+  /// [Player.audio]). Skips every video concern: no render layer
+  /// ([setVisible] no-ops via [audioOnly]), no subtitle plumbing, no
+  /// display-mode handling.
+  PlayerNative.audio()
+    : methodChannel = const MethodChannel('com.plezy/mpv_audio_player'),
+      eventChannel = const EventChannel('com.plezy/mpv_audio_player/events'),
+      audioOnly = true;
+
   int? _textureIdValue;
   String _dvConversionMode = 'auto';
   String _dvConversionLog = 'no';
 
+  // Gapless-audio arming state (audioOnly). The native playlist is always
+  // [current, next?]; these track whether entry 1 exists and what it plays.
+  bool _hasArmedNext = false;
+  String? _armedNextUri;
+
+  // Set by open() and consumed by that load's file-loaded event, so it is
+  // not mistaken for a gapless advance (see _handleAudioFileLoaded).
+  bool _expectOpenFileLoad = false;
+
   @override
   int? get textureId => _textureIdValue;
 
-  static const _methodChannel = MethodChannel('com.plezy/mpv_player');
-  static const _eventChannel = EventChannel('com.plezy/mpv_player/events');
+  /// Whether this instance drives the audio-only core.
+  final bool audioOnly;
 
   @override
-  MethodChannel get methodChannel => _methodChannel;
+  final MethodChannel methodChannel;
 
   @override
-  EventChannel get eventChannel => _eventChannel;
+  final EventChannel eventChannel;
 
   @override
-  String get logPrefix => 'MPV';
+  String get logPrefix => audioOnly ? 'MPV-audio' : 'MPV';
 
   @override
   String get playerType => 'mpv';
@@ -61,6 +87,12 @@ class PlayerNative extends PlayerBase {
     return '%${utf8.encode(value).length}%$value';
   }
 
+  /// Query-free tail of [uri] for logs (keeps the part id, drops tokens).
+  static String _uriTail(String uri) {
+    final path = uri.split('?').first;
+    return path.length <= 40 ? path : '…${path.substring(path.length - 40)}';
+  }
+
   static String _escapePathListEntry(String value, String separator) {
     return value.replaceAll(r'\', r'\\').replaceAll(separator, '\\$separator');
   }
@@ -76,6 +108,16 @@ class PlayerNative extends PlayerBase {
     if (escapedUris == null || escapedUris.isEmpty) return null;
 
     return 'sub-files=${_fixedLengthQuote(escapedUris.join(separator))}';
+  }
+
+  /// Per-entry `http-header-fields` for a `loadfile ... append` options arg.
+  /// The fixed-length quote shields the whole value from the key=value list
+  /// parser; mpv then splits the headers on commas, the same separator the
+  /// `setProperty('http-header-fields', ...)` path in [open] relies on.
+  static String? _httpHeaderFieldsLoadfileOption(Map<String, String>? headers) {
+    if (headers == null || headers.isEmpty) return null;
+    final headerList = headers.entries.map((e) => '${e.key}: ${e.value}').join(',');
+    return 'http-header-fields=${_fixedLengthQuote(headerList)}';
   }
 
   MediaDisplayCriteria? _effectiveDisplayCriteria(MediaDisplayCriteria? criteria) {
@@ -144,6 +186,18 @@ class PlayerNative extends PlayerBase {
       await observeProperty('audio-device-list', _nodeFormat);
       await observeProperty('audio-device', 'string');
 
+      if (audioOnly) {
+        // Debug aid only: raw playlist positions in the log trail. Gapless
+        // advance DETECTION rides the file-loaded event instead — see
+        // _handleAudioFileLoaded for why property edges are unreliable.
+        await observeProperty('playlist-pos', _nodeFormat);
+        // The Apple audio core sets this at context init; set it defensively
+        // here so every mpv audio backend behaves identically. Direct invoke —
+        // setProperty() would await _ensureInitialized and deadlock on the
+        // memoized future of this very _doInitialize call.
+        await invoke('setProperty', {'name': 'gapless-audio', 'value': 'weak'});
+      }
+
       initialized = true;
     } catch (e) {
       _initFuture = null;
@@ -171,6 +225,10 @@ class PlayerNative extends PlayerBase {
   }) async {
     if (disposed) return;
     await _ensureInitialized();
+    // `loadfile replace` (below) clears the native playlist, dropping any
+    // gapless entry armed via setNext.
+    _hasArmedNext = false;
+    _armedNextUri = null;
     final startPosition = media.start ?? Duration.zero;
     configureTimeline(offset: timelineOffset, duration: timelineDuration);
     clearTracks();
@@ -178,7 +236,7 @@ class PlayerNative extends PlayerBase {
     resetPlaybackProgress(startPosition);
     setSeekable(false);
 
-    await setVisible(true);
+    if (!audioOnly) await setVisible(true);
 
     if (media.headers != null && media.headers!.isNotEmpty) {
       final headerList = media.headers!.entries.map((e) => '${e.key}: ${e.value}').toList();
@@ -216,6 +274,7 @@ class PlayerNative extends PlayerBase {
     if (loadfileOption != null) {
       loadfileArgs.addAll(['-1', loadfileOption]);
     }
+    if (audioOnly) _expectOpenFileLoad = true;
     await command(loadfileArgs);
 
     // mpv's pause property survives loadfile; in-place reloads pause the old
@@ -239,15 +298,101 @@ class PlayerNative extends PlayerBase {
 
   @override
   Future<void> stop() async {
+    _hasArmedNext = false;
+    _armedNextUri = null;
     await command(['stop']);
     setSeekable(false);
-    await invoke('setVisible', {'visible': false});
+    if (!audioOnly) await invoke('setVisible', {'visible': false});
   }
 
   @override
   Future<void> seek(Duration position) async {
     final sourcePosition = sourceSeekPosition(position);
     await runSeek(position, () => command(['seek', (sourcePosition.inMilliseconds / 1000.0).toString(), 'absolute']));
+  }
+
+  @override
+  Future<void> setNext(Media? media) async {
+    if (!audioOnly || disposed || !initialized) return;
+
+    if (_hasArmedNext) {
+      _hasArmedNext = false;
+      _armedNextUri = null;
+      appLogger.d('MPV-audio: clearing armed entry (playlist-remove 1)');
+      try {
+        await command(['playlist-remove', '1']);
+      } on PlatformException {
+        // Entry 1 can vanish in the arm/advance race (mpv already rolled into
+        // it); the append below still lands after the current entry.
+      }
+    }
+    if (media == null) return;
+
+    // Per-entry options are the 4th loadfile argument on mpv >= 0.38
+    // (`loadfile <url> append -1 opt=val`), exactly like open() passes
+    // sub-files. `gapless-audio=weak` splices the armed entry into the
+    // running audio stream when formats match.
+    final args = ['loadfile', media.uri, 'append'];
+    final headerOption = _httpHeaderFieldsLoadfileOption(media.headers);
+    if (headerOption != null) {
+      args.addAll(['-1', headerOption]);
+    }
+    await command(args);
+    _hasArmedNext = true;
+    _armedNextUri = media.uri;
+    appLogger.d('MPV-audio: armed next ${_uriTail(media.uri)}');
+  }
+
+  @override
+  void handlePropertyChange(String name, dynamic value) {
+    if (audioOnly && name == 'playlist-pos') {
+      // Debug aid only — see _handleAudioFileLoaded for the real detection.
+      appLogger.d('MPV-audio: playlist-pos=$value (armed=$_hasArmedNext)');
+      return;
+    }
+    super.handlePropertyChange(name, value);
+  }
+
+  @override
+  void handlePlayerEvent(String name, Map? data) {
+    if (audioOnly && name == 'file-loaded') _handleAudioFileLoaded();
+    super.handlePlayerEvent(name, data);
+  }
+
+  /// Gapless auto-advance detection: a `file-loaded` that open() didn't
+  /// produce while an entry is armed means mpv rolled into the armed entry.
+  /// Surface the transition, then rebase the playlist so the now playing
+  /// entry sits at index 0 again ([setNext] always appends at 1). The rebase
+  /// only removes the spent entry behind the playing one, so it cannot
+  /// disturb position/duration — those refresh with the same file-loaded.
+  ///
+  /// Detection deliberately rides this EVENT, not `playlist-pos` property
+  /// edges: mpv coalesces observed-property notifications per observer
+  /// (1→0→1 under delivery lag nets out to nothing) and the Android bridge
+  /// additionally drops property changes when its shared 64-slot buffer
+  /// overflows (`MutableSharedFlow.tryEmit` from the native event thread),
+  /// so an edge can vanish entirely — which stalled playback at the end of
+  /// the armed track. `file-loaded` fires exactly once per started file on
+  /// the low-volume event flow. Clearing [_hasArmedNext] before emitting
+  /// makes a hypothetical duplicate signal a no-op (it cannot double
+  /// advance).
+  void _handleAudioFileLoaded() {
+    if (_expectOpenFileLoad) {
+      _expectOpenFileLoad = false;
+      appLogger.d('MPV-audio: file-loaded (open)');
+      return;
+    }
+    if (!_hasArmedNext) {
+      appLogger.d('MPV-audio: file-loaded (nothing armed, ignored)');
+      return;
+    }
+
+    final uri = _armedNextUri;
+    _hasArmedNext = false;
+    _armedNextUri = null;
+    appLogger.d('MPV-audio: transition (file-loaded) → playlist-remove 0, ${_uriTail(uri ?? '')}');
+    unawaited(command(['playlist-remove', '0']));
+    if (uri != null) trackTransitionController.add(uri);
   }
 
   @override
@@ -346,7 +491,7 @@ class PlayerNative extends PlayerBase {
 
   @override
   Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria, {int extraDelayMs = 0}) async {
-    if (disposed || !Platform.isIOS) return;
+    if (disposed || audioOnly || !Platform.isIOS) return;
     await _ensureInitialized();
     await invoke('setDisplayCriteria', {
       'criteria': _effectiveDisplayCriteria(criteria)?.toJson(),

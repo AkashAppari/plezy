@@ -3,6 +3,7 @@ import '../media/ids.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_server_client.dart';
+import '../models/audio_quality_preset.dart';
 import '../models/transcode_quality_preset.dart';
 import 'multi_server_manager.dart';
 import 'playback_context.dart';
@@ -17,6 +18,10 @@ class PlaybackSourceResolver {
   /// [preferOffline] overrides the default downloaded-copy preference
   /// (`offlineLibraryMode || qualityPreset.isOriginal`). Pass false for
   /// flows that must stay on the server stream, e.g. a transcode restart.
+  ///
+  /// [audioQualityPreset] is the music transcode preset, consulted by the
+  /// backends only for [MediaKind.track] items ([qualityPreset] is
+  /// video-shaped and ignored for tracks).
   Future<PlaybackContext> resolve({
     required MediaItem metadata,
     required int selectedMediaIndex,
@@ -24,6 +29,7 @@ class PlaybackSourceResolver {
     String? preferredVersionSignature,
     required bool offlineLibraryMode,
     required TranscodeQualityPreset qualityPreset,
+    AudioQualityPreset? audioQualityPreset,
     int? selectedAudioStreamId,
     String? sessionIdentifier,
     String? transcodeSessionId,
@@ -38,6 +44,7 @@ class PlaybackSourceResolver {
       preferredVersionSignature: preferredVersionSignature,
       preferOffline: preferOffline ?? (offlineLibraryMode || qualityPreset.isOriginal),
       qualityPreset: qualityPreset,
+      audioQualityPreset: audioQualityPreset,
       selectedAudioStreamId: selectedAudioStreamId,
       sessionIdentifier: sessionIdentifier,
       transcodeSessionId: transcodeSessionId,

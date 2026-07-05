@@ -19,9 +19,12 @@ import '../providers/playback_state_provider.dart';
 import '../providers/trakt_account_provider.dart';
 import '../providers/trackers_provider.dart';
 import '../providers/watch_state_store.dart';
+import '../database/app_database.dart';
 import '../screens/main_screen.dart';
 import '../services/api_cache.dart';
 import '../services/music/music_playback_service.dart';
+import '../services/music/music_playback_service_impl.dart';
+import '../services/offline_watch_sync_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
 import '../watch_together/providers/watch_together_provider.dart';
@@ -166,9 +169,16 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                 },
               ),
               ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),
-              // Stub until the music playback engine binds a real service;
-              // profile-session scope so a profile switch ends the session.
-              ChangeNotifierProvider<MusicPlaybackService>(create: (context) => StubMusicPlaybackService()),
+              // Profile-session scope so a profile switch tears the music
+              // session down (dispose stops playback + releases the audio
+              // core).
+              ChangeNotifierProvider<MusicPlaybackService>(
+                create: (context) => MusicPlaybackServiceImpl(
+                  serverManager: context.read<MultiServerProvider>().serverManager,
+                  database: context.read<AppDatabase>(),
+                  offlineWatchService: context.read<OfflineWatchSyncService>(),
+                ),
+              ),
               ChangeNotifierProvider(create: (context) => WatchTogetherProvider()),
               ChangeNotifierProvider(
                 create: (context) {
