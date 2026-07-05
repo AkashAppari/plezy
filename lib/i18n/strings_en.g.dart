@@ -73,6 +73,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsLiveTvEn liveTv = TranslationsLiveTvEn.internal(_root);
 	late final TranslationsCollectionsEn collections = TranslationsCollectionsEn.internal(_root);
 	late final TranslationsPlaylistsEn playlists = TranslationsPlaylistsEn.internal(_root);
+	late final TranslationsMusicEn music = TranslationsMusicEn.internal(_root);
 	late final TranslationsWatchTogetherEn watchTogether = TranslationsWatchTogetherEn.internal(_root);
 	late final TranslationsDownloadsEn downloads = TranslationsDownloadsEn.internal(_root);
 	late final TranslationsShadersEn shaders = TranslationsShadersEn.internal(_root);
@@ -2863,6 +2864,39 @@ class TranslationsPlaylistsEn {
 	String get errorRemoving => 'Failed to remove from playlist';
 }
 
+// Path: music
+class TranslationsMusicEn {
+	TranslationsMusicEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Go to album'
+	String get goToAlbum => 'Go to album';
+
+	/// en: 'Go to artist'
+	String get goToArtist => 'Go to artist';
+
+	/// en: 'Instant Mix'
+	String get instantMix => 'Instant Mix';
+
+	/// en: 'Play next'
+	String get playNext => 'Play next';
+
+	/// en: 'Add to queue'
+	String get addToQueue => 'Add to queue';
+
+	/// en: 'Disc ${n}'
+	String discNumber({required Object n}) => 'Disc ${n}';
+
+	/// en: '(one) {${n} track} (other) {${n} tracks}'
+	String trackCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: '${n} track',
+		other: '${n} tracks',
+	);
+}
+
 // Path: watchTogether
 class TranslationsWatchTogetherEn {
 	TranslationsWatchTogetherEn.internal(this._root);
@@ -4183,6 +4217,15 @@ class TranslationsLibrariesGroupingsEn {
 	/// en: 'Episodes'
 	String get episodes => 'Episodes';
 
+	/// en: 'Artists'
+	String get artists => 'Artists';
+
+	/// en: 'Albums'
+	String get albums => 'Albums';
+
+	/// en: 'Tracks'
+	String get tracks => 'Tracks';
+
 	/// en: 'Folders'
 	String get folders => 'Folders';
 }
@@ -5351,6 +5394,9 @@ extension on Translations {
 			'libraries.groupings.shows' => 'TV Shows',
 			'libraries.groupings.seasons' => 'Seasons',
 			'libraries.groupings.episodes' => 'Episodes',
+			'libraries.groupings.artists' => 'Artists',
+			'libraries.groupings.albums' => 'Albums',
+			'libraries.groupings.tracks' => 'Tracks',
 			'libraries.groupings.folders' => 'Folders',
 			'libraries.filterCategories.genre' => 'Genre',
 			'libraries.filterCategories.year' => 'Year',
@@ -5513,6 +5559,13 @@ extension on Translations {
 			'playlists.errorAdding' => 'Failed to add to playlist',
 			'playlists.errorReordering' => 'Failed to reorder playlist item',
 			'playlists.errorRemoving' => 'Failed to remove from playlist',
+			'music.goToAlbum' => 'Go to album',
+			'music.goToArtist' => 'Go to artist',
+			'music.instantMix' => 'Instant Mix',
+			'music.playNext' => 'Play next',
+			'music.addToQueue' => 'Add to queue',
+			'music.discNumber' => ({required Object n}) => 'Disc ${n}',
+			'music.trackCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} track', other: '${n} tracks', ), 
 			'watchTogether.title' => 'Watch Together',
 			'watchTogether.description' => 'Watch content in sync with friends and family',
 			'watchTogether.createSession' => 'Create Session',
@@ -5634,6 +5687,8 @@ extension on Translations {
 			'downloads.editSyncFilter' => 'Sync filter',
 			'downloads.syncAllItems' => 'Syncing all items',
 			'downloads.syncUnwatchedItems' => 'Syncing unwatched items',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
 			'downloads.syncRuleAvailable' => 'Available',
 			'downloads.syncRuleOffline' => 'Offline',
@@ -5644,8 +5699,6 @@ extension on Translations {
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'No video enhancement',
 			'shaders.nvscalerDescription' => 'NVIDIA image scaling for sharper video',
-			_ => null,
-		} ?? switch (path) {
 			'shaders.artcnnVariantNeutral' => 'Neutral',
 			'shaders.artcnnVariantDenoise' => 'Denoise',
 			'shaders.artcnnVariantDenoiseSharpen' => 'Denoise + Sharpen',

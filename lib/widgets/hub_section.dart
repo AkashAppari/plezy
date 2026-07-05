@@ -492,6 +492,11 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                     final useWideLayout =
                         episodePosterMode == EpisodePosterMode.episodeThumbnail && (isEpisodeOnlyHub || isMixedHub);
 
+                    // Music hubs render square album/artist artwork
+                    final isSquareHub =
+                        widget.hub.items.isNotEmpty &&
+                        widget.hub.items.every((item) => item.cardShape(episodePosterMode) == CardShape.square);
+
                     // Card dimensions based on hub type
                     const wideCardMultiplier = 1.5;
                     final cardWidth = useWideLayout ? baseCardWidth * wideCardMultiplier : baseCardWidth;
@@ -499,6 +504,8 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                     final posterHeight = useWideLayout
                         ? posterWidth *
                               (9 / 16) // 16:9 for wide layout
+                        : isSquareHub
+                        ? posterWidth // 1:1 for music artwork
                         : posterWidth * 1.5; // 2:3 for poster layout
 
                     final containerHeight = posterHeight + (isTv ? 48 : 33);

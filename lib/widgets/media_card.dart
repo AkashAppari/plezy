@@ -19,6 +19,7 @@ import '../services/settings_service.dart';
 import 'settings_builder.dart';
 import 'watched_indicator.dart';
 import '../utils/content_utils.dart';
+import '../utils/media_image_helper.dart';
 import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/formatters.dart';
@@ -131,9 +132,26 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
         baseLabel = t.accessibility.mediaCardSeason(title: item.displayTitle, seasonInfo: seasonInfo);
       case MediaKind.movie:
         baseLabel = t.accessibility.mediaCardMovie(title: item.displayTitle);
+      // Music reuses the "${title}, ${info}" composite of mediaCardEpisode
+      // (no dedicated music keys yet; adding keys is out of scope here).
+      case MediaKind.album:
+        baseLabel = t.accessibility.mediaCardEpisode(
+          title: item.displayTitle,
+          episodeInfo: item.albumArtistTitle ?? '',
+        );
+      case MediaKind.track:
+        baseLabel = t.accessibility.mediaCardEpisode(
+          title: item.displayTitle,
+          episodeInfo: item.trackArtistTitle ?? '',
+        );
+      case MediaKind.artist:
+        baseLabel = item.displayTitle;
       default:
         baseLabel = t.accessibility.mediaCardShow(title: item.displayTitle);
     }
+
+    // Play-state on an artist is noise — no watched suffix.
+    if (item.kind == MediaKind.artist) return baseLabel;
 
     // Add watched status
     final hasActiveProgress =
@@ -302,10 +320,11 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
         onSecondaryTap: showContextMenuFromTap,
         borderRadius: BorderRadius.circular(tokens(context).radiusSm),
         child: CardFocusBorder(
-          borderRadius: tokens(context).radiusSm,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-            child: Stack(
+          borderRadius: _posterFocusRadius(context, item),
+          child: _clipPosterImage(
+            context,
+            item,
+            Stack(
               fit: StackFit.expand,
               children: [
                 _buildPosterImage(
@@ -318,7 +337,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
                   knownWidth: width,
                   knownHeight: height,
                 ),
-                if (item is MediaItem) WatchedIndicator(item: item),
+                if (item is MediaItem && _showsWatchedIndicator(item)) WatchedIndicator(item: item),
               ],
             ),
           ),
@@ -335,12 +354,13 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
     // The focus border hugs the poster (captions stay outside it), matching
     // the full-bleed card treatment.
     final poster = CardFocusBorder(
-      borderRadius: tokens(context).radiusSm,
+      borderRadius: _posterFocusRadius(context, item),
       child: Stack(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-            child: _buildPosterImage(
+          _clipPosterImage(
+            context,
+            item,
+            _buildPosterImage(
               context,
               item,
               isOffline: widget.isOffline,
@@ -351,7 +371,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
               knownHeight: posterHeight,
             ),
           ),
-          if (item is MediaItem) WatchedIndicator(item: item),
+          if (item is MediaItem && _showsWatchedIndicator(item)) WatchedIndicator(item: item),
         ],
       ),
     );
@@ -434,18 +454,16 @@ class _MediaCardList extends StatelessWidget {
     this.episodePosterModeOverride,
   });
 
-  bool _usesWideAspectRatio() {
-    if (item is! MediaItem) return false;
+  CardShape _cardShape() {
+    if (item is! MediaItem) return CardShape.poster;
     final EpisodePosterMode mode =
         episodePosterModeOverride ?? SettingsService.instance.read(SettingsService.episodePosterMode);
-    return (item as MediaItem).usesWideAspectRatio(mode);
+    return (item as MediaItem).cardShape(mode);
   }
 
-  double _posterWidth() =>
-      MediaCardListLayout.posterWidth(density: density, usesWideAspectRatio: _usesWideAspectRatio());
+  double _posterWidth() => MediaCardListLayout.posterWidth(density: density, shape: _cardShape());
 
-  double _posterHeight() =>
-      MediaCardListLayout.posterHeight(density: density, usesWideAspectRatio: _usesWideAspectRatio());
+  double _posterHeight() => MediaCardListLayout.posterHeight(density: density, shape: _cardShape());
 
   double get _titleFontSize => 13 + LibraryDensity.factor(density) * 3; // 13–16
 
@@ -522,6 +540,10 @@ class _MediaCardList extends StatelessWidget {
       return null;
     } else if (item is MediaItem) {
       final mi = item as MediaItem;
+
+      // Music: a track's parentIndex/index are disc/track numbers, not S#E#.
+      if (mi.kind == MediaKind.album) return mi.albumArtistTitle;
+      if (mi.kind == MediaKind.track) return mi.trackArtistTitle;
 
       if (mi.parentIndex != null && mi.index != null) {
         final showEp = SettingsService.instance.read(SettingsService.showEpisodeNumberOnCards);
@@ -603,9 +625,10 @@ class _MediaCardList extends StatelessWidget {
                 height: _posterHeight(),
                 child: Stack(
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                      child: _buildPosterImage(
+                    _clipPosterImage(
+                      context,
+                      item,
+                      _buildPosterImage(
                         context,
                         item,
                         isOffline: isOffline,
@@ -613,7 +636,8 @@ class _MediaCardList extends StatelessWidget {
                         episodePosterModeOverride: episodePosterModeOverride,
                       ),
                     ),
-                    if (item is MediaItem) WatchedIndicator(item: item as MediaItem),
+                    if (item is MediaItem && _showsWatchedIndicator(item as MediaItem))
+                      WatchedIndicator(item: item as MediaItem),
                   ],
                 ),
               ),
@@ -723,9 +747,36 @@ Widget _buildPosterLoadingPlaceholder(BuildContext context, String _) {
 }
 
 IconData _mediaPosterFallbackIcon(MediaItem item) {
+  if (item.kind == MediaKind.artist) return Symbols.artist_rounded;
+  if (item.kind == MediaKind.album) return Symbols.album_rounded;
+  if (item.kind == MediaKind.track) return Symbols.music_note_rounded;
   if (item.isShow || item.isSeason || item.isEpisode) return Symbols.tv_rounded;
   return Symbols.movie_rounded;
 }
+
+/// Oversized radius for circular focus borders: [CardFocusBorder] paints a
+/// BoxDecoration border whose corner radii are clamped to the box, so on a
+/// square image area this renders a ring hugging the circular artist artwork.
+const double _circularFocusRadius = 9999;
+
+bool _isArtist(Object item) => item is MediaItem && item.kind == MediaKind.artist;
+
+/// Artist artwork clips to a circle; everything else keeps the standard
+/// rounded rect.
+Widget _clipPosterImage(BuildContext context, Object item, Widget image) {
+  if (_isArtist(item)) return ClipOval(child: image);
+  return ClipRRect(borderRadius: BorderRadius.circular(tokens(context).radiusSm), child: image);
+}
+
+/// Focus border radius matching [_clipPosterImage]'s clip shape.
+double _posterFocusRadius(BuildContext context, Object item) =>
+    _isArtist(item) ? _circularFocusRadius : tokens(context).radiusSm;
+
+/// Watched/progress overlays are suppressed for artists: a corner checkmark
+/// sits outside the circular artwork and play-state on an artist is noise.
+/// Albums/tracks keep the standard treatment (albums have no in-progress
+/// state to draw; tracks can show watched/resume state).
+bool _showsWatchedIndicator(MediaItem item) => item.kind != MediaKind.artist;
 
 Widget _buildPosterImage(
   BuildContext context,
@@ -766,8 +817,21 @@ Widget _buildPosterImage(
 
     Widget image;
 
-    // Use thumb image type for 16:9 content (episodes, or movies in mixed hubs)
-    if (item.usesWideAspectRatio(episodePosterMode, mixedHubContext: mixedHubContext)) {
+    // Square 1:1 artwork for music (artists/albums/tracks)
+    if (item.kind.isMusic) {
+      image = OptimizedMediaImage(
+        client: mediaClient,
+        imagePath: posterUrl,
+        width: knownWidth ?? double.infinity,
+        height: knownHeight ?? double.infinity,
+        fit: BoxFit.cover,
+        placeholder: _buildPosterLoadingPlaceholder,
+        fallbackIcon: fallbackIcon,
+        imageType: ImageType.square,
+        localFilePath: localPosterPath,
+      );
+    } else if (item.usesWideAspectRatio(episodePosterMode, mixedHubContext: mixedHubContext)) {
+      // Use thumb image type for 16:9 content (episodes, or movies in mixed hubs)
       image = OptimizedMediaImage.thumb(
         client: mediaClient,
         imagePath: posterUrl,
@@ -849,6 +913,19 @@ class _MediaCardHelpers {
           overflow: .ellipsis,
           style: subtitleStyle,
         );
+      }
+    }
+
+    // For albums, show the album artist
+    if (mi.kind == MediaKind.album && mi.albumArtistTitle != null) {
+      return Text(mi.albumArtistTitle!, maxLines: 1, overflow: .ellipsis, style: subtitleStyle);
+    }
+
+    // For tracks, show "Artist • duration"
+    if (mi.kind == MediaKind.track) {
+      final parts = [?mi.trackArtistTitle, if (mi.durationMs case final durationMs?) formatDurationTextual(durationMs)];
+      if (parts.isNotEmpty) {
+        return Text(parts.join(' • '), maxLines: 1, overflow: .ellipsis, style: subtitleStyle);
       }
     }
 

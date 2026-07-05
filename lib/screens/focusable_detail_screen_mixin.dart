@@ -162,12 +162,15 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
   }
 
   /// Build a standard focusable grid sliver for media items.
-  /// Used by collection and smart playlist detail screens.
+  /// Used by collection, smart playlist, and music artist detail screens.
+  /// [shape] overrides the grid cell silhouette (e.g. [CardShape.square]
+  /// for album grids); null keeps the stock poster geometry.
   Widget buildFocusableGrid({
     required List<dynamic> items,
     required void Function(String itemId) onRefresh,
     String? collectionId,
     VoidCallback? onListRefresh,
+    CardShape? shape,
   }) {
     return SettingsBuilder(
       prefs: const [SettingsService.viewMode, SettingsService.libraryDensity, SettingsService.tvFullCardLayout],
@@ -214,6 +217,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
                 crossAxisExtent: crossAxisExtent,
                 density: libraryDensity,
                 fullBleedImage: fullCardLayout,
+                shape: shape,
               );
               return SliverGrid.builder(
                 addAutomaticKeepAlives: false,

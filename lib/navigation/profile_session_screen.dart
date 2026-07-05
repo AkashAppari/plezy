@@ -21,6 +21,7 @@ import '../providers/trackers_provider.dart';
 import '../providers/watch_state_store.dart';
 import '../screens/main_screen.dart';
 import '../services/api_cache.dart';
+import '../services/music/music_playback_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
 import '../watch_together/providers/watch_together_provider.dart';
@@ -165,6 +166,9 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                 },
               ),
               ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),
+              // Stub until the music playback engine binds a real service;
+              // profile-session scope so a profile switch ends the session.
+              ChangeNotifierProvider<MusicPlaybackService>(create: (context) => StubMusicPlaybackService()),
               ChangeNotifierProvider(create: (context) => WatchTogetherProvider()),
               ChangeNotifierProvider(
                 create: (context) {

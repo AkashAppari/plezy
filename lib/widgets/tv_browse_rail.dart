@@ -142,6 +142,11 @@ class TvBrowseRailLayout {
     final hasTall = !isPersonHub && hub.items.any((item) => !item.usesWideAspectRatio(episodePosterMode));
     final isMixedHub = hasWide && hasTall;
     final useWideLayout = hasWide && (!hasTall || episodePosterMode == EpisodePosterMode.episodeThumbnail);
+    // Music hubs render square album/artist artwork (person hubs are already square).
+    final isSquareHub =
+        !isPersonHub &&
+        hub.items.isNotEmpty &&
+        hub.items.every((item) => item.cardShape(episodePosterMode) == CardShape.square);
     final baseCardWidth = cardWidthFor(
       availableWidth: availableWidth,
       density: density,
@@ -152,7 +157,9 @@ class TvBrowseRailLayout {
     );
     final cardWidth = baseCardWidth * (useWideLayout ? widePosterScale : tallPosterScale);
     final posterWidth = fullCardLayout ? cardWidth : cardWidth - (6 * scale);
-    final posterHeight = isPersonHub ? posterWidth : (useWideLayout ? posterWidth * 9 / 16 : posterWidth * 1.5);
+    final posterHeight = (isPersonHub || isSquareHub)
+        ? posterWidth
+        : (useWideLayout ? posterWidth * 9 / 16 : posterWidth * 1.5);
     final labelHeight = fullCardLayout ? 0.0 : ((isPersonHub ? 58 : 42) * scale);
     final containerHeight = (posterHeight + labelHeight).ceilToDouble();
     final height = containerHeight + focusExtra + (14 * scale);

@@ -534,6 +534,11 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                       final useWideLayout =
                           episodePosterMode == EpisodePosterMode.episodeThumbnail && (isEpisodeOnlyHub || isMixedHub);
 
+                      // Music hubs render square album/artist artwork
+                      final isSquareHub =
+                          _filteredItems.isNotEmpty &&
+                          _filteredItems.every((item) => item.cardShape(episodePosterMode) == CardShape.square);
+
                       if (isListMode) {
                         return SliverPadding(
                           padding: const EdgeInsets.all(8),
@@ -579,6 +584,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                               horizontalPadding: 16,
                               useWideAspectRatio: useWideLayout,
                               fullBleedImage: fullCardLayout,
+                              shape: isSquareHub ? CardShape.square : null,
                             );
                             final columnCount = geometry.columnCount;
 

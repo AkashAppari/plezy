@@ -18,6 +18,7 @@ import '../media/media_version.dart';
 import '../mixins/controller_disposer_mixin.dart';
 import '../services/plex_client.dart';
 import '../services/media_list_playback_launcher.dart';
+import '../services/music/music_playback_service.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/playlist_items_loader.dart';
 import '../services/watch_actions.dart';
@@ -37,6 +38,7 @@ import '../utils/app_logger.dart';
 import '../utils/library_refresh_notifier.dart';
 import '../utils/media_navigation_helper.dart';
 import '../utils/media_server_http_client.dart';
+import '../utils/music_navigation.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/dialogs.dart';
@@ -46,6 +48,8 @@ import '../focus/focusable_text_field.dart';
 import '../screens/plex_match_screen.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/metadata_edit_screen.dart';
+import '../screens/music/album_detail_screen.dart';
+import '../screens/music/artist_detail_screen.dart';
 import '../utils/smart_deletion_handler.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/deletion_notifier.dart';
@@ -276,6 +280,52 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         _MenuAction(value: 'delete', icon: Symbols.delete_rounded, label: t.common.delete, destructive: true),
       );
     } else {
+      // Music (artist/album/track) playback + navigation actions. Play is
+      // always offered — the shared music_navigation helpers surface the
+      // "not supported yet" notice while the stub service is bound. Queue
+      // insertion only exists once a real playback engine is available.
+      final isMusicKind = mediaKind != null && mediaKind.isMusic;
+      if (isMusicKind) {
+        menuActions.add(_MenuAction(value: 'music_play', icon: Symbols.play_arrow_rounded, label: t.common.play));
+
+        final musicAvailable = context.read<MusicPlaybackService?>()?.isAvailable ?? false;
+        if (musicAvailable) {
+          menuActions.add(
+            _MenuAction(value: 'music_play_next', icon: Symbols.playlist_play_rounded, label: t.music.playNext),
+          );
+          menuActions.add(
+            _MenuAction(value: 'music_add_queue', icon: Symbols.queue_music_rounded, label: t.music.addToQueue),
+          );
+        }
+
+        // Instant Mix — capability-gated, and only while the server is
+        // reachable (capabilities stay truthy for offline servers).
+        if (itemServerOnline && (mediaClient?.capabilities.instantMix ?? false)) {
+          menuActions.add(
+            _MenuAction(value: 'music_instant_mix', icon: Symbols.instant_mix_rounded, label: t.music.instantMix),
+          );
+        }
+
+        // Go to Album (tracks only) — hidden when already on that album's
+        // detail screen, mirroring the Go to Series ancestor check.
+        final ancestorAlbumId = context.findAncestorWidgetOfExactType<AlbumDetailScreen>()?.album.id;
+        if (mediaKind == MediaKind.track && mediaItem!.parentId != null && ancestorAlbumId != mediaItem.parentId) {
+          menuActions.add(_MenuAction(value: 'music_album', icon: Symbols.album_rounded, label: t.music.goToAlbum));
+        }
+
+        // Go to Artist — album: parent, track: grandparent; hidden when
+        // already on that artist's detail screen.
+        final musicArtistId = switch (mediaKind) {
+          MediaKind.album => mediaItem!.parentId,
+          MediaKind.track => mediaItem!.grandparentId,
+          _ => null,
+        };
+        final ancestorArtistId = context.findAncestorWidgetOfExactType<ArtistDetailScreen>()?.artist.id;
+        if (musicArtistId != null && ancestorArtistId != musicArtistId) {
+          menuActions.add(_MenuAction(value: 'music_artist', icon: Symbols.artist_rounded, label: t.music.goToArtist));
+        }
+      }
+
       if (hasActiveProgress) {
         menuActions.add(
           _MenuAction(value: 'play_from_beginning', icon: Symbols.replay_rounded, label: t.mediaMenu.playFromBeginning),
@@ -719,6 +769,42 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         case 'delete_media':
           await _handleDeleteMediaItem(context, mediaKind);
           break;
+
+        case 'music_play':
+          await _handleMusicPlay(context);
+          break;
+
+        case 'music_play_next':
+          await _handleMusicEnqueue(context, playNext: true);
+          break;
+
+        case 'music_add_queue':
+          await _handleMusicEnqueue(context, playNext: false);
+          break;
+
+        case 'music_instant_mix':
+          await playInstantMix(context, mediaItem!);
+          break;
+
+        case 'music_album':
+          didNavigate = true;
+          await _navigateToRelated(
+            context,
+            mediaItem!.parentId,
+            (item) => MaterialPageRoute(builder: (_) => AlbumDetailScreen(album: item)),
+            t.common.error,
+          );
+          break;
+
+        case 'music_artist':
+          didNavigate = true;
+          await _navigateToRelated(
+            context,
+            mediaItem!.kind == MediaKind.album ? mediaItem.parentId : mediaItem.grandparentId,
+            (item) => MaterialPageRoute(builder: (_) => ArtistDetailScreen(artist: item)),
+            t.common.error,
+          );
+          break;
       }
     } catch (e, st) {
       appLogger.e('Media context menu action failed', error: e, stackTrace: st);
@@ -931,6 +1017,53 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       total += s;
     }
     return total > 0 ? total : null;
+  }
+
+  /// The track list music playback should operate on for [item]: the item
+  /// itself for a track, an album's tracks, or an artist's playable
+  /// descendants (one server round-trip for the container kinds).
+  Future<List<MediaItem>> _musicTracksForItem(MediaItem item) async {
+    final client = _getMediaClientForItem();
+    return switch (item.kind) {
+      MediaKind.album => await client.fetchAlbumTracks(item.id),
+      MediaKind.artist => await client.fetchPlayableDescendants(item.id),
+      _ => [item],
+    };
+  }
+
+  Future<void> _handleMusicPlay(BuildContext context) async {
+    final item = _mediaItem!;
+    if (item.kind == MediaKind.track) {
+      await playTrackWithAlbumContext(context, item);
+      return;
+    }
+    // Availability gate before the container fetch so the stub costs no
+    // server round-trip.
+    if (!ensureMusicPlaybackAvailable(context)) return;
+    final tracks = await _musicTracksForItem(item);
+    if (!context.mounted) return;
+    await playTracks(
+      context,
+      tracks: tracks,
+      playContext: MusicPlayContext(
+        id: item.id,
+        title: item.displayTitle,
+        kind: item.kind == MediaKind.artist ? MusicPlayContextKind.artist : MusicPlayContextKind.album,
+      ),
+    );
+  }
+
+  Future<void> _handleMusicEnqueue(BuildContext context, {required bool playNext}) async {
+    final service = context.read<MusicPlaybackService?>();
+    // Menu entries are hidden on the stub; defensive re-check.
+    if (service == null || !service.isAvailable) return;
+    final tracks = await _musicTracksForItem(_mediaItem!);
+    if (tracks.isEmpty) return;
+    if (playNext) {
+      service.addNext(tracks);
+    } else {
+      service.addToEnd(tracks);
+    }
   }
 
   /// Handle shuffle play using play queues — dispatches via the

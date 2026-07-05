@@ -11,6 +11,7 @@ enum ImageType {
   thumb, // 16:9 episode thumbnails
   logo, // Variable ratio clear logos
   avatar, // Square-ish user avatars
+  square, // 1:1 music artwork (albums, artists, tracks)
 }
 
 /// Backend-neutral image URL helper.
@@ -116,6 +117,7 @@ class MediaImageHelper {
         return roundDimensions(thumbWidth, thumbHeight);
 
       case ImageType.avatar:
+      case ImageType.square:
         final size = min(targetWidth, targetHeight);
         return roundDimensions(size, size);
 
@@ -232,6 +234,10 @@ class MediaImageHelper {
       // the tile budget on low-RAM hardware.
       ImageType.poster when DevicePerformance.isReduced => (480, 720),
       ImageType.poster => (720, 1080),
+      // Square music artwork fills the same grid cells as posters, so both
+      // axes cap at the poster width budget.
+      ImageType.square when DevicePerformance.isReduced => (480, 480),
+      ImageType.square => (720, 720),
       ImageType.thumb when DevicePerformance.isReduced => (640, 360),
       ImageType.thumb => (960, 540),
       ImageType.art when DevicePerformance.isReduced => (_reducedMaxArtWidth, _reducedMaxArtHeight),

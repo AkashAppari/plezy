@@ -548,6 +548,14 @@ sealed class MediaItem with _$MediaItem {
     return false;
   }
 
+  /// The card silhouette this item renders with. Music items (artist/album/
+  /// track) are square; everything else folds in the [usesWideAspectRatio]
+  /// wide-vs-poster decision, so the two can never disagree.
+  CardShape cardShape(EpisodePosterMode mode, {bool mixedHubContext = false}) {
+    if (kind.isMusic) return CardShape.square;
+    return usesWideAspectRatio(mode, mixedHubContext: mixedHubContext) ? CardShape.wide : CardShape.poster;
+  }
+
   /// Returns the best hero art path based on the container's aspect ratio.
   String? heroArt({required double containerAspectRatio}) {
     final candidates = heroArtCandidates(containerAspectRatio: containerAspectRatio);
@@ -572,6 +580,11 @@ sealed class MediaItem with _$MediaItem {
     return candidates;
   }
 }
+
+/// The silhouette a media card renders with: 2:3 posters, 16:9 wide
+/// thumbnails (episodes/clips), or 1:1 squares (music artwork; artists clip
+/// to a circle). Resolved per item via [MediaItem.cardShape].
+enum CardShape { poster, wide, square }
 
 MediaKind _mediaKindFromJson(Object? raw) => MediaKind.fromString(raw as String?);
 

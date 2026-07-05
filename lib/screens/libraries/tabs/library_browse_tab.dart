@@ -9,6 +9,7 @@ import '../../../media/library_first_character.dart';
 import '../../../media/library_query.dart';
 import '../../../media/media_backend.dart';
 import '../../../media/media_item.dart';
+import '../../../media/media_kind.dart';
 import '../../../providers/multi_server_provider.dart';
 import '../../../utils/media_server_http_client.dart';
 import '../../../exceptions/media_server_exceptions.dart';
@@ -266,6 +267,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   double? _measuredListRowHeight;
   int? _listMetricsDensity;
   bool? _listMetricsUsesWideRatio;
+  CardShape? _listMetricsShape;
   final FocusNode _alphaJumpBarFocusNode = FocusNode(debugLabel: 'alpha_jump_bar');
   // When the user taps a letter, pin the highlight so scroll-based recalculation
   // doesn't immediately override it (e.g. when the letter has fewer items than a full row).
@@ -546,19 +548,23 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       final savedFilters = storage.getLibraryFilters(sectionId: widget.library.globalKey);
       final savedSort = storage.getLibrarySort(widget.library.globalKey);
       final savedGrouping = storage.getLibraryGrouping(widget.library.globalKey);
+      // Resolve the restored grouping before the sort fetch — music groupings
+      // (albums/tracks) request their own per-type sort list.
+      final restoredGrouping = _normalizeGrouping(savedGrouping);
+      final sortLibraryType = _sortOptionsLibraryType(restoredGrouping);
 
       final LoadedFiltersAndSorts loaded;
       if (_isJellyfinLibrary) {
         // `/Items/Filters` can be much slower than the paged `/Items` browse
         // request on large Jellyfin libraries. Load only the local sort list
         // before page 1, then fill filter values in the background.
-        final sorts = await client.fetchSortOptions(widget.library.id, libraryType: widget.library.kind.id);
+        final sorts = await client.fetchSortOptions(widget.library.id, libraryType: sortLibraryType);
         loaded = LoadedFiltersAndSorts(filters: const [], sorts: sorts);
       } else {
         // Plex filters+sorts must resolve before items so saved-sort restoration
         // can match a saved key against the just-loaded sort list, and so the
         // first item fetch already includes the restored sort param.
-        loaded = await loader.load(widget.library);
+        loaded = await loader.load(widget.library, sortLibraryType: sortLibraryType);
       }
 
       if (generation != _contentRequestId || !mounted) return;
@@ -569,7 +575,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         // assigning the empty map is a no-op for Plex and a real payload for Jellyfin.
         _jellyfinFilterValues = loaded.cachedValues;
         _selectedFilters = Map.from(savedFilters);
-        _selectedGrouping = _normalizeGrouping(savedGrouping);
+        _selectedGrouping = restoredGrouping;
 
         // Restore sort
         if (savedSort != null) {
@@ -769,9 +775,27 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         return '3';
       case 'episodes':
         return '4';
+      case 'artists':
+        return '8';
+      case 'albums':
+        return '9';
+      case 'tracks':
+        return '10';
       default:
         return '';
     }
+  }
+
+  /// `libraryType` for sort-option fetches. Plex music sections serve a
+  /// distinct sort list per type (`?type=9|10` for albums/tracks), so the
+  /// active grouping picks the type; every other grouping shares the
+  /// library's own list.
+  String _sortOptionsLibraryType(String grouping) {
+    return switch (grouping) {
+      browseGroupingAlbums => MediaKind.album.id,
+      browseGroupingTracks => MediaKind.track.id,
+      _ => widget.library.kind.id,
+    };
   }
 
   List<String> _getGroupingOptions() {
@@ -788,6 +812,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         return t.libraries.groupings.seasons;
       case 'episodes':
         return t.libraries.groupings.episodes;
+      case 'artists':
+        return t.libraries.groupings.artists;
+      case 'albums':
+        return t.libraries.groupings.albums;
+      case 'tracks':
+        return t.libraries.groupings.tracks;
       case 'folders':
         return t.libraries.groupings.folders;
       default:
@@ -917,14 +947,47 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
   void _handleGroupingSelection(String? value) {
     if (!mounted || value == null || value == _selectedGrouping || !_getGroupingOptions().contains(value)) return;
+    final sortTypeChanged = _sortOptionsLibraryType(value) != _sortOptionsLibraryType(_selectedGrouping);
     setState(() {
       _selectedGrouping = value;
     });
     StorageService.getInstance().then((storage) {
       storage.saveLibraryGrouping(widget.library.globalKey, value);
     });
+    if (sortTypeChanged) {
+      // Music groupings serve per-type sort lists; refresh the options (and
+      // drop a selected sort the new list doesn't offer) before fetching
+      // items so the first page can't carry a sort key of the wrong type.
+      unawaited(_reloadSortOptionsForGrouping());
+      return;
+    }
     _loadItems();
     _loadFirstCharacters();
+  }
+
+  /// Re-fetch the sort options for the just-selected grouping's type, then
+  /// load items. Only called when the grouping switch changed the sort type
+  /// (artist/album/track on music libraries).
+  Future<void> _reloadSortOptionsForGrouping() async {
+    final generation = _contentRequestId;
+    final grouping = _selectedGrouping;
+    var sorts = const <MediaSort>[];
+    try {
+      final client = context.getMediaClientForLibrary(widget.library);
+      sorts = await client.fetchSortOptions(widget.library.id, libraryType: _sortOptionsLibraryType(grouping));
+    } catch (e, st) {
+      appLogger.w('Failed to load sort options for grouping $grouping', error: e, stackTrace: st);
+    }
+    if (!mounted || generation != _contentRequestId || grouping != _selectedGrouping) return;
+    setState(() {
+      _sortOptions = sorts;
+      if (_selectedSort != null && sorts.every((s) => s.key != _selectedSort!.key)) {
+        _selectedSort = null;
+        _isSortDescending = false;
+      }
+    });
+    unawaited(_loadItems());
+    unawaited(_loadFirstCharacters());
   }
 
   void _showFiltersBottomSheet() {
@@ -1736,18 +1799,33 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   /// Width of the alpha jump bar widget
   static const double _alphaJumpBarWidth = 20.0;
 
-  void _setListScrollMetrics({required int density, required bool usesWideAspectRatio}) {
-    if (_listMetricsDensity != density || _listMetricsUsesWideRatio != usesWideAspectRatio) {
+  void _setListScrollMetrics({required int density, required bool usesWideAspectRatio, CardShape? shape}) {
+    if (_listMetricsDensity != density ||
+        _listMetricsUsesWideRatio != usesWideAspectRatio ||
+        _listMetricsShape != shape) {
       _measuredListRowHeight = null;
       _listMetricsDensity = density;
       _listMetricsUsesWideRatio = usesWideAspectRatio;
+      _listMetricsShape = shape;
     }
 
-    final itemWidth = MediaCardListLayout.posterWidth(density: density, usesWideAspectRatio: usesWideAspectRatio);
-    final itemHeight = MediaCardListLayout.posterHeight(density: density, usesWideAspectRatio: usesWideAspectRatio);
+    final itemWidth = MediaCardListLayout.posterWidth(
+      density: density,
+      usesWideAspectRatio: usesWideAspectRatio,
+      shape: shape,
+    );
+    final itemHeight = MediaCardListLayout.posterHeight(
+      density: density,
+      usesWideAspectRatio: usesWideAspectRatio,
+      shape: shape,
+    );
     final rowHeight =
         _measuredListRowHeight ??
-        MediaCardListLayout.estimatedRowHeight(density: density, usesWideAspectRatio: usesWideAspectRatio);
+        MediaCardListLayout.estimatedRowHeight(
+          density: density,
+          usesWideAspectRatio: usesWideAspectRatio,
+          shape: shape,
+        );
     _scrollMetrics = LibraryAlphaScrollMetrics(
       columnCount: 1,
       rowHeight: rowHeight,
@@ -1786,10 +1864,17 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     final rightPadding = _shouldShowAlphaJumpBar && !isPhone ? _alphaJumpBarWidth : 8.0;
 
     final useWideRatio = _selectedGrouping == 'episodes' && episodePosterMode == EpisodePosterMode.episodeThumbnail;
+    // Music groupings are homogeneous, so the whole grid shares the square
+    // cell shape (artists render circular inside the square cell).
+    final isMusicGrouping =
+        _selectedGrouping == browseGroupingArtists ||
+        _selectedGrouping == browseGroupingAlbums ||
+        _selectedGrouping == browseGroupingTracks;
+    final browseShape = isMusicGrouping ? CardShape.square : null;
 
     if (viewMode == ViewMode.list) {
       // In list view, all items are in a single column (first column)
-      _setListScrollMetrics(density: libraryDensity, usesWideAspectRatio: useWideRatio);
+      _setListScrollMetrics(density: libraryDensity, usesWideAspectRatio: useWideRatio, shape: browseShape);
       return SliverPadding(
         padding: .fromLTRB(8, topPadding, rightPadding, 8),
         sliver: SliverList.builder(
@@ -1839,6 +1924,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
               crossAxisExtentForColumnCount: hasAlphaBarReservation ? crossAxisExtent + (rightPadding - 8.0) : null,
               density: libraryDensity,
               useWideAspectRatio: useWideRatio,
+              shape: browseShape,
               fullBleedImage: fullCardLayout,
             );
             final columnCount = geometry.columnCount;
@@ -1857,6 +1943,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
               itemCount,
               fullCardLayout,
               useWideRatio,
+              browseShape,
               libraryDensity,
               _shouldShowAlphaJumpBar,
               isPhone,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../../media/library_query.dart';
+import '../../../media/media_kind.dart';
 import '../../../media/media_playlist.dart';
 import '../../../mixins/library_tab_focus_mixin.dart';
 import '../../../mixins/paginated_item_loader.dart';
@@ -66,9 +67,11 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
   @override
   Future<LibraryPage<MediaPlaylist>> fetchPage(int start, int size, AbortController? abort) {
     // Both backends return playlists scoped to the server (not the library) —
-    // neither Plex nor Jellyfin's API filters playlists by section.
+    // neither Plex nor Jellyfin's API filters playlists by section. Music
+    // libraries surface audio playlists; everything else keeps video.
     final client = getMediaClientForLibrary();
-    return client.fetchPlaylistsPage(playlistType: 'video', start: start, size: size, abort: abort);
+    final playlistType = widget.library.kind == MediaKind.artist ? 'audio' : 'video';
+    return client.fetchPlaylistsPage(playlistType: playlistType, start: start, size: size, abort: abort);
   }
 
   @override

@@ -784,6 +784,9 @@
       "shows": "TV Shows",
       "seasons": "Seasons",
       "episodes": "Episodes",
+      "artists": "Artists",
+      "albums": "Albums",
+      "tracks": "Tracks",
       "folders": "Folders"
     },
     "filterCategories": {
@@ -969,6 +972,18 @@
     "errorAdding": "Failed to add to playlist",
     "errorReordering": "Failed to reorder playlist item",
     "errorRemoving": "Failed to remove from playlist"
+  },
+  "music": {
+    "goToAlbum": "Go to album",
+    "goToArtist": "Go to artist",
+    "instantMix": "Instant Mix",
+    "playNext": "Play next",
+    "addToQueue": "Add to queue",
+    "discNumber": "Disc ${n}",
+    "trackCount": {
+      "one": "${n} track",
+      "other": "${n} tracks"
+    }
   },
   "watchTogether": {
     "title": "Watch Together",

@@ -5,7 +5,6 @@ import '../mixins/disposable_change_notifier_mixin.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
-import '../utils/content_utils.dart';
 import 'multi_server_provider.dart';
 
 /// Load state for the libraries provider
@@ -68,7 +67,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
   /// without refetching the already-loaded servers.
   final Set<String> _pendingDeltaServerIds = {};
 
-  /// Unmodifiable list of all libraries (filtered for supported types, ordered)
+  /// Unmodifiable list of all libraries (ordered)
   List<MediaLibrary> get libraries => List.unmodifiable(_libraries);
 
   /// Whether libraries are currently being loaded
@@ -119,7 +118,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
 
   /// Load libraries from all connected servers, unconditionally. Used by
   /// pull-to-refresh, inline connection-add, and library reordering.
-  /// Filters out music libraries and applies saved ordering.
+  /// Applies saved ordering.
   Future<void> loadLibraries() => _load();
 
   /// Single entry point for every full (re)load. Concurrent callers coalesce
@@ -161,7 +160,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
 
     try {
       final result = await _aggregationService!.getMediaLibrariesFromAllServers(serverIds: ids);
-      final fresh = result.libraries.where((lib) => !ContentTypeHelper.isMusicLibrary(lib)).toList();
+      final fresh = result.libraries;
 
       final merged = [
         for (final lib in _libraries)
@@ -229,13 +228,10 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
         }
       }
 
-      // Filter out music libraries (not supported)
-      final filteredLibraries = result.libraries.where((lib) => !ContentTypeHelper.isMusicLibrary(lib)).toList();
-
       // Apply saved library order
       final storage = _storageService ??= await StorageService.getInstance();
       final savedOrder = storage.getLibraryOrder();
-      final orderedLibraries = _applyLibraryOrder(filteredLibraries, savedOrder);
+      final orderedLibraries = _applyLibraryOrder(result.libraries, savedOrder);
 
       _libraries = orderedLibraries;
       // Track which servers actually responded so [syncToOnlineServers] can tell
