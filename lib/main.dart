@@ -213,7 +213,11 @@ Future<void> _bootstrapApp() async {
   final commitSuffix = gitCommit.isNotEmpty ? ' (${gitCommit.substring(0, 7)})' : '';
   String renderer = '';
   if (Platform.isAndroid) {
-    renderer = ' [${await const MethodChannel('com.plezy/theme').invokeMethod<String>('getRenderer')}]';
+    final rendererName = await const MethodChannel('com.plezy/theme').invokeMethod<String>('getRenderer');
+    renderer = ' [$rendererName]';
+    // Tag crash reports with the active renderer while Impeller rolls back
+    // out to Android TV, so device-specific regressions are attributable.
+    unawaited(Sentry.configureScope((scope) => scope.setTag('renderer', rendererName ?? 'unknown')));
   }
   appLogger.i(
     'Plezy v${packageInfo.version}+${packageInfo.buildNumber}$commitSuffix$renderer'

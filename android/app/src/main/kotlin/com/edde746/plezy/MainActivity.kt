@@ -386,8 +386,6 @@ class MainActivity : FlutterActivity() {
   }
 
   private fun shouldDisableImpeller(): Boolean {
-    // Android TV devices — weaker GPUs, less Impeller testing
-    if (isAndroidTvDevice()) return true
     if (DeviceQuirks.isEWaste) return true
     // NVIDIA Tegra (Shield TV)
     if (Build.MANUFACTURER.equals("NVIDIA", ignoreCase = true)) return true
@@ -397,7 +395,19 @@ class MainActivity : FlutterActivity() {
     ) {
       return true
     }
+    if (isAndroidTvDevice()) return !tvSupportsImpeller()
     return false
+  }
+
+  // Impeller froze API 30 Fire TV hardware (#749) and Flutter's Vulkan → GLES
+  // fallback still miscompiles gradients/SVGs, so only TV devices on Android 12+
+  // with a Vulkan 1.1 driver leave the Skia path.
+  private fun tvSupportsImpeller(): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return false
+    // Fire OS reports modern API levels on GPUs whose drivers can't back it up
+    if (Build.MANUFACTURER.equals("Amazon", ignoreCase = true)) return false
+    val vulkan11 = 0x401000 // FEATURE_VULKAN_HARDWARE_VERSION encodes 1.1.0 as 0x401000
+    return packageManager.hasSystemFeature(PackageManager.FEATURE_VULKAN_HARDWARE_VERSION, vulkan11)
   }
 
   override fun getRenderMode(): RenderMode {
