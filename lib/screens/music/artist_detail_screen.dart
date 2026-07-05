@@ -13,6 +13,7 @@ import '../../mixins/grid_focus_node_mixin.dart';
 import '../../services/music/music_playback_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/formatters.dart';
+import '../../utils/layout_constants.dart';
 import '../../utils/media_image_helper.dart';
 import '../../utils/music_navigation.dart';
 import '../../utils/platform_detector.dart';
@@ -126,53 +127,93 @@ class _ArtistDetailScreenState extends BaseMediaListDetailScreen<ArtistDetailScr
     final genres = widget.artist.genres ?? const [];
     final summary = widget.artist.summary;
 
+    Widget portrait(double size) => ClipOval(
+      child: OptimizedMediaImage(
+        client: client,
+        imagePath: widget.artist.thumbPath,
+        imageType: ImageType.square,
+        width: size,
+        height: size,
+        fallbackIcon: Symbols.artist_rounded,
+      ),
+    );
+
+    Widget info({required bool centered}) => Column(
+      mainAxisSize: .min,
+      crossAxisAlignment: centered ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.artist.displayTitle,
+          style: textTheme.titleLarge,
+          textAlign: centered ? TextAlign.center : TextAlign.start,
+        ),
+        if (genres.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            toBulletedString(genres),
+            style: textTheme.bodyMedium?.copyWith(color: tk.textMuted),
+            textAlign: centered ? TextAlign.center : TextAlign.start,
+          ),
+        ],
+        if (summary != null && summary.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: CollapsibleText(
+              text: summary,
+              maxLines: 3,
+              style: textTheme.bodyMedium?.copyWith(color: tk.textMuted),
+              focusNode: _bioFocusNode,
+              skipTraversal: false,
+            ),
+          ),
+        ],
+      ],
+    );
+
+    final actionRow = FocusableActionBar(
+      key: actionBarKey,
+      spacing: 4,
+      actions: getAppBarActions(),
+      onNavigateDown: navigateToGrid,
+      onBack: () => Navigator.pop(context),
+    );
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: Column(
-        children: [
-          ClipOval(
-            child: OptimizedMediaImage(
-              client: client,
-              imagePath: widget.artist.thumbPath,
-              imageType: ImageType.square,
-              width: 140,
-              height: 140,
-              fallbackIcon: Symbols.artist_rounded,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(widget.artist.displayTitle, style: textTheme.titleLarge, textAlign: TextAlign.center),
-          if (genres.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              toBulletedString(genres),
-              style: textTheme.bodyMedium?.copyWith(color: tk.textMuted),
-              textAlign: TextAlign.center,
-            ),
-          ],
-          if (summary != null && summary.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 720),
-              child: CollapsibleText(
-                text: summary,
-                maxLines: 3,
-                style: textTheme.bodyMedium?.copyWith(color: tk.textMuted),
-                focusNode: _bioFocusNode,
-                skipTraversal: false,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final narrow = constraints.maxWidth < ScreenBreakpoints.mobile;
+          if (narrow) {
+            return Column(
+              children: [
+                portrait(140),
+                const SizedBox(height: 12),
+                info(centered: true),
+                const SizedBox(height: 16),
+                actionRow,
+                const SizedBox(height: 8),
+              ],
+            );
+          }
+          // Wide/desktop: portrait left, left-aligned text + actions beside
+          // it — mirrors the album header so the two screens read as one
+          // family (and the grid below starts at the same left inset).
+          return Row(
+            crossAxisAlignment: .center,
+            children: [
+              portrait(180),
+              const SizedBox(width: 24),
+              Expanded(
+                child: Column(
+                  mainAxisSize: .min,
+                  crossAxisAlignment: .start,
+                  children: [info(centered: false), const SizedBox(height: 16), actionRow],
+                ),
               ),
-            ),
-          ],
-          const SizedBox(height: 16),
-          FocusableActionBar(
-            key: actionBarKey,
-            spacing: 4,
-            actions: getAppBarActions(),
-            onNavigateDown: navigateToGrid,
-            onBack: () => Navigator.pop(context),
-          ),
-          const SizedBox(height: 8),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
