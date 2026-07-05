@@ -51,6 +51,10 @@ class MainActivity : FlutterActivity() {
     private const val TEXT_INPUT_DIAGNOSTICS_ENABLED = false
     private const val EXTERNAL_PLAYER_REQUEST_CODE = 7461
 
+    // Mirrors DevicePerformance._lowMemThresholdBytes (2252 MiB): nominal
+    // "2GB" devices report totalMem slightly above 2 GiB after carve-outs.
+    private const val LOW_MEM_THRESHOLD_BYTES = 2252L shl 20
+
     // External player result APIs used by Jellyfin Android TV.
     private const val API_MX_RETURN_RESULT = "return_result"
     private const val API_MX_RESULT_ID = "com.mxtech.intent.result.VIEW"
@@ -208,6 +212,18 @@ class MainActivity : FlutterActivity() {
       "isLowRamDevice" to activityManager.isLowRamDevice,
       "totalMemBytes" to memoryInfo.totalMem
     )
+  }
+
+  /**
+   * Same triple DevicePerformance uses for the reduced tier on the Dart
+   * side — keep the two in sync. Evaluated here too because engine shell
+   * args must be decided before Dart runs.
+   */
+  private fun isLowRamClass(): Boolean {
+    val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    val memoryInfo = ActivityManager.MemoryInfo()
+    activityManager.getMemoryInfo(memoryInfo)
+    return !Process.is64Bit() || activityManager.isLowRamDevice || memoryInfo.totalMem <= LOW_MEM_THRESHOLD_BYTES
   }
 
   /** User-assigned device name (Settings > About > Device name), or null. */
@@ -382,6 +398,15 @@ class MainActivity : FlutterActivity() {
     val args = super.getFlutterShellArgs()
     usingSkia = shouldDisableImpeller()
     if (usingSkia) args.add("--enable-impeller=false")
+    if (isLowRamClass()) {
+      // Bound the memory pools Dart can't reach: Skia's GPU resource cache
+      // is sized from the surface area (hundreds of MB on a 4K-composited
+      // TV) and the Dart old gen defaults to a large fraction of physical
+      // RAM. Both drive LMK kills on 2GB boxes (#1349).
+      if (usingSkia) args.add("--resource-cache-max-bytes-threshold=50331648")
+      args.add("--old-gen-heap-size=256")
+      Log.i(TAG, "Low-RAM device: capped engine caches (skia=$usingSkia, oldGen=256MB)")
+    }
     return args
   }
 
