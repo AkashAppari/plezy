@@ -137,6 +137,17 @@ void MpvPlayerPlugin::HandleMethodCall(
             DrainPlatformTasks();
             return std::optional<HRESULT>(0);
           }
+          // Both resume variants are handled: which of the two arrives (or
+          // both) depends on S3 vs Modern Standby; re-arming is idempotent.
+          // player_ create/reset also happens on this thread, so the
+          // null-check suffices. Never consume the message.
+          if (message == WM_POWERBROADCAST && player_ && player_->IsInitialized()) {
+            if (wparam == PBT_APMSUSPEND) {
+              player_->NotifyPowerSuspend();
+            } else if (wparam == PBT_APMRESUMEAUTOMATIC || wparam == PBT_APMRESUMESUSPEND) {
+              player_->NotifyPowerResume();
+            }
+          }
           return std::optional<HRESULT>(std::nullopt);
         });
 

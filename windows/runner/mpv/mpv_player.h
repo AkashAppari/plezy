@@ -6,6 +6,7 @@
 #include <mpv/client.h>
 
 #include <atomic>
+#include <chrono>
 #include <functional>
 #include <map>
 #include <memory>
@@ -75,6 +76,12 @@ class MpvPlayer {
   // Sets the event callback for property changes and events.
   void SetEventCallback(EventCallback callback);
 
+  // Power notifications, called from the platform thread (window proc).
+  // NotifyPowerResume only sets an atomic flag consumed by the event thread —
+  // no mpv calls, no timers — so it cannot race Dispose and needs no cleanup.
+  void NotifyPowerSuspend();
+  void NotifyPowerResume();
+
  private:
   void StartEventLoop();
   void StopEventLoop();
@@ -82,7 +89,9 @@ class MpvPlayer {
   void HandleMpvEvent(mpv_event* event);
   void SendPropertyChange(const char* name, mpv_node* data);
   void SendEvent(const std::string& name, const flutter::EncodableMap& data = {});
-  void ReloadAudioOutput();
+  void MaybeRunAudioRecovery();
+  void TryAudioReload(const char* reason, int attempt);
+  void LogRecovery(const std::string& text);
   uint64_t RegisterStatusRequest(StatusCallback callback);
   StatusCallback TakeStatusRequest(uint64_t request_id);
   uint64_t RegisterGetPropertyRequest(GetPropertyCallback callback);
@@ -97,6 +106,16 @@ class MpvPlayer {
   std::mutex callback_mutex_;
   bool current_ao_is_null_ = false;
   bool audio_reload_pending_ = false;
+
+  // Audio recovery state. Event thread only, except |resume_reload_requested_|
+  // which the platform thread sets on WM_POWERBROADCAST resume.
+  std::atomic<bool> resume_reload_requested_{false};
+  bool file_loaded_ = false;
+  int resume_attempts_left_ = 0;
+  std::chrono::steady_clock::time_point resume_next_attempt_{};
+  int null_attempts_left_ = 0;
+  std::chrono::steady_clock::time_point null_next_attempt_{};
+  std::chrono::milliseconds null_backoff_{};
 
   uint64_t next_reply_userdata_ = 1;
   std::map<std::string, uint64_t> observed_properties_;
