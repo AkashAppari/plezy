@@ -242,8 +242,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/connectivity_plus/connectivity_plus"
-      ref: "2b614414ce95d920880765d07cbb9759699a4563"
-      resolved-ref: "2b614414ce95d920880765d07cbb9759699a4563"
+      ref: "4c0d4071150481f76d753c6ce1ff325bb959b9b5"
+      resolved-ref: "4c0d4071150481f76d753c6ce1ff325bb959b9b5"
       url: "https://github.com/edde746/plus_plugins"
     source: git
     version: "7.1.1"
