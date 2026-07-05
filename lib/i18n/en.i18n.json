@@ -255,6 +255,7 @@
     "traktDescription": "Sync watch history with Trakt",
     "trackers": "Trackers",
     "trackersDescription": "Sync progress to Trakt, MyAnimeList, AniList, and Simkl",
+    "manageLibrariesDescription": "Reorder and hide libraries",
     "companionRemoteServer": "Companion Remote Server",
     "companionRemoteServerDescription": "Allow mobile devices on your network to control this app",
     "autoPip": "Auto Picture-in-Picture",

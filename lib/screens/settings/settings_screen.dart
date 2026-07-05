@@ -35,6 +35,7 @@ import '../../utils/platform_detector.dart';
 import '../../utils/update_dialog.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/dialog_action_button.dart';
+import '../../widgets/library_management_sheet.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
@@ -64,6 +65,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   static const _kDonate = 'donate';
   static const _kAppearance = 'appearance';
   static const _kPlayback = 'playback';
+  static const _kManageLibraries = 'manage_libraries';
   static const _kTrackers = 'trackers';
   static const _kDownloadLocation = 'download_location';
   static const _kDownloadOnWifiOnly = 'download_on_wifi_only';
@@ -135,6 +137,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
   @override
   Widget build(BuildContext context) {
+    final hasLibraries = context.select<LibrariesProvider, bool>((p) => p.libraries.isNotEmpty);
+
     return Scaffold(
       body: Focus(
         onKeyEvent: _handleKeyEvent,
@@ -150,6 +154,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
                     if (DonationService.isEnabled) _buildDonateTile(),
                     _buildAppearanceTile(),
                     _buildPlaybackTile(),
+                    if (hasLibraries) _buildManageLibrariesTile(),
                     _buildTrackersTile(),
                   ],
                 ),
@@ -230,6 +235,16 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
       title: t.settings.videoPlayback,
       subtitle: t.settings.videoPlaybackDescription,
       destinationBuilder: (context) => const PlaybackSettingsScreen(),
+    );
+  }
+
+  Widget _buildManageLibrariesTile() {
+    return SettingNavigationTile(
+      focusNode: _focusTracker.get(_kManageLibraries),
+      icon: Symbols.video_library_rounded,
+      title: t.libraries.manageLibraries,
+      subtitle: t.settings.manageLibrariesDescription,
+      onTap: () => showLibraryManagementSheet(context),
     );
   }
 

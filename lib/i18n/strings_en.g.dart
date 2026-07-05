@@ -876,6 +876,9 @@ class TranslationsSettingsEn {
 	/// en: 'Sync progress to Trakt, MyAnimeList, AniList, and Simkl'
 	String get trackersDescription => 'Sync progress to Trakt, MyAnimeList, AniList, and Simkl';
 
+	/// en: 'Reorder and hide libraries'
+	String get manageLibrariesDescription => 'Reorder and hide libraries';
+
 	/// en: 'Companion Remote Server'
 	String get companionRemoteServer => 'Companion Remote Server';
 
@@ -4824,6 +4827,7 @@ extension on Translations {
 			'settings.traktDescription' => 'Sync watch history with Trakt',
 			'settings.trackers' => 'Trackers',
 			'settings.trackersDescription' => 'Sync progress to Trakt, MyAnimeList, AniList, and Simkl',
+			'settings.manageLibrariesDescription' => 'Reorder and hide libraries',
 			'settings.companionRemoteServer' => 'Companion Remote Server',
 			'settings.companionRemoteServerDescription' => 'Allow mobile devices on your network to control this app',
 			'settings.autoPip' => 'Auto Picture-in-Picture',
@@ -5090,9 +5094,9 @@ extension on Translations {
 			'messages.unableToDetermineLibrarySection' => 'Unable to determine library section for this item',
 			'messages.logsCleared' => 'Logs cleared',
 			'messages.logsCopied' => 'Logs copied to clipboard',
-			'messages.noLogsAvailable' => 'No logs available',
 			_ => null,
 		} ?? switch (path) {
+			'messages.noLogsAvailable' => 'No logs available',
 			'messages.libraryScanning' => ({required Object title}) => 'Scanning "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Library scan started for "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Failed to scan library: ${error}',
@@ -5604,9 +5608,9 @@ extension on Translations {
 			'shaders.shaderImported' => 'Shader imported',
 			'shaders.shaderImportFailed' => 'Failed to import shader',
 			'shaders.deleteShader' => 'Delete Shader',
-			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
 			_ => null,
 		} ?? switch (path) {
+			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
 			'companionRemote.title' => 'Companion Remote',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Connected to ${name}',
 			'companionRemote.unknownDevice' => 'Unknown Device',
