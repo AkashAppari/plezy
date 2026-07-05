@@ -235,19 +235,16 @@ class OptimizedMediaImage extends StatelessWidget {
     final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
     final scaledWidth = effectiveWidth * dpr;
     final scaledHeight = effectiveHeight * dpr;
-    final (_, memHeight) = MediaImageHelper.getMemCacheDimensions(
+    final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
       displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
       displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
       imageType: imageType,
     );
 
-    return Image.file(
-      file,
+    return Image(
+      image: MediaImageHelper.boundedDecode(FileImage(file), memWidth: memWidth, memHeight: memHeight),
       width: width,
       height: height,
-      // Only cacheHeight: leaving cacheWidth null preserves decode aspect
-      // ratio, mirroring the network branch's ResizeImage wrapper.
-      cacheHeight: memHeight > 0 ? memHeight : null,
       // Artwork is decorative: the enclosing card exposes one merged node
       // with the title, and a per-image node just grows the semantics tree
       // the TV a11y services make Flutter rebuild every frame.
@@ -296,7 +293,7 @@ class OptimizedMediaImage extends StatelessWidget {
 
     final scaledWidth = effectiveWidth * devicePixelRatio;
     final scaledHeight = effectiveHeight * devicePixelRatio;
-    final (_, memHeight) = MediaImageHelper.getMemCacheDimensions(
+    final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
       displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
       displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
       imageType: imageType,
@@ -311,7 +308,7 @@ class OptimizedMediaImage extends StatelessWidget {
       headers: const {'User-Agent': 'Plezy'},
     );
 
-    final resizedProvider = ResizeImage.resizeIfNeeded(null, memHeight > 0 ? memHeight : null, provider);
+    final resizedProvider = MediaImageHelper.boundedDecode(provider, memWidth: memWidth, memHeight: memHeight);
 
     // Reduced tier: swap in directly, no fade machinery at all.
     if (DevicePerformance.isReduced) {

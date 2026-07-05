@@ -144,10 +144,19 @@ class TvSpotlightBackground extends StatelessWidget {
       media.backgroundSquarePath,
       media.thumbPath,
     ];
+    final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
+      displayWidth: (size.width * dpr).round(),
+      displayHeight: (size.height * dpr).round(),
+      imageType: ImageType.art,
+    );
+
     for (final candidate in artCandidates) {
       final localPath = localArtworkPathResolver?.call(candidate);
       if (localPath != null && File(localPath).existsSync()) {
-        return FileImage(File(localPath));
+        // Local originals skipped the server transcode entirely, so the
+        // decode bound is the only thing between a full-resolution art file
+        // and the GPU on a low-RAM TV.
+        return MediaImageHelper.boundedDecode(FileImage(File(localPath)), memWidth: memWidth, memHeight: memHeight);
       }
     }
 
@@ -164,14 +173,8 @@ class TvSpotlightBackground extends StatelessWidget {
 
     if (imageUrl.isEmpty) return null;
 
-    final (_, memHeight) = MediaImageHelper.getMemCacheDimensions(
-      displayWidth: (size.width * dpr).round(),
-      displayHeight: (size.height * dpr).round(),
-      imageType: ImageType.art,
-    );
-
     final provider = CachedNetworkImageProvider(imageUrl, cacheManager: PlexImageCacheManager.instance);
-    return ResizeImage.resizeIfNeeded(null, memHeight > 0 ? memHeight : null, provider);
+    return MediaImageHelper.boundedDecode(provider, memWidth: memWidth, memHeight: memHeight);
   }
 
   Widget _buildHorizontalScrim(Color bgColor) {
