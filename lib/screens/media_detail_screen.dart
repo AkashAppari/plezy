@@ -6,6 +6,7 @@ import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../navigation/profile_navigation_scope.dart';
+import '../services/device_performance.dart';
 import '../services/image_cache_service.dart';
 import 'package:flutter/services.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -153,6 +154,14 @@ class _SeasonEpisodePager {
     _states.remove(seasonId);
     _firstPageLoadsInFlight.remove(seasonId);
     _moreLoadsInFlight.remove(seasonId);
+  }
+
+  /// Drops cached episode pages for seasons outside [keepSeasonIds].
+  /// In-flight sets are left alone — a completing prefetch just re-adds one
+  /// bounded page. Evicted seasons transparently refetch through the normal
+  /// unloaded-hub path when refocused.
+  void retainOnly(Set<String> keepSeasonIds) {
+    _states.removeWhere((seasonId, _) => !keepSeasonIds.contains(seasonId));
   }
 
   void removeEpisode(String episodeId) {
@@ -4023,6 +4032,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         _episodes = List.of(_seasonEpisodePager.stateFor(season.id).items);
       });
       unawaited(_prefetchAdjacentSeasonEpisodePages(seasonIndex));
+      _pruneDistantSeasonPages(seasonIndex);
       return;
     }
 
@@ -4033,6 +4043,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     });
     unawaited(_fetchSeasonEpisodes(seasonIndex));
     unawaited(_prefetchAdjacentSeasonEpisodePages(seasonIndex));
+    _pruneDistantSeasonPages(seasonIndex);
+  }
+
+  /// Low-end TV only: keep episode pages for the selected season ±1 (the
+  /// prefetch window) and drop the rest. Visited 200-item pages otherwise
+  /// accumulate for the screen's lifetime — irrelevant for a 3-season show,
+  /// tens of MB of retained heap for a 30-season one.
+  void _pruneDistantSeasonPages(int seasonIndex) {
+    if (!DevicePerformance.isLowEndHardware || !PlatformDetector.isTV()) return;
+    final keep = <String>{
+      for (var i = seasonIndex - 1; i <= seasonIndex + 1; i++)
+        if (i >= 0 && i < _seasons.length) _seasons[i].id,
+    };
+    _seasonEpisodePager.retainOnly(keep);
   }
 
   /// What the rail should show in a hub's trailing slot: a spinner while the
