@@ -109,6 +109,22 @@ class ServerCapabilities {
   /// `/Items?ParentId=...&Recursive=false` queries.
   final bool folderGrouping;
 
+  /// Server can supply track lyrics. Jellyfin exposes `/Audio/{id}/Lyrics`;
+  /// Plex surfaces sidecar `.lrc`/`.txt` files as track streams
+  /// (`streamType 4`) fetched via `/library/streams/{id}`. Gates the lyrics
+  /// affordance in the music player; per-track absence is the runtime gate.
+  final bool lyrics;
+
+  /// Server can build an "instant mix" / radio track list from a seed item.
+  /// Jellyfin: `/Items/{id}/InstantMix`; Plex: station play queues
+  /// (`POST /playQueues?type=audio&uri=...station...`).
+  final bool instantMix;
+
+  /// Server can transcode audio to a capped bitrate. Plex:
+  /// `/music/:/transcode/universal`; Jellyfin: `PlaybackInfo` with an audio
+  /// `TranscodingProfile`. Gates the music quality picker (vs original-only).
+  final bool audioTranscoding;
+
   const ServerCapabilities({
     this.serverSidePlayQueue = false,
     this.serverSidePlaylists = false,
@@ -130,6 +146,9 @@ class ServerCapabilities {
     this.alphaBar = AlphaBarMode.none,
     this.scrubThumbnails = false,
     this.folderGrouping = false,
+    this.lyrics = false,
+    this.instantMix = false,
+    this.audioTranscoding = false,
   });
 
   /// Defaults for a fully-featured Plex server.
@@ -154,6 +173,9 @@ class ServerCapabilities {
     alphaBar: AlphaBarMode.scrollSnap,
     scrubThumbnails: true,
     folderGrouping: true,
+    lyrics: true,
+    instantMix: true,
+    audioTranscoding: true,
   );
 
   /// Defaults for a Jellyfin server.
@@ -185,6 +207,9 @@ class ServerCapabilities {
     alphaBar: AlphaBarMode.nameStartsWithFilter,
     scrubThumbnails: true,
     folderGrouping: true,
+    lyrics: true,
+    instantMix: true,
+    audioTranscoding: true,
   );
 
   ServerCapabilities copyWith({
@@ -208,6 +233,9 @@ class ServerCapabilities {
     AlphaBarMode? alphaBar,
     bool? scrubThumbnails,
     bool? folderGrouping,
+    bool? lyrics,
+    bool? instantMix,
+    bool? audioTranscoding,
   }) {
     return ServerCapabilities(
       serverSidePlayQueue: serverSidePlayQueue ?? this.serverSidePlayQueue,
@@ -230,6 +258,9 @@ class ServerCapabilities {
       alphaBar: alphaBar ?? this.alphaBar,
       scrubThumbnails: scrubThumbnails ?? this.scrubThumbnails,
       folderGrouping: folderGrouping ?? this.folderGrouping,
+      lyrics: lyrics ?? this.lyrics,
+      instantMix: instantMix ?? this.instantMix,
+      audioTranscoding: audioTranscoding ?? this.audioTranscoding,
     );
   }
 }

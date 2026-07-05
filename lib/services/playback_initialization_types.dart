@@ -1,6 +1,7 @@
 import '../media/media_item.dart';
 import '../media/media_source_info.dart';
 import '../media/media_version.dart';
+import '../models/audio_quality_preset.dart';
 import '../models/transcode_quality_preset.dart';
 import '../mpv/mpv.dart';
 
@@ -28,6 +29,12 @@ class PlaybackInitializationOptions {
   /// server to transcode when supported.
   final TranscodeQualityPreset qualityPreset;
 
+  /// Music transcode preset, consulted only when [metadata] is a
+  /// [MediaKind.track]. `original` (or null) direct-plays; anything else asks
+  /// for a bitrate-capped audio transcode. [qualityPreset] is ignored for
+  /// tracks — video presets are resolution-shaped.
+  final AudioQualityPreset? audioQualityPreset;
+
   /// Audio stream id forwarded to the transcoder. `null` means "let the
   /// server pick".
   final int? selectedAudioStreamId;
@@ -45,6 +52,7 @@ class PlaybackInitializationOptions {
     this.selectedMediaSourceId,
     this.preferredVersionSignature,
     this.qualityPreset = TranscodeQualityPreset.original,
+    this.audioQualityPreset,
     this.selectedAudioStreamId,
     this.sessionIdentifier,
     this.transcodeSessionId,

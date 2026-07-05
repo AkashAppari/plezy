@@ -90,6 +90,26 @@ void main() {
       expect(Uri.parse(url).path, '/Videos/folder%2Fitem%20%231%3Fx/stream');
     });
 
+    test('buildAudioDirectStreamUrl targets /Audio with the same static-stream contract', () {
+      final url = client.buildAudioDirectStreamUrl('track-7');
+      final uri = Uri.parse(url);
+
+      expect(uri.path, '/Audio/track-7/stream');
+      expect(uri.queryParameters['Static'], 'true');
+      expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(uri.queryParameters['DeviceId'], 'dev-xyz');
+      expect(uri.queryParameters.containsKey('Container'), isFalse);
+      expect(uri.queryParameters.containsKey('MediaSourceId'), isFalse);
+    });
+
+    test('buildAudioDirectStreamUrl appends Container and MediaSourceId when provided', () {
+      final url = client.buildAudioDirectStreamUrl('track-7', container: 'flac', mediaSourceId: 'src-9');
+      final uri = Uri.parse(url);
+
+      expect(uri.queryParameters['Container'], 'flac');
+      expect(uri.queryParameters['MediaSourceId'], 'src-9');
+    });
+
     test('buildDirectStreamUrl canonicalizes a mixed-case scheme from stored config', () async {
       // This URL bypasses Dart's Uri normalization on its way to the player,
       // and FFmpeg's protocol lookup is case-sensitive — a stored
@@ -2952,7 +2972,8 @@ void main() {
       expect(requestUri, isNotNull);
       expect(requestUri!.queryParameters['ParentId'], 'show-1');
       expect(requestUri!.queryParameters['Recursive'], 'true');
-      expect(requestUri!.queryParameters['IncludeItemTypes'], 'Movie,Episode');
+      // Audio rides along so albums/artists/audio playlists expand to tracks.
+      expect(requestUri!.queryParameters['IncludeItemTypes'], 'Movie,Episode,Audio');
       expect(requestUri!.queryParameters['StartIndex'], '20');
       expect(requestUri!.queryParameters['Limit'], '10');
     });

@@ -15,6 +15,7 @@ import 'base_shared_preferences_service.dart';
 import 'device_performance.dart';
 export 'base_shared_preferences_service.dart'
     show Pref, BoolPref, IntPref, DoublePref, StringPref, NullableStringPref, StringListPref, EnumPref, JsonPref;
+import '../models/audio_quality_preset.dart';
 import '../models/transcode_quality_preset.dart';
 import '../navigation/navigation_tabs.dart';
 import '../utils/platform_detector.dart';
@@ -419,6 +420,11 @@ class SettingsService extends BaseSharedPreferencesService {
     'default_quality_preset',
     values: TranscodeQualityPreset.values,
     defaultValue: TranscodeQualityPreset.original,
+  );
+  static const musicQualityPreset = EnumPref<AudioQualityPreset>(
+    'music_quality_preset',
+    values: AudioQualityPreset.values,
+    defaultValue: AudioQualityPreset.original,
   );
   static const autoPlayNextEpisode = BoolPref('auto_play_next_episode', defaultValue: true);
   static const useExoPlayer = BoolPref('use_exoplayer', defaultValue: true);

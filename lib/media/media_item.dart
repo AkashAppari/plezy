@@ -464,6 +464,34 @@ sealed class MediaItem with _$MediaItem {
     return null;
   }
 
+  /// Track number within its disc, for [MediaKind.track] items.
+  int? get trackNumber => kind == MediaKind.track ? index : null;
+
+  /// Disc number for [MediaKind.track] items (Plex `parentIndex`, Jellyfin
+  /// `ParentIndexNumber`). Null/1 on single-disc albums.
+  int? get discNumber => kind == MediaKind.track ? parentIndex : null;
+
+  /// Album title for music items: a track's parent, an album's own title.
+  String? get albumTitle => switch (kind) {
+    MediaKind.track => parentTitle,
+    MediaKind.album => title,
+    _ => null,
+  };
+
+  /// Album-artist name for music items: a track's grandparent, an album's
+  /// parent.
+  String? get albumArtistTitle => switch (kind) {
+    MediaKind.track => grandparentTitle,
+    MediaKind.album => parentTitle,
+    _ => null,
+  };
+
+  /// Performing artist of a track. Falls back to [albumArtistTitle] — both
+  /// backends only populate a separate value when it differs (Plex stores a
+  /// compilation track's own artist in `originalTitle`; the Jellyfin mapper
+  /// mirrors that convention from `Artists`).
+  String? get trackArtistTitle => kind == MediaKind.track ? (originalTitle ?? albumArtistTitle) : null;
+
   /// Plex-only edition label. Jellyfin returns null.
   String? get editionTitle => null;
 

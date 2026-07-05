@@ -188,8 +188,13 @@ void main() {
 
       expect(results.map((item) => item.id), ['jf-show']);
       expect(plexRequests.single.queryParameters['limit'], '100');
-      expect(plexRequests.single.queryParameters['searchTypes'], 'movies,tv');
-      expect(jellyfinRequests.single.queryParameters['Limit'], '100');
+      expect(plexRequests.single.queryParameters['searchTypes'], 'movies,tv,music');
+      // Jellyfin search fans out to /Items plus a best-effort /Artists call
+      // (500 above → treated as empty).
+      final jfItemsRequest = jellyfinRequests.singleWhere((url) => url.path == '/Items');
+      expect(jfItemsRequest.queryParameters['Limit'], '100');
+      final jfArtistsRequest = jellyfinRequests.singleWhere((url) => url.path == '/Artists');
+      expect(jfArtistsRequest.queryParameters['searchTerm'], 'The Boys');
     });
 
     test('getOnDeckFromAllServers forwards preview limit to clients', () async {

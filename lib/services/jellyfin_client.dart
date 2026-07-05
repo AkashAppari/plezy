@@ -15,6 +15,7 @@ import 'file_info_parser.dart';
 import 'library_query_translator.dart';
 import '../media/media_filter.dart';
 import '../media/live_tv_support.dart';
+import '../media/lyrics.dart';
 import '../media/media_backend.dart';
 import '../media/media_file_info.dart';
 import '../media/media_hub.dart';
@@ -26,6 +27,7 @@ import '../media/ids.dart';
 import '../media/media_server_client.dart';
 import '../media/playback_report_metadata.dart';
 import '../media/server_capabilities.dart';
+import '../models/audio_quality_preset.dart';
 import '../models/jellyfin/jellyfin_user_profile.dart';
 import '../models/livetv_capture_buffer.dart';
 import '../models/livetv_channel.dart';
@@ -69,6 +71,7 @@ import 'scrub_preview_source.dart';
 import '../mpv/mpv.dart';
 
 part 'jellyfin_client/parts/browse.dart';
+part 'jellyfin_client/parts/music.dart';
 part 'jellyfin_client/parts/playback.dart';
 part 'jellyfin_client/parts/watch_state.dart';
 part 'jellyfin_client/parts/playlists.dart';
@@ -88,6 +91,7 @@ class JellyfinClient
     with
         MediaServerCacheMixin,
         _JellyfinBrowseMethods,
+        _JellyfinMusicMethods,
         _JellyfinPlaybackMethods,
         _JellyfinWatchStateMethods,
         _JellyfinPlaylistMethods,

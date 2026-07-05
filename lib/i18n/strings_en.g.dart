@@ -2155,6 +2155,15 @@ class TranslationsDiscoverEn {
 	/// en: 'Recently Added in ${library}'
 	String recentlyAddedIn({required Object library}) => 'Recently Added in ${library}';
 
+	/// en: 'Latest Albums in ${library}'
+	String latestAlbumsIn({required Object library}) => 'Latest Albums in ${library}';
+
+	/// en: 'Recently Played in ${library}'
+	String recentlyPlayedIn({required Object library}) => 'Recently Played in ${library}';
+
+	/// en: 'Most Played in ${library}'
+	String mostPlayedIn({required Object library}) => 'Most Played in ${library}';
+
 	/// en: 'S${season}E${episode}'
 	String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 
@@ -5265,6 +5274,9 @@ extension on Translations {
 			'discover.nextUpIn' => ({required Object library}) => 'Next Up in ${library}',
 			'discover.recentlyAdded' => 'Recently Added',
 			'discover.recentlyAddedIn' => ({required Object library}) => 'Recently Added in ${library}',
+			'discover.latestAlbumsIn' => ({required Object library}) => 'Latest Albums in ${library}',
+			'discover.recentlyPlayedIn' => ({required Object library}) => 'Recently Played in ${library}',
+			'discover.mostPlayedIn' => ({required Object library}) => 'Most Played in ${library}',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Overview',
 			'discover.cast' => 'Cast',
@@ -5632,11 +5644,11 @@ extension on Translations {
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'No video enhancement',
 			'shaders.nvscalerDescription' => 'NVIDIA image scaling for sharper video',
+			_ => null,
+		} ?? switch (path) {
 			'shaders.artcnnVariantNeutral' => 'Neutral',
 			'shaders.artcnnVariantDenoise' => 'Denoise',
 			'shaders.artcnnVariantDenoiseSharpen' => 'Denoise + Sharpen',
-			_ => null,
-		} ?? switch (path) {
 			'shaders.qualityFast' => 'Fast',
 			'shaders.qualityHQ' => 'High Quality',
 			'shaders.mode' => 'Mode',
