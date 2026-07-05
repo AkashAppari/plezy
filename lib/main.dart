@@ -313,6 +313,10 @@ FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
       }
       // Native HTTP errors from CFNetwork (server errors, not actionable)
       if (e.type == 'HTTPClientError') return true;
+      // Benign EventChannel teardown race: the engine replies this when a
+      // 'cancel' lands after the stream is already gone, and the framework
+      // reports it via FlutterError — nothing was ever wrong user-side.
+      if (e.type == 'PlatformException' && v != null && v.contains('No active stream to cancel')) return true;
       // Discord RPC errors when Discord is not running
       if (e.type == 'DiscordStateException') return true;
       return false;

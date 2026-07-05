@@ -95,7 +95,17 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     }
   }
 
+  /// Backends expose static per-backend [EventChannel]s, so two overlapping
+  /// instances (episode handoff, quick exit/reopen) share one channel name.
+  /// The engine allows a single active stream per channel: a newer instance's
+  /// listen displaces the older sink, and the older instance's late cancel
+  /// would then tear down the *newer* stream — leaving it eventless — while
+  /// the final cancel gets an engine "No active stream to cancel" error.
+  /// Only the instance recorded here may send the native cancel.
+  static final Map<String, PlayerBase> _eventChannelOwners = {};
+
   void _setupEventListener() {
+    _eventChannelOwners[eventChannel.name] = this;
     _eventSubscription = eventChannel.receiveBroadcastStream().listen(
       _handleEvent,
       onError: (error) {
@@ -779,13 +789,22 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     if (_disposed) return;
     _disposed = true;
 
-    try {
-      await _eventSubscription?.cancel();
-    } on PlatformException catch (e, st) {
-      appLogger.d('Player event stream already detached during dispose', error: e, stackTrace: st);
-    } on MissingPluginException catch (e, st) {
-      appLogger.d('Player event stream plugin missing during dispose', error: e, stackTrace: st);
+    if (identical(_eventChannelOwners[eventChannel.name], this)) {
+      _eventChannelOwners.remove(eventChannel.name);
+      try {
+        await _eventSubscription?.cancel();
+      } on PlatformException catch (e, st) {
+        appLogger.d('Player event stream already detached during dispose', error: e, stackTrace: st);
+      } on MissingPluginException catch (e, st) {
+        appLogger.d('Player event stream plugin missing during dispose', error: e, stackTrace: st);
+      }
+    } else {
+      // A newer instance owns the channel; cancelling would send a stray
+      // native 'cancel' that kills *its* stream. Drop ours without cancelling
+      // — the newer listen already replaced this subscription's routing.
+      appLogger.d('Player event stream handed off to a newer instance, skipping cancel');
     }
+    _eventSubscription = null;
     await _logSubscription?.cancel();
     try {
       await methodChannel.invokeMethod('dispose', {
