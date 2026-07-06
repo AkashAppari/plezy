@@ -209,7 +209,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
               value: '$minutes',
               icon: Symbols.timer_rounded,
               label: t.music.sleepTimerMinutes(n: minutes),
-              selected: timed,
+              selected: timed && service.sleepTimerDuration == Duration(minutes: minutes),
             ),
           AppMenuItem(
             value: 'end_of_track',

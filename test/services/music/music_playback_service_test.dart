@@ -929,6 +929,23 @@ void main() {
     });
   });
 
+  test('timed sleep timer exposes its armed duration for the preset menu', () async {
+    await h.playTracks([t1]);
+
+    h.service.setSleepTimer(const Duration(minutes: 30));
+    expect(h.service.sleepTimerActive, isTrue);
+    expect(h.service.sleepTimerDuration, const Duration(minutes: 30));
+    expect(h.service.sleepTimerEndOfTrack, isFalse);
+
+    h.service.setSleepTimer(null, endOfTrack: true);
+    expect(h.service.sleepTimerDuration, isNull);
+    expect(h.service.sleepTimerActive, isTrue);
+
+    h.service.setSleepTimer(null);
+    expect(h.service.sleepTimerActive, isFalse);
+    expect(h.service.sleepTimerDuration, isNull);
+  });
+
   test('end-of-track sleep timer suppresses arming and pauses at completion', () async {
     await h.playTracks([t1, t2]);
     expect(h.player.armed?.uri, _urlFor(t2));

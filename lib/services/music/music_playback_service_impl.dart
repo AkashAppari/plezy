@@ -129,6 +129,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
 
   Timer? _sleepTimer;
   DateTime? _sleepTimerEndsAt;
+  Duration? _sleepTimerDuration;
   bool _sleepTimerEndOfTrack = false;
 
   final StreamController<Duration> _positionController = StreamController<Duration>.broadcast();
@@ -185,6 +186,9 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
 
   @override
   DateTime? get sleepTimerEndsAt => _sleepTimerEndsAt;
+
+  @override
+  Duration? get sleepTimerDuration => _sleepTimerDuration;
 
   @override
   bool get sleepTimerEndOfTrack => _sleepTimerEndOfTrack;
@@ -932,10 +936,12 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _sleepTimer?.cancel();
     _sleepTimer = null;
     _sleepTimerEndsAt = null;
+    _sleepTimerDuration = null;
     final hadEndOfTrack = _sleepTimerEndOfTrack;
     _sleepTimerEndOfTrack = endOfTrack;
     if (!endOfTrack && duration != null) {
       _sleepTimerEndsAt = DateTime.now().add(duration);
+      _sleepTimerDuration = duration;
       _sleepTimer = Timer(duration, _onSleepTimerFired);
     }
     // End-of-track mode suppresses gapless arming (and leaving it restores
@@ -949,6 +955,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   void _onSleepTimerFired() {
     _sleepTimer = null;
     _sleepTimerEndsAt = null;
+    _sleepTimerDuration = null;
     unawaited(pause());
     notifyListeners();
   }
@@ -957,6 +964,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _sleepTimer?.cancel();
     _sleepTimer = null;
     _sleepTimerEndsAt = null;
+    _sleepTimerDuration = null;
     _sleepTimerEndOfTrack = false;
   }
 

@@ -117,6 +117,10 @@ abstract class MusicPlaybackService extends ChangeNotifier {
   /// inactive.
   DateTime? get sleepTimerEndsAt;
 
+  /// The duration the timed sleep timer was armed with (for marking the
+  /// chosen preset); null in end-of-track mode or when inactive.
+  Duration? get sleepTimerDuration;
+
   /// Whether the sleep timer pauses at the end of the current track instead
   /// of after a fixed duration.
   bool get sleepTimerEndOfTrack;
@@ -232,6 +236,9 @@ class StubMusicPlaybackService extends MusicPlaybackService {
 
   @override
   DateTime? get sleepTimerEndsAt => null;
+
+  @override
+  Duration? get sleepTimerDuration => null;
 
   @override
   bool get sleepTimerEndOfTrack => false;
