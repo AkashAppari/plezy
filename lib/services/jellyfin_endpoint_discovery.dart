@@ -61,8 +61,7 @@ class JellyfinEndpointUserInputCandidates {
 class JellyfinEndpointDiscovery {
   static const int defaultPort = 8096;
 
-  JellyfinEndpointDiscovery({http.Client Function()? testHttpClientFactory})
-    : _testHttpClientFactory = testHttpClientFactory;
+  JellyfinEndpointDiscovery({this._testHttpClientFactory});
 
   final http.Client Function()? _testHttpClientFactory;
 

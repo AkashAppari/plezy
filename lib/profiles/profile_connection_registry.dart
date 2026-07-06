@@ -216,9 +216,7 @@ class ProfileConnectionRegistry {
       // Vault couldn't decrypt the stored token (key/ciphertext divergence).
       // Clear it to the empty-string lazy-fetch sentinel so the binder
       // re-acquires a token on next use instead of re-failing every boot.
-      appLogger.w(
-        'ProfileConnectionRegistry: clearing undecryptable token for ${row.profileId}/${row.connectionId}',
-      );
+      appLogger.w('ProfileConnectionRegistry: clearing undecryptable token for ${row.profileId}/${row.connectionId}');
       unawaited(_clearToken(row.profileId, row.connectionId));
     }
     return ProfileConnection(

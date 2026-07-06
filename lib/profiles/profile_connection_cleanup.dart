@@ -301,11 +301,8 @@ Future<bool> _isServerReferenced(
 Set<ServerId> _serverIdsForConnection(Connection connection) {
   return switch (connection) {
     PlexAccountConnection(:final servers) => {
-      for (final server in servers)
-        if (ServerId.tryParse(server.clientIdentifier) case final serverId?) serverId,
+      for (final server in servers) ?ServerId.tryParse(server.clientIdentifier),
     },
-    JellyfinConnection(:final serverMachineId) => {
-      if (ServerId.tryParse(serverMachineId) case final serverId?) serverId,
-    },
+    JellyfinConnection(:final serverMachineId) => {?ServerId.tryParse(serverMachineId)},
   };
 }

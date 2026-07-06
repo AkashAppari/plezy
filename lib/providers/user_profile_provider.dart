@@ -33,7 +33,7 @@ import '../utils/app_logger.dart';
 /// account-owner's token would silently return the *owner's* settings —
 /// wrong defaults for kid profiles, parental restrictions, etc.
 class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
-  UserProfileProvider({StorageService? storageService}) : _storageService = storageService;
+  UserProfileProvider({this._storageService});
 
   MediaServerUserProfile? _profileSettings;
   bool _isInitialized = false;

@@ -23,11 +23,10 @@ class PlexHomeService {
   PlexHomeService({
     required this._connections,
     required this._profileConnections,
-    StorageService? storage,
+    this._storage,
     Future<List<PlexHomeUser>> Function(String accountToken)? plexHomeUserFetcher,
     this._refreshInterval = const Duration(hours: 1),
-  }) : _storage = storage,
-       _fetchHomeUsers = plexHomeUserFetcher ?? _defaultHomeUserFetcher;
+  }) : _fetchHomeUsers = plexHomeUserFetcher ?? _defaultHomeUserFetcher;
 
   final ConnectionRegistry _connections;
   final ProfileConnectionRegistry _profileConnections;
