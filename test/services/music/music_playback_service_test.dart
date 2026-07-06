@@ -451,8 +451,19 @@ class FakeMediaControlsManager extends MediaControlsManager {
     bool force = false,
   }) async {}
 
+  final List<({bool canGoNext, bool canStop, bool canSkip, bool canSetSpeed})> controlSyncs = [];
+
   @override
-  Future<void> setControlsEnabled({bool canGoNext = false, bool canGoPrevious = false, bool canSeek = false}) async {}
+  Future<void> setControlsEnabled({
+    bool canGoNext = false,
+    bool canGoPrevious = false,
+    bool canSeek = false,
+    bool canStop = false,
+    bool canSkip = false,
+    bool canSetSpeed = false,
+  }) async {
+    controlSyncs.add((canGoNext: canGoNext, canStop: canStop, canSkip: canSkip, canSetSpeed: canSetSpeed));
+  }
 
   @override
   Future<void> clear() async {
@@ -737,6 +748,46 @@ void main() {
     await pumpEventQueue();
     expect(h.service.status, MusicPlaybackStatus.playing);
     expect(h.player.playCalls, 1);
+  });
+
+  test('OS stop command stops the session', () async {
+    await h.playTracks([t1, t2]);
+    final player = h.player;
+
+    h.controls.eventsCtrl.add(const StopEvent());
+    await pumpEventQueue();
+
+    expect(h.service.status, MusicPlaybackStatus.idle);
+    expect(h.service.currentTrack, isNull);
+    expect(player.disposed, isTrue);
+  });
+
+  test('OS skip commands seek within the track, clamped to its bounds', () async {
+    await h.playTracks([t1, t2]);
+    h.player.setPosition(const Duration(seconds: 30));
+
+    h.controls.eventsCtrl.add(const SkipForwardEvent(Duration(seconds: 15)));
+    await pumpEventQueue();
+    expect(h.player.seeks, [const Duration(seconds: 45)]);
+
+    h.controls.eventsCtrl.add(const SkipBackwardEvent(null)); // default interval
+    await pumpEventQueue();
+    expect(h.player.seeks.last, const Duration(seconds: 30));
+
+    h.player.setPosition(const Duration(seconds: 5));
+    h.controls.eventsCtrl.add(const SkipBackwardEvent(Duration(seconds: 15)));
+    await pumpEventQueue();
+    expect(h.player.seeks.last, Duration.zero);
+  });
+
+  test('music advertises stop and skip but never a speed control', () async {
+    await h.playTracks([t1, t2]);
+
+    expect(h.controls.controlSyncs, isNotEmpty);
+    final last = h.controls.controlSyncs.last;
+    expect(last.canStop, isTrue);
+    expect(last.canSkip, isTrue);
+    expect(last.canSetSpeed, isFalse);
   });
 
   test('interruption without shouldResume stays paused', () async {

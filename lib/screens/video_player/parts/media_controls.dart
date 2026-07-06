@@ -87,6 +87,11 @@ extension _VideoPlayerMediaControlsMethods on VideoPlayerScreenState {
       canGoNext: canNavigateEpisodes,
       canGoPrevious: canNavigateEpisodes,
       canSeek: canSeek,
+      canStop: true,
+      // In-track skips work on live TV too through the capture buffer.
+      canSkip: true,
+      // Rate changes don't apply to a live stream.
+      canSetSpeed: !widget.isLive,
     );
   }
 

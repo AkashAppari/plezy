@@ -639,6 +639,12 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
         // Previous always restarts the track even at queue head.
         canGoPrevious: true,
         canSeek: true,
+        canStop: true,
+        // In-track skips: Bluetooth/steering-wheel fast-forward and rewind
+        // buttons map here on Android. (Never surfaced on iOS/macOS — see
+        // MediaControlsManager.setControlsEnabled.)
+        canSkip: true,
+        // Music always plays at 1.0 — never advertise a speed control.
       ),
     );
   }
@@ -657,6 +663,12 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       unawaited(previous());
     } else if (event is SeekEvent) {
       unawaited(seek(event.position));
+    } else if (event is StopEvent) {
+      unawaited(stop());
+    } else if (event is SkipForwardEvent) {
+      unawaited(_seekRelative(event.interval ?? _defaultSkipInterval));
+    } else if (event is SkipBackwardEvent) {
+      unawaited(_seekRelative(-(event.interval ?? _defaultSkipInterval)));
     } else if (event is AudioInterruptionBeganEvent || event is AudioRouteOldDeviceUnavailableEvent) {
       // Remember whether we were playing so interruption-end/route-return
       // can resume. Unlike video, music resumes even while backgrounded —
@@ -676,6 +688,23 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
         unawaited(play());
       }
     }
+    // SetSpeedEvent is deliberately unhandled: music always plays at 1.0 and
+    // the control is not advertised — but Linux MPRIS exposes an always-
+    // writable Rate property, so the event can still arrive. The periodic
+    // playback-state update reasserts speed 1.0.
+  }
+
+  static const _defaultSkipInterval = Duration(seconds: 15);
+
+  /// In-track relative seek for OS skip commands, clamped to the track.
+  Future<void> _seekRelative(Duration delta) async {
+    final player = _player;
+    if (player == null) return;
+    var target = player.currentPosition + delta;
+    if (target < Duration.zero) target = Duration.zero;
+    final max = duration;
+    if (max != null && target > max) target = max;
+    await player.seek(target);
   }
 
   // ---------------------------------------------------------------------

@@ -1,5 +1,9 @@
 part of '../../video_player_screen.dart';
 
+/// Fallback for OS skip commands that arrive without an interval (the
+/// platforms normally send one — Android hardcodes 15s).
+const _defaultMediaControlSkip = Duration(seconds: 15);
+
 extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   void _queueScrubPreviewLoad({
     required MediaItem metadata,
@@ -331,6 +335,21 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       } else if (event is PreviousTrackEvent) {
         appLogger.d('Media control: Previous track event received');
         unawaited(_restartOrPlayPrevious());
+      } else if (event is StopEvent) {
+        // Same semantics as the companion remote's stop: exit the player.
+        appLogger.d('Media control: Stop event received');
+        unawaited(_handleBackButton());
+      } else if (event is SkipForwardEvent) {
+        appLogger.d('Media control: Skip forward event received (${event.interval})');
+        unawaited(_seekRelative(event.interval ?? _defaultMediaControlSkip));
+      } else if (event is SkipBackwardEvent) {
+        appLogger.d('Media control: Skip backward event received (${event.interval})');
+        unawaited(_seekRelative(-(event.interval ?? _defaultMediaControlSkip)));
+      } else if (event is SetSpeedEvent) {
+        // UI, Discord, and the media-session state all follow reactively
+        // via streams.rate — same unguarded path as keyboard shortcuts.
+        appLogger.d('Media control: Set speed event received (${event.speed}x)');
+        unawaited(activePlayer!.setRate(event.speed));
       }
     });
 
