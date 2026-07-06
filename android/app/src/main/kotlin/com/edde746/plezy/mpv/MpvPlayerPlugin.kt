@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.os.ParcelFileDescriptor
 import android.util.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -156,6 +157,7 @@ open class MpvPlayerPlugin(
       "requestAudioFocus" -> handleRequestAudioFocus(result)
       "abandonAudioFocus" -> handleAbandonAudioFocus(result)
       "openContentFd" -> handleOpenContentFd(call, result)
+      "closeContentFd" -> handleCloseContentFd(call, result)
       "isInitialized" -> result.success(playerCore?.isInitialized ?: false)
       "setLogLevel" -> result.success(null)
       else -> result.notImplemented()
@@ -452,6 +454,26 @@ open class MpvPlayerPlugin(
         runOnMain { result.error("OPEN_FAILED", e.message, null) }
       }
     }.start()
+  }
+
+  // Reclaims a detached fd from handleOpenContentFd that mpv will never
+  // consume (a gapless-armed entry dropped before mpv opened it). The Dart
+  // side guarantees single-close and only calls this when the entry provably
+  // never played.
+  private fun handleCloseContentFd(call: MethodCall, result: MethodChannel.Result) {
+    val fd = call.argument<Int>("fd")
+    if (fd == null || fd < 0) {
+      result.error("INVALID_ARGS", "Missing 'fd'", null)
+      return
+    }
+    try {
+      ParcelFileDescriptor.adoptFd(fd).close()
+      Log.d(tag, "Closed content FD $fd")
+      result.success(null)
+    } catch (e: Exception) {
+      Log.e(tag, "Failed to close content FD $fd: ${e.message}", e)
+      result.error("CLOSE_FAILED", e.message, null)
+    }
   }
 
   // PlayerDelegate

@@ -2,6 +2,7 @@ import 'dart:async' show unawaited;
 import 'dart:convert';
 import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 
 import '../../media/media_display_criteria.dart';
@@ -32,8 +33,17 @@ class PlayerNative extends PlayerBase {
 
   // Gapless-audio arming state (audioOnly). The native playlist is always
   // [current, next?]; these track whether entry 1 exists and what it plays.
+  // _armedNextUri keeps the ORIGINAL media URI (the music service matches
+  // trackTransition events against it); _armedNextFd is the content-fd claim
+  // when the armed URI needed fdclose:// conversion (see _toPlayableUri).
   bool _hasArmedNext = false;
   String? _armedNextUri;
+  int? _armedNextFd;
+
+  /// Host tests aren't Android, so the content:// → fdclose:// path would be
+  /// unreachable; forces the conversion regardless of platform.
+  @visibleForTesting
+  static bool debugForceContentFdConversion = false;
 
   // Set by open() and consumed by that load's file-loaded event, so it is
   // not mistaken for a gapless advance (see _handleAudioFileLoaded).
@@ -222,6 +232,34 @@ class PlayerNative extends PlayerBase {
     }
   }
 
+  /// Closes a detached content fd that mpv will never consume. Fire-and-forget
+  /// safe: a failure only leaks one fd.
+  Future<void> _closeContentFd(int fd) async {
+    try {
+      await invoke('closeContentFd', {'fd': fd});
+    } catch (e) {
+      appLogger.d('$logPrefix: closeContentFd($fd) failed', error: e);
+    }
+  }
+
+  /// Converts Android SAF content:// URIs to `fdclose://<fd>` — mpv owns the fd
+  /// and closes it when it opens the entry. Returns the loadfile URI and the
+  /// opened fd (null when no conversion applied). [strict] throws instead of
+  /// falling back to the raw URI when the fd cannot be opened: mpv cannot
+  /// open content:// itself, so arming one would stall playback at the track
+  /// boundary — setNext must fail loudly so the music service falls back to
+  /// an explicit open.
+  Future<(String, int?)> _toPlayableUri(String uri, {bool strict = false}) async {
+    final convert = (Platform.isAndroid || debugForceContentFdConversion) && uri.startsWith('content://');
+    if (!convert) return (uri, null);
+    final fd = await _openContentFd(uri);
+    if (fd == null) {
+      if (strict) throw StateError('openContentFd failed for ${_uriTail(uri)}');
+      return (uri, null);
+    }
+    return ('fdclose://$fd', fd);
+  }
+
   @override
   Future<void> open(
     Media media, {
@@ -234,9 +272,9 @@ class PlayerNative extends PlayerBase {
     if (disposed) return;
     await _ensureInitialized();
     // `loadfile replace` (below) clears the native playlist, dropping any
-    // gapless entry armed via setNext.
-    _hasArmedNext = false;
-    _armedNextUri = null;
+    // gapless entry armed via setNext — settle its content-fd claim first.
+    // No transition is surfaced: the caller is replacing playback anyway.
+    await _clearArmedNext(adoptIfRolledIn: false);
     final startPosition = media.start ?? Duration.zero;
     configureTimeline(offset: timelineOffset, duration: timelineDuration);
     clearTracks();
@@ -276,14 +314,10 @@ class PlayerNative extends PlayerBase {
     await setProperty('sid', 'no');
     await setProperty('secondary-sid', 'no');
 
-    // Convert content:// URIs to fdclose:// for MPV on Android (SAF SD card downloads)
-    var uri = media.uri;
-    if (Platform.isAndroid && uri.startsWith('content://')) {
-      final fd = await _openContentFd(uri);
-      if (fd != null) {
-        uri = 'fdclose://$fd';
-      }
-    }
+    // Convert content:// URIs to fdclose:// for MPV on Android (SAF SD card
+    // downloads). The immediate `loadfile replace` consumes the fd, so no
+    // claim tracking is needed here (unlike setNext).
+    final (uri, _) = await _toPlayableUri(media.uri);
 
     final loadfileArgs = ['loadfile', uri, 'replace'];
     final loadfileOption = _externalSubtitlesLoadfileOption(externalSubtitles);
@@ -314,8 +348,9 @@ class PlayerNative extends PlayerBase {
 
   @override
   Future<void> stop() async {
-    _hasArmedNext = false;
-    _armedNextUri = null;
+    // `stop` tears down the playlist without mpv opening the armed entry —
+    // settle its content-fd claim first. No transition: playback is ending.
+    await _clearArmedNext(adoptIfRolledIn: false);
     await command(['stop']);
     setSeekable(false);
     if (!audioOnly) await invoke('setVisible', {'visible': false});
@@ -331,32 +366,100 @@ class PlayerNative extends PlayerBase {
   Future<void> setNext(Media? media) async {
     if (!audioOnly || disposed || !initialized) return;
 
-    if (_hasArmedNext) {
-      _hasArmedNext = false;
-      _armedNextUri = null;
-      appLogger.d('MPV-audio: clearing armed entry (playlist-remove 1)');
-      try {
-        await command(['playlist-remove', '1']);
-      } on PlatformException {
-        // Entry 1 can vanish in the arm/advance race (mpv already rolled into
-        // it); the append below still lands after the current entry.
-      }
-    }
+    await _clearArmedNext();
     if (media == null) return;
+
+    final (loadUri, fd) = await _toPlayableUri(media.uri, strict: true);
 
     // Per-entry options are the 4th loadfile argument on mpv >= 0.38
     // (`loadfile <url> append -1 opt=val`), exactly like open() passes
     // sub-files. `gapless-audio=weak` splices the armed entry into the
     // running audio stream when formats match.
-    final args = ['loadfile', media.uri, 'append'];
+    final args = ['loadfile', loadUri, 'append'];
     final headerOption = _httpHeaderFieldsLoadfileOption(media.headers);
     if (headerOption != null) {
       args.addAll(['-1', headerOption]);
     }
-    await command(args);
+    try {
+      await command(args);
+    } catch (e) {
+      // The entry never joined the playlist, so the fd has no consumer.
+      if (fd != null) unawaited(_closeContentFd(fd));
+      rethrow;
+    }
     _hasArmedNext = true;
     _armedNextUri = media.uri;
+    _armedNextFd = fd;
     appLogger.d('MPV-audio: armed next ${_uriTail(media.uri)}');
+  }
+
+  /// Clears the armed entry (if any), resolving the arm/advance race and the
+  /// content-fd claim. mpv may have already rolled into the armed entry
+  /// before this runs; blindly removing index 1 then would remove the
+  /// PLAYING entry, so playlist-pos is checked first. fd ownership: mpv owns
+  /// the fd from the moment it opens the entry (fdclose closes it at stream
+  /// close); Dart may close only when the entry provably never opened —
+  /// playlist-pos 0 both before and after a successful remove. Anything
+  /// ambiguous leaks the fd (one fd, ms-wide window) rather than risk
+  /// closing an fd mpv holds. The remove's success cannot be the ownership
+  /// signal: Android's command bridge never surfaces mpv command failures.
+  ///
+  /// [adoptIfRolledIn]: when mpv already advanced into the armed entry,
+  /// surface the transition here (the pending file-loaded event becomes a
+  /// no-op once the flags are cleared) — without this a queue edit landing
+  /// exactly at the gapless boundary desyncs the music service from the
+  /// audio for the whole next track. Callers that replace or stop playback
+  /// pass false: no one is listening for that entry anymore.
+  Future<void> _clearArmedNext({bool adoptIfRolledIn = true}) async {
+    if (!_hasArmedNext) return;
+    final uri = _armedNextUri;
+    final fd = _armedNextFd;
+    _hasArmedNext = false;
+    _armedNextUri = null;
+    _armedNextFd = null;
+
+    String? pos;
+    try {
+      pos = await getProperty('playlist-pos');
+    } catch (_) {
+      // Unknown state — fall through to the remove, never close the fd.
+    }
+    if (pos == '1') {
+      appLogger.d('MPV-audio: clear requested but armed entry already playing');
+      if (adoptIfRolledIn) _completeArmedAdvance(uri);
+      return;
+    }
+
+    appLogger.d('MPV-audio: clearing armed entry (playlist-remove 1)');
+    try {
+      await command(['playlist-remove', '1']);
+    } on PlatformException {
+      // Entry 1 vanished in the arm/advance race — mpv rolled into it and
+      // the file-loaded handler already rebased. The fd (if any) is mpv's.
+      return;
+    }
+    if (fd == null) return;
+    String? postPos;
+    try {
+      postPos = await getProperty('playlist-pos');
+    } catch (_) {}
+    if (pos == '0' && postPos == '0') {
+      unawaited(_closeContentFd(fd));
+    }
+    // Any other combination is ambiguous (mpv advanced mid-clear, idle
+    // playlist, property error): leak on doubt.
+  }
+
+  /// The armed entry became the playing one (mpv rolled into it): clear the
+  /// arm — the fd (if any) was consumed by mpv — remove the spent entry so
+  /// the playing entry rebases to index 0, and surface the transition.
+  void _completeArmedAdvance(String? uri) {
+    _hasArmedNext = false;
+    _armedNextUri = null;
+    _armedNextFd = null;
+    appLogger.d('MPV-audio: armed entry advanced → playlist-remove 0, ${_uriTail(uri ?? '')}');
+    unawaited(command(['playlist-remove', '0']));
+    if (uri != null) trackTransitionController.add(uri);
   }
 
   @override
@@ -402,13 +505,23 @@ class PlayerNative extends PlayerBase {
       appLogger.d('MPV-audio: file-loaded (nothing armed, ignored)');
       return;
     }
+    _completeArmedAdvance(_armedNextUri);
+  }
 
-    final uri = _armedNextUri;
-    _hasArmedNext = false;
-    _armedNextUri = null;
-    appLogger.d('MPV-audio: transition (file-loaded) → playlist-remove 0, ${_uriTail(uri ?? '')}');
-    unawaited(command(['playlist-remove', '0']));
-    if (uri != null) trackTransitionController.add(uri);
+  @override
+  Future<void> dispose({bool preserveDisplayMode = false}) async {
+    if (disposed) return;
+    // Settle an armed-but-unconsumed content fd before the base teardown
+    // disables invoke() — the playlist is torn down without mpv ever opening
+    // the entry.
+    if (_hasArmedNext) {
+      try {
+        await _clearArmedNext(adoptIfRolledIn: false);
+      } catch (_) {
+        // Leak on doubt.
+      }
+    }
+    await super.dispose(preserveDisplayMode: preserveDisplayMode);
   }
 
   @override
