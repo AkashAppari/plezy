@@ -87,6 +87,9 @@ class FakePlayer implements Player {
   final List<String> openedUris = [];
   final List<Media?> setNextCalls = [];
   final List<Duration> seeks = [];
+
+  /// Arming these URIs throws, simulating a native setNext failure.
+  final Set<String> failingSetNextUris = {};
   int playCalls = 0;
   int pauseCalls = 0;
   int stopCalls = 0;
@@ -202,6 +205,9 @@ class FakePlayer implements Player {
   @override
   Future<void> setNext(Media? media) async {
     setNextCalls.add(media);
+    if (media != null && failingSetNextUris.contains(media.uri)) {
+      throw StateError('setNext failed for ${media.uri}');
+    }
     _armedMedia = media;
   }
 
@@ -409,6 +415,9 @@ class FakeMusicSourceResolver implements MusicSourceResolver {
   final Set<String> failingIds = {};
   final Map<String, int> resolveCounts = {};
 
+  /// Per-track URL overrides (e.g. content:// shapes for offline tracks).
+  final Map<String, String> urlOverrides = {};
+
   @override
   Future<MusicSource> resolve(MediaItem track) async {
     resolveCounts[track.id] = (resolveCounts[track.id] ?? 0) + 1;
@@ -416,7 +425,7 @@ class FakeMusicSourceResolver implements MusicSourceResolver {
       throw StateError('resolve failed for ${track.id}');
     }
     return MusicSource(
-      url: _urlFor(track),
+      url: urlOverrides[track.id] ?? _urlFor(track),
       playSessionId: 'ps-${track.id}',
       playMethod: 'DirectPlay',
       reportingClient: client,
@@ -480,6 +489,10 @@ class _Harness {
   final FakeMediaControlsManager controls;
   final List<FakePlayer> players;
 
+  /// Seeded into every created FakePlayer — lets a test configure arm
+  /// failures before the first player exists.
+  final Set<String> failingSetNextUris = {};
+
   FakePlayer get player => players.last;
 
   factory _Harness.create() {
@@ -487,11 +500,13 @@ class _Harness {
     final resolver = FakeMusicSourceResolver(client: client);
     final controls = FakeMediaControlsManager();
     final players = <FakePlayer>[];
+    late final _Harness harness;
     final service = MusicPlaybackServiceImpl(
       serverManager: MultiServerManager(),
       resolver: resolver,
       audioPlayerFactory: () {
         final player = FakePlayer();
+        player.failingSetNextUris.addAll(harness.failingSetNextUris);
         players.add(player);
         return player;
       },
@@ -500,7 +515,8 @@ class _Harness {
       // paths resolve within pumpEventQueue.
       completedConfirmDelay: Duration.zero,
     );
-    return _Harness._(service, resolver, client, controls, players);
+    harness = _Harness._(service, resolver, client, controls, players);
+    return harness;
   }
 
   Future<void> playTracks(List<MediaItem> tracks, {MediaItem? startTrack, bool shuffle = false}) async {
@@ -812,6 +828,105 @@ void main() {
     expect(h.service.queue.map((t) => t.id), ['t2', 't3']);
     expect(h.player.openedUris, [_urlFor(t1), _urlFor(t2)]);
     expect(h.client.reportsFor('stopped').map((r) => r.itemId), ['t1']);
+  });
+
+  group('gapless boundary races', () {
+    // The sync stream controllers make the race drivable deterministically:
+    // a transition emitted between the queue edit (which un-arms the entry
+    // synchronously) and the event pump lands exactly like mpv rolling into
+    // the armed entry as it is being cleared.
+
+    test('transition raced by a reorder is adopted via the stale-arm memo', () async {
+      await h.playTracks([t1, t2, t3]);
+      expect(h.player.armed?.uri, _urlFor(t2));
+
+      h.service.reorder(1, 2); // queue [t1, t3, t2] — un-arms t2
+      h.player.emitTransition(_urlFor(t2)); // ...but mpv already rolled into it
+      await pumpEventQueue();
+
+      expect(h.service.currentTrack?.id, 't2');
+      expect(h.service.currentIndex, 2);
+      expect(h.service.status, MusicPlaybackStatus.playing);
+      expect(h.player.openedUris, [_urlFor(t1)], reason: 'adopted gaplessly, no re-open');
+      final stopped = h.client.reportsFor('stopped').toList();
+      expect(stopped.single.itemId, 't1');
+      expect(stopped.single.position, _trackDuration);
+      expect(h.client.reportsFor('started').map((r) => r.itemId), ['t1', 't2']);
+    });
+
+    test('transition into a track removed at the boundary advances to the real next', () async {
+      final t4 = _track('t4');
+      await h.playTracks([t1, t2, t3, t4]);
+
+      h.service.removeAt(1); // queue [t1, t3, t4] — un-arms t2
+      h.player.emitTransition(_urlFor(t2)); // mpv rolled into the removed track
+      await pumpEventQueue();
+
+      expect(h.service.currentTrack?.id, 't3');
+      expect(h.player.openedUris, [_urlFor(t1), _urlFor(t3)]);
+      expect(h.player.armed?.uri, _urlFor(t4));
+      expect(h.client.reportsFor('stopped').single.itemId, 't1');
+
+      // A stale boundary completed pulse must not double-advance past t3.
+      h.player.emitCompleted();
+      await pumpEventQueue();
+      expect(h.service.currentTrack?.id, 't3');
+      expect(h.player.openedUris, [_urlFor(t1), _urlFor(t3)]);
+    });
+
+    test('removed-at-boundary with no next parks paused', () async {
+      await h.playTracks([t1, t2]);
+
+      h.service.removeAt(1); // queue [t1] — un-arms t2
+      h.player.emitTransition(_urlFor(t2));
+      await pumpEventQueue();
+
+      expect(h.service.status, MusicPlaybackStatus.paused);
+      expect(h.service.currentTrack?.id, 't1');
+      expect(h.player.pauseCalls, 1, reason: 'the removed track is audibly playing — silence it');
+      expect(h.player.openedUris, [_urlFor(t1)]);
+    });
+
+    test('stale transition after a manual advance is dropped', () async {
+      await h.playTracks([t1, t2, t3]);
+
+      h.service.removeAt(1); // memo t2
+      await h.service.next(); // manual advance clears the memo
+      await pumpEventQueue();
+      expect(h.service.currentTrack?.id, 't3');
+
+      h.player.emitTransition(_urlFor(t2));
+      await pumpEventQueue();
+
+      expect(h.service.currentTrack?.id, 't3');
+      expect(h.service.currentIndex, 1);
+      expect(h.player.openedUris, [_urlFor(t1), _urlFor(t3)]);
+    });
+
+    test('failed native arm falls back to an explicit open at completion', () async {
+      h.failingSetNextUris.add(_urlFor(t2));
+      await h.playTracks([t1, t2]);
+      expect(h.player.armed, isNull);
+
+      h.player.emitCompleted();
+      await pumpEventQueue();
+
+      expect(h.player.openedUris, [_urlFor(t1), _urlFor(t2)]);
+      expect(h.service.currentTrack?.id, 't2');
+      expect(h.service.status, MusicPlaybackStatus.playing);
+    });
+
+    test('transition matching is URL-shape agnostic (offline content://)', () async {
+      h.resolver.urlOverrides['t2'] = 'content://downloads/t2';
+      await h.playTracks([t1, t2]);
+      expect(h.player.armed?.uri, 'content://downloads/t2');
+
+      h.player.emitTransition('content://downloads/t2');
+      await pumpEventQueue();
+
+      expect(h.service.currentTrack?.id, 't2');
+      expect(h.service.status, MusicPlaybackStatus.playing);
+    });
   });
 
   test('end-of-track sleep timer suppresses arming and pauses at completion', () async {

@@ -109,6 +109,13 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   MusicPlayContext? _playContext;
   PlaybackProgressTracker? _tracker;
   _ArmedTrack? _armed;
+
+  /// The arm most recently cleared for a re-arm (generation-gated): a queue
+  /// edit can un-arm an entry in the same instant mpv rolls into it, so the
+  /// resulting transition must stay adoptable — dropping it leaves the
+  /// service tracking the finished track for the entire next file.
+  _ArmedTrack? _staleArm;
+  int _staleArmGeneration = -1;
   Timer? _completedConfirmTimer;
 
   /// Bumped on every open/advance/stop so stale async continuations
@@ -255,6 +262,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _currentTrack = track;
     _currentSource = null;
     _armed = null;
+    _staleArm = null;
     _setStatus(MusicPlaybackStatus.loading, forceNotify: true);
 
     await _coordinator.claimMusic();
@@ -331,13 +339,13 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     if (target == null) {
       if (_armed == null) return;
       appLogger.d('Music: clearing arm (queue end / end-of-track sleep)');
-      _armed = null;
+      _rememberStaleArm();
       await _trySetNext(player, null);
       return;
     }
     if (_armed?.track.globalKey == target.globalKey) return;
 
-    _armed = null;
+    _rememberStaleArm();
     await _trySetNext(player, null);
     if (generation != _generation || _player != player) return;
 
@@ -365,6 +373,16 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       // transition that can never come.
       _armed = null;
     }
+  }
+
+  /// Un-arm bookkeeping: [_armed] is cleared but remembered so
+  /// [_onTrackTransition] can adopt a transition that raced the clear.
+  void _rememberStaleArm() {
+    if (_armed != null) {
+      _staleArm = _armed;
+      _staleArmGeneration = _generation;
+    }
+    _armed = null;
   }
 
   Future<bool> _trySetNext(Player player, Media? media) async {
@@ -446,11 +464,22 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   /// The backend auto-advanced into the pre-armed item: authoritative
   /// track change.
   void _onTrackTransition(String uri) {
-    final armed = _armed;
+    var armed = _armed;
+    if ((armed == null || armed.source.url != uri) &&
+        _staleArm != null &&
+        _staleArmGeneration == _generation &&
+        _staleArm!.source.url == uri) {
+      // mpv rolled into the entry in the same instant a queue edit un-armed
+      // it — the transition is still authoritative for what is audibly
+      // playing.
+      armed = _staleArm;
+    }
+    _staleArm = null;
     if (armed == null || armed.source.url != uri) {
       appLogger.w('Unexpected track transition to $uri (armed: ${armed?.source.url})');
       return;
     }
+    final adopted = armed;
     _armed = null;
     final generation = ++_generation;
 
@@ -461,19 +490,33 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     // Move the cursor to the armed entry: the expected natural-next when it
     // still matches, otherwise wherever the armed track now sits.
     final expected = _queue.nextIndex();
-    if (expected != null && _queue.trackAt(expected)?.globalKey == armed.track.globalKey) {
+    if (expected != null && _queue.trackAt(expected)?.globalKey == adopted.track.globalKey) {
       _queue.jumpTo(expected);
     } else {
-      final index = _queue.queue.indexWhere((t) => t.globalKey == armed.track.globalKey);
-      if (index >= 0) _queue.jumpTo(index);
+      final index = _queue.queue.indexWhere((t) => t.globalKey == adopted.track.globalKey);
+      if (index < 0) {
+        // The track mpv advanced into was removed from the queue at the
+        // boundary: don't adopt it — play what the queue says comes next,
+        // or park when nothing does.
+        appLogger.d('Music: transition into removed track "${adopted.track.title}" — advancing past it');
+        final nextCursor = _queue.nextIndex();
+        if (nextCursor != null) {
+          unawaited(_advanceTo(nextCursor));
+        } else {
+          unawaited(_player?.pause());
+          _parkAtEnd();
+        }
+        return;
+      }
+      _queue.jumpTo(index);
     }
 
-    _currentTrack = _queue.current ?? armed.track;
-    _currentSource = armed.source;
+    _currentTrack = _queue.current ?? adopted.track;
+    _currentSource = adopted.source;
     _consecutiveFailures = 0;
-    appLogger.d('Music: transition received "${armed.track.title}" → cursor ${_queue.cursor}');
+    appLogger.d('Music: transition received "${adopted.track.title}" → cursor ${_queue.cursor}');
     _setStatus(MusicPlaybackStatus.playing, forceNotify: true);
-    _bindTrackServices(_currentTrack!, armed.source);
+    _bindTrackServices(_currentTrack!, adopted.source);
     unawaited(_armNext(generation));
   }
 
@@ -938,6 +981,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _currentTrack = null;
     _currentSource = null;
     _armed = null;
+    _staleArm = null;
     _playContext = null;
     _resumeAfterInterruption = false;
 
