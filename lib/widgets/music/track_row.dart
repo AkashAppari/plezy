@@ -77,6 +77,12 @@ class TrackRow extends StatefulWidget {
   /// Mute the title — the queue sheet marks already-played entries this way.
   final bool dimmed;
 
+  /// Hide the leading album track number (the 32px slot stays, keeping
+  /// titles aligned with the current row's equalizer). The queue sheet
+  /// turns it off: album-relative numbers read as a sorting bug in a
+  /// mixed-album queue.
+  final bool showTrackNumber;
+
   /// Show a compact download-status indicator (muted [DownloadStatusIcon])
   /// between the duration and the trailing ⋮ when the track has a download
   /// record. Off by default — surfaces without download affordances (queue
@@ -101,6 +107,7 @@ class TrackRow extends StatefulWidget {
     this.enableContextMenu = true,
     this.isCurrent,
     this.dimmed = false,
+    this.showTrackNumber = true,
     this.showDownloadStatus = false,
   });
 
@@ -235,7 +242,9 @@ class _TrackRowState extends State<TrackRow> with ContextMenuTapMixin<TrackRow>,
                   child: Center(
                     child: isCurrent
                         ? EqualizerIcon(animate: serviceIsPlaying, color: colorScheme.primary)
-                        : Text('${widget.item.trackNumber ?? ''}', style: TextStyle(fontSize: 13, color: tk.textMuted)),
+                        : widget.showTrackNumber
+                        ? Text('${widget.item.trackNumber ?? ''}', style: TextStyle(fontSize: 13, color: tk.textMuted))
+                        : null,
                   ),
                 ),
                 const SizedBox(width: 8),

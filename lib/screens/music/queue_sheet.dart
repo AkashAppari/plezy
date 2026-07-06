@@ -215,6 +215,7 @@ class _QueueListState extends State<QueueList> {
           enableContextMenu: false,
           isCurrent: isCurrent,
           dimmed: index < currentIndex,
+          showTrackNumber: false,
           focusNode: isCurrent ? _currentRowFocusNode : null,
           trailingIcon: Symbols.close_rounded,
           onTrailingTap: () => service.removeAt(index),
