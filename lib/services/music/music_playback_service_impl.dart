@@ -18,6 +18,7 @@ import '../multi_server_manager.dart';
 import '../offline_watch_sync_service.dart';
 import '../playback_coordinator.dart';
 import '../playback_progress_tracker.dart';
+import '../settings_service.dart';
 import 'music_playback_service.dart';
 import 'music_queue_controller.dart';
 import 'music_source_resolver.dart';
@@ -96,6 +97,11 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   final PlaybackCoordinator _coordinator;
 
   final MusicQueueController _queue = MusicQueueController();
+
+  /// Persisted music volume (0–100), applied to every audio player instance
+  /// (the core is recreated after video claims playback). Falls back to full
+  /// volume when settings aren't bootstrapped (tests).
+  double _volume = SettingsService.instanceOrNull?.read(SettingsService.musicVolume) ?? 100.0;
 
   Player? _player;
   final List<StreamSubscription<Object?>> _playerSubs = [];
@@ -420,6 +426,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     final player = _audioPlayerFactory();
     _player = player;
     _wirePlayerStreams(player);
+    if (_volume != 100.0) unawaited(player.setVolume(_volume));
     return player;
   }
 
@@ -826,6 +833,20 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   @override
   Future<void> seek(Duration position) async {
     await _player?.seek(position);
+  }
+
+  @override
+  double get volume => _volume;
+
+  @override
+  Future<void> setVolume(double volume) async {
+    final clamped = volume.clamp(0.0, 100.0);
+    if (clamped == _volume) return;
+    _volume = clamped;
+    notifyListeners();
+    final settings = SettingsService.instanceOrNull;
+    if (settings != null) unawaited(settings.write(SettingsService.musicVolume, clamped));
+    await _player?.setVolume(clamped);
   }
 
   @override

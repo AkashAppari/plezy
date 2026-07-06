@@ -426,6 +426,11 @@ class SettingsService extends BaseSharedPreferencesService {
     values: AudioQualityPreset.values,
     defaultValue: AudioQualityPreset.original,
   );
+
+  /// Music player volume (0–100), independent of the video player's
+  /// [volume] so desktop music listening levels don't drag video loudness
+  /// around.
+  static const musicVolume = DoublePref('music_volume', defaultValue: 100.0);
   static const autoPlayNextEpisode = BoolPref('auto_play_next_episode', defaultValue: true);
   static const useExoPlayer = BoolPref('use_exoplayer', defaultValue: true);
   static const startupSection = EnumPref<NavigationTabId>(
@@ -847,6 +852,7 @@ class SettingsService extends BaseSharedPreferencesService {
     matchContentFrameRate,
     tunneledPlayback,
     dvConversionMode,
+    musicVolume,
     defaultPlaybackSpeed,
     defaultBoxFitMode,
     autoPlayNextEpisode,

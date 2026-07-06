@@ -91,6 +91,11 @@ abstract class MusicPlaybackService extends ChangeNotifier {
 
   Future<void> seek(Duration position);
 
+  /// Music playback volume, 0–100. Persisted across sessions and applied to
+  /// every audio player instance; independent of the video player volume.
+  double get volume;
+  Future<void> setVolume(double volume);
+
   void setRepeatMode(MusicRepeatMode mode);
   void toggleShuffle();
 
@@ -203,6 +208,12 @@ class StubMusicPlaybackService extends MusicPlaybackService {
 
   @override
   Future<void> seek(Duration position) async {}
+
+  @override
+  double get volume => 100;
+
+  @override
+  Future<void> setVolume(double volume) async {}
 
   @override
   void setRepeatMode(MusicRepeatMode mode) {}
