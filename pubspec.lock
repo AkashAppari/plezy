@@ -768,8 +768,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "4f4b28f3e669f6ba2421cef5d240ddd37f244b03"
-      resolved-ref: "4f4b28f3e669f6ba2421cef5d240ddd37f244b03"
+      ref: "71b96f8dcfe3cc0483735b796fb933b3ba838cc2"
+      resolved-ref: "71b96f8dcfe3cc0483735b796fb933b3ba838cc2"
       url: "https://github.com/edde746/media_controls"
     source: git
     version: "0.3.0"

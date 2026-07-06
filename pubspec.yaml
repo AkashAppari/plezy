@@ -35,7 +35,7 @@ dependencies:
   os_media_controls:
     git:
       url: https://github.com/edde746/media_controls
-      ref: 4f4b28f3e669f6ba2421cef5d240ddd37f244b03
+      ref: 71b96f8dcfe3cc0483735b796fb933b3ba838cc2
   rate_limiter: ^1.0.0
   wakelock_plus:
     git:
