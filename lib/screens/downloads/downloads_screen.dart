@@ -12,6 +12,7 @@ import '../../services/music/music_playback_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/music_navigation.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/focusable_tab_chip.dart';
 import '../../widgets/music/mini_player.dart';
 import '../../widgets/music/track_row.dart';
 import '../../services/settings_service.dart';
@@ -114,7 +115,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
   Widget _buildAppBarTitle() {
     // On desktop/TV with side nav, show tabs in app bar
     if (PlatformDetector.shouldUseSideNavigation(context)) {
-      return Row(
+      return TabChipStrip(
         children: [
           _buildTabChip(t.downloads.manage, 0),
           const SizedBox(width: 8),

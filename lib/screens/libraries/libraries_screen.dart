@@ -24,6 +24,7 @@ import '../../utils/content_utils.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/backend_badge.dart';
 import '../../widgets/desktop_app_bar.dart';
+import '../../widgets/focusable_tab_chip.dart';
 import '../../widgets/library_management_sheet.dart';
 import '../../services/storage_service.dart';
 import '../../mixins/refreshable.dart';
@@ -681,8 +682,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
     // On desktop/TV with side nav, show tabs in app bar (library name is in side nav)
     if (PlatformDetector.shouldUseSideNavigation(context)) {
-      return Row(
-        mainAxisSize: .min,
+      return TabChipStrip(
         children: [
           for (int i = 0; i < _visibleTabs.length; i++) ...[
             if (i > 0) const SizedBox(width: 8),
