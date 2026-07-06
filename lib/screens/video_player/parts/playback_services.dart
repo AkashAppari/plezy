@@ -230,6 +230,10 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     // Local media still reports live when its server is online; only queue
     // locally when no reporting client is reachable.
     if (mediaClient != null) {
+      // Captured now (synchronously); resolved at scrobble time because the
+      // play queue holding the siblings is created fire-and-forget and may
+      // not exist yet when the tracker is wired.
+      final playbackState = context.read<PlaybackStateProvider>();
       _progressTracker = PlaybackProgressTracker(
         client: mediaClient,
         metadata: metadata,
@@ -239,6 +243,18 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         playMethod: playMethod ?? (_isTranscoding ? 'Transcode' : 'DirectPlay'),
         playSessionId: playSessionId,
         mediaInfo: mediaInfo,
+        onScrobbled: () async {
+          // Other episodes of a Plex multi-episode file share this item's
+          // part — watching the file watched them too (#1500). Reusing
+          // markWatchedFromPlaybackStop keeps the local watched-event
+          // emission and the Jellyfin double-scrobble guard (#1287).
+          final siblings = playbackState.sameFileSiblings(metadata, playedPartId: mediaInfo?.partId?.toString());
+          for (final sibling in siblings) {
+            if (sibling.isWatched) continue;
+            await mediaClient.markWatchedFromPlaybackStop(sibling);
+            appLogger.d('Scrobbled same-file sibling ${sibling.id} of ${metadata.id}');
+          }
+        },
       );
       _progressTracker!.startTracking();
     } else if (_isOfflinePlayback) {

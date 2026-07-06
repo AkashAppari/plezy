@@ -61,7 +61,15 @@ class EpisodeNavigationService {
   /// - Not applicable (e.g., movie content)
   /// - Next episode doesn't exist (end of season/series)
   /// - Previous episode doesn't exist (first episode)
-  Future<AdjacentEpisodes> loadAdjacentEpisodes({required BuildContext context, required MediaItem metadata}) async {
+  ///
+  /// [playedPartId] is the backend part id actually being played, when
+  /// known — it lets the queue skip sibling entries of a Plex
+  /// multi-episode file (#1500).
+  Future<AdjacentEpisodes> loadAdjacentEpisodes({
+    required BuildContext context,
+    required MediaItem metadata,
+    String? playedPartId,
+  }) async {
     try {
       // Resolve providers up-front so we don't reach for `context` after
       // any of the awaits below — avoids the
@@ -82,8 +90,8 @@ class EpisodeNavigationService {
       if (!playbackState.isQueueActive) {
         return AdjacentEpisodes();
       }
-      final next = await playbackState.getNextEpisode(metadata.id, loopQueue: false);
-      final previous = await playbackState.getPreviousEpisode(metadata.id);
+      final next = await playbackState.getNextEpisode(metadata.id, loopQueue: false, playedPartId: playedPartId);
+      final previous = await playbackState.getPreviousEpisode(metadata.id, playedPartId: playedPartId);
       final mode = playbackState.isShuffleActive ? 'Shuffle' : 'Sequential';
       appLogger.d('$mode mode - Next: ${next?.title}, Previous: ${previous?.title}');
       return AdjacentEpisodes(next: next, previous: previous);

@@ -394,6 +394,44 @@ sealed class MediaItem with _$MediaItem {
   /// `[seasonId, showId]`. For a season: `[showId]`. For a movie: `[]`.
   List<String> get parentChain => [?parentId, ?grandparentId];
 
+  /// Server-side file paths across every version of this item. Plex
+  /// represents a multi-episode file (`S02E24-E25.mkv`) as distinct episode
+  /// items whose parts have *different* part ids but the same file, so the
+  /// file path — not the part id — is the "same underlying file" signal
+  /// (#1500).
+  Set<String> get allPartFiles => {
+    for (final version in mediaVersions ?? const <MediaVersion>[])
+      for (final part in version.parts)
+        if (part.file != null && part.file!.isNotEmpty) part.file!,
+  };
+
+  /// Whether [other] is backed by the same physical file as this item.
+  /// [playedPartId] — the part actually being played, when known — pins the
+  /// comparison to that part's file, so an episode with multiple versions
+  /// only matches against the file on screen; otherwise any file overlap
+  /// between the two items counts. Items without file metadata (Plex hides
+  /// paths from restricted users) or from a different server never match.
+  bool sharesFileWith(MediaItem other, {String? playedPartId}) {
+    if (other.serverId != serverId) return false;
+    final otherFiles = other.allPartFiles;
+    if (otherFiles.isEmpty) return false;
+    if (playedPartId != null) {
+      final playedFile = _filePathForPart(playedPartId);
+      if (playedFile != null) return otherFiles.contains(playedFile);
+    }
+    return allPartFiles.intersection(otherFiles).isNotEmpty;
+  }
+
+  /// The file path of this item's part with [partId], or null when unknown.
+  String? _filePathForPart(String partId) {
+    for (final version in mediaVersions ?? const <MediaVersion>[]) {
+      for (final part in version.parts) {
+        if (part.id == partId) return (part.file?.isEmpty ?? true) ? null : part.file;
+      }
+    }
+    return null;
+  }
+
   /// Recency used to order the Continue Watching / On Deck shelf: when the item
   /// was last watched, falling back to when it was added for never-watched rows.
   /// Shared by the per-client merge and the cross-server sort so they agree.

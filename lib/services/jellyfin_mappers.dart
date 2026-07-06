@@ -60,6 +60,7 @@ MediaVersion jellyfinMediaSourceToVersion(
       MediaPart(
         id: partId,
         streamPath: streamPath,
+        file: source['Path'] as String?,
         sizeBytes: flexibleInt(source['Size']),
         container: source['Container'] as String?,
         durationMs: includePartDuration ? jellyfinTicksToMs(source['RunTimeTicks']) : null,
