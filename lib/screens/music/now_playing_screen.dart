@@ -24,6 +24,7 @@ import '../../theme/mono_motion.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/formatters.dart';
+import '../../utils/desktop_window_padding.dart';
 import '../../utils/media_image_helper.dart';
 import '../../utils/music_navigation.dart';
 import '../../utils/platform_detector.dart';
@@ -58,12 +59,30 @@ class NowPlayingScreen extends StatefulWidget {
   State<NowPlayingScreen> createState() => _NowPlayingScreenState();
 }
 
-class _NowPlayingScreenState extends State<NowPlayingScreen> with ContextMenuTapMixin<NowPlayingScreen> {
+class _NowPlayingScreenState extends State<NowPlayingScreen>
+    with ContextMenuTapMixin<NowPlayingScreen>, SingleTickerProviderStateMixin {
   MusicPlaybackService? _service;
   StreamSubscription<Object>? _errorsSub;
 
   bool _showLyrics = false;
   final Map<String, Future<Lyrics?>> _lyricsCache = {};
+
+  /// Key for getting a context below this screen's own OverlaySheetHost —
+  /// the State's context sits ABOVE it, so sheet calls made with `context`
+  /// would miss the host and fall back to a hostless modal sheet.
+  final GlobalKey _overlayChildKey = GlobalKey();
+
+  BuildContext get _sheetContext => _overlayChildKey.currentContext ?? context;
+
+  /// Swipe-down-to-dismiss (mobile portrait). The offset feeds a
+  /// ValueListenableBuilder-wrapped Transform so drag frames never rebuild
+  /// the screen.
+  final ValueNotifier<double> _dismissDrag = ValueNotifier<double>(0);
+  late final AnimationController _dismissSettle = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 200),
+  )..addListener(_onDismissSettleTick);
+  double _dismissSettleFrom = 0;
 
   final FocusNode _seekFocusNode = FocusNode(debugLabel: 'now_playing_seek');
   final FocusNode _overflowFocusNode = FocusNode(debugLabel: 'now_playing_overflow');
@@ -92,6 +111,8 @@ class _NowPlayingScreenState extends State<NowPlayingScreen> with ContextMenuTap
   @override
   void dispose() {
     _errorsSub?.cancel();
+    _dismissSettle.dispose();
+    _dismissDrag.dispose();
     _seekFocusNode.dispose();
     _overflowFocusNode.dispose();
     _playPauseFocusNode.dispose();
@@ -119,6 +140,39 @@ class _NowPlayingScreenState extends State<NowPlayingScreen> with ContextMenuTap
 
   void _pop() => Navigator.pop(context);
 
+  // Swipe-down anywhere above the transport controls closes the screen —
+  // the standard music-player gesture. The content follows the finger;
+  // releasing past the threshold pops (the route's reverse slide+fade
+  // continues the motion from where the finger left off), otherwise the
+  // content settles back.
+
+  void _onDismissSettleTick() {
+    _dismissDrag.value = _dismissSettleFrom * (1 - Curves.easeOutCubic.transform(_dismissSettle.value));
+  }
+
+  void _onDismissDragStart(DragStartDetails details) => _dismissSettle.stop();
+
+  void _onDismissDragUpdate(DragUpdateDetails details) {
+    _dismissDrag.value = math.max(0, _dismissDrag.value + details.delta.dy);
+  }
+
+  void _onDismissDragEnd(DragEndDetails details) {
+    final offset = _dismissDrag.value;
+    if (offset <= 0) return;
+    // Same thresholds as the overlay sheet system's drag-to-dismiss.
+    if (offset > MediaQuery.sizeOf(context).height * 0.25 || (details.primaryVelocity ?? 0) > 500) {
+      _pop();
+    } else {
+      _onDismissDragCancel();
+    }
+  }
+
+  void _onDismissDragCancel() {
+    if (_dismissDrag.value <= 0) return;
+    _dismissSettleFrom = _dismissDrag.value;
+    _dismissSettle.forward(from: 0);
+  }
+
   /// Artist line tap — the track's grandparent is the artist. Mirrors the
   /// album screen's artist link (fetch, then navigate; soft-fail).
   Future<void> _openArtist(MediaItem track) async {
@@ -139,7 +193,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen> with ContextMenuTap
     final service = context.read<MusicPlaybackService>();
     final timed = service.sleepTimerActive && !service.sleepTimerEndOfTrack;
     final selected = await OverlaySheetController.showAdaptive<String>(
-      context,
+      _sheetContext,
       showDragHandle: true,
       builder: (context) => AppMenuSheet<String>(
         title: t.music.sleepTimer,
@@ -231,7 +285,15 @@ class _NowPlayingScreenState extends State<NowPlayingScreen> with ContextMenuTap
     // the sheet, otherwise the route pops natively — audio continues).
     return OverlaySheetHost(
       canPop: true,
-      child: Scaffold(backgroundColor: tk.bg, body: content),
+      child: Scaffold(
+        key: _overlayChildKey,
+        backgroundColor: tk.bg,
+        body: ValueListenableBuilder<double>(
+          valueListenable: _dismissDrag,
+          builder: (context, offset, child) => Transform.translate(offset: Offset(0, offset), child: child),
+          child: content,
+        ),
+      ),
     );
   }
 
@@ -240,7 +302,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen> with ContextMenuTap
   // -------------------------------------------------------------------
 
   Widget _buildPortraitLayout(MusicPlaybackService service, MediaItem track, MediaServerClient? client) {
-    return Column(
+    Widget upper = Column(
       children: [
         _buildTopBar(track, service.playContext?.title),
         Expanded(
@@ -250,6 +312,24 @@ class _NowPlayingScreenState extends State<NowPlayingScreen> with ContextMenuTap
           ),
         ),
         Padding(padding: const EdgeInsets.fromLTRB(32, 8, 32, 0), child: _buildTrackInfo(track, centered: true)),
+      ],
+    );
+    // Touch only — desktop keeps mouse drags for text selection and the
+    // lyrics pane. A drag starting on the lyrics scrollable still scrolls
+    // (the descendant recognizer wins the arena).
+    if (!PlatformDetector.isDesktopOS()) {
+      upper = GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onVerticalDragStart: _onDismissDragStart,
+        onVerticalDragUpdate: _onDismissDragUpdate,
+        onVerticalDragEnd: _onDismissDragEnd,
+        onVerticalDragCancel: _onDismissDragCancel,
+        child: upper,
+      );
+    }
+    return Column(
+      children: [
+        Expanded(child: upper),
         Padding(padding: const EdgeInsets.fromLTRB(16, 8, 16, 0), child: _buildSeekBar()),
         _buildTransportRow(service),
         _buildUtilityRow(showQueueButton: true),
@@ -279,8 +359,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen> with ContextMenuTap
                       _buildTrackInfo(track, centered: false),
                       const SizedBox(height: 8),
                       _buildSeekBar(),
-                      _buildTransportRow(service),
-                      _buildUtilityRow(showQueueButton: false),
+                      _buildWideControlBand(service),
                       const SizedBox(height: 12),
                       // Inline queue panel — same widget the queue sheet uses.
                       Expanded(
@@ -373,29 +452,117 @@ class _NowPlayingScreenState extends State<NowPlayingScreen> with ContextMenuTap
   /// screen's element asserts; the screen already watches the service.
   Widget _buildTopBar(MediaItem track, String? playContextTitle) {
     final tk = tokens(context);
+    // macOS pins the traffic lights at y=21 (16pt buttons → center 29, see
+    // WindowUtilsPlugin.customButtonPositions); a fixed 58px row centers the
+    // close button on that line regardless of the platform visual density
+    // shrinking the IconButton box.
+    final isMacOS = Theme.of(context).platform == TargetPlatform.macOS;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
-      child: Row(
-        children: [
-          IconButton(
-            icon: AppIcon(Symbols.keyboard_arrow_down_rounded, fill: 1, color: tk.text),
-            tooltip: t.common.close,
-            onPressed: _pop,
-          ),
-          Expanded(
-            child: playContextTitle == null || playContextTitle.isEmpty
-                ? const SizedBox.shrink()
-                : Text(
-                    t.music.playingFrom(title: playContextTitle),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: .ellipsis,
-                    style: TextStyle(fontSize: 13, color: tk.textMuted),
-                  ),
-          ),
-          _buildOverflowButton(track),
-        ],
+      padding: EdgeInsets.fromLTRB(8, isMacOS ? 0 : 4, 8, 0),
+      child: SizedBox(
+        height: isMacOS ? 58 : null,
+        child: Row(
+          children: [
+            // Inset past the macOS traffic lights — this screen is a fullscreen
+            // route, so the close button would otherwise sit underneath them.
+            DesktopAppBarHelper.buildAdjustedLeading(
+              IconButton(
+                icon: AppIcon(Symbols.keyboard_arrow_down_rounded, fill: 1, color: tk.text),
+                tooltip: t.common.close,
+                onPressed: _pop,
+              ),
+              context: context,
+            )!,
+            Expanded(
+              child: playContextTitle == null || playContextTitle.isEmpty
+                  ? const SizedBox.shrink()
+                  : Text(
+                      t.music.playingFrom(title: playContextTitle),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: .ellipsis,
+                      style: TextStyle(fontSize: 13, color: tk.textMuted),
+                    ),
+            ),
+            _buildOverflowButton(track),
+          ],
+        ),
       ),
+    );
+  }
+
+  /// Wide-layout control band: the transport row stays exactly centered
+  /// (equal-width flanks), with lyrics + a desktop volume slider as a
+  /// right-aligned cluster that scales down instead of overflowing when the
+  /// pane is narrow.
+  Widget _buildWideControlBand(MusicPlaybackService service) {
+    final tk = tokens(context);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    final cluster = Row(
+      mainAxisSize: .min,
+      children: [
+        IconButton(
+          icon: AppIcon(
+            Symbols.lyrics_rounded,
+            fill: 1,
+            size: 22,
+            color: _showLyrics ? colorScheme.primary : tk.textMuted,
+          ),
+          tooltip: t.music.lyrics,
+          onPressed: _toggleLyrics,
+        ),
+        if (PlatformDetector.isDesktop(context)) ...[const SizedBox(width: 4), _buildVolumeCluster(service)],
+      ],
+    );
+
+    return Row(
+      children: [
+        const Expanded(child: SizedBox()),
+        _buildTransportRow(service),
+        Expanded(
+          child: Align(
+            alignment: .centerRight,
+            child: FittedBox(fit: BoxFit.scaleDown, child: cluster),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Desktop volume control (0–100), persisted by the service across
+  /// sessions. Mono styling matches the seek bar: text-colored active track
+  /// on outline.
+  Widget _buildVolumeCluster(MusicPlaybackService service) {
+    final tk = tokens(context);
+    final icon = service.volume <= 0
+        ? Symbols.volume_off_rounded
+        : service.volume < 50
+        ? Symbols.volume_down_rounded
+        : Symbols.volume_up_rounded;
+    return Row(
+      mainAxisSize: .min,
+      children: [
+        AppIcon(icon, fill: 1, size: 20, color: tk.textMuted),
+        SizedBox(
+          width: 140,
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 3,
+              activeTrackColor: tk.text,
+              inactiveTrackColor: tk.outline,
+              thumbColor: tk.text,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+            ),
+            child: Slider(
+              value: service.volume.clamp(0.0, 100.0),
+              max: 100,
+              onChanged: (value) => unawaited(service.setVolume(value)),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -639,13 +806,13 @@ class _NowPlayingScreenState extends State<NowPlayingScreen> with ContextMenuTap
           if (showQueueButton)
             FocusableAction(
               debugLabel: 'np_queue',
-              onPressed: () => unawaited(showQueueSheet(context)),
+              onPressed: () => unawaited(showQueueSheet(_sheetContext)),
               builder: (context, state) => _transportIcon(
                 state,
                 icon: Symbols.queue_music_rounded,
                 active: false,
                 tooltip: t.music.queue,
-                onPressed: () => unawaited(showQueueSheet(context)),
+                onPressed: () => unawaited(showQueueSheet(_sheetContext)),
                 size: 22,
               ),
             ),

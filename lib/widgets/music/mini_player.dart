@@ -19,6 +19,7 @@ import '../../utils/video_player_navigation.dart';
 import '../app_icon.dart';
 import '../media_context_menu.dart';
 import '../optimized_media_image.dart';
+import '../overlay_sheet.dart';
 
 /// Suppresses the mini-player while the top PAGE route of the profile
 /// navigator is a full-screen playback surface (the video player or the
@@ -177,12 +178,18 @@ class _MusicMiniPlayerOverlayState extends State<MusicMiniPlayerOverlay> {
     if (_lastTrack == null) return const SizedBox.shrink();
 
     final suppress = context.read<MusicUiRouteObserver?>()?.suppress ?? _noSuppression;
-    return ValueListenableBuilder<bool>(
-      valueListenable: suppress,
-      builder: (context, suppressed, _) {
-        final visible = track != null && !suppressed && !_dismissed;
+    final openSheets = OverlaySheetController.openSheetCount;
+    return ListenableBuilder(
+      listenable: Listenable.merge([suppress, openSheets]),
+      builder: (context, _) {
+        final hasSession = track != null && !suppress.value && !_dismissed;
+        // Sheets render inside the routes' subtrees, BELOW this overlay —
+        // hide the card while any sheet is up so it never floats over one.
+        final visible = hasSession && openSheets.value == 0;
         final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
-        _reportOverlayHeight(visible ? _cardHeight + (useSideNav ? 32 : 24) : 0);
+        // Report off the session (not sheet) state so the underlying
+        // screen's scroll padding doesn't jump while a sheet is open.
+        _reportOverlayHeight(hasSession ? _cardHeight + (useSideNav ? 32 : 24) : 0);
 
         final Widget child = visible
             ? _MiniPlayerCard(
@@ -270,6 +277,10 @@ class _MiniPlayerCardState extends State<_MiniPlayerCard> with ContextMenuTapMix
           height: _MusicMiniPlayerOverlayState._cardHeight,
           child: Stack(
             children: [
+              // Played fraction tints the card background itself — the card
+              // fills up as the track progresses (clipped by the Material's
+              // rounded corners above).
+              const Positioned.fill(child: _MiniPlayerProgress()),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Row(
@@ -343,7 +354,6 @@ class _MiniPlayerCardState extends State<_MiniPlayerCard> with ContextMenuTapMix
                   ],
                 ),
               ),
-              const Positioned(left: 0, right: 0, bottom: 0, height: 2, child: _MiniPlayerProgress()),
             ],
           ),
         ),
@@ -376,8 +386,9 @@ class _MiniPlayerCardState extends State<_MiniPlayerCard> with ContextMenuTapMix
   }
 }
 
-/// Isolated progress leaf — positionStream ticks rebuild only this 2px line,
-/// never the card above it.
+/// Isolated progress leaf — positionStream ticks rebuild only this
+/// background layer, never the card content above it. The played fraction
+/// renders as a subtle full-height tint that fills the card left-to-right.
 class _MiniPlayerProgress extends StatelessWidget {
   const _MiniPlayerProgress();
 
@@ -396,7 +407,7 @@ class _MiniPlayerProgress extends StatelessWidget {
           child: FractionallySizedBox(
             widthFactor: fraction,
             heightFactor: 1,
-            child: ColoredBox(color: tk.text.withValues(alpha: 0.9)),
+            child: ColoredBox(color: tk.text.withValues(alpha: 0.08)),
           ),
         );
       },

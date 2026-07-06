@@ -580,8 +580,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     _openedFromKeyboard = false;
 
     if (useBottomSheet) {
+      // Present from the menu's own context: it sits at the trigger widget,
+      // below any screen-level OverlaySheetHost, while callers often pass a
+      // screen context from ABOVE its host (which would skip the host and
+      // fall back to a hostless modal sheet).
       selected = await OverlaySheetController.showAdaptive<String>(
-        context,
+        this.context,
         showDragHandle: true,
         builder: (context) => AppMenuSheet<String>(
           title: _itemDisplayTitle(),
@@ -966,10 +970,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         loadingShown = false;
       }
 
-      if (fileInfo != null && context.mounted) {
-        // Show file info bottom sheet
+      if (fileInfo != null && context.mounted && mounted) {
+        // Show file info bottom sheet, presented from the menu's own context
+        // so a screen-level OverlaySheetHost is found (see _showContextMenu).
         await OverlaySheetController.showAdaptive(
-          context,
+          this.context,
           isScrollControlled: true,
           builder: (context) => FileInfoBottomSheet(fileInfo: fileInfo, title: item.displayTitle),
         );
@@ -1308,8 +1313,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   Future<void> _showRatingSheet(BuildContext context, MediaItem item, MediaServerClient client) async {
+    if (!mounted) return;
+    // Presented from the menu's own context so a screen-level
+    // OverlaySheetHost is found (see _showContextMenu).
     await OverlaySheetController.showAdaptive(
-      context,
+      this.context,
       showDragHandle: true,
       builder: (context) => RatingBottomSheet(
         item: item,
