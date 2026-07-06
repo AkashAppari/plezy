@@ -643,9 +643,11 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final itemHorizontalPadding = itemHorizontalPaddingForContext(context, isCollapsed: isCollapsed);
     final hasLiveTv = context.watch<MultiServerProvider>().hasLiveTv;
     // Nullable watch: rail tests (and any host without the profile session
-    // scope) simply never show the Now Playing item.
+    // scope) simply never show the Now Playing item. TV-only — it is the
+    // way back into the now-playing screen there; desktop already has the
+    // mini-player for that.
     final musicService = context.watch<MusicPlaybackService?>();
-    final nowPlayingTrack = widget.isOfflineMode ? null : musicService?.currentTrack;
+    final nowPlayingTrack = widget.isOfflineMode || !PlatformDetector.isTV() ? null : musicService?.currentTrack;
 
     // Listen to fullscreen + groupLibrariesByServer setting so the rail
     // rebuilds when the user toggles "Group libraries by server" in Appearance.
