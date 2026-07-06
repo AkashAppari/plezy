@@ -1223,7 +1223,6 @@ class _TranslationsMusicSv extends TranslationsMusicEn {
 	@override String get nowPlaying => 'Spelas nu';
 	@override String playingFrom({required Object title}) => 'Spelar från ${title}';
 	@override String get queue => 'Kö';
-	@override String get upNext => 'Näst på tur';
 	@override String get clearQueue => 'Rensa kön';
 	@override String get lyrics => 'Låttext';
 	@override String get noLyrics => 'Ingen låttext tillgänglig';
@@ -2892,7 +2891,6 @@ extension on TranslationsSv {
 			'music.nowPlaying' => 'Spelas nu',
 			'music.playingFrom' => ({required Object title}) => 'Spelar från ${title}',
 			'music.queue' => 'Kö',
-			'music.upNext' => 'Näst på tur',
 			'music.clearQueue' => 'Rensa kön',
 			'music.lyrics' => 'Låttext',
 			'music.noLyrics' => 'Ingen låttext tillgänglig',
@@ -3022,9 +3020,9 @@ extension on TranslationsSv {
 			'downloads.noSyncRules' => 'Inga synkregler',
 			'downloads.manageSyncRule' => 'Hantera synkronisering',
 			'downloads.editEpisodeCount' => 'Antal avsnitt',
+			'downloads.editSyncFilter' => 'Synkroniseringsfilter',
 			_ => null,
 		} ?? switch (path) {
-			'downloads.editSyncFilter' => 'Synkroniseringsfilter',
 			'downloads.syncAllItems' => 'Synkroniserar alla objekt',
 			'downloads.syncUnwatchedItems' => 'Synkroniserar osedda objekt',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',

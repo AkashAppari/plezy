@@ -974,7 +974,6 @@
     "nowPlaying": "再生中",
     "playingFrom": "${title} から再生",
     "queue": "再生キュー",
-    "upNext": "次はこちら",
     "clearQueue": "キューをクリア",
     "lyrics": "歌詞",
     "noLyrics": "歌詞がありません",

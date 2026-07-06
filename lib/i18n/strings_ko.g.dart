@@ -1222,7 +1222,6 @@ class _TranslationsMusicKo extends TranslationsMusicEn {
 	@override String get nowPlaying => '재생 중';
 	@override String playingFrom({required Object title}) => '${title}에서 재생 중';
 	@override String get queue => '재생 대기열';
-	@override String get upNext => '다음 항목';
 	@override String get clearQueue => '대기열 비우기';
 	@override String get lyrics => '가사';
 	@override String get noLyrics => '가사 없음';
@@ -2891,7 +2890,6 @@ extension on TranslationsKo {
 			'music.nowPlaying' => '재생 중',
 			'music.playingFrom' => ({required Object title}) => '${title}에서 재생 중',
 			'music.queue' => '재생 대기열',
-			'music.upNext' => '다음 항목',
 			'music.clearQueue' => '대기열 비우기',
 			'music.lyrics' => '가사',
 			'music.noLyrics' => '가사 없음',
@@ -3021,9 +3019,9 @@ extension on TranslationsKo {
 			'downloads.noSyncRules' => '동기화 규칙 없음',
 			'downloads.manageSyncRule' => '동기화 관리',
 			'downloads.editEpisodeCount' => '에피소드 수',
+			'downloads.editSyncFilter' => '동기화 필터',
 			_ => null,
 		} ?? switch (path) {
-			'downloads.editSyncFilter' => '동기화 필터',
 			'downloads.syncAllItems' => '모든 항목 동기화 중',
 			'downloads.syncUnwatchedItems' => '시청하지 않은 항목 동기화 중',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => '서버: ${server} • ${status}',

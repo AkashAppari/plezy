@@ -975,7 +975,6 @@
     "nowPlaying": "In riproduzione",
     "playingFrom": "Riproduzione da ${title}",
     "queue": "Coda",
-    "upNext": "Da riprodurre",
     "clearQueue": "Svuota la coda",
     "lyrics": "Testo",
     "noLyrics": "Nessun testo disponibile",

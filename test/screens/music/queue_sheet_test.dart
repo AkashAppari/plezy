@@ -30,7 +30,8 @@ MediaItem _track(String id, String title) => MediaItem(
   serverName: 'Server',
 );
 
-/// Fixed-state fake queue: three tracks, playing the first.
+/// Fixed-state fake queue: three tracks, playing the middle one — so the
+/// sheet renders history, current, and upcoming rows at once.
 class _FakeQueueService extends StubMusicPlaybackService {
   final List<MediaItem> tracks;
   final List<int> jumps = [];
@@ -41,7 +42,7 @@ class _FakeQueueService extends StubMusicPlaybackService {
   bool get isAvailable => true;
 
   @override
-  MediaItem? get currentTrack => tracks.first;
+  MediaItem? get currentTrack => tracks[1];
 
   @override
   MusicPlaybackStatus get status => MusicPlaybackStatus.playing;
@@ -50,7 +51,7 @@ class _FakeQueueService extends StubMusicPlaybackService {
   List<MediaItem> get queue => tracks;
 
   @override
-  int get currentIndex => 0;
+  int get currentIndex => 1;
 
   @override
   Future<void> jumpTo(int index) async {
@@ -87,7 +88,7 @@ void main() {
     );
   }
 
-  testWidgets('renders header, pinned current track, and upcoming rows', (tester) async {
+  testWidgets('renders header and the full queue including history', (tester) async {
     final service = _FakeQueueService([_track('t1', 'Alpha'), _track('t2', 'Beta'), _track('t3', 'Gamma')]);
 
     await tester.pumpWidget(wrap(service));
@@ -100,17 +101,14 @@ void main() {
     expect(find.text(t.music.queue), findsOneWidget);
     expect(find.text(t.music.trackCount(n: 3)), findsOneWidget);
 
-    // Pinned current row (not a TrackRow) + "Up next" label.
+    // The whole queue renders as TrackRows: played, current, and upcoming.
+    expect(find.byType(TrackRow), findsNWidgets(3));
     expect(find.text('Alpha'), findsOneWidget);
-    expect(find.text(t.music.upNext), findsOneWidget);
-
-    // Upcoming tracks render as TrackRows.
-    expect(find.byType(TrackRow), findsNWidgets(2));
     expect(find.text('Beta'), findsOneWidget);
     expect(find.text('Gamma'), findsOneWidget);
   });
 
-  testWidgets('tapping an upcoming row jumps to its queue index', (tester) async {
+  testWidgets('tapping a played or upcoming row jumps to its queue index', (tester) async {
     final service = _FakeQueueService([_track('t1', 'Alpha'), _track('t2', 'Beta'), _track('t3', 'Gamma')]);
 
     await tester.pumpWidget(wrap(service));
@@ -121,7 +119,9 @@ void main() {
 
     await tester.tap(find.text('Gamma'));
     await tester.pump();
+    await tester.tap(find.text('Alpha'));
+    await tester.pump();
 
-    expect(service.jumps, [2]);
+    expect(service.jumps, [2, 0]);
   });
 }

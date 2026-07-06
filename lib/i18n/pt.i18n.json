@@ -975,7 +975,6 @@
     "nowPlaying": "Reproduzindo agora",
     "playingFrom": "Reproduzindo de ${title}",
     "queue": "Fila",
-    "upNext": "A seguir",
     "clearQueue": "Limpar fila",
     "lyrics": "Letra",
     "noLyrics": "Nenhuma letra disponível",

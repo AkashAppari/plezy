@@ -974,7 +974,6 @@
     "nowPlaying": "재생 중",
     "playingFrom": "${title}에서 재생 중",
     "queue": "재생 대기열",
-    "upNext": "다음 항목",
     "clearQueue": "대기열 비우기",
     "lyrics": "가사",
     "noLyrics": "가사 없음",

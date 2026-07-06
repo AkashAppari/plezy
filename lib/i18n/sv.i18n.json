@@ -975,7 +975,6 @@
     "nowPlaying": "Spelas nu",
     "playingFrom": "Spelar från ${title}",
     "queue": "Kö",
-    "upNext": "Näst på tur",
     "clearQueue": "Rensa kön",
     "lyrics": "Låttext",
     "noLyrics": "Ingen låttext tillgänglig",

@@ -1223,7 +1223,6 @@ class _TranslationsMusicNl extends TranslationsMusicEn {
 	@override String get nowPlaying => 'Nu afspelen';
 	@override String playingFrom({required Object title}) => 'Afspelen vanaf ${title}';
 	@override String get queue => 'Wachtrij';
-	@override String get upNext => 'Volgende nummers';
 	@override String get clearQueue => 'Wachtrij wissen';
 	@override String get lyrics => 'Songtekst';
 	@override String get noLyrics => 'Geen songtekst beschikbaar';
@@ -2892,7 +2891,6 @@ extension on TranslationsNl {
 			'music.nowPlaying' => 'Nu afspelen',
 			'music.playingFrom' => ({required Object title}) => 'Afspelen vanaf ${title}',
 			'music.queue' => 'Wachtrij',
-			'music.upNext' => 'Volgende nummers',
 			'music.clearQueue' => 'Wachtrij wissen',
 			'music.lyrics' => 'Songtekst',
 			'music.noLyrics' => 'Geen songtekst beschikbaar',
@@ -3022,9 +3020,9 @@ extension on TranslationsNl {
 			'downloads.noSyncRules' => 'Geen synchronisatieregels',
 			'downloads.manageSyncRule' => 'Synchronisatie beheren',
 			'downloads.editEpisodeCount' => 'Aantal afleveringen',
+			'downloads.editSyncFilter' => 'Synchronisatiefilter',
 			_ => null,
 		} ?? switch (path) {
-			'downloads.editSyncFilter' => 'Synchronisatiefilter',
 			'downloads.syncAllItems' => 'Alle items synchroniseren',
 			'downloads.syncUnwatchedItems' => 'Ongekeken items synchroniseren',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',

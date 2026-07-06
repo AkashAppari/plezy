@@ -1223,7 +1223,6 @@ class _TranslationsMusicEs extends TranslationsMusicEn {
 	@override String get nowPlaying => 'Reproduciendo ahora';
 	@override String playingFrom({required Object title}) => 'Reproduciendo desde ${title}';
 	@override String get queue => 'Cola';
-	@override String get upNext => 'A continuación';
 	@override String get clearQueue => 'Vaciar la cola';
 	@override String get lyrics => 'Letra';
 	@override String get noLyrics => 'No hay letra disponible';
@@ -2892,7 +2891,6 @@ extension on TranslationsEs {
 			'music.nowPlaying' => 'Reproduciendo ahora',
 			'music.playingFrom' => ({required Object title}) => 'Reproduciendo desde ${title}',
 			'music.queue' => 'Cola',
-			'music.upNext' => 'A continuación',
 			'music.clearQueue' => 'Vaciar la cola',
 			'music.lyrics' => 'Letra',
 			'music.noLyrics' => 'No hay letra disponible',
@@ -3022,9 +3020,9 @@ extension on TranslationsEs {
 			'downloads.noSyncRules' => 'Sin reglas de sincronización',
 			'downloads.manageSyncRule' => 'Gestionar sincronización',
 			'downloads.editEpisodeCount' => 'Número de episodios',
+			'downloads.editSyncFilter' => 'Filtro de sincronización',
 			_ => null,
 		} ?? switch (path) {
-			'downloads.editSyncFilter' => 'Filtro de sincronización',
 			'downloads.syncAllItems' => 'Sincronizando todos los elementos',
 			'downloads.syncUnwatchedItems' => 'Sincronizando elementos no vistos',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Servidor: ${server} • ${status}',

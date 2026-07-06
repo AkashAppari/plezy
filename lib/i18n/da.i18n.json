@@ -975,7 +975,6 @@
     "nowPlaying": "Afspiller nu",
     "playingFrom": "Afspiller fra ${title}",
     "queue": "Kø",
-    "upNext": "Næste i køen",
     "clearQueue": "Ryd kø",
     "lyrics": "Sangtekst",
     "noLyrics": "Ingen sangtekst tilgængelig",

@@ -1222,7 +1222,6 @@ class _TranslationsMusicZh extends TranslationsMusicEn {
 	@override String get nowPlaying => '正在播放';
 	@override String playingFrom({required Object title}) => '来自 ${title}';
 	@override String get queue => '播放队列';
-	@override String get upNext => '即将播放';
 	@override String get clearQueue => '清空队列';
 	@override String get lyrics => '歌词';
 	@override String get noLyrics => '暂无歌词';
@@ -2891,7 +2890,6 @@ extension on TranslationsZh {
 			'music.nowPlaying' => '正在播放',
 			'music.playingFrom' => ({required Object title}) => '来自 ${title}',
 			'music.queue' => '播放队列',
-			'music.upNext' => '即将播放',
 			'music.clearQueue' => '清空队列',
 			'music.lyrics' => '歌词',
 			'music.noLyrics' => '暂无歌词',
@@ -3021,9 +3019,9 @@ extension on TranslationsZh {
 			'downloads.noSyncRules' => '没有同步规则',
 			'downloads.manageSyncRule' => '管理同步',
 			'downloads.editEpisodeCount' => '剧集数量',
+			'downloads.editSyncFilter' => '同步筛选',
 			_ => null,
 		} ?? switch (path) {
-			'downloads.editSyncFilter' => '同步筛选',
 			'downloads.syncAllItems' => '同步所有项目',
 			'downloads.syncUnwatchedItems' => '同步未观看项目',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => '服务器: ${server} • ${status}',

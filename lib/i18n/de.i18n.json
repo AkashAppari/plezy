@@ -975,7 +975,6 @@
     "nowPlaying": "Wird wiedergegeben",
     "playingFrom": "Wiedergabe aus ${title}",
     "queue": "Warteschlange",
-    "upNext": "Als Nächstes",
     "clearQueue": "Warteschlange leeren",
     "lyrics": "Songtext",
     "noLyrics": "Kein Songtext verfügbar",

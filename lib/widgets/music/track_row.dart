@@ -68,6 +68,15 @@ class TrackRow extends StatefulWidget {
   /// opt out so the recognizers don't fight in the gesture arena.
   final bool enableContextMenu;
 
+  /// Override the service-derived "is this the current track" check. Hosts
+  /// that can render the same track at several queue positions (the queue
+  /// sheet) pass the exact positional match so only the playing entry gets
+  /// the equalizer; null keeps the by-id fallback for album/track lists.
+  final bool? isCurrent;
+
+  /// Mute the title — the queue sheet marks already-played entries this way.
+  final bool dimmed;
+
   /// Show a compact download-status indicator (muted [DownloadStatusIcon])
   /// between the duration and the trailing ⋮ when the track has a download
   /// record. Off by default — surfaces without download affordances (queue
@@ -90,6 +99,8 @@ class TrackRow extends StatefulWidget {
     this.trailingIcon,
     this.onTrailingTap,
     this.enableContextMenu = true,
+    this.isCurrent,
+    this.dimmed = false,
     this.showDownloadStatus = false,
   });
 
@@ -177,8 +188,9 @@ class _TrackRowState extends State<TrackRow> with ContextMenuTapMixin<TrackRow>,
     final colorScheme = Theme.of(context).colorScheme;
 
     // Both selects run unconditionally every build (provider contract).
-    final isCurrent = context.select<MusicPlaybackService, bool>((s) => s.currentTrack?.id == widget.item.id);
+    final isCurrentById = context.select<MusicPlaybackService, bool>((s) => s.currentTrack?.id == widget.item.id);
     final serviceIsPlaying = context.select<MusicPlaybackService, bool>((s) => s.isPlaying);
+    final isCurrent = widget.isCurrent ?? isCurrentById;
 
     final showFocus = _hasFocus && InputModeTracker.isKeyboardMode(context);
     final radii = BorderRadius.vertical(
@@ -239,7 +251,7 @@ class _TrackRowState extends State<TrackRow> with ContextMenuTapMixin<TrackRow>,
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400,
-                          color: isCurrent ? tk.text : null,
+                          color: isCurrent ? tk.text : (widget.dimmed ? tk.textMuted : null),
                         ),
                       ),
                       if (subtitle != null)

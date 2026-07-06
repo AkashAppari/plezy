@@ -1225,7 +1225,6 @@ class _TranslationsMusicRu extends TranslationsMusicEn {
 	@override String get nowPlaying => 'Сейчас играет';
 	@override String playingFrom({required Object title}) => 'Воспроизведение из ${title}';
 	@override String get queue => 'Очередь';
-	@override String get upNext => 'Далее';
 	@override String get clearQueue => 'Очистить очередь';
 	@override String get lyrics => 'Текст песни';
 	@override String get noLyrics => 'Текст песни недоступен';
@@ -2894,7 +2893,6 @@ extension on TranslationsRu {
 			'music.nowPlaying' => 'Сейчас играет',
 			'music.playingFrom' => ({required Object title}) => 'Воспроизведение из ${title}',
 			'music.queue' => 'Очередь',
-			'music.upNext' => 'Далее',
 			'music.clearQueue' => 'Очистить очередь',
 			'music.lyrics' => 'Текст песни',
 			'music.noLyrics' => 'Текст песни недоступен',
@@ -3024,9 +3022,9 @@ extension on TranslationsRu {
 			'downloads.noSyncRules' => 'Нет правил синхронизации',
 			'downloads.manageSyncRule' => 'Управление синхронизацией',
 			'downloads.editEpisodeCount' => 'Количество эпизодов',
+			'downloads.editSyncFilter' => 'Фильтр синхронизации',
 			_ => null,
 		} ?? switch (path) {
-			'downloads.editSyncFilter' => 'Фильтр синхронизации',
 			'downloads.syncAllItems' => 'Синхронизация всех элементов',
 			'downloads.syncUnwatchedItems' => 'Синхронизация непросмотренных элементов',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Сервер: ${server} • ${status}',

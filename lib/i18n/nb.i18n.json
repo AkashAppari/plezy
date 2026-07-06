@@ -975,7 +975,6 @@
     "nowPlaying": "Spilles nå",
     "playingFrom": "Spiller fra ${title}",
     "queue": "Kø",
-    "upNext": "Neste i køen",
     "clearQueue": "Tøm kø",
     "lyrics": "Sangtekst",
     "noLyrics": "Ingen sangtekst tilgjengelig",

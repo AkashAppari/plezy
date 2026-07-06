@@ -975,7 +975,6 @@
     "nowPlaying": "Lecture en cours",
     "playingFrom": "Lecture depuis ${title}",
     "queue": "File d'attente",
-    "upNext": "À suivre",
     "clearQueue": "Vider la file d'attente",
     "lyrics": "Paroles",
     "noLyrics": "Aucune parole disponible",

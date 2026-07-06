@@ -1222,7 +1222,6 @@ class _TranslationsMusicJa extends TranslationsMusicEn {
 	@override String get nowPlaying => '再生中';
 	@override String playingFrom({required Object title}) => '${title} から再生';
 	@override String get queue => '再生キュー';
-	@override String get upNext => '次はこちら';
 	@override String get clearQueue => 'キューをクリア';
 	@override String get lyrics => '歌詞';
 	@override String get noLyrics => '歌詞がありません';
@@ -2891,7 +2890,6 @@ extension on TranslationsJa {
 			'music.nowPlaying' => '再生中',
 			'music.playingFrom' => ({required Object title}) => '${title} から再生',
 			'music.queue' => '再生キュー',
-			'music.upNext' => '次はこちら',
 			'music.clearQueue' => 'キューをクリア',
 			'music.lyrics' => '歌詞',
 			'music.noLyrics' => '歌詞がありません',
@@ -3021,9 +3019,9 @@ extension on TranslationsJa {
 			'downloads.noSyncRules' => '同期ルールなし',
 			'downloads.manageSyncRule' => '同期を管理',
 			'downloads.editEpisodeCount' => 'エピソード数',
+			'downloads.editSyncFilter' => '同期フィルター',
 			_ => null,
 		} ?? switch (path) {
-			'downloads.editSyncFilter' => '同期フィルター',
 			'downloads.syncAllItems' => 'すべてのアイテムを同期中',
 			'downloads.syncUnwatchedItems' => '未視聴のアイテムを同期中',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'サーバー: ${server} • ${status}',

@@ -975,7 +975,6 @@
     "nowPlaying": "Reproduciendo ahora",
     "playingFrom": "Reproduciendo desde ${title}",
     "queue": "Cola",
-    "upNext": "A continuación",
     "clearQueue": "Vaciar la cola",
     "lyrics": "Letra",
     "noLyrics": "No hay letra disponible",

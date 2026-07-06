@@ -2905,9 +2905,6 @@ class TranslationsMusicEn {
 	/// en: 'Queue'
 	String get queue => 'Queue';
 
-	/// en: 'Up next'
-	String get upNext => 'Up next';
-
 	/// en: 'Clear queue'
 	String get clearQueue => 'Clear queue';
 
@@ -5623,7 +5620,6 @@ extension on Translations {
 			'music.nowPlaying' => 'Now Playing',
 			'music.playingFrom' => ({required Object title}) => 'Playing from ${title}',
 			'music.queue' => 'Queue',
-			'music.upNext' => 'Up next',
 			'music.clearQueue' => 'Clear queue',
 			'music.lyrics' => 'Lyrics',
 			'music.noLyrics' => 'No lyrics available',
@@ -5741,9 +5737,9 @@ extension on Translations {
 			'downloads.customAmount' => 'Custom amount...',
 			'downloads.includeSpecials' => 'Include Specials',
 			'downloads.howManyEpisodes' => 'How many episodes?',
+			'downloads.itemsQueued' => ({required Object count}) => '${count} items queued for download',
 			_ => null,
 		} ?? switch (path) {
-			'downloads.itemsQueued' => ({required Object count}) => '${count} items queued for download',
 			'downloads.keepSynced' => 'Keep synced',
 			'downloads.downloadOnce' => 'Download once',
 			'downloads.keepNUnwatched' => ({required Object count}) => 'Keep ${count} unwatched',

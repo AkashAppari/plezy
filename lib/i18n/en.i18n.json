@@ -987,7 +987,6 @@
     "nowPlaying": "Now Playing",
     "playingFrom": "Playing from ${title}",
     "queue": "Queue",
-    "upNext": "Up next",
     "clearQueue": "Clear queue",
     "lyrics": "Lyrics",
     "noLyrics": "No lyrics available",

@@ -1223,7 +1223,6 @@ class _TranslationsMusicBg extends TranslationsMusicEn {
 	@override String get nowPlaying => 'Сега се възпроизвежда';
 	@override String playingFrom({required Object title}) => 'Възпроизвеждане от ${title}';
 	@override String get queue => 'Опашка';
-	@override String get upNext => 'Следва';
 	@override String get clearQueue => 'Изчисти опашката';
 	@override String get lyrics => 'Текст';
 	@override String get noLyrics => 'Няма наличен текст';
@@ -2892,7 +2891,6 @@ extension on TranslationsBg {
 			'music.nowPlaying' => 'Сега се възпроизвежда',
 			'music.playingFrom' => ({required Object title}) => 'Възпроизвеждане от ${title}',
 			'music.queue' => 'Опашка',
-			'music.upNext' => 'Следва',
 			'music.clearQueue' => 'Изчисти опашката',
 			'music.lyrics' => 'Текст',
 			'music.noLyrics' => 'Няма наличен текст',
@@ -3022,9 +3020,9 @@ extension on TranslationsBg {
 			'downloads.noSyncRules' => 'Няма правила за синхронизация',
 			'downloads.manageSyncRule' => 'Управление на синхронизацията',
 			'downloads.editEpisodeCount' => 'Брой епизоди',
+			'downloads.editSyncFilter' => 'Филтър за синхронизация',
 			_ => null,
 		} ?? switch (path) {
-			'downloads.editSyncFilter' => 'Филтър за синхронизация',
 			'downloads.syncAllItems' => 'Синхронизират се всички елементи',
 			'downloads.syncUnwatchedItems' => 'Синхронизират се негледаните елементи',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Сървър: ${server} • ${status}',

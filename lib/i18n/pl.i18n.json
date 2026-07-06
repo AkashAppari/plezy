@@ -977,7 +977,6 @@
     "nowPlaying": "Teraz odtwarzane",
     "playingFrom": "Odtwarzanie z ${title}",
     "queue": "Kolejka",
-    "upNext": "Następne",
     "clearQueue": "Wyczyść kolejkę",
     "lyrics": "Tekst",
     "noLyrics": "Brak dostępnego tekstu",

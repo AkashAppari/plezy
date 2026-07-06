@@ -974,7 +974,6 @@
     "nowPlaying": "正在播放",
     "playingFrom": "来自 ${title}",
     "queue": "播放队列",
-    "upNext": "即将播放",
     "clearQueue": "清空队列",
     "lyrics": "歌词",
     "noLyrics": "暂无歌词",
