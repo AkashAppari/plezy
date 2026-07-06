@@ -195,7 +195,11 @@ class _TrackRowState extends State<TrackRow> with ContextMenuTapMixin<TrackRow>,
     final colorScheme = Theme.of(context).colorScheme;
 
     // Both selects run unconditionally every build (provider contract).
-    final isCurrentById = context.select<MusicPlaybackService, bool>((s) => s.currentTrack?.id == widget.item.id);
+    // globalKey, not id: a bare ratingKey is server-scoped, so a track on
+    // another server with the same id would falsely light up as current.
+    final isCurrentById = context.select<MusicPlaybackService, bool>(
+      (s) => s.currentTrack?.globalKey == widget.item.globalKey,
+    );
     final serviceIsPlaying = context.select<MusicPlaybackService, bool>((s) => s.isPlaying);
     final isCurrent = widget.isCurrent ?? isCurrentById;
 
