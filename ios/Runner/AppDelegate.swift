@@ -14,11 +14,12 @@ import MediaPlayer
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // Configure audio session for media playback
+    // Configure audio session for media playback. Not activated here: the
+    // session is non-mixing, so activation stops other apps' audio — it is
+    // claimed when playback actually starts.
     do {
       let session = AVAudioSession.sharedInstance()
       try session.setCategory(.playback, mode: .default)
-      try session.setActive(true)
     } catch {
       print("Failed to configure audio session: \(error)")
     }
