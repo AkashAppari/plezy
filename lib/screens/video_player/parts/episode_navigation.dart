@@ -210,6 +210,17 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
   /// Reload a VOD item/source while keeping the route, player instance, and
   /// native renderer alive. This is the common path for episode navigation,
   /// queue item jumps, Watch Together media switches, and source changes.
+  ///
+  /// [preservedAudioTrack]/[preservedSubtitleTrack]/
+  /// [preservedSecondarySubtitleTrack] override the live player state when
+  /// [preserveCurrentTrackSelection] is set — for callers whose player no
+  /// longer holds the selections (the TV background suspend stops the native
+  /// player, which clears its track state, before the reload runs).
+  ///
+  /// [startPaused] keeps the reloaded item paused: open() starts held, and
+  /// every post-open resume point (subtitle-load resume, frame-rate gate
+  /// release) arms track selection without playing, the same way a Watch
+  /// Together-owned start does. The caller owns starting playback.
   Future<bool> _reloadMediaInPlace({
     required MediaItem metadata,
     int? selectedMediaIndex,
@@ -219,6 +230,10 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     int? selectedAudioStreamId,
     Duration? resumePosition,
     bool preserveCurrentTrackSelection = false,
+    AudioTrack? preservedAudioTrack,
+    SubtitleTrack? preservedSubtitleTrack,
+    SubtitleTrack? preservedSecondarySubtitleTrack,
+    bool startPaused = false,
     bool useCurrentAudioStreamSelection = true,
     bool showErrorUi = true,
     String reason = 'media reload',
@@ -247,10 +262,14 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     final previousHasFirstFrame = _hasFirstFrame.value;
     final isItemChange = previousMetadata.globalKey != metadata.globalKey;
 
-    final currentAudioTrack = preserveCurrentTrackSelection ? currentPlayer.state.track.audio : null;
-    final currentSubtitleTrack = preserveCurrentTrackSelection ? currentPlayer.state.track.subtitle : null;
+    final currentAudioTrack = preserveCurrentTrackSelection
+        ? preservedAudioTrack ?? currentPlayer.state.track.audio
+        : null;
+    final currentSubtitleTrack = preserveCurrentTrackSelection
+        ? preservedSubtitleTrack ?? currentPlayer.state.track.subtitle
+        : null;
     final currentSecondarySubtitleTrack = preserveCurrentTrackSelection
-        ? currentPlayer.state.track.secondarySubtitle
+        ? preservedSecondarySubtitleTrack ?? currentPlayer.state.track.secondarySubtitle
         : null;
     final wasPlayingBeforeReload = _playbackIntentShouldPlay;
     var didOpenReplacement = false;
@@ -410,7 +429,11 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         selectedVersion: result.selectedVersion,
         timing: openTiming,
         headers: result.usesLocalMedia ? null : streamHeaders,
-        play: !frameRatePlan.holdPlaybackStart && !wtOwnsStart && externalSubtitlePlan.canStartBeforeTrackSetup,
+        play:
+            !frameRatePlan.holdPlaybackStart &&
+            !wtOwnsStart &&
+            !startPaused &&
+            externalSubtitlePlan.canStartBeforeTrackSetup,
         externalSubtitlesAtOpen: externalSubtitlePlan.subtitlesAtOpen,
         shouldContinue: isCurrentReload,
         onOpened: () {
@@ -453,7 +476,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       trackManager.cacheExternalSubtitles(result.externalSubtitles);
 
       final resumeForStartupFrame =
-          frameRatePlan.needsStartupRefresh && externalSubtitlePlan.requiresPostOpenAdd && !wtOwnsStart;
+          frameRatePlan.needsStartupRefresh && externalSubtitlePlan.requiresPostOpenAdd && !wtOwnsStart && !startPaused;
       await _applyTracksAfterOpen(
         trackManager: trackManager,
         externalSubtitlePlan: externalSubtitlePlan,
@@ -464,9 +487,10 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         shouldResumeAfterSubtitleLoad: () =>
             (!frameRatePlan.holdPlaybackStart || resumeForStartupFrame) &&
             !wtOwnsStart &&
+            !startPaused &&
             mounted &&
             player == currentPlayer,
-        applySelectionWhenResumeSkipped: wtOwnsStart && !frameRatePlan.holdPlaybackStart,
+        applySelectionWhenResumeSkipped: (wtOwnsStart || startPaused) && !frameRatePlan.holdPlaybackStart,
       );
       if (!isCurrentReload()) return true;
 
@@ -474,11 +498,13 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         currentPlayer: currentPlayer,
         settingsService: settingsService,
         plan: frameRatePlan,
+        // startPaused rides the Watch Together yield path: the gate release
+        // arms track selection but leaves the player paused for the caller.
         resumeAfterStartupGate: (reason) => _resumeAfterStartupGateOrYieldToWatchTogether(
           currentPlayer: currentPlayer,
           externalSubtitlePlan: externalSubtitlePlan,
           reason: reason,
-          wtOwnsStart: wtOwnsStart,
+          wtOwnsStart: wtOwnsStart || startPaused,
         ),
         playbackResumedForStartupFrame: resumeForStartupFrame,
       );

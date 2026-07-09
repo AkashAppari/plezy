@@ -391,6 +391,21 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   String _playerBackendLabel = 'unknown';
   Timer? _tvBackgroundMediaControlResumeTimer;
 
+  /// Android TV: release the native AV pipeline once the app stays
+  /// backgrounded past this grace window. A merely paused player keeps its
+  /// MediaCodec decoders and (tunneled passthrough) AudioTrack alive, which
+  /// on shared-pipeline TV SoCs degrades every other app until Plezy is
+  /// force-stopped. The grace absorbs transient hidden/paused blips
+  /// (assistant overlay, HDMI-CEC events) so quick app switches don't churn
+  /// codecs.
+  static const Duration _tvBackgroundPlayerSuspendGrace = Duration(seconds: 30);
+  Timer? _tvBackgroundPlayerSuspendTimer;
+  bool _playerSuspendedForTvBackground = false;
+  Duration? _tvBackgroundSuspendPosition;
+  AudioTrack? _tvBackgroundSuspendAudioTrack;
+  SubtitleTrack? _tvBackgroundSuspendSubtitleTrack;
+  SubtitleTrack? _tvBackgroundSuspendSecondarySubtitleTrack;
+
   /// Whether to skip lifecycle actions because PiP is active or about to start.
   /// Apple auto-PiP is system-initiated during the background transition, and
   /// Android auto-PiP on API 26-30 has a brief native transition window before
@@ -634,6 +649,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _recordLifecycleState('paused', action: 'backgrounded');
         break;
       case AppLifecycleState.resumed:
+        // Synchronously, before the queued transition: a pending suspend must
+        // not fire between this event and _handleAppResumed running.
+        _cancelTvBackgroundPlayerSuspendTimer();
         _recordLifecycleState('resumed');
         _enqueueLifecycleTransition('resumed', _handleAppResumed);
         break;
@@ -1154,6 +1172,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     _autoPlayTimer?.cancel();
     _tvBackgroundMediaControlResumeTimer?.cancel();
+    _tvBackgroundPlayerSuspendTimer?.cancel();
 
     _stillWatchingTimer?.cancel();
 
