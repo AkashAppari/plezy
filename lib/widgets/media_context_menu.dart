@@ -1384,9 +1384,44 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// backend — Plex uses server-side `/playQueues`, Jellyfin builds an
   /// in-memory queue locally.
   Future<void> _launchCollectionOrPlaylist(BuildContext context, {required bool shuffle}) async {
+    final playlist = _playlist;
+    if (playlist?.playlistType == 'audio') {
+      await _launchAudioPlaylist(context, playlist!, shuffle: shuffle);
+      return;
+    }
+
     // Launcher accepts both MediaItem (for collections) and MediaPlaylist.
     final launcher = MediaListPlaybackLauncher.forItem(context, widget.item);
     await launcher.launchFromCollectionOrPlaylist(item: widget.item, shuffle: shuffle, showLoadingIndicator: false);
+  }
+
+  Future<void> _launchAudioPlaylist(BuildContext context, MediaPlaylist playlist, {required bool shuffle}) async {
+    // Match PlaylistDetailScreen: fail the availability gate before paying
+    // for a full playlist fetch, then hand the tracks to the music session.
+    if (!ensureMusicPlaybackAvailable(context)) return;
+
+    List<MediaItem> tracks;
+    try {
+      tracks = await fetchAllPlaylistItems(_getMediaClientForItem(), playlist.id);
+    } catch (e, st) {
+      appLogger.w('Failed to fetch audio playlist ${playlist.id}', error: e, stackTrace: st);
+      if (context.mounted) {
+        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+      }
+      return;
+    }
+    if (!context.mounted) return;
+    if (tracks.isEmpty) {
+      showErrorSnackBar(context, t.messages.failedToCreatePlayQueueNoItems);
+      return;
+    }
+
+    await playTracks(
+      context,
+      tracks: tracks,
+      playContext: MusicPlayContext(id: playlist.id, title: playlist.title, kind: MusicPlayContextKind.playlist),
+      shuffle: shuffle,
+    );
   }
 
   /// Handle delete action for collections and playlists
