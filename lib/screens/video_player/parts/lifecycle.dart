@@ -182,14 +182,13 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
   /// Arm the grace timer that releases the native AV pipeline if the app
   /// stays backgrounded (Android TV only). Returns whether it was armed.
   bool _armTvBackgroundPlayerSuspendTimer() {
-    if (!Platform.isAndroid || !PlatformDetector.isTV()) return false;
-    if (_playerSuspendedForTvBackground) return false;
-    if (widget.isLive) {
-      // Restore re-tunes via _switchLiveChannel(0); don't suspend a live
-      // session the zap flow can't rebuild.
-      final channels = widget.live?.channels;
-      if (channels == null || channels.isEmpty) return false;
-      if (_live.channelIndex < 0 || _live.channelIndex >= channels.length) return false;
+    if (!shouldSuspendPlayerForTvBackground(
+      isAndroid: Platform.isAndroid,
+      isTv: PlatformDetector.isTV(),
+      isLive: widget.isLive,
+      alreadySuspended: _playerSuspendedForTvBackground,
+    )) {
+      return false;
     }
     _tvBackgroundPlayerSuspendTimer?.cancel();
     _tvBackgroundPlayerSuspendTimer = Timer(VideoPlayerScreenState._tvBackgroundPlayerSuspendGrace, () {
@@ -215,6 +214,9 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
   Future<void> _suspendPlayerForTvBackground() async {
     final currentPlayer = player;
     if (!mounted || currentPlayer == null || !_isPlayerInitialized) return;
+    // A live stream's tuned session is also its time-shift buffer. Stopping
+    // it would force a re-tune at the live edge and discard pause state.
+    if (widget.isLive) return;
     if (_playerSuspendedForTvBackground || _shouldSkipForPip) return;
     final lifecycleState = WidgetsBinding.instance.lifecycleState;
     if (lifecycleState == AppLifecycleState.resumed || lifecycleState == AppLifecycleState.inactive) return;
@@ -248,9 +250,9 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
   /// a fresh playback decision, since the suspended stream URL may have
   /// expired server-side — and comes back paused; the caller's
   /// [_restoreMediaControlsAfterResume] then resumes it (with
-  /// rewind-on-resume) exactly like a plain background pause. Live re-tunes
-  /// the current channel through the zap flow, which starts playing at the
-  /// live edge.
+  /// rewind-on-resume) exactly like a plain background pause. Live sessions
+  /// never enter this flow because their tuned session and capture-buffer
+  /// position must remain intact across backgrounding.
   Future<void> _restorePlayerAfterTvBackgroundSuspend() async {
     _playerSuspendedForTvBackground = false;
     final resumePosition = _tvBackgroundSuspendPosition;
@@ -264,12 +266,6 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
 
     final currentPlayer = player;
     if (!mounted || currentPlayer == null || !_isPlayerInitialized) return;
-
-    if (widget.isLive) {
-      _recordLifecycleState('resumed', action: 'tv_background_suspend_retune');
-      await _switchLiveChannel(0);
-      return;
-    }
 
     _recordLifecycleState('resumed', action: 'tv_background_suspend_reload');
     final reloaded = await _reloadMediaInPlace(
