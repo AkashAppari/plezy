@@ -40,8 +40,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/edde746/MPVKit",
       "state" : {
-        "revision" : "206ba4a9f8f8191f18cabfdc025bfa512729af58",
-        "version" : "1.0.9"
+        "revision" : "bdc3a651c17c01d3985828bdc07b716786992259",
+        "version" : "1.0.10"
       }
     },
     {
