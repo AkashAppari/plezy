@@ -89,6 +89,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   final Map<String, SyncRuleItem> _syncRules = {};
 
   String? _activeProfileId;
+  Future<void>? _profileScopedReloadFuture;
 
   OfflineModeSource? _offlineSource;
 
@@ -141,7 +142,9 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   void setActiveProfileId(String? profileId) {
     if (_activeProfileId == profileId) return;
     _activeProfileId = profileId;
-    unawaited(_reloadProfileScopedStateForActiveProfile());
+    final reload = _reloadProfileScopedStateForActiveProfile();
+    _profileScopedReloadFuture = reload;
+    unawaited(reload);
   }
 
   Future<void> _reloadProfileScopedStateForActiveProfile() async {
@@ -216,6 +219,22 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _queueing.clear();
     _ownedDownloadKeys.clear();
     _deletionProgress.clear();
+    safeNotifyListeners();
+  }
+
+  /// Preserve physical downloads across a full logout while detaching them
+  /// from profiles that are about to be deleted. The next selected profile
+  /// adopts the ownerless rows through [_loadDownloadOwners].
+  Future<void> detachDownloadsForLogout() async {
+    // Invalidate any in-flight profile reload before waiting for it: an old
+    // reload may still finish its DB adoption, but cannot repopulate the
+    // active-profile view after this point.
+    _activeProfileId = null;
+    await _initFuture;
+    await _profileScopedReloadFuture;
+    await _database.clearAllDownloadOwners();
+    _ownedDownloadKeys.clear();
+    _syncRules.clear();
     safeNotifyListeners();
   }
 

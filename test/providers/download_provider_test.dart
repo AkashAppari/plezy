@@ -156,6 +156,34 @@ void main() {
 
       p.dispose();
     });
+
+    test('logout detaches ownership without deleting physical downloads', () async {
+      const globalKey = 'srv:preserved';
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'preserved',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+      );
+      await db.addDownloadOwner(profileId: 'test-profile', globalKey: globalKey);
+
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {globalKey: const DownloadProgress(globalKey: globalKey, status: DownloadStatus.completed)},
+        ownedDownloadKeys: {globalKey},
+      );
+      expect(p.downloads, contains(globalKey));
+
+      await p.detachDownloadsForLogout();
+
+      expect(await db.getDownloadedMedia(globalKey), isNotNull);
+      expect(await db.hasDownloadOwner(globalKey), isFalse);
+      expect(p.downloads, isEmpty);
+
+      p.dispose();
+    });
   });
 
   group('DownloadProvider — local file selection', () {

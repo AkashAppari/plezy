@@ -230,7 +230,10 @@ Future<void> logoutAllProfiles(BuildContext context) async {
 
   await companionRemote.resetForLogout();
   await userProfileProvider.logout();
-  await scope.downloads.deleteAllDownloads();
+  // Downloads are device-local data, not credentials. Keep their physical
+  // files and pinned metadata, but detach profile ownership before deleting
+  // the profiles so the next selected profile can adopt them.
+  await scope.downloads.detachDownloadsForLogout();
   scope.multiServer.clearAllConnections();
   // Drop the profile/connection rows so the next sign-in starts clean and
   // doesn't bind to stale tokens or orphaned profile rows.
@@ -246,9 +249,9 @@ Future<void> logoutAllProfiles(BuildContext context) async {
   // through the next sign-in's clients).
   await scope.database.clearAllWatchActions();
   await scope.database.clearAllSyncRules();
-  // Downloads were removed above, so no pinned cache rows need to survive this
-  // app-global logout into the next sign-in.
-  await ApiCache.instance.clearAll();
+  // Preserve pinned rows backing offline downloads; all session/API data is
+  // volatile and must not cross into the next sign-in.
+  await ApiCache.instance.clearVolatile();
   await scope.hiddenLibraries?.refresh();
   playbackState.clearShuffle();
 
