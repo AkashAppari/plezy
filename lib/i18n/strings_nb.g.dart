@@ -1106,6 +1106,7 @@ class _TranslationsLiveTvNb extends TranslationsLiveTvEn {
 	@override String get recordEpisode => 'Ta opp episode';
 	@override String get recordSeries => 'Ta opp serie';
 	@override String get recordOptions => 'Opptaksvalg';
+	@override String get saveTo => 'Lagre i';
 	@override String get recordings => 'Opptak';
 	@override String get scheduledRecordings => 'Planlagt';
 	@override String get recordingRules => 'Opptaksregler';
@@ -2804,6 +2805,7 @@ extension on TranslationsNb {
 			'liveTv.recordEpisode' => 'Ta opp episode',
 			'liveTv.recordSeries' => 'Ta opp serie',
 			'liveTv.recordOptions' => 'Opptaksvalg',
+			'liveTv.saveTo' => 'Lagre i',
 			'liveTv.recordings' => 'Opptak',
 			'liveTv.scheduledRecordings' => 'Planlagt',
 			'liveTv.recordingRules' => 'Opptaksregler',
@@ -3020,9 +3022,9 @@ extension on TranslationsNb {
 			'downloads.noSyncRules' => 'Ingen synkroniseringsregler',
 			'downloads.manageSyncRule' => 'Administrer synkronisering',
 			'downloads.editEpisodeCount' => 'Antall episoder',
-			'downloads.editSyncFilter' => 'Synkroniseringsfilter',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.editSyncFilter' => 'Synkroniseringsfilter',
 			'downloads.syncAllItems' => 'Synkroniserer alle elementer',
 			'downloads.syncUnwatchedItems' => 'Synkroniserer usette elementer',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',

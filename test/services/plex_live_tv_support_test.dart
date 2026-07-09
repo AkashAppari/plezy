@@ -215,6 +215,43 @@ void main() {
     expect(created?.key, '18');
   });
 
+  test('fromTemplate section override drops the template location id', () async {
+    late http.Request captured;
+    final client = makeClient((request) async {
+      captured = request;
+      return jsonResponse({
+        'MediaContainer': {
+          'MediaSubscription': [
+            {'key': '18', 'type': 4, 'title': 'Episode'},
+          ],
+        },
+      });
+    });
+    addTearDown(client.close);
+
+    const template = MediaSubscription(key: '', targetLibrarySectionID: 2, targetSectionLocationID: 7, type: 4);
+
+    final overridden = MediaSubscriptionCreateRequest.fromTemplate(template, targetLibrarySectionID: 5);
+    expect(overridden.targetLibrarySectionID, 5);
+    expect(overridden.targetSectionLocationID, isNull);
+
+    await client.liveTv.createRecordingRule(overridden);
+    expect(captured.url.queryParameters['targetLibrarySectionID'], '5');
+    expect(captured.url.queryParameters.containsKey('targetSectionLocationID'), isFalse);
+  });
+
+  test('fromTemplate without override keeps template section and location', () {
+    const template = MediaSubscription(key: '', targetLibrarySectionID: 2, targetSectionLocationID: 7, type: 4);
+
+    final request = MediaSubscriptionCreateRequest.fromTemplate(template);
+    expect(request.targetLibrarySectionID, 2);
+    expect(request.targetSectionLocationID, 7);
+
+    // Same-section override is a no-op: the template location still applies.
+    final sameSection = MediaSubscriptionCreateRequest.fromTemplate(template, targetLibrarySectionID: 2);
+    expect(sameSection.targetSectionLocationID, 7);
+  });
+
   test('updateRecordingRule sends prefs as query params', () async {
     late http.Request captured;
     final client = makeClient((request) async {

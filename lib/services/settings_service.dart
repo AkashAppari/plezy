@@ -570,6 +570,12 @@ class SettingsService extends BaseSharedPreferencesService {
 
   static IntPref watchedThresholdPref(ServerId serverId) => IntPref('watched_threshold_$serverId', defaultValue: 90);
 
+  /// Library section the user last picked as a DVR recording target, keyed by
+  /// subscription type (movie/show) so the two don't clobber each other.
+  /// 0 = unset (only explicit picks are written; the server template default
+  /// keeps applying until the user chooses).
+  static IntPref dvrTargetSectionPref(ServerId serverId, int type) => IntPref('dvr_target_section_${type}_$serverId');
+
   static EnumPref<TrackerLibraryFilterMode> trackerFilterModePref(TrackerService s) => EnumPref(
     'tracker_library_filter_mode_${s.name}',
     values: TrackerLibraryFilterMode.values,

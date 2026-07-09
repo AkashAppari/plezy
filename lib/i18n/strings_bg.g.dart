@@ -1106,6 +1106,7 @@ class _TranslationsLiveTvBg extends TranslationsLiveTvEn {
 	@override String get recordEpisode => 'Запиши епизод';
 	@override String get recordSeries => 'Запиши сериал';
 	@override String get recordOptions => 'Опции за запис';
+	@override String get saveTo => 'Запази в';
 	@override String get recordings => 'Записи';
 	@override String get scheduledRecordings => 'Планирани';
 	@override String get recordingRules => 'Правила за запис';
@@ -2804,6 +2805,7 @@ extension on TranslationsBg {
 			'liveTv.recordEpisode' => 'Запиши епизод',
 			'liveTv.recordSeries' => 'Запиши сериал',
 			'liveTv.recordOptions' => 'Опции за запис',
+			'liveTv.saveTo' => 'Запази в',
 			'liveTv.recordings' => 'Записи',
 			'liveTv.scheduledRecordings' => 'Планирани',
 			'liveTv.recordingRules' => 'Правила за запис',
@@ -3020,9 +3022,9 @@ extension on TranslationsBg {
 			'downloads.noSyncRules' => 'Няма правила за синхронизация',
 			'downloads.manageSyncRule' => 'Управление на синхронизацията',
 			'downloads.editEpisodeCount' => 'Брой епизоди',
-			'downloads.editSyncFilter' => 'Филтър за синхронизация',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.editSyncFilter' => 'Филтър за синхронизация',
 			'downloads.syncAllItems' => 'Синхронизират се всички елементи',
 			'downloads.syncUnwatchedItems' => 'Синхронизират се негледаните елементи',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Сървър: ${server} • ${status}',

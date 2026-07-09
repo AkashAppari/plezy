@@ -1106,6 +1106,7 @@ class _TranslationsLiveTvEs extends TranslationsLiveTvEn {
 	@override String get recordEpisode => 'Grabar episodio';
 	@override String get recordSeries => 'Grabar serie';
 	@override String get recordOptions => 'Opciones de grabación';
+	@override String get saveTo => 'Guardar en';
 	@override String get recordings => 'Grabaciones';
 	@override String get scheduledRecordings => 'Programadas';
 	@override String get recordingRules => 'Reglas de grabación';
@@ -2804,6 +2805,7 @@ extension on TranslationsEs {
 			'liveTv.recordEpisode' => 'Grabar episodio',
 			'liveTv.recordSeries' => 'Grabar serie',
 			'liveTv.recordOptions' => 'Opciones de grabación',
+			'liveTv.saveTo' => 'Guardar en',
 			'liveTv.recordings' => 'Grabaciones',
 			'liveTv.scheduledRecordings' => 'Programadas',
 			'liveTv.recordingRules' => 'Reglas de grabación',
@@ -3020,9 +3022,9 @@ extension on TranslationsEs {
 			'downloads.noSyncRules' => 'Sin reglas de sincronización',
 			'downloads.manageSyncRule' => 'Gestionar sincronización',
 			'downloads.editEpisodeCount' => 'Número de episodios',
-			'downloads.editSyncFilter' => 'Filtro de sincronización',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.editSyncFilter' => 'Filtro de sincronización',
 			'downloads.syncAllItems' => 'Sincronizando todos los elementos',
 			'downloads.syncUnwatchedItems' => 'Sincronizando elementos no vistos',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Servidor: ${server} • ${status}',

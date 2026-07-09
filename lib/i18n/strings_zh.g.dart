@@ -1106,6 +1106,7 @@ class _TranslationsLiveTvZh extends TranslationsLiveTvEn {
 	@override String get recordEpisode => '录制单集';
 	@override String get recordSeries => '录制整部剧集';
 	@override String get recordOptions => '录制选项';
+	@override String get saveTo => '保存到';
 	@override String get recordings => '录制内容';
 	@override String get scheduledRecordings => '已安排';
 	@override String get recordingRules => '录制规则';
@@ -2803,6 +2804,7 @@ extension on TranslationsZh {
 			'liveTv.recordEpisode' => '录制单集',
 			'liveTv.recordSeries' => '录制整部剧集',
 			'liveTv.recordOptions' => '录制选项',
+			'liveTv.saveTo' => '保存到',
 			'liveTv.recordings' => '录制内容',
 			'liveTv.scheduledRecordings' => '已安排',
 			'liveTv.recordingRules' => '录制规则',
@@ -3019,9 +3021,9 @@ extension on TranslationsZh {
 			'downloads.noSyncRules' => '没有同步规则',
 			'downloads.manageSyncRule' => '管理同步',
 			'downloads.editEpisodeCount' => '剧集数量',
-			'downloads.editSyncFilter' => '同步筛选',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.editSyncFilter' => '同步筛选',
 			'downloads.syncAllItems' => '同步所有项目',
 			'downloads.syncUnwatchedItems' => '同步未观看项目',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => '服务器: ${server} • ${status}',

@@ -879,6 +879,7 @@
     "recordEpisode": "에피소드 녹화",
     "recordSeries": "시리즈 녹화",
     "recordOptions": "녹화 옵션",
+    "saveTo": "저장 위치",
     "recordings": "녹화",
     "scheduledRecordings": "예약됨",
     "recordingRules": "녹화 규칙",

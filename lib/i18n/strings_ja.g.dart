@@ -1106,6 +1106,7 @@ class _TranslationsLiveTvJa extends TranslationsLiveTvEn {
 	@override String get recordEpisode => 'このエピソードを録画';
 	@override String get recordSeries => 'シリーズを録画';
 	@override String get recordOptions => '録画オプション';
+	@override String get saveTo => '保存先';
 	@override String get recordings => '録画';
 	@override String get scheduledRecordings => '予約';
 	@override String get recordingRules => '録画ルール';
@@ -2803,6 +2804,7 @@ extension on TranslationsJa {
 			'liveTv.recordEpisode' => 'このエピソードを録画',
 			'liveTv.recordSeries' => 'シリーズを録画',
 			'liveTv.recordOptions' => '録画オプション',
+			'liveTv.saveTo' => '保存先',
 			'liveTv.recordings' => '録画',
 			'liveTv.scheduledRecordings' => '予約',
 			'liveTv.recordingRules' => '録画ルール',
@@ -3019,9 +3021,9 @@ extension on TranslationsJa {
 			'downloads.noSyncRules' => '同期ルールなし',
 			'downloads.manageSyncRule' => '同期を管理',
 			'downloads.editEpisodeCount' => 'エピソード数',
-			'downloads.editSyncFilter' => '同期フィルター',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.editSyncFilter' => '同期フィルター',
 			'downloads.syncAllItems' => 'すべてのアイテムを同期中',
 			'downloads.syncUnwatchedItems' => '未視聴のアイテムを同期中',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'サーバー: ${server} • ${status}',

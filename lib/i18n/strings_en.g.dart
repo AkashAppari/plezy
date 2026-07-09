@@ -2614,6 +2614,9 @@ class TranslationsLiveTvEn {
 	/// en: 'Record Options'
 	String get recordOptions => 'Record Options';
 
+	/// en: 'Save to'
+	String get saveTo => 'Save to';
+
 	/// en: 'Recordings'
 	String get recordings => 'Recordings';
 
@@ -5533,6 +5536,7 @@ extension on Translations {
 			'liveTv.recordEpisode' => 'Record Episode',
 			'liveTv.recordSeries' => 'Record Series',
 			'liveTv.recordOptions' => 'Record Options',
+			'liveTv.saveTo' => 'Save to',
 			'liveTv.recordings' => 'Recordings',
 			'liveTv.scheduledRecordings' => 'Scheduled',
 			'liveTv.recordingRules' => 'Recording Rules',
@@ -5737,9 +5741,9 @@ extension on Translations {
 			'downloads.customAmount' => 'Custom amount...',
 			'downloads.includeSpecials' => 'Include Specials',
 			'downloads.howManyEpisodes' => 'How many episodes?',
-			'downloads.itemsQueued' => ({required Object count}) => '${count} items queued for download',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.itemsQueued' => ({required Object count}) => '${count} items queued for download',
 			'downloads.keepSynced' => 'Keep synced',
 			'downloads.downloadOnce' => 'Download once',
 			'downloads.keepNUnwatched' => ({required Object count}) => 'Keep ${count} unwatched',

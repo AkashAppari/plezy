@@ -1106,6 +1106,7 @@ class _TranslationsLiveTvRu extends TranslationsLiveTvEn {
 	@override String get recordEpisode => 'Записать эпизод';
 	@override String get recordSeries => 'Записать сериал';
 	@override String get recordOptions => 'Параметры записи';
+	@override String get saveTo => 'Сохранить в';
 	@override String get recordings => 'Записи';
 	@override String get scheduledRecordings => 'Запланировано';
 	@override String get recordingRules => 'Правила записи';
@@ -2806,6 +2807,7 @@ extension on TranslationsRu {
 			'liveTv.recordEpisode' => 'Записать эпизод',
 			'liveTv.recordSeries' => 'Записать сериал',
 			'liveTv.recordOptions' => 'Параметры записи',
+			'liveTv.saveTo' => 'Сохранить в',
 			'liveTv.recordings' => 'Записи',
 			'liveTv.scheduledRecordings' => 'Запланировано',
 			'liveTv.recordingRules' => 'Правила записи',
@@ -3022,9 +3024,9 @@ extension on TranslationsRu {
 			'downloads.noSyncRules' => 'Нет правил синхронизации',
 			'downloads.manageSyncRule' => 'Управление синхронизацией',
 			'downloads.editEpisodeCount' => 'Количество эпизодов',
-			'downloads.editSyncFilter' => 'Фильтр синхронизации',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.editSyncFilter' => 'Фильтр синхронизации',
 			'downloads.syncAllItems' => 'Синхронизация всех элементов',
 			'downloads.syncUnwatchedItems' => 'Синхронизация непросмотренных элементов',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Сервер: ${server} • ${status}',

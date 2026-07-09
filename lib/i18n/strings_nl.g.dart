@@ -1106,6 +1106,7 @@ class _TranslationsLiveTvNl extends TranslationsLiveTvEn {
 	@override String get recordEpisode => 'Aflevering opnemen';
 	@override String get recordSeries => 'Serie opnemen';
 	@override String get recordOptions => 'Opnameopties';
+	@override String get saveTo => 'Opslaan in';
 	@override String get recordings => 'Opnames';
 	@override String get scheduledRecordings => 'Gepland';
 	@override String get recordingRules => 'Opnameregels';
@@ -2804,6 +2805,7 @@ extension on TranslationsNl {
 			'liveTv.recordEpisode' => 'Aflevering opnemen',
 			'liveTv.recordSeries' => 'Serie opnemen',
 			'liveTv.recordOptions' => 'Opnameopties',
+			'liveTv.saveTo' => 'Opslaan in',
 			'liveTv.recordings' => 'Opnames',
 			'liveTv.scheduledRecordings' => 'Gepland',
 			'liveTv.recordingRules' => 'Opnameregels',
@@ -3020,9 +3022,9 @@ extension on TranslationsNl {
 			'downloads.noSyncRules' => 'Geen synchronisatieregels',
 			'downloads.manageSyncRule' => 'Synchronisatie beheren',
 			'downloads.editEpisodeCount' => 'Aantal afleveringen',
-			'downloads.editSyncFilter' => 'Synchronisatiefilter',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.editSyncFilter' => 'Synchronisatiefilter',
 			'downloads.syncAllItems' => 'Alle items synchroniseren',
 			'downloads.syncUnwatchedItems' => 'Ongekeken items synchroniseren',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',

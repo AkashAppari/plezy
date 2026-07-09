@@ -190,9 +190,15 @@ class MediaSubscriptionCreateRequest {
       for (final setting in subscription.settings)
         if (setting.id.isNotEmpty) setting.id: setting.value ?? setting.defaultValue,
     };
+    // The template's location id belongs to the template's section; when the
+    // caller redirects to another section it must not be sent along (the
+    // server then uses the new section's default location).
+    final overridingSection =
+        targetLibrarySectionID != null && targetLibrarySectionID != subscription.targetLibrarySectionID;
     return MediaSubscriptionCreateRequest(
       targetLibrarySectionID: targetLibrarySectionID ?? subscription.targetLibrarySectionID,
-      targetSectionLocationID: targetSectionLocationID ?? subscription.targetSectionLocationID,
+      targetSectionLocationID:
+          targetSectionLocationID ?? (overridingSection ? null : subscription.targetSectionLocationID),
       type: subscription.type,
       parameters: subscription.parameters,
       prefs: {...templatePrefs, ...prefs},

@@ -1106,6 +1106,7 @@ class _TranslationsLiveTvKo extends TranslationsLiveTvEn {
 	@override String get recordEpisode => '에피소드 녹화';
 	@override String get recordSeries => '시리즈 녹화';
 	@override String get recordOptions => '녹화 옵션';
+	@override String get saveTo => '저장 위치';
 	@override String get recordings => '녹화';
 	@override String get scheduledRecordings => '예약됨';
 	@override String get recordingRules => '녹화 규칙';
@@ -2803,6 +2804,7 @@ extension on TranslationsKo {
 			'liveTv.recordEpisode' => '에피소드 녹화',
 			'liveTv.recordSeries' => '시리즈 녹화',
 			'liveTv.recordOptions' => '녹화 옵션',
+			'liveTv.saveTo' => '저장 위치',
 			'liveTv.recordings' => '녹화',
 			'liveTv.scheduledRecordings' => '예약됨',
 			'liveTv.recordingRules' => '녹화 규칙',
@@ -3019,9 +3021,9 @@ extension on TranslationsKo {
 			'downloads.noSyncRules' => '동기화 규칙 없음',
 			'downloads.manageSyncRule' => '동기화 관리',
 			'downloads.editEpisodeCount' => '에피소드 수',
-			'downloads.editSyncFilter' => '동기화 필터',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.editSyncFilter' => '동기화 필터',
 			'downloads.syncAllItems' => '모든 항목 동기화 중',
 			'downloads.syncUnwatchedItems' => '시청하지 않은 항목 동기화 중',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => '서버: ${server} • ${status}',

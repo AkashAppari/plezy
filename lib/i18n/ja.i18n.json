@@ -879,6 +879,7 @@
     "recordEpisode": "このエピソードを録画",
     "recordSeries": "シリーズを録画",
     "recordOptions": "録画オプション",
+    "saveTo": "保存先",
     "recordings": "録画",
     "scheduledRecordings": "予約",
     "recordingRules": "録画ルール",
