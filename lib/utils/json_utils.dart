@@ -8,22 +8,23 @@ int? flexibleInt(Object? v) => switch (v) {
   _ => null,
 };
 
-/// Parse a value that may be [bool], [int] (0/1), or [String] ('1') to [bool].
+/// Parse a value that may be [bool], [int] (0/1), or [String] ('1'/'true'/'false') to [bool].
 /// Returns `false` for `null` or unrecognised values.
 /// Handles Plex API responses where boolean fields may arrive as integers.
 bool flexibleBool(Object? v) => switch (v) {
   final bool b => b,
   final int n => n == 1,
-  final String s => s == '1',
+  final String s => s == '1' || s.toLowerCase() == 'true',
   _ => false,
 };
 
-/// Parse a value that may be [bool], [int] (0/1), or [String] ('1') to [bool].
-/// Returns `null` for `null` or unrecognised values.
+/// Parse a value that may be [bool], [int] (0/1), or [String] ('1'/'true'/'false') to [bool].
+/// Returns `null` for `null` or unsupported non-string values; legacy string
+/// values other than `'1'`/`'true'` map to `false`.
 bool? flexibleBoolNullable(Object? v) => switch (v) {
   final bool b => b,
   final int n => n == 1,
-  final String s => s == '1',
+  final String s => s == '1' || s.toLowerCase() == 'true',
   _ => null,
 };
 

@@ -61,7 +61,7 @@ class ServerCapabilities {
   final bool numericUserRating;
 
   /// Per-user favorite flag ("heart") on media items. Jellyfin exposes it via
-  /// `/Users/{userId}/FavoriteItems/{itemId}`; Plex has no equivalent.
+  /// `/UserFavoriteItems/{itemId}?userId=...`; Plex has no equivalent.
   final bool userFavorites;
 
   /// Hide an item from Continue Watching without changing watch state or

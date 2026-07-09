@@ -294,13 +294,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     _mediaControlSubscription = mediaControlsManager.controlEvents.listen((event) {
       final activePlayer = player;
       if (_mediaControlsSuspendedForTvBackground) {
-        final eventLabel = event.runtimeType.toString();
-        if (activePlayer != null && (event is PlayEvent || event is TogglePlayPauseEvent)) {
-          appLogger.d('Media control: $eventLabel received while Android TV background-suspended');
-          unawaited(_requestForegroundResumeFromSuspendedMediaControl(eventLabel));
-        } else {
-          appLogger.d('Media control: $eventLabel ignored while Android TV background-suspended');
-        }
+        appLogger.d('Media control: ${event.runtimeType} ignored while Android TV background-suspended');
         return;
       }
 

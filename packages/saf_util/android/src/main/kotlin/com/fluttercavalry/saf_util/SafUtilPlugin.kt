@@ -13,6 +13,7 @@ import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.provider.DocumentsContract
 import androidx.documentfile.provider.DocumentFile
+import androidx.core.net.toUri
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -20,11 +21,11 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import io.flutter.plugin.common.PluginRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
-import androidx.core.net.toUri
 
 
 /** SafUtilPlugin */
@@ -37,11 +38,15 @@ class SafUtilPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
   private lateinit var context: Context
   private var activity: Activity? = null
+  private var activityBinding: ActivityPluginBinding? = null
 
   private var pendingResult: Result? = null
   private var pendingArguments: PendingArguments? = null
   private val requestCodeOpenDocumentTree = 1001
   private val requestCodeOpenFiles = 1002
+  private val activityResultListener = PluginRegistry.ActivityResultListener { requestCode, resultCode, data ->
+    onActivityResult(requestCode, resultCode, data)
+  }
 
   /// Atomically takes ownership of the pending picker state. Every reply to a
   /// pending Result must go through this so no already-answered Result is ever
@@ -61,21 +66,31 @@ class SafUtilPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   }
 
   override fun onDetachedFromActivity() {
-    activity = null
+    detachFromActivityBinding()
   }
 
   override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
-    activity = binding.activity
+    attachToActivity(binding)
   }
 
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+    attachToActivity(binding)
+  }
+
+  private fun attachToActivity(binding: ActivityPluginBinding) {
+    detachFromActivityBinding()
+    activityBinding = binding
     activity = binding.activity
-    binding.addActivityResultListener { requestCode, resultCode, data ->
-      onActivityResult(requestCode, resultCode, data)
-    }
+    binding.addActivityResultListener(activityResultListener)
   }
 
   override fun onDetachedFromActivityForConfigChanges() {
+    detachFromActivityBinding()
+  }
+
+  private fun detachFromActivityBinding() {
+    activityBinding?.removeActivityResultListener(activityResultListener)
+    activityBinding = null
     activity = null
   }
 

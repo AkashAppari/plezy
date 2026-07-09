@@ -27,6 +27,10 @@ extension DownloadDatabaseOperations on AppDatabase {
     await (delete(downloadOwners)..where((t) => t.profileId.equals(profileId))).go();
   }
 
+  Future<void> clearAllDownloadOwners() async {
+    await delete(downloadOwners).go();
+  }
+
   Future<Set<String>> getDownloadOwnerKeysForProfile(String profileId) async {
     if (profileId.isEmpty) return const {};
     final rows = await (select(downloadOwners)..where((t) => t.profileId.equals(profileId))).get();

@@ -194,6 +194,31 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     await _releaseDownloadsForProfileWhere(profileId, (_) => true);
   }
 
+  Future<void> deleteAllDownloads() async {
+    final downloads = await _downloadManager.getAllDownloads();
+    for (final row in downloads) {
+      await _downloadManager.deleteDownload(row.globalKey);
+    }
+    await _database.clearAllDownloadOwners();
+
+    try {
+      final artworkDirectory = await DownloadStorageService.instance.getArtworkDirectory();
+      if (await artworkDirectory.exists()) {
+        await artworkDirectory.delete(recursive: true);
+      }
+    } catch (e, stackTrace) {
+      appLogger.w('Failed to delete shared download artwork directory', error: e, stackTrace: stackTrace);
+    }
+
+    _downloads.clear();
+    _metadata.clear();
+    _artworkPaths.clear();
+    _queueing.clear();
+    _ownedDownloadKeys.clear();
+    _deletionProgress.clear();
+    safeNotifyListeners();
+  }
+
   /// Remove ownership rows for [profileId] that belong to the removed
   /// connection's public server ids. Physical files stay when any other valid
   /// owner remains.

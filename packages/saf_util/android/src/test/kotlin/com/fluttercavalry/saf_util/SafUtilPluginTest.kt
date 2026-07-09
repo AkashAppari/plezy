@@ -1,27 +1,89 @@
 package com.fluttercavalry.saf_util
 
+import android.app.Activity
+import android.content.Intent
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
-import org.mockito.Mockito
+import io.flutter.plugin.common.PluginRegistry
+import org.mockito.ArgumentCaptor
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.verify
+import org.mockito.Mockito.verifyNoMoreInteractions
+import org.mockito.Mockito.`when`
+import kotlin.test.assertEquals
 import kotlin.test.Test
-
-/*
- * This demonstrates a simple unit test of the Kotlin portion of this plugin's implementation.
- *
- * Once you have built the plugin's example app, you can run these tests from the command
- * line by running `./gradlew testDebugUnitTest` in the `example/android/` directory, or
- * you can run them directly from IDEs that support JUnit such as Android Studio.
- */
 
 internal class SafUtilPluginTest {
     @Test
-    fun onMethodCall_getPlatformVersion_returnsExpectedValue() {
+    fun onMethodCall_unknownMethod_returnsNotImplemented() {
         val plugin = SafUtilPlugin()
+        val result = mock(MethodChannel.Result::class.java)
 
-        val call = MethodCall("getPlatformVersion", null)
-        val mockResult: MethodChannel.Result = Mockito.mock(MethodChannel.Result::class.java)
-        plugin.onMethodCall(call, mockResult)
+        plugin.onMethodCall(MethodCall("unknown", null), result)
 
-        Mockito.verify(mockResult).success("Android " + android.os.Build.VERSION.RELEASE)
+        verify(result).notImplemented()
+        verifyNoMoreInteractions(result)
+    }
+
+    @Test
+    fun pickDirectory_withoutActivity_returnsNoActivityError() {
+        val plugin = SafUtilPlugin()
+        val result = mock(MethodChannel.Result::class.java)
+
+        plugin.onMethodCall(MethodCall("pickDirectory", null), result)
+
+        verify(result).error("NO_ACTIVITY", "Activity is null", null)
+        verifyNoMoreInteractions(result)
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun pickDirectory_afterConfigChange_reattachesListenerAndClearsPendingResult() {
+        val plugin = SafUtilPlugin()
+        val firstActivity = RecordingActivity()
+        val firstBinding = mock(ActivityPluginBinding::class.java)
+        `when`(firstBinding.activity).thenReturn(firstActivity)
+
+        plugin.onAttachedToActivity(firstBinding)
+
+        val firstListenerCaptor = ArgumentCaptor.forClass(PluginRegistry.ActivityResultListener::class.java)
+        verify(firstBinding).addActivityResultListener(firstListenerCaptor.capture())
+
+        val firstResult = mock(MethodChannel.Result::class.java)
+        plugin.onMethodCall(MethodCall("pickDirectory", null), firstResult)
+        assertEquals(listOf(1001), firstActivity.startedRequestCodes)
+
+        val secondResult = mock(MethodChannel.Result::class.java)
+        plugin.onMethodCall(MethodCall("pickDirectory", null), secondResult)
+        verify(secondResult).error("ALREADY_PICKING", "Another picker process is already in progress", null)
+
+        plugin.onDetachedFromActivityForConfigChanges()
+        verify(firstBinding).removeActivityResultListener(firstListenerCaptor.value)
+
+        val secondActivity = RecordingActivity()
+        val secondBinding = mock(ActivityPluginBinding::class.java)
+        `when`(secondBinding.activity).thenReturn(secondActivity)
+
+        plugin.onReattachedToActivityForConfigChanges(secondBinding)
+
+        val secondListenerCaptor = ArgumentCaptor.forClass(PluginRegistry.ActivityResultListener::class.java)
+        verify(secondBinding).addActivityResultListener(secondListenerCaptor.capture())
+
+        secondListenerCaptor.value.onActivityResult(1001, Activity.RESULT_CANCELED, null)
+        verify(firstResult).success(null)
+
+        val thirdResult = mock(MethodChannel.Result::class.java)
+        plugin.onMethodCall(MethodCall("pickDirectory", null), thirdResult)
+        assertEquals(listOf(1001), secondActivity.startedRequestCodes)
+    }
+
+    private class RecordingActivity : Activity() {
+        val startedRequestCodes = mutableListOf<Int>()
+
+        @Deprecated("Deprecated in Android")
+        override fun startActivityForResult(intent: Intent?, requestCode: Int) {
+            startedRequestCodes.add(requestCode)
+        }
     }
 }

@@ -89,7 +89,6 @@ class MainActivity : FlutterActivity() {
   private val DEVICE_ADJUSTMENT_CHANNEL = "com.plezy/device_adjustment"
   private val TEXT_INPUT_CHANNEL = "com.plezy/text_input"
   private val APP_EXIT_CHANNEL = "com.plezy/app_exit"
-  private val APP_FOREGROUND_CHANNEL = "com.plezy/app_foreground"
   private var watchNextPlugin: WatchNextPlugin? = null
   private var nativeTextInputFocused = false
   private var pendingExternalPlayerResult: MethodChannel.Result? = null
@@ -532,13 +531,6 @@ class MainActivity : FlutterActivity() {
       }
     }
 
-    MethodChannel(flutterEngine.dartExecutor.binaryMessenger, APP_FOREGROUND_CHANNEL).setMethodCallHandler { call, result ->
-      when (call.method) {
-        "requestForeground" -> result.success(requestForeground())
-        else -> result.notImplemented()
-      }
-    }
-
     // External player: open local video files with proper content:// URIs
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, EXTERNAL_PLAYER_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {
@@ -720,31 +712,6 @@ class MainActivity : FlutterActivity() {
         }
         else -> result.notImplemented()
       }
-    }
-  }
-
-  private fun requestForeground(): Boolean = try {
-    val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-    activityManager.moveTaskToFront(taskId, 0)
-    true
-  } catch (e: Exception) {
-    Log.w(TAG, "Failed to move task to foreground", e)
-    try {
-      val launchIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
-        addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-        addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-      }
-      if (launchIntent != null) {
-        startActivity(launchIntent)
-        true
-      } else {
-        false
-      }
-    } catch (launchError: Exception) {
-      Log.w(TAG, "Failed to start foreground activity", launchError)
-      false
     }
   }
 

@@ -44,7 +44,6 @@ import '../services/discord_rpc_service.dart';
 import '../services/trackers/tracker_coordinator.dart';
 import '../services/trakt/trakt_scrobble_service.dart';
 import '../services/episode_navigation_service.dart';
-import '../services/app_foreground_service.dart';
 import '../services/apple_tv_remote_touch_service.dart';
 import '../services/media_controls_manager.dart';
 import '../services/playback_coordinator.dart';
@@ -378,7 +377,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _wasPlayingBeforeInactive = false;
   bool _hiddenForBackground = false;
   bool _mediaControlsSuspendedForTvBackground = false;
-  bool _resumeFromSuspendedMediaControlOnForeground = false;
   bool _resumeAfterAppleAudioSessionPause = false;
   DateTime? _lastPlaybackPauseAt;
   bool _autoPipEnabled = false;
@@ -389,7 +387,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   int _rewindOnResume = 0;
   Future<void> _lifecycleTransition = Future<void>.value();
   String _playerBackendLabel = 'unknown';
-  Timer? _tvBackgroundMediaControlResumeTimer;
 
   /// Android TV: release the native AV pipeline once the app stays
   /// backgrounded past this grace window. A merely paused player keeps its
@@ -1171,7 +1168,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _serverStatusSubscription?.cancel();
 
     _autoPlayTimer?.cancel();
-    _tvBackgroundMediaControlResumeTimer?.cancel();
     _tvBackgroundPlayerSuspendTimer?.cancel();
 
     _stillWatchingTimer?.cancel();

@@ -84,6 +84,7 @@ interface ExoPlayerDelegate : com.edde746.plezy.shared.PlayerDelegate {
     uri: String,
     headers: Map<String, String>?,
     positionMs: Long,
+    playWhenReady: Boolean,
     errorMessage: String
   ): Boolean = false
 }
@@ -1110,6 +1111,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         uri = currentMediaUri!!,
         headers = currentHeaders,
         positionMs = effectivePosition,
+        playWhenReady = exoPlayer?.playWhenReady ?: true,
         errorMessage = "Video track present but no decoder available"
       )
       return
@@ -1217,6 +1219,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         uri = currentMediaUri!!,
         headers = currentHeaders,
         positionMs = effectivePosition,
+        playWhenReady = exoPlayer?.playWhenReady ?: true,
         errorMessage = error.message ?: "Unknown error"
       ) ?: false
 
@@ -2650,6 +2653,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
           uri = uri,
           headers = currentHeaders,
           positionMs = effectivePosition,
+          playWhenReady = player.playWhenReady,
           errorMessage = "Decoder hang: $decoderName accepted input but produced no output"
         )
       }
@@ -2700,6 +2704,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             uri = uri,
             headers = currentHeaders,
             positionMs = player.currentPosition,
+            playWhenReady = player.playWhenReady,
             errorMessage = "Video track present but no decoder available"
           )
           return
@@ -2715,6 +2720,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             uri = uri,
             headers = currentHeaders,
             positionMs = player.currentPosition,
+            playWhenReady = player.playWhenReady,
             errorMessage = "Black screen detected: 0 video frames rendered after ${elapsed}ms"
           )
           return
@@ -3722,8 +3728,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
   fun triggerFallback() {
     val uri = currentMediaUri ?: return
-    val pos = exoPlayer?.currentPosition ?: 0L
-    delegate?.onFormatUnsupported(uri, currentHeaders, pos, "debug: manual fallback trigger")
+    val player = exoPlayer
+    val pos = player?.currentPosition ?: 0L
+    delegate?.onFormatUnsupported(uri, currentHeaders, pos, player?.playWhenReady ?: true, "debug: manual fallback trigger")
   }
 
   // Cleanup

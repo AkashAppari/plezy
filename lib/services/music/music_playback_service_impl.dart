@@ -772,6 +772,11 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     if (player.state.completed) {
       // Parked at queue end: restart the current track.
       await player.seek(Duration.zero);
+      final currentTrack = _currentTrack;
+      final currentSource = _currentSource;
+      if (currentTrack != null && currentSource != null) {
+        _bindTrackServices(currentTrack, currentSource);
+      }
       unawaited(_armNext(_generation));
     }
     await player.play();

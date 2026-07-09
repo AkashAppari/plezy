@@ -28,7 +28,6 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       'hiddenForBackground': _hiddenForBackground,
       'playerSuspendedForTvBackground': _playerSuspendedForTvBackground,
       'mediaControlsSuspendedForTvBackground': _mediaControlsSuspendedForTvBackground,
-      'pendingForegroundMediaResume': _resumeFromSuspendedMediaControlOnForeground,
       'backend': _playerBackendLabel,
     };
     if (action != null) {
@@ -49,7 +48,6 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       ' hiddenForBackground=$_hiddenForBackground'
       ' playerSuspendedForTvBackground=$_playerSuspendedForTvBackground'
       ' mediaControlsSuspendedForTvBackground=$_mediaControlsSuspendedForTvBackground'
-      ' pendingForegroundMediaResume=$_resumeFromSuspendedMediaControlOnForeground'
       ' backend=$_playerBackendLabel',
     );
   }

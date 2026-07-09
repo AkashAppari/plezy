@@ -60,7 +60,12 @@ Future<PlexAccountRegistration> registerPlexAccountFromToken({
       createdAt: DateTime.now(),
       lastAuthenticatedAt: DateTime.now(),
     );
-    final existedBefore = await connections.get(connection.id) != null;
+    final legacyId = 'plex.${auth.clientIdentifier}';
+    final existedBefore =
+        await connections.get(connection.id) != null ||
+        (accountUuid.isNotEmpty &&
+            legacyId != connection.id &&
+            await connections.get(legacyId) is PlexAccountConnection);
     await connections.upsert(connection);
 
     if (accountUuid.isNotEmpty) {
