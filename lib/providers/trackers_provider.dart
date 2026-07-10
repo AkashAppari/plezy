@@ -58,6 +58,14 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   bool get isAnilistConnected => _anilist != null;
   bool get isSimklConnected => _simkl != null;
 
+  /// The live MAL client for the Explore catalog, shared with the scrobble
+  /// tracker so both ride one session (MAL rotates refresh tokens — a second
+  /// client would race refreshes and log the user out). Gated on this
+  /// provider's own session so a freshly-mounted profile subtree never sees
+  /// the previous profile's client while its sessions are still loading;
+  /// every rebind is followed by a notify, so proxy consumers track identity.
+  MalClient? get malCatalogClient => _mal == null ? null : MalTracker.instance.client;
+
   String? get malUsername => _mal?.username;
   String? get anilistUsername => _anilist?.username;
   String? get simklUsername => _simkl?.username;

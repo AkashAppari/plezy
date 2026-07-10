@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:http/http.dart' as http;
 
+import '../../../models/mal/mal_anime.dart';
+import '../../../models/mal/mal_character.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/json_utils.dart';
 import '../future_coalescer.dart';
@@ -12,6 +14,7 @@ import '../tracker_http_client.dart';
 import '../tracker_session.dart';
 import 'mal_auth_service.dart';
 import 'mal_constants.dart';
+import 'mal_page.dart';
 
 /// HTTP wrapper for the MAL REST API.
 ///
@@ -75,6 +78,75 @@ class MalClient implements DisposableTrackerClient {
       if (e.statusCode == 404) return null;
       rethrow;
     }
+  }
+
+  /// Anime summary fields the Explore catalog requests on list endpoints.
+  static const String catalogFields =
+      'id,title,main_picture,alternative_titles,start_date,synopsis,mean,'
+      'genres,media_type,rating,num_episodes,average_episode_duration,start_season,'
+      'status,studios,num_scoring_users';
+
+  static const String _characterFields = 'role,main_picture,first_name,last_name';
+
+  /// Characters of an anime, main roles first (MAL exposes no voice actors).
+  Future<MalPage<MalCharacter>> getAnimeCharacters(int animeId, {int limit = 20}) async {
+    final res = await _request('GET', '/anime/$animeId/characters?limit=$limit&fields=$_characterFields');
+    return MalPage.fromJsonEntries(res, MalCharacter.fromEntry);
+  }
+
+  /// The user's Plan to Watch list — the MAL equivalent of a watchlist.
+  /// `nsfw=true` because it is the user's own list.
+  Future<MalPage<MalAnime>> getPlanToWatch({int page = 1, int limit = 100}) => _getAnimePage(
+    '/users/@me/animelist',
+    {'status': 'plan_to_watch', 'sort': 'list_updated_at', 'nsfw': 'true'},
+    page: page,
+    limit: limit,
+  );
+
+  /// Personalized recommendations. Empty for accounts without history.
+  Future<MalPage<MalAnime>> getSuggestedAnime({int page = 1, int limit = 100}) =>
+      _getAnimePage('/anime/suggestions', const {}, page: page, limit: limit);
+
+  Future<MalPage<MalAnime>> getAnimeRanking(MalRankingType type, {int page = 1, int limit = 100}) =>
+      _getAnimePage('/anime/ranking', {'ranking_type': type.queryValue}, page: page, limit: limit);
+
+  /// Title search. MAL rejects queries under 3 characters (`invalid q`) —
+  /// callers guard the minimum length.
+  Future<MalPage<MalAnime>> searchAnime(String query, {int page = 1, int limit = 30}) =>
+      _getAnimePage('/anime', {'q': query}, page: page, limit: limit);
+
+  /// Community "users also liked" titles from the anime detail's
+  /// `recommendations` field, with the catalog fields selected on the nested
+  /// nodes (`fields=recommendations{...}` — braces percent-encoded, MAL
+  /// accepts the nested selector).
+  Future<List<MalAnime>> getAnimeRecommendations(int animeId, {int limit = 20}) async {
+    final res = await _request('GET', '/anime/$animeId?fields=recommendations%7B$catalogFields%7D');
+    if (res is! Map) return const [];
+    final recommendations = res['recommendations'];
+    if (recommendations is! List) return const [];
+    return [
+      for (final entry in recommendations.take(limit))
+        if (entry is Map<String, dynamic> && entry['node'] is Map<String, dynamic>)
+          MalAnime.fromJson(entry['node'] as Map<String, dynamic>),
+    ];
+  }
+
+  Future<MalPage<MalAnime>> _getAnimePage(
+    String path,
+    Map<String, String> params, {
+    required int page,
+    required int limit,
+  }) async {
+    final query = Uri(
+      queryParameters: {
+        ...params,
+        'limit': '$limit',
+        if (page > 1) 'offset': '${(page - 1) * limit}',
+        'fields': catalogFields,
+      },
+    ).query;
+    final res = await _request('GET', '$path?$query');
+    return MalPage.fromJson(res, MalAnime.fromJson);
   }
 
   Future<int?> getAnimeEpisodeCount(int animeId) async {

@@ -38,6 +38,9 @@ class _FakeFribbLookup implements FribbMappingLookup {
     lookups++;
     return rows;
   }
+
+  @override
+  Future<FribbMappingRow?> lookupByMal(int malId) async => rows.where((row) => row.malId == malId).firstOrNull;
 }
 
 class _FakeAnimeProgressLookup implements AnimeEpisodeProgressLookup {

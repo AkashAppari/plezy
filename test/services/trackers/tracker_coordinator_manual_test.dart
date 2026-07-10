@@ -66,6 +66,9 @@ class _FakeFribbLookup implements FribbMappingLookup {
 
   @override
   Future<List<FribbMappingRow>> lookup({int? tvdbId, int? tmdbId, String? imdbId}) async => rows;
+
+  @override
+  Future<FribbMappingRow?> lookupByMal(int malId) async => rows.where((row) => row.malId == malId).firstOrNull;
 }
 
 class _FakeAnimeListsLookup implements AnimeListsMappingLookup {

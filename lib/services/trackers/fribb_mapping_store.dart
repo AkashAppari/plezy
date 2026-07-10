@@ -24,13 +24,19 @@ class FribbIndex {
   final Map<int, List<FribbMappingRow>> byTmdb;
   final Map<String, List<FribbMappingRow>> byImdb;
 
-  const FribbIndex({required this.byTvdb, required this.byTmdb, required this.byImdb});
+  /// Reverse index for the Explore catalog: MAL id → its (single) row, so a
+  /// MAL entry can be matched back to library external ids.
+  final Map<int, FribbMappingRow> byMal;
 
-  bool get isEmpty => byTvdb.isEmpty && byTmdb.isEmpty && byImdb.isEmpty;
+  const FribbIndex({required this.byTvdb, required this.byTmdb, required this.byImdb, this.byMal = const {}});
+
+  bool get isEmpty => byTvdb.isEmpty && byTmdb.isEmpty && byImdb.isEmpty && byMal.isEmpty;
 }
 
 abstract interface class FribbMappingLookup {
   Future<List<FribbMappingRow>> lookup({int? tvdbId, int? tmdbId, String? imdbId});
+
+  Future<FribbMappingRow?> lookupByMal(int malId);
 }
 
 /// Loads and refreshes the Fribb anime-lists mapping on demand.
@@ -149,6 +155,9 @@ class FribbMappingStore implements FribbMappingLookup {
     return const [];
   }
 
+  @override
+  Future<FribbMappingRow?> lookupByMal(int malId) async => (await _ensureLoaded()).byMal[malId];
+
   /// Conditional-GET the mapping if the last check was >[_refreshInterval] ago
   /// and we already have an index loaded. No-op when nothing is loaded — the
   /// first lookup handles the initial download.
@@ -249,6 +258,7 @@ FribbIndex parseFribbIndex(String raw) {
   final byTvdb = <int, List<FribbMappingRow>>{};
   final byTmdb = <int, List<FribbMappingRow>>{};
   final byImdb = <String, List<FribbMappingRow>>{};
+  final byMal = <int, FribbMappingRow>{};
 
   var skipped = 0;
   for (final raw in decoded) {
@@ -271,8 +281,10 @@ FribbIndex parseFribbIndex(String raw) {
       if (imdb.isEmpty) continue;
       (byImdb[imdb] ??= <FribbMappingRow>[]).add(row);
     }
+    final mal = row.malId;
+    if (mal != null) byMal.putIfAbsent(mal, () => row);
   }
 
   if (skipped > 0) appLogger.w('Fribb: skipped $skipped malformed row(s)');
-  return FribbIndex(byTvdb: byTvdb, byTmdb: byTmdb, byImdb: byImdb);
+  return FribbIndex(byTvdb: byTvdb, byTmdb: byTmdb, byImdb: byImdb, byMal: byMal);
 }
