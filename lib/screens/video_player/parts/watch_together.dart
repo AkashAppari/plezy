@@ -175,7 +175,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     // fetchItem populates mediaVersions, so the saved preference resolves to
     // a verified index/id here rather than a raw stored index.
     final savedVersion = await resolveSavedMediaVersionFor(metadata);
-    final handled = await _reloadMediaInPlace(
+    final outcome = await _reloadMediaInPlace(
       metadata: metadata,
       selectedMediaIndex: savedVersion?.index ?? 0,
       selectedMediaSourceId: savedVersion?.sourceId,
@@ -187,7 +187,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
       reason: 'watch together media switch',
     );
     if (!mounted) return false;
-    if (!handled) {
+    if (outcome == _MediaReloadOutcome.rejected) {
       if (player == null) {
         unawaited(_replaceScreenWithPlayer(metadata));
         return true;
@@ -196,8 +196,8 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
       // error; the next heartbeat re-dispatches and converges once idle.
       return false;
     }
-    // handled==true also covers "reload failed after rollback" and
-    // "superseded by a newer attempt" — trust only the committed identity.
+    // failed (after rollback) and superseded land here too — trust only the
+    // committed identity.
     final onTarget = _currentMetadata.id == ratingKey && _currentMetadata.serverId == serverId;
     if (onTarget) {
       // A success ends the failure episode for this key; a later failure to

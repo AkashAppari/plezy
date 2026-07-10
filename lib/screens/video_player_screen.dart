@@ -134,6 +134,27 @@ Future<void> _setWakelock(bool enabled) async {
 /// transition is in flight.
 enum _PlaybackTransition { idle, reloadingMedia, restartingTranscode, switchingChannel }
 
+/// Outcome of [VideoPlayerScreenState._reloadMediaInPlace].
+enum _MediaReloadOutcome {
+  /// An entry guard refused the attempt (live screen, unmounted, another
+  /// transition in flight). Nothing was touched; safe to retry later.
+  rejected,
+
+  /// A newer playback attempt took ownership mid-reload; its outcome
+  /// governs what is on screen now.
+  superseded,
+
+  /// The replacement media opened and its session committed. A post-open
+  /// step may still have failed (tracks/services were rewired in the
+  /// catch), but the network stream is fresh.
+  opened,
+
+  /// The reload failed before the replacement opened: the previous session
+  /// is still committed, the eagerly-set identity was rolled back, and the
+  /// old (possibly dead — #1520) stream is still loaded.
+  failed,
+}
+
 /// Handle for one playback attempt (initial start, in-place reload,
 /// transcode restart). Async continuations check [isCurrent] after every
 /// await: it holds while the screen is mounted, the captured player is

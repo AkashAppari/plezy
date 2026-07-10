@@ -268,7 +268,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     if (!mounted || currentPlayer == null || !_isPlayerInitialized) return;
 
     _recordLifecycleState('resumed', action: 'tv_background_suspend_reload');
-    final reloaded = await _reloadMediaInPlace(
+    final outcome = await _reloadMediaInPlace(
       metadata: _currentMetadata,
       resumePosition: resumePosition,
       preserveCurrentTrackSelection: true,
@@ -278,8 +278,10 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       startPaused: true,
       reason: 'TV background suspend restore',
     );
-    if (!reloaded) {
+    if (outcome == _MediaReloadOutcome.rejected) {
       appLogger.w('TV background suspend restore: in-place reload rejected');
+    } else if (outcome == _MediaReloadOutcome.failed) {
+      appLogger.w('TV background suspend restore: in-place reload failed');
     }
   }
 }
