@@ -491,9 +491,20 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   }) async {
     if (isNetworkVod) {
       // Covers network drops up to 10 min; applies to transcode streams too.
+      //
+      // reconnect_on_http_error=503: without it, ffmpeg abandons a reconnect
+      // that gets an HTTP error and the truncated body surfaces as a clean
+      // mid-file EOF (#1520 — PMS answers 503 while restarting/maintenance).
+      // Deliberately 503 only: a persistent 500 must keep failing fast so the
+      // server-limit dialog (_server500Pattern) appears promptly, and a
+      // multi-code list would need mpv's %len% quoting to survive the
+      // comma-separated option string. While ffmpeg retries, mpv reports
+      // buffering, which also makes the server-online reconnect hook in
+      // _wirePlayerStreams reachable.
       await player.setProperty(
         'stream-lavf-o',
-        'reconnect=1,reconnect_on_network_error=1,reconnect_streamed=1,reconnect_delay_max=600',
+        'reconnect=1,reconnect_on_network_error=1,reconnect_on_http_error=503,'
+        'reconnect_streamed=1,reconnect_delay_max=600',
       );
     } else {
       await player.setProperty('stream-lavf-o', '');
