@@ -9,20 +9,16 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.graphics.SurfaceTexture
 import android.media.AudioManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.os.Process
 import android.provider.Settings
 import android.util.Log
 import android.util.Rational
 import android.view.InputDevice
 import android.view.KeyEvent
-import android.view.TextureView
 import android.view.ViewGroup
 import android.view.WindowInsets
 import android.view.WindowManager
@@ -93,6 +89,9 @@ class MainActivity : FlutterActivity() {
   private var nativeTextInputFocused = false
   private var pendingExternalPlayerResult: MethodChannel.Result? = null
   private var originalWindowBrightness: Float? = null
+  private var flutterTextureView: FlutterTextureView? = null
+  private var flutterSurfaceReconnectPending = false
+  private var activityStarted = false
 
   private inline fun logTextInputDiag(message: () -> String) {
     if (TEXT_INPUT_DIAGNOSTICS_ENABLED) {
@@ -383,6 +382,9 @@ class MainActivity : FlutterActivity() {
   override fun onDestroy() {
     pendingExternalPlayerResult?.error("ACTIVITY_DESTROYED", "Activity was destroyed while external player was active", null)
     pendingExternalPlayerResult = null
+    activityStarted = false
+    flutterSurfaceReconnectPending = false
+    flutterTextureView = null
     super.onDestroy()
   }
 
@@ -448,41 +450,49 @@ class MainActivity : FlutterActivity() {
   }
 
   override fun onFlutterTextureViewCreated(flutterTextureView: FlutterTextureView) {
+    this.flutterTextureView = flutterTextureView
     val original = flutterTextureView.surfaceTextureListener ?: return
-    val handler = Handler(Looper.getMainLooper())
-    var pendingResize: Runnable? = null
-    var lastWidth = 0
-    var lastHeight = 0
+    flutterTextureView.surfaceTextureListener =
+      DeferredSurfaceTextureListener(
+        delegate = original,
+        onSurfaceAvailable = ::tryReconnectFlutterSurface
+      ) { surface ->
+        flutterTextureView.isAvailable && flutterTextureView.surfaceTexture === surface
+      }
+  }
 
-    flutterTextureView.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
-      override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
-        original.onSurfaceTextureAvailable(surface, width, height)
+  override fun onStop() {
+    activityStarted = false
+    if (isAndroidTvDevice()) flutterSurfaceReconnectPending = true
+    super.onStop()
+  }
+
+  override fun onStart() {
+    super.onStart()
+    activityStarted = true
+    tryReconnectFlutterSurface()
+  }
+
+  private fun tryReconnectFlutterSurface() {
+    if (!activityStarted || !flutterSurfaceReconnectPending) return
+    val textureView = flutterTextureView ?: return
+    textureView.post {
+      if (!activityStarted ||
+        !flutterSurfaceReconnectPending ||
+        textureView !== flutterTextureView ||
+        !textureView.isAttachedToWindow ||
+        !textureView.isAvailable
+      ) {
+        return@post
       }
 
-      override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
-        if (width == lastWidth && height == lastHeight) return
-        lastWidth = width
-        lastHeight = height
-        pendingResize?.let { handler.removeCallbacks(it) }
-        pendingResize = Runnable {
-          if (flutterTextureView.isAvailable) {
-            original.onSurfaceTextureSizeChanged(surface, width, height)
-          }
-        }
-        handler.postDelayed(pendingResize!!, 100)
-      }
-
-      override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
-        original.onSurfaceTextureUpdated(surface)
-      }
-
-      override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
-        pendingResize?.let { handler.removeCallbacks(it) }
-        pendingResize = null
-        lastWidth = 0
-        lastHeight = 0
-        return original.onSurfaceTextureDestroyed(surface)
-      }
+      // Some TV firmware retains an available TextureView while invalidating
+      // its compositor surface during standby. Force Flutter's supported
+      // surface-swap path so rendering resumes without restarting the engine.
+      Log.i(TAG, "Reconnecting Flutter texture surface after Android TV standby")
+      textureView.pause()
+      textureView.resume()
+      flutterSurfaceReconnectPending = false
     }
   }
 
