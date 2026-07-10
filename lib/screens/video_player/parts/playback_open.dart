@@ -504,7 +504,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       await player.setProperty(
         'stream-lavf-o',
         'reconnect=1,reconnect_on_network_error=1,reconnect_on_http_error=503,'
-        'reconnect_streamed=1,reconnect_delay_max=600',
+            'reconnect_streamed=1,reconnect_delay_max=600',
       );
     } else {
       await player.setProperty('stream-lavf-o', '');
