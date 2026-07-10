@@ -210,4 +210,7 @@ dependencies {
   implementation(project(":libass"))
 
   testImplementation("junit:junit:4.13.2")
+  // Real android.util.* implementations for tests exercising media3 classes
+  // (MatroskaExtractor uses SparseArray, which is a no-op stub on plain JVM)
+  testImplementation("org.robolectric:robolectric:4.15.1")
 }

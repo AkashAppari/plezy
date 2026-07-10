@@ -1314,7 +1314,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     if (currentMediaIsLive) {
       val factory = dataSourceFactory ?: return false
       val extractorsFactory = androidx.media3.extractor.ExtractorsFactory {
-        arrayOf(MatroskaExtractor(MatroskaExtractor.FLAG_DISABLE_SEEK_FOR_CUES))
+        arrayOf(LatmMatroskaExtractor(MatroskaExtractor.FLAG_DISABLE_SEEK_FOR_CUES))
       }
       val mediaSource = ProgressiveMediaSource.Factory(factory, extractorsFactory)
         .createMediaSource(MediaItem.fromUri(uri))
@@ -2968,7 +2968,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       // so data flows immediately without hanging.
       // Headers already applied to httpDataSourceFactory above.
       val extractorsFactory = androidx.media3.extractor.ExtractorsFactory {
-        arrayOf(MatroskaExtractor(MatroskaExtractor.FLAG_DISABLE_SEEK_FOR_CUES))
+        arrayOf(LatmMatroskaExtractor(MatroskaExtractor.FLAG_DISABLE_SEEK_FOR_CUES))
       }
 
       val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory!!, extractorsFactory)
