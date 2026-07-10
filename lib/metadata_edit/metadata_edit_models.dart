@@ -2,6 +2,7 @@ import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
+import '../utils/media_image_helper.dart';
 
 enum MetadataEditFieldType { text, multilineText, date, stringList, choice, artwork }
 
@@ -24,6 +25,7 @@ class MetadataArtworkConfig {
   final int gridColumns;
   final double gridAspectRatio;
   final MetadataArtworkFit fit;
+  final ImageType imageType;
 
   const MetadataArtworkConfig({
     required this.key,
@@ -33,6 +35,7 @@ class MetadataArtworkConfig {
     required this.gridColumns,
     required this.gridAspectRatio,
     this.fit = MetadataArtworkFit.cover,
+    this.imageType = ImageType.poster,
   });
 }
 

@@ -13,7 +13,6 @@ import '../services/file_picker_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
 import '../utils/formatters.dart';
-import '../utils/media_image_helper.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/snackbar_helper.dart';
 import '../widgets/app_icon.dart';
@@ -373,7 +372,7 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
             width: artwork.previewWidth,
             height: artwork.previewHeight,
             fit: artwork.fit == MetadataArtworkFit.contain ? BoxFit.contain : BoxFit.cover,
-            imageType: _imageTypeForArtwork(artwork),
+            imageType: artwork.imageType,
           ),
         ),
       ),
@@ -549,7 +548,7 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
                       client: widget.adapter.mediaClient,
                       imagePath: artwork.thumbnailPath,
                       fit: _config.fit == MetadataArtworkFit.contain ? BoxFit.contain : BoxFit.cover,
-                      imageType: _imageTypeForArtwork(_config),
+                      imageType: _config.imageType,
                     ),
                   ),
                 ),
@@ -570,12 +569,4 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
       },
     );
   }
-}
-
-ImageType _imageTypeForArtwork(MetadataArtworkConfig artwork) {
-  final key = artwork.key.toLowerCase();
-  if (key == 'arts' || key == 'backdrop') return ImageType.art;
-  if (key == 'clearlogos' || key == 'logo') return ImageType.logo;
-  if (key == 'squarearts') return ImageType.avatar;
-  return ImageType.poster;
 }

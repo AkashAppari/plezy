@@ -5,6 +5,7 @@ import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../services/plex_client.dart';
 import '../utils/language_codes.dart';
+import '../utils/media_image_helper.dart';
 import 'metadata_edit_models.dart';
 
 class PlexMetadataEditAdapter extends MetadataEditAdapter {
@@ -240,10 +241,33 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
 
   List<MetadataEditField> _artworkFields(MediaKind kind) {
     final fields = <MetadataEditField>[
-      _artworkField('posters', t.metadataEdit.poster, t.metadataEdit.selectPoster, 40, 60, 3, 2 / 3),
+      // Episode "posters" are 16:9 thumbnails, not 2:3 poster art.
+      kind == MediaKind.episode
+          ? _artworkField(
+              'posters',
+              t.metadataEdit.poster,
+              t.metadataEdit.selectPoster,
+              80,
+              45,
+              2,
+              16 / 9,
+              imageType: ImageType.thumb,
+            )
+          : _artworkField('posters', t.metadataEdit.poster, t.metadataEdit.selectPoster, 40, 60, 3, 2 / 3),
     ];
     if (kind == MediaKind.movie || kind == MediaKind.show || kind == MediaKind.episode) {
-      fields.add(_artworkField('arts', t.metadataEdit.background, t.metadataEdit.selectBackground, 80, 45, 2, 16 / 9));
+      fields.add(
+        _artworkField(
+          'arts',
+          t.metadataEdit.background,
+          t.metadataEdit.selectBackground,
+          80,
+          45,
+          2,
+          16 / 9,
+          imageType: ImageType.art,
+        ),
+      );
     }
     if (kind == MediaKind.movie || kind == MediaKind.show || kind == MediaKind.collection) {
       fields.add(
@@ -256,9 +280,21 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
           2,
           2.5,
           fit: MetadataArtworkFit.contain,
+          imageType: ImageType.logo,
         ),
       );
-      fields.add(_artworkField('squareArts', t.metadataEdit.squareArt, t.metadataEdit.selectSquareArt, 50, 50, 3, 1));
+      fields.add(
+        _artworkField(
+          'squareArts',
+          t.metadataEdit.squareArt,
+          t.metadataEdit.selectSquareArt,
+          50,
+          50,
+          3,
+          1,
+          imageType: ImageType.avatar,
+        ),
+      );
     }
     return fields;
   }
@@ -272,6 +308,7 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
     int columns,
     double aspectRatio, {
     MetadataArtworkFit fit = MetadataArtworkFit.cover,
+    ImageType imageType = ImageType.poster,
   }) {
     return MetadataEditField(
       id: 'artwork:$key',
@@ -286,6 +323,7 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
         gridColumns: columns,
         gridAspectRatio: aspectRatio,
         fit: fit,
+        imageType: imageType,
       ),
     );
   }

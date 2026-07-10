@@ -5,6 +5,7 @@ import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../services/jellyfin_client.dart';
 import '../utils/jellyfin_time.dart';
+import '../utils/media_image_helper.dart';
 import 'metadata_edit_models.dart';
 
 class JellyfinMetadataEditAdapter extends MetadataEditAdapter {
@@ -235,11 +236,32 @@ class JellyfinMetadataEditAdapter extends MetadataEditAdapter {
 
   List<MetadataEditField> _artworkFields(MediaKind kind) {
     final fields = <MetadataEditField>[
-      _artworkField('Primary', t.metadataEdit.poster, t.metadataEdit.selectPoster, 40, 60, 3, 2 / 3),
+      // Episode "posters" are 16:9 thumbnails, not 2:3 poster art.
+      kind == MediaKind.episode
+          ? _artworkField(
+              'Primary',
+              t.metadataEdit.poster,
+              t.metadataEdit.selectPoster,
+              80,
+              45,
+              2,
+              16 / 9,
+              imageType: ImageType.thumb,
+            )
+          : _artworkField('Primary', t.metadataEdit.poster, t.metadataEdit.selectPoster, 40, 60, 3, 2 / 3),
     ];
     if (kind == MediaKind.movie || kind == MediaKind.show || kind == MediaKind.episode) {
       fields.add(
-        _artworkField('Backdrop', t.metadataEdit.background, t.metadataEdit.selectBackground, 80, 45, 2, 16 / 9),
+        _artworkField(
+          'Backdrop',
+          t.metadataEdit.background,
+          t.metadataEdit.selectBackground,
+          80,
+          45,
+          2,
+          16 / 9,
+          imageType: ImageType.art,
+        ),
       );
     }
     if (kind == MediaKind.movie || kind == MediaKind.show) {
@@ -253,6 +275,7 @@ class JellyfinMetadataEditAdapter extends MetadataEditAdapter {
           2,
           2.5,
           fit: MetadataArtworkFit.contain,
+          imageType: ImageType.logo,
         ),
       );
     }
@@ -268,6 +291,7 @@ class JellyfinMetadataEditAdapter extends MetadataEditAdapter {
     int columns,
     double aspectRatio, {
     MetadataArtworkFit fit = MetadataArtworkFit.cover,
+    ImageType imageType = ImageType.poster,
   }) {
     return MetadataEditField(
       id: 'artwork:$key',
@@ -282,6 +306,7 @@ class JellyfinMetadataEditAdapter extends MetadataEditAdapter {
         gridColumns: columns,
         gridAspectRatio: aspectRatio,
         fit: fit,
+        imageType: imageType,
       ),
     );
   }
