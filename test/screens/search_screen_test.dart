@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:plezy/focus/focusable_text_field.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -48,7 +50,7 @@ void main() {
 
     final state = key.currentState!;
     final searchInput = state as SearchInputFocusable;
-    searchInput.setSearchQuery('movie');
+    _searchController(tester).text = 'movie';
     await tester.pump();
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -58,7 +60,7 @@ void main() {
     expect(() => (state as Refreshable).refresh(), returnsNormally);
     expect(() => (state as dynamic).updateItem('movie_1'), returnsNormally);
     expect(() => (state as FullRefreshable).fullRefresh(), returnsNormally);
-    expect(() => searchInput.setSearchQuery('new movie'), returnsNormally);
+    expect(() => searchInput.submitSearchQuery('new movie'), returnsNormally);
     expect(() => (state as FocusableTab).focusActiveTabIfReady(), returnsNormally);
     expect(tester.takeException(), isNull);
   });
@@ -69,7 +71,7 @@ void main() {
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
 
     final state = key.currentState!;
-    (state as SearchInputFocusable).setSearchQuery('movie');
+    _searchController(tester).text = 'movie';
     // rate_limiter's Debounce compares DateTime.now() against the fake-clock
     // timer, so it never invokes under FakeAsync — run the search via
     // refresh() (same _performSearch path) to get results behind the dialog.
@@ -94,7 +96,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
 
-    (key.currentState! as SearchInputFocusable).setSearchQuery('movie');
+    _searchController(tester).text = 'movie';
     await tester.pump(const Duration(milliseconds: 100));
     expect(client.queries, isEmpty);
 
@@ -105,9 +107,101 @@ void main() {
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
   });
+
+  testWidgets('companion-remote submitSearchQuery dismisses an open OSK and focuses results', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(tester);
+    await tester.pumpAndSettle();
+    // The search screen autofocuses its input on TV, so the OSK is already up —
+    // exactly the "keyboard already open when the remote search arrives" flow
+    // (the phone's Search chip sends tabSearch before the query).
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+
+    expect(client.queries, ['movie']);
+    expect(find.text('Movie 1'), findsOneWidget);
+    // The OSK is dismissed (and does not auto-reopen), focus lands on results.
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+
+    // Stays closed on subsequent frames, and the selection write from the
+    // focus change must not re-arm the debounce into a second identical fetch.
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(client.queries, ['movie']);
+
+    // Re-submitting already-displayed results requests the input and then the
+    // existing first result in the same turn. That superseded input request
+    // must not leave its one-focus-entry keyboard suppression stuck.
+    final searchInput = key.currentState! as SearchInputFocusable;
+    searchInput.submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+    expect(client.queries, ['movie']);
+
+    searchInput.focusSearchInput();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('companion-remote submitSearchQuery with no results focuses the input without the OSK', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(tester, items: []);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('zzz');
+    await tester.pumpAndSettle();
+
+    expect(client.queries, ['zzz']);
+    // No results: the OSK is dismissed and the input keeps focus WITHOUT the
+    // keyboard reopening, so the remote isn't stranded.
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchInput');
+
+    // Does not auto-reopen while the input keeps focus.
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('companion-remote submitSearchQuery whose search fails keeps focus on the input without the OSK', (
+    tester,
+  ) async {
+    final (client, key) = await _pumpTvSearchScreen(tester, registerClient: false);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+
+    // performSearchQuery threw (no servers): the failed state renders, the OSK
+    // is dismissed, and the input keeps focus so the remote isn't stranded.
+    expect(client.queries, isEmpty);
+    expect(find.byIcon(Symbols.error_rounded), findsOneWidget);
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchInput');
+
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }
 
-Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchScreen(WidgetTester tester) async {
+Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchScreen(
+  WidgetTester tester, {
+  List<MediaItem>? items,
+  // When false, no server is registered, so performSearchQuery throws — the
+  // path a companion-remote submit hits when the search fails outright.
+  bool registerClient = true,
+}) async {
   TvDetectionService.debugSetAppleTVOverride(null);
   await TvDetectionService.getInstance(forceTv: true);
   TvDetectionService.setForceTVSync(true);
@@ -119,18 +213,21 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
   });
 
   final client = _FakeMediaServerClient(
-    items: [
-      MediaItem(
-        id: 'movie_1',
-        backend: MediaBackend.plex,
-        kind: MediaKind.movie,
-        title: 'Movie 1',
-        serverId: 'server_1',
-        serverName: 'Server',
-      ),
-    ],
+    items:
+        items ??
+        [
+          MediaItem(
+            id: 'movie_1',
+            backend: MediaBackend.plex,
+            kind: MediaKind.movie,
+            title: 'Movie 1',
+            serverId: 'server_1',
+            serverName: 'Server',
+          ),
+        ],
   );
-  final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+  final manager = MultiServerManager();
+  if (registerClient) manager.debugRegisterClientForTesting(client);
   final provider = MultiServerProvider(manager, DataAggregationService(manager));
   addTearDown(provider.dispose);
 
@@ -154,6 +251,10 @@ Finder _keyboardDoneKey() {
     of: find.byKey(const Key('tv_virtual_keyboard_panel')),
     matching: find.byIcon(Icons.search_rounded),
   );
+}
+
+TextEditingController _searchController(WidgetTester tester) {
+  return tester.widget<FocusableTextField>(find.byType(FocusableTextField)).controller;
 }
 
 class _FakeMediaServerClient implements MediaServerClient {

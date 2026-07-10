@@ -34,6 +34,7 @@ mixin DebouncedMediaSearch<T extends StatefulWidget> on State<T> {
   int _searchGeneration = 0;
   String? _inFlightQuery;
   bool _showedClearButton = false;
+  String _lastObservedText = '';
 
   /// Names the focus nodes and log lines.
   String get searchDebugLabel => widget.runtimeType.toString();
@@ -68,7 +69,14 @@ mixin DebouncedMediaSearch<T extends StatefulWidget> on State<T> {
 
   void _onSearchTextChanged() {
     if (!mounted) return;
-    final query = searchController.text.trim();
+    // The controller also notifies on selection/composing changes (e.g. the
+    // focus gain after an external text set writes a collapsed selection); a
+    // selection-only notification mid-flight would re-arm the debounce and
+    // re-run the identical query against the servers.
+    final text = searchController.text;
+    if (text == _lastObservedText) return;
+    _lastObservedText = text;
+    final query = text.trim();
 
     // The clear affordance tracks text emptiness; without this rebuild it
     // only appeared when a search landed ~500ms later.
