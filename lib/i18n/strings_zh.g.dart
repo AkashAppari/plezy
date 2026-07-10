@@ -69,6 +69,7 @@ class TranslationsZh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsLogsZh logs = _TranslationsLogsZh._(_root);
 	@override late final _TranslationsLicensesZh licenses = _TranslationsLicensesZh._(_root);
 	@override late final _TranslationsNavigationZh navigation = _TranslationsNavigationZh._(_root);
+	@override late final _TranslationsExploreZh explore = _TranslationsExploreZh._(_root);
 	@override late final _TranslationsLiveTvZh liveTv = _TranslationsLiveTvZh._(_root);
 	@override late final _TranslationsCollectionsZh collections = _TranslationsCollectionsZh._(_root);
 	@override late final _TranslationsPlaylistsZh playlists = _TranslationsPlaylistsZh._(_root);
@@ -84,7 +85,8 @@ class TranslationsZh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsMatchScreenZh matchScreen = _TranslationsMatchScreenZh._(_root);
 	@override late final _TranslationsServerTasksZh serverTasks = _TranslationsServerTasksZh._(_root);
 	@override late final _TranslationsTraktZh trakt = _TranslationsTraktZh._(_root);
-	@override late final _TranslationsTrackersZh trackers = _TranslationsTrackersZh._(_root);
+	@override late final _TranslationsSeerrZh seerr = _TranslationsSeerrZh._(_root);
+	@override late final _TranslationsServicesZh services = _TranslationsServicesZh._(_root);
 	@override late final _TranslationsAddServerZh addServer = _TranslationsAddServerZh._(_root);
 }
 
@@ -377,8 +379,8 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => '在 Discord 上显示您正在观看的内容';
 	@override String get trakt => 'Trakt';
 	@override String get traktDescription => '将观看历史与 Trakt 同步';
-	@override String get trackers => '追踪器';
-	@override String get trackersDescription => '将进度同步到 Trakt、MyAnimeList、AniList 和 Simkl';
+	@override String get services => '服务';
+	@override String get servicesDescription => '连接 Trakt、MyAnimeList、Seerr 等';
 	@override String get companionRemoteServer => '配套遥控服务器';
 	@override String get companionRemoteServerDescription => '允许网络上的移动设备控制此应用';
 	@override String get autoPip => '自动画中画';
@@ -555,7 +557,7 @@ class _TranslationsRateSheetZh extends TranslationsRateSheetEn {
 	@override String get setScore => '设置分数';
 	@override String get saved => '已保存';
 	@override String get notAvailable => '未找到匹配项';
-	@override String get noConnectedTrackers => '在设置中连接跟踪器即可在那里评分。';
+	@override String get noConnectedServices => '在设置中连接服务，即可在此评分。';
 }
 
 // Path: accessibility
@@ -1063,6 +1065,38 @@ class _TranslationsNavigationZh extends TranslationsNavigationEn {
 	@override String get libraries => '媒体库';
 	@override String get downloads => '下载';
 	@override String get liveTv => '电视直播';
+	@override String get explore => '探索';
+}
+
+// Path: explore
+class _TranslationsExploreZh extends TranslationsExploreEn {
+	_TranslationsExploreZh._(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '探索';
+	@override String get selectSource => '选择来源';
+	@override late final _TranslationsExploreRowsZh rows = _TranslationsExploreRowsZh._(_root);
+	@override late final _TranslationsExploreStatusZh status = _TranslationsExploreStatusZh._(_root);
+	@override String episodeCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n,
+		other: '${n} 集',
+	);
+	@override String get cast => '演员表';
+	@override String get characters => '角色';
+	@override String get addToWatchlist => '添加到想看列表';
+	@override String get removeFromWatchlist => '从想看列表移除';
+	@override String get watchlistUpdateFailed => '无法更新想看列表';
+	@override String get notInLibrary => '不在你的媒体库中';
+	@override String get inTheseLibraries => '在这些媒体库中';
+	@override String availableOn({required Object server}) => '在 ${server} 上可用';
+	@override String get checkingLibrary => '正在检查你的媒体库...';
+	@override String get emptyTitle => '这里还什么都没有';
+	@override String emptyMessage({required Object source}) => '当 ${source} 有内容时，相关内容将显示在这里。';
+	@override String searchHint({required Object source}) => '搜索 ${source}';
+	@override String searchEmpty({required Object query}) => '没有“${query}”的结果';
+	@override String searchPrompt({required Object source}) => '在 ${source} 上搜索电影和剧集。';
+	@override String get searchFailed => '搜索失败。请检查网络连接后重试。';
 }
 
 // Path: liveTv
@@ -1645,15 +1679,54 @@ class _TranslationsTraktZh extends TranslationsTraktEn {
 	@override String get watchedSyncDescription => '在 Plezy 中将内容标记为已观看时，也会在 Trakt 上标记为已观看。';
 }
 
-// Path: trackers
-class _TranslationsTrackersZh extends TranslationsTrackersEn {
-	_TranslationsTrackersZh._(TranslationsZh root) : this._root = root, super.internal(root);
+// Path: seerr
+class _TranslationsSeerrZh extends TranslationsSeerrEn {
+	_TranslationsSeerrZh._(TranslationsZh root) : this._root = root, super.internal(root);
 
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => '追踪器';
-	@override String get hubSubtitle => '与 Trakt 和其他服务同步观看进度。';
+	@override String get title => 'Seerr';
+	@override String get connectTitle => '连接 Seerr';
+	@override String get serverUrl => '服务器 URL';
+	@override String get serverUrlHelper => '你的 Seerr 实例的地址';
+	@override String get checkServer => '继续';
+	@override String get signInWithJellyfin => '使用 Jellyfin 登录';
+	@override String get signInWithEmby => '使用 Emby 登录';
+	@override String get signInWithLocal => '使用本地账户';
+	@override String get email => '邮箱';
+	@override String get noSignInMethods => '此 Seerr 实例未提供 Plezy 支持的登录方式。';
+	@override String get instance => '实例';
+	@override String get disconnectConfirm => '断开 Seerr 连接？';
+	@override String get disconnectConfirmBody => 'Plezy 将忘记此 Seerr 实例。可随时重新连接。';
+	@override String get request => '请求';
+	@override String get request4k => '请求 4K';
+	@override String get seasons => '季';
+	@override String get allSeasons => '全部季';
+	@override String get advancedOptions => '高级';
+	@override String get destinationServer => '目标服务器';
+	@override String get qualityProfile => '质量配置文件';
+	@override String get rootFolder => '根目录';
+	@override String get languageProfile => '语言配置文件';
+	@override String get requestSubmitted => '请求已提交';
+	@override String requestFailed({required Object error}) => '请求失败: ${error}';
+	@override String get requestsLoadFailed => '无法加载请求选项';
+	@override String get nothingToRequest => '所有内容都已可用或已请求。';
+	@override String get statusAvailable => '可用';
+	@override String get statusPartiallyAvailable => '部分可用';
+	@override String get statusRequested => '已请求';
+	@override String get statusProcessing => '处理中';
+}
+
+// Path: services
+class _TranslationsServicesZh extends TranslationsServicesEn {
+	_TranslationsServicesZh._(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '服务';
+	@override String get hubSubtitle => '同步观看进度并请求新内容。';
 	@override String get notConnected => '未连接';
 	@override String connectedAs({required Object username}) => '已以 @${username} 身份连接';
 	@override String get scrobble => '自动记录进度';
@@ -1661,10 +1734,10 @@ class _TranslationsTrackersZh extends TranslationsTrackersEn {
 	@override String disconnectConfirm({required Object service}) => '断开 ${service} 连接？';
 	@override String disconnectConfirmBody({required Object service}) => 'Plezy 将停止更新 ${service}。可随时重新连接。';
 	@override String connectFailed({required Object service}) => '无法连接到 ${service}。请重试。';
-	@override late final _TranslationsTrackersServicesZh services = _TranslationsTrackersServicesZh._(_root);
-	@override late final _TranslationsTrackersDeviceCodeZh deviceCode = _TranslationsTrackersDeviceCodeZh._(_root);
-	@override late final _TranslationsTrackersOauthProxyZh oauthProxy = _TranslationsTrackersOauthProxyZh._(_root);
-	@override late final _TranslationsTrackersLibraryFilterZh libraryFilter = _TranslationsTrackersLibraryFilterZh._(_root);
+	@override late final _TranslationsServicesNamesZh names = _TranslationsServicesNamesZh._(_root);
+	@override late final _TranslationsServicesDeviceCodeZh deviceCode = _TranslationsServicesDeviceCodeZh._(_root);
+	@override late final _TranslationsServicesOauthProxyZh oauthProxy = _TranslationsServicesOauthProxyZh._(_root);
+	@override late final _TranslationsServicesLibraryFilterZh libraryFilter = _TranslationsServicesLibraryFilterZh._(_root);
 }
 
 // Path: addServer
@@ -1831,6 +1904,41 @@ class _TranslationsLibrariesSortLabelsZh extends TranslationsLibrariesSortLabels
 	@override String get lastEpisodeDateAdded => '最新一集添加日期';
 }
 
+// Path: explore.rows
+class _TranslationsExploreRowsZh extends TranslationsExploreRowsEn {
+	_TranslationsExploreRowsZh._(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get watchlist => '想看列表';
+	@override String get recommendedMovies => '推荐电影';
+	@override String get recommendedShows => '推荐剧集';
+	@override String get trendingMovies => '趋势电影';
+	@override String get trendingShows => '趋势剧集';
+	@override String get popularMovies => '热门电影';
+	@override String get popularShows => '热门剧集';
+	@override String get suggestedAnime => '推荐动画';
+	@override String get airingAnime => '热门连载动画';
+	@override String get popularAnime => '最受欢迎动画';
+	@override String get trending => '趋势';
+	@override String get upcomingMovies => '即将上映的电影';
+	@override String get upcomingShows => '即将播出的剧集';
+}
+
+// Path: explore.status
+class _TranslationsExploreStatusZh extends TranslationsExploreStatusEn {
+	_TranslationsExploreStatusZh._(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get airing => '连载中';
+	@override String get ended => '已完结';
+	@override String get canceled => '已取消';
+	@override String get upcoming => '即将上线';
+}
+
 // Path: companionRemote.session
 class _TranslationsCompanionRemoteSessionZh extends TranslationsCompanionRemoteSessionEn {
 	_TranslationsCompanionRemoteSessionZh._(TranslationsZh root) : this._root = root, super.internal(root);
@@ -1927,9 +2035,9 @@ class _TranslationsCompanionRemoteErrorsZh extends TranslationsCompanionRemoteEr
 	@override String get connectionLost => '连接丢失';
 }
 
-// Path: trackers.services
-class _TranslationsTrackersServicesZh extends TranslationsTrackersServicesEn {
-	_TranslationsTrackersServicesZh._(TranslationsZh root) : this._root = root, super.internal(root);
+// Path: services.names
+class _TranslationsServicesNamesZh extends TranslationsServicesNamesEn {
+	_TranslationsServicesNamesZh._(TranslationsZh root) : this._root = root, super.internal(root);
 
 	final TranslationsZh _root; // ignore: unused_field
 
@@ -1937,11 +2045,12 @@ class _TranslationsTrackersServicesZh extends TranslationsTrackersServicesEn {
 	@override String get mal => 'MyAnimeList';
 	@override String get anilist => 'AniList';
 	@override String get simkl => 'Simkl';
+	@override String get seerr => 'Seerr';
 }
 
-// Path: trackers.deviceCode
-class _TranslationsTrackersDeviceCodeZh extends TranslationsTrackersDeviceCodeEn {
-	_TranslationsTrackersDeviceCodeZh._(TranslationsZh root) : this._root = root, super.internal(root);
+// Path: services.deviceCode
+class _TranslationsServicesDeviceCodeZh extends TranslationsServicesDeviceCodeEn {
+	_TranslationsServicesDeviceCodeZh._(TranslationsZh root) : this._root = root, super.internal(root);
 
 	final TranslationsZh _root; // ignore: unused_field
 
@@ -1953,9 +2062,9 @@ class _TranslationsTrackersDeviceCodeZh extends TranslationsTrackersDeviceCodeEn
 	@override String get codeCopied => '代码已复制';
 }
 
-// Path: trackers.oauthProxy
-class _TranslationsTrackersOauthProxyZh extends TranslationsTrackersOauthProxyEn {
-	_TranslationsTrackersOauthProxyZh._(TranslationsZh root) : this._root = root, super.internal(root);
+// Path: services.oauthProxy
+class _TranslationsServicesOauthProxyZh extends TranslationsServicesOauthProxyEn {
+	_TranslationsServicesOauthProxyZh._(TranslationsZh root) : this._root = root, super.internal(root);
 
 	final TranslationsZh _root; // ignore: unused_field
 
@@ -1966,9 +2075,9 @@ class _TranslationsTrackersOauthProxyZh extends TranslationsTrackersOauthProxyEn
 	@override String get urlCopied => 'URL 已复制';
 }
 
-// Path: trackers.libraryFilter
-class _TranslationsTrackersLibraryFilterZh extends TranslationsTrackersLibraryFilterEn {
-	_TranslationsTrackersLibraryFilterZh._(TranslationsZh root) : this._root = root, super.internal(root);
+// Path: services.libraryFilter
+class _TranslationsServicesLibraryFilterZh extends TranslationsServicesLibraryFilterEn {
+	_TranslationsServicesLibraryFilterZh._(TranslationsZh root) : this._root = root, super.internal(root);
 
 	final TranslationsZh _root; // ignore: unused_field
 
@@ -2232,8 +2341,8 @@ extension on TranslationsZh {
 			'settings.discordRichPresenceDescription' => '在 Discord 上显示您正在观看的内容',
 			'settings.trakt' => 'Trakt',
 			'settings.traktDescription' => '将观看历史与 Trakt 同步',
-			'settings.trackers' => '追踪器',
-			'settings.trackersDescription' => '将进度同步到 Trakt、MyAnimeList、AniList 和 Simkl',
+			'settings.services' => '服务',
+			'settings.servicesDescription' => '连接 Trakt、MyAnimeList、Seerr 等',
 			'settings.companionRemoteServer' => '配套遥控服务器',
 			'settings.companionRemoteServerDescription' => '允许网络上的移动设备控制此应用',
 			'settings.autoPip' => '自动画中画',
@@ -2389,7 +2498,7 @@ extension on TranslationsZh {
 			'rateSheet.setScore' => '设置分数',
 			'rateSheet.saved' => '已保存',
 			'rateSheet.notAvailable' => '未找到匹配项',
-			'rateSheet.noConnectedTrackers' => '在设置中连接跟踪器即可在那里评分。',
+			'rateSheet.noConnectedServices' => '在设置中连接服务，即可在此评分。',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, 电影',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, 电视剧',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -2770,6 +2879,42 @@ extension on TranslationsZh {
 			'navigation.libraries' => '媒体库',
 			'navigation.downloads' => '下载',
 			'navigation.liveTv' => '电视直播',
+			'navigation.explore' => '探索',
+			'explore.title' => '探索',
+			'explore.selectSource' => '选择来源',
+			'explore.rows.watchlist' => '想看列表',
+			'explore.rows.recommendedMovies' => '推荐电影',
+			'explore.rows.recommendedShows' => '推荐剧集',
+			'explore.rows.trendingMovies' => '趋势电影',
+			'explore.rows.trendingShows' => '趋势剧集',
+			'explore.rows.popularMovies' => '热门电影',
+			'explore.rows.popularShows' => '热门剧集',
+			'explore.rows.suggestedAnime' => '推荐动画',
+			'explore.rows.airingAnime' => '热门连载动画',
+			'explore.rows.popularAnime' => '最受欢迎动画',
+			'explore.rows.trending' => '趋势',
+			'explore.rows.upcomingMovies' => '即将上映的电影',
+			'explore.rows.upcomingShows' => '即将播出的剧集',
+			'explore.status.airing' => '连载中',
+			'explore.status.ended' => '已完结',
+			'explore.status.canceled' => '已取消',
+			'explore.status.upcoming' => '即将上线',
+			'explore.episodeCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, other: '${n} 集', ), 
+			'explore.cast' => '演员表',
+			'explore.characters' => '角色',
+			'explore.addToWatchlist' => '添加到想看列表',
+			'explore.removeFromWatchlist' => '从想看列表移除',
+			'explore.watchlistUpdateFailed' => '无法更新想看列表',
+			'explore.notInLibrary' => '不在你的媒体库中',
+			'explore.inTheseLibraries' => '在这些媒体库中',
+			'explore.availableOn' => ({required Object server}) => '在 ${server} 上可用',
+			'explore.checkingLibrary' => '正在检查你的媒体库...',
+			'explore.emptyTitle' => '这里还什么都没有',
+			'explore.emptyMessage' => ({required Object source}) => '当 ${source} 有内容时，相关内容将显示在这里。',
+			'explore.searchHint' => ({required Object source}) => '搜索 ${source}',
+			'explore.searchEmpty' => ({required Object query}) => '没有“${query}”的结果',
+			'explore.searchPrompt' => ({required Object source}) => '在 ${source} 上搜索电影和剧集。',
+			'explore.searchFailed' => '搜索失败。请检查网络连接后重试。',
 			'liveTv.title' => '电视直播',
 			'liveTv.guide' => '节目指南',
 			'liveTv.noChannels' => '没有可用的频道',
@@ -2985,6 +3130,8 @@ extension on TranslationsZh {
 			'downloads.cancelledDownloadMessage' => '此下载已取消。你想怎么做？',
 			'downloads.allEpisodesAlreadyDownloaded' => '所有剧集均已下载',
 			'downloads.resumeDownload' => '继续下载',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.cancelledDownload' => '已取消的下载',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file}（正在同步 ${status}）',
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '已下载 ${file} — 点击完成',
@@ -3021,8 +3168,6 @@ extension on TranslationsZh {
 			'downloads.noSyncRules' => '没有同步规则',
 			'downloads.manageSyncRule' => '管理同步',
 			'downloads.editEpisodeCount' => '剧集数量',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.editSyncFilter' => '同步筛选',
 			'downloads.syncAllItems' => '同步所有项目',
 			'downloads.syncUnwatchedItems' => '同步未观看项目',
@@ -3271,39 +3416,70 @@ extension on TranslationsZh {
 			'trakt.scrobbleDescription' => '在播放时向 Trakt 发送播放、暂停和停止事件。',
 			'trakt.watchedSync' => '同步已观看状态',
 			'trakt.watchedSyncDescription' => '在 Plezy 中将内容标记为已观看时，也会在 Trakt 上标记为已观看。',
-			'trackers.title' => '追踪器',
-			'trackers.hubSubtitle' => '与 Trakt 和其他服务同步观看进度。',
-			'trackers.notConnected' => '未连接',
-			'trackers.connectedAs' => ({required Object username}) => '已以 @${username} 身份连接',
-			'trackers.scrobble' => '自动记录进度',
-			'trackers.scrobbleDescription' => '观看完一集或一部电影后更新你的列表。',
-			'trackers.disconnectConfirm' => ({required Object service}) => '断开 ${service} 连接？',
-			'trackers.disconnectConfirmBody' => ({required Object service}) => 'Plezy 将停止更新 ${service}。可随时重新连接。',
-			'trackers.connectFailed' => ({required Object service}) => '无法连接到 ${service}。请重试。',
-			'trackers.services.mal' => 'MyAnimeList',
-			'trackers.services.anilist' => 'AniList',
-			'trackers.services.simkl' => 'Simkl',
-			'trackers.deviceCode.title' => ({required Object service}) => '在 ${service} 上激活 Plezy',
-			'trackers.deviceCode.body' => ({required Object url}) => '访问 ${url} 并输入此代码：',
-			'trackers.deviceCode.openToActivate' => ({required Object service}) => '打开 ${service} 以激活',
-			'trackers.deviceCode.waitingForAuthorization' => '等待授权…',
-			'trackers.deviceCode.codeCopied' => '代码已复制',
-			'trackers.oauthProxy.title' => ({required Object service}) => '登录 ${service}',
-			'trackers.oauthProxy.body' => '扫描此二维码，或在任意设备上打开 URL。',
-			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => '打开 ${service} 以登录',
-			'trackers.oauthProxy.urlCopied' => 'URL 已复制',
-			'trackers.libraryFilter.title' => '媒体库筛选',
-			'trackers.libraryFilter.subtitleAllSyncing' => '同步所有媒体库',
-			'trackers.libraryFilter.subtitleNoneSyncing' => '不同步任何内容',
-			'trackers.libraryFilter.subtitleBlocked' => ({required Object count}) => '已屏蔽 ${count} 个',
-			'trackers.libraryFilter.subtitleAllowed' => ({required Object count}) => '已允许 ${count} 个',
-			'trackers.libraryFilter.mode' => '筛选模式',
-			'trackers.libraryFilter.modeBlacklist' => '黑名单',
-			'trackers.libraryFilter.modeWhitelist' => '白名单',
-			'trackers.libraryFilter.modeHintBlacklist' => '同步下方未勾选的所有媒体库。',
-			'trackers.libraryFilter.modeHintWhitelist' => '仅同步下方勾选的媒体库。',
-			'trackers.libraryFilter.libraries' => '媒体库',
-			'trackers.libraryFilter.noLibraries' => '没有可用的媒体库',
+			'seerr.title' => 'Seerr',
+			'seerr.connectTitle' => '连接 Seerr',
+			'seerr.serverUrl' => '服务器 URL',
+			'seerr.serverUrlHelper' => '你的 Seerr 实例的地址',
+			'seerr.checkServer' => '继续',
+			'seerr.signInWithJellyfin' => '使用 Jellyfin 登录',
+			'seerr.signInWithEmby' => '使用 Emby 登录',
+			'seerr.signInWithLocal' => '使用本地账户',
+			'seerr.email' => '邮箱',
+			'seerr.noSignInMethods' => '此 Seerr 实例未提供 Plezy 支持的登录方式。',
+			'seerr.instance' => '实例',
+			'seerr.disconnectConfirm' => '断开 Seerr 连接？',
+			'seerr.disconnectConfirmBody' => 'Plezy 将忘记此 Seerr 实例。可随时重新连接。',
+			'seerr.request' => '请求',
+			'seerr.request4k' => '请求 4K',
+			'seerr.seasons' => '季',
+			'seerr.allSeasons' => '全部季',
+			'seerr.advancedOptions' => '高级',
+			'seerr.destinationServer' => '目标服务器',
+			'seerr.qualityProfile' => '质量配置文件',
+			'seerr.rootFolder' => '根目录',
+			'seerr.languageProfile' => '语言配置文件',
+			'seerr.requestSubmitted' => '请求已提交',
+			'seerr.requestFailed' => ({required Object error}) => '请求失败: ${error}',
+			'seerr.requestsLoadFailed' => '无法加载请求选项',
+			'seerr.nothingToRequest' => '所有内容都已可用或已请求。',
+			'seerr.statusAvailable' => '可用',
+			'seerr.statusPartiallyAvailable' => '部分可用',
+			'seerr.statusRequested' => '已请求',
+			'seerr.statusProcessing' => '处理中',
+			'services.title' => '服务',
+			'services.hubSubtitle' => '同步观看进度并请求新内容。',
+			'services.notConnected' => '未连接',
+			'services.connectedAs' => ({required Object username}) => '已以 @${username} 身份连接',
+			'services.scrobble' => '自动记录进度',
+			'services.scrobbleDescription' => '观看完一集或一部电影后更新你的列表。',
+			'services.disconnectConfirm' => ({required Object service}) => '断开 ${service} 连接？',
+			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy 将停止更新 ${service}。可随时重新连接。',
+			'services.connectFailed' => ({required Object service}) => '无法连接到 ${service}。请重试。',
+			'services.names.mal' => 'MyAnimeList',
+			'services.names.anilist' => 'AniList',
+			'services.names.simkl' => 'Simkl',
+			'services.names.seerr' => 'Seerr',
+			'services.deviceCode.title' => ({required Object service}) => '在 ${service} 上激活 Plezy',
+			'services.deviceCode.body' => ({required Object url}) => '访问 ${url} 并输入此代码：',
+			'services.deviceCode.openToActivate' => ({required Object service}) => '打开 ${service} 以激活',
+			'services.deviceCode.waitingForAuthorization' => '等待授权…',
+			'services.deviceCode.codeCopied' => '代码已复制',
+			'services.oauthProxy.title' => ({required Object service}) => '登录 ${service}',
+			'services.oauthProxy.body' => '扫描此二维码，或在任意设备上打开 URL。',
+			'services.oauthProxy.openToSignIn' => ({required Object service}) => '打开 ${service} 以登录',
+			'services.oauthProxy.urlCopied' => 'URL 已复制',
+			'services.libraryFilter.title' => '媒体库筛选',
+			'services.libraryFilter.subtitleAllSyncing' => '同步所有媒体库',
+			'services.libraryFilter.subtitleNoneSyncing' => '不同步任何内容',
+			'services.libraryFilter.subtitleBlocked' => ({required Object count}) => '已屏蔽 ${count} 个',
+			'services.libraryFilter.subtitleAllowed' => ({required Object count}) => '已允许 ${count} 个',
+			'services.libraryFilter.mode' => '筛选模式',
+			'services.libraryFilter.modeBlacklist' => '黑名单',
+			'services.libraryFilter.modeWhitelist' => '白名单',
+			'services.libraryFilter.modeHintBlacklist' => '同步下方未勾选的所有媒体库。',
+			'services.libraryFilter.modeHintWhitelist' => '仅同步下方勾选的媒体库。',
+			'services.libraryFilter.libraries' => '媒体库',
+			'services.libraryFilter.noLibraries' => '没有可用的媒体库',
 			'addServer.addJellyfinTitle' => '添加 Jellyfin 服务器',
 			'addServer.serverUrls' => '服务器 URL',
 			'addServer.serverUrlsHelper' => '可输入多个 URL，以逗号分隔。',

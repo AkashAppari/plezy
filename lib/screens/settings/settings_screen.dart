@@ -24,6 +24,7 @@ import '../../services/file_picker_service.dart';
 import '../../services/saf_storage_service.dart';
 import '../../services/settings_export_service.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/seerr_account_provider.dart';
 import '../../providers/trackers_provider.dart';
 import '../../providers/trakt_account_provider.dart';
 import '../../services/keyboard_shortcuts_service.dart';
@@ -48,7 +49,7 @@ import 'keyboard_shortcuts_screen.dart';
 import 'logs_screen.dart';
 import 'playback_settings_screen.dart';
 import '../profile/profile_switch_screen.dart';
-import 'trackers_settings_screen.dart';
+import 'services_settings_screen.dart';
 import '../../widgets/loading_indicator_box.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -66,7 +67,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   static const _kAppearance = 'appearance';
   static const _kPlayback = 'playback';
   static const _kManageLibraries = 'manage_libraries';
-  static const _kTrackers = 'trackers';
+  static const _kServices = 'services';
   static const _kDownloadLocation = 'download_location';
   static const _kDownloadOnWifiOnly = 'download_on_wifi_only';
   static const _kAutoRemoveWatchedDownloads = 'auto_remove_watched_downloads';
@@ -155,7 +156,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
                     _buildAppearanceTile(),
                     _buildPlaybackTile(),
                     if (hasLibraries) _buildManageLibrariesTile(),
-                    _buildTrackersTile(),
+                    _buildServicesTile(),
                   ],
                 ),
 
@@ -248,22 +249,23 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     );
   }
 
-  Widget _buildTrackersTile() {
-    return Consumer2<TraktAccountProvider, TrackersProvider>(
-      builder: (context, trakt, trackers, _) {
+  Widget _buildServicesTile() {
+    return Consumer3<TraktAccountProvider, TrackersProvider, SeerrAccountProvider>(
+      builder: (context, trakt, trackers, seerr, _) {
         final connectedNames = <String>[
           if (trakt.isConnected) t.trakt.title,
-          if (trackers.isMalConnected) t.trackers.services.mal,
-          if (trackers.isAnilistConnected) t.trackers.services.anilist,
-          if (trackers.isSimklConnected) t.trackers.services.simkl,
+          if (trackers.isMalConnected) t.services.names.mal,
+          if (trackers.isAnilistConnected) t.services.names.anilist,
+          if (trackers.isSimklConnected) t.services.names.simkl,
+          if (seerr.isConnected) t.services.names.seerr,
         ];
-        final subtitle = connectedNames.isEmpty ? t.settings.trackersDescription : connectedNames.join(' · ');
+        final subtitle = connectedNames.isEmpty ? t.settings.servicesDescription : connectedNames.join(' · ');
         return SettingNavigationTile(
-          focusNode: _focusTracker.get(_kTrackers),
+          focusNode: _focusTracker.get(_kServices),
           icon: Symbols.sync_rounded,
-          title: t.settings.trackers,
+          title: t.settings.services,
           subtitle: subtitle,
-          destinationBuilder: (_) => const TrackersSettingsScreen(),
+          destinationBuilder: (_) => const ServicesSettingsScreen(),
         );
       },
     );

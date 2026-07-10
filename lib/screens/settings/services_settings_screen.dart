@@ -1,39 +1,43 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../providers/seerr_account_provider.dart';
 import '../../providers/trackers_provider.dart';
 import '../../providers/trakt_account_provider.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/catalog_source_logo.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/settings_section.dart';
+import 'seerr_connect_screen.dart';
+import 'seerr_settings_screen.dart';
 import 'tracker_settings_screen.dart';
 import 'trakt_settings_screen.dart';
 
-/// Unified hub for all watch-progress trackers: Trakt, MyAnimeList, AniList,
-/// Simkl. Each row opens its service-specific settings screen.
-class TrackersSettingsScreen extends StatelessWidget {
-  const TrackersSettingsScreen({super.key});
+/// Unified hub for all connected services: the watch-progress trackers
+/// (Trakt, MyAnimeList, AniList, Simkl) and the Seerr request server. Each
+/// row opens its service-specific settings screen.
+class ServicesSettingsScreen extends StatelessWidget {
+  const ServicesSettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return FocusedScrollScaffold(
-      title: Text(t.trackers.title),
+      title: Text(t.services.title),
       slivers: [
         SliverList(
           delegate: SliverChildListDelegate([
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Text(
-                t.trackers.hubSubtitle,
+                t.services.hubSubtitle,
                 style: Theme.of(
                   context,
                 ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             ),
-            SettingsGroup(children: [_trakt(), _mal(), _anilist(), _simkl()]),
+            SettingsGroup(children: [_trakt(), _mal(), _anilist(), _simkl(), _seerr()]),
             const SizedBox(height: 24),
           ]),
         ),
@@ -42,8 +46,8 @@ class TrackersSettingsScreen extends StatelessWidget {
   }
 
   Widget _trakt() => Consumer<TraktAccountProvider>(
-    builder: (context, account, _) => _TrackerHubRow(
-      leading: const _TrackerLogo('assets/trakt_circlemark.svg'),
+    builder: (context, account, _) => _ServiceHubRow(
+      leading: const CatalogSourceLogo.asset('assets/trakt_circlemark.svg', size: 24),
       title: t.trakt.title,
       username: account.isConnected ? account.username : null,
       onTap: () {
@@ -57,9 +61,9 @@ class TrackersSettingsScreen extends StatelessWidget {
   );
 
   Widget _mal() => Consumer<TrackersProvider>(
-    builder: (context, account, _) => _TrackerHubRow(
-      leading: const _TrackerLogo('assets/mal_mark.svg'),
-      title: t.trackers.services.mal,
+    builder: (context, account, _) => _ServiceHubRow(
+      leading: const CatalogSourceLogo.asset('assets/mal_mark.svg', size: 24),
+      title: t.services.names.mal,
       username: account.isMalConnected ? account.malUsername : null,
       onTap: () {
         if (account.isMalConnected) {
@@ -75,9 +79,9 @@ class TrackersSettingsScreen extends StatelessWidget {
   );
 
   Widget _anilist() => Consumer<TrackersProvider>(
-    builder: (context, account, _) => _TrackerHubRow(
-      leading: const _TrackerLogo('assets/anilist_mark.svg'),
-      title: t.trackers.services.anilist,
+    builder: (context, account, _) => _ServiceHubRow(
+      leading: const CatalogSourceLogo.asset('assets/anilist_mark.svg', size: 24),
+      title: t.services.names.anilist,
       username: account.isAnilistConnected ? account.anilistUsername : null,
       onTap: () {
         if (account.isAnilistConnected) {
@@ -93,9 +97,9 @@ class TrackersSettingsScreen extends StatelessWidget {
   );
 
   Widget _simkl() => Consumer<TrackersProvider>(
-    builder: (context, account, _) => _TrackerHubRow(
-      leading: const _TrackerLogo('assets/simkl_mark.svg'),
-      title: t.trackers.services.simkl,
+    builder: (context, account, _) => _ServiceHubRow(
+      leading: const CatalogSourceLogo.asset('assets/simkl_mark.svg', size: 24),
+      title: t.services.names.simkl,
       username: account.isSimklConnected ? account.simklUsername : null,
       onTap: () {
         if (account.isSimklConnected) {
@@ -109,9 +113,25 @@ class TrackersSettingsScreen extends StatelessWidget {
       },
     ),
   );
+
+  Widget _seerr() => Consumer<SeerrAccountProvider>(
+    builder: (context, account, _) => _ServiceHubRow(
+      leading: const CatalogSourceLogo.asset('assets/seerr_mark.svg', size: 24),
+      title: t.services.names.seerr,
+      username: account.isConnected ? account.displayName : null,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => account.isConnected ? const SeerrSettingsScreen() : const SeerrConnectScreen(),
+          ),
+        );
+      },
+    ),
+  );
 }
 
-class _TrackerHubRow extends StatelessWidget {
+class _ServiceHubRow extends StatelessWidget {
   final Widget leading;
   final String title;
 
@@ -120,30 +140,16 @@ class _TrackerHubRow extends StatelessWidget {
 
   final VoidCallback onTap;
 
-  const _TrackerHubRow({required this.leading, required this.title, required this.username, required this.onTap});
+  const _ServiceHubRow({required this.leading, required this.title, required this.username, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
       leading: leading,
       title: Text(title),
-      subtitle: Text(username != null ? t.trackers.connectedAs(username: username!) : t.trackers.notConnected),
+      subtitle: Text(username != null ? t.services.connectedAs(username: username!) : t.services.notConnected),
       trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
       onTap: onTap,
     );
-  }
-}
-
-/// 24x24 SVG logo driven by [IconTheme]. Uses [SvgTheme.currentColor] so SVGs
-/// with multiple explicit fills (AniList keeps its brand-blue L while the A
-/// follows the theme) render correctly alongside single-color wordmarks.
-class _TrackerLogo extends StatelessWidget {
-  final String asset;
-  const _TrackerLogo(this.asset);
-
-  @override
-  Widget build(BuildContext context) {
-    final color = IconTheme.of(context).color ?? Theme.of(context).colorScheme.onSurface;
-    return SvgPicture.asset(asset, width: 24, height: 24, theme: SvgTheme(currentColor: color));
   }
 }

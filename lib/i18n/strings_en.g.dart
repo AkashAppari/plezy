@@ -70,6 +70,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsLogsEn logs = TranslationsLogsEn.internal(_root);
 	late final TranslationsLicensesEn licenses = TranslationsLicensesEn.internal(_root);
 	late final TranslationsNavigationEn navigation = TranslationsNavigationEn.internal(_root);
+	late final TranslationsExploreEn explore = TranslationsExploreEn.internal(_root);
 	late final TranslationsLiveTvEn liveTv = TranslationsLiveTvEn.internal(_root);
 	late final TranslationsCollectionsEn collections = TranslationsCollectionsEn.internal(_root);
 	late final TranslationsPlaylistsEn playlists = TranslationsPlaylistsEn.internal(_root);
@@ -85,7 +86,8 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsMatchScreenEn matchScreen = TranslationsMatchScreenEn.internal(_root);
 	late final TranslationsServerTasksEn serverTasks = TranslationsServerTasksEn.internal(_root);
 	late final TranslationsTraktEn trakt = TranslationsTraktEn.internal(_root);
-	late final TranslationsTrackersEn trackers = TranslationsTrackersEn.internal(_root);
+	late final TranslationsSeerrEn seerr = TranslationsSeerrEn.internal(_root);
+	late final TranslationsServicesEn services = TranslationsServicesEn.internal(_root);
 	late final TranslationsAddServerEn addServer = TranslationsAddServerEn.internal(_root);
 }
 
@@ -871,11 +873,11 @@ class TranslationsSettingsEn {
 	/// en: 'Sync watch history with Trakt'
 	String get traktDescription => 'Sync watch history with Trakt';
 
-	/// en: 'Trackers'
-	String get trackers => 'Trackers';
+	/// en: 'Services'
+	String get services => 'Services';
 
-	/// en: 'Sync progress to Trakt, MyAnimeList, AniList, and Simkl'
-	String get trackersDescription => 'Sync progress to Trakt, MyAnimeList, AniList, and Simkl';
+	/// en: 'Connect Trakt, MyAnimeList, Seerr, and more'
+	String get servicesDescription => 'Connect Trakt, MyAnimeList, Seerr, and more';
 
 	/// en: 'Reorder and hide libraries'
 	String get manageLibrariesDescription => 'Reorder and hide libraries';
@@ -1323,8 +1325,8 @@ class TranslationsRateSheetEn {
 	/// en: 'No match found'
 	String get notAvailable => 'No match found';
 
-	/// en: 'Connect a tracker in Settings to rate there.'
-	String get noConnectedTrackers => 'Connect a tracker in Settings to rate there.';
+	/// en: 'Connect a service in Settings to rate there.'
+	String get noConnectedServices => 'Connect a service in Settings to rate there.';
 }
 
 // Path: accessibility
@@ -2502,6 +2504,78 @@ class TranslationsNavigationEn {
 
 	/// en: 'Live TV'
 	String get liveTv => 'Live TV';
+
+	/// en: 'Explore'
+	String get explore => 'Explore';
+}
+
+// Path: explore
+class TranslationsExploreEn {
+	TranslationsExploreEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Explore'
+	String get title => 'Explore';
+
+	/// en: 'Select source'
+	String get selectSource => 'Select source';
+
+	late final TranslationsExploreRowsEn rows = TranslationsExploreRowsEn.internal(_root);
+	late final TranslationsExploreStatusEn status = TranslationsExploreStatusEn.internal(_root);
+
+	/// en: '(one) {${n} episode} (other) {${n} episodes}'
+	String episodeCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: '${n} episode',
+		other: '${n} episodes',
+	);
+
+	/// en: 'Cast'
+	String get cast => 'Cast';
+
+	/// en: 'Characters'
+	String get characters => 'Characters';
+
+	/// en: 'Add to Watchlist'
+	String get addToWatchlist => 'Add to Watchlist';
+
+	/// en: 'Remove from Watchlist'
+	String get removeFromWatchlist => 'Remove from Watchlist';
+
+	/// en: 'Couldn't update watchlist'
+	String get watchlistUpdateFailed => 'Couldn\'t update watchlist';
+
+	/// en: 'Not in your library'
+	String get notInLibrary => 'Not in your library';
+
+	/// en: 'In these libraries'
+	String get inTheseLibraries => 'In these libraries';
+
+	/// en: 'Available on ${server}'
+	String availableOn({required Object server}) => 'Available on ${server}';
+
+	/// en: 'Checking your library...'
+	String get checkingLibrary => 'Checking your library...';
+
+	/// en: 'Nothing here yet'
+	String get emptyTitle => 'Nothing here yet';
+
+	/// en: 'Rows from ${source} will appear here once they have content.'
+	String emptyMessage({required Object source}) => 'Rows from ${source} will appear here once they have content.';
+
+	/// en: 'Search ${source}'
+	String searchHint({required Object source}) => 'Search ${source}';
+
+	/// en: 'No results for "${query}"'
+	String searchEmpty({required Object query}) => 'No results for "${query}"';
+
+	/// en: 'Search for movies and shows on ${source}.'
+	String searchPrompt({required Object source}) => 'Search for movies and shows on ${source}.';
+
+	/// en: 'Search failed. Check your connection and try again.'
+	String get searchFailed => 'Search failed. Check your connection and try again.';
 }
 
 // Path: liveTv
@@ -3973,19 +4047,118 @@ class TranslationsTraktEn {
 	String get watchedSyncDescription => 'When you mark items watched in Plezy, mark them on Trakt.';
 }
 
-// Path: trackers
-class TranslationsTrackersEn {
-	TranslationsTrackersEn.internal(this._root);
+// Path: seerr
+class TranslationsSeerrEn {
+	TranslationsSeerrEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
 	// Translations
 
-	/// en: 'Trackers'
-	String get title => 'Trackers';
+	/// en: 'Seerr'
+	String get title => 'Seerr';
 
-	/// en: 'Sync watch progress with Trakt and other services.'
-	String get hubSubtitle => 'Sync watch progress with Trakt and other services.';
+	/// en: 'Connect Seerr'
+	String get connectTitle => 'Connect Seerr';
+
+	/// en: 'Server URL'
+	String get serverUrl => 'Server URL';
+
+	/// en: 'The address of your Seerr instance'
+	String get serverUrlHelper => 'The address of your Seerr instance';
+
+	/// en: 'Continue'
+	String get checkServer => 'Continue';
+
+	/// en: 'Sign in with Jellyfin'
+	String get signInWithJellyfin => 'Sign in with Jellyfin';
+
+	/// en: 'Sign in with Emby'
+	String get signInWithEmby => 'Sign in with Emby';
+
+	/// en: 'Use a local account'
+	String get signInWithLocal => 'Use a local account';
+
+	/// en: 'Email'
+	String get email => 'Email';
+
+	/// en: 'This Seerr instance offers no sign-in method Plezy supports.'
+	String get noSignInMethods => 'This Seerr instance offers no sign-in method Plezy supports.';
+
+	/// en: 'Instance'
+	String get instance => 'Instance';
+
+	/// en: 'Disconnect Seerr?'
+	String get disconnectConfirm => 'Disconnect Seerr?';
+
+	/// en: 'Plezy will forget this Seerr instance. Reconnect any time.'
+	String get disconnectConfirmBody => 'Plezy will forget this Seerr instance. Reconnect any time.';
+
+	/// en: 'Request'
+	String get request => 'Request';
+
+	/// en: 'Request in 4K'
+	String get request4k => 'Request in 4K';
+
+	/// en: 'Seasons'
+	String get seasons => 'Seasons';
+
+	/// en: 'All seasons'
+	String get allSeasons => 'All seasons';
+
+	/// en: 'Advanced'
+	String get advancedOptions => 'Advanced';
+
+	/// en: 'Destination server'
+	String get destinationServer => 'Destination server';
+
+	/// en: 'Quality profile'
+	String get qualityProfile => 'Quality profile';
+
+	/// en: 'Root folder'
+	String get rootFolder => 'Root folder';
+
+	/// en: 'Language profile'
+	String get languageProfile => 'Language profile';
+
+	/// en: 'Request submitted'
+	String get requestSubmitted => 'Request submitted';
+
+	/// en: 'Request failed: ${error}'
+	String requestFailed({required Object error}) => 'Request failed: ${error}';
+
+	/// en: 'Couldn't load request options'
+	String get requestsLoadFailed => 'Couldn\'t load request options';
+
+	/// en: 'Everything is already available or requested.'
+	String get nothingToRequest => 'Everything is already available or requested.';
+
+	/// en: 'Available'
+	String get statusAvailable => 'Available';
+
+	/// en: 'Partially available'
+	String get statusPartiallyAvailable => 'Partially available';
+
+	/// en: 'Requested'
+	String get statusRequested => 'Requested';
+
+	/// en: 'Processing'
+	String get statusProcessing => 'Processing';
+}
+
+// Path: services
+class TranslationsServicesEn {
+	TranslationsServicesEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Services'
+	String get title => 'Services';
+
+	/// en: 'Sync watch progress and request new titles.'
+	String get hubSubtitle => 'Sync watch progress and request new titles.';
 
 	/// en: 'Not connected'
 	String get notConnected => 'Not connected';
@@ -4008,10 +4181,10 @@ class TranslationsTrackersEn {
 	/// en: 'Couldn't connect to ${service}. Try again.'
 	String connectFailed({required Object service}) => 'Couldn\'t connect to ${service}. Try again.';
 
-	late final TranslationsTrackersServicesEn services = TranslationsTrackersServicesEn.internal(_root);
-	late final TranslationsTrackersDeviceCodeEn deviceCode = TranslationsTrackersDeviceCodeEn.internal(_root);
-	late final TranslationsTrackersOauthProxyEn oauthProxy = TranslationsTrackersOauthProxyEn.internal(_root);
-	late final TranslationsTrackersLibraryFilterEn libraryFilter = TranslationsTrackersLibraryFilterEn.internal(_root);
+	late final TranslationsServicesNamesEn names = TranslationsServicesNamesEn.internal(_root);
+	late final TranslationsServicesDeviceCodeEn deviceCode = TranslationsServicesDeviceCodeEn.internal(_root);
+	late final TranslationsServicesOauthProxyEn oauthProxy = TranslationsServicesOauthProxyEn.internal(_root);
+	late final TranslationsServicesLibraryFilterEn libraryFilter = TranslationsServicesLibraryFilterEn.internal(_root);
 }
 
 // Path: addServer
@@ -4383,6 +4556,75 @@ class TranslationsLibrariesSortLabelsEn {
 	String get lastEpisodeDateAdded => 'Last Episode Date Added';
 }
 
+// Path: explore.rows
+class TranslationsExploreRowsEn {
+	TranslationsExploreRowsEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Watchlist'
+	String get watchlist => 'Watchlist';
+
+	/// en: 'Recommended Movies'
+	String get recommendedMovies => 'Recommended Movies';
+
+	/// en: 'Recommended Shows'
+	String get recommendedShows => 'Recommended Shows';
+
+	/// en: 'Trending Movies'
+	String get trendingMovies => 'Trending Movies';
+
+	/// en: 'Trending Shows'
+	String get trendingShows => 'Trending Shows';
+
+	/// en: 'Popular Movies'
+	String get popularMovies => 'Popular Movies';
+
+	/// en: 'Popular Shows'
+	String get popularShows => 'Popular Shows';
+
+	/// en: 'Suggested Anime'
+	String get suggestedAnime => 'Suggested Anime';
+
+	/// en: 'Top Airing Anime'
+	String get airingAnime => 'Top Airing Anime';
+
+	/// en: 'Most Popular Anime'
+	String get popularAnime => 'Most Popular Anime';
+
+	/// en: 'Trending'
+	String get trending => 'Trending';
+
+	/// en: 'Upcoming Movies'
+	String get upcomingMovies => 'Upcoming Movies';
+
+	/// en: 'Upcoming Shows'
+	String get upcomingShows => 'Upcoming Shows';
+}
+
+// Path: explore.status
+class TranslationsExploreStatusEn {
+	TranslationsExploreStatusEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Airing'
+	String get airing => 'Airing';
+
+	/// en: 'Ended'
+	String get ended => 'Ended';
+
+	/// en: 'Canceled'
+	String get canceled => 'Canceled';
+
+	/// en: 'Upcoming'
+	String get upcoming => 'Upcoming';
+}
+
 // Path: companionRemote.session
 class TranslationsCompanionRemoteSessionEn {
 	TranslationsCompanionRemoteSessionEn.internal(this._root);
@@ -4599,9 +4841,9 @@ class TranslationsCompanionRemoteErrorsEn {
 	String get connectionLost => 'Connection lost';
 }
 
-// Path: trackers.services
-class TranslationsTrackersServicesEn {
-	TranslationsTrackersServicesEn.internal(this._root);
+// Path: services.names
+class TranslationsServicesNamesEn {
+	TranslationsServicesNamesEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4615,11 +4857,14 @@ class TranslationsTrackersServicesEn {
 
 	/// en: 'Simkl'
 	String get simkl => 'Simkl';
+
+	/// en: 'Seerr'
+	String get seerr => 'Seerr';
 }
 
-// Path: trackers.deviceCode
-class TranslationsTrackersDeviceCodeEn {
-	TranslationsTrackersDeviceCodeEn.internal(this._root);
+// Path: services.deviceCode
+class TranslationsServicesDeviceCodeEn {
+	TranslationsServicesDeviceCodeEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4641,9 +4886,9 @@ class TranslationsTrackersDeviceCodeEn {
 	String get codeCopied => 'Code copied';
 }
 
-// Path: trackers.oauthProxy
-class TranslationsTrackersOauthProxyEn {
-	TranslationsTrackersOauthProxyEn.internal(this._root);
+// Path: services.oauthProxy
+class TranslationsServicesOauthProxyEn {
+	TranslationsServicesOauthProxyEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4662,9 +4907,9 @@ class TranslationsTrackersOauthProxyEn {
 	String get urlCopied => 'URL copied';
 }
 
-// Path: trackers.libraryFilter
-class TranslationsTrackersLibraryFilterEn {
-	TranslationsTrackersLibraryFilterEn.internal(this._root);
+// Path: services.libraryFilter
+class TranslationsServicesLibraryFilterEn {
+	TranslationsServicesLibraryFilterEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4958,8 +5203,8 @@ extension on Translations {
 			'settings.discordRichPresenceDescription' => 'Show what you\'re watching on Discord',
 			'settings.trakt' => 'Trakt',
 			'settings.traktDescription' => 'Sync watch history with Trakt',
-			'settings.trackers' => 'Trackers',
-			'settings.trackersDescription' => 'Sync progress to Trakt, MyAnimeList, AniList, and Simkl',
+			'settings.services' => 'Services',
+			'settings.servicesDescription' => 'Connect Trakt, MyAnimeList, Seerr, and more',
 			'settings.manageLibrariesDescription' => 'Reorder and hide libraries',
 			'settings.companionRemoteServer' => 'Companion Remote Server',
 			'settings.companionRemoteServerDescription' => 'Allow mobile devices on your network to control this app',
@@ -5118,7 +5363,7 @@ extension on Translations {
 			'rateSheet.favorited' => 'Favorited',
 			'rateSheet.saved' => 'Saved',
 			'rateSheet.notAvailable' => 'No match found',
-			'rateSheet.noConnectedTrackers' => 'Connect a tracker in Settings to rate there.',
+			'rateSheet.noConnectedServices' => 'Connect a service in Settings to rate there.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, movie',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV show',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -5502,6 +5747,42 @@ extension on Translations {
 			'navigation.libraries' => 'Libraries',
 			'navigation.downloads' => 'Downloads',
 			'navigation.liveTv' => 'Live TV',
+			'navigation.explore' => 'Explore',
+			'explore.title' => 'Explore',
+			'explore.selectSource' => 'Select source',
+			'explore.rows.watchlist' => 'Watchlist',
+			'explore.rows.recommendedMovies' => 'Recommended Movies',
+			'explore.rows.recommendedShows' => 'Recommended Shows',
+			'explore.rows.trendingMovies' => 'Trending Movies',
+			'explore.rows.trendingShows' => 'Trending Shows',
+			'explore.rows.popularMovies' => 'Popular Movies',
+			'explore.rows.popularShows' => 'Popular Shows',
+			'explore.rows.suggestedAnime' => 'Suggested Anime',
+			'explore.rows.airingAnime' => 'Top Airing Anime',
+			'explore.rows.popularAnime' => 'Most Popular Anime',
+			'explore.rows.trending' => 'Trending',
+			'explore.rows.upcomingMovies' => 'Upcoming Movies',
+			'explore.rows.upcomingShows' => 'Upcoming Shows',
+			'explore.status.airing' => 'Airing',
+			'explore.status.ended' => 'Ended',
+			'explore.status.canceled' => 'Canceled',
+			'explore.status.upcoming' => 'Upcoming',
+			'explore.episodeCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} episode', other: '${n} episodes', ), 
+			'explore.cast' => 'Cast',
+			'explore.characters' => 'Characters',
+			'explore.addToWatchlist' => 'Add to Watchlist',
+			'explore.removeFromWatchlist' => 'Remove from Watchlist',
+			'explore.watchlistUpdateFailed' => 'Couldn\'t update watchlist',
+			'explore.notInLibrary' => 'Not in your library',
+			'explore.inTheseLibraries' => 'In these libraries',
+			'explore.availableOn' => ({required Object server}) => 'Available on ${server}',
+			'explore.checkingLibrary' => 'Checking your library...',
+			'explore.emptyTitle' => 'Nothing here yet',
+			'explore.emptyMessage' => ({required Object source}) => 'Rows from ${source} will appear here once they have content.',
+			'explore.searchHint' => ({required Object source}) => 'Search ${source}',
+			'explore.searchEmpty' => ({required Object query}) => 'No results for "${query}"',
+			'explore.searchPrompt' => ({required Object source}) => 'Search for movies and shows on ${source}.',
+			'explore.searchFailed' => 'Search failed. Check your connection and try again.',
 			'liveTv.title' => 'Live TV',
 			'liveTv.guide' => 'Guide',
 			'liveTv.noChannels' => 'No channels available',
@@ -5705,6 +5986,8 @@ extension on Translations {
 			'downloads.movies' => 'Movies',
 			'downloads.music' => 'Music',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} tracks queued for download',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.noDownloads' => 'No downloads yet',
 			'downloads.noDownloadsDescription' => 'Downloaded content will appear here for offline viewing',
 			'downloads.downloadNow' => 'Download',
@@ -5741,8 +6024,6 @@ extension on Translations {
 			'downloads.customAmount' => 'Custom amount...',
 			'downloads.includeSpecials' => 'Include Specials',
 			'downloads.howManyEpisodes' => 'How many episodes?',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.itemsQueued' => ({required Object count}) => '${count} items queued for download',
 			'downloads.keepSynced' => 'Keep synced',
 			'downloads.downloadOnce' => 'Download once',
@@ -6006,39 +6287,70 @@ extension on Translations {
 			'trakt.scrobbleDescription' => 'Send play, pause, and stop events to Trakt during playback.',
 			'trakt.watchedSync' => 'Sync watched status',
 			'trakt.watchedSyncDescription' => 'When you mark items watched in Plezy, mark them on Trakt.',
-			'trackers.title' => 'Trackers',
-			'trackers.hubSubtitle' => 'Sync watch progress with Trakt and other services.',
-			'trackers.notConnected' => 'Not connected',
-			'trackers.connectedAs' => ({required Object username}) => 'Connected as @${username}',
-			'trackers.scrobble' => 'Track progress automatically',
-			'trackers.scrobbleDescription' => 'Update your list when you finish an episode or movie.',
-			'trackers.disconnectConfirm' => ({required Object service}) => 'Disconnect ${service}?',
-			'trackers.disconnectConfirmBody' => ({required Object service}) => 'Plezy will stop updating ${service}. Reconnect any time.',
-			'trackers.connectFailed' => ({required Object service}) => 'Couldn\'t connect to ${service}. Try again.',
-			'trackers.services.mal' => 'MyAnimeList',
-			'trackers.services.anilist' => 'AniList',
-			'trackers.services.simkl' => 'Simkl',
-			'trackers.deviceCode.title' => ({required Object service}) => 'Activate Plezy on ${service}',
-			'trackers.deviceCode.body' => ({required Object url}) => 'Visit ${url} and enter this code:',
-			'trackers.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} to activate',
-			'trackers.deviceCode.waitingForAuthorization' => 'Waiting for authorization…',
-			'trackers.deviceCode.codeCopied' => 'Code copied',
-			'trackers.oauthProxy.title' => ({required Object service}) => 'Sign in to ${service}',
-			'trackers.oauthProxy.body' => 'Scan this QR code or open the URL on any device.',
-			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => 'Open ${service} to sign in',
-			'trackers.oauthProxy.urlCopied' => 'URL copied',
-			'trackers.libraryFilter.title' => 'Library filter',
-			'trackers.libraryFilter.subtitleAllSyncing' => 'Syncing all libraries',
-			'trackers.libraryFilter.subtitleNoneSyncing' => 'Nothing syncing',
-			'trackers.libraryFilter.subtitleBlocked' => ({required Object count}) => '${count} blocked',
-			'trackers.libraryFilter.subtitleAllowed' => ({required Object count}) => '${count} allowed',
-			'trackers.libraryFilter.mode' => 'Filter mode',
-			'trackers.libraryFilter.modeBlacklist' => 'Blacklist',
-			'trackers.libraryFilter.modeWhitelist' => 'Whitelist',
-			'trackers.libraryFilter.modeHintBlacklist' => 'Sync every library except the ones checked below.',
-			'trackers.libraryFilter.modeHintWhitelist' => 'Sync only the libraries checked below.',
-			'trackers.libraryFilter.libraries' => 'Libraries',
-			'trackers.libraryFilter.noLibraries' => 'No libraries available',
+			'seerr.title' => 'Seerr',
+			'seerr.connectTitle' => 'Connect Seerr',
+			'seerr.serverUrl' => 'Server URL',
+			'seerr.serverUrlHelper' => 'The address of your Seerr instance',
+			'seerr.checkServer' => 'Continue',
+			'seerr.signInWithJellyfin' => 'Sign in with Jellyfin',
+			'seerr.signInWithEmby' => 'Sign in with Emby',
+			'seerr.signInWithLocal' => 'Use a local account',
+			'seerr.email' => 'Email',
+			'seerr.noSignInMethods' => 'This Seerr instance offers no sign-in method Plezy supports.',
+			'seerr.instance' => 'Instance',
+			'seerr.disconnectConfirm' => 'Disconnect Seerr?',
+			'seerr.disconnectConfirmBody' => 'Plezy will forget this Seerr instance. Reconnect any time.',
+			'seerr.request' => 'Request',
+			'seerr.request4k' => 'Request in 4K',
+			'seerr.seasons' => 'Seasons',
+			'seerr.allSeasons' => 'All seasons',
+			'seerr.advancedOptions' => 'Advanced',
+			'seerr.destinationServer' => 'Destination server',
+			'seerr.qualityProfile' => 'Quality profile',
+			'seerr.rootFolder' => 'Root folder',
+			'seerr.languageProfile' => 'Language profile',
+			'seerr.requestSubmitted' => 'Request submitted',
+			'seerr.requestFailed' => ({required Object error}) => 'Request failed: ${error}',
+			'seerr.requestsLoadFailed' => 'Couldn\'t load request options',
+			'seerr.nothingToRequest' => 'Everything is already available or requested.',
+			'seerr.statusAvailable' => 'Available',
+			'seerr.statusPartiallyAvailable' => 'Partially available',
+			'seerr.statusRequested' => 'Requested',
+			'seerr.statusProcessing' => 'Processing',
+			'services.title' => 'Services',
+			'services.hubSubtitle' => 'Sync watch progress and request new titles.',
+			'services.notConnected' => 'Not connected',
+			'services.connectedAs' => ({required Object username}) => 'Connected as @${username}',
+			'services.scrobble' => 'Track progress automatically',
+			'services.scrobbleDescription' => 'Update your list when you finish an episode or movie.',
+			'services.disconnectConfirm' => ({required Object service}) => 'Disconnect ${service}?',
+			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy will stop updating ${service}. Reconnect any time.',
+			'services.connectFailed' => ({required Object service}) => 'Couldn\'t connect to ${service}. Try again.',
+			'services.names.mal' => 'MyAnimeList',
+			'services.names.anilist' => 'AniList',
+			'services.names.simkl' => 'Simkl',
+			'services.names.seerr' => 'Seerr',
+			'services.deviceCode.title' => ({required Object service}) => 'Activate Plezy on ${service}',
+			'services.deviceCode.body' => ({required Object url}) => 'Visit ${url} and enter this code:',
+			'services.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} to activate',
+			'services.deviceCode.waitingForAuthorization' => 'Waiting for authorization…',
+			'services.deviceCode.codeCopied' => 'Code copied',
+			'services.oauthProxy.title' => ({required Object service}) => 'Sign in to ${service}',
+			'services.oauthProxy.body' => 'Scan this QR code or open the URL on any device.',
+			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Open ${service} to sign in',
+			'services.oauthProxy.urlCopied' => 'URL copied',
+			'services.libraryFilter.title' => 'Library filter',
+			'services.libraryFilter.subtitleAllSyncing' => 'Syncing all libraries',
+			'services.libraryFilter.subtitleNoneSyncing' => 'Nothing syncing',
+			'services.libraryFilter.subtitleBlocked' => ({required Object count}) => '${count} blocked',
+			'services.libraryFilter.subtitleAllowed' => ({required Object count}) => '${count} allowed',
+			'services.libraryFilter.mode' => 'Filter mode',
+			'services.libraryFilter.modeBlacklist' => 'Blacklist',
+			'services.libraryFilter.modeWhitelist' => 'Whitelist',
+			'services.libraryFilter.modeHintBlacklist' => 'Sync every library except the ones checked below.',
+			'services.libraryFilter.modeHintWhitelist' => 'Sync only the libraries checked below.',
+			'services.libraryFilter.libraries' => 'Libraries',
+			'services.libraryFilter.noLibraries' => 'No libraries available',
 			'addServer.addJellyfinTitle' => 'Add Jellyfin server',
 			'addServer.serverUrls' => 'Server URLs',
 			'addServer.serverUrlsHelper' => 'Multiple URLs allowed, separated by commas.',

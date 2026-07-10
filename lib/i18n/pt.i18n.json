@@ -247,8 +247,8 @@
     "discordRichPresenceDescription": "Mostrar o que você está assistindo no Discord",
     "trakt": "Trakt",
     "traktDescription": "Sincronizar histórico de exibição com Trakt",
-    "trackers": "Rastreadores",
-    "trackersDescription": "Sincronizar progresso com Trakt, MyAnimeList, AniList e Simkl",
+    "services": "Serviços",
+    "servicesDescription": "Conecte Trakt, MyAnimeList, Seerr e mais",
     "companionRemoteServer": "Servidor de controlo remoto",
     "companionRemoteServerDescription": "Permitir que dispositivos móveis na sua rede controlem esta aplicação",
     "autoPip": "Picture-in-Picture Automático",
@@ -416,7 +416,7 @@
     "setScore": "Definir pontuação",
     "saved": "Salvo",
     "notAvailable": "Nenhuma correspondência encontrada",
-    "noConnectedTrackers": "Conecte um rastreador em Configurações para avaliar lá."
+    "noConnectedServices": "Conecte um serviço nas Configurações para avaliar por lá."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, filme",
@@ -842,7 +842,52 @@
   "navigation": {
     "libraries": "Bibliotecas",
     "downloads": "Downloads",
-    "liveTv": "TV ao Vivo"
+    "liveTv": "TV ao Vivo",
+    "explore": "Explorar"
+  },
+  "explore": {
+    "title": "Explorar",
+    "selectSource": "Selecionar fonte",
+    "rows": {
+      "watchlist": "Lista para ver",
+      "recommendedMovies": "Filmes recomendados",
+      "recommendedShows": "Séries recomendadas",
+      "trendingMovies": "Filmes em alta",
+      "trendingShows": "Séries em alta",
+      "popularMovies": "Filmes populares",
+      "popularShows": "Séries populares",
+      "suggestedAnime": "Anime sugerido",
+      "airingAnime": "Melhor anime em exibição",
+      "popularAnime": "Anime mais popular",
+      "trending": "Em alta",
+      "upcomingMovies": "Próximos filmes",
+      "upcomingShows": "Próximas séries"
+    },
+    "status": {
+      "airing": "Em exibição",
+      "ended": "Finalizada",
+      "canceled": "Cancelada",
+      "upcoming": "Em breve"
+    },
+    "episodeCount": {
+      "one": "${n} episódio",
+      "other": "${n} episódios"
+    },
+    "cast": "Elenco",
+    "characters": "Personagens",
+    "addToWatchlist": "Adicionar à lista para ver",
+    "removeFromWatchlist": "Remover da lista para ver",
+    "watchlistUpdateFailed": "Não foi possível atualizar a lista para ver",
+    "notInLibrary": "Não está na sua biblioteca",
+    "inTheseLibraries": "Nestas bibliotecas",
+    "availableOn": "Disponível em ${server}",
+    "checkingLibrary": "Verificando a sua biblioteca...",
+    "emptyTitle": "Ainda não há nada aqui",
+    "emptyMessage": "As linhas de ${source} aparecerão aqui quando tiverem conteúdo.",
+    "searchHint": "Buscar em ${source}",
+    "searchEmpty": "Nenhum resultado para \"${query}\"",
+    "searchPrompt": "Busque filmes e séries em ${source}.",
+    "searchFailed": "Falha na busca. Verifique sua conexão e tente novamente."
   },
   "liveTv": {
     "title": "TV ao Vivo",
@@ -1384,9 +1429,41 @@
     "watchedSync": "Sincronizar status de assistido",
     "watchedSyncDescription": "Ao marcar itens como assistidos no Plezy, eles também serão marcados no Trakt."
   },
-  "trackers": {
-    "title": "Rastreadores",
-    "hubSubtitle": "Sincronize o progresso assistido com Trakt e outros serviços.",
+  "seerr": {
+    "title": "Seerr",
+    "connectTitle": "Conectar Seerr",
+    "serverUrl": "URL do servidor",
+    "serverUrlHelper": "O endereço da sua instância do Seerr",
+    "checkServer": "Continuar",
+    "signInWithJellyfin": "Entrar com Jellyfin",
+    "signInWithEmby": "Entrar com Emby",
+    "signInWithLocal": "Usar uma conta local",
+    "email": "E-mail",
+    "noSignInMethods": "Esta instância do Seerr não oferece nenhum método de login compatível com o Plezy.",
+    "instance": "Instância",
+    "disconnectConfirm": "Desconectar Seerr?",
+    "disconnectConfirmBody": "O Plezy esquecerá esta instância do Seerr. Reconecte quando quiser.",
+    "request": "Solicitar",
+    "request4k": "Solicitar em 4K",
+    "seasons": "Temporadas",
+    "allSeasons": "Todas as temporadas",
+    "advancedOptions": "Avançado",
+    "destinationServer": "Servidor de destino",
+    "qualityProfile": "Perfil de qualidade",
+    "rootFolder": "Pasta raiz",
+    "languageProfile": "Perfil de idioma",
+    "requestSubmitted": "Solicitação enviada",
+    "requestFailed": "Falha na solicitação: ${error}",
+    "requestsLoadFailed": "Não foi possível carregar as opções de solicitação",
+    "nothingToRequest": "Tudo já está disponível ou solicitado.",
+    "statusAvailable": "Disponível",
+    "statusPartiallyAvailable": "Parcialmente disponível",
+    "statusRequested": "Solicitado",
+    "statusProcessing": "Processando"
+  },
+  "services": {
+    "title": "Serviços",
+    "hubSubtitle": "Sincronize o progresso de exibição e solicite novos títulos.",
     "notConnected": "Não conectado",
     "connectedAs": "Conectado como @${username}",
     "scrobble": "Registrar progresso automaticamente",
@@ -1394,10 +1471,11 @@
     "disconnectConfirm": "Desconectar ${service}?",
     "disconnectConfirmBody": "Plezy deixará de atualizar ${service}. Reconecte quando quiser.",
     "connectFailed": "Não foi possível conectar ao ${service}. Tente novamente.",
-    "services": {
+    "names": {
       "mal": "MyAnimeList",
       "anilist": "AniList",
-      "simkl": "Simkl"
+      "simkl": "Simkl",
+      "seerr": "Seerr"
     },
     "deviceCode": {
       "title": "Ativar Plezy no ${service}",

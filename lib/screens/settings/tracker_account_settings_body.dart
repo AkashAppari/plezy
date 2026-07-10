@@ -78,7 +78,7 @@ class TrackerAccountSettingsBody extends StatelessWidget {
                 final settings = SettingsService.instance;
                 return ListTile(
                   leading: const AppIcon(Symbols.filter_list_rounded, fill: 1),
-                  title: Text(t.trackers.libraryFilter.title),
+                  title: Text(t.services.libraryFilter.title),
                   subtitle: Text(TrackerLibraryFilterScreen.subtitleFor(settings, service)),
                   trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                   onTap: () => Navigator.of(

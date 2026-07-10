@@ -247,8 +247,8 @@
     "discordRichPresenceDescription": "Toon op Discord wat je aan het kijken bent",
     "trakt": "Trakt",
     "traktDescription": "Kijkgeschiedenis synchroniseren met Trakt",
-    "trackers": "Trackers",
-    "trackersDescription": "Voortgang synchroniseren met Trakt, MyAnimeList, AniList en Simkl",
+    "services": "Services",
+    "servicesDescription": "Verbind Trakt, MyAnimeList, Seerr en meer",
     "companionRemoteServer": "Companion Remote-server",
     "companionRemoteServerDescription": "Sta mobiele apparaten op je netwerk toe om deze app te bedienen",
     "autoPip": "Automatische beeld-in-beeld",
@@ -416,7 +416,7 @@
     "setScore": "Score instellen",
     "saved": "Opgeslagen",
     "notAvailable": "Geen match gevonden",
-    "noConnectedTrackers": "Verbind een tracker in Instellingen om daar te beoordelen."
+    "noConnectedServices": "Verbind een service in Instellingen om daar te beoordelen."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",
@@ -842,7 +842,52 @@
   "navigation": {
     "libraries": "Media",
     "downloads": "Downloads",
-    "liveTv": "Live TV"
+    "liveTv": "Live TV",
+    "explore": "Verkennen"
+  },
+  "explore": {
+    "title": "Verkennen",
+    "selectSource": "Bron kiezen",
+    "rows": {
+      "watchlist": "Kijklijst",
+      "recommendedMovies": "Aanbevolen films",
+      "recommendedShows": "Aanbevolen series",
+      "trendingMovies": "Trending films",
+      "trendingShows": "Trending series",
+      "popularMovies": "Populaire films",
+      "popularShows": "Populaire series",
+      "suggestedAnime": "Voorgestelde anime",
+      "airingAnime": "Top lopende anime",
+      "popularAnime": "Populairste anime",
+      "trending": "Trending",
+      "upcomingMovies": "Aankomende films",
+      "upcomingShows": "Aankomende series"
+    },
+    "searchHint": "Zoeken in ${source}",
+    "searchEmpty": "Geen resultaten voor \"${query}\"",
+    "searchPrompt": "Zoek naar films en series op ${source}.",
+    "searchFailed": "Zoeken mislukt. Controleer je verbinding en probeer opnieuw.",
+    "status": {
+      "airing": "Lopend",
+      "ended": "Afgelopen",
+      "canceled": "Geannuleerd",
+      "upcoming": "Binnenkort"
+    },
+    "episodeCount": {
+      "one": "${n} aflevering",
+      "other": "${n} afleveringen"
+    },
+    "cast": "Acteurs",
+    "characters": "Personages",
+    "addToWatchlist": "Toevoegen aan kijklijst",
+    "removeFromWatchlist": "Verwijderen uit kijklijst",
+    "watchlistUpdateFailed": "Kon kijklijst niet bijwerken",
+    "notInLibrary": "Niet in je bibliotheek",
+    "inTheseLibraries": "In deze bibliotheken",
+    "availableOn": "Beschikbaar op ${server}",
+    "checkingLibrary": "Je bibliotheek controleren...",
+    "emptyTitle": "Hier is nog niets",
+    "emptyMessage": "Rijen van ${source} verschijnen hier zodra ze inhoud hebben."
   },
   "liveTv": {
     "title": "Live TV",
@@ -1384,9 +1429,41 @@
     "watchedSync": "Bekeken-status synchroniseren",
     "watchedSyncDescription": "Wanneer je items als bekeken markeert in Plezy, worden ze ook op Trakt gemarkeerd."
   },
-  "trackers": {
-    "title": "Trackers",
-    "hubSubtitle": "Synchroniseer kijkvoortgang met Trakt en andere diensten.",
+  "seerr": {
+    "title": "Seerr",
+    "connectTitle": "Verbinden met Seerr",
+    "serverUrl": "Server-URL",
+    "serverUrlHelper": "Het adres van je Seerr-instantie",
+    "checkServer": "Doorgaan",
+    "signInWithJellyfin": "Inloggen met Jellyfin",
+    "signInWithEmby": "Inloggen met Emby",
+    "signInWithLocal": "Een lokaal account gebruiken",
+    "email": "E-mail",
+    "noSignInMethods": "Deze Seerr-instantie biedt geen inlogmethode die Plezy ondersteunt.",
+    "instance": "Instantie",
+    "disconnectConfirm": "Seerr loskoppelen?",
+    "disconnectConfirmBody": "Plezy vergeet deze Seerr-instantie. Je kunt altijd opnieuw verbinden.",
+    "request": "Aanvragen",
+    "request4k": "Aanvragen in 4K",
+    "seasons": "Seizoenen",
+    "allSeasons": "Alle seizoenen",
+    "advancedOptions": "Geavanceerd",
+    "destinationServer": "Doelserver",
+    "qualityProfile": "Kwaliteitsprofiel",
+    "rootFolder": "Hoofdmap",
+    "languageProfile": "Taalprofiel",
+    "requestSubmitted": "Aanvraag verzonden",
+    "requestFailed": "Aanvraag mislukt: ${error}",
+    "requestsLoadFailed": "Kan aanvraagopties niet laden",
+    "nothingToRequest": "Alles is al beschikbaar of aangevraagd.",
+    "statusAvailable": "Beschikbaar",
+    "statusPartiallyAvailable": "Gedeeltelijk beschikbaar",
+    "statusRequested": "Aangevraagd",
+    "statusProcessing": "Verwerken"
+  },
+  "services": {
+    "title": "Services",
+    "hubSubtitle": "Synchroniseer kijkvoortgang en vraag nieuwe titels aan.",
     "notConnected": "Niet verbonden",
     "connectedAs": "Verbonden als @${username}",
     "scrobble": "Voortgang automatisch volgen",
@@ -1394,10 +1471,11 @@
     "disconnectConfirm": "${service} loskoppelen?",
     "disconnectConfirmBody": "Plezy stopt met ${service} bijwerken. Je kunt altijd opnieuw verbinden.",
     "connectFailed": "Kan niet verbinden met ${service}. Probeer opnieuw.",
-    "services": {
+    "names": {
       "mal": "MyAnimeList",
       "anilist": "AniList",
-      "simkl": "Simkl"
+      "simkl": "Simkl",
+      "seerr": "Seerr"
     },
     "deviceCode": {
       "title": "Plezy activeren op ${service}",

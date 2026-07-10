@@ -247,8 +247,8 @@
     "discordRichPresenceDescription": "Visa vad du tittar på i Discord",
     "trakt": "Trakt",
     "traktDescription": "Synkronisera visningshistorik med Trakt",
-    "trackers": "Spårare",
-    "trackersDescription": "Synkronisera framsteg till Trakt, MyAnimeList, AniList och Simkl",
+    "services": "Tjänster",
+    "servicesDescription": "Anslut Trakt, MyAnimeList, Seerr med mera",
     "companionRemoteServer": "Companion Remote-server",
     "companionRemoteServerDescription": "Tillåt mobila enheter i ditt nätverk att styra denna app",
     "autoPip": "Automatisk bild-i-bild",
@@ -416,7 +416,7 @@
     "setScore": "Ange betyg",
     "saved": "Sparat",
     "notAvailable": "Ingen matchning hittades",
-    "noConnectedTrackers": "Anslut en spårare i Inställningar för att betygsätta där."
+    "noConnectedServices": "Anslut en tjänst i Inställningar för att betygsätta där."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",
@@ -842,7 +842,52 @@
   "navigation": {
     "libraries": "Bibliotek",
     "downloads": "Nerladdat",
-    "liveTv": "Live-TV"
+    "liveTv": "Live-TV",
+    "explore": "Utforska"
+  },
+  "explore": {
+    "title": "Utforska",
+    "selectSource": "Välj källa",
+    "rows": {
+      "watchlist": "Bevakningslista",
+      "recommendedMovies": "Rekommenderade filmer",
+      "recommendedShows": "Rekommenderade serier",
+      "trendingMovies": "Trendande filmer",
+      "trendingShows": "Trendande serier",
+      "popularMovies": "Populära filmer",
+      "popularShows": "Populära serier",
+      "suggestedAnime": "Föreslagna anime",
+      "airingAnime": "Bästa pågående anime",
+      "popularAnime": "Mest populära anime",
+      "trending": "Trendar nu",
+      "upcomingMovies": "Kommande filmer",
+      "upcomingShows": "Kommande serier"
+    },
+    "status": {
+      "airing": "Pågår",
+      "ended": "Avslutad",
+      "canceled": "Nedlagd",
+      "upcoming": "Kommande"
+    },
+    "episodeCount": {
+      "one": "${n} avsnitt",
+      "other": "${n} avsnitt"
+    },
+    "cast": "Rollbesättning",
+    "characters": "Karaktärer",
+    "addToWatchlist": "Lägg till i bevakningslista",
+    "removeFromWatchlist": "Ta bort från bevakningslista",
+    "watchlistUpdateFailed": "Det gick inte att uppdatera bevakningslistan",
+    "notInLibrary": "Finns inte i ditt bibliotek",
+    "inTheseLibraries": "I dessa bibliotek",
+    "availableOn": "Tillgänglig på ${server}",
+    "checkingLibrary": "Kontrollerar ditt bibliotek...",
+    "emptyTitle": "Inget här ännu",
+    "emptyMessage": "Rader från ${source} visas här när de har innehåll.",
+    "searchHint": "Sök i ${source}",
+    "searchEmpty": "Inga resultat för \"${query}\"",
+    "searchPrompt": "Sök efter filmer och serier på ${source}.",
+    "searchFailed": "Sökningen misslyckades. Kontrollera din anslutning och försök igen."
   },
   "liveTv": {
     "title": "Live-TV",
@@ -1384,9 +1429,41 @@
     "watchedSync": "Synkronisera tittad-status",
     "watchedSyncDescription": "När du markerar något som tittat i Plezy markeras det också på Trakt."
   },
-  "trackers": {
-    "title": "Spårare",
-    "hubSubtitle": "Synka tittförlopp med Trakt och andra tjänster.",
+  "seerr": {
+    "title": "Seerr",
+    "connectTitle": "Anslut Seerr",
+    "serverUrl": "Server-URL",
+    "serverUrlHelper": "Adressen till din Seerr-instans",
+    "checkServer": "Fortsätt",
+    "signInWithJellyfin": "Logga in med Jellyfin",
+    "signInWithEmby": "Logga in med Emby",
+    "signInWithLocal": "Använd ett lokalt konto",
+    "email": "E-post",
+    "noSignInMethods": "Den här Seerr-instansen erbjuder ingen inloggningsmetod som Plezy stöder.",
+    "instance": "Instans",
+    "disconnectConfirm": "Koppla från Seerr?",
+    "disconnectConfirmBody": "Plezy glömmer den här Seerr-instansen. Återanslut när som helst.",
+    "request": "Begär",
+    "request4k": "Begär i 4K",
+    "seasons": "Säsonger",
+    "allSeasons": "Alla säsonger",
+    "advancedOptions": "Avancerat",
+    "destinationServer": "Målserver",
+    "qualityProfile": "Kvalitetsprofil",
+    "rootFolder": "Rotmapp",
+    "languageProfile": "Språkprofil",
+    "requestSubmitted": "Begäran skickad",
+    "requestFailed": "Begäran misslyckades: ${error}",
+    "requestsLoadFailed": "Det gick inte att läsa in alternativ för begäran",
+    "nothingToRequest": "Allt är redan tillgängligt eller begärt.",
+    "statusAvailable": "Tillgänglig",
+    "statusPartiallyAvailable": "Delvis tillgänglig",
+    "statusRequested": "Begärd",
+    "statusProcessing": "Bearbetas"
+  },
+  "services": {
+    "title": "Tjänster",
+    "hubSubtitle": "Synkronisera dina framsteg och begär nya titlar.",
     "notConnected": "Ej ansluten",
     "connectedAs": "Ansluten som @${username}",
     "scrobble": "Spåra framsteg automatiskt",
@@ -1394,10 +1471,11 @@
     "disconnectConfirm": "Koppla från ${service}?",
     "disconnectConfirmBody": "Plezy slutar uppdatera ${service}. Återanslut när som helst.",
     "connectFailed": "Kunde inte ansluta till ${service}. Försök igen.",
-    "services": {
+    "names": {
       "mal": "MyAnimeList",
       "anilist": "AniList",
-      "simkl": "Simkl"
+      "simkl": "Simkl",
+      "seerr": "Seerr"
     },
     "deviceCode": {
       "title": "Aktivera Plezy på ${service}",

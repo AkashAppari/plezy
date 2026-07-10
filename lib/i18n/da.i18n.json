@@ -247,8 +247,8 @@
     "discordRichPresenceDescription": "Vis hvad du ser på Discord",
     "trakt": "Trakt",
     "traktDescription": "Synkroniser visningshistorik med Trakt",
-    "trackers": "Trackere",
-    "trackersDescription": "Synkroniser fremgang til Trakt, MyAnimeList, AniList og Simkl",
+    "services": "Tjenester",
+    "servicesDescription": "Forbind Trakt, MyAnimeList, Seerr og mere",
     "companionRemoteServer": "Companion Remote Server",
     "companionRemoteServerDescription": "Tillad mobilenheder på dit netværk at styre denne app",
     "autoPip": "Auto billede-i-billede",
@@ -416,7 +416,7 @@
     "setScore": "Angiv en score",
     "saved": "Gemt",
     "notAvailable": "Intet match fundet",
-    "noConnectedTrackers": "Forbind en tracker i Indstillinger for at bedømme der."
+    "noConnectedServices": "Forbind en tjeneste i Indstillinger for at bedømme der."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",
@@ -842,7 +842,52 @@
   "navigation": {
     "libraries": "Biblioteker",
     "downloads": "Downloads",
-    "liveTv": "Live TV"
+    "liveTv": "Live TV",
+    "explore": "Udforsk"
+  },
+  "explore": {
+    "title": "Udforsk",
+    "selectSource": "Vælg kilde",
+    "rows": {
+      "watchlist": "Ønskeliste",
+      "recommendedMovies": "Anbefalede film",
+      "recommendedShows": "Anbefalede serier",
+      "trendingMovies": "Trending film",
+      "trendingShows": "Trending serier",
+      "popularMovies": "Populære film",
+      "popularShows": "Populære serier",
+      "suggestedAnime": "Foreslået anime",
+      "airingAnime": "Top igangværende anime",
+      "popularAnime": "Mest populære anime",
+      "trending": "Trending",
+      "upcomingMovies": "Kommende film",
+      "upcomingShows": "Kommende serier"
+    },
+    "status": {
+      "airing": "Sendes",
+      "ended": "Afsluttet",
+      "canceled": "Aflyst",
+      "upcoming": "Kommende"
+    },
+    "episodeCount": {
+      "one": "${n} afsnit",
+      "other": "${n} afsnit"
+    },
+    "cast": "Rollebesætning",
+    "characters": "Figurer",
+    "addToWatchlist": "Føj til ønskeliste",
+    "removeFromWatchlist": "Fjern fra ønskeliste",
+    "watchlistUpdateFailed": "Kunne ikke opdatere ønskelisten",
+    "notInLibrary": "Ikke i dit bibliotek",
+    "inTheseLibraries": "I disse biblioteker",
+    "availableOn": "Tilgængelig på ${server}",
+    "checkingLibrary": "Tjekker dit bibliotek...",
+    "emptyTitle": "Der er ikke noget her endnu",
+    "emptyMessage": "Rækker fra ${source} vises her, når de har indhold.",
+    "searchHint": "Søg i ${source}",
+    "searchEmpty": "Ingen resultater for \"${query}\"",
+    "searchPrompt": "Søg efter film og serier på ${source}.",
+    "searchFailed": "Søgningen mislykkedes. Tjek din forbindelse, og prøv igen."
   },
   "liveTv": {
     "title": "Live TV",
@@ -1384,9 +1429,41 @@
     "watchedSync": "Synkroniser sét-status",
     "watchedSyncDescription": "Når du markerer ting som sét i Plezy, markeres de også på Trakt."
   },
-  "trackers": {
-    "title": "Trackere",
-    "hubSubtitle": "Synkroniser afspilningsfremskridt med Trakt og andre tjenester.",
+  "seerr": {
+    "title": "Seerr",
+    "connectTitle": "Forbind Seerr",
+    "serverUrl": "Server-URL",
+    "serverUrlHelper": "Adressen på din Seerr-instans",
+    "checkServer": "Fortsæt",
+    "signInWithJellyfin": "Log ind med Jellyfin",
+    "signInWithEmby": "Log ind med Emby",
+    "signInWithLocal": "Brug en lokal konto",
+    "email": "E-mail",
+    "noSignInMethods": "Denne Seerr-instans tilbyder ingen loginmetode, som Plezy understøtter.",
+    "instance": "Instans",
+    "disconnectConfirm": "Afbryd Seerr?",
+    "disconnectConfirmBody": "Plezy glemmer denne Seerr-instans. Tilslut igen når som helst.",
+    "request": "Anmod",
+    "request4k": "Anmod i 4K",
+    "seasons": "Sæsoner",
+    "allSeasons": "Alle sæsoner",
+    "advancedOptions": "Avanceret",
+    "destinationServer": "Destinationsserver",
+    "qualityProfile": "Kvalitetsprofil",
+    "rootFolder": "Rodmappe",
+    "languageProfile": "Sprogprofil",
+    "requestSubmitted": "Anmodning sendt",
+    "requestFailed": "Anmodning mislykkedes: ${error}",
+    "requestsLoadFailed": "Kunne ikke indlæse anmodningsmuligheder",
+    "nothingToRequest": "Alt er allerede tilgængeligt eller anmodet.",
+    "statusAvailable": "Tilgængelig",
+    "statusPartiallyAvailable": "Delvist tilgængelig",
+    "statusRequested": "Anmodet",
+    "statusProcessing": "Behandler"
+  },
+  "services": {
+    "title": "Tjenester",
+    "hubSubtitle": "Synkroniser dit visningsfremskridt, og anmod om nye titler.",
     "notConnected": "Ikke forbundet",
     "connectedAs": "Forbundet som @${username}",
     "scrobble": "Registrer fremgang automatisk",
@@ -1394,10 +1471,11 @@
     "disconnectConfirm": "Afbryd ${service}?",
     "disconnectConfirmBody": "Plezy stopper med at opdatere ${service}. Tilslut igen når som helst.",
     "connectFailed": "Kunne ikke forbinde til ${service}. Prøv igen.",
-    "services": {
+    "names": {
       "mal": "MyAnimeList",
       "anilist": "AniList",
-      "simkl": "Simkl"
+      "simkl": "Simkl",
+      "seerr": "Seerr"
     },
     "deviceCode": {
       "title": "Aktiver Plezy på ${service}",

@@ -29,18 +29,18 @@ class TrackerLibraryFilterScreen extends StatelessWidget {
     final ids = settings.read(SettingsService.trackerFilterIdsPref(service)).toSet();
     if (ids.isEmpty) {
       return mode == TrackerLibraryFilterMode.blacklist
-          ? t.trackers.libraryFilter.subtitleAllSyncing
-          : t.trackers.libraryFilter.subtitleNoneSyncing;
+          ? t.services.libraryFilter.subtitleAllSyncing
+          : t.services.libraryFilter.subtitleNoneSyncing;
     }
     final count = ids.length.toString();
     return mode == TrackerLibraryFilterMode.blacklist
-        ? t.trackers.libraryFilter.subtitleBlocked(count: count)
-        : t.trackers.libraryFilter.subtitleAllowed(count: count);
+        ? t.services.libraryFilter.subtitleBlocked(count: count)
+        : t.services.libraryFilter.subtitleAllowed(count: count);
   }
 
   @override
   Widget build(BuildContext context) {
-    final title = Text(t.trackers.libraryFilter.title);
+    final title = Text(t.services.libraryFilter.title);
     final modePref = SettingsService.trackerFilterModePref(service);
     final idsPref = SettingsService.trackerFilterIdsPref(service);
 
@@ -79,8 +79,8 @@ class TrackerLibraryFilterScreen extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                 child: Text(
                   mode == TrackerLibraryFilterMode.blacklist
-                      ? t.trackers.libraryFilter.modeHintBlacklist
-                      : t.trackers.libraryFilter.modeHintWhitelist,
+                      ? t.services.libraryFilter.modeHintBlacklist
+                      : t.services.libraryFilter.modeHintWhitelist,
                   style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
               ),
@@ -89,15 +89,15 @@ class TrackerLibraryFilterScreen extends StatelessWidget {
                   SettingSegmentedTile<TrackerLibraryFilterMode, TrackerLibraryFilterMode>(
                     pref: modePref,
                     icon: Symbols.filter_list_rounded,
-                    title: t.trackers.libraryFilter.mode,
+                    title: t.services.libraryFilter.mode,
                     segments: [
                       ButtonSegment(
                         value: TrackerLibraryFilterMode.blacklist,
-                        label: Text(t.trackers.libraryFilter.modeBlacklist),
+                        label: Text(t.services.libraryFilter.modeBlacklist),
                       ),
                       ButtonSegment(
                         value: TrackerLibraryFilterMode.whitelist,
-                        label: Text(t.trackers.libraryFilter.modeWhitelist),
+                        label: Text(t.services.libraryFilter.modeWhitelist),
                       ),
                     ],
                     decode: (v) => v,
@@ -110,8 +110,8 @@ class TrackerLibraryFilterScreen extends StatelessWidget {
             if (libraries.isEmpty) {
               children.add(
                 SettingsGroup(
-                  title: t.trackers.libraryFilter.libraries,
-                  children: [ListTile(title: Text(t.trackers.libraryFilter.noLibraries))],
+                  title: t.services.libraryFilter.libraries,
+                  children: [ListTile(title: Text(t.services.libraryFilter.noLibraries))],
                 ),
               );
             } else if (showServerHeaders) {
@@ -126,7 +126,7 @@ class TrackerLibraryFilterScreen extends StatelessWidget {
             } else {
               children.add(
                 SettingsGroup(
-                  title: t.trackers.libraryFilter.libraries,
+                  title: t.services.libraryFilter.libraries,
                   children: [
                     for (final libs in grouped.values)
                       for (final lib in libs) libraryTile(lib),

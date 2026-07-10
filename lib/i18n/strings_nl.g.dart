@@ -69,6 +69,7 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsLogsNl logs = _TranslationsLogsNl._(_root);
 	@override late final _TranslationsLicensesNl licenses = _TranslationsLicensesNl._(_root);
 	@override late final _TranslationsNavigationNl navigation = _TranslationsNavigationNl._(_root);
+	@override late final _TranslationsExploreNl explore = _TranslationsExploreNl._(_root);
 	@override late final _TranslationsLiveTvNl liveTv = _TranslationsLiveTvNl._(_root);
 	@override late final _TranslationsCollectionsNl collections = _TranslationsCollectionsNl._(_root);
 	@override late final _TranslationsPlaylistsNl playlists = _TranslationsPlaylistsNl._(_root);
@@ -84,7 +85,8 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsMatchScreenNl matchScreen = _TranslationsMatchScreenNl._(_root);
 	@override late final _TranslationsServerTasksNl serverTasks = _TranslationsServerTasksNl._(_root);
 	@override late final _TranslationsTraktNl trakt = _TranslationsTraktNl._(_root);
-	@override late final _TranslationsTrackersNl trackers = _TranslationsTrackersNl._(_root);
+	@override late final _TranslationsSeerrNl seerr = _TranslationsSeerrNl._(_root);
+	@override late final _TranslationsServicesNl services = _TranslationsServicesNl._(_root);
 	@override late final _TranslationsAddServerNl addServer = _TranslationsAddServerNl._(_root);
 }
 
@@ -377,8 +379,8 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => 'Toon op Discord wat je aan het kijken bent';
 	@override String get trakt => 'Trakt';
 	@override String get traktDescription => 'Kijkgeschiedenis synchroniseren met Trakt';
-	@override String get trackers => 'Trackers';
-	@override String get trackersDescription => 'Voortgang synchroniseren met Trakt, MyAnimeList, AniList en Simkl';
+	@override String get services => 'Services';
+	@override String get servicesDescription => 'Verbind Trakt, MyAnimeList, Seerr en meer';
 	@override String get companionRemoteServer => 'Companion Remote-server';
 	@override String get companionRemoteServerDescription => 'Sta mobiele apparaten op je netwerk toe om deze app te bedienen';
 	@override String get autoPip => 'Automatische beeld-in-beeld';
@@ -555,7 +557,7 @@ class _TranslationsRateSheetNl extends TranslationsRateSheetEn {
 	@override String get setScore => 'Score instellen';
 	@override String get saved => 'Opgeslagen';
 	@override String get notAvailable => 'Geen match gevonden';
-	@override String get noConnectedTrackers => 'Verbind een tracker in Instellingen om daar te beoordelen.';
+	@override String get noConnectedServices => 'Verbind een service in Instellingen om daar te beoordelen.';
 }
 
 // Path: accessibility
@@ -1063,6 +1065,39 @@ class _TranslationsNavigationNl extends TranslationsNavigationEn {
 	@override String get libraries => 'Media';
 	@override String get downloads => 'Downloads';
 	@override String get liveTv => 'Live TV';
+	@override String get explore => 'Verkennen';
+}
+
+// Path: explore
+class _TranslationsExploreNl extends TranslationsExploreEn {
+	_TranslationsExploreNl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Verkennen';
+	@override String get selectSource => 'Bron kiezen';
+	@override late final _TranslationsExploreRowsNl rows = _TranslationsExploreRowsNl._(_root);
+	@override String searchHint({required Object source}) => 'Zoeken in ${source}';
+	@override String searchEmpty({required Object query}) => 'Geen resultaten voor "${query}"';
+	@override String searchPrompt({required Object source}) => 'Zoek naar films en series op ${source}.';
+	@override String get searchFailed => 'Zoeken mislukt. Controleer je verbinding en probeer opnieuw.';
+	@override late final _TranslationsExploreStatusNl status = _TranslationsExploreStatusNl._(_root);
+	@override String episodeCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n,
+		one: '${n} aflevering',
+		other: '${n} afleveringen',
+	);
+	@override String get cast => 'Acteurs';
+	@override String get characters => 'Personages';
+	@override String get addToWatchlist => 'Toevoegen aan kijklijst';
+	@override String get removeFromWatchlist => 'Verwijderen uit kijklijst';
+	@override String get watchlistUpdateFailed => 'Kon kijklijst niet bijwerken';
+	@override String get notInLibrary => 'Niet in je bibliotheek';
+	@override String get inTheseLibraries => 'In deze bibliotheken';
+	@override String availableOn({required Object server}) => 'Beschikbaar op ${server}';
+	@override String get checkingLibrary => 'Je bibliotheek controleren...';
+	@override String get emptyTitle => 'Hier is nog niets';
+	@override String emptyMessage({required Object source}) => 'Rijen van ${source} verschijnen hier zodra ze inhoud hebben.';
 }
 
 // Path: liveTv
@@ -1646,15 +1681,54 @@ class _TranslationsTraktNl extends TranslationsTraktEn {
 	@override String get watchedSyncDescription => 'Wanneer je items als bekeken markeert in Plezy, worden ze ook op Trakt gemarkeerd.';
 }
 
-// Path: trackers
-class _TranslationsTrackersNl extends TranslationsTrackersEn {
-	_TranslationsTrackersNl._(TranslationsNl root) : this._root = root, super.internal(root);
+// Path: seerr
+class _TranslationsSeerrNl extends TranslationsSeerrEn {
+	_TranslationsSeerrNl._(TranslationsNl root) : this._root = root, super.internal(root);
 
 	final TranslationsNl _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Trackers';
-	@override String get hubSubtitle => 'Synchroniseer kijkvoortgang met Trakt en andere diensten.';
+	@override String get title => 'Seerr';
+	@override String get connectTitle => 'Verbinden met Seerr';
+	@override String get serverUrl => 'Server-URL';
+	@override String get serverUrlHelper => 'Het adres van je Seerr-instantie';
+	@override String get checkServer => 'Doorgaan';
+	@override String get signInWithJellyfin => 'Inloggen met Jellyfin';
+	@override String get signInWithEmby => 'Inloggen met Emby';
+	@override String get signInWithLocal => 'Een lokaal account gebruiken';
+	@override String get email => 'E-mail';
+	@override String get noSignInMethods => 'Deze Seerr-instantie biedt geen inlogmethode die Plezy ondersteunt.';
+	@override String get instance => 'Instantie';
+	@override String get disconnectConfirm => 'Seerr loskoppelen?';
+	@override String get disconnectConfirmBody => 'Plezy vergeet deze Seerr-instantie. Je kunt altijd opnieuw verbinden.';
+	@override String get request => 'Aanvragen';
+	@override String get request4k => 'Aanvragen in 4K';
+	@override String get seasons => 'Seizoenen';
+	@override String get allSeasons => 'Alle seizoenen';
+	@override String get advancedOptions => 'Geavanceerd';
+	@override String get destinationServer => 'Doelserver';
+	@override String get qualityProfile => 'Kwaliteitsprofiel';
+	@override String get rootFolder => 'Hoofdmap';
+	@override String get languageProfile => 'Taalprofiel';
+	@override String get requestSubmitted => 'Aanvraag verzonden';
+	@override String requestFailed({required Object error}) => 'Aanvraag mislukt: ${error}';
+	@override String get requestsLoadFailed => 'Kan aanvraagopties niet laden';
+	@override String get nothingToRequest => 'Alles is al beschikbaar of aangevraagd.';
+	@override String get statusAvailable => 'Beschikbaar';
+	@override String get statusPartiallyAvailable => 'Gedeeltelijk beschikbaar';
+	@override String get statusRequested => 'Aangevraagd';
+	@override String get statusProcessing => 'Verwerken';
+}
+
+// Path: services
+class _TranslationsServicesNl extends TranslationsServicesEn {
+	_TranslationsServicesNl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Services';
+	@override String get hubSubtitle => 'Synchroniseer kijkvoortgang en vraag nieuwe titels aan.';
 	@override String get notConnected => 'Niet verbonden';
 	@override String connectedAs({required Object username}) => 'Verbonden als @${username}';
 	@override String get scrobble => 'Voortgang automatisch volgen';
@@ -1662,10 +1736,10 @@ class _TranslationsTrackersNl extends TranslationsTrackersEn {
 	@override String disconnectConfirm({required Object service}) => '${service} loskoppelen?';
 	@override String disconnectConfirmBody({required Object service}) => 'Plezy stopt met ${service} bijwerken. Je kunt altijd opnieuw verbinden.';
 	@override String connectFailed({required Object service}) => 'Kan niet verbinden met ${service}. Probeer opnieuw.';
-	@override late final _TranslationsTrackersServicesNl services = _TranslationsTrackersServicesNl._(_root);
-	@override late final _TranslationsTrackersDeviceCodeNl deviceCode = _TranslationsTrackersDeviceCodeNl._(_root);
-	@override late final _TranslationsTrackersOauthProxyNl oauthProxy = _TranslationsTrackersOauthProxyNl._(_root);
-	@override late final _TranslationsTrackersLibraryFilterNl libraryFilter = _TranslationsTrackersLibraryFilterNl._(_root);
+	@override late final _TranslationsServicesNamesNl names = _TranslationsServicesNamesNl._(_root);
+	@override late final _TranslationsServicesDeviceCodeNl deviceCode = _TranslationsServicesDeviceCodeNl._(_root);
+	@override late final _TranslationsServicesOauthProxyNl oauthProxy = _TranslationsServicesOauthProxyNl._(_root);
+	@override late final _TranslationsServicesLibraryFilterNl libraryFilter = _TranslationsServicesLibraryFilterNl._(_root);
 }
 
 // Path: addServer
@@ -1832,6 +1906,41 @@ class _TranslationsLibrariesSortLabelsNl extends TranslationsLibrariesSortLabels
 	@override String get lastEpisodeDateAdded => 'Datum laatst toegevoegde aflevering';
 }
 
+// Path: explore.rows
+class _TranslationsExploreRowsNl extends TranslationsExploreRowsEn {
+	_TranslationsExploreRowsNl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get watchlist => 'Kijklijst';
+	@override String get recommendedMovies => 'Aanbevolen films';
+	@override String get recommendedShows => 'Aanbevolen series';
+	@override String get trendingMovies => 'Trending films';
+	@override String get trendingShows => 'Trending series';
+	@override String get popularMovies => 'Populaire films';
+	@override String get popularShows => 'Populaire series';
+	@override String get suggestedAnime => 'Voorgestelde anime';
+	@override String get airingAnime => 'Top lopende anime';
+	@override String get popularAnime => 'Populairste anime';
+	@override String get trending => 'Trending';
+	@override String get upcomingMovies => 'Aankomende films';
+	@override String get upcomingShows => 'Aankomende series';
+}
+
+// Path: explore.status
+class _TranslationsExploreStatusNl extends TranslationsExploreStatusEn {
+	_TranslationsExploreStatusNl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get airing => 'Lopend';
+	@override String get ended => 'Afgelopen';
+	@override String get canceled => 'Geannuleerd';
+	@override String get upcoming => 'Binnenkort';
+}
+
 // Path: companionRemote.session
 class _TranslationsCompanionRemoteSessionNl extends TranslationsCompanionRemoteSessionEn {
 	_TranslationsCompanionRemoteSessionNl._(TranslationsNl root) : this._root = root, super.internal(root);
@@ -1928,9 +2037,9 @@ class _TranslationsCompanionRemoteErrorsNl extends TranslationsCompanionRemoteEr
 	@override String get connectionLost => 'Verbinding verloren';
 }
 
-// Path: trackers.services
-class _TranslationsTrackersServicesNl extends TranslationsTrackersServicesEn {
-	_TranslationsTrackersServicesNl._(TranslationsNl root) : this._root = root, super.internal(root);
+// Path: services.names
+class _TranslationsServicesNamesNl extends TranslationsServicesNamesEn {
+	_TranslationsServicesNamesNl._(TranslationsNl root) : this._root = root, super.internal(root);
 
 	final TranslationsNl _root; // ignore: unused_field
 
@@ -1938,11 +2047,12 @@ class _TranslationsTrackersServicesNl extends TranslationsTrackersServicesEn {
 	@override String get mal => 'MyAnimeList';
 	@override String get anilist => 'AniList';
 	@override String get simkl => 'Simkl';
+	@override String get seerr => 'Seerr';
 }
 
-// Path: trackers.deviceCode
-class _TranslationsTrackersDeviceCodeNl extends TranslationsTrackersDeviceCodeEn {
-	_TranslationsTrackersDeviceCodeNl._(TranslationsNl root) : this._root = root, super.internal(root);
+// Path: services.deviceCode
+class _TranslationsServicesDeviceCodeNl extends TranslationsServicesDeviceCodeEn {
+	_TranslationsServicesDeviceCodeNl._(TranslationsNl root) : this._root = root, super.internal(root);
 
 	final TranslationsNl _root; // ignore: unused_field
 
@@ -1954,9 +2064,9 @@ class _TranslationsTrackersDeviceCodeNl extends TranslationsTrackersDeviceCodeEn
 	@override String get codeCopied => 'Code gekopieerd';
 }
 
-// Path: trackers.oauthProxy
-class _TranslationsTrackersOauthProxyNl extends TranslationsTrackersOauthProxyEn {
-	_TranslationsTrackersOauthProxyNl._(TranslationsNl root) : this._root = root, super.internal(root);
+// Path: services.oauthProxy
+class _TranslationsServicesOauthProxyNl extends TranslationsServicesOauthProxyEn {
+	_TranslationsServicesOauthProxyNl._(TranslationsNl root) : this._root = root, super.internal(root);
 
 	final TranslationsNl _root; // ignore: unused_field
 
@@ -1967,9 +2077,9 @@ class _TranslationsTrackersOauthProxyNl extends TranslationsTrackersOauthProxyEn
 	@override String get urlCopied => 'URL gekopieerd';
 }
 
-// Path: trackers.libraryFilter
-class _TranslationsTrackersLibraryFilterNl extends TranslationsTrackersLibraryFilterEn {
-	_TranslationsTrackersLibraryFilterNl._(TranslationsNl root) : this._root = root, super.internal(root);
+// Path: services.libraryFilter
+class _TranslationsServicesLibraryFilterNl extends TranslationsServicesLibraryFilterEn {
+	_TranslationsServicesLibraryFilterNl._(TranslationsNl root) : this._root = root, super.internal(root);
 
 	final TranslationsNl _root; // ignore: unused_field
 
@@ -2233,8 +2343,8 @@ extension on TranslationsNl {
 			'settings.discordRichPresenceDescription' => 'Toon op Discord wat je aan het kijken bent',
 			'settings.trakt' => 'Trakt',
 			'settings.traktDescription' => 'Kijkgeschiedenis synchroniseren met Trakt',
-			'settings.trackers' => 'Trackers',
-			'settings.trackersDescription' => 'Voortgang synchroniseren met Trakt, MyAnimeList, AniList en Simkl',
+			'settings.services' => 'Services',
+			'settings.servicesDescription' => 'Verbind Trakt, MyAnimeList, Seerr en meer',
 			'settings.companionRemoteServer' => 'Companion Remote-server',
 			'settings.companionRemoteServerDescription' => 'Sta mobiele apparaten op je netwerk toe om deze app te bedienen',
 			'settings.autoPip' => 'Automatische beeld-in-beeld',
@@ -2390,7 +2500,7 @@ extension on TranslationsNl {
 			'rateSheet.setScore' => 'Score instellen',
 			'rateSheet.saved' => 'Opgeslagen',
 			'rateSheet.notAvailable' => 'Geen match gevonden',
-			'rateSheet.noConnectedTrackers' => 'Verbind een tracker in Instellingen om daar te beoordelen.',
+			'rateSheet.noConnectedServices' => 'Verbind een service in Instellingen om daar te beoordelen.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV-serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -2771,6 +2881,42 @@ extension on TranslationsNl {
 			'navigation.libraries' => 'Media',
 			'navigation.downloads' => 'Downloads',
 			'navigation.liveTv' => 'Live TV',
+			'navigation.explore' => 'Verkennen',
+			'explore.title' => 'Verkennen',
+			'explore.selectSource' => 'Bron kiezen',
+			'explore.rows.watchlist' => 'Kijklijst',
+			'explore.rows.recommendedMovies' => 'Aanbevolen films',
+			'explore.rows.recommendedShows' => 'Aanbevolen series',
+			'explore.rows.trendingMovies' => 'Trending films',
+			'explore.rows.trendingShows' => 'Trending series',
+			'explore.rows.popularMovies' => 'Populaire films',
+			'explore.rows.popularShows' => 'Populaire series',
+			'explore.rows.suggestedAnime' => 'Voorgestelde anime',
+			'explore.rows.airingAnime' => 'Top lopende anime',
+			'explore.rows.popularAnime' => 'Populairste anime',
+			'explore.rows.trending' => 'Trending',
+			'explore.rows.upcomingMovies' => 'Aankomende films',
+			'explore.rows.upcomingShows' => 'Aankomende series',
+			'explore.searchHint' => ({required Object source}) => 'Zoeken in ${source}',
+			'explore.searchEmpty' => ({required Object query}) => 'Geen resultaten voor "${query}"',
+			'explore.searchPrompt' => ({required Object source}) => 'Zoek naar films en series op ${source}.',
+			'explore.searchFailed' => 'Zoeken mislukt. Controleer je verbinding en probeer opnieuw.',
+			'explore.status.airing' => 'Lopend',
+			'explore.status.ended' => 'Afgelopen',
+			'explore.status.canceled' => 'Geannuleerd',
+			'explore.status.upcoming' => 'Binnenkort',
+			'explore.episodeCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n, one: '${n} aflevering', other: '${n} afleveringen', ), 
+			'explore.cast' => 'Acteurs',
+			'explore.characters' => 'Personages',
+			'explore.addToWatchlist' => 'Toevoegen aan kijklijst',
+			'explore.removeFromWatchlist' => 'Verwijderen uit kijklijst',
+			'explore.watchlistUpdateFailed' => 'Kon kijklijst niet bijwerken',
+			'explore.notInLibrary' => 'Niet in je bibliotheek',
+			'explore.inTheseLibraries' => 'In deze bibliotheken',
+			'explore.availableOn' => ({required Object server}) => 'Beschikbaar op ${server}',
+			'explore.checkingLibrary' => 'Je bibliotheek controleren...',
+			'explore.emptyTitle' => 'Hier is nog niets',
+			'explore.emptyMessage' => ({required Object source}) => 'Rijen van ${source} verschijnen hier zodra ze inhoud hebben.',
 			'liveTv.title' => 'Live TV',
 			'liveTv.guide' => 'Gids',
 			'liveTv.noChannels' => 'Geen zenders beschikbaar',
@@ -2986,6 +3132,8 @@ extension on TranslationsNl {
 			'downloads.cancelledDownloadMessage' => 'Deze download is geannuleerd. Wat wil je doen?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alle afleveringen zijn al gedownload',
 			'downloads.resumeDownload' => 'Download hervatten',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.cancelledDownload' => 'Geannuleerde download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} synchroniseren)',
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} gedownload — klik om te voltooien',
@@ -3022,8 +3170,6 @@ extension on TranslationsNl {
 			'downloads.noSyncRules' => 'Geen synchronisatieregels',
 			'downloads.manageSyncRule' => 'Synchronisatie beheren',
 			'downloads.editEpisodeCount' => 'Aantal afleveringen',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.editSyncFilter' => 'Synchronisatiefilter',
 			'downloads.syncAllItems' => 'Alle items synchroniseren',
 			'downloads.syncUnwatchedItems' => 'Ongekeken items synchroniseren',
@@ -3272,39 +3418,70 @@ extension on TranslationsNl {
 			'trakt.scrobbleDescription' => 'Verstuur play-, pauze- en stopgebeurtenissen tijdens afspelen naar Trakt.',
 			'trakt.watchedSync' => 'Bekeken-status synchroniseren',
 			'trakt.watchedSyncDescription' => 'Wanneer je items als bekeken markeert in Plezy, worden ze ook op Trakt gemarkeerd.',
-			'trackers.title' => 'Trackers',
-			'trackers.hubSubtitle' => 'Synchroniseer kijkvoortgang met Trakt en andere diensten.',
-			'trackers.notConnected' => 'Niet verbonden',
-			'trackers.connectedAs' => ({required Object username}) => 'Verbonden als @${username}',
-			'trackers.scrobble' => 'Voortgang automatisch volgen',
-			'trackers.scrobbleDescription' => 'Werk je lijst bij wanneer je een aflevering of film afrondt.',
-			'trackers.disconnectConfirm' => ({required Object service}) => '${service} loskoppelen?',
-			'trackers.disconnectConfirmBody' => ({required Object service}) => 'Plezy stopt met ${service} bijwerken. Je kunt altijd opnieuw verbinden.',
-			'trackers.connectFailed' => ({required Object service}) => 'Kan niet verbinden met ${service}. Probeer opnieuw.',
-			'trackers.services.mal' => 'MyAnimeList',
-			'trackers.services.anilist' => 'AniList',
-			'trackers.services.simkl' => 'Simkl',
-			'trackers.deviceCode.title' => ({required Object service}) => 'Plezy activeren op ${service}',
-			'trackers.deviceCode.body' => ({required Object url}) => 'Ga naar ${url} en voer deze code in:',
-			'trackers.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} om te activeren',
-			'trackers.deviceCode.waitingForAuthorization' => 'Wachten op autorisatie…',
-			'trackers.deviceCode.codeCopied' => 'Code gekopieerd',
-			'trackers.oauthProxy.title' => ({required Object service}) => 'Aanmelden bij ${service}',
-			'trackers.oauthProxy.body' => 'Scan deze QR-code of open de URL op een apparaat.',
-			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => '${service} openen om aan te melden',
-			'trackers.oauthProxy.urlCopied' => 'URL gekopieerd',
-			'trackers.libraryFilter.title' => 'Bibliotheekfilter',
-			'trackers.libraryFilter.subtitleAllSyncing' => 'Alle bibliotheken synchroniseren',
-			'trackers.libraryFilter.subtitleNoneSyncing' => 'Niets wordt gesynchroniseerd',
-			'trackers.libraryFilter.subtitleBlocked' => ({required Object count}) => '${count} geblokkeerd',
-			'trackers.libraryFilter.subtitleAllowed' => ({required Object count}) => '${count} toegestaan',
-			'trackers.libraryFilter.mode' => 'Filtermodus',
-			'trackers.libraryFilter.modeBlacklist' => 'Zwarte lijst',
-			'trackers.libraryFilter.modeWhitelist' => 'Witte lijst',
-			'trackers.libraryFilter.modeHintBlacklist' => 'Synchroniseer alle bibliotheken behalve die hieronder aangevinkt zijn.',
-			'trackers.libraryFilter.modeHintWhitelist' => 'Synchroniseer alleen de hieronder aangevinkte bibliotheken.',
-			'trackers.libraryFilter.libraries' => 'Bibliotheken',
-			'trackers.libraryFilter.noLibraries' => 'Geen bibliotheken beschikbaar',
+			'seerr.title' => 'Seerr',
+			'seerr.connectTitle' => 'Verbinden met Seerr',
+			'seerr.serverUrl' => 'Server-URL',
+			'seerr.serverUrlHelper' => 'Het adres van je Seerr-instantie',
+			'seerr.checkServer' => 'Doorgaan',
+			'seerr.signInWithJellyfin' => 'Inloggen met Jellyfin',
+			'seerr.signInWithEmby' => 'Inloggen met Emby',
+			'seerr.signInWithLocal' => 'Een lokaal account gebruiken',
+			'seerr.email' => 'E-mail',
+			'seerr.noSignInMethods' => 'Deze Seerr-instantie biedt geen inlogmethode die Plezy ondersteunt.',
+			'seerr.instance' => 'Instantie',
+			'seerr.disconnectConfirm' => 'Seerr loskoppelen?',
+			'seerr.disconnectConfirmBody' => 'Plezy vergeet deze Seerr-instantie. Je kunt altijd opnieuw verbinden.',
+			'seerr.request' => 'Aanvragen',
+			'seerr.request4k' => 'Aanvragen in 4K',
+			'seerr.seasons' => 'Seizoenen',
+			'seerr.allSeasons' => 'Alle seizoenen',
+			'seerr.advancedOptions' => 'Geavanceerd',
+			'seerr.destinationServer' => 'Doelserver',
+			'seerr.qualityProfile' => 'Kwaliteitsprofiel',
+			'seerr.rootFolder' => 'Hoofdmap',
+			'seerr.languageProfile' => 'Taalprofiel',
+			'seerr.requestSubmitted' => 'Aanvraag verzonden',
+			'seerr.requestFailed' => ({required Object error}) => 'Aanvraag mislukt: ${error}',
+			'seerr.requestsLoadFailed' => 'Kan aanvraagopties niet laden',
+			'seerr.nothingToRequest' => 'Alles is al beschikbaar of aangevraagd.',
+			'seerr.statusAvailable' => 'Beschikbaar',
+			'seerr.statusPartiallyAvailable' => 'Gedeeltelijk beschikbaar',
+			'seerr.statusRequested' => 'Aangevraagd',
+			'seerr.statusProcessing' => 'Verwerken',
+			'services.title' => 'Services',
+			'services.hubSubtitle' => 'Synchroniseer kijkvoortgang en vraag nieuwe titels aan.',
+			'services.notConnected' => 'Niet verbonden',
+			'services.connectedAs' => ({required Object username}) => 'Verbonden als @${username}',
+			'services.scrobble' => 'Voortgang automatisch volgen',
+			'services.scrobbleDescription' => 'Werk je lijst bij wanneer je een aflevering of film afrondt.',
+			'services.disconnectConfirm' => ({required Object service}) => '${service} loskoppelen?',
+			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy stopt met ${service} bijwerken. Je kunt altijd opnieuw verbinden.',
+			'services.connectFailed' => ({required Object service}) => 'Kan niet verbinden met ${service}. Probeer opnieuw.',
+			'services.names.mal' => 'MyAnimeList',
+			'services.names.anilist' => 'AniList',
+			'services.names.simkl' => 'Simkl',
+			'services.names.seerr' => 'Seerr',
+			'services.deviceCode.title' => ({required Object service}) => 'Plezy activeren op ${service}',
+			'services.deviceCode.body' => ({required Object url}) => 'Ga naar ${url} en voer deze code in:',
+			'services.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} om te activeren',
+			'services.deviceCode.waitingForAuthorization' => 'Wachten op autorisatie…',
+			'services.deviceCode.codeCopied' => 'Code gekopieerd',
+			'services.oauthProxy.title' => ({required Object service}) => 'Aanmelden bij ${service}',
+			'services.oauthProxy.body' => 'Scan deze QR-code of open de URL op een apparaat.',
+			'services.oauthProxy.openToSignIn' => ({required Object service}) => '${service} openen om aan te melden',
+			'services.oauthProxy.urlCopied' => 'URL gekopieerd',
+			'services.libraryFilter.title' => 'Bibliotheekfilter',
+			'services.libraryFilter.subtitleAllSyncing' => 'Alle bibliotheken synchroniseren',
+			'services.libraryFilter.subtitleNoneSyncing' => 'Niets wordt gesynchroniseerd',
+			'services.libraryFilter.subtitleBlocked' => ({required Object count}) => '${count} geblokkeerd',
+			'services.libraryFilter.subtitleAllowed' => ({required Object count}) => '${count} toegestaan',
+			'services.libraryFilter.mode' => 'Filtermodus',
+			'services.libraryFilter.modeBlacklist' => 'Zwarte lijst',
+			'services.libraryFilter.modeWhitelist' => 'Witte lijst',
+			'services.libraryFilter.modeHintBlacklist' => 'Synchroniseer alle bibliotheken behalve die hieronder aangevinkt zijn.',
+			'services.libraryFilter.modeHintWhitelist' => 'Synchroniseer alleen de hieronder aangevinkte bibliotheken.',
+			'services.libraryFilter.libraries' => 'Bibliotheken',
+			'services.libraryFilter.noLibraries' => 'Geen bibliotheken beschikbaar',
 			'addServer.addJellyfinTitle' => 'Jellyfin-server toevoegen',
 			'addServer.serverUrls' => 'Server-URL\'s',
 			'addServer.serverUrlsHelper' => 'Meerdere URL\'s toegestaan, gescheiden door komma\'s.',

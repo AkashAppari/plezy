@@ -69,6 +69,7 @@ class TranslationsKo extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsLogsKo logs = _TranslationsLogsKo._(_root);
 	@override late final _TranslationsLicensesKo licenses = _TranslationsLicensesKo._(_root);
 	@override late final _TranslationsNavigationKo navigation = _TranslationsNavigationKo._(_root);
+	@override late final _TranslationsExploreKo explore = _TranslationsExploreKo._(_root);
 	@override late final _TranslationsLiveTvKo liveTv = _TranslationsLiveTvKo._(_root);
 	@override late final _TranslationsCollectionsKo collections = _TranslationsCollectionsKo._(_root);
 	@override late final _TranslationsPlaylistsKo playlists = _TranslationsPlaylistsKo._(_root);
@@ -84,7 +85,8 @@ class TranslationsKo extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsMatchScreenKo matchScreen = _TranslationsMatchScreenKo._(_root);
 	@override late final _TranslationsServerTasksKo serverTasks = _TranslationsServerTasksKo._(_root);
 	@override late final _TranslationsTraktKo trakt = _TranslationsTraktKo._(_root);
-	@override late final _TranslationsTrackersKo trackers = _TranslationsTrackersKo._(_root);
+	@override late final _TranslationsSeerrKo seerr = _TranslationsSeerrKo._(_root);
+	@override late final _TranslationsServicesKo services = _TranslationsServicesKo._(_root);
 	@override late final _TranslationsAddServerKo addServer = _TranslationsAddServerKo._(_root);
 }
 
@@ -377,8 +379,8 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => 'Discord에서 시청 중인 콘텐츠 표시';
 	@override String get trakt => 'Trakt';
 	@override String get traktDescription => 'Trakt와 시청 기록 동기화';
-	@override String get trackers => '트래커';
-	@override String get trackersDescription => 'Trakt, MyAnimeList, AniList 및 Simkl에 진행률 동기화';
+	@override String get services => '서비스';
+	@override String get servicesDescription => 'Trakt, MyAnimeList, Seerr 등 연결';
 	@override String get companionRemoteServer => '컴패니언 리모트 서버';
 	@override String get companionRemoteServerDescription => '네트워크의 모바일 기기가 이 앱을 제어할 수 있도록 허용';
 	@override String get autoPip => '자동 PIP 모드';
@@ -555,7 +557,7 @@ class _TranslationsRateSheetKo extends TranslationsRateSheetEn {
 	@override String get setScore => '점수 설정';
 	@override String get saved => '저장됨';
 	@override String get notAvailable => '일치 항목 없음';
-	@override String get noConnectedTrackers => '설정에서 트래커를 연결하면 거기에도 평가할 수 있습니다.';
+	@override String get noConnectedServices => '평가하려면 설정에서 서비스를 연결하세요.';
 }
 
 // Path: accessibility
@@ -1063,6 +1065,38 @@ class _TranslationsNavigationKo extends TranslationsNavigationEn {
 	@override String get libraries => '미디어 라이브러리';
 	@override String get downloads => '다운로드';
 	@override String get liveTv => '실시간 TV';
+	@override String get explore => '탐색';
+}
+
+// Path: explore
+class _TranslationsExploreKo extends TranslationsExploreEn {
+	_TranslationsExploreKo._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '탐색';
+	@override String get selectSource => '소스 선택';
+	@override late final _TranslationsExploreRowsKo rows = _TranslationsExploreRowsKo._(_root);
+	@override String searchHint({required Object source}) => '${source}에서 검색';
+	@override String searchEmpty({required Object query}) => '「${query}」에 대한 결과가 없습니다';
+	@override String searchPrompt({required Object source}) => '${source}에서 영화와 TV 프로그램을 검색하세요.';
+	@override String get searchFailed => '검색에 실패했습니다. 연결을 확인하고 다시 시도하세요.';
+	@override late final _TranslationsExploreStatusKo status = _TranslationsExploreStatusKo._(_root);
+	@override String episodeCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n,
+		other: '${n}화',
+	);
+	@override String get cast => '출연진';
+	@override String get characters => '캐릭터';
+	@override String get addToWatchlist => '관심 목록에 추가';
+	@override String get removeFromWatchlist => '관심 목록에서 제거';
+	@override String get watchlistUpdateFailed => '관심 목록을 업데이트하지 못했습니다';
+	@override String get notInLibrary => '라이브러리에 없음';
+	@override String get inTheseLibraries => '이 라이브러리에 있음';
+	@override String availableOn({required Object server}) => '${server}에서 이용 가능';
+	@override String get checkingLibrary => '라이브러리 확인 중...';
+	@override String get emptyTitle => '아직 아무것도 없습니다';
+	@override String emptyMessage({required Object source}) => '${source}에 콘텐츠가 추가되면 여기에 표시됩니다.';
 }
 
 // Path: liveTv
@@ -1645,15 +1679,54 @@ class _TranslationsTraktKo extends TranslationsTraktEn {
 	@override String get watchedSyncDescription => 'Plezy에서 시청 완료로 표시한 항목이 Trakt에도 시청 완료로 표시됩니다.';
 }
 
-// Path: trackers
-class _TranslationsTrackersKo extends TranslationsTrackersEn {
-	_TranslationsTrackersKo._(TranslationsKo root) : this._root = root, super.internal(root);
+// Path: seerr
+class _TranslationsSeerrKo extends TranslationsSeerrEn {
+	_TranslationsSeerrKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => '트래커';
-	@override String get hubSubtitle => '시청 진행률을 Trakt 및 다른 서비스와 동기화합니다.';
+	@override String get title => 'Seerr';
+	@override String get connectTitle => 'Seerr에 연결';
+	@override String get serverUrl => '서버 URL';
+	@override String get serverUrlHelper => 'Seerr 인스턴스의 주소';
+	@override String get checkServer => '계속';
+	@override String get signInWithJellyfin => 'Jellyfin으로 로그인';
+	@override String get signInWithEmby => 'Emby로 로그인';
+	@override String get signInWithLocal => '로컬 계정 사용';
+	@override String get email => '이메일';
+	@override String get noSignInMethods => '이 Seerr 인스턴스에는 Plezy가 지원하는 로그인 방법이 없습니다.';
+	@override String get instance => '인스턴스';
+	@override String get disconnectConfirm => 'Seerr 연결을 해제하시겠습니까?';
+	@override String get disconnectConfirmBody => 'Plezy가 이 Seerr 인스턴스를 삭제합니다. 언제든 다시 연결할 수 있습니다.';
+	@override String get request => '요청';
+	@override String get request4k => '4K로 요청';
+	@override String get seasons => '시즌';
+	@override String get allSeasons => '모든 시즌';
+	@override String get advancedOptions => '고급';
+	@override String get destinationServer => '대상 서버';
+	@override String get qualityProfile => '화질 프로파일';
+	@override String get rootFolder => '루트 폴더';
+	@override String get languageProfile => '언어 프로파일';
+	@override String get requestSubmitted => '요청을 제출했습니다';
+	@override String requestFailed({required Object error}) => '요청 실패: ${error}';
+	@override String get requestsLoadFailed => '요청 옵션을 불러올 수 없습니다';
+	@override String get nothingToRequest => '모두 이미 사용 가능하거나 요청되었습니다.';
+	@override String get statusAvailable => '사용 가능';
+	@override String get statusPartiallyAvailable => '일부 사용 가능';
+	@override String get statusRequested => '요청됨';
+	@override String get statusProcessing => '처리 중';
+}
+
+// Path: services
+class _TranslationsServicesKo extends TranslationsServicesEn {
+	_TranslationsServicesKo._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '서비스';
+	@override String get hubSubtitle => '시청 진행률을 동기화하고 새 작품을 요청하세요.';
 	@override String get notConnected => '연결되지 않음';
 	@override String connectedAs({required Object username}) => '@${username} 로 연결됨';
 	@override String get scrobble => '진행률 자동 추적';
@@ -1661,10 +1734,10 @@ class _TranslationsTrackersKo extends TranslationsTrackersEn {
 	@override String disconnectConfirm({required Object service}) => '${service} 연결을 해제하시겠습니까?';
 	@override String disconnectConfirmBody({required Object service}) => 'Plezy가 ${service} 업데이트를 중지합니다. 언제든 다시 연결할 수 있습니다.';
 	@override String connectFailed({required Object service}) => '${service}에 연결할 수 없습니다. 다시 시도하세요.';
-	@override late final _TranslationsTrackersServicesKo services = _TranslationsTrackersServicesKo._(_root);
-	@override late final _TranslationsTrackersDeviceCodeKo deviceCode = _TranslationsTrackersDeviceCodeKo._(_root);
-	@override late final _TranslationsTrackersOauthProxyKo oauthProxy = _TranslationsTrackersOauthProxyKo._(_root);
-	@override late final _TranslationsTrackersLibraryFilterKo libraryFilter = _TranslationsTrackersLibraryFilterKo._(_root);
+	@override late final _TranslationsServicesNamesKo names = _TranslationsServicesNamesKo._(_root);
+	@override late final _TranslationsServicesDeviceCodeKo deviceCode = _TranslationsServicesDeviceCodeKo._(_root);
+	@override late final _TranslationsServicesOauthProxyKo oauthProxy = _TranslationsServicesOauthProxyKo._(_root);
+	@override late final _TranslationsServicesLibraryFilterKo libraryFilter = _TranslationsServicesLibraryFilterKo._(_root);
 }
 
 // Path: addServer
@@ -1831,6 +1904,41 @@ class _TranslationsLibrariesSortLabelsKo extends TranslationsLibrariesSortLabels
 	@override String get lastEpisodeDateAdded => '최신 에피소드 추가일';
 }
 
+// Path: explore.rows
+class _TranslationsExploreRowsKo extends TranslationsExploreRowsEn {
+	_TranslationsExploreRowsKo._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get watchlist => '관심 목록';
+	@override String get recommendedMovies => '추천 영화';
+	@override String get recommendedShows => '추천 TV 프로그램';
+	@override String get trendingMovies => '지금 뜨는 영화';
+	@override String get trendingShows => '지금 뜨는 TV 프로그램';
+	@override String get popularMovies => '인기 영화';
+	@override String get popularShows => '인기 TV 프로그램';
+	@override String get suggestedAnime => '추천 애니메이션';
+	@override String get airingAnime => '방영 중인 인기 애니메이션';
+	@override String get popularAnime => '가장 인기 있는 애니메이션';
+	@override String get trending => '지금 뜨는 콘텐츠';
+	@override String get upcomingMovies => '개봉 예정 영화';
+	@override String get upcomingShows => '방영 예정 TV 프로그램';
+}
+
+// Path: explore.status
+class _TranslationsExploreStatusKo extends TranslationsExploreStatusEn {
+	_TranslationsExploreStatusKo._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get airing => '방영 중';
+	@override String get ended => '종영';
+	@override String get canceled => '취소됨';
+	@override String get upcoming => '방영 예정';
+}
+
 // Path: companionRemote.session
 class _TranslationsCompanionRemoteSessionKo extends TranslationsCompanionRemoteSessionEn {
 	_TranslationsCompanionRemoteSessionKo._(TranslationsKo root) : this._root = root, super.internal(root);
@@ -1927,9 +2035,9 @@ class _TranslationsCompanionRemoteErrorsKo extends TranslationsCompanionRemoteEr
 	@override String get connectionLost => '연결이 끊어졌습니다';
 }
 
-// Path: trackers.services
-class _TranslationsTrackersServicesKo extends TranslationsTrackersServicesEn {
-	_TranslationsTrackersServicesKo._(TranslationsKo root) : this._root = root, super.internal(root);
+// Path: services.names
+class _TranslationsServicesNamesKo extends TranslationsServicesNamesEn {
+	_TranslationsServicesNamesKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1937,11 +2045,12 @@ class _TranslationsTrackersServicesKo extends TranslationsTrackersServicesEn {
 	@override String get mal => 'MyAnimeList';
 	@override String get anilist => 'AniList';
 	@override String get simkl => 'Simkl';
+	@override String get seerr => 'Seerr';
 }
 
-// Path: trackers.deviceCode
-class _TranslationsTrackersDeviceCodeKo extends TranslationsTrackersDeviceCodeEn {
-	_TranslationsTrackersDeviceCodeKo._(TranslationsKo root) : this._root = root, super.internal(root);
+// Path: services.deviceCode
+class _TranslationsServicesDeviceCodeKo extends TranslationsServicesDeviceCodeEn {
+	_TranslationsServicesDeviceCodeKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1953,9 +2062,9 @@ class _TranslationsTrackersDeviceCodeKo extends TranslationsTrackersDeviceCodeEn
 	@override String get codeCopied => '코드가 복사되었습니다';
 }
 
-// Path: trackers.oauthProxy
-class _TranslationsTrackersOauthProxyKo extends TranslationsTrackersOauthProxyEn {
-	_TranslationsTrackersOauthProxyKo._(TranslationsKo root) : this._root = root, super.internal(root);
+// Path: services.oauthProxy
+class _TranslationsServicesOauthProxyKo extends TranslationsServicesOauthProxyEn {
+	_TranslationsServicesOauthProxyKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1966,9 +2075,9 @@ class _TranslationsTrackersOauthProxyKo extends TranslationsTrackersOauthProxyEn
 	@override String get urlCopied => 'URL이 복사되었습니다';
 }
 
-// Path: trackers.libraryFilter
-class _TranslationsTrackersLibraryFilterKo extends TranslationsTrackersLibraryFilterEn {
-	_TranslationsTrackersLibraryFilterKo._(TranslationsKo root) : this._root = root, super.internal(root);
+// Path: services.libraryFilter
+class _TranslationsServicesLibraryFilterKo extends TranslationsServicesLibraryFilterEn {
+	_TranslationsServicesLibraryFilterKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -2232,8 +2341,8 @@ extension on TranslationsKo {
 			'settings.discordRichPresenceDescription' => 'Discord에서 시청 중인 콘텐츠 표시',
 			'settings.trakt' => 'Trakt',
 			'settings.traktDescription' => 'Trakt와 시청 기록 동기화',
-			'settings.trackers' => '트래커',
-			'settings.trackersDescription' => 'Trakt, MyAnimeList, AniList 및 Simkl에 진행률 동기화',
+			'settings.services' => '서비스',
+			'settings.servicesDescription' => 'Trakt, MyAnimeList, Seerr 등 연결',
 			'settings.companionRemoteServer' => '컴패니언 리모트 서버',
 			'settings.companionRemoteServerDescription' => '네트워크의 모바일 기기가 이 앱을 제어할 수 있도록 허용',
 			'settings.autoPip' => '자동 PIP 모드',
@@ -2389,7 +2498,7 @@ extension on TranslationsKo {
 			'rateSheet.setScore' => '점수 설정',
 			'rateSheet.saved' => '저장됨',
 			'rateSheet.notAvailable' => '일치 항목 없음',
-			'rateSheet.noConnectedTrackers' => '설정에서 트래커를 연결하면 거기에도 평가할 수 있습니다.',
+			'rateSheet.noConnectedServices' => '평가하려면 설정에서 서비스를 연결하세요.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, 영화',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV 프로그램',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -2770,6 +2879,42 @@ extension on TranslationsKo {
 			'navigation.libraries' => '미디어 라이브러리',
 			'navigation.downloads' => '다운로드',
 			'navigation.liveTv' => '실시간 TV',
+			'navigation.explore' => '탐색',
+			'explore.title' => '탐색',
+			'explore.selectSource' => '소스 선택',
+			'explore.rows.watchlist' => '관심 목록',
+			'explore.rows.recommendedMovies' => '추천 영화',
+			'explore.rows.recommendedShows' => '추천 TV 프로그램',
+			'explore.rows.trendingMovies' => '지금 뜨는 영화',
+			'explore.rows.trendingShows' => '지금 뜨는 TV 프로그램',
+			'explore.rows.popularMovies' => '인기 영화',
+			'explore.rows.popularShows' => '인기 TV 프로그램',
+			'explore.rows.suggestedAnime' => '추천 애니메이션',
+			'explore.rows.airingAnime' => '방영 중인 인기 애니메이션',
+			'explore.rows.popularAnime' => '가장 인기 있는 애니메이션',
+			'explore.rows.trending' => '지금 뜨는 콘텐츠',
+			'explore.rows.upcomingMovies' => '개봉 예정 영화',
+			'explore.rows.upcomingShows' => '방영 예정 TV 프로그램',
+			'explore.searchHint' => ({required Object source}) => '${source}에서 검색',
+			'explore.searchEmpty' => ({required Object query}) => '「${query}」에 대한 결과가 없습니다',
+			'explore.searchPrompt' => ({required Object source}) => '${source}에서 영화와 TV 프로그램을 검색하세요.',
+			'explore.searchFailed' => '검색에 실패했습니다. 연결을 확인하고 다시 시도하세요.',
+			'explore.status.airing' => '방영 중',
+			'explore.status.ended' => '종영',
+			'explore.status.canceled' => '취소됨',
+			'explore.status.upcoming' => '방영 예정',
+			'explore.episodeCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, other: '${n}화', ), 
+			'explore.cast' => '출연진',
+			'explore.characters' => '캐릭터',
+			'explore.addToWatchlist' => '관심 목록에 추가',
+			'explore.removeFromWatchlist' => '관심 목록에서 제거',
+			'explore.watchlistUpdateFailed' => '관심 목록을 업데이트하지 못했습니다',
+			'explore.notInLibrary' => '라이브러리에 없음',
+			'explore.inTheseLibraries' => '이 라이브러리에 있음',
+			'explore.availableOn' => ({required Object server}) => '${server}에서 이용 가능',
+			'explore.checkingLibrary' => '라이브러리 확인 중...',
+			'explore.emptyTitle' => '아직 아무것도 없습니다',
+			'explore.emptyMessage' => ({required Object source}) => '${source}에 콘텐츠가 추가되면 여기에 표시됩니다.',
 			'liveTv.title' => '실시간 TV',
 			'liveTv.guide' => '편성표',
 			'liveTv.noChannels' => '사용 가능한 채널이 없습니다',
@@ -2985,6 +3130,8 @@ extension on TranslationsKo {
 			'downloads.cancelledDownloadMessage' => '이 다운로드가 취소되었습니다. 어떻게 하시겠습니까?',
 			'downloads.allEpisodesAlreadyDownloaded' => '모든 에피소드가 이미 다운로드되었습니다',
 			'downloads.resumeDownload' => '다운로드 재개',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.cancelledDownload' => '취소된 다운로드',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} 동기화 중)',
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} 다운로드됨 — 클릭하여 완료',
@@ -3021,8 +3168,6 @@ extension on TranslationsKo {
 			'downloads.noSyncRules' => '동기화 규칙 없음',
 			'downloads.manageSyncRule' => '동기화 관리',
 			'downloads.editEpisodeCount' => '에피소드 수',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.editSyncFilter' => '동기화 필터',
 			'downloads.syncAllItems' => '모든 항목 동기화 중',
 			'downloads.syncUnwatchedItems' => '시청하지 않은 항목 동기화 중',
@@ -3271,39 +3416,70 @@ extension on TranslationsKo {
 			'trakt.scrobbleDescription' => '재생 중 재생, 일시정지, 정지 이벤트를 Trakt로 전송합니다.',
 			'trakt.watchedSync' => '시청 상태 동기화',
 			'trakt.watchedSyncDescription' => 'Plezy에서 시청 완료로 표시한 항목이 Trakt에도 시청 완료로 표시됩니다.',
-			'trackers.title' => '트래커',
-			'trackers.hubSubtitle' => '시청 진행률을 Trakt 및 다른 서비스와 동기화합니다.',
-			'trackers.notConnected' => '연결되지 않음',
-			'trackers.connectedAs' => ({required Object username}) => '@${username} 로 연결됨',
-			'trackers.scrobble' => '진행률 자동 추적',
-			'trackers.scrobbleDescription' => '에피소드나 영화를 시청하면 목록을 업데이트합니다.',
-			'trackers.disconnectConfirm' => ({required Object service}) => '${service} 연결을 해제하시겠습니까?',
-			'trackers.disconnectConfirmBody' => ({required Object service}) => 'Plezy가 ${service} 업데이트를 중지합니다. 언제든 다시 연결할 수 있습니다.',
-			'trackers.connectFailed' => ({required Object service}) => '${service}에 연결할 수 없습니다. 다시 시도하세요.',
-			'trackers.services.mal' => 'MyAnimeList',
-			'trackers.services.anilist' => 'AniList',
-			'trackers.services.simkl' => 'Simkl',
-			'trackers.deviceCode.title' => ({required Object service}) => '${service}에서 Plezy 활성화',
-			'trackers.deviceCode.body' => ({required Object url}) => '${url}을 방문하여 이 코드를 입력하세요:',
-			'trackers.deviceCode.openToActivate' => ({required Object service}) => '활성화하려면 ${service} 열기',
-			'trackers.deviceCode.waitingForAuthorization' => '인증을 기다리는 중…',
-			'trackers.deviceCode.codeCopied' => '코드가 복사되었습니다',
-			'trackers.oauthProxy.title' => ({required Object service}) => '${service}에 로그인',
-			'trackers.oauthProxy.body' => '이 QR 코드를 스캔하거나 아무 기기에서 URL을 여세요.',
-			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => '로그인하려면 ${service} 열기',
-			'trackers.oauthProxy.urlCopied' => 'URL이 복사되었습니다',
-			'trackers.libraryFilter.title' => '라이브러리 필터',
-			'trackers.libraryFilter.subtitleAllSyncing' => '모든 라이브러리 동기화 중',
-			'trackers.libraryFilter.subtitleNoneSyncing' => '동기화 안 함',
-			'trackers.libraryFilter.subtitleBlocked' => ({required Object count}) => '${count}개 차단됨',
-			'trackers.libraryFilter.subtitleAllowed' => ({required Object count}) => '${count}개 허용됨',
-			'trackers.libraryFilter.mode' => '필터 모드',
-			'trackers.libraryFilter.modeBlacklist' => '차단 목록',
-			'trackers.libraryFilter.modeWhitelist' => '허용 목록',
-			'trackers.libraryFilter.modeHintBlacklist' => '아래에 선택한 라이브러리를 제외한 모든 라이브러리를 동기화합니다.',
-			'trackers.libraryFilter.modeHintWhitelist' => '아래에 선택한 라이브러리만 동기화합니다.',
-			'trackers.libraryFilter.libraries' => '라이브러리',
-			'trackers.libraryFilter.noLibraries' => '사용 가능한 라이브러리가 없습니다',
+			'seerr.title' => 'Seerr',
+			'seerr.connectTitle' => 'Seerr에 연결',
+			'seerr.serverUrl' => '서버 URL',
+			'seerr.serverUrlHelper' => 'Seerr 인스턴스의 주소',
+			'seerr.checkServer' => '계속',
+			'seerr.signInWithJellyfin' => 'Jellyfin으로 로그인',
+			'seerr.signInWithEmby' => 'Emby로 로그인',
+			'seerr.signInWithLocal' => '로컬 계정 사용',
+			'seerr.email' => '이메일',
+			'seerr.noSignInMethods' => '이 Seerr 인스턴스에는 Plezy가 지원하는 로그인 방법이 없습니다.',
+			'seerr.instance' => '인스턴스',
+			'seerr.disconnectConfirm' => 'Seerr 연결을 해제하시겠습니까?',
+			'seerr.disconnectConfirmBody' => 'Plezy가 이 Seerr 인스턴스를 삭제합니다. 언제든 다시 연결할 수 있습니다.',
+			'seerr.request' => '요청',
+			'seerr.request4k' => '4K로 요청',
+			'seerr.seasons' => '시즌',
+			'seerr.allSeasons' => '모든 시즌',
+			'seerr.advancedOptions' => '고급',
+			'seerr.destinationServer' => '대상 서버',
+			'seerr.qualityProfile' => '화질 프로파일',
+			'seerr.rootFolder' => '루트 폴더',
+			'seerr.languageProfile' => '언어 프로파일',
+			'seerr.requestSubmitted' => '요청을 제출했습니다',
+			'seerr.requestFailed' => ({required Object error}) => '요청 실패: ${error}',
+			'seerr.requestsLoadFailed' => '요청 옵션을 불러올 수 없습니다',
+			'seerr.nothingToRequest' => '모두 이미 사용 가능하거나 요청되었습니다.',
+			'seerr.statusAvailable' => '사용 가능',
+			'seerr.statusPartiallyAvailable' => '일부 사용 가능',
+			'seerr.statusRequested' => '요청됨',
+			'seerr.statusProcessing' => '처리 중',
+			'services.title' => '서비스',
+			'services.hubSubtitle' => '시청 진행률을 동기화하고 새 작품을 요청하세요.',
+			'services.notConnected' => '연결되지 않음',
+			'services.connectedAs' => ({required Object username}) => '@${username} 로 연결됨',
+			'services.scrobble' => '진행률 자동 추적',
+			'services.scrobbleDescription' => '에피소드나 영화를 시청하면 목록을 업데이트합니다.',
+			'services.disconnectConfirm' => ({required Object service}) => '${service} 연결을 해제하시겠습니까?',
+			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy가 ${service} 업데이트를 중지합니다. 언제든 다시 연결할 수 있습니다.',
+			'services.connectFailed' => ({required Object service}) => '${service}에 연결할 수 없습니다. 다시 시도하세요.',
+			'services.names.mal' => 'MyAnimeList',
+			'services.names.anilist' => 'AniList',
+			'services.names.simkl' => 'Simkl',
+			'services.names.seerr' => 'Seerr',
+			'services.deviceCode.title' => ({required Object service}) => '${service}에서 Plezy 활성화',
+			'services.deviceCode.body' => ({required Object url}) => '${url}을 방문하여 이 코드를 입력하세요:',
+			'services.deviceCode.openToActivate' => ({required Object service}) => '활성화하려면 ${service} 열기',
+			'services.deviceCode.waitingForAuthorization' => '인증을 기다리는 중…',
+			'services.deviceCode.codeCopied' => '코드가 복사되었습니다',
+			'services.oauthProxy.title' => ({required Object service}) => '${service}에 로그인',
+			'services.oauthProxy.body' => '이 QR 코드를 스캔하거나 아무 기기에서 URL을 여세요.',
+			'services.oauthProxy.openToSignIn' => ({required Object service}) => '로그인하려면 ${service} 열기',
+			'services.oauthProxy.urlCopied' => 'URL이 복사되었습니다',
+			'services.libraryFilter.title' => '라이브러리 필터',
+			'services.libraryFilter.subtitleAllSyncing' => '모든 라이브러리 동기화 중',
+			'services.libraryFilter.subtitleNoneSyncing' => '동기화 안 함',
+			'services.libraryFilter.subtitleBlocked' => ({required Object count}) => '${count}개 차단됨',
+			'services.libraryFilter.subtitleAllowed' => ({required Object count}) => '${count}개 허용됨',
+			'services.libraryFilter.mode' => '필터 모드',
+			'services.libraryFilter.modeBlacklist' => '차단 목록',
+			'services.libraryFilter.modeWhitelist' => '허용 목록',
+			'services.libraryFilter.modeHintBlacklist' => '아래에 선택한 라이브러리를 제외한 모든 라이브러리를 동기화합니다.',
+			'services.libraryFilter.modeHintWhitelist' => '아래에 선택한 라이브러리만 동기화합니다.',
+			'services.libraryFilter.libraries' => '라이브러리',
+			'services.libraryFilter.noLibraries' => '사용 가능한 라이브러리가 없습니다',
 			'addServer.addJellyfinTitle' => 'Jellyfin 서버 추가',
 			'addServer.serverUrls' => '서버 URL',
 			'addServer.serverUrlsHelper' => '쉼표로 구분하여 여러 URL을 입력할 수 있습니다.',

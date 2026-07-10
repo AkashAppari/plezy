@@ -247,8 +247,8 @@
     "discordRichPresenceDescription": "Discord에서 시청 중인 콘텐츠 표시",
     "trakt": "Trakt",
     "traktDescription": "Trakt와 시청 기록 동기화",
-    "trackers": "트래커",
-    "trackersDescription": "Trakt, MyAnimeList, AniList 및 Simkl에 진행률 동기화",
+    "services": "서비스",
+    "servicesDescription": "Trakt, MyAnimeList, Seerr 등 연결",
     "companionRemoteServer": "컴패니언 리모트 서버",
     "companionRemoteServerDescription": "네트워크의 모바일 기기가 이 앱을 제어할 수 있도록 허용",
     "autoPip": "자동 PIP 모드",
@@ -416,7 +416,7 @@
     "setScore": "점수 설정",
     "saved": "저장됨",
     "notAvailable": "일치 항목 없음",
-    "noConnectedTrackers": "설정에서 트래커를 연결하면 거기에도 평가할 수 있습니다."
+    "noConnectedServices": "평가하려면 설정에서 서비스를 연결하세요."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, 영화",
@@ -842,7 +842,51 @@
   "navigation": {
     "libraries": "미디어 라이브러리",
     "downloads": "다운로드",
-    "liveTv": "실시간 TV"
+    "liveTv": "실시간 TV",
+    "explore": "탐색"
+  },
+  "explore": {
+    "title": "탐색",
+    "selectSource": "소스 선택",
+    "rows": {
+      "watchlist": "관심 목록",
+      "recommendedMovies": "추천 영화",
+      "recommendedShows": "추천 TV 프로그램",
+      "trendingMovies": "지금 뜨는 영화",
+      "trendingShows": "지금 뜨는 TV 프로그램",
+      "popularMovies": "인기 영화",
+      "popularShows": "인기 TV 프로그램",
+      "suggestedAnime": "추천 애니메이션",
+      "airingAnime": "방영 중인 인기 애니메이션",
+      "popularAnime": "가장 인기 있는 애니메이션",
+      "trending": "지금 뜨는 콘텐츠",
+      "upcomingMovies": "개봉 예정 영화",
+      "upcomingShows": "방영 예정 TV 프로그램"
+    },
+    "searchHint": "${source}에서 검색",
+    "searchEmpty": "「${query}」에 대한 결과가 없습니다",
+    "searchPrompt": "${source}에서 영화와 TV 프로그램을 검색하세요.",
+    "searchFailed": "검색에 실패했습니다. 연결을 확인하고 다시 시도하세요.",
+    "status": {
+      "airing": "방영 중",
+      "ended": "종영",
+      "canceled": "취소됨",
+      "upcoming": "방영 예정"
+    },
+    "episodeCount": {
+      "other": "${n}화"
+    },
+    "cast": "출연진",
+    "characters": "캐릭터",
+    "addToWatchlist": "관심 목록에 추가",
+    "removeFromWatchlist": "관심 목록에서 제거",
+    "watchlistUpdateFailed": "관심 목록을 업데이트하지 못했습니다",
+    "notInLibrary": "라이브러리에 없음",
+    "inTheseLibraries": "이 라이브러리에 있음",
+    "availableOn": "${server}에서 이용 가능",
+    "checkingLibrary": "라이브러리 확인 중...",
+    "emptyTitle": "아직 아무것도 없습니다",
+    "emptyMessage": "${source}에 콘텐츠가 추가되면 여기에 표시됩니다."
   },
   "liveTv": {
     "title": "실시간 TV",
@@ -1383,9 +1427,41 @@
     "watchedSync": "시청 상태 동기화",
     "watchedSyncDescription": "Plezy에서 시청 완료로 표시한 항목이 Trakt에도 시청 완료로 표시됩니다."
   },
-  "trackers": {
-    "title": "트래커",
-    "hubSubtitle": "시청 진행률을 Trakt 및 다른 서비스와 동기화합니다.",
+  "seerr": {
+    "title": "Seerr",
+    "connectTitle": "Seerr에 연결",
+    "serverUrl": "서버 URL",
+    "serverUrlHelper": "Seerr 인스턴스의 주소",
+    "checkServer": "계속",
+    "signInWithJellyfin": "Jellyfin으로 로그인",
+    "signInWithEmby": "Emby로 로그인",
+    "signInWithLocal": "로컬 계정 사용",
+    "email": "이메일",
+    "noSignInMethods": "이 Seerr 인스턴스에는 Plezy가 지원하는 로그인 방법이 없습니다.",
+    "instance": "인스턴스",
+    "disconnectConfirm": "Seerr 연결을 해제하시겠습니까?",
+    "disconnectConfirmBody": "Plezy가 이 Seerr 인스턴스를 삭제합니다. 언제든 다시 연결할 수 있습니다.",
+    "request": "요청",
+    "request4k": "4K로 요청",
+    "seasons": "시즌",
+    "allSeasons": "모든 시즌",
+    "advancedOptions": "고급",
+    "destinationServer": "대상 서버",
+    "qualityProfile": "화질 프로파일",
+    "rootFolder": "루트 폴더",
+    "languageProfile": "언어 프로파일",
+    "requestSubmitted": "요청을 제출했습니다",
+    "requestFailed": "요청 실패: ${error}",
+    "requestsLoadFailed": "요청 옵션을 불러올 수 없습니다",
+    "nothingToRequest": "모두 이미 사용 가능하거나 요청되었습니다.",
+    "statusAvailable": "사용 가능",
+    "statusPartiallyAvailable": "일부 사용 가능",
+    "statusRequested": "요청됨",
+    "statusProcessing": "처리 중"
+  },
+  "services": {
+    "title": "서비스",
+    "hubSubtitle": "시청 진행률을 동기화하고 새 작품을 요청하세요.",
     "notConnected": "연결되지 않음",
     "connectedAs": "@${username} 로 연결됨",
     "scrobble": "진행률 자동 추적",
@@ -1393,10 +1469,11 @@
     "disconnectConfirm": "${service} 연결을 해제하시겠습니까?",
     "disconnectConfirmBody": "Plezy가 ${service} 업데이트를 중지합니다. 언제든 다시 연결할 수 있습니다.",
     "connectFailed": "${service}에 연결할 수 없습니다. 다시 시도하세요.",
-    "services": {
+    "names": {
       "mal": "MyAnimeList",
       "anilist": "AniList",
-      "simkl": "Simkl"
+      "simkl": "Simkl",
+      "seerr": "Seerr"
     },
     "deviceCode": {
       "title": "${service}에서 Plezy 활성화",

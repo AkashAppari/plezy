@@ -62,6 +62,6 @@ Future<void> launchTrackerConnect<T>(
     Navigator.of(context).pop();
   }
   if (!ok) {
-    showAppSnackBar(context, t.trackers.connectFailed(service: serviceName));
+    showAppSnackBar(context, t.services.connectFailed(service: serviceName));
   }
 }

@@ -247,8 +247,8 @@
     "discordRichPresenceDescription": "Показвай какво гледате в Discord",
     "trakt": "Trakt",
     "traktDescription": "Синхронизирай историята на гледане с Trakt",
-    "trackers": "Тракери",
-    "trackersDescription": "Синхронизирай прогреса с Trakt, MyAnimeList, AniList и Simkl",
+    "services": "Услуги",
+    "servicesDescription": "Свържи Trakt, MyAnimeList, Seerr и още",
     "companionRemoteServer": "Сървър за дистанционно управление",
     "companionRemoteServerDescription": "Позволи на мобилни устройства във вашата мрежа да управляват това приложение",
     "autoPip": "Автоматичен режим картина в картината",
@@ -416,7 +416,7 @@
     "setScore": "Задай оценка",
     "saved": "Запазено",
     "notAvailable": "Няма намерено съвпадение",
-    "noConnectedTrackers": "Свържете тракер в Настройки, за да оценявате там."
+    "noConnectedServices": "Свържи услуга в Настройки, за да оценяваш там."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, филм",
@@ -842,7 +842,52 @@
   "navigation": {
     "libraries": "Библиотеки",
     "downloads": "Изтегляния",
-    "liveTv": "Телевизия на живо"
+    "liveTv": "Телевизия на живо",
+    "explore": "Разгледай"
+  },
+  "explore": {
+    "title": "Разгледай",
+    "selectSource": "Избери източник",
+    "rows": {
+      "watchlist": "Списък за гледане",
+      "recommendedMovies": "Препоръчани филми",
+      "recommendedShows": "Препоръчани сериали",
+      "trendingMovies": "Актуални филми",
+      "trendingShows": "Актуални сериали",
+      "popularMovies": "Популярни филми",
+      "popularShows": "Популярни сериали",
+      "suggestedAnime": "Препоръчани аниме",
+      "airingAnime": "Топ излъчвани аниме",
+      "popularAnime": "Най-популярни аниме",
+      "trending": "Актуални",
+      "upcomingMovies": "Предстоящи филми",
+      "upcomingShows": "Предстоящи сериали"
+    },
+    "status": {
+      "airing": "Излъчва се",
+      "ended": "Приключил",
+      "canceled": "Отменен",
+      "upcoming": "Предстоящ"
+    },
+    "episodeCount": {
+      "one": "${n} епизод",
+      "other": "${n} епизода"
+    },
+    "cast": "Актьори",
+    "characters": "Герои",
+    "addToWatchlist": "Добави в списъка за гледане",
+    "removeFromWatchlist": "Премахни от списъка за гледане",
+    "watchlistUpdateFailed": "Неуспешно обновяване на списъка за гледане",
+    "notInLibrary": "Не е в твоята библиотека",
+    "inTheseLibraries": "В тези библиотеки",
+    "availableOn": "Налично на ${server}",
+    "checkingLibrary": "Проверка на твоята библиотека...",
+    "emptyTitle": "Тук все още няма нищо",
+    "emptyMessage": "Редовете от ${source} ще се появят тук, когато има съдържание.",
+    "searchHint": "Търсене в ${source}",
+    "searchEmpty": "Няма резултати за \"${query}\"",
+    "searchPrompt": "Търси филми и сериали в ${source}.",
+    "searchFailed": "Търсенето се провали. Провери връзката си и опитай отново."
   },
   "liveTv": {
     "title": "Телевизия на живо",
@@ -1384,9 +1429,41 @@
     "watchedSync": "Синхронизирай статус гледано",
     "watchedSyncDescription": "Когато маркирате елементи като гледани в Plezy, маркирай ги и в Trakt."
   },
-  "trackers": {
-    "title": "Тракери",
-    "hubSubtitle": "Синхронизирай прогреса на гледане с Trakt и други услуги.",
+  "seerr": {
+    "title": "Seerr",
+    "connectTitle": "Свързване със Seerr",
+    "serverUrl": "URL на сървъра",
+    "serverUrlHelper": "Адресът на твоята Seerr инстанция",
+    "checkServer": "Продължи",
+    "signInWithJellyfin": "Вход с Jellyfin",
+    "signInWithEmby": "Вход с Emby",
+    "signInWithLocal": "Използвай локален акаунт",
+    "email": "Имейл",
+    "noSignInMethods": "Тази Seerr инстанция не предлага метод за вход, който Plezy поддържа.",
+    "instance": "Инстанция",
+    "disconnectConfirm": "Да се прекъсне ли Seerr?",
+    "disconnectConfirmBody": "Plezy ще забрави тази Seerr инстанция. Можете да се свържете отново по всяко време.",
+    "request": "Заяви",
+    "request4k": "Заяви в 4K",
+    "seasons": "Сезони",
+    "allSeasons": "Всички сезони",
+    "advancedOptions": "Разширени",
+    "destinationServer": "Целеви сървър",
+    "qualityProfile": "Профил за качество",
+    "rootFolder": "Основна папка",
+    "languageProfile": "Езиков профил",
+    "requestSubmitted": "Заявката е изпратена",
+    "requestFailed": "Заявката се провали: ${error}",
+    "requestsLoadFailed": "Неуспешно зареждане на опциите за заявка",
+    "nothingToRequest": "Всичко вече е налично или заявено.",
+    "statusAvailable": "Налично",
+    "statusPartiallyAvailable": "Частично налично",
+    "statusRequested": "Заявено",
+    "statusProcessing": "Обработва се"
+  },
+  "services": {
+    "title": "Услуги",
+    "hubSubtitle": "Синхронизирай прогреса на гледане и заявявай нови заглавия.",
     "notConnected": "Не е свързан",
     "connectedAs": "Свързан като @${username}",
     "scrobble": "Проследявай прогреса автоматично",
@@ -1394,10 +1471,11 @@
     "disconnectConfirm": "Да се прекъсне ли ${service}?",
     "disconnectConfirmBody": "Plezy ще спре да обновява ${service}. Можете да се свържете отново по всяко време.",
     "connectFailed": "Неуспешно свързване с ${service}. Опитайте отново.",
-    "services": {
+    "names": {
       "mal": "MyAnimeList",
       "anilist": "AniList",
-      "simkl": "Simkl"
+      "simkl": "Simkl",
+      "seerr": "Seerr"
     },
     "deviceCode": {
       "title": "Активиране на Plezy в ${service}",

@@ -247,8 +247,8 @@
     "discordRichPresenceDescription": "Discordで視聴中の内容を表示",
     "trakt": "Trakt",
     "traktDescription": "視聴履歴を Trakt と同期",
-    "trackers": "トラッカー",
-    "trackersDescription": "進捗を Trakt、MyAnimeList、AniList、Simkl と同期",
+    "services": "サービス",
+    "servicesDescription": "Trakt、MyAnimeList、Seerr などを接続",
     "companionRemoteServer": "コンパニオンリモートサーバー",
     "companionRemoteServerDescription": "ネットワーク上のモバイルデバイスからこのアプリを操作できるようにする",
     "autoPip": "自動ピクチャーインピクチャー",
@@ -416,7 +416,7 @@
     "setScore": "スコアを設定",
     "saved": "保存済み",
     "notAvailable": "一致なし",
-    "noConnectedTrackers": "設定でトラッカーを接続すると、そこで評価できます。"
+    "noConnectedServices": "評価するには、設定でサービスを接続してください。"
   },
   "accessibility": {
     "mediaCardMovie": "${title}、映画",
@@ -842,7 +842,51 @@
   "navigation": {
     "libraries": "ライブラリ",
     "downloads": "ダウンロード",
-    "liveTv": "ライブTV"
+    "liveTv": "ライブTV",
+    "explore": "探索"
+  },
+  "explore": {
+    "title": "探索",
+    "selectSource": "ソースを選択",
+    "rows": {
+      "watchlist": "ウォッチリスト",
+      "recommendedMovies": "おすすめの映画",
+      "recommendedShows": "おすすめのテレビ番組",
+      "trendingMovies": "トレンドの映画",
+      "trendingShows": "トレンドのテレビ番組",
+      "popularMovies": "人気の映画",
+      "popularShows": "人気のテレビ番組",
+      "suggestedAnime": "おすすめのアニメ",
+      "airingAnime": "放送中の注目アニメ",
+      "popularAnime": "人気のアニメ",
+      "trending": "トレンド",
+      "upcomingMovies": "近日公開の映画",
+      "upcomingShows": "放送予定の番組"
+    },
+    "searchHint": "${source} で検索",
+    "searchEmpty": "「${query}」の結果が見つかりません",
+    "searchPrompt": "${source} で映画やテレビ番組を検索します。",
+    "searchFailed": "検索に失敗しました。接続を確認してもう一度お試しください。",
+    "status": {
+      "airing": "放送中",
+      "ended": "放送終了",
+      "canceled": "打ち切り",
+      "upcoming": "放送予定"
+    },
+    "episodeCount": {
+      "other": "${n} 話"
+    },
+    "cast": "キャスト",
+    "characters": "キャラクター",
+    "addToWatchlist": "ウォッチリストに追加",
+    "removeFromWatchlist": "ウォッチリストから削除",
+    "watchlistUpdateFailed": "ウォッチリストを更新できませんでした",
+    "notInLibrary": "ライブラリにありません",
+    "inTheseLibraries": "これらのライブラリにあります",
+    "availableOn": "${server}で視聴可能",
+    "checkingLibrary": "ライブラリを確認中...",
+    "emptyTitle": "まだ何もありません",
+    "emptyMessage": "${source}にコンテンツが追加されると、ここに表示されます。"
   },
   "liveTv": {
     "title": "ライブTV",
@@ -1383,9 +1427,41 @@
     "watchedSync": "視聴済みステータスを同期",
     "watchedSyncDescription": "Plezy で項目を視聴済みにすると、Trakt でも視聴済みになります。"
   },
-  "trackers": {
-    "title": "トラッカー",
-    "hubSubtitle": "視聴進捗をTraktや他のサービスと同期します。",
+  "seerr": {
+    "title": "Seerr",
+    "connectTitle": "Seerrに接続",
+    "serverUrl": "サーバー URL",
+    "serverUrlHelper": "Seerr インスタンスのアドレス",
+    "checkServer": "続ける",
+    "signInWithJellyfin": "Jellyfinでサインイン",
+    "signInWithEmby": "Embyでサインイン",
+    "signInWithLocal": "ローカルアカウントを使う",
+    "email": "メールアドレス",
+    "noSignInMethods": "この Seerr インスタンスには Plezy が対応しているサインイン方法がありません。",
+    "instance": "インスタンス",
+    "disconnectConfirm": "Seerr の接続を解除しますか？",
+    "disconnectConfirmBody": "Plezy はこの Seerr インスタンスの情報を削除します。いつでも再接続できます。",
+    "request": "リクエスト",
+    "request4k": "4K でリクエスト",
+    "seasons": "シーズン",
+    "allSeasons": "全シーズン",
+    "advancedOptions": "詳細",
+    "destinationServer": "宛先サーバー",
+    "qualityProfile": "画質プロファイル",
+    "rootFolder": "ルートフォルダ",
+    "languageProfile": "言語プロファイル",
+    "requestSubmitted": "リクエストを送信しました",
+    "requestFailed": "リクエストに失敗しました: ${error}",
+    "requestsLoadFailed": "リクエストオプションを読み込めませんでした",
+    "nothingToRequest": "すべてすでに利用可能またはリクエスト済みです。",
+    "statusAvailable": "利用可能",
+    "statusPartiallyAvailable": "一部利用可能",
+    "statusRequested": "リクエスト済み",
+    "statusProcessing": "処理中"
+  },
+  "services": {
+    "title": "サービス",
+    "hubSubtitle": "視聴の進捗を同期して、新しいタイトルをリクエストします。",
     "notConnected": "未接続",
     "connectedAs": "@${username} として接続済み",
     "scrobble": "進捗を自動で記録",
@@ -1393,10 +1469,11 @@
     "disconnectConfirm": "${service} の接続を解除しますか？",
     "disconnectConfirmBody": "Plezyは${service}の更新を停止します。いつでも再接続できます。",
     "connectFailed": "${service} に接続できませんでした。もう一度お試しください。",
-    "services": {
+    "names": {
       "mal": "MyAnimeList",
       "anilist": "AniList",
-      "simkl": "Simkl"
+      "simkl": "Simkl",
+      "seerr": "Seerr"
     },
     "deviceCode": {
       "title": "${service} で Plezy を有効化",

@@ -29,19 +29,19 @@ class OAuthProxyDialog extends StatelessWidget {
   Future<void> _copyUrl(BuildContext context) async {
     await Clipboard.setData(ClipboardData(text: start.url));
     if (!context.mounted) return;
-    showAppSnackBar(context, t.trackers.oauthProxy.urlCopied);
+    showAppSnackBar(context, t.services.oauthProxy.urlCopied);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AlertDialog(
-      title: Text(t.trackers.oauthProxy.title(service: serviceName)),
+      title: Text(t.services.oauthProxy.title(service: serviceName)),
       content: Column(
         mainAxisSize: .min,
         crossAxisAlignment: .start,
         children: [
-          Text(t.trackers.oauthProxy.body, style: theme.textTheme.bodyMedium),
+          Text(t.services.oauthProxy.body, style: theme.textTheme.bodyMedium),
           const SizedBox(height: 16),
           // QrImageView doesn't support intrinsic sizing; wrap in SizedBox so
           // AlertDialog's IntrinsicWidth walk sees a concrete width.
@@ -77,7 +77,7 @@ class OAuthProxyDialog extends StatelessWidget {
               onPressed: _open,
               child: FilledButton.icon(
                 icon: const Icon(Icons.open_in_new),
-                label: Text(t.trackers.oauthProxy.openToSignIn(service: serviceName)),
+                label: Text(t.services.oauthProxy.openToSignIn(service: serviceName)),
                 onPressed: _open,
               ),
             ),
@@ -87,7 +87,7 @@ class OAuthProxyDialog extends StatelessWidget {
             children: [
               const LoadingIndicatorBox(size: 16),
               const SizedBox(width: 12),
-              Expanded(child: Text(t.trackers.deviceCode.waitingForAuthorization, style: theme.textTheme.bodySmall)),
+              Expanded(child: Text(t.services.deviceCode.waitingForAuthorization, style: theme.textTheme.bodySmall)),
             ],
           ),
         ],

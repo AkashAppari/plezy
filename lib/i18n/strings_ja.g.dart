@@ -69,6 +69,7 @@ class TranslationsJa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsLogsJa logs = _TranslationsLogsJa._(_root);
 	@override late final _TranslationsLicensesJa licenses = _TranslationsLicensesJa._(_root);
 	@override late final _TranslationsNavigationJa navigation = _TranslationsNavigationJa._(_root);
+	@override late final _TranslationsExploreJa explore = _TranslationsExploreJa._(_root);
 	@override late final _TranslationsLiveTvJa liveTv = _TranslationsLiveTvJa._(_root);
 	@override late final _TranslationsCollectionsJa collections = _TranslationsCollectionsJa._(_root);
 	@override late final _TranslationsPlaylistsJa playlists = _TranslationsPlaylistsJa._(_root);
@@ -84,7 +85,8 @@ class TranslationsJa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsMatchScreenJa matchScreen = _TranslationsMatchScreenJa._(_root);
 	@override late final _TranslationsServerTasksJa serverTasks = _TranslationsServerTasksJa._(_root);
 	@override late final _TranslationsTraktJa trakt = _TranslationsTraktJa._(_root);
-	@override late final _TranslationsTrackersJa trackers = _TranslationsTrackersJa._(_root);
+	@override late final _TranslationsSeerrJa seerr = _TranslationsSeerrJa._(_root);
+	@override late final _TranslationsServicesJa services = _TranslationsServicesJa._(_root);
 	@override late final _TranslationsAddServerJa addServer = _TranslationsAddServerJa._(_root);
 }
 
@@ -377,8 +379,8 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => 'Discordで視聴中の内容を表示';
 	@override String get trakt => 'Trakt';
 	@override String get traktDescription => '視聴履歴を Trakt と同期';
-	@override String get trackers => 'トラッカー';
-	@override String get trackersDescription => '進捗を Trakt、MyAnimeList、AniList、Simkl と同期';
+	@override String get services => 'サービス';
+	@override String get servicesDescription => 'Trakt、MyAnimeList、Seerr などを接続';
 	@override String get companionRemoteServer => 'コンパニオンリモートサーバー';
 	@override String get companionRemoteServerDescription => 'ネットワーク上のモバイルデバイスからこのアプリを操作できるようにする';
 	@override String get autoPip => '自動ピクチャーインピクチャー';
@@ -555,7 +557,7 @@ class _TranslationsRateSheetJa extends TranslationsRateSheetEn {
 	@override String get setScore => 'スコアを設定';
 	@override String get saved => '保存済み';
 	@override String get notAvailable => '一致なし';
-	@override String get noConnectedTrackers => '設定でトラッカーを接続すると、そこで評価できます。';
+	@override String get noConnectedServices => '評価するには、設定でサービスを接続してください。';
 }
 
 // Path: accessibility
@@ -1063,6 +1065,38 @@ class _TranslationsNavigationJa extends TranslationsNavigationEn {
 	@override String get libraries => 'ライブラリ';
 	@override String get downloads => 'ダウンロード';
 	@override String get liveTv => 'ライブTV';
+	@override String get explore => '探索';
+}
+
+// Path: explore
+class _TranslationsExploreJa extends TranslationsExploreEn {
+	_TranslationsExploreJa._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '探索';
+	@override String get selectSource => 'ソースを選択';
+	@override late final _TranslationsExploreRowsJa rows = _TranslationsExploreRowsJa._(_root);
+	@override String searchHint({required Object source}) => '${source} で検索';
+	@override String searchEmpty({required Object query}) => '「${query}」の結果が見つかりません';
+	@override String searchPrompt({required Object source}) => '${source} で映画やテレビ番組を検索します。';
+	@override String get searchFailed => '検索に失敗しました。接続を確認してもう一度お試しください。';
+	@override late final _TranslationsExploreStatusJa status = _TranslationsExploreStatusJa._(_root);
+	@override String episodeCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n,
+		other: '${n} 話',
+	);
+	@override String get cast => 'キャスト';
+	@override String get characters => 'キャラクター';
+	@override String get addToWatchlist => 'ウォッチリストに追加';
+	@override String get removeFromWatchlist => 'ウォッチリストから削除';
+	@override String get watchlistUpdateFailed => 'ウォッチリストを更新できませんでした';
+	@override String get notInLibrary => 'ライブラリにありません';
+	@override String get inTheseLibraries => 'これらのライブラリにあります';
+	@override String availableOn({required Object server}) => '${server}で視聴可能';
+	@override String get checkingLibrary => 'ライブラリを確認中...';
+	@override String get emptyTitle => 'まだ何もありません';
+	@override String emptyMessage({required Object source}) => '${source}にコンテンツが追加されると、ここに表示されます。';
 }
 
 // Path: liveTv
@@ -1645,15 +1679,54 @@ class _TranslationsTraktJa extends TranslationsTraktEn {
 	@override String get watchedSyncDescription => 'Plezy で項目を視聴済みにすると、Trakt でも視聴済みになります。';
 }
 
-// Path: trackers
-class _TranslationsTrackersJa extends TranslationsTrackersEn {
-	_TranslationsTrackersJa._(TranslationsJa root) : this._root = root, super.internal(root);
+// Path: seerr
+class _TranslationsSeerrJa extends TranslationsSeerrEn {
+	_TranslationsSeerrJa._(TranslationsJa root) : this._root = root, super.internal(root);
 
 	final TranslationsJa _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'トラッカー';
-	@override String get hubSubtitle => '視聴進捗をTraktや他のサービスと同期します。';
+	@override String get title => 'Seerr';
+	@override String get connectTitle => 'Seerrに接続';
+	@override String get serverUrl => 'サーバー URL';
+	@override String get serverUrlHelper => 'Seerr インスタンスのアドレス';
+	@override String get checkServer => '続ける';
+	@override String get signInWithJellyfin => 'Jellyfinでサインイン';
+	@override String get signInWithEmby => 'Embyでサインイン';
+	@override String get signInWithLocal => 'ローカルアカウントを使う';
+	@override String get email => 'メールアドレス';
+	@override String get noSignInMethods => 'この Seerr インスタンスには Plezy が対応しているサインイン方法がありません。';
+	@override String get instance => 'インスタンス';
+	@override String get disconnectConfirm => 'Seerr の接続を解除しますか？';
+	@override String get disconnectConfirmBody => 'Plezy はこの Seerr インスタンスの情報を削除します。いつでも再接続できます。';
+	@override String get request => 'リクエスト';
+	@override String get request4k => '4K でリクエスト';
+	@override String get seasons => 'シーズン';
+	@override String get allSeasons => '全シーズン';
+	@override String get advancedOptions => '詳細';
+	@override String get destinationServer => '宛先サーバー';
+	@override String get qualityProfile => '画質プロファイル';
+	@override String get rootFolder => 'ルートフォルダ';
+	@override String get languageProfile => '言語プロファイル';
+	@override String get requestSubmitted => 'リクエストを送信しました';
+	@override String requestFailed({required Object error}) => 'リクエストに失敗しました: ${error}';
+	@override String get requestsLoadFailed => 'リクエストオプションを読み込めませんでした';
+	@override String get nothingToRequest => 'すべてすでに利用可能またはリクエスト済みです。';
+	@override String get statusAvailable => '利用可能';
+	@override String get statusPartiallyAvailable => '一部利用可能';
+	@override String get statusRequested => 'リクエスト済み';
+	@override String get statusProcessing => '処理中';
+}
+
+// Path: services
+class _TranslationsServicesJa extends TranslationsServicesEn {
+	_TranslationsServicesJa._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'サービス';
+	@override String get hubSubtitle => '視聴の進捗を同期して、新しいタイトルをリクエストします。';
 	@override String get notConnected => '未接続';
 	@override String connectedAs({required Object username}) => '@${username} として接続済み';
 	@override String get scrobble => '進捗を自動で記録';
@@ -1661,10 +1734,10 @@ class _TranslationsTrackersJa extends TranslationsTrackersEn {
 	@override String disconnectConfirm({required Object service}) => '${service} の接続を解除しますか？';
 	@override String disconnectConfirmBody({required Object service}) => 'Plezyは${service}の更新を停止します。いつでも再接続できます。';
 	@override String connectFailed({required Object service}) => '${service} に接続できませんでした。もう一度お試しください。';
-	@override late final _TranslationsTrackersServicesJa services = _TranslationsTrackersServicesJa._(_root);
-	@override late final _TranslationsTrackersDeviceCodeJa deviceCode = _TranslationsTrackersDeviceCodeJa._(_root);
-	@override late final _TranslationsTrackersOauthProxyJa oauthProxy = _TranslationsTrackersOauthProxyJa._(_root);
-	@override late final _TranslationsTrackersLibraryFilterJa libraryFilter = _TranslationsTrackersLibraryFilterJa._(_root);
+	@override late final _TranslationsServicesNamesJa names = _TranslationsServicesNamesJa._(_root);
+	@override late final _TranslationsServicesDeviceCodeJa deviceCode = _TranslationsServicesDeviceCodeJa._(_root);
+	@override late final _TranslationsServicesOauthProxyJa oauthProxy = _TranslationsServicesOauthProxyJa._(_root);
+	@override late final _TranslationsServicesLibraryFilterJa libraryFilter = _TranslationsServicesLibraryFilterJa._(_root);
 }
 
 // Path: addServer
@@ -1831,6 +1904,41 @@ class _TranslationsLibrariesSortLabelsJa extends TranslationsLibrariesSortLabels
 	@override String get lastEpisodeDateAdded => '最新エピソード追加日';
 }
 
+// Path: explore.rows
+class _TranslationsExploreRowsJa extends TranslationsExploreRowsEn {
+	_TranslationsExploreRowsJa._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get watchlist => 'ウォッチリスト';
+	@override String get recommendedMovies => 'おすすめの映画';
+	@override String get recommendedShows => 'おすすめのテレビ番組';
+	@override String get trendingMovies => 'トレンドの映画';
+	@override String get trendingShows => 'トレンドのテレビ番組';
+	@override String get popularMovies => '人気の映画';
+	@override String get popularShows => '人気のテレビ番組';
+	@override String get suggestedAnime => 'おすすめのアニメ';
+	@override String get airingAnime => '放送中の注目アニメ';
+	@override String get popularAnime => '人気のアニメ';
+	@override String get trending => 'トレンド';
+	@override String get upcomingMovies => '近日公開の映画';
+	@override String get upcomingShows => '放送予定の番組';
+}
+
+// Path: explore.status
+class _TranslationsExploreStatusJa extends TranslationsExploreStatusEn {
+	_TranslationsExploreStatusJa._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get airing => '放送中';
+	@override String get ended => '放送終了';
+	@override String get canceled => '打ち切り';
+	@override String get upcoming => '放送予定';
+}
+
 // Path: companionRemote.session
 class _TranslationsCompanionRemoteSessionJa extends TranslationsCompanionRemoteSessionEn {
 	_TranslationsCompanionRemoteSessionJa._(TranslationsJa root) : this._root = root, super.internal(root);
@@ -1927,9 +2035,9 @@ class _TranslationsCompanionRemoteErrorsJa extends TranslationsCompanionRemoteEr
 	@override String get connectionLost => '接続が切断されました';
 }
 
-// Path: trackers.services
-class _TranslationsTrackersServicesJa extends TranslationsTrackersServicesEn {
-	_TranslationsTrackersServicesJa._(TranslationsJa root) : this._root = root, super.internal(root);
+// Path: services.names
+class _TranslationsServicesNamesJa extends TranslationsServicesNamesEn {
+	_TranslationsServicesNamesJa._(TranslationsJa root) : this._root = root, super.internal(root);
 
 	final TranslationsJa _root; // ignore: unused_field
 
@@ -1937,11 +2045,12 @@ class _TranslationsTrackersServicesJa extends TranslationsTrackersServicesEn {
 	@override String get mal => 'MyAnimeList';
 	@override String get anilist => 'AniList';
 	@override String get simkl => 'Simkl';
+	@override String get seerr => 'Seerr';
 }
 
-// Path: trackers.deviceCode
-class _TranslationsTrackersDeviceCodeJa extends TranslationsTrackersDeviceCodeEn {
-	_TranslationsTrackersDeviceCodeJa._(TranslationsJa root) : this._root = root, super.internal(root);
+// Path: services.deviceCode
+class _TranslationsServicesDeviceCodeJa extends TranslationsServicesDeviceCodeEn {
+	_TranslationsServicesDeviceCodeJa._(TranslationsJa root) : this._root = root, super.internal(root);
 
 	final TranslationsJa _root; // ignore: unused_field
 
@@ -1953,9 +2062,9 @@ class _TranslationsTrackersDeviceCodeJa extends TranslationsTrackersDeviceCodeEn
 	@override String get codeCopied => 'コードをコピーしました';
 }
 
-// Path: trackers.oauthProxy
-class _TranslationsTrackersOauthProxyJa extends TranslationsTrackersOauthProxyEn {
-	_TranslationsTrackersOauthProxyJa._(TranslationsJa root) : this._root = root, super.internal(root);
+// Path: services.oauthProxy
+class _TranslationsServicesOauthProxyJa extends TranslationsServicesOauthProxyEn {
+	_TranslationsServicesOauthProxyJa._(TranslationsJa root) : this._root = root, super.internal(root);
 
 	final TranslationsJa _root; // ignore: unused_field
 
@@ -1966,9 +2075,9 @@ class _TranslationsTrackersOauthProxyJa extends TranslationsTrackersOauthProxyEn
 	@override String get urlCopied => 'URLをコピーしました';
 }
 
-// Path: trackers.libraryFilter
-class _TranslationsTrackersLibraryFilterJa extends TranslationsTrackersLibraryFilterEn {
-	_TranslationsTrackersLibraryFilterJa._(TranslationsJa root) : this._root = root, super.internal(root);
+// Path: services.libraryFilter
+class _TranslationsServicesLibraryFilterJa extends TranslationsServicesLibraryFilterEn {
+	_TranslationsServicesLibraryFilterJa._(TranslationsJa root) : this._root = root, super.internal(root);
 
 	final TranslationsJa _root; // ignore: unused_field
 
@@ -2232,8 +2341,8 @@ extension on TranslationsJa {
 			'settings.discordRichPresenceDescription' => 'Discordで視聴中の内容を表示',
 			'settings.trakt' => 'Trakt',
 			'settings.traktDescription' => '視聴履歴を Trakt と同期',
-			'settings.trackers' => 'トラッカー',
-			'settings.trackersDescription' => '進捗を Trakt、MyAnimeList、AniList、Simkl と同期',
+			'settings.services' => 'サービス',
+			'settings.servicesDescription' => 'Trakt、MyAnimeList、Seerr などを接続',
 			'settings.companionRemoteServer' => 'コンパニオンリモートサーバー',
 			'settings.companionRemoteServerDescription' => 'ネットワーク上のモバイルデバイスからこのアプリを操作できるようにする',
 			'settings.autoPip' => '自動ピクチャーインピクチャー',
@@ -2389,7 +2498,7 @@ extension on TranslationsJa {
 			'rateSheet.setScore' => 'スコアを設定',
 			'rateSheet.saved' => '保存済み',
 			'rateSheet.notAvailable' => '一致なし',
-			'rateSheet.noConnectedTrackers' => '設定でトラッカーを接続すると、そこで評価できます。',
+			'rateSheet.noConnectedServices' => '評価するには、設定でサービスを接続してください。',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}、映画',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}、テレビ番組',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}、${episodeInfo}',
@@ -2770,6 +2879,42 @@ extension on TranslationsJa {
 			'navigation.libraries' => 'ライブラリ',
 			'navigation.downloads' => 'ダウンロード',
 			'navigation.liveTv' => 'ライブTV',
+			'navigation.explore' => '探索',
+			'explore.title' => '探索',
+			'explore.selectSource' => 'ソースを選択',
+			'explore.rows.watchlist' => 'ウォッチリスト',
+			'explore.rows.recommendedMovies' => 'おすすめの映画',
+			'explore.rows.recommendedShows' => 'おすすめのテレビ番組',
+			'explore.rows.trendingMovies' => 'トレンドの映画',
+			'explore.rows.trendingShows' => 'トレンドのテレビ番組',
+			'explore.rows.popularMovies' => '人気の映画',
+			'explore.rows.popularShows' => '人気のテレビ番組',
+			'explore.rows.suggestedAnime' => 'おすすめのアニメ',
+			'explore.rows.airingAnime' => '放送中の注目アニメ',
+			'explore.rows.popularAnime' => '人気のアニメ',
+			'explore.rows.trending' => 'トレンド',
+			'explore.rows.upcomingMovies' => '近日公開の映画',
+			'explore.rows.upcomingShows' => '放送予定の番組',
+			'explore.searchHint' => ({required Object source}) => '${source} で検索',
+			'explore.searchEmpty' => ({required Object query}) => '「${query}」の結果が見つかりません',
+			'explore.searchPrompt' => ({required Object source}) => '${source} で映画やテレビ番組を検索します。',
+			'explore.searchFailed' => '検索に失敗しました。接続を確認してもう一度お試しください。',
+			'explore.status.airing' => '放送中',
+			'explore.status.ended' => '放送終了',
+			'explore.status.canceled' => '打ち切り',
+			'explore.status.upcoming' => '放送予定',
+			'explore.episodeCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, other: '${n} 話', ), 
+			'explore.cast' => 'キャスト',
+			'explore.characters' => 'キャラクター',
+			'explore.addToWatchlist' => 'ウォッチリストに追加',
+			'explore.removeFromWatchlist' => 'ウォッチリストから削除',
+			'explore.watchlistUpdateFailed' => 'ウォッチリストを更新できませんでした',
+			'explore.notInLibrary' => 'ライブラリにありません',
+			'explore.inTheseLibraries' => 'これらのライブラリにあります',
+			'explore.availableOn' => ({required Object server}) => '${server}で視聴可能',
+			'explore.checkingLibrary' => 'ライブラリを確認中...',
+			'explore.emptyTitle' => 'まだ何もありません',
+			'explore.emptyMessage' => ({required Object source}) => '${source}にコンテンツが追加されると、ここに表示されます。',
 			'liveTv.title' => 'ライブTV',
 			'liveTv.guide' => '番組表',
 			'liveTv.noChannels' => 'チャンネルがありません',
@@ -2985,6 +3130,8 @@ extension on TranslationsJa {
 			'downloads.cancelledDownloadMessage' => 'このダウンロードはキャンセルされました。どうしますか？',
 			'downloads.allEpisodesAlreadyDownloaded' => 'すべてのエピソードはすでにダウンロード済みです',
 			'downloads.resumeDownload' => 'ダウンロードを再開',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.cancelledDownload' => 'キャンセルされたダウンロード',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file}（${status}を同期中）',
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} をダウンロード済み — クリックして完了',
@@ -3021,8 +3168,6 @@ extension on TranslationsJa {
 			'downloads.noSyncRules' => '同期ルールなし',
 			'downloads.manageSyncRule' => '同期を管理',
 			'downloads.editEpisodeCount' => 'エピソード数',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.editSyncFilter' => '同期フィルター',
 			'downloads.syncAllItems' => 'すべてのアイテムを同期中',
 			'downloads.syncUnwatchedItems' => '未視聴のアイテムを同期中',
@@ -3271,39 +3416,70 @@ extension on TranslationsJa {
 			'trakt.scrobbleDescription' => '再生中に再生・一時停止・停止イベントを Trakt に送信します。',
 			'trakt.watchedSync' => '視聴済みステータスを同期',
 			'trakt.watchedSyncDescription' => 'Plezy で項目を視聴済みにすると、Trakt でも視聴済みになります。',
-			'trackers.title' => 'トラッカー',
-			'trackers.hubSubtitle' => '視聴進捗をTraktや他のサービスと同期します。',
-			'trackers.notConnected' => '未接続',
-			'trackers.connectedAs' => ({required Object username}) => '@${username} として接続済み',
-			'trackers.scrobble' => '進捗を自動で記録',
-			'trackers.scrobbleDescription' => 'エピソードや映画を見終えたときにリストを更新します。',
-			'trackers.disconnectConfirm' => ({required Object service}) => '${service} の接続を解除しますか？',
-			'trackers.disconnectConfirmBody' => ({required Object service}) => 'Plezyは${service}の更新を停止します。いつでも再接続できます。',
-			'trackers.connectFailed' => ({required Object service}) => '${service} に接続できませんでした。もう一度お試しください。',
-			'trackers.services.mal' => 'MyAnimeList',
-			'trackers.services.anilist' => 'AniList',
-			'trackers.services.simkl' => 'Simkl',
-			'trackers.deviceCode.title' => ({required Object service}) => '${service} で Plezy を有効化',
-			'trackers.deviceCode.body' => ({required Object url}) => '${url} にアクセスしてこのコードを入力:',
-			'trackers.deviceCode.openToActivate' => ({required Object service}) => '${service} を開いて有効化',
-			'trackers.deviceCode.waitingForAuthorization' => '認証を待っています…',
-			'trackers.deviceCode.codeCopied' => 'コードをコピーしました',
-			'trackers.oauthProxy.title' => ({required Object service}) => '${service} にサインイン',
-			'trackers.oauthProxy.body' => 'このQRコードをスキャンするか、任意のデバイスでURLを開いてください。',
-			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => '${service} を開いてサインイン',
-			'trackers.oauthProxy.urlCopied' => 'URLをコピーしました',
-			'trackers.libraryFilter.title' => 'ライブラリフィルター',
-			'trackers.libraryFilter.subtitleAllSyncing' => 'すべてのライブラリを同期中',
-			'trackers.libraryFilter.subtitleNoneSyncing' => '同期なし',
-			'trackers.libraryFilter.subtitleBlocked' => ({required Object count}) => '${count} 件をブロック',
-			'trackers.libraryFilter.subtitleAllowed' => ({required Object count}) => '${count} 件を許可',
-			'trackers.libraryFilter.mode' => 'フィルターモード',
-			'trackers.libraryFilter.modeBlacklist' => 'ブロックリスト',
-			'trackers.libraryFilter.modeWhitelist' => '許可リスト',
-			'trackers.libraryFilter.modeHintBlacklist' => '下でチェックしたライブラリ以外をすべて同期します。',
-			'trackers.libraryFilter.modeHintWhitelist' => '下でチェックしたライブラリのみ同期します。',
-			'trackers.libraryFilter.libraries' => 'ライブラリ',
-			'trackers.libraryFilter.noLibraries' => '利用できるライブラリがありません',
+			'seerr.title' => 'Seerr',
+			'seerr.connectTitle' => 'Seerrに接続',
+			'seerr.serverUrl' => 'サーバー URL',
+			'seerr.serverUrlHelper' => 'Seerr インスタンスのアドレス',
+			'seerr.checkServer' => '続ける',
+			'seerr.signInWithJellyfin' => 'Jellyfinでサインイン',
+			'seerr.signInWithEmby' => 'Embyでサインイン',
+			'seerr.signInWithLocal' => 'ローカルアカウントを使う',
+			'seerr.email' => 'メールアドレス',
+			'seerr.noSignInMethods' => 'この Seerr インスタンスには Plezy が対応しているサインイン方法がありません。',
+			'seerr.instance' => 'インスタンス',
+			'seerr.disconnectConfirm' => 'Seerr の接続を解除しますか？',
+			'seerr.disconnectConfirmBody' => 'Plezy はこの Seerr インスタンスの情報を削除します。いつでも再接続できます。',
+			'seerr.request' => 'リクエスト',
+			'seerr.request4k' => '4K でリクエスト',
+			'seerr.seasons' => 'シーズン',
+			'seerr.allSeasons' => '全シーズン',
+			'seerr.advancedOptions' => '詳細',
+			'seerr.destinationServer' => '宛先サーバー',
+			'seerr.qualityProfile' => '画質プロファイル',
+			'seerr.rootFolder' => 'ルートフォルダ',
+			'seerr.languageProfile' => '言語プロファイル',
+			'seerr.requestSubmitted' => 'リクエストを送信しました',
+			'seerr.requestFailed' => ({required Object error}) => 'リクエストに失敗しました: ${error}',
+			'seerr.requestsLoadFailed' => 'リクエストオプションを読み込めませんでした',
+			'seerr.nothingToRequest' => 'すべてすでに利用可能またはリクエスト済みです。',
+			'seerr.statusAvailable' => '利用可能',
+			'seerr.statusPartiallyAvailable' => '一部利用可能',
+			'seerr.statusRequested' => 'リクエスト済み',
+			'seerr.statusProcessing' => '処理中',
+			'services.title' => 'サービス',
+			'services.hubSubtitle' => '視聴の進捗を同期して、新しいタイトルをリクエストします。',
+			'services.notConnected' => '未接続',
+			'services.connectedAs' => ({required Object username}) => '@${username} として接続済み',
+			'services.scrobble' => '進捗を自動で記録',
+			'services.scrobbleDescription' => 'エピソードや映画を見終えたときにリストを更新します。',
+			'services.disconnectConfirm' => ({required Object service}) => '${service} の接続を解除しますか？',
+			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezyは${service}の更新を停止します。いつでも再接続できます。',
+			'services.connectFailed' => ({required Object service}) => '${service} に接続できませんでした。もう一度お試しください。',
+			'services.names.mal' => 'MyAnimeList',
+			'services.names.anilist' => 'AniList',
+			'services.names.simkl' => 'Simkl',
+			'services.names.seerr' => 'Seerr',
+			'services.deviceCode.title' => ({required Object service}) => '${service} で Plezy を有効化',
+			'services.deviceCode.body' => ({required Object url}) => '${url} にアクセスしてこのコードを入力:',
+			'services.deviceCode.openToActivate' => ({required Object service}) => '${service} を開いて有効化',
+			'services.deviceCode.waitingForAuthorization' => '認証を待っています…',
+			'services.deviceCode.codeCopied' => 'コードをコピーしました',
+			'services.oauthProxy.title' => ({required Object service}) => '${service} にサインイン',
+			'services.oauthProxy.body' => 'このQRコードをスキャンするか、任意のデバイスでURLを開いてください。',
+			'services.oauthProxy.openToSignIn' => ({required Object service}) => '${service} を開いてサインイン',
+			'services.oauthProxy.urlCopied' => 'URLをコピーしました',
+			'services.libraryFilter.title' => 'ライブラリフィルター',
+			'services.libraryFilter.subtitleAllSyncing' => 'すべてのライブラリを同期中',
+			'services.libraryFilter.subtitleNoneSyncing' => '同期なし',
+			'services.libraryFilter.subtitleBlocked' => ({required Object count}) => '${count} 件をブロック',
+			'services.libraryFilter.subtitleAllowed' => ({required Object count}) => '${count} 件を許可',
+			'services.libraryFilter.mode' => 'フィルターモード',
+			'services.libraryFilter.modeBlacklist' => 'ブロックリスト',
+			'services.libraryFilter.modeWhitelist' => '許可リスト',
+			'services.libraryFilter.modeHintBlacklist' => '下でチェックしたライブラリ以外をすべて同期します。',
+			'services.libraryFilter.modeHintWhitelist' => '下でチェックしたライブラリのみ同期します。',
+			'services.libraryFilter.libraries' => 'ライブラリ',
+			'services.libraryFilter.noLibraries' => '利用できるライブラリがありません',
 			'addServer.addJellyfinTitle' => 'Jellyfinサーバーを追加',
 			'addServer.serverUrls' => 'サーバーURL',
 			'addServer.serverUrlsHelper' => '複数のURLをカンマ区切りで入力できます。',

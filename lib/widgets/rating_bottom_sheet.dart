@@ -138,7 +138,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
                         child: Text(
-                          t.rateSheet.noConnectedTrackers,
+                          t.rateSheet.noConnectedServices,
                           style: Theme.of(
                             context,
                           ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -229,7 +229,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
       autofocus: autofocus,
       leading: _TrackerLogo(source.logoAsset),
       title: source.title,
-      subtitle: source.username != null ? t.trackers.connectedAs(username: source.username!) : source.connectedLabel,
+      subtitle: source.username != null ? t.services.connectedAs(username: source.username!) : source.connectedLabel,
       loading: loading,
       status: status,
       enabled: !loading,
@@ -265,7 +265,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
       sources.add(
         _TrackerRatingSource(
           service: TrackerService.mal,
-          title: t.trackers.services.mal,
+          title: t.services.names.mal,
           username: trackers.malUsername,
           connectedLabel: t.trakt.connected,
           logoAsset: 'assets/mal_mark.svg',
@@ -277,7 +277,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
       sources.add(
         _TrackerRatingSource(
           service: TrackerService.anilist,
-          title: t.trackers.services.anilist,
+          title: t.services.names.anilist,
           username: trackers.anilistUsername,
           connectedLabel: t.trakt.connected,
           logoAsset: 'assets/anilist_mark.svg',
@@ -289,7 +289,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
       sources.add(
         _TrackerRatingSource(
           service: TrackerService.simkl,
-          title: t.trackers.services.simkl,
+          title: t.services.names.simkl,
           username: trackers.simklUsername,
           connectedLabel: t.trakt.connected,
           logoAsset: 'assets/simkl_mark.svg',

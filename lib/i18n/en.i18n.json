@@ -253,8 +253,8 @@
     "discordRichPresenceDescription": "Show what you're watching on Discord",
     "trakt": "Trakt",
     "traktDescription": "Sync watch history with Trakt",
-    "trackers": "Trackers",
-    "trackersDescription": "Sync progress to Trakt, MyAnimeList, AniList, and Simkl",
+    "services": "Services",
+    "servicesDescription": "Connect Trakt, MyAnimeList, Seerr, and more",
     "manageLibrariesDescription": "Reorder and hide libraries",
     "companionRemoteServer": "Companion Remote Server",
     "companionRemoteServerDescription": "Allow mobile devices on your network to control this app",
@@ -425,7 +425,7 @@
     "favorited": "Favorited",
     "saved": "Saved",
     "notAvailable": "No match found",
-    "noConnectedTrackers": "Connect a tracker in Settings to rate there."
+    "noConnectedServices": "Connect a service in Settings to rate there."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, movie",
@@ -854,7 +854,52 @@
   "navigation": {
     "libraries": "Libraries",
     "downloads": "Downloads",
-    "liveTv": "Live TV"
+    "liveTv": "Live TV",
+    "explore": "Explore"
+  },
+  "explore": {
+    "title": "Explore",
+    "selectSource": "Select source",
+    "rows": {
+      "watchlist": "Watchlist",
+      "recommendedMovies": "Recommended Movies",
+      "recommendedShows": "Recommended Shows",
+      "trendingMovies": "Trending Movies",
+      "trendingShows": "Trending Shows",
+      "popularMovies": "Popular Movies",
+      "popularShows": "Popular Shows",
+      "suggestedAnime": "Suggested Anime",
+      "airingAnime": "Top Airing Anime",
+      "popularAnime": "Most Popular Anime",
+      "trending": "Trending",
+      "upcomingMovies": "Upcoming Movies",
+      "upcomingShows": "Upcoming Shows"
+    },
+    "status": {
+      "airing": "Airing",
+      "ended": "Ended",
+      "canceled": "Canceled",
+      "upcoming": "Upcoming"
+    },
+    "episodeCount": {
+      "one": "${n} episode",
+      "other": "${n} episodes"
+    },
+    "cast": "Cast",
+    "characters": "Characters",
+    "addToWatchlist": "Add to Watchlist",
+    "removeFromWatchlist": "Remove from Watchlist",
+    "watchlistUpdateFailed": "Couldn't update watchlist",
+    "notInLibrary": "Not in your library",
+    "inTheseLibraries": "In these libraries",
+    "availableOn": "Available on ${server}",
+    "checkingLibrary": "Checking your library...",
+    "emptyTitle": "Nothing here yet",
+    "emptyMessage": "Rows from ${source} will appear here once they have content.",
+    "searchHint": "Search ${source}",
+    "searchEmpty": "No results for \"${query}\"",
+    "searchPrompt": "Search for movies and shows on ${source}.",
+    "searchFailed": "Search failed. Check your connection and try again."
   },
   "liveTv": {
     "title": "Live TV",
@@ -1399,9 +1444,41 @@
     "watchedSync": "Sync watched status",
     "watchedSyncDescription": "When you mark items watched in Plezy, mark them on Trakt."
   },
-  "trackers": {
-    "title": "Trackers",
-    "hubSubtitle": "Sync watch progress with Trakt and other services.",
+  "seerr": {
+    "title": "Seerr",
+    "connectTitle": "Connect Seerr",
+    "serverUrl": "Server URL",
+    "serverUrlHelper": "The address of your Seerr instance",
+    "checkServer": "Continue",
+    "signInWithJellyfin": "Sign in with Jellyfin",
+    "signInWithEmby": "Sign in with Emby",
+    "signInWithLocal": "Use a local account",
+    "email": "Email",
+    "noSignInMethods": "This Seerr instance offers no sign-in method Plezy supports.",
+    "instance": "Instance",
+    "disconnectConfirm": "Disconnect Seerr?",
+    "disconnectConfirmBody": "Plezy will forget this Seerr instance. Reconnect any time.",
+    "request": "Request",
+    "request4k": "Request in 4K",
+    "seasons": "Seasons",
+    "allSeasons": "All seasons",
+    "advancedOptions": "Advanced",
+    "destinationServer": "Destination server",
+    "qualityProfile": "Quality profile",
+    "rootFolder": "Root folder",
+    "languageProfile": "Language profile",
+    "requestSubmitted": "Request submitted",
+    "requestFailed": "Request failed: ${error}",
+    "requestsLoadFailed": "Couldn't load request options",
+    "nothingToRequest": "Everything is already available or requested.",
+    "statusAvailable": "Available",
+    "statusPartiallyAvailable": "Partially available",
+    "statusRequested": "Requested",
+    "statusProcessing": "Processing"
+  },
+  "services": {
+    "title": "Services",
+    "hubSubtitle": "Sync watch progress and request new titles.",
     "notConnected": "Not connected",
     "connectedAs": "Connected as @${username}",
     "scrobble": "Track progress automatically",
@@ -1409,10 +1486,11 @@
     "disconnectConfirm": "Disconnect ${service}?",
     "disconnectConfirmBody": "Plezy will stop updating ${service}. Reconnect any time.",
     "connectFailed": "Couldn't connect to ${service}. Try again.",
-    "services": {
+    "names": {
       "mal": "MyAnimeList",
       "anilist": "AniList",
-      "simkl": "Simkl"
+      "simkl": "Simkl",
+      "seerr": "Seerr"
     },
     "deviceCode": {
       "title": "Activate Plezy on ${service}",

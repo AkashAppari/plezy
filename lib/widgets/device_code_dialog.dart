@@ -30,19 +30,19 @@ class DeviceCodeDialog extends StatelessWidget {
   Future<void> _copy(BuildContext context) async {
     await Clipboard.setData(ClipboardData(text: code.userCode));
     if (!context.mounted) return;
-    showAppSnackBar(context, t.trackers.deviceCode.codeCopied);
+    showAppSnackBar(context, t.services.deviceCode.codeCopied);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AlertDialog(
-      title: Text(t.trackers.deviceCode.title(service: serviceName)),
+      title: Text(t.services.deviceCode.title(service: serviceName)),
       content: Column(
         mainAxisSize: .min,
         crossAxisAlignment: .start,
         children: [
-          Text(t.trackers.deviceCode.body(url: code.verificationUrl), style: theme.textTheme.bodyMedium),
+          Text(t.services.deviceCode.body(url: code.verificationUrl), style: theme.textTheme.bodyMedium),
           const SizedBox(height: 16),
           Center(
             child: InkWell(
@@ -68,7 +68,7 @@ class DeviceCodeDialog extends StatelessWidget {
               onPressed: _open,
               child: FilledButton.icon(
                 icon: const Icon(Icons.open_in_new),
-                label: Text(t.trackers.deviceCode.openToActivate(service: serviceName)),
+                label: Text(t.services.deviceCode.openToActivate(service: serviceName)),
                 onPressed: _open,
               ),
             ),
@@ -78,7 +78,7 @@ class DeviceCodeDialog extends StatelessWidget {
             children: [
               const LoadingIndicatorBox(size: 16),
               const SizedBox(width: 12),
-              Expanded(child: Text(t.trackers.deviceCode.waitingForAuthorization, style: theme.textTheme.bodySmall)),
+              Expanded(child: Text(t.services.deviceCode.waitingForAuthorization, style: theme.textTheme.bodySmall)),
             ],
           ),
         ],
