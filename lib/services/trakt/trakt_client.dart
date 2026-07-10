@@ -3,14 +3,19 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../../models/trakt/trakt_cast_entry.dart';
+import '../../models/trakt/trakt_catalog_entry.dart';
+import '../../models/trakt/trakt_catalog_media.dart';
 import '../../models/trakt/trakt_scrobble_request.dart';
 import '../../models/trakt/trakt_user.dart';
 import '../../utils/app_logger.dart';
+import '../trackers/future_coalescer.dart';
 import '../trackers/tracker_constants.dart';
 import '../trackers/tracker_exceptions.dart';
 import '../trackers/tracker_http_client.dart';
 import '../trackers/tracker_session.dart';
 import 'trakt_constants.dart';
+import 'trakt_page.dart';
 
 /// HTTP wrapper for the Trakt REST API.
 ///
@@ -19,7 +24,7 @@ import 'trakt_constants.dart';
 class TraktClient {
   static const Set<int> _scrobbleAllowedStatuses = {200, 201, 409};
   static const Set<int> _permanentRefreshFailureStatuses = {400, 401, 403};
-  static final Map<String, Future<TrackerSession>> _refreshesByToken = {};
+  static final KeyedFutureCoalescer<String, TrackerSession> _refreshesByToken = KeyedFutureCoalescer();
 
   TrackerSession _session;
   final TrackerHttpClient _http;
@@ -78,6 +83,100 @@ class TraktClient {
     return res is List ? res : const [];
   }
 
+  // --- Catalog endpoints (Explore tab) ---
+
+  static const String _catalogExtended = 'extended=full,images';
+
+  /// `GET /sync/watchlist[/{type}/{sort}]`. A null [type] returns all entry
+  /// types mixed, in the user's rank order. Pagination is currently optional
+  /// on this endpoint; sending page/limit makes Trakt echo X-Pagination
+  /// headers.
+  Future<TraktPage<TraktCatalogEntry>> getWatchlist({
+    TraktCatalogType? type,
+    String sort = 'added',
+    int page = 1,
+    int limit = 100,
+  }) async {
+    final path = type == null ? '/sync/watchlist' : '/sync/watchlist/${type.name}/$sort';
+    final res = await _requestResponse('GET', '$path?$_catalogExtended&page=$page&limit=$limit');
+    return TraktPage.fromResponse(res, _decodeEntries(res.body));
+  }
+
+  /// Items are wrapped as `{watchers, movie|show}`. Public endpoint, but sent
+  /// authenticated: the tab only exists with a session and per-user rate
+  /// limiting is cleaner than app-level.
+  Future<TraktPage<TraktCatalogEntry>> getTrending(TraktCatalogType type, {int page = 1, int limit = 25}) async {
+    final res = await _requestResponse('GET', '/${type.name}/trending?$_catalogExtended&page=$page&limit=$limit');
+    return TraktPage.fromResponse(res, _decodeEntries(res.body));
+  }
+
+  /// Returns bare movie/show objects (not wrapped like trending).
+  Future<TraktPage<TraktCatalogMedia>> getPopular(TraktCatalogType type, {int page = 1, int limit = 25}) async {
+    final res = await _requestResponse('GET', '/${type.name}/popular?$_catalogExtended&page=$page&limit=$limit');
+    return TraktPage.fromResponse(res, _decodeMedia(res.body));
+  }
+
+  /// Personalized recommendations. OAuth-required, limit-only (no pagination).
+  Future<List<TraktCatalogMedia>> getRecommended(
+    TraktCatalogType type, {
+    int limit = 25,
+    bool ignoreCollected = false,
+    bool ignoreWatchlisted = true,
+  }) async {
+    final res = await _requestResponse(
+      'GET',
+      '/recommendations/${type.name}'
+          '?$_catalogExtended&limit=$limit&ignore_collected=$ignoreCollected&ignore_watchlisted=$ignoreWatchlisted',
+    );
+    return _decodeMedia(res.body);
+  }
+
+  /// Title search across movies and shows (`GET /search/movie,show`).
+  /// Results are wrapped `{type, score, movie|show}` like watchlist entries.
+  Future<TraktPage<TraktCatalogEntry>> searchCatalog(String query, {int page = 1, int limit = 25}) async {
+    final res = await _requestResponse(
+      'GET',
+      '/search/movie,show?query=${Uri.encodeQueryComponent(query)}&$_catalogExtended&page=$page&limit=$limit',
+    );
+    return TraktPage.fromResponse(res, _decodeEntries(res.body));
+  }
+
+  /// Similar titles (`GET /{movies|shows}/{id}/related`) — bare media
+  /// objects of the same type. [id] is a Trakt numeric id or slug.
+  Future<List<TraktCatalogMedia>> getRelated(TraktCatalogType type, String id, {int limit = 20}) async {
+    final res = await _requestResponse('GET', '/${type.name}/$id/related?$_catalogExtended&limit=$limit');
+    return _decodeMedia(res.body);
+  }
+
+  /// Cast credits of a title (`GET /{movies|shows}/{id}/people`), in billing
+  /// order. Crew is not parsed. [id] is a Trakt numeric id or slug.
+  Future<List<TraktCastEntry>> getPeople(TraktCatalogType type, String id) async {
+    final res = await _requestResponse('GET', '/${type.name}/$id/people?$_catalogExtended');
+    final decoded = TrackerHttpClient.decodeJson(res.body);
+    if (decoded is! Map) return const [];
+    final cast = decoded['cast'];
+    if (cast is! List) return const [];
+    return [for (final e in cast.whereType<Map<String, dynamic>>()) TraktCastEntry.fromJson(e)];
+  }
+
+  /// Body shape: `{"movies":[{"ids":{...}}],"shows":[{"ids":{...}}]}`.
+  Future<void> addToWatchlist(Map<String, dynamic> body) =>
+      _request('POST', '/sync/watchlist', body: body, allowStatuses: const {200, 201});
+
+  Future<void> removeFromWatchlist(Map<String, dynamic> body) => _request('POST', '/sync/watchlist/remove', body: body);
+
+  static List<TraktCatalogEntry> _decodeEntries(String body) {
+    final decoded = TrackerHttpClient.decodeJson(body);
+    if (decoded is! List) return const [];
+    return [for (final e in decoded.whereType<Map<String, dynamic>>()) TraktCatalogEntry.fromJson(e)];
+  }
+
+  static List<TraktCatalogMedia> _decodeMedia(String body) {
+    final decoded = TrackerHttpClient.decodeJson(body);
+    if (decoded is! List) return const [];
+    return [for (final e in decoded.whereType<Map<String, dynamic>>()) TraktCatalogMedia.fromJson(e)];
+  }
+
   /// Refresh the access token. Coalesces concurrent calls so
   /// duplicate POSTs don't race when multiple in-flight requests hit 401.
   Future<TrackerSession> refresh() async {
@@ -88,31 +187,26 @@ class TraktClient {
       if (e.isPermanent) onSessionInvalidated();
       rethrow;
     }
-    final existing = _refreshesByToken[refreshToken];
-    if (existing != null) {
-      try {
-        final session = await existing;
-        if (_session.refreshToken == refreshToken) {
-          _session = session;
-          onSessionUpdated?.call(session);
-        }
-        return _session;
-      } on TrackerAuthException catch (e) {
-        if (e.isPermanent && _session.refreshToken == refreshToken) {
-          onSessionInvalidated();
-        }
-        rethrow;
+    var initiated = false;
+    try {
+      final session = await _refreshesByToken.run(refreshToken, () {
+        initiated = true;
+        return _doRefresh(refreshToken);
+      });
+      // No-op for the initiating client (_doRefresh already adopted, so its
+      // refreshToken moved on); joiners sharing the token adopt here.
+      if (_session.refreshToken == refreshToken) {
+        _session = session;
+        onSessionUpdated?.call(session);
       }
+      return _session;
+    } on TrackerAuthException catch (e) {
+      // The initiator's _doRefresh already invalidated; joiners do it here.
+      if (!initiated && e.isPermanent && _session.refreshToken == refreshToken) {
+        onSessionInvalidated();
+      }
+      rethrow;
     }
-
-    late final Future<TrackerSession> refresh;
-    refresh = _doRefresh(refreshToken).whenComplete(() {
-      if (identical(_refreshesByToken[refreshToken], refresh)) {
-        _refreshesByToken.remove(refreshToken);
-      }
-    });
-    _refreshesByToken[refreshToken] = refresh;
-    return refresh;
   }
 
   Future<TrackerSession> _doRefresh(String refreshToken) async {
@@ -188,6 +282,18 @@ class TraktClient {
     Map<String, dynamic>? body,
     Set<int> allowStatuses = const {200, 201, 204},
   }) async {
+    final res = await _requestResponse(method, path, body: body, allowStatuses: allowStatuses);
+    return TrackerHttpClient.decodeJson(res.body);
+  }
+
+  /// [_request] variant exposing the raw response for callers that need
+  /// headers (pagination).
+  Future<http.Response> _requestResponse(
+    String method,
+    String path, {
+    Map<String, dynamic>? body,
+    Set<int> allowStatuses = const {200, 201, 204},
+  }) async {
     if (_session.needsRefresh) {
       try {
         await refresh();
@@ -203,9 +309,7 @@ class TraktClient {
       res = await _send(method, path, body: body);
     }
 
-    if (allowStatuses.contains(res.statusCode)) {
-      return TrackerHttpClient.decodeJson(res.body);
-    }
+    if (allowStatuses.contains(res.statusCode)) return res;
 
     if (res.statusCode == 429) {
       throw TrackerRateLimitException(

@@ -27,11 +27,17 @@ class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
   int _bindingGeneration = 0;
   bool _isConnecting = false;
   Completer<void>? _cancelCompleter;
+  TraktClient? _catalogClient;
 
   TrackerSession? get session => _session;
   bool get isConnected => _session != null;
   String? get username => _session?.username;
   bool get isConnecting => _isConnecting;
+
+  /// Client for the catalog/watchlist surfaces (Explore tab). Owned and
+  /// rebound here alongside the scrobble/sync services; null when
+  /// disconnected.
+  TraktClient? get catalogClient => _catalogClient;
 
   /// Cancel an in-flight `connect()` (e.g. user dismissed the device-code
   /// dialog). Completing the completer both wakes the blocking `Future.any`
@@ -134,6 +140,10 @@ class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
       onSessionInvalidated: handleInvalidated,
       onSessionUpdated: handleUpdated,
     );
+    _catalogClient?.dispose();
+    _catalogClient = session == null
+        ? null
+        : TraktClient(session, onSessionInvalidated: handleInvalidated, onSessionUpdated: handleUpdated);
     safeNotifyListeners();
   }
 
@@ -146,6 +156,7 @@ class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
     _session = session;
     TraktScrobbleService.instance.updateSession(session);
     TraktSyncService.instance.updateSession(session);
+    _catalogClient?.updateSession(session);
     unawaited(_store.save(userUuid, session));
     safeNotifyListeners();
   }
@@ -175,6 +186,8 @@ class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
   @override
   void dispose() {
     _auth.dispose();
+    _catalogClient?.dispose();
+    _catalogClient = null;
     super.dispose();
   }
 }
