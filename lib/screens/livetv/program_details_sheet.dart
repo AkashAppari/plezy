@@ -10,6 +10,7 @@ import '../../models/livetv_channel.dart';
 import '../../models/livetv_program.dart';
 import '../../models/media_subscription.dart';
 import '../../services/image_cache_service.dart';
+import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/app_icon.dart';
@@ -17,6 +18,7 @@ import '../../widgets/collapsible_text.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../../widgets/optimized_media_image.dart' show blurArtwork;
 import 'livetv_recording_actions.dart';
+import 'livetv_styles.dart';
 
 /// Shows a bottom sheet with program details and actions (Play / Watch Channel /
 /// Record / Manage recording).
@@ -48,7 +50,7 @@ void showProgramDetailsSheet(
   );
 }
 
-enum _ActionStyle { filled, outlined }
+enum _ActionStyle { filled, tonal }
 
 class _SheetAction {
   final String label;
@@ -60,7 +62,7 @@ class _SheetAction {
     required this.label,
     required this.icon,
     required this.onPressed,
-    this.style = _ActionStyle.outlined,
+    this.style = _ActionStyle.tonal,
   });
 }
 
@@ -175,7 +177,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
         _SheetAction(
           label: isLive ? t.common.play : t.liveTv.watchChannel,
           icon: isLive ? Symbols.play_arrow_rounded : Symbols.live_tv_rounded,
-          style: isLive ? _ActionStyle.filled : _ActionStyle.outlined,
+          style: isLive ? _ActionStyle.filled : _ActionStyle.tonal,
           onPressed: () {
             _closeSheet();
             widget.onTuneChannel!();
@@ -232,8 +234,12 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
             icon: AppIcon(action.icon),
             label: Text(action.label),
           )
-        : OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+        : FilledButton.icon(
+            style: FilledButton.styleFrom(
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              backgroundColor: tokens(context).text.withValues(alpha: 0.08),
+              foregroundColor: tokens(context).text,
+            ),
             onPressed: action.onPressed,
             icon: AppIcon(action.icon),
             label: Text(action.label),
@@ -307,18 +313,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
                     Row(
                       children: [
                         Expanded(child: Text(program.displayTitle, style: theme.textTheme.titleMedium)),
-                        if (program.isCurrentlyAiring)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: const BoxDecoration(
-                              color: Colors.red,
-                              borderRadius: BorderRadius.all(Radius.circular(4)),
-                            ),
-                            child: Text(
-                              t.liveTv.live,
-                              style: const TextStyle(color: Colors.white, fontWeight: .bold, fontSize: 11),
-                            ),
-                          ),
+                        if (program.isCurrentlyAiring) StatusPill(label: t.liveTv.live, color: Colors.red),
                       ],
                     ),
                     const SizedBox(height: 4),
