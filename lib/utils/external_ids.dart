@@ -15,6 +15,14 @@ class ExternalIds {
 
   bool get hasAny => imdb != null || tmdb != null || tvdb != null;
 
+  /// True when any id form matches [other]. Used to verify reverse-lookup
+  /// candidates (never yields false positives; the two sides may carry
+  /// different id subsets).
+  bool intersects(ExternalIds other) =>
+      (imdb != null && imdb == other.imdb) ||
+      (tmdb != null && tmdb == other.tmdb) ||
+      (tvdb != null && tvdb == other.tvdb);
+
   factory ExternalIds.fromGuids(List<dynamic> guids) {
     String? imdb;
     int? tmdb;
@@ -32,6 +40,19 @@ class ExternalIds {
       }
     }
     return ExternalIds(imdb: imdb, tmdb: tmdb, tvdb: tvdb);
+  }
+
+  /// Pick the first raw Jellyfin item whose inline `ProviderIds` intersect
+  /// [ids]. Pure helper so the reverse-lookup verification stays
+  /// unit-testable (its call site lives in a part file).
+  static Map<String, dynamic>? jellyfinCandidateMatching(List<Map<String, dynamic>> candidates, ExternalIds ids) {
+    for (final item in candidates) {
+      final providerIds = item['ProviderIds'];
+      if (providerIds is! Map) continue;
+      final candidate = ExternalIds.fromJellyfinProviderIds(providerIds.cast<String, Object?>());
+      if (ids.intersects(candidate)) return item;
+    }
+    return null;
   }
 
   /// Build from a Jellyfin `ProviderIds` map. Jellyfin stores external IDs

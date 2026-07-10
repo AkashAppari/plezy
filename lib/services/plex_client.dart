@@ -4398,6 +4398,59 @@ class PlexClient
     return ExternalIds.fromGuids(guids);
   }
 
+  /// Server-wide title filter + client-side Guid-array verification. Plex's
+  /// `guid=` field filter matches only the item's primary `plex://` guid
+  /// (verified against PMS 1.43) — never the external `imdb://`/`tmdb://`
+  /// ids in the `Guid` array — so this mirrors the Jellyfin
+  /// title-search-and-verify approach: exact-id verification, false
+  /// negatives possible on differing titles, false positives never.
+  ///
+  /// When [year] is known, a ±1 window is applied server-side first
+  /// (`year=` takes comma-separated values as OR, verified on PMS 1.43) so
+  /// short/common titles keep the true match inside the 20-item response;
+  /// the year filter drops items with no year metadata, hence the
+  /// unfiltered second attempt.
+  @override
+  Future<MediaItem?> findByExternalIds(ExternalIds ids, {required MediaKind kind, String? title, int? year}) async {
+    final plexType = switch (kind) {
+      MediaKind.movie => 1,
+      MediaKind.show => 2,
+      _ => null,
+    };
+    if (plexType == null || !ids.hasAny || title == null || title.isEmpty) return null;
+
+    Future<MediaItem?> attempt(String? years) async {
+      final response = await _getWithFailover(
+        '/library/all',
+        queryParameters: {
+          'title': title,
+          'type': plexType,
+          'includeGuids': 1,
+          'X-Plex-Container-Size': 20,
+          'year': ?years,
+        },
+      );
+      final container = _getMediaContainer(response);
+      final metadata = container?['Metadata'];
+      if (metadata is! List) return null;
+      for (final item in metadata) {
+        if (item is! Map<String, dynamic>) continue;
+        final guids = item['Guid'];
+        if (guids is! List) continue;
+        if (ids.intersects(ExternalIds.fromGuids(guids))) {
+          return PlexMappers.mediaItem(_createTaggedMetadataWithLibrary(item));
+        }
+      }
+      return null;
+    }
+
+    if (year != null) {
+      final match = await attempt('${year - 1},$year,${year + 1}');
+      if (match != null) return match;
+    }
+    return attempt(null);
+  }
+
   @override
   Future<void> reportPlaybackStarted({
     required String itemId,

@@ -537,6 +537,31 @@ class DataAggregationService {
     return result;
   }
 
+  /// Reverse external-id lookup fanned out to every online server (see
+  /// [MediaServerClient.findByExternalIds]). One request wave per tap on an
+  /// Explore catalog item; per-server failures are logged and skipped.
+  Future<List<MediaItem>> findByExternalIdsAcrossServers(
+    ExternalIds ids, {
+    required MediaKind kind,
+    String? title,
+    int? year,
+  }) async {
+    if (!ids.hasAny) return [];
+    final clients = _serverManager.onlineClients;
+    if (clients.isEmpty) return [];
+
+    final futures = clients.entries.map((entry) async {
+      try {
+        return await entry.value.findByExternalIds(ids, kind: kind, title: title, year: year);
+      } catch (e, st) {
+        appLogger.w('External-id lookup failed on ${entry.key}', error: e, stackTrace: st);
+        return null;
+      }
+    });
+
+    return (await Future.wait(futures)).nonNulls.toList();
+  }
+
   /// Group libraries by server (internal aggregation helper).
   Map<String, List<MediaLibrary>> _groupLibrariesByServer(List<MediaLibrary> libraries) {
     final grouped = <String, List<MediaLibrary>>{};

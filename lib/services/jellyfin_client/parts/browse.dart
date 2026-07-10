@@ -1041,6 +1041,74 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     return _mapItems([...results.first, ...results[1]]);
   }
 
+  /// Jellyfin removed `anyProviderIdEquals`, so the reverse lookup is a
+  /// title search verified against each candidate's inline `ProviderIds` —
+  /// exact-id verification, so localized-title misses are possible but a
+  /// wrong item can never match.
+  ///
+  /// When [year] is known, a ±1 `years=` window (comma-OR, verified on JF
+  /// 10.11) is applied first so short/common titles keep the true match
+  /// inside the 20-item response; a second unfiltered attempt covers items
+  /// with missing or off-window year metadata.
+  @override
+  Future<MediaItem?> findByExternalIds(ExternalIds ids, {required MediaKind kind, String? title, int? year}) async {
+    final itemType = switch (kind) {
+      MediaKind.movie => 'Movie',
+      MediaKind.show => 'Series',
+      _ => null,
+    };
+    if (itemType == null || !ids.hasAny || title == null || title.isEmpty) return null;
+
+    Future<MediaItem?> attempt(String? years) async {
+      final candidates = await _fetchItemsArray('/Items', {
+        'userId': connection.userId,
+        'SearchTerm': title,
+        'Recursive': 'true',
+        'Limit': '20',
+        'IncludeItemTypes': itemType,
+        'Fields': 'ProviderIds,$_browseFields',
+        'years': ?years,
+        ...jellyfinImageQueryParameters,
+      });
+      final match = ExternalIds.jellyfinCandidateMatching(candidates, ids);
+      if (match == null) return null;
+      final item = _mapItems([match]).firstOrNull;
+      if (item == null) return null;
+      return _withLibraryFromAncestors(item);
+    }
+
+    if (year != null) {
+      final match = await attempt('${year - 1},$year,${year + 1}');
+      if (match != null) return match;
+    }
+    return attempt(null);
+  }
+
+  /// Best-effort library stamp for items found outside a library context
+  /// (the search-based reverse lookup): `/Items/{id}/Ancestors` names the
+  /// owning CollectionFolder. One extra request per match (memoized with the
+  /// match by the session-level matcher cache); failures return the item
+  /// unstamped.
+  Future<MediaItem> _withLibraryFromAncestors(MediaItem item) async {
+    try {
+      final response = await _http.get(
+        '/Items/${_segment(item.id)}/Ancestors',
+        queryParameters: {'userId': connection.userId},
+      );
+      throwIfHttpError(response);
+      final data = response.data;
+      if (data is! List) return item;
+      for (final ancestor in data.whereType<Map<String, dynamic>>()) {
+        if (ancestor['Type'] == 'CollectionFolder') {
+          return item.copyWith(libraryId: ancestor['Id'] as String?, libraryTitle: ancestor['Name'] as String?);
+        }
+      }
+    } catch (e) {
+      appLogger.d('Jellyfin ancestors lookup failed for ${item.id}', error: e);
+    }
+    return item;
+  }
+
   @override
   Future<List<MediaItem>> fetchPersonMedia(String personId) async {
     final all = <MediaItem>[];
