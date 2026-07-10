@@ -256,15 +256,19 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       // play queue holding the siblings is created fire-and-forget and may
       // not exist yet when the tracker is wired.
       final playbackState = context.read<PlaybackStateProvider>();
+      final effectivePlayMethod = playMethod ?? (_isTranscoding ? 'Transcode' : 'DirectPlay');
       _progressTracker = PlaybackProgressTracker(
         client: mediaClient,
         metadata: metadata,
         player: currentPlayer,
         offlineWatchService: offlineWatchService,
         queueOnOnlineFailure: _playbackContext?.shouldQueueOnReportFailure ?? _usesLocalPlaybackSource,
-        playMethod: playMethod ?? (_isTranscoding ? 'Transcode' : 'DirectPlay'),
+        playMethod: effectivePlayMethod,
         playSessionId: playSessionId,
         mediaInfo: mediaInfo,
+        onPausedKeepalive: mediaClient is PlexClient && effectivePlayMethod == 'Transcode'
+            ? () => mediaClient.pingTranscodeSession(_playbackTranscodeSessionId)
+            : null,
         onScrobbled: () async {
           // Other episodes of a Plex multi-episode file share this item's
           // part — watching the file watched them too (#1500). Reusing

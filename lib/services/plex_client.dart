@@ -1682,6 +1682,20 @@ class PlexClient
     throwIfHttpError(response);
   }
 
+  /// Keep a paused transcode session alive. Timeline updates alone have not
+  /// historically stopped PMS from reaping an idle transcoder, so Plex
+  /// clients send this alongside every paused timeline (see OpenPHT's
+  /// SendTranscoderPing). [transcodeSessionId] is the `session` param the
+  /// transcode was started with. Best-effort: a failed ping must never
+  /// disturb playback, so errors are logged and swallowed.
+  Future<void> pingTranscodeSession(String transcodeSessionId) async {
+    try {
+      await _http.get('/video/:/transcode/universal/ping', queryParameters: {'session': transcodeSessionId});
+    } catch (e) {
+      appLogger.d('Transcode keepalive ping failed', error: e);
+    }
+  }
+
   /// Remove item from Continue Watching (On Deck) without affecting watch status or progress
   /// This uses the same endpoint Plex Web uses to hide items from Continue Watching
   Future<void> removeFromOnDeck(String ratingKey) async {

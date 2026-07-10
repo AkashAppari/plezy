@@ -63,6 +63,13 @@ class PlaybackProgressTracker {
   /// un-scrobble the primary item.
   final Future<void> Function()? onScrobbled;
 
+  /// Invoked on every paused progress tick. The player wires this to the
+  /// Plex transcoder keepalive ping (`/video/:/transcode/universal/ping`) —
+  /// timeline reports alone historically have not been enough to stop PMS
+  /// from reaping an idle transcode, so official Plex clients send both
+  /// while paused. Best-effort; failures are the callee's to swallow.
+  final Future<void> Function()? onPausedKeepalive;
+
   /// Timer for periodic progress updates
   Timer? _progressTimer;
 
@@ -76,9 +83,6 @@ class PlaybackProgressTracker {
 
   /// Timer ticks to skip before retrying after failures (exponential backoff).
   int _ticksToSkip = 0;
-
-  /// Counts timer ticks while paused to send periodic "paused" heartbeats.
-  int _pausedTickCounter = 0;
 
   /// Whether we've already scrobbled (marked as watched) for this playback session.
   bool _scrobbled = false;
@@ -105,6 +109,7 @@ class PlaybackProgressTracker {
     this.playSessionId,
     this.mediaInfo,
     this.onScrobbled,
+    this.onPausedKeepalive,
     this.updateInterval = const Duration(seconds: 10),
   }) : assert(!isOffline || offlineWatchService != null, 'offlineWatchService is required when isOffline is true'),
        assert(isOffline || client != null, 'client is required when isOffline is false'),
@@ -137,27 +142,22 @@ class PlaybackProgressTracker {
     }
 
     _progressTimer = Timer.periodic(updateInterval, (timer) {
+      // Skip ticks when backing off after consecutive failures to avoid
+      // flooding the network with doomed requests during an outage.
+      if (_ticksToSkip > 0) {
+        _ticksToSkip--;
+        return;
+      }
       if (player.state.isActive) {
-        _pausedTickCounter = 0;
-        // Skip ticks when backing off after consecutive failures to avoid
-        // flooding the network with doomed requests during an outage.
-        if (_ticksToSkip > 0) {
-          _ticksToSkip--;
-          return;
-        }
         _sendProgress('playing');
       } else {
-        // Send periodic "paused" updates to keep the server session alive
-        // (~60s with default 10s interval)
-        _pausedTickCounter++;
-        if (_pausedTickCounter >= 6) {
-          _pausedTickCounter = 0;
-          if (_ticksToSkip > 0) {
-            _ticksToSkip--;
-            return;
-          }
-          _sendProgress('paused');
-        }
+        // Report every tick while paused too — official clients do the
+        // same (~10s); the timeline heartbeat is what keeps the server
+        // session and its transcoder from being reaped during a long
+        // pause (#1520).
+        _sendProgress('paused');
+        final keepalive = onPausedKeepalive;
+        if (keepalive != null) unawaited(keepalive());
       }
     });
 
