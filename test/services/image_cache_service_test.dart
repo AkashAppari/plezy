@@ -60,6 +60,35 @@ void main() {
     expect(secondDone, isTrue);
   });
 
+  test('an unclaimed successful body cannot permanently leak a permit', () async {
+    final client = createArtworkHttpClientForTest(
+      mixedClient(),
+      maxConcurrent: 1,
+      unclaimedResponseTimeout: const Duration(milliseconds: 20),
+    );
+
+    // Mirrors an image widget being disposed after headers arrive but before
+    // the cache manager starts listening to the response body.
+    await client.send(get('/abandoned')).timeout(timeout);
+
+    final next = await client.send(get('/poster')).timeout(timeout);
+    expect(await next.stream.bytesToString().timeout(timeout), 'poster-bytes');
+  });
+
+  test('an unclaimed body is cancelled so the transport can reclaim its connection', () async {
+    final cancelled = Completer<void>();
+    final body = StreamController<List<int>>(onCancel: () => cancelled.complete());
+    final client = createArtworkHttpClientForTest(
+      MockClient.streaming((request, _) async => http.StreamedResponse(body.stream, 200)),
+      maxConcurrent: 1,
+      unclaimedResponseTimeout: const Duration(milliseconds: 20),
+    );
+
+    await client.send(get('/abandoned')).timeout(timeout);
+    await cancelled.future.timeout(timeout);
+    await body.close();
+  });
+
   test('error bodies are drained so the transport can reclaim the connection', () async {
     final listened = Completer<void>();
     final body = StreamController<List<int>>(onListen: () => listened.complete());

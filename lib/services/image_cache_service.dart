@@ -66,8 +66,13 @@ class PlexImageCacheManager extends ce_cache.DefaultCacheManager {
 class _SharedHttpClient extends http.BaseClient {
   final http.Client _inner;
   final _RequestLimiter _limiter;
+  final Duration _unclaimedResponseTimeout;
 
-  _SharedHttpClient(this._inner, this._limiter);
+  _SharedHttpClient(
+    this._inner,
+    this._limiter, {
+    this._unclaimedResponseTimeout = const Duration(seconds: 2),
+  });
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
@@ -106,7 +111,7 @@ class _SharedHttpClient extends http.BaseClient {
       }
 
       return http.StreamedResponse(
-        _releaseWhenDone(response.stream, release),
+        _releaseWhenDone(response.stream, release, claimTimeout: _unclaimedResponseTimeout),
         response.statusCode,
         contentLength: response.contentLength,
         request: response.request,
@@ -128,16 +133,55 @@ class _SharedHttpClient extends http.BaseClient {
 // ignore: unused-code
 /// Test hook: builds the throttled artwork client with an isolated limiter.
 @visibleForTesting
-http.Client createArtworkHttpClientForTest(http.Client inner, {int maxConcurrent = 6}) =>
-    _SharedHttpClient(inner, _RequestLimiter(maxConcurrent));
+http.Client createArtworkHttpClientForTest(
+  http.Client inner, {
+  int maxConcurrent = 6,
+  Duration unclaimedResponseTimeout = const Duration(seconds: 2),
+}) => _SharedHttpClient(inner, _RequestLimiter(maxConcurrent), unclaimedResponseTimeout: unclaimedResponseTimeout);
 
-Stream<List<int>> _releaseWhenDone(Stream<List<int>> stream, void Function() release) async* {
-  try {
-    await for (final chunk in stream) {
-      yield chunk;
-    }
-  } finally {
+Stream<List<int>> _releaseWhenDone(
+  Stream<List<int>> stream,
+  void Function() release, {
+  required Duration claimTimeout,
+}) {
+  var claimed = false;
+  var abandoned = false;
+
+  // A cache request can be cancelled after response headers arrive but before
+  // CE subscribes to the body (for example when a rail card is disposed).
+  // An async* wrapper that is never listened to never enters its `finally`, so
+  // without this guard the permit is lost permanently and artwork wedges once
+  // every slot has leaked. Give CE ample time to claim the body, then release
+  // the slot and cancel the orphaned transport request.
+  final claimTimer = Timer(claimTimeout, () {
+    if (claimed) return;
+    abandoned = true;
     release();
+    _cancelUnclaimedBody(stream);
+  });
+
+  return (() async* {
+    if (abandoned) {
+      throw http.ClientException('Artwork response body was abandoned before it was consumed');
+    }
+    claimed = true;
+    claimTimer.cancel();
+    try {
+      await for (final chunk in stream) {
+        yield chunk;
+      }
+    } finally {
+      release();
+    }
+  })();
+}
+
+void _cancelUnclaimedBody(Stream<List<int>> stream) {
+  try {
+    final subscription = stream.listen((_) {}, onError: (_, _) {});
+    unawaited(subscription.cancel().catchError((_) {}));
+  } catch (_) {
+    // The body may already have terminated while the timeout callback ran.
   }
 }
 
