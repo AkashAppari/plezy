@@ -574,10 +574,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
           ),
         ],
       ],
-      if (errorText != null) ...[
-        const SizedBox(height: 12),
-        Text(errorText!, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error)),
-      ],
+      ...buildInlineError(theme),
     ];
   }
 
@@ -738,14 +735,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
               label: Text(t.auth.quickConnectCancel),
             ),
           ),
-          if (errorText != null) ...[
-            const SizedBox(height: 16),
-            Text(
-              errorText!,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
-            ),
-          ],
+          ...buildInlineError(theme, gap: 16, center: true),
         ],
       ),
     );

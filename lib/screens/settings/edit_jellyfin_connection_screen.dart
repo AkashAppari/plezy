@@ -124,10 +124,7 @@ class _EditJellyfinConnectionScreenState extends State<EditJellyfinConnectionScr
                       label: Text(t.common.save),
                     ),
                   ),
-                  if (errorText != null) ...[
-                    const SizedBox(height: 12),
-                    Text(errorText!, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error)),
-                  ],
+                  ...buildInlineError(theme),
                 ],
               ),
             ),

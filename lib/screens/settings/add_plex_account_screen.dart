@@ -175,14 +175,7 @@ class _AddPlexAccountScreenState extends State<AddPlexAccountScreen> with AsyncF
                         ],
                       ),
                     ),
-                    if (errorText != null) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        errorText!,
-                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                    ...buildInlineError(theme, gap: 16, center: true),
                   ],
                 ),
               ),

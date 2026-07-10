@@ -1,3 +1,4 @@
+import '../../profiles/profile.dart';
 import '../base_shared_preferences_service.dart';
 import 'tracker_constants.dart';
 import 'tracker_session.dart';
@@ -25,7 +26,7 @@ class TrackerAccountStore {
 
   TrackerAccountStore._(this.service, this._baseKey);
 
-  String _scopedKey(String userUuid) => userUuid.isEmpty ? _baseKey : 'user_${userUuid}_$_baseKey';
+  String _scopedKey(String userUuid) => profileScopedPrefsKey(userUuid, _baseKey);
 
   Future<TrackerSession?> load(String userUuid) async {
     final prefs = await BaseSharedPreferencesService.sharedCache();

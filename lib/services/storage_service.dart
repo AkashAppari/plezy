@@ -96,12 +96,12 @@ class StorageService extends BaseSharedPreferencesService {
   /// full profile id is the scope.
   String? activeUserScope() => _activeUserScope();
 
-  String userScopeForProfileId(String profileId) => parsePlexHomeProfileId(profileId)?.homeUserUuid ?? profileId;
+  String userScopeForProfileId(String profileId) => profileUserScope(profileId);
 
   String? _activeUserScope() {
     final id = getActiveProfileId();
     if (id == null) return null;
-    return parsePlexHomeProfileId(id)?.homeUserUuid ?? id;
+    return profileUserScope(id);
   }
 
   /// Returns `'user_{scope}_'` for the active profile, or `''` if no

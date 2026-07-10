@@ -223,6 +223,23 @@ final RegExp _trailingHomeUserUuidPattern = RegExp(
   r'-([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|[0-9a-fA-F]{16})$',
 );
 
+/// Prefs scope for a profile id: Plex Home profiles scope by their bare
+/// home-user uuid (`user_{uuid}_*`), other profiles by the full id.
+///
+/// Every `user_{scope}_{key}` prefs-key builder must apply this —
+/// [StorageService]'s `_migratePlexHomeUserScopes` relocates full-profile-id
+/// keys onto the uuid scope at every launch, so a builder that skips the
+/// normalization writes keys that vanish on the next restart (Trakt
+/// "unlinking" on hot restart was exactly this).
+String profileUserScope(String profileId) => parsePlexHomeProfileId(profileId)?.homeUserUuid ?? profileId;
+
+/// THE builder for profile-scoped prefs keys: `user_{scope}_{baseKey}`, or
+/// the bare [baseKey] for the empty (signed-out/account-level) scope.
+/// Pairs the `user_` prefix with [profileUserScope] in one place so no key
+/// builder can skip the normalization (see the warning above).
+String profileScopedPrefsKey(String userUuid, String baseKey) =>
+    userUuid.isEmpty ? baseKey : 'user_${profileUserScope(userUuid)}_$baseKey';
+
 /// Inverse of [plexHomeProfileId]. Returns `null` if [id] doesn't match the
 /// `plex-home-{accountConnectionId}-{homeUserUuid}` shape.
 ({String accountConnectionId, String homeUserUuid})? parsePlexHomeProfileId(String id) {
