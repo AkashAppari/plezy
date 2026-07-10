@@ -68,11 +68,7 @@ class _SharedHttpClient extends http.BaseClient {
   final _RequestLimiter _limiter;
   final Duration _unclaimedResponseTimeout;
 
-  _SharedHttpClient(
-    this._inner,
-    this._limiter, {
-    this._unclaimedResponseTimeout = const Duration(seconds: 2),
-  });
+  _SharedHttpClient(this._inner, this._limiter, {this._unclaimedResponseTimeout = const Duration(seconds: 2)});
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
