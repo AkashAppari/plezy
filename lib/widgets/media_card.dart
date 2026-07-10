@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import '../media/ids.dart';
 
@@ -7,15 +8,18 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../focus/card_focus_scope.dart';
 import '../focus/input_mode_tracker.dart';
+import '../media/catalog_item_ref.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
 import '../mixins/context_menu_tap_mixin.dart';
+import '../models/catalog/catalog_item.dart';
 import '../providers/download_provider.dart';
 import '../providers/watch_state_store.dart';
 import '../services/download_storage_service.dart';
 import '../services/settings_service.dart';
+import 'catalog_context_menu.dart';
 import 'settings_builder.dart';
 import 'watched_indicator.dart';
 import '../utils/content_utils.dart';
@@ -94,6 +98,34 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
   /// Public method to trigger tap action (for keyboard/gamepad SELECT)
   void handleTap() {
     _handleTap(context, _effectiveItemForAction(context));
+  }
+
+  CatalogItem? get _catalogItem {
+    final item = widget.item;
+    return item is MediaItem && item.isCatalogItem ? item.catalogItem : null;
+  }
+
+  // Catalog stand-ins get the catalog menu at the same seams (long-press,
+  // right-click, TV context-menu key) instead of the server-backed
+  // MediaContextMenu, which is not in their tree.
+  @override
+  void showContextMenuFromTap() {
+    final catalogItem = _catalogItem;
+    if (catalogItem != null) {
+      unawaited(showCatalogItemMenu(context, catalogItem, position: lastTapPosition));
+      return;
+    }
+    super.showContextMenuFromTap();
+  }
+
+  @override
+  void showContextMenu() {
+    final catalogItem = _catalogItem;
+    if (catalogItem != null) {
+      unawaited(showCatalogItemMenu(context, catalogItem));
+      return;
+    }
+    super.showContextMenu();
   }
 
   Object _effectiveItem(BuildContext context) {
@@ -260,6 +292,12 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
             showServerName: widget.showServerName,
             episodePosterModeOverride: widget.episodePosterModeOverride,
           );
+
+    // Catalog stand-ins (Explore tab) have no server-backed actions — every
+    // entry in the context menu would break on serverId == null. Long-press
+    // no-ops on them; taps route through the catalog branch in
+    // navigateToMediaItem.
+    if (item is MediaItem && item.isCatalogItem) return cardWidget;
 
     // MediaContextMenu as a non-widget helper — only wrap with its key for
     // programmatic context menu access; gesture callbacks are on InkWell directly.

@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
-import 'package:rate_limiter/rate_limiter.dart';
 
 import '../focus/focusable_text_field.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
-import '../mixins/controller_disposer_mixin.dart';
+import '../mixins/debounced_media_search.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/refreshable.dart';
 import '../providers/multi_server_provider.dart';
@@ -30,163 +29,83 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen>
-    with
-        Refreshable,
-        FullRefreshable,
-        SearchInputFocusable,
-        FocusableTab,
-        ControllerDisposerMixin,
-        MountedSetStateMixin {
-  late final _searchController = createTextEditingController();
-  final _searchFocusNode = FocusNode(debugLabel: 'SearchInput');
-  final _firstResultFocusNode = FocusNode(debugLabel: 'SearchFirstResult');
-  List<MediaItem> _searchResults = [];
-  bool _isSearching = false;
-  bool _hasSearched = false;
-  late final Debounce _searchDebounce;
-  String _lastSearchedQuery = '';
+    with Refreshable, FullRefreshable, SearchInputFocusable, FocusableTab, MountedSetStateMixin, DebouncedMediaSearch {
   String? _focusResultsForQuery;
 
   @override
   void initState() {
     super.initState();
-    _searchDebounce = debounce(_performSearch, const Duration(milliseconds: 500));
-    _searchController.addListener(_onSearchChanged);
-    FocusUtils.requestFocusAfterBuild(this, _searchFocusNode);
+    FocusUtils.requestFocusAfterBuild(this, searchFocusNode);
   }
 
   @override
-  void dispose() {
-    _searchDebounce.cancel();
-    _searchController.removeListener(_onSearchChanged);
-    _searchFocusNode.dispose();
-    _firstResultFocusNode.dispose();
-    super.dispose();
+  String get searchDebugLabel => 'Search';
+
+  @override
+  Future<List<MediaItem>> performSearchQuery(String query) async {
+    final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
+    if (!multiServerProvider.hasConnectedServers) {
+      throw Exception('No servers available');
+    }
+    return multiServerProvider.aggregationService.searchAcrossServers(query);
   }
 
-  void _onSearchChanged() {
-    if (!mounted) return;
-
-    final query = _searchController.text;
-
-    if (query.trim().isEmpty) {
-      _searchDebounce.cancel();
-      _focusResultsForQuery = null;
-      setStateIfMounted(() {
-        _searchResults = [];
-        _hasSearched = false;
-        _isSearching = false;
-        _lastSearchedQuery = '';
-      });
-      return;
-    }
-
-    // Only search if the query has actually changed
-    if (query.trim() == _lastSearchedQuery.trim()) {
-      return;
-    }
-
-    _searchDebounce([query]);
+  @override
+  void onSearchError(Object error) {
+    _focusResultsForQuery = null;
+    showErrorSnackBar(context, t.errors.searchFailed(error: error));
   }
 
-  Future<void> _performSearch(String query) async {
-    if (!mounted) return;
-
-    if (query.trim().isEmpty) {
-      setStateIfMounted(() {
-        _searchResults = [];
-        _hasSearched = false;
-      });
-      return;
-    }
-
-    setStateIfMounted(() {
-      _isSearching = true;
-      _hasSearched = true;
-    });
-
-    try {
-      if (!mounted) return;
-      final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
-
-      if (!multiServerProvider.hasConnectedServers) {
-        throw Exception('No servers available');
-      }
-
-      final neutral = await multiServerProvider.aggregationService.searchAcrossServers(query);
-      if (mounted) {
-        setStateIfMounted(() {
-          _searchResults = neutral;
-          _isSearching = false;
-          _lastSearchedQuery = query.trim();
-        });
-        _maybeFocusResultsAfterSubmit(query, neutral);
-      }
-    } catch (e) {
-      _focusResultsForQuery = null;
-      if (mounted) {
-        setStateIfMounted(() {
-          _isSearching = false;
-        });
-        showErrorSnackBar(context, t.errors.searchFailed(error: e));
-      }
-    }
+  @override
+  void onSearchCleared() {
+    _focusResultsForQuery = null;
   }
 
-  /// OSK "Search" / hardware Enter on TV: jump to results, or force the
-  /// search to run now and focus results when it lands.
-  void _handleSearchSubmit() {
-    final query = _searchController.text.trim();
-    if (query.isEmpty) return;
-
-    if (_searchResults.isNotEmpty && !_isSearching && query == _lastSearchedQuery.trim()) {
-      _firstResultFocusNode.requestFocus();
-      return;
-    }
-
-    _focusResultsForQuery = query;
-    if (_searchDebounce.isPending || !_isSearching) {
-      _searchDebounce.cancel();
-      _performSearch(query);
-    }
-    // else: the in-flight search already covers the current text; its
-    // completion focuses the results.
-  }
-
-  void _maybeFocusResultsAfterSubmit(String query, List<MediaItem> results) {
-    if (_focusResultsForQuery == null || _focusResultsForQuery != query.trim()) return;
+  @override
+  void onSearchCompleted(String query, List<MediaItem> results) {
+    if (_focusResultsForQuery == null || _focusResultsForQuery != query) return;
     _focusResultsForQuery = null;
     if (results.isEmpty) return;
-    if (_searchController.text.trim() != query.trim()) return; // user kept editing
-    FocusUtils.requestFocusAfterBuild(this, _firstResultFocusNode);
+    if (searchController.text.trim() != query) return; // user kept editing
+    FocusUtils.requestFocusAfterBuild(this, firstResultFocusNode);
+  }
+
+  /// OSK "Search" / hardware Enter on TV additionally focuses the results
+  /// when the forced search lands.
+  @override
+  void handleSearchSubmit() {
+    final query = searchController.text.trim();
+    if (query.isEmpty) return;
+    if (searchResults.isEmpty || isSearching || query != lastSearchedQuery) {
+      _focusResultsForQuery = query;
+    }
+    super.handleSearchSubmit();
   }
 
   @override
   void refresh() {
     if (!mounted) return;
-    if (_searchController.text.isNotEmpty) {
-      _performSearch(_searchController.text);
-    }
+    runSearch(searchController.text.trim());
   }
 
   /// Focus the search input field
   @override
   void focusSearchInput() {
     if (!mounted) return;
-    _searchFocusNode.requestFocus();
+    searchFocusNode.requestFocus();
   }
 
   @override
   void focusActiveTabIfReady() {
     if (!mounted) return;
-    _searchFocusNode.requestFocus();
+    searchFocusNode.requestFocus();
   }
 
   /// Set the search query externally (e.g. from companion remote)
   @override
   void setSearchQuery(String query) {
     if (!mounted) return;
-    _searchController.text = query;
+    searchController.text = query;
   }
 
   // Public method to fully reload all content (for profile switches)
@@ -194,23 +113,15 @@ class _SearchScreenState extends State<SearchScreen>
   void fullRefresh() {
     if (!mounted) return;
     appLogger.d('SearchScreen.fullRefresh() called - clearing search and reloading');
-    // Clear search results and search text for new profile
-    _searchController.clear();
+    // Clearing the field resets the search state through the text listener.
     _focusResultsForQuery = null;
-    setStateIfMounted(() {
-      _searchResults.clear();
-      _isSearching = false;
-      _hasSearched = false;
-      _lastSearchedQuery = '';
-    });
+    searchController.clear();
   }
 
   void updateItem(String _) {
     if (!mounted) return;
     // Trigger a refresh of the search to get updated metadata
-    if (_searchController.text.isNotEmpty) {
-      _performSearch(_searchController.text);
-    }
+    runSearch(searchController.text.trim());
   }
 
   /// Navigate focus to the sidebar
@@ -226,13 +137,13 @@ class _SearchScreenState extends State<SearchScreen>
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) {
-            final item = _searchResults[index];
+            final item = searchResults[index];
             return FocusableMediaCard(
               key: Key(item.globalKey),
               item: item,
               forceListMode: true,
               disableScale: true,
-              focusNode: index == 0 ? _firstResultFocusNode : null,
+              focusNode: index == 0 ? firstResultFocusNode : null,
               onRefresh: updateItem,
               onListRefresh: () => updateItem(item.id),
               onNavigateLeft: _navigateToSidebar,
@@ -240,7 +151,7 @@ class _SearchScreenState extends State<SearchScreen>
               showServerName: showServerName,
             );
           },
-          childCount: _searchResults.length,
+          childCount: searchResults.length,
           addAutomaticKeepAlives: false,
           addSemanticIndexes: false,
         ),
@@ -260,17 +171,15 @@ class _SearchScreenState extends State<SearchScreen>
               child: Padding(
                 padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
                 child: FocusableTextField(
-                  controller: _searchController,
-                  focusNode: _searchFocusNode,
+                  controller: searchController,
+                  focusNode: searchFocusNode,
                   textInputAction: TextInputAction.search,
                   onNavigateLeft: _navigateToSidebar,
-                  onNavigateDown: _searchResults.isNotEmpty && !_isSearching
-                      ? _firstResultFocusNode.requestFocus
-                      : null,
-                  onEditingComplete: PlatformDetector.isTV() ? _handleSearchSubmit : null,
+                  onNavigateDown: searchResults.isNotEmpty && !isSearching ? firstResultFocusNode.requestFocus : null,
+                  onEditingComplete: PlatformDetector.isTV() ? handleSearchSubmit : null,
                   onBack: () {
-                    if (_searchController.text.isNotEmpty) {
-                      _searchController.clear();
+                    if (searchController.text.isNotEmpty) {
+                      searchController.clear();
                     } else {
                       _navigateToSidebar();
                     }
@@ -279,11 +188,11 @@ class _SearchScreenState extends State<SearchScreen>
                     context,
                     hintText: t.search.hint,
                     prefixIcon: const AppIcon(Symbols.search_rounded, fill: 1),
-                    suffixIcon: _searchController.text.isNotEmpty
+                    suffixIcon: searchController.text.isNotEmpty
                         ? IconButton(
                             icon: const AppIcon(Symbols.clear_rounded, fill: 1),
                             onPressed: () {
-                              _searchController.clear();
+                              searchController.clear();
                             },
                           )
                         : null,
@@ -291,9 +200,9 @@ class _SearchScreenState extends State<SearchScreen>
                 ),
               ),
             ),
-            if (_isSearching)
+            if (isSearching)
               LoadingIndicatorBox.sliver
-            else if (!_hasSearched)
+            else if (!hasSearched)
               SliverFillRemaining(
                 child: StateMessageWidget(
                   message: t.search.searchYourMedia,
@@ -302,7 +211,11 @@ class _SearchScreenState extends State<SearchScreen>
                   iconSize: 80,
                 ),
               )
-            else if (_searchResults.isEmpty)
+            else if (lastSearchFailed)
+              SliverFillRemaining(
+                child: StateMessageWidget(message: t.explore.searchFailed, icon: Symbols.error_rounded, iconSize: 80),
+              )
+            else if (searchResults.isEmpty)
               SliverFillRemaining(
                 child: StateMessageWidget(
                   message: t.messages.noResultsFound,

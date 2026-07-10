@@ -10,18 +10,22 @@ import '../media/media_server_client.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/plex_home_service.dart';
 import '../profiles/profile_connection_registry.dart';
+import '../providers/catalog_sources_provider.dart';
 import '../providers/companion_remote_provider.dart';
 import '../providers/discover_provider.dart';
+import '../providers/explore_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../providers/trakt_account_provider.dart';
+import '../providers/seerr_account_provider.dart';
 import '../providers/trackers_provider.dart';
 import '../providers/watch_state_store.dart';
 import '../database/app_database.dart';
 import '../screens/main_screen.dart';
 import '../services/api_cache.dart';
+import '../services/catalog/catalog_library_matcher.dart';
 import '../services/music/music_playback_service.dart';
 import '../services/music/music_playback_service_impl.dart';
 import '../services/offline_watch_sync_service.dart';
@@ -143,6 +147,50 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                   return provider;
                 },
               ),
+              ChangeNotifierProvider(
+                create: (context) {
+                  final provider = SeerrAccountProvider();
+                  provider.bindPlexTokenSupplier(
+                    buildSeerrPlexTokenSupplier(
+                      activeProfile: context.read<ActiveProfileProvider>(),
+                      connections: context.read<ConnectionRegistry>(),
+                      profileConnections: context.read<ProfileConnectionRegistry>(),
+                    ),
+                  );
+                  unawaited(
+                    provider.onActiveProfileChanged(activeId).catchError((Object e, StackTrace s) {
+                      appLogger.w('Seerr profile hydrate failed', error: e, stackTrace: s);
+                    }),
+                  );
+                  return provider;
+                },
+              ),
+              ChangeNotifierProxyProvider3<
+                TraktAccountProvider,
+                TrackersProvider,
+                SeerrAccountProvider,
+                CatalogSourcesProvider
+              >(
+                create: (context) {
+                  final provider = CatalogSourcesProvider();
+                  unawaited(
+                    provider.onActiveProfileChanged(activeId).catchError((Object e, StackTrace s) {
+                      appLogger.w('Catalog sources profile hydrate failed', error: e, stackTrace: s);
+                    }),
+                  );
+                  return provider;
+                },
+                update: (_, trakt, trackers, seerr, previous) {
+                  final provider = previous ?? CatalogSourcesProvider();
+                  provider.update(trakt, trackers, seerr);
+                  return provider;
+                },
+              ),
+              ChangeNotifierProvider(
+                create: (context) => ExploreProvider(context.read<CatalogSourcesProvider>()),
+                lazy: true,
+              ),
+              Provider(create: (context) => CatalogLibraryMatcher(context.read<MultiServerProvider>()), lazy: true),
               ChangeNotifierProvider(
                 create: (context) =>
                     HiddenLibrariesProvider(storageService: context.read<StorageService>(), profileId: activeId),

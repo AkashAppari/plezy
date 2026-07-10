@@ -194,6 +194,38 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           _buildWatchedToggleButton(metadata, actionButtonStyle, tvScale, showFocus: state.showFocus),
     );
 
+    // Watchlist toggle for the connected catalog sources (Trakt, MAL).
+    // Membership reads each source's session snapshot — no per-open API
+    // call. Filled when the item is on ANY source's watchlist; with several
+    // candidates the press opens a source chooser.
+    // Not in the compact tiers: it drops away first on narrow screens.
+    final watchlistStates = [
+      for (final candidate in _watchlistCandidates) candidate.source.isOnWatchlist(metadata.kind, candidate.ids),
+    ];
+    final bool? onWatchlist = watchlistStates.contains(true)
+        ? true
+        : watchlistStates.contains(false)
+        ? false
+        : null;
+    final watchlistAction = _watchlistCandidates.isEmpty
+        ? null
+        : FocusableAction(
+            debugLabel: 'detail_watchlist',
+            onPressed: () => unawaited(_handleWatchlistTogglePressed(metadata)),
+            builder: (context, state) => KeyedSubtree(
+              key: _watchlistButtonKey,
+              child: iconActionButton(
+                state,
+                onPressed: onWatchlist == null ? null : () => unawaited(_handleWatchlistTogglePressed(metadata)),
+                icon: AppIcon(
+                  (onWatchlist ?? false) ? Symbols.bookmark_added_rounded : Symbols.bookmark_add_rounded,
+                  fill: 1,
+                ),
+                tooltip: (onWatchlist ?? false) ? t.explore.removeFromWatchlist : t.explore.addToWatchlist,
+              ),
+            ),
+          );
+
     void showMoreActions() => _contextMenuKey.currentState?.showContextMenu(context);
 
     final moreActionsAction = widget.isOffline
@@ -216,6 +248,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       ?shuffleAction,
       ?downloadAction,
       watchedAction,
+      ?watchlistAction,
       ?moreActionsAction,
     ];
 
@@ -278,6 +311,69 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         return actionBar(compactActionsFor(maxWidth));
       },
     );
+  }
+
+  Future<void> _handleWatchlistTogglePressed(MediaItem metadata) async {
+    final candidates = _watchlistCandidates;
+    if (candidates.isEmpty || _watchlistMutationInFlight) return;
+    // Parity with the disabled pointer button: while every membership is
+    // still unknown, a dpad press kicks the snapshot loads instead of
+    // opening a chooser whose selection would silently no-op.
+    if (candidates.every((c) => c.source.isOnWatchlist(metadata.kind, c.ids) == null)) {
+      for (final candidate in candidates) {
+        unawaited(candidate.source.ensureWatchlistLoaded());
+      }
+      return;
+    }
+    if (candidates.length == 1) {
+      await _toggleWatchlistOn(metadata, candidates.single);
+      return;
+    }
+
+    // Several providers can hold this item: choose per press. Each entry
+    // shows that source's current membership.
+    final renderBox = _watchlistButtonKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+    final choice = await showAppMenu<WatchlistCandidate>(
+      context,
+      anchorRect: renderBox.localToGlobal(Offset.zero) & renderBox.size,
+      focusFirstItem: true,
+      entries: [
+        for (final candidate in candidates)
+          AppMenuItem(
+            value: candidate,
+            leading: CatalogSourceLogo(candidate.source.id),
+            label: candidate.source.displayName,
+            subtitle: (candidate.source.isOnWatchlist(metadata.kind, candidate.ids) ?? false)
+                ? t.explore.removeFromWatchlist
+                : t.explore.addToWatchlist,
+            trailing: (candidate.source.isOnWatchlist(metadata.kind, candidate.ids) ?? false)
+                ? const AppIcon(Symbols.bookmark_added_rounded, fill: 1)
+                : const AppIcon(Symbols.bookmark_add_rounded),
+          ),
+      ],
+    );
+    if (choice == null || !mounted) return;
+    await _toggleWatchlistOn(metadata, choice);
+  }
+
+  Future<void> _toggleWatchlistOn(MediaItem metadata, WatchlistCandidate candidate) async {
+    final current = candidate.source.isOnWatchlist(metadata.kind, candidate.ids);
+    if (current == null || _watchlistMutationInFlight) return;
+    _watchlistMutationInFlight = true;
+    try {
+      // Optimistic inside the source; the row/screens listening to
+      // watchlistChanges (including this one) rebuild immediately.
+      if (current) {
+        await candidate.source.removeFromWatchlist(metadata.kind, candidate.ids);
+      } else {
+        await candidate.source.addToWatchlist(metadata.kind, candidate.ids);
+      }
+    } catch (_) {
+      if (mounted) showErrorSnackBar(context, t.explore.watchlistUpdateFailed);
+    } finally {
+      _watchlistMutationInFlight = false;
+    }
   }
 
   Future<void> _handleWatchedTogglePressed(MediaItem metadata) async {

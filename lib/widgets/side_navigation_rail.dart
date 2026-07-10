@@ -14,6 +14,7 @@ import '../media/media_item.dart';
 import '../media/media_library.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../navigation/navigation_tabs.dart';
+import '../providers/catalog_sources_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../services/music/music_playback_service.dart';
@@ -241,6 +242,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   }
 
   static const _kHome = 'home';
+  static const _kExplore = 'explore';
   static const _kNowPlaying = 'nowPlaying';
   static const _kLibraries = 'libraries';
   static const _kSearch = 'search';
@@ -382,6 +384,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     switch (widget.selectedTab) {
       case NavigationTabId.discover:
         return _kHome;
+      case NavigationTabId.explore:
+        return _kExplore;
       case NavigationTabId.libraries:
         final libKey = widget.selectedLibraryKey;
         if (libKey != null && _librariesExpanded) {
@@ -432,11 +436,13 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     required bool hasHiddenLibraries,
     required bool hasLiveTv,
     required bool hasNowPlaying,
+    required bool hasExplore,
   }) {
     return {
       _kHome,
       if (hasNowPlaying) _kNowPlaying,
       _kLibraries,
+      if (hasExplore) _kExplore,
       _kSearch,
       if (_showDownloads) _kDownloads,
       _kSettings,
@@ -511,6 +517,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     required bool hasHiddenLibraries,
     required bool hasLiveTv,
     required bool hasNowPlaying,
+    required bool hasExplore,
   }) {
     return [
       if (widget.isOfflineMode && widget.onReconnect != null) _kReconnect,
@@ -526,6 +533,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           ],
         ],
         if (hasLiveTv) 'liveTv',
+        if (hasExplore) _kExplore,
         _kSearch,
       ],
       if (_showDownloads) _kDownloads,
@@ -643,6 +651,9 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final itemHorizontalPadding = itemHorizontalPaddingForContext(context, isCollapsed: isCollapsed);
     final hasLiveTv = context.watch<MultiServerProvider>().hasLiveTv;
     // Nullable watch: rail tests (and any host without the profile session
+    // scope) simply never show the Explore item.
+    final hasExplore = context.watch<CatalogSourcesProvider?>()?.hasAnySource ?? false;
+    // Nullable watch: rail tests (and any host without the profile session
     // scope) simply never show the Now Playing item. TV-only — it is the
     // way back into the now-playing screen there; desktop already has the
     // mini-player for that.
@@ -680,6 +691,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
             hasHiddenLibraries: hiddenLibraries.isNotEmpty,
             hasLiveTv: hasLiveTv,
             hasNowPlaying: nowPlayingTrack != null,
+            hasExplore: hasExplore,
           ),
         );
         final focusOrder = _buildFocusOrder(
@@ -688,6 +700,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           hasHiddenLibraries: hiddenLibraries.isNotEmpty,
           hasLiveTv: hasLiveTv,
           hasNowPlaying: nowPlayingTrack != null,
+          hasExplore: hasExplore,
         );
         _debugAssertUniqueFocusOrder(focusOrder);
         return TapRegion(
@@ -773,6 +786,19 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                                         isFocused: _focusTracker.isFocused('liveTv'),
                                         onTap: () => widget.onDestinationSelected(NavigationTabId.liveTv),
                                         focusNode: _focusTracker.get('liveTv'),
+                                        isCollapsed: isCollapsed,
+                                      ),
+                                      const SizedBox(height: 8),
+                                    ],
+                                    if (hasExplore) ...[
+                                      _buildNavItem(
+                                        icon: Symbols.explore_rounded,
+                                        selectedIcon: Symbols.explore_rounded,
+                                        label: Translations.of(context).navigation.explore,
+                                        isSelected: widget.selectedTab == NavigationTabId.explore,
+                                        isFocused: _focusTracker.isFocused(_kExplore),
+                                        onTap: () => widget.onDestinationSelected(NavigationTabId.explore),
+                                        focusNode: _focusTracker.get(_kExplore),
                                         isCollapsed: isCollapsed,
                                       ),
                                       const SizedBox(height: 8),

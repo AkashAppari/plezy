@@ -33,6 +33,7 @@ import '../profiles/active_profile_binder.dart';
 import '../connection/connection_registry.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/plex_home_service.dart';
+import '../providers/catalog_sources_provider.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
@@ -55,6 +56,7 @@ import '../widgets/side_navigation_rail.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/key_event_utils.dart';
 import 'discover_screen.dart';
+import 'explore_screen.dart';
 import 'libraries/library_quick_picker_sheet.dart';
 import 'libraries/libraries_screen.dart';
 import 'livetv/live_tv_screen.dart';
@@ -202,8 +204,10 @@ class _MainScreenState extends State<MainScreen>
 
   OfflineModeProvider? _offlineModeProvider;
   MultiServerProvider? _multiServerProvider;
+  CatalogSourcesProvider? _catalogSourcesProvider;
   RouteObserver<PageRoute<dynamic>>? _profileRouteObserver;
   bool _lastHasLiveTv = false;
+  bool _lastHasExplore = false;
 
   /// Whether a reconnection attempt is in progress
   bool _isReconnecting = false;
@@ -218,6 +222,7 @@ class _MainScreenState extends State<MainScreen>
 
   late List<Widget> _screens;
   final GlobalKey<State<DiscoverScreen>> _discoverKey = GlobalKey();
+  final GlobalKey<State<ExploreScreen>> _exploreKey = GlobalKey();
   final GlobalKey<State<LibrariesScreen>> _librariesKey = GlobalKey();
   final GlobalKey<State<LiveTvScreen>> _liveTvKey = GlobalKey();
   final GlobalKey<State<SearchScreen>> _searchKey = GlobalKey();
@@ -298,6 +303,11 @@ class _MainScreenState extends State<MainScreen>
       _lastHasLiveTv = context.read<MultiServerProvider>().hasLiveTv;
     } catch (_) {
       _lastHasLiveTv = false;
+    }
+    try {
+      _lastHasExplore = context.read<CatalogSourcesProvider>().hasAnySource;
+    } catch (_) {
+      _lastHasExplore = false;
     }
     _currentTab = _defaultTabForMode(_isOffline);
     _lastOnlineTabId = _isOffline ? null : NavigationTabId.discover;
@@ -745,6 +755,15 @@ class _MainScreenState extends State<MainScreen>
       _multiServerProvider!.addListener(_handleLiveTvChanged);
     }
 
+    // Listen for catalog sources (Explore tab) appearing/disappearing when a
+    // provider like Trakt is connected or disconnected mid-session.
+    final catalogSources = context.read<CatalogSourcesProvider>();
+    if (catalogSources != _catalogSourcesProvider) {
+      _catalogSourcesProvider?.removeListener(_handleCatalogSourcesChanged);
+      _catalogSourcesProvider = catalogSources;
+      _catalogSourcesProvider!.addListener(_handleCatalogSourcesChanged);
+    }
+
     // Wire up Companion Remote command routing (host devices only, once)
     if (!_companionRemoteSetup && PlatformDetector.shouldActAsRemoteHost(context)) {
       _companionRemoteSetup = true;
@@ -823,6 +842,7 @@ class _MainScreenState extends State<MainScreen>
     }
     _offlineModeProvider?.removeListener(_handleOfflineStatusChanged);
     _multiServerProvider?.removeListener(_handleLiveTvChanged);
+    _catalogSourcesProvider?.removeListener(_handleCatalogSourcesChanged);
     if (_bindingSettleListener != null) {
       _activeProfileForListener?.removeListener(_bindingSettleListener!);
     }
@@ -912,6 +932,7 @@ class _MainScreenState extends State<MainScreen>
       for (final tab in _getVisibleTabs(offline))
         switch (tab.id) {
           NavigationTabId.discover => DiscoverScreen(key: _discoverKey),
+          NavigationTabId.explore => ExploreScreen(key: _exploreKey),
           NavigationTabId.libraries => LibrariesScreen(
             key: _librariesKey,
             onLibraryOrderChanged: _onLibraryOrderChanged,
@@ -936,6 +957,7 @@ class _MainScreenState extends State<MainScreen>
   NavigationTabId _defaultTabForMode(bool isOffline) => NavigationTab.resolveDefaultTab(
     isOffline: isOffline,
     hasLiveTv: _hasLiveTv,
+    hasExplore: _lastHasExplore,
     preferredStartup: SettingsService.instanceOrNull?.read(SettingsService.startupSection),
   );
 
@@ -992,6 +1014,20 @@ class _MainScreenState extends State<MainScreen>
     if (pending != null && _getVisibleTabs(_isOffline).any((t) => t.id == pending)) {
       _selectTab(pending);
     }
+  }
+
+  void _handleCatalogSourcesChanged() {
+    final hasExplore = _catalogSourcesProvider?.hasAnySource ?? false;
+    if (hasExplore == _lastHasExplore) return;
+    _lastHasExplore = hasExplore;
+
+    setState(() {
+      _screens = _buildScreens(_isOffline);
+      _currentTab = _normalizeTabForMode(_currentTab, _isOffline);
+    });
+    // Same as the live-TV handler: the passthrough flag depends on whether
+    // _currentTab is the first tab, which the normalize above can change.
+    _updateTvosMenuPassthrough();
   }
 
   void _handleOfflineStatusChanged() {
@@ -1527,7 +1563,7 @@ class _MainScreenState extends State<MainScreen>
 
   /// Get navigation tabs filtered by offline mode
   List<NavigationTab> _getVisibleTabs(bool isOffline) {
-    return NavigationTab.getVisibleTabs(isOffline: isOffline, hasLiveTv: _hasLiveTv);
+    return NavigationTab.getVisibleTabs(isOffline: isOffline, hasLiveTv: _hasLiveTv, hasExplore: _lastHasExplore);
   }
 
   List<NavigationTab> _getBottomNavigationTabs(BuildContext context) {
@@ -1543,6 +1579,7 @@ class _MainScreenState extends State<MainScreen>
   GlobalKey? _screenKeyFor(NavigationTabId tab) {
     return switch (tab) {
       NavigationTabId.discover => _discoverKey,
+      NavigationTabId.explore => _exploreKey,
       NavigationTabId.libraries => _librariesKey,
       NavigationTabId.liveTv => _liveTvKey,
       NavigationTabId.search => _searchKey,

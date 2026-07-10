@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/catalog_item_ref.dart';
 import '../media/ids.dart';
 
 import 'package:flutter/material.dart';
@@ -169,11 +170,17 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     }
   }
 
+  /// Catalog hubs (Explore View All) hold synthesized items with no library
+  /// timestamps, so a Date Added sort would silently no-op — offer only the
+  /// fields those items carry.
+  bool get _isCatalogHub => widget.hub.items.firstOrNull?.isCatalogItem ?? false;
+
   List<MediaSort> _getDefaultSortOptions() {
     return [
       MediaSort(key: 'titleSort', title: t.hubDetail.title, defaultDirection: 'asc'),
       MediaSort(key: 'year', descKey: 'year:desc', title: t.hubDetail.releaseYear, defaultDirection: 'desc'),
-      MediaSort(key: 'addedAt', descKey: 'addedAt:desc', title: t.hubDetail.dateAdded, defaultDirection: 'desc'),
+      if (!_isCatalogHub)
+        MediaSort(key: 'addedAt', descKey: 'addedAt:desc', title: t.hubDetail.dateAdded, defaultDirection: 'desc'),
       MediaSort(key: 'rating', descKey: 'rating:desc', title: t.hubDetail.rating, defaultDirection: 'desc'),
     ];
   }

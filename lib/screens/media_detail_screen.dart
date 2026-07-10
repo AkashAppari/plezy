@@ -21,7 +21,7 @@ import '../focus/focusable_action_bar.dart';
 import '../focus/focusable_wrapper.dart';
 import '../focus/key_event_utils.dart';
 import '../focus/input_mode_tracker.dart';
-import '../focus/card_focus_scope.dart';
+import '../widgets/cast_member_strip.dart';
 import '../widgets/focus_builders.dart';
 import '../media/library_query.dart';
 import '../media/media_hub.dart';
@@ -51,12 +51,13 @@ import '../utils/download_utils.dart';
 import '../services/settings_service.dart';
 import '../services/watch_actions.dart';
 import '../widgets/settings_builder.dart';
-import '../utils/grid_size_calculator.dart';
 import '../utils/layout_constants.dart';
+import '../models/catalog/catalog_item.dart';
+import '../providers/catalog_sources_provider.dart';
 import '../providers/download_provider.dart';
 import '../providers/offline_watch_provider.dart';
 import '../providers/watch_state_store.dart';
-import '../theme/mono_tokens.dart';
+import '../services/catalog/catalog_source.dart';
 import '../utils/app_logger.dart';
 import '../utils/formatters.dart';
 import '../utils/scroll_utils.dart';
@@ -64,6 +65,9 @@ import '../utils/dialogs.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/app_bar_back_button.dart';
+import '../widgets/app_menu.dart';
+import '../widgets/catalog_source_logo.dart';
+import '../widgets/desktop_app_bar.dart';
 import '../utils/desktop_window_padding.dart';
 import '../widgets/horizontal_scroll_with_arrows.dart';
 import '../widgets/media_context_menu.dart';
@@ -101,6 +105,10 @@ const String _tvDetailActorsHubId = 'detail_actors';
 const String _tvDetailActorPersonIdRawKey = 'tvDetailActorPersonId';
 
 enum _SyncRuleAction { edit, remove, delete }
+
+/// A watchlist-capable catalog source paired with this item's ids in that
+/// source's terms (see `_resolveWatchlistIds`).
+typedef WatchlistCandidate = ({CatalogSource source, CatalogItemIds ids});
 
 class _SeasonEpisodePager {
   final Map<String, PagedMediaListState<MediaItem>> _states = {};
@@ -294,6 +302,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   // (same isolation pattern as DiscoverScreen._spotlightItem).
   final ValueNotifier<MediaItem?> _tvDetailFocusedEpisode = ValueNotifier(null);
   bool _tvDetailActionRowHasFocus = false;
+
+  // Watchlist action (external catalog sources: Trakt, MAL). External ids
+  // resolve once via the owning server, then per capable source; membership
+  // comes from each source's session snapshot, so opening details never
+  // costs a provider call. Multiple candidates → the toggle opens a chooser.
+  List<WatchlistCandidate> _watchlistCandidates = const [];
+  List<CatalogSource> _watchlistListenedSources = const [];
+  final GlobalKey _watchlistButtonKey = GlobalKey();
+  bool _watchlistMutationInFlight = false;
 
   // Inline season tabs
   int _selectedSeasonIndex = 0;
@@ -670,6 +687,47 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _castFocusNode = FocusNode(debugLabel: 'cast_row');
     _infoRowsFocusNode = FocusNode(debugLabel: 'info_rows');
     _loadFullMetadata();
+    _initWatchlistState();
+  }
+
+  /// Hook up the watchlist action's data: every watchlist-capable catalog
+  /// source this item resolves in, with its per-source ids. No-ops offline
+  /// and for non-movie/show kinds.
+  void _initWatchlistState() {
+    if (widget.isOffline || (!_metadata.isMovie && !_metadata.isShow)) return;
+    final sources = Provider.of<CatalogSourcesProvider?>(context, listen: false)?.watchlistCapableSources;
+    if (sources == null || sources.isEmpty) return;
+    _watchlistListenedSources = sources;
+    for (final source in sources) {
+      source.watchlistChanges.addListener(_onWatchlistSourceChanged);
+      unawaited(source.ensureWatchlistLoaded());
+    }
+    unawaited(_resolveWatchlistIds(sources));
+  }
+
+  Future<void> _resolveWatchlistIds(List<CatalogSource> sources) async {
+    try {
+      final ids = await _getMediaClientForMetadata(context)?.fetchExternalIds(_metadata.id);
+      if (!mounted || ids == null || !ids.hasAny) return;
+      // Sources can require their own id forms (MAL maps external ids to an
+      // anime id via Fribb); null means the item is outside that source's
+      // domain. The action shows for the sources that resolved; with more
+      // than one, the toggle opens a source chooser.
+      final candidates = <WatchlistCandidate>[];
+      for (final source in sources) {
+        final resolved = await source.resolveItemIds(_metadata.kind, ids);
+        if (resolved != null) candidates.add((source: source, ids: resolved));
+      }
+      if (!mounted || candidates.isEmpty) return;
+      setState(() => _watchlistCandidates = candidates);
+    } catch (e) {
+      appLogger.d('Watchlist external-id resolution failed', error: e);
+    }
+  }
+
+  void _onWatchlistSourceChanged() {
+    // ignore: no-empty-block - membership state lives in the source
+    setStateIfMounted(() {});
   }
 
   void _onScroll() {
@@ -794,6 +852,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   @override
   void dispose() {
+    for (final source in _watchlistListenedSources) {
+      source.watchlistChanges.removeListener(_onWatchlistSourceChanged);
+    }
     _routeObserver?.unsubscribe(this);
     _scrollController.dispose();
     _scrollOffset.dispose();
@@ -2143,12 +2204,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   /// Get the responsive card width used by seasons/extras/cast rows.
-  /// Uses the shared grid size calculator for consistency with library grids.
-  double _getResponsiveCardWidth() {
-    final density = SettingsService.instance.read(SettingsService.libraryDensity);
-    final availableWidth = MediaQuery.sizeOf(context).width;
-    return GridSizeCalculator.getCellWidth(availableWidth, context, density);
-  }
+  /// Delegates to the cast strip's calculator so the dpad scroll math and
+  /// the rendered cards can never disagree.
+  double _getResponsiveCardWidth() => CastMemberStrip.responsiveCardWidth(context);
 
   /// Handle key events for the overview section
   KeyEventResult _handleOverviewKeyEvent(FocusNode _, KeyEvent event) {
@@ -2464,7 +2522,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         scrollListToIndex(
           _castScrollController,
           _focusedCastIndex,
-          itemExtent: _getResponsiveCardWidth() + 6 + 4,
+          itemExtent: CastMemberStrip.itemExtentForCardWidth(_getResponsiveCardWidth()),
           leadingPadding: 0,
         );
       }
@@ -2478,7 +2536,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         scrollListToIndex(
           _castScrollController,
           _focusedCastIndex,
-          itemExtent: _getResponsiveCardWidth() + 6 + 4,
+          itemExtent: CastMemberStrip.itemExtentForCardWidth(_getResponsiveCardWidth()),
           leadingPadding: 0,
         );
       }
@@ -3104,10 +3162,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     // Show loading state while fetching full metadata
     if (_isLoadingMetadata) {
+      // A bare AppBar's auto-implied back button ignores the macOS traffic
+      // lights; route the leading through the shared desktop padding logic.
+      final backButton = AppBarBackButton(
+        style: BackButtonStyle.plain,
+        onPressed: () => Navigator.pop(context, _watchStateChanged),
+      );
       final loading = Focus(
         onKeyEvent: _handleMediaDetailBackKey,
         child: Scaffold(
-          appBar: AppBar(),
+          appBar: AppBar(
+            leading: DesktopAppBarSections.buildLeadingSection(leading: backButton, context: context),
+            leadingWidth: DesktopAppBarSections.calculateLeadingWidthForSection(leading: backButton, context: context),
+          ),
           body: const Center(child: CircularProgressIndicator()),
         ),
       );
@@ -4374,94 +4441,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   Widget _buildCastSectionContent(MediaItem metadata) {
-    final cardWidth = _getResponsiveCardWidth();
-    const innerPadding = 3.0;
-    final imageSize = cardWidth;
-    // image + inner padding + text area + outer list padding + focus scale headroom
-    final containerHeight = imageSize + innerPadding * 2 + 58 + 10;
-
-    final theme = Theme.of(context);
-    final actorNameStyle = theme.textTheme.bodyMedium?.copyWith(fontWeight: .w600);
-    final actorRoleStyle = theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant);
-
+    final roles = metadata.roles!;
     return Focus(
       focusNode: _castFocusNode,
       onKeyEvent: _handleCastKeyEvent,
       child: ListenableBuilder(
         listenable: _castFocusNode,
-        builder: (context, _) {
-          final hasFocus = _castFocusNode.hasFocus;
-
-          return SizedBox(
-            height: containerHeight,
-            child: HorizontalScrollWithArrows(
-              controller: _castScrollController,
-              builder: (scrollController) => ListView.builder(
-                addAutomaticKeepAlives: false,
-                addSemanticIndexes: false,
-                controller: scrollController,
-                scrollDirection: Axis.horizontal,
-                clipBehavior: Clip.none,
-                padding: const EdgeInsets.symmetric(vertical: 5),
-                itemCount: metadata.roles!.length,
-                itemBuilder: (context, index) {
-                  final actor = metadata.roles![index];
-                  final isFocused = hasFocus && index == _focusedCastIndex;
-
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 4),
-                    child: FocusBuilders.buildLockedFocusWrapper(
-                      context: context,
-                      isFocused: isFocused,
-                      borderRadius: tokens(context).radiusSm,
-                      onTap: () => _navigateToActorMedia(actor),
-                      delegateFocusBorder: true,
-                      child: Padding(
-                        padding: const EdgeInsets.all(innerPadding),
-                        child: SizedBox(
-                          width: cardWidth,
-                          child: Column(
-                            crossAxisAlignment: .start,
-                            children: [
-                              CardFocusBorder(
-                                borderRadius: tokens(context).radiusSm,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                                  child: OptimizedMediaImage(
-                                    client: getServerBoundMediaClient(context),
-                                    imagePath: actor.thumbPath,
-                                    width: imageSize,
-                                    height: imageSize,
-                                    fit: BoxFit.cover,
-                                    imageType: ImageType.avatar,
-                                    fallbackIcon: Symbols.person_rounded,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: .start,
-                                  children: [
-                                    Text(actor.tag, style: actorNameStyle, maxLines: 2, overflow: .ellipsis),
-                                    if (actor.role != null) ...[
-                                      const SizedBox(height: 2),
-                                      Text(actor.role!, style: actorRoleStyle, maxLines: 1, overflow: .ellipsis),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          );
-        },
+        builder: (context, _) => CastMemberStrip(
+          members: [for (final actor in roles) (name: actor.tag, secondary: actor.role, imagePath: actor.thumbPath)],
+          imageClient: getServerBoundMediaClient(context),
+          controller: _castScrollController,
+          focusedIndex: _castFocusNode.hasFocus ? _focusedCastIndex : null,
+          onMemberTap: (index) => _navigateToActorMedia(roles[index]),
+        ),
       ),
     );
   }

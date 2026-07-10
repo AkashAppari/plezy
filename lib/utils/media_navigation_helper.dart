@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../i18n/strings.g.dart';
+import '../media/catalog_item_ref.dart';
 import '../media/ids.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
@@ -11,6 +12,7 @@ import '../screens/media_detail_screen.dart';
 import '../screens/playlist/playlist_detail_screen.dart';
 import '../services/settings_service.dart';
 import '../utils/global_key_utils.dart';
+import 'catalog_navigation_helper.dart';
 import 'music_navigation.dart';
 import 'plex_library_section_helpers.dart';
 import 'video_player_navigation.dart';
@@ -167,6 +169,15 @@ Future<MediaNavigationResult> navigateToMediaItem(
     return MediaNavigationResult.unsupported;
   }
   final mi = item;
+
+  // Catalog stand-ins (Explore tab) have no server id — every server-backed
+  // route below would break on them. Route to the catalog flow instead.
+  if (mi.isCatalogItem) {
+    final catalogItem = mi.catalogItem;
+    if (catalogItem == null) return MediaNavigationResult.unsupported;
+    await navigateToCatalogItem(context, catalogItem);
+    return MediaNavigationResult.navigated;
+  }
   final settings = SettingsService.instanceOrNull;
   final continueWatchingAction = settings?.read(SettingsService.continueWatchingAction) ?? ContinueWatchingAction.play;
   final episodeAction = settings?.read(SettingsService.episodeAction) ?? EpisodeAction.play;
@@ -251,6 +262,16 @@ Future<MediaNavigationResult> navigateToMediaItemDetails(
   void Function(String)? onRefresh,
   MediaItem? metadataOverride,
 }) async {
+  // Catalog stand-ins (Explore tab) must never reach MediaDetailScreen — it
+  // hard-requires a server id. Guarded here (not only in navigateToMediaItem)
+  // so secondary entry points like card-title clicks are covered too.
+  if (mi.isCatalogItem) {
+    final catalogItem = mi.catalogItem;
+    if (catalogItem == null) return MediaNavigationResult.unsupported;
+    await navigateToCatalogItem(context, catalogItem);
+    return MediaNavigationResult.navigated;
+  }
+
   final target = mediaDetailNavigationTargetFor(mi, metadataOverride: metadataOverride);
   final result = await Navigator.push<bool>(
     context,
