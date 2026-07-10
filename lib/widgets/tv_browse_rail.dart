@@ -736,14 +736,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
 
     if (key.isLeftKey) {
       if (_itemIndex > 0) {
-        // No setState: the per-card focus selectors repaint the two affected
-        // cards via _focusModel; nothing else in the rail depends on it.
-        _itemIndex--;
-        _hasUserChangedItem = true;
-        _focusModel.set(_hubIndex, _itemIndex);
-        _rememberFocus(hub);
-        _notifyFocusedItem();
-        _scrollToItem(duration: event is KeyRepeatEvent ? _repeatNavigationScrollDuration : _navigationScrollDuration);
+        _moveItem(-1, duration: event is KeyRepeatEvent ? _repeatNavigationScrollDuration : _navigationScrollDuration);
       } else {
         widget.onNavigateToSidebar?.call();
       }
@@ -752,12 +745,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
 
     if (key.isRightKey) {
       if (_itemIndex < _totalItemCount(hub) - 1) {
-        _itemIndex++;
-        _hasUserChangedItem = true;
-        _focusModel.set(_hubIndex, _itemIndex);
-        _rememberFocus(hub);
-        _notifyFocusedItem();
-        _scrollToItem(duration: event is KeyRepeatEvent ? _repeatNavigationScrollDuration : _navigationScrollDuration);
+        _moveItem(1, duration: event is KeyRepeatEvent ? _repeatNavigationScrollDuration : _navigationScrollDuration);
       }
       return KeyEventResult.handled;
     }
@@ -782,6 +770,22 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     }
 
     return KeyEventResult.ignored;
+  }
+
+  void _moveItem(int delta, {Duration duration = _navigationScrollDuration}) {
+    final hub = _activeHub;
+    if (hub == null) return;
+    final next = (_itemIndex + delta).clamp(0, _totalItemCount(hub) - 1);
+    if (next == _itemIndex) return;
+
+    // No setState: the per-card focus selectors and the fixed semantics proxy
+    // observe the selection through _focusModel.
+    _itemIndex = next;
+    _hasUserChangedItem = true;
+    _focusModel.set(_hubIndex, _itemIndex);
+    _rememberFocus(hub);
+    _notifyFocusedItem();
+    _scrollToItem(duration: duration);
   }
 
   void _moveHub(int delta) {
@@ -1116,21 +1120,36 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                       ),
                       child: ClipRect(
                         clipper: _RailClipper(leftOverflow: horizontalInset, rightOverflow: 0),
-                        child: SizedBox(
-                          height: viewportHeight,
-                          child: _buildHubSectionList(
-                            modes: modes,
-                            metricsByHub: metricsByHub,
-                            sectionHeights: sectionHeights,
-                            scale: scale,
-                            fullCardLayout: fullCardLayout,
-                            leftOverflow: horizontalInset,
-                            interactionExpansion: interactionExpansion,
-                            railViewportWidth: railViewportWidth,
-                            bottomPadding: bottomPadding,
+                        child: ExcludeSemantics(
+                          // Both axes animate during D-pad navigation. Keeping
+                          // the individual headers/cards in the semantics tree
+                          // makes Android recompute every moving node's bounds
+                          // on every frame when an accessibility service is
+                          // active. A fixed proxy below exposes the same active
+                          // selection and actions without tracking that motion.
+                          child: SizedBox(
+                            height: viewportHeight,
+                            child: _buildHubSectionList(
+                              modes: modes,
+                              metricsByHub: metricsByHub,
+                              sectionHeights: sectionHeights,
+                              scale: scale,
+                              fullCardLayout: fullCardLayout,
+                              leftOverflow: horizontalInset,
+                              interactionExpansion: interactionExpansion,
+                              railViewportWidth: railViewportWidth,
+                              bottomPadding: bottomPadding,
+                            ),
                           ),
                         ),
                       ),
+                    ),
+                    Positioned(
+                      left: horizontalInset,
+                      top: TvBrowseRailLayout.railTopPaddingForScale(scale),
+                      right: 0,
+                      height: viewportHeight,
+                      child: _buildSemanticSelectionProxy(),
                     ),
                     // Unfocused-rail dim: a scrim quad on top instead of
                     // AnimatedOpacity, which would keep a full-viewport
@@ -1224,6 +1243,59 @@ class TvBrowseRailState extends State<TvBrowseRail> {
         );
       },
     );
+  }
+
+  Widget _buildSemanticSelectionProxy() {
+    return ListenableBuilder(
+      listenable: _focusModel,
+      builder: (context, _) {
+        final hub = _activeHub;
+        if (hub == null) return const SizedBox.shrink();
+        final totalCount = _totalItemCount(hub);
+        final hasItem = _itemIndex < hub.items.length;
+        final isTrailing = _itemIndex == hub.items.length && _hasTrailingFor(hub);
+        final trailing = isTrailing ? _trailingFor(hub) : TvRailTrailing.none;
+        final actionable = hasItem || (isTrailing && trailing != TvRailTrailing.loading);
+
+        return Semantics(
+          key: const ValueKey('tv_browse_rail_semantic_proxy'),
+          identifier: 'tv_browse_rail_selection',
+          container: true,
+          focusable: true,
+          focused: _focusModel.railHasFocus,
+          button: actionable,
+          label: _semanticSelectionLabel(hub),
+          onTap: actionable ? () => unawaited(_activateCurrentItem()) : null,
+          onLongPress: hasItem && !_isPersonHub(hub) ? _showContextMenuForCurrentItem : null,
+          onScrollLeft: _itemIndex > 0 ? () => _moveItem(-1) : null,
+          onScrollRight: _itemIndex < totalCount - 1 ? () => _moveItem(1) : null,
+          onScrollUp: _hubIndex > 0 ? () => _moveHub(-1) : null,
+          onScrollDown: _hubIndex < widget.hubs.length - 1 ? () => _moveHub(1) : null,
+          child: const SizedBox.expand(),
+        );
+      },
+    );
+  }
+
+  String _semanticSelectionLabel(MediaHub hub) {
+    String selection;
+    if (_itemIndex < hub.items.length) {
+      final item = hub.items[_itemIndex];
+      if (_isPersonHub(hub)) {
+        selection = [item.displayTitle, if (item.parentTitle?.isNotEmpty == true) item.parentTitle!].join(', ');
+      } else {
+        selection = mediaCardSemanticLabel(item);
+      }
+    } else {
+      selection = switch (_trailingFor(hub)) {
+        TvRailTrailing.loading => t.common.loading,
+        TvRailTrailing.error => t.common.retry,
+        TvRailTrailing.viewAll => t.common.viewAll,
+        TvRailTrailing.none => '',
+      };
+    }
+
+    return [hub.title, if (selection.isNotEmpty) selection].join(', ');
   }
 
   Widget _buildHubHeader(
@@ -1328,25 +1400,15 @@ class TvBrowseRailState extends State<TvBrowseRail> {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              // Inactive rows drop out of the semantics tree: their cards
-              // can't take focus until the hub is activated (locked-hub
-              // model), and the per-frame semantics pass on a11y-active TV
-              // boxes scales with node count — the active row's nodes are
-              // the only ones a screen reader can act on anyway.
-              ListenableSelector<bool>(
-                listenable: _focusModel,
-                selector: () => _focusModel.hubIndex == hubIndex,
-                builder: (context, isActive, child) => ExcludeSemantics(excluding: !isActive, child: child),
-                child: _buildHubRailList(
-                  hub: hub,
-                  hubIndex: hubIndex,
-                  episodePosterMode: episodePosterMode,
-                  metrics: metrics,
-                  scale: scale,
-                  fullCardLayout: fullCardLayout,
-                  scrollController: scrollController,
-                  totalCount: totalCount,
-                ),
+              _buildHubRailList(
+                hub: hub,
+                hubIndex: hubIndex,
+                episodePosterMode: episodePosterMode,
+                metrics: metrics,
+                scale: scale,
+                fullCardLayout: fullCardLayout,
+                scrollController: scrollController,
+                totalCount: totalCount,
               ),
               Positioned.fill(
                 left: -leftOverflow,

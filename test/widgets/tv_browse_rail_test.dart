@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/dpad_navigator.dart';
@@ -322,6 +323,73 @@ void main() {
     SettingsService.resetForTesting();
     HubFocusMemory.clear();
     await SettingsService.getInstance();
+  });
+
+  testWidgets('semantic selection proxy stays fixed while animated rail selection changes', (tester) async {
+    final semantics = tester.ensureSemantics();
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final serverManager = MultiServerManager();
+    final items = [
+      MediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'First Movie'),
+      MediaItem(id: 'movie_2', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Second Movie'),
+    ];
+    final hub = MediaHub(id: 'movies', title: 'Movies', type: 'movie', items: items, size: items.length);
+    String? activatedItemId;
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>(
+        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        child: InputModeTracker(
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: Scaffold(
+              body: SizedBox(
+                width: 1280,
+                height: 720,
+                child: TvBrowseRail(
+                  hubs: [hub],
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.movie_rounded,
+                  onActivateItem: (_, item) {
+                    activatedItemId = item.id;
+                    return true;
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final proxy = find.bySemanticsIdentifier('tv_browse_rail_selection');
+    expect(proxy, findsOneWidget);
+    final initialRect = tester.getRect(proxy);
+    final initialNode = tester.getSemantics(proxy);
+    expect(initialNode.label, contains('Movies'));
+    expect(initialNode.label, contains('First Movie'));
+    expect(initialNode.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+    expect(tester.widget<Semantics>(proxy).properties.onTap, isNotNull);
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+
+    final movedNode = tester.getSemantics(proxy);
+    expect(movedNode.label, contains('Second Movie'));
+    expect(tester.getRect(proxy), initialRect);
+    expect(tester.hasRunningAnimations, isTrue);
+
+    tester.widget<Semantics>(find.byKey(const ValueKey('tv_browse_rail_semantic_proxy'))).properties.onTap!();
+    await tester.pump();
+    expect(activatedItemId, 'movie_2');
+
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+    semantics.dispose();
   });
 
   testWidgets('active hub header uses theme foreground in light mode', (tester) async {

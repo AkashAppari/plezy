@@ -3606,64 +3606,83 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                   mainAxisSize: .min,
                   crossAxisAlignment: .start,
                   children: [
-                    if (showLogo) ...[
-                      _buildDetailLogoOrTitle(
-                        context,
-                        metadata,
-                        width: logoWidth,
-                        height: logoHeight,
-                        titleBuilder: (context, title) => _buildDetailTitle(
-                          context,
-                          title,
-                          fontSize: 56 * scale,
-                          fontWeight: .w800,
-                          shadowBlur: 12,
-                          color: foregroundColor,
-                          shadowColor: _tvDetailTitleShadowColor(context),
-                        ),
-                      ),
-                      SizedBox(height: logoMetadataGap),
-                    ],
-                    SizedBox(
-                      height: metadataLineHeight,
-                      child: Align(alignment: .centerLeft, child: _buildTvDetailMetadataLine(context, metadata, scale)),
-                    ),
-                    if (genres.isNotEmpty) ...[
-                      SizedBox(height: genreGap),
-                      SizedBox(
-                        height: genreLineHeight,
-                        child: Align(
-                          alignment: .centerLeft,
-                          child: Text(
-                            genres.join('  •  '),
-                            maxLines: 1,
-                            overflow: .ellipsis,
-                            style: TextStyle(
-                              color: mutedForegroundColor,
-                              fontSize: 16 * scale,
-                              fontWeight: .w600,
-                              letterSpacing: 0.1,
+                    Semantics(
+                      key: const ValueKey('tv_detail_information_semantics'),
+                      identifier: 'tv_detail_information',
+                      container: true,
+                      label: _tvDetailInformationSemanticLabel(metadata, description: description, genres: genres),
+                      child: ExcludeSemantics(
+                        // This is one non-interactive announcement. The action
+                        // buttons below remain separate accessible controls.
+                        child: Column(
+                          mainAxisSize: .min,
+                          crossAxisAlignment: .start,
+                          children: [
+                            if (showLogo) ...[
+                              _buildDetailLogoOrTitle(
+                                context,
+                                metadata,
+                                width: logoWidth,
+                                height: logoHeight,
+                                titleBuilder: (context, title) => _buildDetailTitle(
+                                  context,
+                                  title,
+                                  fontSize: 56 * scale,
+                                  fontWeight: .w800,
+                                  shadowBlur: 12,
+                                  color: foregroundColor,
+                                  shadowColor: _tvDetailTitleShadowColor(context),
+                                ),
+                              ),
+                              SizedBox(height: logoMetadataGap),
+                            ],
+                            SizedBox(
+                              height: metadataLineHeight,
+                              child: Align(
+                                alignment: .centerLeft,
+                                child: _buildTvDetailMetadataLine(context, metadata, scale),
+                              ),
                             ),
-                          ),
+                            if (genres.isNotEmpty) ...[
+                              SizedBox(height: genreGap),
+                              SizedBox(
+                                height: genreLineHeight,
+                                child: Align(
+                                  alignment: .centerLeft,
+                                  child: Text(
+                                    genres.join('  •  '),
+                                    maxLines: 1,
+                                    overflow: .ellipsis,
+                                    style: TextStyle(
+                                      color: mutedForegroundColor,
+                                      fontSize: 16 * scale,
+                                      fontWeight: .w600,
+                                      letterSpacing: 0.1,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                            if (hasDescription && summaryMaxLines > 0) ...[
+                              SizedBox(height: summaryGap),
+                              SizedBox(
+                                height: summaryLineHeight * summaryMaxLines,
+                                child: Text(
+                                  description,
+                                  maxLines: summaryMaxLines,
+                                  overflow: .ellipsis,
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    color: mutedForegroundColor,
+                                    fontSize: summaryFontSize,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
-                    ],
-                    if (hasDescription && summaryMaxLines > 0) ...[
-                      SizedBox(height: summaryGap),
-                      SizedBox(
-                        height: summaryLineHeight * summaryMaxLines,
-                        child: Text(
-                          description,
-                          maxLines: summaryMaxLines,
-                          overflow: .ellipsis,
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: mutedForegroundColor,
-                            fontSize: summaryFontSize,
-                            height: 1.35,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                     SizedBox(height: actionGap),
                     SizedBox(height: actionHeight, child: _buildActionButtons(metadata)),
                   ],
@@ -3674,6 +3693,46 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         );
       },
     );
+  }
+
+  String _tvDetailInformationSemanticLabel(
+    MediaItem metadata, {
+    required String? description,
+    required List<String> genres,
+  }) {
+    final lineMetadata = _tvDetailFocusedEpisode.value ?? metadata;
+    final parts = <String>[];
+
+    void add(String? value) {
+      if (value == null || value.isEmpty || parts.contains(value)) return;
+      parts.add(value);
+    }
+
+    add(metadata.displayTitle);
+    if (!identical(lineMetadata, metadata)) add(lineMetadata.displayTitle);
+
+    final episodeLabel = formatSeasonEpisodeLabel(lineMetadata.parentIndex, lineMetadata.index);
+    if (lineMetadata.isEpisode) add(episodeLabel);
+    if (lineMetadata.isMovie) {
+      add(t.discover.movie);
+    } else if (lineMetadata.isShow) {
+      add(t.discover.tvShow);
+    }
+    add(MediaRatingBadge.semanticLabelForMedia(lineMetadata, fallbackItem: metadata));
+    if (lineMetadata.contentRating != null) add(formatContentRating(lineMetadata.contentRating!));
+    if (lineMetadata.durationMs != null) add(formatDurationTextual(lineMetadata.durationMs!));
+    if (lineMetadata.isEpisode && lineMetadata.originallyAvailableAt != null) {
+      add(formatAbbreviatedDate(lineMetadata.originallyAvailableAt!));
+    } else if (lineMetadata.year != null) {
+      add(lineMetadata.year.toString());
+    }
+    for (final label in buildMediaQualityLabels(lineMetadata)) {
+      add(label);
+    }
+    if (genres.isNotEmpty) add(genres.join(', '));
+    add(description);
+
+    return parts.join(', ');
   }
 
   Color _tvDetailForegroundColor(BuildContext context) => Theme.of(context).colorScheme.onSurface;

@@ -50,6 +50,71 @@ void _rememberFailedPosterUrl(String? url) {
   }
 }
 
+/// The single announcement used for a media card.
+///
+/// TV browse rails also use this label for their fixed semantic selection
+/// proxy, so the accessible description stays identical when the animated
+/// card subtree is excluded from semantics.
+String mediaCardSemanticLabel(Object item) {
+  // Playlists don't expose kind, so build a simple localized label and exit early
+  if (item is MediaPlaylist) {
+    final count = item.leafCount;
+    final countText = count != null ? ', ${t.playlists.itemCount(count: count)}' : '';
+    return '${item.displayTitle}, ${t.playlists.playlist}$countText';
+  }
+
+  if (item is! MediaItem) {
+    return '$item';
+  }
+
+  String baseLabel;
+  switch (item.kind) {
+    case MediaKind.episode:
+      final episodeInfo = item.parentIndex != null && item.index != null ? 'S${item.parentIndex} E${item.index}' : '';
+      baseLabel = t.accessibility.mediaCardEpisode(title: item.displayTitle, episodeInfo: episodeInfo);
+    case MediaKind.season:
+      final seasonInfo = item.title?.isNotEmpty == true
+          ? item.title!
+          : item.index != null
+          ? t.common.seasonNumber(number: item.index!)
+          : '';
+      baseLabel = t.accessibility.mediaCardSeason(title: item.displayTitle, seasonInfo: seasonInfo);
+    case MediaKind.movie:
+      baseLabel = t.accessibility.mediaCardMovie(title: item.displayTitle);
+    // Music reuses the "${title}, ${info}" composite of mediaCardEpisode
+    // (no dedicated music keys yet; adding keys is out of scope here).
+    case MediaKind.album:
+      baseLabel = t.accessibility.mediaCardEpisode(title: item.displayTitle, episodeInfo: item.albumArtistTitle ?? '');
+    case MediaKind.track:
+      baseLabel = t.accessibility.mediaCardEpisode(title: item.displayTitle, episodeInfo: item.trackArtistTitle ?? '');
+    case MediaKind.artist:
+      baseLabel = item.displayTitle;
+    default:
+      baseLabel = t.accessibility.mediaCardShow(title: item.displayTitle);
+  }
+
+  // Play-state on an artist is noise — no watched suffix.
+  if (item.kind == MediaKind.artist) return baseLabel;
+
+  // Add watched status
+  final hasActiveProgress =
+      item.viewOffsetMs != null &&
+      item.durationMs != null &&
+      item.viewOffsetMs! > 0 &&
+      item.viewOffsetMs! < item.durationMs!;
+
+  if (hasActiveProgress) {
+    final percent = ((item.viewOffsetMs! / item.durationMs!) * 100).round();
+    baseLabel = '$baseLabel, ${t.accessibility.mediaCardPartiallyWatched(percent: percent)}';
+  } else if (item.isWatched) {
+    baseLabel = '$baseLabel, ${t.accessibility.mediaCardWatched}';
+  } else {
+    baseLabel = '$baseLabel, ${t.accessibility.mediaCardUnwatched}';
+  }
+
+  return baseLabel;
+}
+
 class MediaCard extends StatefulWidget {
   /// Either a [MediaItem] or a [MediaPlaylist]. Typed as [Object] because Dart
   /// has no nominal union type — runtime `is` checks select the variant.
@@ -138,72 +203,6 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
     return item is MediaItem ? context.readFreshWatchState(item) : item;
   }
 
-  String _buildSemanticLabel(Object item) {
-    // Playlists don't expose kind, so build a simple localized label and exit early
-    if (item is MediaPlaylist) {
-      final count = item.leafCount;
-      final countText = count != null ? ', ${t.playlists.itemCount(count: count)}' : '';
-      return '${item.displayTitle}, ${t.playlists.playlist}$countText';
-    }
-
-    if (item is! MediaItem) {
-      return '$item';
-    }
-
-    String baseLabel;
-    switch (item.kind) {
-      case MediaKind.episode:
-        final episodeInfo = item.parentIndex != null && item.index != null ? 'S${item.parentIndex} E${item.index}' : '';
-        baseLabel = t.accessibility.mediaCardEpisode(title: item.displayTitle, episodeInfo: episodeInfo);
-      case MediaKind.season:
-        final seasonInfo = item.title?.isNotEmpty == true
-            ? item.title!
-            : item.index != null
-            ? t.common.seasonNumber(number: item.index!)
-            : '';
-        baseLabel = t.accessibility.mediaCardSeason(title: item.displayTitle, seasonInfo: seasonInfo);
-      case MediaKind.movie:
-        baseLabel = t.accessibility.mediaCardMovie(title: item.displayTitle);
-      // Music reuses the "${title}, ${info}" composite of mediaCardEpisode
-      // (no dedicated music keys yet; adding keys is out of scope here).
-      case MediaKind.album:
-        baseLabel = t.accessibility.mediaCardEpisode(
-          title: item.displayTitle,
-          episodeInfo: item.albumArtistTitle ?? '',
-        );
-      case MediaKind.track:
-        baseLabel = t.accessibility.mediaCardEpisode(
-          title: item.displayTitle,
-          episodeInfo: item.trackArtistTitle ?? '',
-        );
-      case MediaKind.artist:
-        baseLabel = item.displayTitle;
-      default:
-        baseLabel = t.accessibility.mediaCardShow(title: item.displayTitle);
-    }
-
-    // Play-state on an artist is noise — no watched suffix.
-    if (item.kind == MediaKind.artist) return baseLabel;
-
-    // Add watched status
-    final hasActiveProgress =
-        item.viewOffsetMs != null &&
-        item.durationMs != null &&
-        item.viewOffsetMs! > 0 &&
-        item.viewOffsetMs! < item.durationMs!;
-
-    if (hasActiveProgress) {
-      final percent = ((item.viewOffsetMs! / item.durationMs!) * 100).round();
-      baseLabel = '$baseLabel, ${t.accessibility.mediaCardPartiallyWatched(percent: percent)}';
-    } else if (item.isWatched) {
-      baseLabel = '$baseLabel, ${t.accessibility.mediaCardWatched}';
-    } else {
-      baseLabel = '$baseLabel, ${t.accessibility.mediaCardUnwatched}';
-    }
-
-    return baseLabel;
-  }
-
   void _handleTap(BuildContext context, Object item) async {
     // Ignore taps while context menu is open to avoid double-activating
     if (contextMenuKey.currentState?.isContextMenuOpen == true) {
@@ -273,7 +272,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
       viewMode = SettingsService.instance.read(SettingsService.viewMode);
     }
 
-    final semanticLabel = _buildSemanticLabel(item);
+    final semanticLabel = mediaCardSemanticLabel(item);
     final localPosterPath = _getLocalPosterPath(context, item);
 
     final cardWidget = viewMode == ViewMode.grid

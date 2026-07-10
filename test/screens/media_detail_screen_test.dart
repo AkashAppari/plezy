@@ -3,11 +3,13 @@ import 'package:drift/native.dart';
 import 'package:plezy/media/ids.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/focus/focusable_action_bar.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -85,6 +87,53 @@ void main() {
     final baseFontSize = 56 * TvLayoutConstants.scaleForSize(const Size(800, 480));
     expect(titleText.style?.fontSize, isNotNull);
     expect(titleText.style!.fontSize!, lessThan(baseFontSize));
+  });
+
+  testWidgets('TV detail exposes hero information as one semantic node', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(1280, 720);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final movie = MediaItem(
+      id: 'semantic_movie',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.movie,
+      title: 'Semantic Movie',
+      summary: 'One concise detail announcement.',
+      year: 2025,
+      genres: ['Drama', 'Mystery'],
+    );
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: withProfileNavigationScope(child: MediaDetailScreen(metadata: movie)),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    final information = find.bySemanticsIdentifier('tv_detail_information');
+    expect(information, findsOneWidget);
+    final node = tester.getSemantics(information);
+    expect(node.label, contains('Semantic Movie'));
+    expect(node.label, contains('Movie'));
+    expect(node.label, contains('2025'));
+    expect(node.label, contains('Drama, Mystery'));
+    expect(node.label, contains('One concise detail announcement.'));
+    expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isFalse);
+    expect(tester.widget<Semantics>(information).properties.onTap, isNull);
+
+    // Visual content and the separate action row remain present.
+    expect(find.text('Semantic Movie'), findsOneWidget);
+    expect(find.text('One concise detail announcement.'), findsOneWidget);
+    expect(find.byType(FocusableActionBar), findsOneWidget);
+    semantics.dispose();
   });
 
   testWidgets('TV detail reveals without waiting for directional input', (tester) async {
