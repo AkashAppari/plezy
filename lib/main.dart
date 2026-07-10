@@ -147,12 +147,23 @@ Future<void> main() async {
 }
 
 Future<void> _bootstrapApp() async {
+  final startupWatch = Stopwatch()..start();
+  var lastStartupMarkMs = 0;
+  void markStartupPhase(String phase) {
+    if (!kProfileMode) return;
+    final elapsedMs = startupWatch.elapsedMilliseconds;
+    appLogger.i('Startup phase $phase: ${elapsedMs - lastStartupMarkMs}ms (total ${elapsedMs}ms)');
+    lastStartupMarkMs = elapsedMs;
+  }
+
   final settings = await SettingsService.getInstance();
+  markStartupPhase('settings');
   final savedLocale = settings.read(SettingsService.appLocale);
 
   unawaited(LocaleSettings.setLocale(savedLocale));
 
   await initializeDateFormatting(savedLocale.languageCode, null);
+  markStartupPhase('locale');
 
   // One-time cleanup of the old flutter_cache_manager image cache directory
   // (replaced by cached_network_image_ce in a prior refactor).
@@ -197,6 +208,7 @@ Future<void> _bootstrapApp() async {
 
   await Future.wait(futures);
   final storage = await storageFuture;
+  markStartupPhase('platform-services');
 
   // Configure image cache — keep budget modest to leave headroom for Skia
   // decode buffers. Runs after the futures so the effects tier is resolved.
@@ -229,8 +241,10 @@ Future<void> _bootstrapApp() async {
     // `adb shell dumpsys meminfo` when tuning them.
     appLogger.i('Startup RSS: ${ProcessInfo.currentRss >> 20}MB');
   }
+  markStartupPhase('environment');
 
   await DownloadStorageService.instance.initialize(settings);
+  markStartupPhase('download-storage');
 
   FullscreenStateManager().startMonitoring();
 
@@ -253,6 +267,7 @@ Future<void> _bootstrapApp() async {
   }
 
   await TraktScrobbleService.instance.initialize();
+  markStartupPhase('trakt-scrobble');
 
   _registerShaderLicenses();
 
@@ -263,6 +278,7 @@ Future<void> _bootstrapApp() async {
     return const ColoredBox(color: Color(0xFF000000));
   };
 
+  markStartupPhase('pre-runApp');
   runApp(MainApp(settings: settings, storage: storage));
 }
 

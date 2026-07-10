@@ -62,6 +62,38 @@ void main() {
     expect(find.byType(Dialog), findsOneWidget);
   });
 
+  testWidgets('directional navigation selects the expected key and wraps around spacers', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await _pumpKeyboard(tester, controller: controller);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pump();
+    expect(controller.text, '2');
+
+    // Re-open at the first key, then wrap left past the leading spacer to 0.
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    await _pumpKeyboard(tester, controller: controller);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pump();
+    expect(controller.text, '20');
+  });
+
+  testWidgets('external controller changes rebuild the preview', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await _pumpKeyboard(tester, controller: controller);
+    controller.text = 'updated externally';
+    await tester.pump();
+
+    expect(find.text('updated externally'), findsOneWidget);
+  });
+
   testWidgets('keyboard enter inserts newline for multiline input', (tester) async {
     final controller = TextEditingController(text: 'a');
     addTearDown(controller.dispose);

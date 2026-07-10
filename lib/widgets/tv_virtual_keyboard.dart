@@ -6,9 +6,9 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../focus/dpad_navigator.dart';
 import '../i18n/strings.g.dart';
-import '../mixins/mounted_set_state_mixin.dart';
 import '../utils/platform_detector.dart';
 import 'clickable_cursor.dart';
+import 'listenable_selector.dart';
 
 bool _keyboardTextWarmedUp = false;
 
@@ -126,6 +126,8 @@ class _TvKey {
   const _TvKey.action(this.label, this.type, {this.icon}) : value = '';
 }
 
+typedef _TvKeyboardSelection = ({int row, int column});
+
 class _TvVirtualKeyboardDialog extends StatefulWidget {
   final TextEditingController controller;
   final String? hintText;
@@ -157,35 +159,48 @@ class _TvVirtualKeyboardDialog extends StatefulWidget {
   State<_TvVirtualKeyboardDialog> createState() => _TvVirtualKeyboardDialogState();
 }
 
-class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with MountedSetStateMixin {
+class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> {
   final _focusNode = FocusNode(debugLabel: 'TvVirtualKeyboard');
-  int _row = 0;
-  int _column = 0;
+  final ValueNotifier<_TvKeyboardSelection> _selection = ValueNotifier((row: 0, column: 0));
+  List<List<_TvKey>> _rows = const [];
+  Locale? _rowsLocale;
   bool _shiftEnabled = false;
   bool _symbolsPage = false;
 
-  List<List<_TvKey>> get _rows => _symbolsPage ? _buildSymbolRows() : _buildMainRows();
+  int get _row => _selection.value.row;
+  int get _column => _selection.value.column;
   int get _gridColumnCount => _isNumberKeyboard ? 3 : 12;
 
   @override
   void initState() {
     super.initState();
-    _column = _firstFocusableColumn(_row) ?? 0;
-    widget.controller.addListener(_handleTextChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _focusNode.requestFocus();
     });
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final locale = Localizations.maybeLocaleOf(context);
+    if (_rows.isNotEmpty && locale == _rowsLocale) return;
+    _rowsLocale = locale;
+    _refreshRows(resetSelection: _rows.isEmpty);
+  }
+
+  @override
   void dispose() {
-    widget.controller.removeListener(_handleTextChanged);
+    _selection.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
-  void _handleTextChanged() {
-    setStateIfMounted(() {});
+  void _refreshRows({bool resetSelection = false}) {
+    _rows = _symbolsPage ? _buildSymbolRows() : _buildMainRows();
+    final current = _selection.value;
+    final row = resetSelection ? 0 : current.row.clamp(0, _rows.length - 1);
+    final column = resetSelection ? (_firstFocusableColumn(row) ?? 0) : _nearestFocusableColumn(row, current.column);
+    _selection.value = (row: row, column: column);
   }
 
   bool get _isNumberKeyboard {
@@ -431,19 +446,14 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
     }
     if (nextColumn == null) return;
     final column = nextColumn;
-    setState(() {
-      _column = column;
-    });
+    _selection.value = (row: _row, column: column);
   }
 
   void _moveVertical(int delta) {
     final rows = _rows;
     final nextRow = (_row + delta) % rows.length;
     final nextColumn = _nearestFocusableColumn(nextRow, _column);
-    setState(() {
-      _row = nextRow;
-      _column = nextColumn;
-    });
+    _selection.value = (row: nextRow, column: nextColumn);
   }
 
   int? _firstFocusableColumn(int row) {
@@ -488,7 +498,10 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
         _insert(key.value);
         return;
       case _TvKeyType.shift:
-        setState(() => _shiftEnabled = !_shiftEnabled);
+        setState(() {
+          _shiftEnabled = !_shiftEnabled;
+          _refreshRows();
+        });
         return;
       case _TvKeyType.symbols:
         _toggleSymbolsPage();
@@ -517,9 +530,7 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
   void _toggleSymbolsPage() {
     setState(() {
       _symbolsPage = !_symbolsPage;
-      final rows = _rows;
-      _row = _row.clamp(0, rows.length - 1).toInt();
-      _column = _nearestFocusableColumn(_row, _column);
+      _refreshRows();
     });
   }
 
@@ -633,7 +644,6 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
     final media = MediaQuery.of(context);
     final metrics = _metricsFor(media.size);
     final colorScheme = Theme.of(context).colorScheme;
-    final text = widget.controller.text;
 
     return Dialog(
       key: const Key('tv_virtual_keyboard_dialog'),
@@ -663,7 +673,10 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
               mainAxisSize: .min,
               crossAxisAlignment: .stretch,
               children: [
-                _buildPreview(context, text, metrics),
+                ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: widget.controller,
+                  builder: (context, value, _) => _buildPreview(context, value.text, metrics),
+                ),
                 SizedBox(height: metrics.previewGap),
                 for (var row = 0; row < _rows.length; row++) ...[
                   _buildRow(context, row, metrics),
@@ -757,41 +770,43 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
       return SizedBox(width: metrics.keySize, height: metrics.keySize);
     }
 
-    final colorScheme = Theme.of(context).colorScheme;
-    final selected = row == _row && column == _column;
-    final active = key.type == _TvKeyType.shift && _shiftEnabled;
-    final background = selected
-        ? colorScheme.primary
-        : active
-        ? colorScheme.secondaryContainer
-        : colorScheme.surfaceContainerHighest.withValues(alpha: 0.88);
-    final foreground = selected
-        ? colorScheme.onPrimary
-        : active
-        ? colorScheme.onSecondaryContainer
-        : colorScheme.onSurface;
+    return ListenableSelector<bool>(
+      listenable: _selection,
+      selector: () => _selection.value == (row: row, column: column),
+      builder: (context, selected, _) {
+        final colorScheme = Theme.of(context).colorScheme;
+        final active = key.type == _TvKeyType.shift && _shiftEnabled;
+        final background = selected
+            ? colorScheme.primary
+            : active
+            ? colorScheme.secondaryContainer
+            : colorScheme.surfaceContainerHighest.withValues(alpha: 0.88);
+        final foreground = selected
+            ? colorScheme.onPrimary
+            : active
+            ? colorScheme.onSecondaryContainer
+            : colorScheme.onSurface;
 
-    return ClickableCursor(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _row = row;
-            _column = column;
-          });
-          _activate(key);
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          width: metrics.keySize,
-          height: metrics.keySize,
-          alignment: .center,
-          decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(metrics.keyRadius)),
-          child: Padding(
-            padding: .symmetric(horizontal: metrics.keySize * 0.04),
-            child: _buildKeyContent(context, key, foreground, metrics),
+        return ClickableCursor(
+          child: GestureDetector(
+            onTap: () {
+              _selection.value = (row: row, column: column);
+              _activate(key);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 120),
+              width: metrics.keySize,
+              height: metrics.keySize,
+              alignment: .center,
+              decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(metrics.keyRadius)),
+              child: Padding(
+                padding: .symmetric(horizontal: metrics.keySize * 0.04),
+                child: _buildKeyContent(context, key, foreground, metrics),
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

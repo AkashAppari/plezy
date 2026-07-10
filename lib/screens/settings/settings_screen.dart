@@ -95,13 +95,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   @override
   void initState() {
     super.initState();
-    _focusTracker = FocusMemoryTracker(
-      onFocusChanged: () {
-        // ignore: no-empty-block - setState triggers rebuild to update focus styling
-        setStateIfMounted(() {});
-      },
-      debugLabelPrefix: 'settings',
-    );
+    _focusTracker = FocusMemoryTracker(debugLabelPrefix: 'settings');
     if (_keyboardShortcutsSupported) {
       KeyboardShortcutsService.getInstance().then((s) {
         setStateIfMounted(() => _keyboardService = s);

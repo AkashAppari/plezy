@@ -11,9 +11,16 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 import '../utils/media_server_http_client.dart';
+import 'device_performance.dart';
 
 final _artworkHttpClient = MediaServerHttpClient(usePlexApiClient: true);
-final _artworkRequestLimiter = _RequestLimiter(6);
+
+@visibleForTesting
+int artworkRequestConcurrencyForTier({required bool reduced}) => reduced ? 3 : 6;
+
+// Top-level fields are initialized lazily. The first artwork request happens
+// after DevicePerformance has resolved the hardware tier during bootstrap.
+final _artworkRequestLimiter = _RequestLimiter(artworkRequestConcurrencyForTier(reduced: DevicePerformance.isReduced));
 
 Future<void> closeArtworkHttpClientGracefully({Duration drainTimeout = const Duration(seconds: 5)}) {
   return _artworkHttpClient.closeGracefully(drainTimeout: drainTimeout);
