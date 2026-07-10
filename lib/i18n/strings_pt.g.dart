@@ -703,6 +703,7 @@ class _TranslationsMessagesPt extends TranslationsMessagesEn {
 	@override String autoRemovedWatchedDownload({required Object title}) => 'Removido automaticamente: ${title}';
 	@override String get removedFromContinueWatching => 'Removido de Continuar Assistindo';
 	@override String errorLoading({required Object error}) => 'Erro: ${error}';
+	@override String get streamInterrupted => 'A transmissão foi interrompida. Toque em reproduzir ou avance para tentar novamente.';
 	@override String get fileInfoNotAvailable => 'Informações do arquivo não disponíveis';
 	@override String errorLoadingFileInfo({required Object error}) => 'Erro ao carregar info do arquivo: ${error}';
 	@override String get errorLoadingSeries => 'Erro ao carregar série';
@@ -2607,6 +2608,7 @@ extension on TranslationsPt {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Removido automaticamente: ${title}',
 			'messages.removedFromContinueWatching' => 'Removido de Continuar Assistindo',
 			'messages.errorLoading' => ({required Object error}) => 'Erro: ${error}',
+			'messages.streamInterrupted' => 'A transmissão foi interrompida. Toque em reproduzir ou avance para tentar novamente.',
 			'messages.fileInfoNotAvailable' => 'Informações do arquivo não disponíveis',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Erro ao carregar info do arquivo: ${error}',
 			'messages.errorLoadingSeries' => 'Erro ao carregar série',
@@ -2617,9 +2619,9 @@ extension on TranslationsPt {
 			'messages.unableToDetermineLibrarySection' => 'Não é possível determinar a secção da biblioteca para este item',
 			'messages.logsCleared' => 'Logs limpos',
 			'messages.logsCopied' => 'Logs copiados para a área de transferência',
-			'messages.noLogsAvailable' => 'Nenhum log disponível',
 			_ => null,
 		} ?? switch (path) {
+			'messages.noLogsAvailable' => 'Nenhum log disponível',
 			'messages.libraryScanning' => ({required Object title}) => 'Escaneando "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Escaneamento da biblioteca iniciado para "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Falha ao escanear biblioteca: ${error}',
@@ -3131,9 +3133,9 @@ extension on TranslationsPt {
 			'downloads.cancelledDownloadTitle' => 'Download cancelado',
 			'downloads.cancelledDownloadMessage' => 'Este download foi cancelado. O que você deseja fazer?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Todos os episódios já foram baixados',
-			'downloads.resumeDownload' => 'Retomar download',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.resumeDownload' => 'Retomar download',
 			'downloads.cancelledDownload' => 'Download cancelado',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (sincronizando ${status})',
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} baixado — clique para concluir',

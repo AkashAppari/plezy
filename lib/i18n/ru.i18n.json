@@ -535,6 +535,7 @@
     "autoRemovedWatchedDownload": "Автоудалено: ${title}",
     "removedFromContinueWatching": "Удалено из «Продолжить просмотр»",
     "errorLoading": "Ошибка: ${error}",
+    "streamInterrupted": "Поток прервался. Нажмите «Воспроизвести» или перемотайте, чтобы повторить попытку.",
     "fileInfoNotAvailable": "Информация о файле недоступна",
     "errorLoadingFileInfo": "Ошибка загрузки информации о файле: ${error}",
     "errorLoadingSeries": "Ошибка загрузки сериала",

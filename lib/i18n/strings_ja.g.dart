@@ -703,6 +703,7 @@ class _TranslationsMessagesJa extends TranslationsMessagesEn {
 	@override String autoRemovedWatchedDownload({required Object title}) => '自動削除: ${title}';
 	@override String get removedFromContinueWatching => '視聴中から削除しました';
 	@override String errorLoading({required Object error}) => 'エラー: ${error}';
+	@override String get streamInterrupted => 'ストリームが中断されました。再生を押すかシークして再試行してください。';
 	@override String get fileInfoNotAvailable => 'ファイル情報が利用できません';
 	@override String errorLoadingFileInfo({required Object error}) => 'ファイル情報の読み込みエラー: ${error}';
 	@override String get errorLoadingSeries => 'シリーズの読み込みエラー';
@@ -2605,6 +2606,7 @@ extension on TranslationsJa {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '自動削除: ${title}',
 			'messages.removedFromContinueWatching' => '視聴中から削除しました',
 			'messages.errorLoading' => ({required Object error}) => 'エラー: ${error}',
+			'messages.streamInterrupted' => 'ストリームが中断されました。再生を押すかシークして再試行してください。',
 			'messages.fileInfoNotAvailable' => 'ファイル情報が利用できません',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'ファイル情報の読み込みエラー: ${error}',
 			'messages.errorLoadingSeries' => 'シリーズの読み込みエラー',
@@ -2615,9 +2617,9 @@ extension on TranslationsJa {
 			'messages.unableToDetermineLibrarySection' => 'このアイテムのライブラリセクションを判別できません',
 			'messages.logsCleared' => 'ログをクリアしました',
 			'messages.logsCopied' => 'ログをクリップボードにコピーしました',
-			'messages.noLogsAvailable' => 'ログがありません',
 			_ => null,
 		} ?? switch (path) {
+			'messages.noLogsAvailable' => 'ログがありません',
 			'messages.libraryScanning' => ({required Object title}) => '"${title}"をスキャン中...',
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}"のライブラリスキャンを開始しました',
 			'messages.libraryScanFailed' => ({required Object error}) => 'ライブラリのスキャンに失敗しました: ${error}',
@@ -3129,9 +3131,9 @@ extension on TranslationsJa {
 			'downloads.cancelledDownloadTitle' => 'キャンセルされたダウンロード',
 			'downloads.cancelledDownloadMessage' => 'このダウンロードはキャンセルされました。どうしますか？',
 			'downloads.allEpisodesAlreadyDownloaded' => 'すべてのエピソードはすでにダウンロード済みです',
-			'downloads.resumeDownload' => 'ダウンロードを再開',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.resumeDownload' => 'ダウンロードを再開',
 			'downloads.cancelledDownload' => 'キャンセルされたダウンロード',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file}（${status}を同期中）',
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} をダウンロード済み — クリックして完了',

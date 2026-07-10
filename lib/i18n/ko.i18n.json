@@ -535,6 +535,7 @@
     "autoRemovedWatchedDownload": "자동 삭제됨: ${title}",
     "removedFromContinueWatching": "계속 시청 목록에서 제거됨",
     "errorLoading": "오류: ${error}",
+    "streamInterrupted": "스트림이 중단되었습니다. 재생을 누르거나 탐색하여 다시 시도하세요.",
     "fileInfoNotAvailable": "파일 정보가 없습니다",
     "errorLoadingFileInfo": "파일 정보 로딩 중 오류: ${error}",
     "errorLoadingSeries": "시리즈 로딩 중 오류",

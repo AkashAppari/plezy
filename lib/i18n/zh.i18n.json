@@ -535,6 +535,7 @@
     "autoRemovedWatchedDownload": "已自动移除: ${title}",
     "removedFromContinueWatching": "已从继续观看中移除",
     "errorLoading": "错误: ${error}",
+    "streamInterrupted": "视频流已中断。按播放键或拖动进度条重试。",
     "fileInfoNotAvailable": "文件信息不可用",
     "errorLoadingFileInfo": "加载文件信息时出错: ${error}",
     "errorLoadingSeries": "加载系列时出错",

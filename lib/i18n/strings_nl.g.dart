@@ -703,6 +703,7 @@ class _TranslationsMessagesNl extends TranslationsMessagesEn {
 	@override String autoRemovedWatchedDownload({required Object title}) => 'Automatisch verwijderd: ${title}';
 	@override String get removedFromContinueWatching => 'Verwijderd uit Doorgaan met kijken';
 	@override String errorLoading({required Object error}) => 'Fout: ${error}';
+	@override String get streamInterrupted => 'De stream is onderbroken. Druk op afspelen of spoel om het opnieuw te proberen.';
 	@override String get fileInfoNotAvailable => 'Bestand informatie niet beschikbaar';
 	@override String errorLoadingFileInfo({required Object error}) => 'Fout bij laden bestand info: ${error}';
 	@override String get errorLoadingSeries => 'Fout bij laden serie';
@@ -2607,6 +2608,7 @@ extension on TranslationsNl {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatisch verwijderd: ${title}',
 			'messages.removedFromContinueWatching' => 'Verwijderd uit Doorgaan met kijken',
 			'messages.errorLoading' => ({required Object error}) => 'Fout: ${error}',
+			'messages.streamInterrupted' => 'De stream is onderbroken. Druk op afspelen of spoel om het opnieuw te proberen.',
 			'messages.fileInfoNotAvailable' => 'Bestand informatie niet beschikbaar',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Fout bij laden bestand info: ${error}',
 			'messages.errorLoadingSeries' => 'Fout bij laden serie',
@@ -2617,9 +2619,9 @@ extension on TranslationsNl {
 			'messages.unableToDetermineLibrarySection' => 'Kan bibliotheeksectie voor dit item niet bepalen',
 			'messages.logsCleared' => 'Logs gewist',
 			'messages.logsCopied' => 'Logs gekopieerd naar klembord',
-			'messages.noLogsAvailable' => 'Geen logs beschikbaar',
 			_ => null,
 		} ?? switch (path) {
+			'messages.noLogsAvailable' => 'Geen logs beschikbaar',
 			'messages.libraryScanning' => ({required Object title}) => 'Scannen "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Bibliotheek scan gestart voor "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kon bibliotheek niet scannen: ${error}',
@@ -3131,9 +3133,9 @@ extension on TranslationsNl {
 			'downloads.cancelledDownloadTitle' => 'Geannuleerde download',
 			'downloads.cancelledDownloadMessage' => 'Deze download is geannuleerd. Wat wil je doen?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alle afleveringen zijn al gedownload',
-			'downloads.resumeDownload' => 'Download hervatten',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.resumeDownload' => 'Download hervatten',
 			'downloads.cancelledDownload' => 'Geannuleerde download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} synchroniseren)',
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} gedownload — klik om te voltooien',

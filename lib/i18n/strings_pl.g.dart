@@ -703,6 +703,7 @@ class _TranslationsMessagesPl extends TranslationsMessagesEn {
 	@override String autoRemovedWatchedDownload({required Object title}) => 'Automatycznie usunięto: ${title}';
 	@override String get removedFromContinueWatching => 'Usunięto z kontynuowania oglądania';
 	@override String errorLoading({required Object error}) => 'Błąd: ${error}';
+	@override String get streamInterrupted => 'Strumień został przerwany. Naciśnij odtwarzanie lub przewiń, aby spróbować ponownie.';
 	@override String get fileInfoNotAvailable => 'Informacje o pliku niedostępne';
 	@override String errorLoadingFileInfo({required Object error}) => 'Błąd ładowania informacji o pliku: ${error}';
 	@override String get errorLoadingSeries => 'Błąd ładowania serialu';
@@ -2611,6 +2612,7 @@ extension on TranslationsPl {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatycznie usunięto: ${title}',
 			'messages.removedFromContinueWatching' => 'Usunięto z kontynuowania oglądania',
 			'messages.errorLoading' => ({required Object error}) => 'Błąd: ${error}',
+			'messages.streamInterrupted' => 'Strumień został przerwany. Naciśnij odtwarzanie lub przewiń, aby spróbować ponownie.',
 			'messages.fileInfoNotAvailable' => 'Informacje o pliku niedostępne',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Błąd ładowania informacji o pliku: ${error}',
 			'messages.errorLoadingSeries' => 'Błąd ładowania serialu',
@@ -2621,9 +2623,9 @@ extension on TranslationsPl {
 			'messages.unableToDetermineLibrarySection' => 'Nie można określić sekcji biblioteki dla tego elementu',
 			'messages.logsCleared' => 'Logi wyczyszczone',
 			'messages.logsCopied' => 'Logi skopiowane do schowka',
-			'messages.noLogsAvailable' => 'Brak dostępnych logów',
 			_ => null,
 		} ?? switch (path) {
+			'messages.noLogsAvailable' => 'Brak dostępnych logów',
 			'messages.libraryScanning' => ({required Object title}) => 'Skanowanie "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Rozpoczęto skanowanie biblioteki "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Nie udało się zeskanować biblioteki: ${error}',
@@ -3135,9 +3137,9 @@ extension on TranslationsPl {
 			'downloads.cancelledDownloadTitle' => 'Anulowane pobieranie',
 			'downloads.cancelledDownloadMessage' => 'To pobieranie zostało anulowane. Co chcesz zrobić?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Wszystkie odcinki są już pobrane',
-			'downloads.resumeDownload' => 'Wznów pobieranie',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.resumeDownload' => 'Wznów pobieranie',
 			'downloads.cancelledDownload' => 'Anulowane pobieranie',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (synchronizowanie ${status})',
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Pobrano ${file} — kliknij, aby dokończyć',

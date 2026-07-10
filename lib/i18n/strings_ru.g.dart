@@ -703,6 +703,7 @@ class _TranslationsMessagesRu extends TranslationsMessagesEn {
 	@override String autoRemovedWatchedDownload({required Object title}) => 'Автоудалено: ${title}';
 	@override String get removedFromContinueWatching => 'Удалено из «Продолжить просмотр»';
 	@override String errorLoading({required Object error}) => 'Ошибка: ${error}';
+	@override String get streamInterrupted => 'Поток прервался. Нажмите «Воспроизвести» или перемотайте, чтобы повторить попытку.';
 	@override String get fileInfoNotAvailable => 'Информация о файле недоступна';
 	@override String errorLoadingFileInfo({required Object error}) => 'Ошибка загрузки информации о файле: ${error}';
 	@override String get errorLoadingSeries => 'Ошибка загрузки сериала';
@@ -2611,6 +2612,7 @@ extension on TranslationsRu {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Автоудалено: ${title}',
 			'messages.removedFromContinueWatching' => 'Удалено из «Продолжить просмотр»',
 			'messages.errorLoading' => ({required Object error}) => 'Ошибка: ${error}',
+			'messages.streamInterrupted' => 'Поток прервался. Нажмите «Воспроизвести» или перемотайте, чтобы повторить попытку.',
 			'messages.fileInfoNotAvailable' => 'Информация о файле недоступна',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Ошибка загрузки информации о файле: ${error}',
 			'messages.errorLoadingSeries' => 'Ошибка загрузки сериала',
@@ -2621,9 +2623,9 @@ extension on TranslationsRu {
 			'messages.unableToDetermineLibrarySection' => 'Не удаётся определить раздел библиотеки для этого элемента',
 			'messages.logsCleared' => 'Логи очищены',
 			'messages.logsCopied' => 'Логи скопированы в буфер обмена',
-			'messages.noLogsAvailable' => 'Логи отсутствуют',
 			_ => null,
 		} ?? switch (path) {
+			'messages.noLogsAvailable' => 'Логи отсутствуют',
 			'messages.libraryScanning' => ({required Object title}) => 'Сканирование "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Сканирование библиотеки начато для "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Не удалось отсканировать библиотеку: ${error}',
@@ -3135,9 +3137,9 @@ extension on TranslationsRu {
 			'downloads.cancelledDownloadTitle' => 'Загрузка отменена',
 			'downloads.cancelledDownloadMessage' => 'Эта загрузка была отменена. Что вы хотите сделать?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Все эпизоды уже загружены',
-			'downloads.resumeDownload' => 'Возобновить загрузку',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.resumeDownload' => 'Возобновить загрузку',
 			'downloads.cancelledDownload' => 'Загрузка отменена',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (синхронизация ${status})',
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} загружен — нажмите, чтобы завершить',

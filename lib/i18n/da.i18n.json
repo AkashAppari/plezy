@@ -535,6 +535,7 @@
     "autoRemovedWatchedDownload": "Automatisk fjernet: ${title}",
     "removedFromContinueWatching": "Fjernet fra Fortsæt med at se",
     "errorLoading": "Fejl: ${error}",
+    "streamInterrupted": "Streamen blev afbrudt. Tryk på afspil, eller spol for at prøve igen.",
     "fileInfoNotAvailable": "Filinfo ikke tilgængelig",
     "errorLoadingFileInfo": "Fejl ved indlæsning af filinfo: ${error}",
     "errorLoadingSeries": "Fejl ved indlæsning af serie",

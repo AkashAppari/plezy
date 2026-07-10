@@ -703,6 +703,7 @@ class _TranslationsMessagesNb extends TranslationsMessagesEn {
 	@override String autoRemovedWatchedDownload({required Object title}) => 'Automatisk fjernet: ${title}';
 	@override String get removedFromContinueWatching => 'Fjernet fra Fortsett å se';
 	@override String errorLoading({required Object error}) => 'Feil: ${error}';
+	@override String get streamInterrupted => 'Avspillingen ble avbrutt. Trykk på Spill av eller spol for å prøve på nytt.';
 	@override String get fileInfoNotAvailable => 'Filinformasjon ikke tilgjengelig';
 	@override String errorLoadingFileInfo({required Object error}) => 'Feil ved lasting av filinformasjon: ${error}';
 	@override String get errorLoadingSeries => 'Feil ved lasting av serie';
@@ -2607,6 +2608,7 @@ extension on TranslationsNb {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatisk fjernet: ${title}',
 			'messages.removedFromContinueWatching' => 'Fjernet fra Fortsett å se',
 			'messages.errorLoading' => ({required Object error}) => 'Feil: ${error}',
+			'messages.streamInterrupted' => 'Avspillingen ble avbrutt. Trykk på Spill av eller spol for å prøve på nytt.',
 			'messages.fileInfoNotAvailable' => 'Filinformasjon ikke tilgjengelig',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Feil ved lasting av filinformasjon: ${error}',
 			'messages.errorLoadingSeries' => 'Feil ved lasting av serie',
@@ -2617,9 +2619,9 @@ extension on TranslationsNb {
 			'messages.unableToDetermineLibrarySection' => 'Kan ikke fastslå bibliotekseksjonen for dette elementet',
 			'messages.logsCleared' => 'Logger tømt',
 			'messages.logsCopied' => 'Logger kopiert til utklippstavle',
-			'messages.noLogsAvailable' => 'Ingen logger tilgjengelig',
 			_ => null,
 		} ?? switch (path) {
+			'messages.noLogsAvailable' => 'Ingen logger tilgjengelig',
 			'messages.libraryScanning' => ({required Object title}) => 'Skanner "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Bibliotekkanning startet for "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kunne ikke skanne bibliotek: ${error}',
@@ -3131,9 +3133,9 @@ extension on TranslationsNb {
 			'downloads.cancelledDownloadTitle' => 'Avbrutt nedlasting',
 			'downloads.cancelledDownloadMessage' => 'Denne nedlastingen ble avbrutt. Hva vil du gjøre?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alle episoder er allerede lastet ned',
-			'downloads.resumeDownload' => 'Gjenoppta nedlasting',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.resumeDownload' => 'Gjenoppta nedlasting',
 			'downloads.cancelledDownload' => 'Avbrutt nedlasting',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (synkroniserer ${status})',
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} lastet ned – klikk for å fullføre',

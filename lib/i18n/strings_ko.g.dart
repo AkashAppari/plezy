@@ -703,6 +703,7 @@ class _TranslationsMessagesKo extends TranslationsMessagesEn {
 	@override String autoRemovedWatchedDownload({required Object title}) => '자동 삭제됨: ${title}';
 	@override String get removedFromContinueWatching => '계속 시청 목록에서 제거됨';
 	@override String errorLoading({required Object error}) => '오류: ${error}';
+	@override String get streamInterrupted => '스트림이 중단되었습니다. 재생을 누르거나 탐색하여 다시 시도하세요.';
 	@override String get fileInfoNotAvailable => '파일 정보가 없습니다';
 	@override String errorLoadingFileInfo({required Object error}) => '파일 정보 로딩 중 오류: ${error}';
 	@override String get errorLoadingSeries => '시리즈 로딩 중 오류';
@@ -2605,6 +2606,7 @@ extension on TranslationsKo {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '자동 삭제됨: ${title}',
 			'messages.removedFromContinueWatching' => '계속 시청 목록에서 제거됨',
 			'messages.errorLoading' => ({required Object error}) => '오류: ${error}',
+			'messages.streamInterrupted' => '스트림이 중단되었습니다. 재생을 누르거나 탐색하여 다시 시도하세요.',
 			'messages.fileInfoNotAvailable' => '파일 정보가 없습니다',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => '파일 정보 로딩 중 오류: ${error}',
 			'messages.errorLoadingSeries' => '시리즈 로딩 중 오류',
@@ -2615,9 +2617,9 @@ extension on TranslationsKo {
 			'messages.unableToDetermineLibrarySection' => '이 항목의 라이브러리 섹션을 확인할 수 없습니다',
 			'messages.logsCleared' => '로그가 삭제 되었습니다',
 			'messages.logsCopied' => '로그가 클립보드에 복사 되었습니다',
-			'messages.noLogsAvailable' => '사용 가능한 로그가 없습니다',
 			_ => null,
 		} ?? switch (path) {
+			'messages.noLogsAvailable' => '사용 가능한 로그가 없습니다',
 			'messages.libraryScanning' => ({required Object title}) => '"${title}"을(를) 스캔 중입니다...',
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}" 미디어 라이브러리 스캔 시작',
 			'messages.libraryScanFailed' => ({required Object error}) => '미디어 라이브러리 스캔 실패: ${error}',
@@ -3129,9 +3131,9 @@ extension on TranslationsKo {
 			'downloads.cancelledDownloadTitle' => '취소된 다운로드',
 			'downloads.cancelledDownloadMessage' => '이 다운로드가 취소되었습니다. 어떻게 하시겠습니까?',
 			'downloads.allEpisodesAlreadyDownloaded' => '모든 에피소드가 이미 다운로드되었습니다',
-			'downloads.resumeDownload' => '다운로드 재개',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.resumeDownload' => '다운로드 재개',
 			'downloads.cancelledDownload' => '취소된 다운로드',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} 동기화 중)',
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} 다운로드됨 — 클릭하여 완료',

@@ -535,6 +535,7 @@
     "autoRemovedWatchedDownload": "Eliminado automáticamente: ${title}",
     "removedFromContinueWatching": "Eliminado de Seguir Viendo",
     "errorLoading": "Error: ${error}",
+    "streamInterrupted": "La reproducción se interrumpió. Pulsa reproducir o avanza para volver a intentarlo.",
     "fileInfoNotAvailable": "Información de archivo no disponible",
     "errorLoadingFileInfo": "Error al cargar info de archivo: ${error}",
     "errorLoadingSeries": "Error al cargar la serie",

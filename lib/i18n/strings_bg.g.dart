@@ -703,6 +703,7 @@ class _TranslationsMessagesBg extends TranslationsMessagesEn {
 	@override String autoRemovedWatchedDownload({required Object title}) => 'Автоматично премахнато: ${title}';
 	@override String get removedFromContinueWatching => 'Премахнато от продължаване на гледането';
 	@override String errorLoading({required Object error}) => 'Грешка: ${error}';
+	@override String get streamInterrupted => 'Потокът прекъсна. Натиснете „Пусни“ или превъртете, за да опитате отново.';
 	@override String get fileInfoNotAvailable => 'Информацията за файла не е налична';
 	@override String errorLoadingFileInfo({required Object error}) => 'Грешка при зареждане на информация за файла: ${error}';
 	@override String get errorLoadingSeries => 'Грешка при зареждане на сериала';
@@ -2607,6 +2608,7 @@ extension on TranslationsBg {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Автоматично премахнато: ${title}',
 			'messages.removedFromContinueWatching' => 'Премахнато от продължаване на гледането',
 			'messages.errorLoading' => ({required Object error}) => 'Грешка: ${error}',
+			'messages.streamInterrupted' => 'Потокът прекъсна. Натиснете „Пусни“ или превъртете, за да опитате отново.',
 			'messages.fileInfoNotAvailable' => 'Информацията за файла не е налична',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Грешка при зареждане на информация за файла: ${error}',
 			'messages.errorLoadingSeries' => 'Грешка при зареждане на сериала',
@@ -2617,9 +2619,9 @@ extension on TranslationsBg {
 			'messages.unableToDetermineLibrarySection' => 'Не може да се определи секцията на библиотеката за този елемент',
 			'messages.logsCleared' => 'Логовете са изчистени',
 			'messages.logsCopied' => 'Логовете са копирани в клипборда',
-			'messages.noLogsAvailable' => 'Няма налични логове',
 			_ => null,
 		} ?? switch (path) {
+			'messages.noLogsAvailable' => 'Няма налични логове',
 			'messages.libraryScanning' => ({required Object title}) => 'Сканиране на "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Сканирането на библиотеката е стартирано за "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Неуспешно сканиране на библиотеката: ${error}',
@@ -3131,9 +3133,9 @@ extension on TranslationsBg {
 			'downloads.cancelledDownloadTitle' => 'Отменено изтегляне',
 			'downloads.cancelledDownloadMessage' => 'Това изтегляне беше отменено. Какво искате да направите?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Всички епизоди вече са изтеглени',
-			'downloads.resumeDownload' => 'Възобнови изтеглянето',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.resumeDownload' => 'Възобнови изтеглянето',
 			'downloads.cancelledDownload' => 'Отменено изтегляне',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (синхронизира се ${status})',
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Изтеглен ${file} — щракнете за довършване',

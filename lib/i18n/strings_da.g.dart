@@ -703,6 +703,7 @@ class _TranslationsMessagesDa extends TranslationsMessagesEn {
 	@override String autoRemovedWatchedDownload({required Object title}) => 'Automatisk fjernet: ${title}';
 	@override String get removedFromContinueWatching => 'Fjernet fra Fortsæt med at se';
 	@override String errorLoading({required Object error}) => 'Fejl: ${error}';
+	@override String get streamInterrupted => 'Streamen blev afbrudt. Tryk på afspil, eller spol for at prøve igen.';
 	@override String get fileInfoNotAvailable => 'Filinfo ikke tilgængelig';
 	@override String errorLoadingFileInfo({required Object error}) => 'Fejl ved indlæsning af filinfo: ${error}';
 	@override String get errorLoadingSeries => 'Fejl ved indlæsning af serie';
@@ -2607,6 +2608,7 @@ extension on TranslationsDa {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatisk fjernet: ${title}',
 			'messages.removedFromContinueWatching' => 'Fjernet fra Fortsæt med at se',
 			'messages.errorLoading' => ({required Object error}) => 'Fejl: ${error}',
+			'messages.streamInterrupted' => 'Streamen blev afbrudt. Tryk på afspil, eller spol for at prøve igen.',
 			'messages.fileInfoNotAvailable' => 'Filinfo ikke tilgængelig',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Fejl ved indlæsning af filinfo: ${error}',
 			'messages.errorLoadingSeries' => 'Fejl ved indlæsning af serie',
@@ -2617,9 +2619,9 @@ extension on TranslationsDa {
 			'messages.unableToDetermineLibrarySection' => 'Kan ikke bestemme biblioteksafdeling for dette element',
 			'messages.logsCleared' => 'Logs ryddet',
 			'messages.logsCopied' => 'Logs kopieret til udklipsholder',
-			'messages.noLogsAvailable' => 'Ingen logs tilgængelige',
 			_ => null,
 		} ?? switch (path) {
+			'messages.noLogsAvailable' => 'Ingen logs tilgængelige',
 			'messages.libraryScanning' => ({required Object title}) => 'Scanner "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Biblioteksscanning startet for "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kunne ikke scanne bibliotek: ${error}',
@@ -3131,9 +3133,9 @@ extension on TranslationsDa {
 			'downloads.cancelledDownloadTitle' => 'Annulleret download',
 			'downloads.cancelledDownloadMessage' => 'Denne download blev annulleret. Hvad vil du gøre?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alle episoder er allerede downloadet',
-			'downloads.resumeDownload' => 'Genoptag download',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.resumeDownload' => 'Genoptag download',
 			'downloads.cancelledDownload' => 'Annulleret download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (synkroniserer ${status})',
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} downloadet — klik for at fuldføre',

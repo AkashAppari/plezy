@@ -535,6 +535,7 @@
     "autoRemovedWatchedDownload": "Supprimé automatiquement : ${title}",
     "removedFromContinueWatching": "Supprimer de \"Continuer à regarder\"",
     "errorLoading": "Erreur: ${error}",
+    "streamInterrupted": "La lecture a été interrompue. Appuyez sur Lecture ou avancez pour réessayer.",
     "fileInfoNotAvailable": "Informations sur le fichier non disponibles",
     "errorLoadingFileInfo": "Erreur lors du chargement des informations sur le fichier: ${error}",
     "errorLoadingSeries": "Erreur lors du chargement de la série",

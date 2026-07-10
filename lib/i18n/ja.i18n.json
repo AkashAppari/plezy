@@ -535,6 +535,7 @@
     "autoRemovedWatchedDownload": "自動削除: ${title}",
     "removedFromContinueWatching": "視聴中から削除しました",
     "errorLoading": "エラー: ${error}",
+    "streamInterrupted": "ストリームが中断されました。再生を押すかシークして再試行してください。",
     "fileInfoNotAvailable": "ファイル情報が利用できません",
     "errorLoadingFileInfo": "ファイル情報の読み込みエラー: ${error}",
     "errorLoadingSeries": "シリーズの読み込みエラー",

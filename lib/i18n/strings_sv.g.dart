@@ -703,6 +703,7 @@ class _TranslationsMessagesSv extends TranslationsMessagesEn {
 	@override String autoRemovedWatchedDownload({required Object title}) => 'Automatiskt borttagen: ${title}';
 	@override String get removedFromContinueWatching => 'Borttagen från Fortsätt titta';
 	@override String errorLoading({required Object error}) => 'Fel: ${error}';
+	@override String get streamInterrupted => 'Uppspelningen avbröts. Tryck på play eller spola för att försöka igen.';
 	@override String get fileInfoNotAvailable => 'Filinformation inte tillgänglig';
 	@override String errorLoadingFileInfo({required Object error}) => 'Fel vid laddning av filinformation: ${error}';
 	@override String get errorLoadingSeries => 'Fel vid laddning av serie';
@@ -2607,6 +2608,7 @@ extension on TranslationsSv {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatiskt borttagen: ${title}',
 			'messages.removedFromContinueWatching' => 'Borttagen från Fortsätt titta',
 			'messages.errorLoading' => ({required Object error}) => 'Fel: ${error}',
+			'messages.streamInterrupted' => 'Uppspelningen avbröts. Tryck på play eller spola för att försöka igen.',
 			'messages.fileInfoNotAvailable' => 'Filinformation inte tillgänglig',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Fel vid laddning av filinformation: ${error}',
 			'messages.errorLoadingSeries' => 'Fel vid laddning av serie',
@@ -2617,9 +2619,9 @@ extension on TranslationsSv {
 			'messages.unableToDetermineLibrarySection' => 'Kan inte avgöra biblioteksavdelningen för detta objekt',
 			'messages.logsCleared' => 'Loggar rensade',
 			'messages.logsCopied' => 'Loggar kopierade till urklipp',
-			'messages.noLogsAvailable' => 'Inga loggar tillgängliga',
 			_ => null,
 		} ?? switch (path) {
+			'messages.noLogsAvailable' => 'Inga loggar tillgängliga',
 			'messages.libraryScanning' => ({required Object title}) => 'Skannar "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Biblioteksskanning startad för "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Misslyckades att skanna bibliotek: ${error}',
@@ -3131,9 +3133,9 @@ extension on TranslationsSv {
 			'downloads.cancelledDownloadTitle' => 'Avbruten nedladdning',
 			'downloads.cancelledDownloadMessage' => 'Den här nedladdningen avbröts. Vad vill du göra?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alla avsnitt är redan nedladdade',
-			'downloads.resumeDownload' => 'Återuppta nedladdning',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.resumeDownload' => 'Återuppta nedladdning',
 			'downloads.cancelledDownload' => 'Avbruten nedladdning',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (synkroniserar ${status})',
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} nedladdad – klicka för att slutföra',

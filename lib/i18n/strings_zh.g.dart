@@ -703,6 +703,7 @@ class _TranslationsMessagesZh extends TranslationsMessagesEn {
 	@override String autoRemovedWatchedDownload({required Object title}) => '已自动移除: ${title}';
 	@override String get removedFromContinueWatching => '已从继续观看中移除';
 	@override String errorLoading({required Object error}) => '错误: ${error}';
+	@override String get streamInterrupted => '视频流已中断。按播放键或拖动进度条重试。';
 	@override String get fileInfoNotAvailable => '文件信息不可用';
 	@override String errorLoadingFileInfo({required Object error}) => '加载文件信息时出错: ${error}';
 	@override String get errorLoadingSeries => '加载系列时出错';
@@ -2605,6 +2606,7 @@ extension on TranslationsZh {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '已自动移除: ${title}',
 			'messages.removedFromContinueWatching' => '已从继续观看中移除',
 			'messages.errorLoading' => ({required Object error}) => '错误: ${error}',
+			'messages.streamInterrupted' => '视频流已中断。按播放键或拖动进度条重试。',
 			'messages.fileInfoNotAvailable' => '文件信息不可用',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => '加载文件信息时出错: ${error}',
 			'messages.errorLoadingSeries' => '加载系列时出错',
@@ -2615,9 +2617,9 @@ extension on TranslationsZh {
 			'messages.unableToDetermineLibrarySection' => '无法确定此项目的库分区',
 			'messages.logsCleared' => '日志已清除',
 			'messages.logsCopied' => '日志已复制到剪贴板',
-			'messages.noLogsAvailable' => '没有可用日志',
 			_ => null,
 		} ?? switch (path) {
+			'messages.noLogsAvailable' => '没有可用日志',
 			'messages.libraryScanning' => ({required Object title}) => '正在扫描 “${title}”...',
 			'messages.libraryScanStarted' => ({required Object title}) => '已开始扫描 “${title}” 媒体库',
 			'messages.libraryScanFailed' => ({required Object error}) => '无法扫描媒体库: ${error}',
@@ -3129,9 +3131,9 @@ extension on TranslationsZh {
 			'downloads.cancelledDownloadTitle' => '已取消的下载',
 			'downloads.cancelledDownloadMessage' => '此下载已取消。你想怎么做？',
 			'downloads.allEpisodesAlreadyDownloaded' => '所有剧集均已下载',
-			'downloads.resumeDownload' => '继续下载',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.resumeDownload' => '继续下载',
 			'downloads.cancelledDownload' => '已取消的下载',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file}（正在同步 ${status}）',
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '已下载 ${file} — 点击完成',
