@@ -1672,6 +1672,9 @@ class TranslationsMessagesEn {
 	/// en: 'Error: ${error}'
 	String errorLoading({required Object error}) => 'Error: ${error}';
 
+	/// en: 'The stream was interrupted. Press play or seek to retry.'
+	String get streamInterrupted => 'The stream was interrupted. Press play or seek to retry.';
+
 	/// en: 'File information not available'
 	String get fileInfoNotAvailable => 'File information not available';
 
@@ -5470,10 +5473,11 @@ extension on Translations {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Auto-removed: ${title}',
 			'messages.removedFromContinueWatching' => 'Removed from Continue Watching',
 			'messages.errorLoading' => ({required Object error}) => 'Error: ${error}',
+			'messages.streamInterrupted' => 'The stream was interrupted. Press play or seek to retry.',
 			'messages.fileInfoNotAvailable' => 'File information not available',
-			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Error loading file info: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Error loading file info: ${error}',
 			'messages.errorLoadingSeries' => 'Error loading series',
 			'messages.musicNotSupported' => 'Music playback is not yet supported',
 			'messages.noDescriptionAvailable' => 'No description available',
@@ -5985,9 +5989,9 @@ extension on Translations {
 			'downloads.tvShows' => 'TV Shows',
 			'downloads.movies' => 'Movies',
 			'downloads.music' => 'Music',
-			'downloads.tracksQueued' => ({required Object count}) => '${count} tracks queued for download',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.tracksQueued' => ({required Object count}) => '${count} tracks queued for download',
 			'downloads.noDownloads' => 'No downloads yet',
 			'downloads.noDownloadsDescription' => 'Downloaded content will appear here for offline viewing',
 			'downloads.downloadNow' => 'Download',

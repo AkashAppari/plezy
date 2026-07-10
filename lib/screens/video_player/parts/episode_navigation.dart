@@ -452,6 +452,12 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       // (open failures throw into the catch below) — superseded either way.
       if (!didOpen || !isCurrentReload()) return _MediaReloadOutcome.superseded;
       _completionLatch.reset();
+      if (isItemChange) {
+        // Same-item reloads (including the spurious-EOF recovery itself and
+        // quality switches) keep the spent budget — that is the loop guard.
+        _spuriousEofRecoveryAttempts = 0;
+        _spuriousEofRecoveryBaselineMs = null;
+      }
 
       // Versions/mediaInfo come from the committed session; rebuild so the
       // controls pick them up. Same-part switches (quality/audio/subtitle)

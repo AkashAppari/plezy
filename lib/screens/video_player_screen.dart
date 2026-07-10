@@ -375,6 +375,23 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   // position ticks only re-arm once playback is more than 2s from the end.
   final CompletionLatch _completionLatch = CompletionLatch(rearmWindowMs: 2000);
 
+  // Spurious-EOF recovery (#1520): a long pause can get the server-side
+  // stream reaped or the idle socket killed; on resume the player drains its
+  // cache and signals a clean EOF mid-file. Recovery reloads in place,
+  // bounded so a persistently dying stream can't reload-loop. The budget
+  // restores once playback progresses well past the last recovery point or
+  // on an item change; user-initiated retries (play/seek) are always allowed
+  // and never consume it.
+  static const int _maxSpuriousEofRecoveryAttempts = 2;
+  static const int _spuriousEofProgressResetMs = 30000;
+  int _spuriousEofRecoveryAttempts = 0;
+  int? _spuriousEofRecoveryBaselineMs;
+
+  /// Playback is parked mid-file on a dead stream: automatic recovery failed
+  /// or its budget is spent. Exits: user play/seek (always allowed) or the
+  /// server-status monitor seeing the server come back online.
+  bool _spuriousEofRecoveryParked = false;
+
   late final FocusNode _playNextCancelFocusNode;
   late final FocusNode _playNextConfirmFocusNode;
 
@@ -498,6 +515,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _requestedMediaSourceId = session.mediaSourceId;
     _selectedQualityPreset = session.qualityPreset;
     _selectedAudioStreamId = session.audioStreamId;
+    // Any freshly opened stream ends a dead-stream park (#1520).
+    _spuriousEofRecoveryParked = false;
     // Every successful open passes through here (never live TV), making it
     // the chokepoint for the local last-played history. Offline plays are
     // excluded — like version prefs, the history describes online intent.
@@ -526,6 +545,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   Future<void> _playWithPlaybackIntent(Player currentPlayer) {
     _playbackIntentShouldPlay = true;
+    if (_spuriousEofRecoveryParked && _playbackTransition == _PlaybackTransition.idle) {
+      // Parked on a dead stream: play/pause on a drained cache is a no-op
+      // (mpv doesn't even flip `pause` on EOF), so any press means "get my
+      // video back" — rebuild the stream instead (#1520).
+      return _retrySpuriousEofRecovery(reason: 'play pressed');
+    }
     return currentPlayer.play();
   }
 
@@ -535,6 +560,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   Future<void> _playOrPauseWithPlaybackIntent(Player currentPlayer) {
+    if (_spuriousEofRecoveryParked && _playbackTransition == _PlaybackTransition.idle) {
+      _playbackIntentShouldPlay = true;
+      return _retrySpuriousEofRecovery(reason: 'play/pause pressed');
+    }
     _playbackIntentShouldPlay = !currentPlayer.state.playing;
     return currentPlayer.playOrPause();
   }

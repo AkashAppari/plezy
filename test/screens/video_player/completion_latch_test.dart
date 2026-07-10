@@ -76,4 +76,57 @@ void main() {
     l.rearmIfClear(promptVisible: false, countdownActive: false);
     expect(l.triggered, isFalse);
   });
+
+  group('classifyEofSignal', () {
+    EofSignalClass classify(int positionMs, {int playerDurationMs = 0, int? metadataDurationMs}) => classifyEofSignal(
+      positionMs: positionMs,
+      playerDurationMs: playerDurationMs,
+      metadataDurationMs: metadataDurationMs,
+    );
+
+    test('mid-file EOF is spurious (#1520)', () {
+      expect(classify(600000, playerDurationMs: 2520000, metadataDurationMs: 2520000), EofSignalClass.spurious);
+    });
+
+    test('metadata anchors when player duration tracks the demuxer cache', () {
+      // Chunked transcode: mpv's duration equals the parked position, which
+      // alone would make the dead stream look genuinely finished.
+      expect(classify(600000, playerDurationMs: 600000, metadataDurationMs: 2520000), EofSignalClass.spurious);
+    });
+
+    test('genuine at the exact end', () {
+      expect(classify(2520000, playerDurationMs: 2520000, metadataDurationMs: 2520000), EofSignalClass.genuine);
+    });
+
+    test('genuine when the stream ends slightly short of metadata duration', () {
+      expect(classify(2517000, playerDurationMs: 2517000, metadataDurationMs: 2520000), EofSignalClass.genuine);
+    });
+
+    test('player duration wins when metadata understates the file', () {
+      // The 3b611a1e failure mode: a short metadata duration must not turn
+      // the real end of a longer file into a spurious classification.
+      expect(classify(2520000, playerDurationMs: 2520000, metadataDurationMs: 2400000), EofSignalClass.genuine);
+    });
+
+    test('classifies from metadata alone when player duration is unknown', () {
+      expect(classify(600000, metadataDurationMs: 2520000), EofSignalClass.spurious);
+      expect(classify(2515000, metadataDurationMs: 2520000), EofSignalClass.genuine);
+    });
+
+    test('unknown when no duration is available', () {
+      expect(classify(600000), EofSignalClass.unknown);
+      expect(classify(600000, metadataDurationMs: 0), EofSignalClass.unknown);
+    });
+
+    test('tolerance boundary is inclusive', () {
+      expect(
+        classify(2520000 - spuriousEofToleranceMs, playerDurationMs: 2520000, metadataDurationMs: null),
+        EofSignalClass.genuine,
+      );
+      expect(
+        classify(2520000 - spuriousEofToleranceMs - 1, playerDurationMs: 2520000, metadataDurationMs: null),
+        EofSignalClass.spurious,
+      );
+    });
+  });
 }

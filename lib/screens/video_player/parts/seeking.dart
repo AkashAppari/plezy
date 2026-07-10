@@ -6,6 +6,12 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
     if (!mounted || currentPlayer == null) return;
 
     final target = clampSeekPosition(currentPlayer, position);
+    // Parked on a dead stream (#1520): a native seek would land inside the
+    // drained cache — rebuild the stream at the target instead.
+    if (_spuriousEofRecoveryParked && !widget.isLive && _playbackTransition == _PlaybackTransition.idle) {
+      await _retrySpuriousEofRecovery(reason: 'seek', resumePosition: target);
+      return;
+    }
     if (_plexTranscodeSeekAction(currentPlayer, target) == PlexTranscodeSeekAction.nativeSeek) {
       await currentPlayer.seek(target);
       return;

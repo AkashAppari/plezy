@@ -544,6 +544,7 @@
     "autoRemovedWatchedDownload": "Auto-removed: ${title}",
     "removedFromContinueWatching": "Removed from Continue Watching",
     "errorLoading": "Error: ${error}",
+    "streamInterrupted": "The stream was interrupted. Press play or seek to retry.",
     "fileInfoNotAvailable": "File information not available",
     "errorLoadingFileInfo": "Error loading file info: ${error}",
     "errorLoadingSeries": "Error loading series",
