@@ -78,14 +78,15 @@ class PerformanceStatsService {
     _fpsTrackingActive = true;
     if (!_fpsCallbackRegistered) {
       _fpsCallbackRegistered = true;
-      SchedulerBinding.instance.addPersistentFrameCallback(_onFrame);
+      SchedulerBinding.instance.addTimingsCallback(_onFrameTimings);
     }
   }
 
-  /// Called every frame to count FPS.
-  void _onFrame(Duration timestamp) {
+  /// Called with completed frame timings to count FPS without retaining an
+  /// app-lifetime persistent callback.
+  void _onFrameTimings(List<FrameTiming> timings) {
     if (!_fpsTrackingActive) return;
-    _frameCount++;
+    _frameCount += timings.length;
     final now = DateTime.now();
     final elapsed = now.difference(_lastFpsUpdate);
     if (elapsed.inMilliseconds >= 1000) {
@@ -101,6 +102,10 @@ class PerformanceStatsService {
     _pollingTimer = null;
     _fpsTrackingActive = false;
     _currentUiFps = null;
+    if (_fpsCallbackRegistered) {
+      SchedulerBinding.instance.removeTimingsCallback(_onFrameTimings);
+      _fpsCallbackRegistered = false;
+    }
   }
 
   /// Fetch all performance stats from the player.

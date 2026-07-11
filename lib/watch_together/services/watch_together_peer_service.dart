@@ -300,7 +300,6 @@ class WatchTogetherPeerService with KeepaliveMixin {
       try {
         final channel = await _connectToRelay();
         _channel = channel;
-        _reconnectAttempts = 0;
 
         final completer = Completer<void>();
         _listenToChannel(channel, setupCompleter: completer);
@@ -328,8 +327,13 @@ class WatchTogetherPeerService with KeepaliveMixin {
           }
         }
 
+        _reconnectAttempts = 0;
         appLogger.d('WatchTogether: Reconnected successfully');
-        onReconnected?.call();
+        try {
+          onReconnected?.call();
+        } catch (e) {
+          appLogger.e('WatchTogether: Reconnect callback failed', error: e);
+        }
       } catch (e) {
         appLogger.e('WatchTogether: Reconnect failed', error: e);
         _handleWebSocketClosed();

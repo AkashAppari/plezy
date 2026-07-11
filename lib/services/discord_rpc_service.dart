@@ -53,6 +53,7 @@ class DiscordRPCService {
   Duration? _mediaDuration;
   Duration? _currentPosition;
   double _playbackSpeed = 1.0;
+  int _playbackRevision = 0;
   Timer? _reconnectTimer;
   DateTime? _lastPresenceUpdate;
   StreamSubscription<void>? _readySubscription;
@@ -106,6 +107,7 @@ class DiscordRPCService {
   /// thumbnail upload uses the neutral [MediaServerClient.thumbnailUrl] /
   /// [MediaServerClient.streamHeaders] surface.
   Future<void> startPlayback(MediaItem metadata, MediaServerClient client) async {
+    final revision = ++_playbackRevision;
     _currentMetadata = metadata;
     _currentClient = client;
     _playbackStartTime = DateTime.now();
@@ -116,7 +118,7 @@ class DiscordRPCService {
 
     if (_isEnabled && _isConnected) {
       // Upload thumbnail in background, don't block playback
-      unawaited(_uploadThumbnailAndUpdatePresence());
+      unawaited(_uploadThumbnailAndUpdatePresence(revision, metadata, client));
     }
   }
 
@@ -172,6 +174,7 @@ class DiscordRPCService {
   }
 
   Future<void> stopPlayback() async {
+    _playbackRevision++;
     _currentMetadata = null;
     _currentClient = null;
     _playbackStartTime = null;
@@ -211,8 +214,10 @@ class DiscordRPCService {
         await Future.delayed(const Duration(milliseconds: 200));
 
         // Update presence if we have active playback
-        if (_currentMetadata != null) {
-          await _uploadThumbnailAndUpdatePresence();
+        final metadata = _currentMetadata;
+        final client = _currentClient;
+        if (metadata != null && client != null) {
+          await _uploadThumbnailAndUpdatePresence(_playbackRevision, metadata, client);
         }
       });
 
@@ -276,11 +281,12 @@ class DiscordRPCService {
     });
   }
 
-  Future<void> _uploadThumbnailAndUpdatePresence() async {
-    // Try to upload thumbnail, but don't block on failure
-    if (_cachedThumbnailUrl == null && _currentMetadata != null && _currentClient != null) {
-      _cachedThumbnailUrl = await _uploadThumbnail(_currentMetadata!, _currentClient!);
+  Future<void> _uploadThumbnailAndUpdatePresence(int revision, MediaItem metadata, MediaServerClient client) async {
+    final thumbnailUrl = await _uploadThumbnail(metadata, client);
+    if (revision != _playbackRevision || !identical(_currentMetadata, metadata) || !identical(_currentClient, client)) {
+      return;
     }
+    _cachedThumbnailUrl = thumbnailUrl;
     await _updatePresence();
   }
 
