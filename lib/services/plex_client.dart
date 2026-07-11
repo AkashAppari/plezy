@@ -811,7 +811,7 @@ class PlexClient
   @override
   Future<HealthStatus> checkHealth() async {
     try {
-      final response = await _getWithFailover('/');
+      final response = await _getWithFailover('/', timeout: MediaServerTimeouts.plexProbe);
       return response.statusCode == 200 ? HealthStatus.online : HealthStatus.offline;
     } on MediaServerHttpException catch (e) {
       if (e.statusCode == 401 || e.statusCode == 403) return HealthStatus.authError;
@@ -841,7 +841,8 @@ class PlexClient
 
   /// Cancel a running background task by its UUID.
   Future<void> cancelActivity(String uuid) async {
-    await _http.delete('/activities/$uuid');
+    final response = await _http.delete('/activities/$uuid');
+    throwIfHttpError(response);
   }
 
   /// Get library sections
@@ -1699,7 +1700,8 @@ class PlexClient
   /// Remove item from Continue Watching (On Deck) without affecting watch status or progress
   /// This uses the same endpoint Plex Web uses to hide items from Continue Watching
   Future<void> removeFromOnDeck(String ratingKey) async {
-    await _http.put('/actions/removeFromContinueWatching', queryParameters: {'ratingKey': ratingKey});
+    final response = await _http.put('/actions/removeFromContinueWatching', queryParameters: {'ratingKey': ratingKey});
+    throwIfHttpError(response);
   }
 
   /// Delete a media item from the library
@@ -2585,6 +2587,7 @@ class PlexClient
         '/library/collections',
         queryParameters: {'type': ?type, 'title': title, 'smart': 0, 'sectionId': sectionId, 'uri': uri},
       );
+      throwIfHttpError(response);
       appLogger.d('Create collection response: ${response.statusCode}');
 
       // Extract the collection ID from the response
@@ -2713,6 +2716,7 @@ class PlexClient
       }
 
       final response = await _http.post('/playQueues', queryParameters: queryParams);
+      throwIfHttpError(response);
 
       return _parsePlayQueueResponse(
         response.data,
@@ -2951,7 +2955,8 @@ class PlexClient
 
   /// Empty trash for a library section
   Future<void> emptyLibraryTrash(String sectionId) async {
-    await _http.put('/library/sections/$sectionId/emptyTrash');
+    final response = await _http.put('/library/sections/$sectionId/emptyTrash');
+    throwIfHttpError(response);
   }
 
   /// Analyze library section

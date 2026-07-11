@@ -1141,10 +1141,12 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
   /// Update favorite channels on the Plex cloud.
   Future<void> setFavoriteChannels(List<FavoriteChannel> channels) async {
     try {
-      await _http.put(
-        _favoriteChannelsUrl,
-        body: channels.map((c) => c.toJson()).toList(),
-        headers: _providerVersionHeader,
+      await _expectOk(
+        () => _http.put(
+          _favoriteChannelsUrl,
+          body: channels.map((c) => c.toJson()).toList(),
+          headers: _providerVersionHeader,
+        ),
       );
     } catch (e) {
       appLogger.e('Failed to update favorite channels', error: e);
