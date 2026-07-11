@@ -5,12 +5,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/models/companion_remote/remote_command.dart';
 import 'package:plezy/services/companion_remote/companion_remote_receiver.dart';
+import 'package:plezy/widgets/video_controls/video_controls.dart';
 
 void main() {
   testWidgets('Back command dispatches semantic gamepad B events', (tester) async {
     final focusNode = FocusNode();
     addTearDown(focusNode.dispose);
     final events = <KeyEvent>[];
+    var actions = 0;
 
     await tester.pumpWidget(
       MaterialApp(
@@ -18,7 +20,8 @@ void main() {
           focusNode: focusNode,
           onKeyEvent: (_, event) {
             events.add(event);
-            return KeyEventResult.handled;
+            final navigationKey = classifyPlayerNavigationKey(event, isAppleTV: false);
+            return handlePlayerNavigationKeyAction(event, navigationKey, () => actions++);
           },
           child: const SizedBox.expand(),
         ),
@@ -35,5 +38,6 @@ void main() {
     expect(events.last, isA<KeyUpEvent>());
     expect(events.map((event) => event.logicalKey), everyElement(LogicalKeyboardKey.gameButtonB));
     expect(events.map((event) => event.deviceType), everyElement(ui.KeyEventDeviceType.directionalPad));
+    expect(actions, 1);
   });
 }

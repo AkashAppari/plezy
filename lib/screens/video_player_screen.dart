@@ -1474,9 +1474,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
     // Screen-level Focus wraps ALL phases (loading + initialized).
     // - autofocus: grabs focus when no deeper child claims it.
-    // - onKeyEvent: self-heals when this node has primary focus (no descendant
-    //   focused). Nav keys are only consumed in that case; otherwise they pass
-    //   through so DirectionalFocusAction can drive dpad nav in overlay sheets.
+    // - onKeyEvent: owns player-level navigation after descendants have had the
+    //   opportunity to handle local layers such as sheets and content strips.
     return Focus(
       focusNode: _screenFocusNode,
       autofocus: isCurrentRoute,
@@ -1485,9 +1484,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         if (!isCurrentRoute) return KeyEventResult.ignored;
         final navigationKey = classifyPlayerNavigationKey(event, isAppleTV: PlatformDetector.isAppleTV());
         if (navigationKey != PlayerNavigationKey.none) {
-          // Descendants (controls and sheets) own staged Back while focused.
-          // This fallback covers loading/error phases and focus drift.
-          if (!node.hasPrimaryFocus) return KeyEventResult.ignored;
           if (navigationKey != PlayerNavigationKey.home && PlatformDetector.isTV() && event is KeyDownEvent) {
             BackKeyCoordinator.markHandled();
           }

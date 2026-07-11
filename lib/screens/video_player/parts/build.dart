@@ -287,10 +287,6 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         onPlayPauseRequested: () => _playOrPauseWithPlaybackIntent(player!),
                         onSeekCompleted: _notifyWatchTogetherSeek,
                         onBack: _handleBackButton,
-                        onHome: _handleHomeButton,
-                        onDismissPrompt: (_showPlayNextDialog || _showStillWatchingPrompt)
-                            ? _dismissPlaybackPromptForBack
-                            : null,
                         onReachedEnd: ({skipAutoPlayCountdown = false}) =>
                             _onVideoCompleted(true, skipAutoPlayCountdown: skipAutoPlayCountdown),
                         canControl: canControl,

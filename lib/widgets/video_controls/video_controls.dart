@@ -301,13 +301,6 @@ class PlexVideoControls extends StatefulWidget {
   /// Called when back button is pressed (for Watch Together session leave confirmation)
   final VoidCallback? onBack;
 
-  /// Called for a direct Home command after player-specific input handling.
-  final VoidCallback? onHome;
-
-  /// Called when Back should dismiss a visible playback prompt before normal
-  /// player back handling.
-  final VoidCallback? onDismissPrompt;
-
   /// Called when the video has effectively reached the end (e.g. credits extend
   /// to EOF and can't be seeked past). Parent should route this into its normal
   /// completion flow so the auto-play-next setting is honored.
@@ -408,8 +401,6 @@ class PlexVideoControls extends StatefulWidget {
     this.onPlayPauseRequested,
     this.onSeekCompleted,
     this.onBack,
-    this.onHome,
-    this.onDismissPrompt,
     this.onReachedEnd,
     this.canControl = true,
     this.hasFirstFrame,

@@ -70,54 +70,27 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     _showControlsWithFocus();
   }
 
-  KeyEventResult _handlePlayerNavigationKeyEvent(KeyEvent event) {
-    final navigationKey = classifyPlayerNavigationKey(event, isAppleTV: PlatformDetector.isAppleTV());
-    if (navigationKey == PlayerNavigationKey.none) return KeyEventResult.ignored;
-
-    if (navigationKey != PlayerNavigationKey.home && PlatformDetector.isTV() && event is KeyDownEvent) {
-      BackKeyCoordinator.markHandled();
+  KeyEventResult _handleLocalPlayerNavigationKeyEvent(KeyEvent event, PlayerNavigationKey navigationKey) {
+    if (navigationKey == PlayerNavigationKey.none || navigationKey == PlayerNavigationKey.home) {
+      return KeyEventResult.ignored;
     }
 
-    return handlePlayerNavigationKeyAction(event, navigationKey, () {
-      if (navigationKey == PlayerNavigationKey.home) {
-        (widget.onHome ?? widget.onBack ?? () => Navigator.of(context).pop(true))();
-        return;
-      }
-      if (widget.onDismissPrompt != null) {
-        widget.onDismissPrompt!();
-        return;
-      }
-      _handleStagedPlayerBack(navigationKey);
-    });
-  }
+    final sheetController = OverlaySheetController.maybeOf(context);
+    if (sheetController?.isOpen ?? false) {
+      return handlePlayerNavigationKeyAction(event, navigationKey, sheetController!.pop);
+    }
 
-  void _handleStagedPlayerBack(PlayerNavigationKey navigationKey) {
-    final disposition = resolvePlayerBackDisposition(
-      navigationKey: navigationKey,
-      contentStripVisible: widget.chromeController.contentStripVisible,
-      controlsVisible: _showControls,
-    );
-    switch (disposition) {
-      case PlayerBackDisposition.closeContentStrip:
+    if (widget.chromeController.contentStripVisible) {
+      return handlePlayerNavigationKeyAction(event, navigationKey, () {
         _desktopControlsKey.currentState?.dismissContentStrip();
         widget.chromeController.setContentStripVisible(false);
         _restartHideTimerForCurrentPlaybackState();
-        return;
-      case PlayerBackDisposition.exitFullscreenIfActive:
-        unawaited(_handlePhysicalEscape());
-        return;
-      case PlayerBackDisposition.hideControls:
-        _hideControls();
-        return;
-      case PlayerBackDisposition.exitPlayer:
-        (widget.onBack ?? () => Navigator.of(context).pop(true))();
-        return;
+      });
     }
-  }
 
-  Future<void> _handlePhysicalEscape() async {
-    if (await FullscreenStateManager().exitFullscreenIfActive()) return;
-    if (mounted) _handleStagedPlayerBack(PlayerNavigationKey.back);
+    // The enclosing player screen is the sole owner of fullscreen, chrome,
+    // prompt, and route-exit stages.
+    return KeyEventResult.ignored;
   }
 
   /// Global key event handler for focus-independent shortcuts (desktop only)
@@ -136,10 +109,10 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       return false;
     }
 
-    // Focus.onKeyEvent will not fire if focus drifted outside the controls.
-    if (!_focusNode.hasFocus) {
-      final navigationResult = _handlePlayerNavigationKeyEvent(event);
-      if (navigationResult != KeyEventResult.ignored) return true;
+    // Native key events also continue through the focus tree after global
+    // handlers run. Player navigation must only mutate state there.
+    if (classifyPlayerNavigationKey(event, isAppleTV: PlatformDetector.isAppleTV()) != PlayerNavigationKey.none) {
+      return false;
     }
 
     // Only handle when video player navigation is disabled (desktop mode without D-pad nav)
@@ -190,10 +163,12 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
   }
 
   KeyEventResult _handleControlsKeyEvent(KeyEvent event, bool isMobile) {
-    final navigationResult = _handlePlayerNavigationKeyEvent(event);
+    final navigationKey = classifyPlayerNavigationKey(event, isAppleTV: PlatformDetector.isAppleTV());
+    final navigationResult = _handleLocalPlayerNavigationKeyEvent(event, navigationKey);
     if (navigationResult != KeyEventResult.ignored) {
       return navigationResult;
     }
+    if (navigationKey != PlayerNavigationKey.none) return KeyEventResult.ignored;
 
     // Only handle KeyDown and KeyRepeat events.
     // Consume KeyUp events for navigation keys to prevent leaking to previous routes.

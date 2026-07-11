@@ -421,15 +421,16 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
   }
 
   void _autoFocus() {
-    if (!InputModeTracker.isKeyboardMode(context)) return;
+    final focusDescendant = InputModeTracker.isKeyboardMode(context);
 
     // First post-frame: the FocusScope is now built and the node is attached.
-    // Grab scope focus immediately so key events (especially back) are trapped.
-    // Second post-frame: ListView.builder items are laid out and their
-    // FocusNodes are registered — focus the first descendant for dpad nav.
+    // Always grab scope focus so key events (especially back) are trapped, even
+    // when a pointer opened the sheet. In keyboard mode, a second post-frame
+    // callback focuses the first descendant for dpad navigation.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_isOpen) return;
       _sheetFocusScopeNode.requestFocus();
+      if (!focusDescendant) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !_isOpen) return;
         // If the current top entry has an initialFocusNode that is attached,
@@ -456,11 +457,12 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
   }
 
   void _refocus() {
-    if (!InputModeTracker.isKeyboardMode(context)) return;
+    final focusDescendant = InputModeTracker.isKeyboardMode(context);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_isOpen) return;
       _sheetFocusScopeNode.requestFocus();
+      if (!focusDescendant) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !_isOpen) return;
         final topEntry = _pageStack.isNotEmpty ? _pageStack.last : null;
