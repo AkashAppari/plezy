@@ -57,6 +57,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         onContentStripVisibilityChanged: (visible) {
           widget.chromeController.setContentStripVisible(visible);
         },
+        chromeController: widget.chromeController,
       ),
     );
   }

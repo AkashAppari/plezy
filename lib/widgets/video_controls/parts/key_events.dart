@@ -74,6 +74,9 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     if (navigationKey == PlayerNavigationKey.none || navigationKey == PlayerNavigationKey.home) {
       return KeyEventResult.ignored;
     }
+    if (PlatformDetector.isTV() && event is KeyDownEvent) {
+      BackKeyCoordinator.markHandled();
+    }
 
     final sheetController = OverlaySheetController.maybeOf(context);
     if (sheetController?.isOpen ?? false) {

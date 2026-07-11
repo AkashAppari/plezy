@@ -177,9 +177,14 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
   }
 
   void _onChromeVisibilityChanged() {
-    final controlsVisible = widget.chromeController?.controlsVisible ?? true;
+    final chromeController = widget.chromeController;
+    final controlsVisible = chromeController?.controlsVisible ?? true;
     final wasControlsVisible = _lastControlsVisible;
     _lastControlsVisible = controlsVisible;
+
+    if (chromeController?.contentStripVisible == false && _stripAnim.value > 0) {
+      _stripAnim.reverse();
+    }
 
     if (!controlsVisible && wasControlsVisible && _stripVisible) {
       // Just notify parent that strip is no longer active — don't animate,

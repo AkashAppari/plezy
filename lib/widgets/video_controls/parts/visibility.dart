@@ -162,17 +162,6 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     }
   }
 
-  /// macOS PiP changed — force controls visible while PiP is active
-  void _onMacPipChanged() {
-    if (!mounted) return;
-    final inPip = _pipService.isPipActive.value;
-    if (inPip) {
-      widget.chromeController.hold(PlayerChromeHold.pip);
-    } else {
-      widget.chromeController.release(PlayerChromeHold.pip);
-    }
-  }
-
   Future<void> _toggleFullscreen() async {
     if (!PlatformDetector.isDesktopOS()) return;
     await FullscreenStateManager().toggleFullscreen();

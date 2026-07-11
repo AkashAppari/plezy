@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
 
 void main() {
@@ -220,6 +221,24 @@ void main() {
       expect(find.text('SHEET'), findsNothing, reason: 'sheet closed');
       expect(find.text('Open'), findsOneWidget, reason: 'screen not popped');
       expect(backs, 0, reason: 'onSystemBack not called while a sheet was open');
+    });
+
+    testWidgets('system back does not duplicate a handled TV key Back on an open sheet', (tester) async {
+      var backs = 0;
+      await pushHost(tester, canPop: false, onSystemBack: () => backs++);
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      BackKeyCoordinator.markHandled();
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(find.text('SHEET'), findsOneWidget);
+      expect(backs, 0);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
+      await tester.pumpAndSettle();
+      expect(find.text('SHEET'), findsNothing);
     });
   });
 }

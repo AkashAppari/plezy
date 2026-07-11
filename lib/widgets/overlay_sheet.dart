@@ -506,6 +506,9 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
 
     // Back key: pop sub-page or close sheet
     if (event.logicalKey.isBackKey) {
+      if (PlatformDetector.isTV() && event is KeyDownEvent) {
+        BackKeyCoordinator.markHandled();
+      }
       return handleBackKeyAction(event, _handleBack);
     }
 
@@ -558,6 +561,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         onPopInvokedWithResult: (didPop, result) {
           if (didPop) return;
           if (_isOpen && !_isClosing) {
+            if (BackKeyCoordinator.consumeIfHandled()) return;
             _handleBack();
             return;
           }

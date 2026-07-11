@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:plezy/models/shader_preset.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/theme/mono_tokens.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
+import 'package:plezy/widgets/video_controls/player_chrome_controller.dart';
 import 'package:plezy/widgets/video_controls/painters/buffer_range_painter.dart';
 import 'package:plezy/widgets/video_controls/widgets/mobile_skip_zones.dart';
 import 'package:plezy/widgets/video_controls/widgets/skip_marker_button.dart';
@@ -315,6 +317,214 @@ void main() {
 
       expect(actions, 1);
       await tester.pump();
+    });
+  });
+
+  group('PlayerNavigationCoordinator focus dispatch', () {
+    PlayerNavigationCoordinator coordinatorFor(
+      PlayerChromeController chromeController, {
+      bool Function()? isPromptOpen,
+      VoidCallback? dismissPrompt,
+      Future<bool> Function()? exitFullscreenIfActive,
+      VoidCallback? exitPlayer,
+      VoidCallback? navigateHome,
+      bool Function()? isActive,
+    }) {
+      return PlayerNavigationCoordinator(
+        chromeController: chromeController,
+        isPromptOpen: isPromptOpen ?? () => false,
+        dismissPrompt: dismissPrompt ?? () {},
+        isChromePresented: () => chromeController.controlsPresented,
+        exitFullscreenIfActive: exitFullscreenIfActive ?? () async => false,
+        exitPlayer: exitPlayer ?? () {},
+        navigateHome: navigateHome ?? () {},
+        isActive: isActive,
+      );
+    }
+
+    Future<void> pumpNavigationFocus(WidgetTester tester, PlayerNavigationCoordinator coordinator) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Focus(
+            autofocus: true,
+            onKeyEvent: (_, event) {
+              final navigationKey = classifyPlayerNavigationKey(event, isAppleTV: false);
+              return handlePlayerNavigationKeyAction(event, navigationKey, () => coordinator.handle(navigationKey));
+            },
+            child: const SizedBox.expand(),
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    testWidgets('one Back hides presented chrome and the next exits once after fade-out', (tester) async {
+      final chromeController = PlayerChromeController();
+      addTearDown(chromeController.dispose);
+      var exits = 0;
+      final coordinator = coordinatorFor(chromeController, exitPlayer: () => exits++);
+      await pumpNavigationFocus(tester, coordinator);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
+
+      expect(chromeController.controlsVisible, isFalse);
+      expect(chromeController.controlsPresented, isTrue);
+      expect(exits, 0);
+
+      chromeController.markControlsHidden();
+      await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
+
+      expect(exits, 1);
+    });
+
+    testWidgets('physical Escape outside fullscreen hides presented chrome without exiting', (tester) async {
+      final chromeController = PlayerChromeController();
+      addTearDown(chromeController.dispose);
+      var fullscreenChecks = 0;
+      var exits = 0;
+      final coordinator = coordinatorFor(
+        chromeController,
+        exitFullscreenIfActive: () async {
+          fullscreenChecks++;
+          return false;
+        },
+        exitPlayer: () => exits++,
+      );
+      await pumpNavigationFocus(tester, coordinator);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pump();
+
+      expect(fullscreenChecks, 1);
+      expect(chromeController.controlsVisible, isFalse);
+      expect(exits, 0);
+    });
+
+    testWidgets('physical Escape preserves event-time chrome presentation across fullscreen check', (tester) async {
+      final chromeController = PlayerChromeController();
+      addTearDown(chromeController.dispose);
+      final fullscreenResult = Completer<bool>();
+      var exits = 0;
+      final coordinator = coordinatorFor(
+        chromeController,
+        exitFullscreenIfActive: () => fullscreenResult.future,
+        exitPlayer: () => exits++,
+      );
+      await pumpNavigationFocus(tester, coordinator);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      chromeController.hide();
+      chromeController.markControlsHidden();
+      fullscreenResult.complete(false);
+      await tester.pump();
+
+      expect(chromeController.controlsVisible, isFalse);
+      expect(chromeController.controlsPresented, isFalse);
+      expect(exits, 0);
+    });
+
+    testWidgets('physical Escape exits native fullscreen before chrome', (tester) async {
+      final chromeController = PlayerChromeController();
+      addTearDown(chromeController.dispose);
+      var exits = 0;
+      final coordinator = coordinatorFor(
+        chromeController,
+        exitFullscreenIfActive: () async => true,
+        exitPlayer: () => exits++,
+      );
+      await pumpNavigationFocus(tester, coordinator);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pump();
+
+      expect(chromeController.controlsVisible, isTrue);
+      expect(exits, 0);
+    });
+
+    testWidgets('physical Escape does nothing after its player route is disposed', (tester) async {
+      final chromeController = PlayerChromeController();
+      addTearDown(chromeController.dispose);
+      final fullscreenResult = Completer<bool>();
+      var active = true;
+      var exits = 0;
+      final coordinator = coordinatorFor(
+        chromeController,
+        exitFullscreenIfActive: () => fullscreenResult.future,
+        exitPlayer: () => exits++,
+        isActive: () => active,
+      );
+      await pumpNavigationFocus(tester, coordinator);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      active = false;
+      fullscreenResult.complete(false);
+      await tester.pump();
+
+      expect(chromeController.controlsVisible, isTrue);
+      expect(exits, 0);
+    });
+
+    testWidgets('Back closes the content strip without hiding chrome or exiting', (tester) async {
+      final chromeController = PlayerChromeController()..setContentStripVisible(true);
+      addTearDown(chromeController.dispose);
+      var exits = 0;
+      final coordinator = coordinatorFor(chromeController, exitPlayer: () => exits++);
+      await pumpNavigationFocus(tester, coordinator);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
+
+      expect(chromeController.contentStripVisible, isFalse);
+      expect(chromeController.controlsVisible, isTrue);
+      expect(exits, 0);
+      chromeController.cancelAutoHide();
+    });
+
+    testWidgets('Home bypasses staged Back layers', (tester) async {
+      final chromeController = PlayerChromeController()..setContentStripVisible(true);
+      addTearDown(chromeController.dispose);
+      var promptOpen = true;
+      var promptDismissals = 0;
+      var homeNavigations = 0;
+      final coordinator = coordinatorFor(
+        chromeController,
+        isPromptOpen: () => promptOpen,
+        dismissPrompt: () {
+          promptOpen = false;
+          promptDismissals++;
+        },
+        navigateHome: () => homeNavigations++,
+      );
+      await pumpNavigationFocus(tester, coordinator);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.home);
+
+      expect(homeNavigations, 1);
+      expect(promptDismissals, 0);
+      expect(chromeController.contentStripVisible, isTrue);
+      expect(chromeController.controlsVisible, isTrue);
+    });
+
+    testWidgets('global observation and focus dispatch produce one native Back action', (tester) async {
+      final chromeController = PlayerChromeController();
+      addTearDown(chromeController.dispose);
+      var globalEvents = 0;
+      var exits = 0;
+      bool globalHandler(KeyEvent event) {
+        if (classifyPlayerNavigationKey(event, isAppleTV: false) != PlayerNavigationKey.none) {
+          globalEvents++;
+        }
+        return false;
+      }
+
+      HardwareKeyboard.instance.addHandler(globalHandler);
+      addTearDown(() => HardwareKeyboard.instance.removeHandler(globalHandler));
+      await pumpNavigationFocus(tester, coordinatorFor(chromeController, exitPlayer: () => exits++));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+
+      expect(globalEvents, 2);
+      expect(chromeController.controlsVisible, isFalse);
+      expect(exits, 0);
     });
   });
 

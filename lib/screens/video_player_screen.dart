@@ -572,10 +572,22 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   final ValueNotifier<bool> _hasFirstFrame = ValueNotifier<bool>(false);
   final ValueNotifier<bool> _isExiting = ValueNotifier<bool>(false);
   final PlayerChromeController _chromeController = PlayerChromeController();
+  late final PlayerNavigationCoordinator _playerNavigationCoordinator;
 
   @override
   void initState() {
     super.initState();
+
+    _playerNavigationCoordinator = PlayerNavigationCoordinator(
+      chromeController: _chromeController,
+      isPromptOpen: () => _showPlayNextDialog || _showStillWatchingPrompt,
+      dismissPrompt: _dismissPlaybackPromptForBack,
+      isChromePresented: () => _isPlayerInitialized && player != null && _chromeController.controlsPresented,
+      exitFullscreenIfActive: FullscreenStateManager().exitFullscreenIfActive,
+      exitPlayer: () => unawaited(_handleBackButton()),
+      navigateHome: _handleHomeButton,
+      isActive: () => mounted,
+    );
 
     _currentMetadata = widget.metadata;
     _activeId = widget.metadata.id;
@@ -1142,38 +1154,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   void _handleScreenPlayerNavigation(PlayerNavigationKey navigationKey) {
-    if (navigationKey == PlayerNavigationKey.home) {
-      _handleHomeButton();
-      return;
+    if (navigationKey != PlayerNavigationKey.home) {
+      final sheetController = OverlaySheetController.maybeOf(context);
+      if (sheetController?.isOpen ?? false) {
+        sheetController!.pop();
+        return;
+      }
     }
-    if (_showPlayNextDialog || _showStillWatchingPrompt) {
-      _dismissPlaybackPromptForBack();
-      return;
-    }
-    final disposition = resolvePlayerBackDisposition(
-      navigationKey: navigationKey,
-      contentStripVisible: _chromeController.contentStripVisible,
-      controlsVisible: _chromeController.controlsVisible,
-    );
-    switch (disposition) {
-      case PlayerBackDisposition.closeContentStrip:
-        _chromeController.setContentStripVisible(false);
-        return;
-      case PlayerBackDisposition.exitFullscreenIfActive:
-        unawaited(_handleScreenPhysicalEscape());
-        return;
-      case PlayerBackDisposition.hideControls:
-        _chromeController.hide();
-        return;
-      case PlayerBackDisposition.exitPlayer:
-        unawaited(_handleBackButton());
-        return;
-    }
-  }
-
-  Future<void> _handleScreenPhysicalEscape() async {
-    if (await FullscreenStateManager().exitFullscreenIfActive()) return;
-    if (mounted) _handleScreenPlayerNavigation(PlayerNavigationKey.back);
+    _playerNavigationCoordinator.handle(navigationKey);
   }
 
   Future<void> _restoreSystemUiAndOrientation() async {
@@ -1530,7 +1518,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         onSystemBack: () {
           if (BackKeyCoordinator.consumeIfHandled()) return;
           BackKeyCoordinator.markHandled();
-          _handleBackButton();
+          _handleScreenPlayerNavigation(PlayerNavigationKey.back);
         },
         child: Builder(
           builder: (sheetContext) => _isPlayerInitialized && player != null

@@ -119,6 +119,32 @@ void main() {
       expect(controller.takeFocusTarget(), isNull);
     });
 
+    test('hide keeps controls presented until the opacity animation completes', () {
+      final controller = PlayerChromeController();
+      addTearDown(controller.dispose);
+
+      controller.hide();
+
+      expect(controller.controlsVisible, isFalse);
+      expect(controller.controlsPresented, isTrue);
+
+      controller.markControlsHidden();
+
+      expect(controller.controlsPresented, isFalse);
+    });
+
+    test('a stale fade-out completion cannot hide controls that were shown again', () {
+      final controller = PlayerChromeController();
+      addTearDown(controller.dispose);
+
+      controller.hide();
+      controller.show();
+      controller.markControlsHidden();
+
+      expect(controller.controlsVisible, isTrue);
+      expect(controller.controlsPresented, isTrue);
+    });
+
     test('silent release removes hold without notifying listeners', () {
       final controller = PlayerChromeController();
       addTearDown(controller.dispose);

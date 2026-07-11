@@ -185,6 +185,81 @@ enum PlayerNavigationKey { none, physicalEscape, back, home }
 
 enum PlayerBackDisposition { closeContentStrip, exitFullscreenIfActive, hideControls, exitPlayer }
 
+/// Coordinates the player-level stages shared by keyboard, controller, and
+/// companion navigation after descendants have handled local overlays.
+class PlayerNavigationCoordinator {
+  final PlayerChromeController chromeController;
+  final bool Function() isPromptOpen;
+  final VoidCallback dismissPrompt;
+  final bool Function() isChromePresented;
+  final Future<bool> Function() exitFullscreenIfActive;
+  final VoidCallback exitPlayer;
+  final VoidCallback navigateHome;
+  final bool Function() isActive;
+
+  bool _handlingPhysicalEscape = false;
+
+  PlayerNavigationCoordinator({
+    required this.chromeController,
+    required this.isPromptOpen,
+    required this.dismissPrompt,
+    required this.isChromePresented,
+    required this.exitFullscreenIfActive,
+    required this.exitPlayer,
+    required this.navigateHome,
+    bool Function()? isActive,
+  }) : isActive = isActive ?? _alwaysActive;
+
+  static bool _alwaysActive() => true;
+
+  void handle(PlayerNavigationKey navigationKey) {
+    if (navigationKey == PlayerNavigationKey.home) {
+      navigateHome();
+      return;
+    }
+    if (isPromptOpen()) {
+      dismissPrompt();
+      return;
+    }
+    if (chromeController.contentStripVisible) {
+      chromeController.setContentStripVisible(false);
+      return;
+    }
+    if (navigationKey == PlayerNavigationKey.physicalEscape) {
+      unawaited(_handlePhysicalEscape());
+      return;
+    }
+    _handleSemanticBack();
+  }
+
+  void _handleSemanticBack() {
+    if (isChromePresented()) {
+      chromeController.hide();
+      return;
+    }
+    exitPlayer();
+  }
+
+  Future<void> _handlePhysicalEscape() async {
+    if (_handlingPhysicalEscape) return;
+    _handlingPhysicalEscape = true;
+    final chromeWasPresented = isChromePresented();
+    try {
+      if (await exitFullscreenIfActive()) return;
+      if (!isActive()) return;
+      if (chromeController.contentStripVisible) {
+        chromeController.setContentStripVisible(false);
+      } else if (chromeWasPresented || isChromePresented()) {
+        chromeController.hide();
+      } else {
+        exitPlayer();
+      }
+    } finally {
+      _handlingPhysicalEscape = false;
+    }
+  }
+}
+
 PlayerBackDisposition resolvePlayerBackDisposition({
   required PlayerNavigationKey navigationKey,
   required bool contentStripVisible,
@@ -613,11 +688,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     HardwareKeyboard.instance.addHandler(_handleGlobalKeyEvent);
     // Listen for first frame to start auto-hide timer
     widget.hasFirstFrame?.addListener(_onFirstFrameReady);
-    // On macOS, show controls and disable auto-hide when PiP activates
-    if (Platform.isMacOS) {
-      _pipService.isPipActive.addListener(_onMacPipChanged);
-    }
-
     // Defer context-dependent initialization to after first build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -707,7 +777,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     }
     if (Platform.isMacOS) {
       FullscreenStateManager().removeListener(_onFullscreenStateChanged);
-      _pipService.isPipActive.removeListener(_onMacPipChanged);
       _trafficLightVisibilityGeneration++;
       unawaited(MacOSWindowService.setTrafficLightsVisible(true));
     }
@@ -726,7 +795,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   void _onEdgeAdjustmentPipChanged() {
     final isInPip = _pipService.isPipActive.value;
     _deviceAdjustmentService.setRestoreSuppressed(isInPip);
-    if (isInPip) _cancelEdgeAdjustmentGesture();
+    if (isInPip) {
+      widget.chromeController.hold(PlayerChromeHold.pip);
+      _cancelEdgeAdjustmentGesture();
+    } else {
+      widget.chromeController.release(PlayerChromeHold.pip);
+    }
   }
 
   @override
@@ -839,6 +913,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                         child: AnimatedOpacity(
                           opacity: _showControls ? 1.0 : 0.0,
                           duration: const Duration(milliseconds: 200),
+                          onEnd: () {
+                            if (!_showControls) widget.chromeController.markControlsHidden();
+                          },
                           child: Builder(
                             builder: (context) {
                               return GestureDetector(

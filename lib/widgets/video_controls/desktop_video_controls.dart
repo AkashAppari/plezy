@@ -19,6 +19,7 @@ import '../../i18n/strings.g.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../models/livetv_capture_buffer.dart';
 import 'models/track_controls_state.dart';
+import 'player_chrome_controller.dart';
 import 'widgets/content_strip.dart';
 import 'widgets/live_timeline_bar.dart';
 import 'widgets/first_frame_guard.dart';
@@ -101,6 +102,7 @@ class DesktopVideoControls extends StatefulWidget {
 
   /// Called when content strip visibility changes
   final ValueChanged<bool>? onContentStripVisibilityChanged;
+  final PlayerChromeController? chromeController;
 
   /// Called when a seek should be executed by the owning screen.
   final Future<void> Function(Duration position)? onSeekRequested;
@@ -150,6 +152,7 @@ class DesktopVideoControls extends StatefulWidget {
     this.onCancelAutoHide,
     this.onStartAutoHide,
     this.onContentStripVisibilityChanged,
+    this.chromeController,
     this.onSeekRequested,
     this.onSeekCompleted,
   });
@@ -242,10 +245,21 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       _nextItemFocusNode,
       _goToLiveFocusNode,
     ];
+    widget.chromeController?.addListener(_onChromeControllerChanged);
+  }
+
+  @override
+  void didUpdateWidget(DesktopVideoControls oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.chromeController != widget.chromeController) {
+      oldWidget.chromeController?.removeListener(_onChromeControllerChanged);
+      widget.chromeController?.addListener(_onChromeControllerChanged);
+    }
   }
 
   @override
   void dispose() {
+    widget.chromeController?.removeListener(_onChromeControllerChanged);
     _keyRepeatThumbnailTimer?.cancel();
     _timelineSeekDebounceTimer?.cancel();
     _timelinePreviewClearTimer?.cancel();
@@ -263,6 +277,12 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       node.dispose();
     }
     super.dispose();
+  }
+
+  void _onChromeControllerChanged() {
+    if (widget.chromeController?.contentStripVisible == false) {
+      hideContentStrip();
+    }
   }
 
   /// Request focus on the play/pause button (called when controls shown via keyboard)
