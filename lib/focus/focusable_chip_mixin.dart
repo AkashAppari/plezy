@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../utils/scroll_utils.dart';
+import 'owned_focus_node_binding.dart';
 import 'dpad_navigator.dart';
 import 'key_event_utils.dart';
 
@@ -45,7 +46,7 @@ class ChipKeyCallbacks {
 /// 6. Call [disposeFocusNode] in your `dispose`
 /// 7. Use [focusNode] and [isFocused] in your build method
 mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
-  FocusNode? _internalFocusNode;
+  final _focusNodeBinding = OwnedFocusNodeBinding();
   bool _isFocused = false;
   Timer? _longPressTimer;
   bool _isSelectKeyDown = false;
@@ -57,30 +58,26 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
   String get debugLabel;
 
   /// The active focus node (external if provided, otherwise internal).
-  FocusNode get focusNode {
-    return widgetFocusNode ?? (_internalFocusNode ??= FocusNode(debugLabel: debugLabel));
-  }
+  FocusNode get focusNode => _focusNodeBinding.node;
 
   /// Whether this widget is currently focused.
   bool get isFocused => _isFocused;
 
   /// Call this in your `initState` to set up the focus listener.
   void initFocusNode() {
-    focusNode.addListener(_onFocusChange);
+    _focusNodeBinding.bind(externalNode: widgetFocusNode, listener: _onFocusChange, debugLabel: debugLabel);
   }
 
   /// Call this in your `didUpdateWidget` with the old widget's focusNode.
   void updateFocusNode(FocusNode? oldFocusNode) {
     if (oldFocusNode != widgetFocusNode) {
-      oldFocusNode?.removeListener(_onFocusChange);
-      focusNode.addListener(_onFocusChange);
+      _focusNodeBinding.bind(externalNode: widgetFocusNode, listener: _onFocusChange, debugLabel: debugLabel);
     }
   }
 
   /// Call this in your `dispose` to clean up the focus listener.
   void disposeFocusNode() {
-    focusNode.removeListener(_onFocusChange);
-    _internalFocusNode?.dispose();
+    _focusNodeBinding.dispose();
     _longPressTimer?.cancel();
   }
 

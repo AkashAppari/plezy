@@ -682,7 +682,6 @@ class PlexClient
     );
   }
 
-  @override
   List<PlexMetadataDto> _extractMetadataList(MediaServerResponse response) => _extractMetadataListWithLibrary(response);
 
   List<PlexMetadataDto> _extractMetadataListWithLibrary(
