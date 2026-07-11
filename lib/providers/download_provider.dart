@@ -90,6 +90,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   final Map<String, SyncRuleItem> _syncRules = {};
 
   String? _activeProfileId;
+  int _profileGeneration = 0;
   Future<void>? _profileScopedReloadFuture;
 
   OfflineModeSource? _offlineSource;
@@ -143,6 +144,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   void setActiveProfileId(String? profileId) {
     if (_activeProfileId == profileId) return;
     _activeProfileId = profileId;
+    _profileGeneration++;
     final reload = _reloadProfileScopedStateForActiveProfile();
     _profileScopedReloadFuture = reload;
     unawaited(reload);
@@ -206,6 +208,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // reload may still finish its DB adoption, but cannot repopulate the
     // active-profile view after this point.
     _activeProfileId = null;
+    _profileGeneration++;
     await _initFuture;
     await _profileScopedReloadFuture;
     await _database.clearAllDownloadOwners();
@@ -364,13 +367,16 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Patch `_metadata` viewCount/viewOffsetMs from queued OfflineWatchProgress
   /// actions. Idempotent and cheap (one batched DB read).
-  Future<void> _applyOfflineWatchOverlay() async {
+  Future<void> _applyOfflineWatchOverlay({int? expectedProfileGeneration}) async {
     if (_metadata.isEmpty) return;
+    bool isStale() =>
+        expectedProfileGeneration != null && (isDisposed || expectedProfileGeneration != _profileGeneration);
     try {
       final keys = _metadata.keys.toSet();
       final scopes = <String, String?>{};
       for (final key in keys) {
         scopes[key] = await _offlineWatchScopeForGlobalKey(key);
+        if (isStale()) return;
       }
       final profileId = _activeProfileId;
       final actions = await _database.getWatchActionsForKeys(
@@ -379,6 +385,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         filterProfile: profileId != null,
         clientScopeIdsByGlobalKey: scopes,
       );
+      if (isStale()) return;
       if (actions.isEmpty) return;
       for (final entry in actions.entries) {
         final base = _metadata[entry.key];
@@ -1554,11 +1561,14 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// This is more lightweight than full refresh() - only updates metadata
   /// without reloading download progress from database.
   Future<void> refreshMetadataFromCache() async {
+    final profileGeneration = _profileGeneration;
+    bool isStale() => isDisposed || profileGeneration != _profileGeneration;
     // The initial load runs in the constructor and may still be in flight
     // when callers (e.g. `onServersConnected`) trigger this. Wait for it so
     // `_downloads` is populated before we walk it — otherwise an early call
     // sees an empty map and does nothing useful.
     await ensureInitialized();
+    if (isStale()) return;
 
     // Walk every download — not just keys we already have metadata for. The
     // initial `_loadPersistedDownloads` may have raced with connection setup
@@ -1568,6 +1578,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     if (keys.isEmpty) return;
 
     final allMetadata = await _downloadManager.getAllPinnedMetadata(preferActiveScope: true);
+    if (isStale()) return;
     int cacheHits = 0;
     int networkFills = 0;
     int misses = 0;
@@ -1578,9 +1589,11 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
       try {
         final downloadRecord = await _downloadManager.getDownloadedMedia(globalKey);
+        if (isStale()) return;
         var cached =
             allMetadata[globalKey] ??
             await _downloadManager.lookupMetadata(parsed.serverId, parsed.ratingKey, preferActiveScope: true);
+        if (isStale()) return;
         if (cached != null) {
           cacheHits++;
         } else if (_downloads.containsKey(globalKey)) {
@@ -1593,6 +1606,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
             parsed.ratingKey,
             preferActiveScope: true,
           );
+          if (isStale()) return;
           if (cached != null) networkFills++;
         }
 
@@ -1616,7 +1630,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
     // Re-apply offline overlay so locally-queued watch actions aren't clobbered
     // by stale per-backend caches that haven't yet seen the server roundtrip.
-    await _applyOfflineWatchOverlay();
+    await _applyOfflineWatchOverlay(expectedProfileGeneration: profileGeneration);
+    if (isStale()) return;
 
     final updatedCount = cacheHits + networkFills;
     appLogger.i(

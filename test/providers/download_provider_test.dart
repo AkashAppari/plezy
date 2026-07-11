@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:plezy/media/ids.dart';
 
@@ -58,16 +59,20 @@ class _MusicExpansionClient implements MediaServerClient {
 }
 
 class _ScopedTestClient implements MediaServerClient, ScopedMediaServerClient {
-  _ScopedTestClient({required this.serverId, required this.scopedServerId});
+  _ScopedTestClient({required this.serverId, required this.scopedServerId, this.fetchItemHandler});
 
   @override
   final ServerId serverId;
 
   @override
   final String scopedServerId;
+  final Future<MediaItem?> Function(String id)? fetchItemHandler;
 
   @override
   MediaBackend get backend => MediaBackend.jellyfin;
+
+  @override
+  Future<MediaItem?> fetchItem(String id, {bool useCache = true}) async => fetchItemHandler?.call(id);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -975,6 +980,76 @@ void main() {
       await p.refreshMetadataFromCache();
 
       expect(p.getMetadata('jf-machine:ep-1')?.isWatched, isTrue);
+
+      p.dispose();
+    });
+
+    test('profile switch discards an in-flight metadata refresh from the old scope', () async {
+      await insertJellyfinConnection('user-a');
+      await db.insertDownload(
+        serverId: ServerId('jf-machine'),
+        clientScopeId: 'jf-machine/user-a',
+        ratingKey: 'movie-1',
+        globalKey: 'jf-machine:movie-1',
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+      );
+
+      final fetchStarted = Completer<void>();
+      final releaseFetch = Completer<void>();
+      var activeClient = _ScopedTestClient(
+        serverId: ServerId('jf-machine'),
+        scopedServerId: 'jf-machine/user-a',
+        fetchItemHandler: (id) async {
+          fetchStarted.complete();
+          await releaseFetch.future;
+          return MediaItem(
+            id: id,
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            title: 'Profile A',
+            serverId: ServerId('jf-machine'),
+          );
+        },
+      );
+      testClientResolver = (serverId, {clientScopeId}) => serverId == 'jf-machine' ? activeClient : null;
+
+      final p = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: 'profile-a',
+      );
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {
+          'jf-machine:movie-1': const DownloadProgress(
+            globalKey: 'jf-machine:movie-1',
+            status: DownloadStatus.completed,
+          ),
+        },
+      );
+
+      final staleRefresh = p.refreshMetadataFromCache();
+      await fetchStarted.future;
+      p.setActiveProfileId('profile-b');
+      activeClient = _ScopedTestClient(
+        serverId: ServerId('jf-machine'),
+        scopedServerId: 'jf-machine/user-b',
+        fetchItemHandler: (id) async => MediaItem(
+          id: id,
+          backend: MediaBackend.jellyfin,
+          kind: MediaKind.movie,
+          title: 'Profile B',
+          serverId: ServerId('jf-machine'),
+        ),
+      );
+      releaseFetch.complete();
+      await staleRefresh;
+
+      expect(p.getMetadata('jf-machine:movie-1'), isNull);
+
+      await p.refreshMetadataFromCache();
+      expect(p.getMetadata('jf-machine:movie-1')?.title, 'Profile B');
 
       p.dispose();
     });
