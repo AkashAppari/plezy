@@ -2780,18 +2780,10 @@ class DownloadManagerService {
 
       final videoPath = await _storageService.ensureAbsolutePath(storedPath);
       final videoFile = File(videoPath);
-      if (!await videoFile.exists()) return;
-
-      appLogger.w('Safety net: video still exists after metadata deletion, deleting: $videoPath');
-      await videoFile.delete();
-
-      await _deleteFileIfExists(File('$videoPath.part'), 'partial download');
-      final subsPath = videoPath.replaceAll(RegExp(r'\.[^.]+$'), '_subs');
-      final subsDir = Directory(subsPath);
-      if (await subsDir.exists()) await subsDir.delete(recursive: true);
-
-      // Walk up empty parent directories toward downloads root
-      await _cleanupEmptyParentDirectories(videoFile.parent);
+      if (await videoFile.exists()) {
+        appLogger.w('Safety net: video still exists after metadata deletion, deleting: $videoPath');
+      }
+      await _deleteFilesystemVideoAssets(videoPath);
     } catch (e, stack) {
       appLogger.w('Safety net deletion failed', error: e, stackTrace: stack);
     }
@@ -2898,6 +2890,24 @@ class DownloadManagerService {
     }
   }
 
+  /// Delete a downloaded file and the sidecars derived from its path. Sidecar
+  /// cleanup is independent of the primary file because interrupted or manual
+  /// video removal must not strand `.part` files or subtitle directories.
+  Future<void> _deleteFilesystemVideoAssets(String videoPath) async {
+    final videoFile = File(videoPath);
+    await _deleteFileIfExists(videoFile, 'video file');
+    await _deleteFileIfExists(File('$videoPath.part'), 'partial download');
+
+    final subsPath = videoPath.replaceAll(RegExp(r'\.[^.]+$'), '_subs');
+    final subsDir = Directory(subsPath);
+    if (await subsDir.exists()) {
+      await subsDir.delete(recursive: true);
+      appLogger.i('Deleted subtitles: $subsPath');
+    }
+
+    await _cleanupEmptyParentDirectories(videoFile.parent);
+  }
+
   /// Fallback deletion using file paths from database.
   ///
   /// [deleteThumb] lets callers preserve a shared artwork blob — album-cover
@@ -2911,21 +2921,7 @@ class DownloadManagerService {
         await _tryDeleteSaf(record.videoFilePath!, isDir: false, description: 'SAF video file');
       } else if (record.videoFilePath != null) {
         final videoPath = await _storageService.ensureAbsolutePath(record.videoFilePath!);
-        final videoFile = File(videoPath);
-        final videoDeleted = await _deleteFileIfExists(videoFile, 'video file');
-
-        if (videoDeleted) {
-          await _deleteFileIfExists(File('$videoPath.part'), 'partial download');
-
-          final subsPath = videoPath.replaceAll(RegExp(r'\.[^.]+$'), '_subs');
-          final subsDir = Directory(subsPath);
-          if (await subsDir.exists()) {
-            await subsDir.delete(recursive: true);
-            appLogger.i('Deleted subtitles: $subsPath');
-          }
-
-          await _cleanupEmptyParentDirectories(videoFile.parent);
-        }
+        await _deleteFilesystemVideoAssets(videoPath);
       }
 
       // thumbPath is a server-side API path (Plex /library/metadata/.../thumb,

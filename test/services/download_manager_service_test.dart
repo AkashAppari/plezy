@@ -276,6 +276,58 @@ void main() {
     });
   });
 
+  group('deletion cleanup', () {
+    test('missing video still removes partial and subtitle sidecars', () async {
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      DownloadStorageService.resetForTesting();
+      final tmpRoot = await Directory.systemTemp.createTemp('download_manager_delete_test_');
+      PathProviderPlatform.instance = _FakePathProvider(tmpRoot);
+      addTearDown(() async {
+        DownloadStorageService.resetForTesting();
+        SettingsService.resetForTesting();
+        if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
+      });
+
+      final settings = await SettingsService.getInstance();
+      final storage = DownloadStorageService.instance;
+      await storage.initialize(settings);
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      JellyfinApiCache.initialize(db);
+      addTearDown(db.close);
+
+      final videoPath = p.join(tmpRoot.path, 'support', 'downloads', 'srv', 'item-1', 'video.mkv');
+      final partial = File('$videoPath.part');
+      final subtitles = Directory(videoPath.replaceAll(RegExp(r'\.[^.]+$'), '_subs'));
+      await partial.parent.create(recursive: true);
+      await partial.writeAsString('partial');
+      await subtitles.create(recursive: true);
+      await File(p.join(subtitles.path, '1.srt')).writeAsString('subtitle');
+
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'item-1',
+        globalKey: 'srv:item-1',
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+      );
+      await db.updateVideoFilePath('srv:item-1', videoPath);
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: storage,
+        clientResolver: (serverId, {clientScopeId}) => null,
+      )..recoveryFuture = Future<void>.value();
+      addTearDown(manager.dispose);
+
+      await manager.deleteDownload('srv:item-1');
+
+      expect(await partial.exists(), isFalse);
+      expect(await subtitles.exists(), isFalse);
+      expect(await db.getDownloadedMedia('srv:item-1'), isNull);
+    });
+  });
+
   group('task session validation', () {
     test('ignores progress from stale native task ids', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
