@@ -28,7 +28,6 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
 
   Map<String, dynamic>? _getMediaContainer(MediaServerResponse response);
   PlexMetadataDto _createTaggedMetadata(Map<String, dynamic> json);
-  List<PlexMetadataDto> _extractMetadataList(MediaServerResponse response);
 
   Future<List<T>> _wrapListApiCall<T>(
     Future<MediaServerResponse> Function() apiCall,
@@ -1061,15 +1060,6 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
     return '${config.baseUrl}$streamPath'.withPlexToken(config.token);
   }
 
-  /// Get active live TV sessions
-  Future<List<PlexMetadataDto>> _getLiveTvSessions() {
-    return _wrapListApiCall<PlexMetadataDto>(
-      () => _http.get('/livetv/sessions'),
-      _extractMetadataList,
-      'Failed to get live TV sessions',
-    );
-  }
-
   Future<List<LiveTvSession>> getLiveTvSessionsDetailed() async {
     final response = await _getWithFailover('/livetv/sessions');
     return _extractContainerList(response, const [
@@ -1151,12 +1141,6 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
     } catch (e) {
       appLogger.e('Failed to update favorite channels', error: e);
     }
-  }
-
-  /// Plex-specific: live TV sessions (active recordings/playback).
-  Future<List<MediaItem>> fetchLiveTvSessions() async {
-    final raw = await _getLiveTvSessions();
-    return raw.map((m) => PlexMappers.mediaItem(m)).toList();
   }
 
   @override

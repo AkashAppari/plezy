@@ -22,11 +22,6 @@ extension DownloadDatabaseOperations on AppDatabase {
     await (delete(downloadOwners)..where((t) => t.profileId.equals(profileId) & t.globalKey.equals(globalKey))).go();
   }
 
-  Future<void> removeDownloadOwnersForProfile(String profileId) async {
-    if (profileId.isEmpty) return;
-    await (delete(downloadOwners)..where((t) => t.profileId.equals(profileId))).go();
-  }
-
   Future<void> clearAllDownloadOwners() async {
     await delete(downloadOwners).go();
   }
@@ -59,12 +54,7 @@ extension DownloadDatabaseOperations on AppDatabase {
     final connectionRows = await select(connections).get();
     final connectionIds = connectionRows.map((row) => row.id).toSet();
     return candidates
-        .where((row) {
-          if (localProfileIds.contains(row.profileId)) return true;
-          final plexHome = parsePlexHomeProfileId(row.profileId);
-          if (plexHome != null) return connectionIds.contains(plexHome.accountConnectionId);
-          return localProfileIds.isEmpty;
-        })
+        .where((row) => _isValidDownloadOwner(row, localProfileIds: localProfileIds, connectionIds: connectionIds))
         .toList(growable: false);
   }
 
@@ -83,16 +73,10 @@ extension DownloadDatabaseOperations on AppDatabase {
     final owners = await select(downloadOwners).get();
     final localProfileIds = (await select(profiles).get()).map((row) => row.id).toSet();
     final connectionIds = (await select(connections).get()).map((row) => row.id).toSet();
-    bool valid(DownloadOwnerItem owner) {
-      if (localProfileIds.contains(owner.profileId)) return true;
-      final plexHome = parsePlexHomeProfileId(owner.profileId);
-      if (plexHome != null) return connectionIds.contains(plexHome.accountConnectionId);
-      return localProfileIds.isEmpty;
-    }
-
     final ownedKeys = <String>{
       for (final owner in owners)
-        if (valid(owner)) owner.globalKey,
+        if (_isValidDownloadOwner(owner, localProfileIds: localProfileIds, connectionIds: connectionIds))
+          owner.globalKey,
     };
     for (final row in rows) {
       if (!ownedKeys.contains(row.globalKey)) {
@@ -332,4 +316,15 @@ extension DownloadDatabaseOperations on AppDatabase {
     final item = await getDownloadedMedia(globalKey);
     return item?.bgTaskId;
   }
+}
+
+bool _isValidDownloadOwner(
+  DownloadOwnerItem owner, {
+  required Set<String> localProfileIds,
+  required Set<String> connectionIds,
+}) {
+  if (localProfileIds.contains(owner.profileId)) return true;
+  final plexHome = parsePlexHomeProfileId(owner.profileId);
+  if (plexHome != null) return connectionIds.contains(plexHome.accountConnectionId);
+  return localProfileIds.isEmpty;
 }

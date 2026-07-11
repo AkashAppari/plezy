@@ -198,31 +198,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     await _releaseDownloadsForProfileWhere(profileId, (_) => true);
   }
 
-  Future<void> deleteAllDownloads() async {
-    final downloads = await _downloadManager.getAllDownloads();
-    for (final row in downloads) {
-      await _downloadManager.deleteDownload(row.globalKey);
-    }
-    await _database.clearAllDownloadOwners();
-
-    try {
-      final artworkDirectory = await DownloadStorageService.instance.getArtworkDirectory();
-      if (await artworkDirectory.exists()) {
-        await artworkDirectory.delete(recursive: true);
-      }
-    } catch (e, stackTrace) {
-      appLogger.w('Failed to delete shared download artwork directory', error: e, stackTrace: stackTrace);
-    }
-
-    _downloads.clear();
-    _metadata.clear();
-    _artworkPaths.clear();
-    _queueing.clear();
-    _ownedDownloadKeys.clear();
-    _deletionProgress.clear();
-    safeNotifyListeners();
-  }
-
   /// Preserve physical downloads across a full logout while detaching them
   /// from profiles that are about to be deleted. The next selected profile
   /// adopts the ownerless rows through [_loadDownloadOwners].
@@ -1693,16 +1668,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     final owner = profileId ?? _activeProfileId;
     if (owner == null || owner.isEmpty) return buildGlobalKey(ServerId(serverId), ratingKey);
     return buildProfileScopedGlobalKey(owner, ServerId(serverId), ratingKey);
-  }
-
-  String syncRuleKeyForGlobalKey(String globalKey) {
-    final scoped = parseProfileScopedGlobalKey(globalKey);
-    if (scoped != null) {
-      return syncRuleKeyFor(scoped.serverId, scoped.ratingKey, profileId: scoped.profileId);
-    }
-    final parsed = parseGlobalKey(globalKey);
-    if (parsed == null) return globalKey;
-    return syncRuleKeyFor(parsed.serverId, parsed.ratingKey);
   }
 
   String syncRuleKeyForClient(MediaServerClient client, String ratingKey, {ServerId? serverId}) {

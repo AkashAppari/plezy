@@ -59,34 +59,6 @@ class LanDiscoveryService {
 
   // ── Host: Broadcasting ──
 
-  Future<void> startBroadcasting({
-    required List<int> discoveryKey,
-    required String deviceName,
-    required String platform,
-    required String clientId,
-    required int wsPort,
-    required List<String> ips,
-  }) async {
-    return startBroadcastingForContexts(
-      contexts: [
-        RemoteAuthContext(
-          id: clientId,
-          backend: 'legacy',
-          connectionId: clientId,
-          homeSecret: const [],
-          discoveryKey: discoveryKey,
-          clientIdentifier: clientId,
-          userUuid: '',
-          allowedUserUuids: const [],
-        ),
-      ],
-      deviceName: deviceName,
-      platform: platform,
-      wsPort: wsPort,
-      ips: ips,
-    );
-  }
-
   Future<void> startBroadcastingForContexts({
     required List<RemoteAuthContext> contexts,
     required String deviceName,
@@ -167,23 +139,6 @@ class LanDiscoveryService {
   }
 
   // ── Client: Listening ──
-
-  /// Start listening for host beacons.
-  /// Returns a stream of currently-visible hosts, updated on each beacon or stale cleanup.
-  Stream<List<DiscoveredHost>> startListening({required List<int> discoveryKey}) {
-    return startListeningForContexts([
-      RemoteAuthContext(
-        id: '',
-        backend: 'legacy',
-        connectionId: '',
-        homeSecret: const [],
-        discoveryKey: discoveryKey,
-        clientIdentifier: '',
-        userUuid: '',
-        allowedUserUuids: const [],
-      ),
-    ]);
-  }
 
   Stream<List<DiscoveredHost>> startListeningForContexts(List<RemoteAuthContext> contexts) {
     _stopListeningInternal();

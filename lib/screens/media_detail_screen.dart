@@ -178,14 +178,6 @@ class _SeasonEpisodePager {
     }
   }
 
-  void updateEpisode(String seasonId, int index, MediaItem updated) {
-    final state = _states[seasonId];
-    if (state == null || index < 0 || index >= state.items.length) return;
-    final next = List<MediaItem>.of(state.items);
-    next[index] = updated;
-    _states[seasonId] = state.replaceItems(next);
-  }
-
   void patchEpisode(String episodeId, MediaItem Function(MediaItem existing) patch) {
     for (final entry in _states.entries.toList()) {
       var changed = false;

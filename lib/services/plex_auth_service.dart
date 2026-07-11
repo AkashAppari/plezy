@@ -769,42 +769,6 @@ class PlexServer {
     return _ConnectionCandidate(httpsConnection, httpsUrl, resultingIsPlexDirect, true);
   }
 
-  Future<PlexConnection?> upgradeConnectionToHttps(PlexConnection current) async {
-    if (current.uri.startsWith('https://')) {
-      return current;
-    }
-
-    final baseConnection = _findMatchingBaseConnection(current);
-    if (baseConnection == null) {
-      return null;
-    }
-
-    final candidate = _ConnectionCandidate(
-      baseConnection,
-      current.uri,
-      current.uri.contains('.plex.direct'),
-      current.uri.startsWith('https://'),
-    );
-    final upgradedCandidate = await _upgradeCandidateToHttpsIfPossible(candidate);
-    if (upgradedCandidate == null) {
-      return null;
-    }
-    return _updateConnectionUrl(upgradedCandidate.connection, upgradedCandidate.url);
-  }
-
-  PlexConnection? _findMatchingBaseConnection(PlexConnection connection) {
-    for (final base in connections) {
-      final sameAddress = base.address == connection.address;
-      final samePort = base.port == connection.port;
-      final sameLocal = base.local == connection.local;
-      final sameRelay = base.relay == connection.relay;
-      if (sameAddress && samePort && sameLocal && sameRelay) {
-        return base;
-      }
-    }
-    return null;
-  }
-
   /// Select the best candidate considering priority, latency, and URL type preference
   _ConnectionCandidate? _selectBestCandidateWithLatency(Map<_ConnectionCandidate, ConnectionTestResult> results) {
     // Group candidates by connection type (local/remote/relay)

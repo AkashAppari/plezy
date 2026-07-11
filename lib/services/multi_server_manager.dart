@@ -528,22 +528,6 @@ class MultiServerManager {
     return bound;
   }
 
-  /// Tear down all servers belonging to the given Plex account. Called when
-  /// the user removes the account from the Connections screen. Idempotent —
-  /// servers already gone are silently skipped.
-  void removePlexAccount(PlexAccountConnection connection) {
-    for (final server in connection.servers) {
-      final id = server.clientIdentifier;
-      final client = _clients.remove(id);
-      if (client != null) _closeClient(client);
-      _plexServers.remove(id);
-      _serverStatus.remove(id);
-      _authErrorServers.remove(id);
-      _clientIdByServer.remove(id);
-    }
-    _statusController.add(Map.from(_serverStatus));
-  }
-
   /// Add a Jellyfin server backed by an authenticated [JellyfinConnection].
   /// Returns true on success.
   ///

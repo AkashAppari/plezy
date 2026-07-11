@@ -2083,11 +2083,6 @@ class PlexClient
   Future<_LibraryContentResult> _getPlaylist(String playlistId, {int? start, int? size, AbortController? abort}) =>
       _fetchPaginatedList('/playlists/$playlistId/items', start: start, size: size, abort: abort);
 
-  /// Fetch every page of a playlist's items. For callers that need the full list
-  /// (downloads, sync rules, context-menu shuffle).
-  Future<List<PlexMetadataDto>> _fetchAllPlaylistItemsDto(String playlistId) =>
-      _fetchAllPages((start, size, abort) => _getPlaylist(playlistId, start: start, size: size, abort: abort));
-
   /// Get all playlists.
   /// Filters by playlistType=video by default.
   /// Set smart to true/false to filter smart playlists, or null for all.
@@ -2509,22 +2504,6 @@ class PlexClient
     librarySectionTitle: librarySectionTitle,
   );
 
-  /// Fetch every item in a collection (downloads, sync rules, context-menu shuffle).
-  Future<List<PlexMetadataDto>> _fetchAllCollectionItemsDto(
-    String collectionId, {
-    String? librarySectionID,
-    String? librarySectionTitle,
-  }) => _fetchAllPages(
-    (start, size, abort) => _getCollectionItems(
-      collectionId,
-      start: start,
-      size: size,
-      abort: abort,
-      librarySectionID: librarySectionID,
-      librarySectionTitle: librarySectionTitle,
-    ),
-  );
-
   /// Get media featuring a specific person (actor/director), paginated.
   Future<_LibraryContentResult> _getPersonMedia(String personId, {int? start, int? size, AbortController? abort}) =>
       _fetchPaginatedList('/library/people/$personId/media', start: start, size: size, abort: abort);
@@ -2941,12 +2920,6 @@ class PlexClient
   /// Get library-specific playlists
   /// Filters playlists by checking if they contain items from the specified library
   /// This is a client-side filter since the API doesn't support sectionId for playlists
-  Future<List<PlexPlaylistDto>> _getLibraryPlaylists({String playlistType = 'video'}) {
-    // For now, return all video playlists
-    // Future enhancement: filter by checking playlist items' library
-    return _getPlaylists(playlistType: playlistType);
-  }
-
   /// Scan/refresh a library section to detect new files
   Future<void> scanLibrary(String sectionId) async {
     await _getWithFailover('/library/sections/$sectionId/refresh');
@@ -4213,26 +4186,6 @@ class PlexClient
     );
   }
 
-  /// Plex-specific: full collection contents across pages.
-  Future<List<MediaItem>> fetchAllCollectionItemsAsMediaItems(
-    String collectionId, {
-    String? libraryId,
-    String? libraryTitle,
-  }) async {
-    final raw = await _fetchAllCollectionItemsDto(
-      collectionId,
-      librarySectionID: libraryId,
-      librarySectionTitle: libraryTitle,
-    );
-    return raw.map((m) => PlexMappers.mediaItem(m)).toList();
-  }
-
-  /// Plex-specific: full playlist contents across pages.
-  Future<List<MediaItem>> fetchAllPlaylistItemsAsMediaItems(String playlistId) async {
-    final raw = await _fetchAllPlaylistItemsDto(playlistId);
-    return raw.map((m) => PlexMappers.mediaItem(m)).toList();
-  }
-
   @override
   Future<LibraryPage<MediaItem>> fetchPersonMediaPage(
     String personId, {
@@ -4328,12 +4281,6 @@ class PlexClient
   Future<List<MediaItem>> fetchExtras(String ratingKey) async {
     final raw = await _getExtras(ratingKey);
     return raw.map((m) => PlexMappers.mediaItem(m)).toList();
-  }
-
-  /// Plex-specific: library-scoped playlists.
-  Future<List<MediaPlaylist>> fetchLibraryPlaylists({String playlistType = 'video'}) async {
-    final raw = await _getLibraryPlaylists(playlistType: playlistType);
-    return raw.map((p) => PlexMappers.mediaPlaylist(p)).toList();
   }
 
   /// Plex-specific: paginated library content with raw Plex filter map,

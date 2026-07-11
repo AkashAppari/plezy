@@ -110,29 +110,6 @@ class CompanionRemotePeerService with KeepaliveMixin {
     }
   }
 
-  /// Create a host session — starts WebSocket server, returns local addresses and port.
-  Future<({List<String> addresses, int port})> createSession(
-    String deviceName,
-    String platform,
-    List<int> homeSecret,
-    String clientIdentifier,
-    List<String> homeUserUUIDs,
-  ) async {
-    final auth = RemoteAuthService.instance;
-    return createSessionForContexts(deviceName, platform, [
-      RemoteAuthContext(
-        id: auth.computeAuthContextId(homeSecret),
-        backend: 'legacy',
-        connectionId: '',
-        homeSecret: homeSecret,
-        discoveryKey: const [],
-        clientIdentifier: clientIdentifier,
-        userUuid: homeUserUUIDs.isEmpty ? '' : homeUserUUIDs.first,
-        allowedUserUuids: homeUserUUIDs,
-      ),
-    ]);
-  }
-
   /// Create a host session that accepts any of the provided remote identities.
   Future<({List<String> addresses, int port})> createSessionForContexts(
     String deviceName,
@@ -425,37 +402,6 @@ class CompanionRemotePeerService with KeepaliveMixin {
     }
   }
 
-  /// Join a host session as a remote client.
-  Future<void> joinSession(
-    String deviceName,
-    String platform,
-    String hostAddress,
-    List<int> homeSecret,
-    String hostClientId,
-    String userUUID,
-    String clientIdentifier,
-  ) async {
-    final auth = RemoteAuthService.instance;
-    final context = RemoteAuthContext(
-      id: auth.computeAuthContextId(homeSecret),
-      backend: 'legacy',
-      connectionId: '',
-      homeSecret: homeSecret,
-      discoveryKey: const [],
-      clientIdentifier: clientIdentifier,
-      userUuid: userUUID,
-      allowedUserUuids: [userUUID],
-    );
-    return joinSessionWithContexts(
-      deviceName,
-      platform,
-      hostAddress,
-      [context],
-      authContextId: context.id,
-      expectedHostClientId: hostClientId,
-    );
-  }
-
   /// Join a host session with any local auth context that the host also supports.
   Future<void> joinSessionWithContexts(
     String deviceName,
@@ -717,37 +663,6 @@ class CompanionRemotePeerService with KeepaliveMixin {
         }
         throw RemotePeerError(type: RemotePeerErrorType.timeout, message: t.companionRemote.errors.joinTimedOut);
       },
-    );
-  }
-
-  /// Race WebSocket connections to multiple host addresses in parallel.
-  Future<String> joinSessionRacing(
-    String deviceName,
-    String platform,
-    List<String> hostAddresses,
-    List<int> homeSecret,
-    String hostClientId,
-    String userUUID,
-    String clientIdentifier,
-  ) async {
-    final auth = RemoteAuthService.instance;
-    final context = RemoteAuthContext(
-      id: auth.computeAuthContextId(homeSecret),
-      backend: 'legacy',
-      connectionId: '',
-      homeSecret: homeSecret,
-      discoveryKey: const [],
-      clientIdentifier: clientIdentifier,
-      userUuid: userUUID,
-      allowedUserUuids: [userUUID],
-    );
-    return joinSessionRacingWithContexts(
-      deviceName,
-      platform,
-      hostAddresses,
-      [context],
-      authContextId: context.id,
-      expectedHostClientId: hostClientId,
     );
   }
 
