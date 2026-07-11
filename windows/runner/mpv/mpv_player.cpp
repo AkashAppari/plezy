@@ -202,12 +202,14 @@ void MpvPlayer::Dispose() {
     callback(-1, "");
   }
 
-  if (mpv_) {
-    mpv_terminate_destroy(mpv_);
-    mpv_ = nullptr;
-  }
+  // Detach the native handle before releasing platform-owned state. mpv can
+  // block in demuxer/network teardown, so only the detached handle crosses to
+  // the worker; it must not retain this player, callbacks, or HWNDs.
+  auto* handle = mpv_;
+  mpv_ = nullptr;
 
   if (hwnd_) {
+    ::ShowWindow(hwnd_, SW_HIDE);
     ::DestroyWindow(hwnd_);
     hwnd_ = nullptr;
 
@@ -216,6 +218,11 @@ void MpvPlayer::Dispose() {
     // (which never has an hwnd_) must not wipe the video instance's state.
     g_mpv_inner_hwnd = nullptr;
     g_mpv_inner_original_proc = nullptr;
+    g_forward_target_view = nullptr;
+  }
+
+  if (handle) {
+    std::thread([handle]() { mpv_terminate_destroy(handle); }).detach();
   }
 
   observed_properties_.clear();
