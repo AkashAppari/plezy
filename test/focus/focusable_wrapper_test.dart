@@ -56,4 +56,32 @@ void main() {
 
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('context menu key does not suppress the next select', (tester) async {
+    final node = FocusNode(debugLabel: 'card');
+    addTearDown(node.dispose);
+    var selected = 0;
+    var longPressed = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FocusableWrapper(
+            focusNode: node,
+            onSelect: () => selected++,
+            onLongPress: () => longPressed++,
+            child: const SizedBox(width: 10, height: 10),
+          ),
+        ),
+      ),
+    );
+    node.requestFocus();
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.contextMenu);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+
+    expect(longPressed, 1);
+    expect(selected, 1);
+  });
 }

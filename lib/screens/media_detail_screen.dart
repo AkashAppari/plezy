@@ -2416,20 +2416,31 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     if (key.isBackKey) return KeyEventResult.ignored;
 
+    if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
+      if (event is KeyUpEvent && key.isSelectKey) {
+        _selectKeyTimer?.cancel();
+        _isSelectKeyDown = false;
+        _longPressTriggered = false;
+      }
+      return KeyEventResult.handled;
+    }
+
     // Handle SELECT with long-press detection
     if (key.isSelectKey) {
       if (event is KeyDownEvent) {
-        _selectKeyTimer?.cancel();
-        _isSelectKeyDown = true;
-        _longPressTriggered = false;
-        _selectKeyTimer = Timer(_longPressDuration, () {
-          if (!mounted) return;
-          if (_isSelectKeyDown) {
-            _longPressTriggered = true;
-            SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
-            _extraCardKeys[_focusedExtraIndex]?.currentState?.showContextMenu();
-          }
-        });
+        if (!_isSelectKeyDown) {
+          _selectKeyTimer?.cancel();
+          _isSelectKeyDown = true;
+          _longPressTriggered = false;
+          _selectKeyTimer = Timer(_longPressDuration, () {
+            if (!mounted) return;
+            if (_isSelectKeyDown) {
+              _longPressTriggered = true;
+              SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
+              _extraCardKeys[_focusedExtraIndex]?.currentState?.showContextMenu();
+            }
+          });
+        }
         return KeyEventResult.handled;
       } else if (event is KeyRepeatEvent) {
         return KeyEventResult.handled;

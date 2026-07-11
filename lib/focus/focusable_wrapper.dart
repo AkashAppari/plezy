@@ -376,6 +376,10 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
     _logFocusableWrapper('node=${node.debugLabel} received key=(${_describeFocusableKey(event)})');
 
     if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
+      if (event is KeyUpEvent && key.isSelectKey) {
+        _longPressTimer?.cancel();
+        _isSelectKeyDown = false;
+      }
       return finish(KeyEventResult.handled, 'select-key-up-suppressed');
     }
 
@@ -404,7 +408,7 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
             _longPressTimer?.cancel();
             _longPressTimer = Timer(widget.longPressDuration, () {
               // Long press detected
-              if (mounted) {
+              if (mounted && _isSelectKeyDown) {
                 SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
                 widget.onLongPress?.call();
               }
@@ -437,7 +441,8 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
 
     // Context menu key
     if (key.isContextMenuKey) {
-      SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
+      _longPressTimer?.cancel();
+      _isSelectKeyDown = false;
       widget.onLongPress?.call();
       return finish(KeyEventResult.handled, 'context-menu');
     }

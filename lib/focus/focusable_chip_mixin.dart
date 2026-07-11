@@ -86,7 +86,12 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
 
   void _onFocusChange() {
     if (mounted) {
-      setState(() => _isFocused = focusNode.hasFocus);
+      final hasFocus = focusNode.hasFocus;
+      setState(() => _isFocused = hasFocus);
+      if (!hasFocus) {
+        _longPressTimer?.cancel();
+        _isSelectKeyDown = false;
+      }
       // Same convention as FocusableTileStateMixin: a chip inside a
       // scrollable strip (TabChipStrip, filter bars) reveals itself on
       // focus; a no-op when no ancestor scrollable exists.
@@ -114,6 +119,10 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
     }
 
     if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
+      if (event is KeyUpEvent && key.isSelectKey) {
+        _longPressTimer?.cancel();
+        _isSelectKeyDown = false;
+      }
       return KeyEventResult.handled;
     }
 
@@ -125,7 +134,7 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
             _isSelectKeyDown = true;
             _longPressTimer?.cancel();
             _longPressTimer = Timer(const Duration(milliseconds: 500), () {
-              if (mounted) {
+              if (mounted && _isSelectKeyDown) {
                 SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
                 callbacks.onLongPress?.call();
               }
@@ -150,7 +159,8 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
 
     // Context menu key triggers long press directly
     if (event.isActionable && key.isContextMenuKey && callbacks.onLongPress != null) {
-      SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
+      _longPressTimer?.cancel();
+      _isSelectKeyDown = false;
       callbacks.onLongPress!();
       return KeyEventResult.handled;
     }

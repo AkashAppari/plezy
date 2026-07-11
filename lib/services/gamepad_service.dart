@@ -256,7 +256,8 @@ class GamepadService with WindowListener {
     }
     _pressedButtons.clear();
     _suppressedButtons.clear();
-    _heldFocusNodes.clear();
+    SchedulerBinding.instance.addPostFrameCallback((_) => _heldFocusNodes.clear());
+    key_sim.scheduleFrameIfIdle();
     _duplicateInputGuard.clear();
 
     // Reset analog stick state so re-focus doesn't inherit stale direction
@@ -510,6 +511,7 @@ class GamepadService with WindowListener {
 
   /// Simulate a full key press (down + up) in a single frame.
   void _simulateKeyPress(LogicalKeyboardKey logicalKey) {
+    key_sim.scheduleFrameIfIdle();
     SchedulerBinding.instance.addPostFrameCallback((_) {
       _dispatchKeyDown(logicalKey);
       _dispatchKeyUp(logicalKey);
@@ -519,6 +521,7 @@ class GamepadService with WindowListener {
   /// Simulate only key down — pair with [_simulateKeyUp] on release
   /// so widget-level long-press timers see real hold duration.
   void _simulateKeyDown(LogicalKeyboardKey logicalKey) {
+    key_sim.scheduleFrameIfIdle();
     SchedulerBinding.instance.addPostFrameCallback((_) {
       _dispatchKeyDown(logicalKey);
     });
@@ -526,6 +529,7 @@ class GamepadService with WindowListener {
 
   /// Simulate only key up — the release half of [_simulateKeyDown].
   void _simulateKeyUp(LogicalKeyboardKey logicalKey) {
+    key_sim.scheduleFrameIfIdle();
     SchedulerBinding.instance.addPostFrameCallback((_) {
       _dispatchKeyUp(logicalKey);
     });
