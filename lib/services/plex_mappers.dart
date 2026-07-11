@@ -561,8 +561,11 @@ class PlexMetadataDto {
   final String? titleSort;
   final String? contentRating;
   final String? summary;
+  @JsonKey(fromJson: flexibleDouble)
   final double? rating;
+  @JsonKey(fromJson: flexibleDouble)
   final double? audienceRating;
+  @JsonKey(fromJson: flexibleDouble)
   final double? userRating;
   @JsonKey(fromJson: flexibleInt)
   final int? year;

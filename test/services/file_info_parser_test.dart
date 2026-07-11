@@ -14,14 +14,14 @@ void main() {
     test('captures the first video stream and accumulates audio + subs', () {
       final streams = [
         // streamType 1=video, 2=audio, 3=subtitle
-        {'streamType': 1, 'id': 100, 'frameRate': 23.976, 'colorSpace': 'bt709'},
+        {'streamType': '1', 'id': '100', 'frameRate': 23.976, 'colorSpace': 'bt709'},
         {
-          'streamType': 2,
-          'id': 101,
-          'index': 1,
+          'streamType': '2',
+          'id': '101',
+          'index': '1',
           'codec': 'eac3',
           'language': 'English',
-          'channels': 6,
+          'channels': '6',
           'selected': true,
           'displayTitle': 'English (EAC3 5.1)',
         },
@@ -35,9 +35,9 @@ void main() {
           'selected': false,
         },
         {
-          'streamType': 3,
-          'id': 200,
-          'index': 3,
+          'streamType': '3',
+          'id': '200',
+          'index': '3',
           'codec': 'srt',
           'language': 'English',
           'forced': false,
@@ -48,8 +48,8 @@ void main() {
 
       final out = walkStreams(streams, reader);
 
-      expect(out.videoStream?['id'], 100);
-      expect(out.audioStream?['id'], 101);
+      expect(out.videoStream?['id'], '100');
+      expect(out.audioStream?['id'], '101');
       expect(out.videoStream?['frameRate'], closeTo(23.976, 1e-6));
       expect(out.audioTracks.map((t) => t.id), [101, 102]);
       expect(out.audioTracks[0].channels, 6);

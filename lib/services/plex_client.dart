@@ -2670,16 +2670,21 @@ class PlexClient
             ),
       ];
     }
+    final playQueueID = flexibleInt(container['playQueueID']);
+    final playQueueVersion = flexibleInt(container['playQueueVersion']);
+    if (playQueueID == null || playQueueVersion == null) {
+      throw const FormatException('Plex play queue response is missing its numeric id or version');
+    }
     return PlayQueueResponse(
-      playQueueID: (container['playQueueID'] as num).toInt(),
-      playQueueSelectedItemID: (container['playQueueSelectedItemID'] as num?)?.toInt(),
-      playQueueSelectedItemOffset: (container['playQueueSelectedItemOffset'] as num?)?.toInt(),
+      playQueueID: playQueueID,
+      playQueueSelectedItemID: flexibleInt(container['playQueueSelectedItemID']),
+      playQueueSelectedItemOffset: flexibleInt(container['playQueueSelectedItemOffset']),
       playQueueSelectedMetadataItemID: container['playQueueSelectedMetadataItemID'] as String?,
       playQueueShuffled: flexibleBool(container['playQueueShuffled']),
       playQueueSourceURI: container['playQueueSourceURI'] as String?,
-      playQueueTotalCount: (container['playQueueTotalCount'] as num?)?.toInt(),
-      playQueueVersion: (container['playQueueVersion'] as num).toInt(),
-      size: (container['size'] as num?)?.toInt(),
+      playQueueTotalCount: flexibleInt(container['playQueueTotalCount']),
+      playQueueVersion: playQueueVersion,
+      size: flexibleInt(container['size']),
       items: items,
     );
   }

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -52,5 +54,35 @@ void main() {
 
     expect(await client.createCollectionFromUri(sectionId: '1', title: 'Collection', uri: 'server://items'), isNull);
     expect(await client.createPlayQueue(uri: 'server://items', type: 'video'), isNull);
+  });
+
+  test('play queue accepts numeric strings from Plex', () async {
+    final client = makeClient(
+      (_) async => http.Response(
+        jsonEncode({
+          'MediaContainer': {
+            'playQueueID': '42',
+            'playQueueSelectedItemID': '7',
+            'playQueueSelectedItemOffset': '1',
+            'playQueueTotalCount': '3',
+            'playQueueVersion': '5',
+            'size': '3',
+            'Metadata': <dynamic>[],
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      ),
+    );
+    addTearDown(client.close);
+
+    final queue = await client.createPlayQueue(uri: 'server://items', type: 'video');
+
+    expect(queue?.playQueueID, 42);
+    expect(queue?.playQueueSelectedItemID, 7);
+    expect(queue?.playQueueSelectedItemOffset, 1);
+    expect(queue?.playQueueTotalCount, 3);
+    expect(queue?.playQueueVersion, 5);
+    expect(queue?.size, 3);
   });
 }

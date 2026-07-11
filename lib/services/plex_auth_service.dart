@@ -11,6 +11,7 @@ import '../models/user_switch_response.dart';
 import '../utils/app_logger.dart';
 import '../utils/device_identity.dart';
 import '../utils/endpoint_race.dart';
+import '../utils/json_utils.dart';
 import '../utils/media_server_timeouts.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/poll_with_backoff.dart';
@@ -359,25 +360,18 @@ class PlexServer {
       throw const FormatException('Server has no valid connections');
     }
 
-    DateTime? lastSeenAt;
-    if (json['lastSeenAt'] != null) {
-      try {
-        lastSeenAt = DateTime.parse(json['lastSeenAt'] as String);
-      } catch (e) {
-        lastSeenAt = null;
-      }
-    }
+    final lastSeenAt = DateTime.tryParse(json['lastSeenAt']?.toString() ?? '');
 
     return PlexServer(
       name: json['name'] as String, // Safe because validated above
       clientIdentifier: json['clientIdentifier'] as String, // Safe because validated above
       accessToken: json['accessToken'] as String, // Safe because validated above
       connections: connections,
-      owned: json['owned'] as bool? ?? false,
-      product: json['product'] as String?,
-      platform: json['platform'] as String?,
+      owned: flexibleBool(json['owned']),
+      product: _optionalScalarString(json['product']),
+      platform: _optionalScalarString(json['platform']),
       lastSeenAt: lastSeenAt,
-      presence: json['presence'] as bool? ?? false,
+      presence: flexibleBool(json['presence']),
     );
   }
 
@@ -992,11 +986,11 @@ class PlexConnection {
     return PlexConnection(
       protocol: json['protocol'] as String, // Safe because validated above
       address: json['address'] as String, // Safe because validated above
-      port: json['port'] as int, // Safe because validated above
+      port: flexibleInt(json['port'])!, // Safe because validated above
       uri: json['uri'] as String, // Safe because validated above
-      local: json['local'] as bool? ?? false,
-      relay: json['relay'] as bool? ?? false,
-      ipv6: json['IPv6'] as bool? ?? false,
+      local: flexibleBool(json['local']),
+      relay: flexibleBool(json['relay']),
+      ipv6: flexibleBool(json['IPv6']),
     );
   }
 
@@ -1013,8 +1007,7 @@ class PlexConnection {
       return false;
     }
 
-    // Check for required port (integer)
-    if (json['port'] is! int) {
+    if (flexibleInt(json['port']) == null) {
       return false;
     }
 
@@ -1072,6 +1065,14 @@ class PlexConnection {
     );
   }
 }
+
+String? _optionalScalarString(Object? value) => switch (value) {
+  null => null,
+  final String value => value,
+  final num value => value.toString(),
+  final bool value => value.toString(),
+  _ => null,
+};
 
 /// Custom exception for server parsing errors that includes debug data
 class ServerParsingException implements Exception {

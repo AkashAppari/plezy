@@ -9,6 +9,19 @@ const _serverId = 'plex-machine-1';
 const _serverName = 'Home';
 
 void main() {
+  test('PlexMetadataDto accepts string ratings', () {
+    final dto = PlexMetadataDto.fromJson({
+      'ratingKey': '1',
+      'rating': '8.8',
+      'audienceRating': '9.1',
+      'userRating': '9.5',
+    });
+
+    expect(dto.rating, 8.8);
+    expect(dto.audienceRating, 9.1);
+    expect(dto.userRating, 9.5);
+  });
+
   group('PlexMappers.mediaItem (movie)', () {
     test('maps a Plex movie with watch state, ratings, genres, and people', () {
       final json = {

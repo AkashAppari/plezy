@@ -79,6 +79,37 @@ void main() {
       expect(response.profile.defaultAudioLanguages, ['en', 'sv']);
       expect(response.profile.defaultSubtitleLanguages, ['en', 'sv']);
     });
+
+    test('fetchServers tolerates scalar drift in server and connection fields', () async {
+      final server = _serverJson()
+        ..['owned'] = '1'
+        ..['presence'] = 1
+        ..['product'] = 42
+        ..['lastSeenAt'] = 123;
+      final connection = (server['connections'] as List).single as Map<String, dynamic>
+        ..['port'] = '32400'
+        ..['local'] = '1'
+        ..['relay'] = 0
+        ..['IPv6'] = 'false';
+      final client = MediaServerHttpClient(
+        client: MockClient(
+          (_) async => http.Response(jsonEncode([server]), 200, headers: {'content-type': 'application/json'}),
+        ),
+      );
+      addTearDown(client.close);
+
+      final servers = await PlexAuthService.forTesting(http: client).fetchServers('token');
+
+      expect(servers.single.owned, isTrue);
+      expect(servers.single.presence, isTrue);
+      expect(servers.single.product, '42');
+      expect(servers.single.lastSeenAt, isNull);
+      expect(connection['port'], '32400');
+      expect(servers.single.connections.first.port, 32400);
+      expect(servers.single.connections.first.local, isTrue);
+      expect(servers.single.connections.first.relay, isFalse);
+      expect(servers.single.connections.first.ipv6, isFalse);
+    });
   });
 }
 
