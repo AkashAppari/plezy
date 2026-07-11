@@ -927,8 +927,8 @@ class TranslationsSettingsEn {
 	/// en: 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.'
 	String get audioPassthroughDescription => 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.';
 
-	/// en: 'Hand Dolby Digital Plus (including Atmos) to the system for bitstream output. DTS and TrueHD still play as multichannel PCM. Brief audio gaps can occur when seeking.'
-	String get audioPassthroughDescriptionAppleTv => 'Hand Dolby Digital Plus (including Atmos) to the system for bitstream output. DTS and TrueHD still play as multichannel PCM. Brief audio gaps can occur when seeking.';
+	/// en: 'Use Apple's native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.'
+	String get audioPassthroughDescriptionAppleTv => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.';
 
 	/// en: 'Downmix to Stereo'
 	String get audioDownmix => 'Downmix to Stereo';
@@ -5224,7 +5224,7 @@ extension on Translations {
 			'settings.tunneledPlaybackDescription' => 'Use video tunneling. Disable if HDR playback shows black video.',
 			'settings.audioPassthrough' => 'Audio Passthrough',
 			'settings.audioPassthroughDescription' => 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.',
-			'settings.audioPassthroughDescriptionAppleTv' => 'Hand Dolby Digital Plus (including Atmos) to the system for bitstream output. DTS and TrueHD still play as multichannel PCM. Brief audio gaps can occur when seeking.',
+			'settings.audioPassthroughDescriptionAppleTv' => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.',
 			'settings.audioDownmix' => 'Downmix to Stereo',
 			'settings.audioDownmixDescription' => 'Mix surround audio down to two channels for stereo speakers or headphones',
 			'settings.downmixCenterBoost' => 'Center Channel Boost',

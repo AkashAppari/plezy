@@ -271,7 +271,7 @@
     "tunneledPlaybackDescription": "Use video tunneling. Disable if HDR playback shows black video.",
     "audioPassthrough": "Audio Passthrough",
     "audioPassthroughDescription": "Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.",
-    "audioPassthroughDescriptionAppleTv": "Hand Dolby Digital Plus (including Atmos) to the system for bitstream output. DTS and TrueHD still play as multichannel PCM. Brief audio gaps can occur when seeking.",
+    "audioPassthroughDescriptionAppleTv": "Use Apple's native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.",
     "audioDownmix": "Downmix to Stereo",
     "audioDownmixDescription": "Mix surround audio down to two channels for stereo speakers or headphones",
     "downmixCenterBoost": "Center Channel Boost",

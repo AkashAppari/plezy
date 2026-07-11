@@ -121,7 +121,6 @@ import wakelock_plus
     do {
       let session = AVAudioSession.sharedInstance()
       try session.setCategory(.playback, mode: .default)
-      try session.setActive(true)
     } catch {
       print("Failed to configure audio session: \(error)")
     }

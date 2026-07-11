@@ -190,9 +190,8 @@ class _UseExternalPlayerPref extends Pref<bool> {
   Future<void> writeTo(BaseSharedPreferencesService svc, bool value) => svc.writeBool(key, value);
 }
 
-/// Experimental Dolby passthrough. Keep opt-in on Apple TV until the
-/// AVPlayer Atmos sink (EAC3+JOC → Dolby MAT, #1300) is verified on real
-/// receiver setups; non-JOC content still decodes to multichannel PCM there.
+/// Experimental native Dolby playback. Keep opt-in on Apple TV until the
+/// EAC3+JOC sample-buffer renderer (#1300) is verified on real receivers.
 class _AudioPassthroughPref extends Pref<bool> {
   const _AudioPassthroughPref() : super('audio_passthrough');
 

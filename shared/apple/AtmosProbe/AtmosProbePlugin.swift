@@ -101,6 +101,10 @@ public class AtmosProbePlugin: NSObject, FlutterPlugin {
     out["route"] = session.currentRoute.outputs.map { port in
       "\(port.portType.rawValue)/\(port.portName)/\(port.channels?.count ?? 0)ch"
     }.joined(separator: ", ")
+    if #available(iOS 17.2, tvOS 17.2, *) {
+      out["renderingMode"] = String(describing: session.renderingMode)
+      out["renderingModeRawValue"] = session.renderingMode.rawValue
+    }
 
     guard let player = player else {
       out["state"] = "idle"
