@@ -455,6 +455,13 @@ class _TranslationsSettingsFr extends TranslationsSettingsEn {
 	@override String get subtitlesAndConfig => 'Sous-titres et configuration';
 	@override String get seekAndTiming => 'Recherche et minutage';
 	@override String get behavior => 'Comportement';
+	@override String get manageLibrariesDescription => 'Réorganiser et masquer les bibliothèques';
+	@override String get visualEffects => 'Effets visuels';
+	@override String get visualEffectsAuto => 'Automatique';
+	@override String get visualEffectsAutoDescription => 'Réduire automatiquement les effets sur les appareils peu puissants';
+	@override String get visualEffectsFull => 'Complets';
+	@override String get visualEffectsReduced => 'Réduits';
+	@override String get visualEffectsReducedDescription => 'Moins d’animations et d’illustrations de plus faible résolution';
 }
 
 // Path: search
@@ -558,6 +565,8 @@ class _TranslationsRateSheetFr extends TranslationsRateSheetEn {
 	@override String get saved => 'Enregistré';
 	@override String get notAvailable => 'Aucune correspondance trouvée';
 	@override String get noConnectedServices => 'Connectez un service dans les Réglages pour noter ici.';
+	@override String get favorite => 'Favori';
+	@override String get favorited => 'Ajouté aux favoris';
 }
 
 // Path: accessibility
@@ -989,6 +998,8 @@ class _TranslationsLibrariesFr extends TranslationsLibrariesEn {
 	@override late final _TranslationsLibrariesGroupingsFr groupings = _TranslationsLibrariesGroupingsFr._(_root);
 	@override late final _TranslationsLibrariesFilterCategoriesFr filterCategories = _TranslationsLibrariesFilterCategoriesFr._(_root);
 	@override late final _TranslationsLibrariesSortLabelsFr sortLabels = _TranslationsLibrariesSortLabelsFr._(_root);
+	@override String get noItemsMatchFilters => 'Aucun élément ne correspond aux filtres actifs';
+	@override String get resetFilters => 'Réinitialiser les filtres';
 }
 
 // Path: about
@@ -1341,6 +1352,9 @@ class _TranslationsWatchTogetherFr extends TranslationsWatchTogetherEn {
 	@override String get removeRoom => 'Supprimer';
 	@override String get guestSwitchUnavailable => 'Impossible de changer — serveur indisponible pour la synchronisation';
 	@override String get guestSwitchFailed => 'Impossible de changer — contenu introuvable sur ce serveur';
+	@override String participantNeedsUpdate({required Object name}) => '${name} utilise une ancienne version de l’app — synchronisation indisponible';
+	@override String resumingWithout({required Object name}) => 'Reprise sans ${name}';
+	@override String waitingForName({required Object name}) => 'En attente de ${name}...';
 }
 
 // Path: downloads
@@ -1875,6 +1889,7 @@ class _TranslationsLibrariesFilterCategoriesFr extends TranslationsLibrariesFilt
 	@override String get contentRating => 'Classification';
 	@override String get tag => 'Tag';
 	@override String get unwatched => 'Non vus';
+	@override String get favorites => 'Favoris';
 }
 
 // Path: libraries.sortLabels
@@ -2420,6 +2435,13 @@ extension on TranslationsFr {
 			'settings.subtitlesAndConfig' => 'Sous-titres et configuration',
 			'settings.seekAndTiming' => 'Recherche et minutage',
 			'settings.behavior' => 'Comportement',
+			'settings.manageLibrariesDescription' => 'Réorganiser et masquer les bibliothèques',
+			'settings.visualEffects' => 'Effets visuels',
+			'settings.visualEffectsAuto' => 'Automatique',
+			'settings.visualEffectsAutoDescription' => 'Réduire automatiquement les effets sur les appareils peu puissants',
+			'settings.visualEffectsFull' => 'Complets',
+			'settings.visualEffectsReduced' => 'Réduits',
+			'settings.visualEffectsReducedDescription' => 'Moins d’animations et d’illustrations de plus faible résolution',
 			'search.hint' => 'Rechercher des films, des séries, de la musique...',
 			'search.tryDifferentTerm' => 'Essayez un autre terme de recherche',
 			'search.searchYourMedia' => 'Rechercher dans vos médias',
@@ -2502,6 +2524,8 @@ extension on TranslationsFr {
 			'rateSheet.saved' => 'Enregistré',
 			'rateSheet.notAvailable' => 'Aucune correspondance trouvée',
 			'rateSheet.noConnectedServices' => 'Connectez un service dans les Réglages pour noter ici.',
+			'rateSheet.favorite' => 'Favori',
+			'rateSheet.favorited' => 'Ajouté aux favoris',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, show TV',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -2610,6 +2634,8 @@ extension on TranslationsFr {
 			'messages.errorLoading' => ({required Object error}) => 'Erreur: ${error}',
 			'messages.streamInterrupted' => 'La lecture a été interrompue. Appuyez sur Lecture ou avancez pour réessayer.',
 			'messages.fileInfoNotAvailable' => 'Informations sur le fichier non disponibles',
+			_ => null,
+		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Erreur lors du chargement des informations sur le fichier: ${error}',
 			'messages.errorLoadingSeries' => 'Erreur lors du chargement de la série',
 			'messages.musicNotSupported' => 'La lecture de musique n\'est pas encore prise en charge',
@@ -2619,8 +2645,6 @@ extension on TranslationsFr {
 			'messages.unableToDetermineLibrarySection' => 'Impossible de déterminer la section de la bibliothèque pour cet élément',
 			'messages.logsCleared' => 'Logs effacés',
 			'messages.logsCopied' => 'Logs copiés dans le presse-papier',
-			_ => null,
-		} ?? switch (path) {
 			'messages.noLogsAvailable' => 'Aucun log disponible',
 			'messages.libraryScanning' => ({required Object title}) => 'Scan de "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Scan de la bibliothèque démarrée pour "${title}"',
@@ -2839,6 +2863,7 @@ extension on TranslationsFr {
 			'libraries.filterCategories.contentRating' => 'Classification',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Non vus',
+			'libraries.filterCategories.favorites' => 'Favoris',
 			'libraries.sortLabels.title' => 'Titre',
 			'libraries.sortLabels.dateAdded' => 'Date d\'ajout',
 			'libraries.sortLabels.releaseDate' => 'Date de sortie',
@@ -2860,6 +2885,8 @@ extension on TranslationsFr {
 			'libraries.sortLabels.dateShared' => 'Date de partage',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Dernière date de diffusion',
 			'libraries.sortLabels.lastEpisodeDateAdded' => 'Date d\'ajout du dernier épisode',
+			'libraries.noItemsMatchFilters' => 'Aucun élément ne correspond aux filtres actifs',
+			'libraries.resetFilters' => 'Réinitialiser les filtres',
 			'about.title' => 'À propos',
 			'about.openSourceLicenses' => 'Licences Open Source',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
@@ -3113,11 +3140,16 @@ extension on TranslationsFr {
 			'watchTogether.removeRoom' => 'Supprimer',
 			'watchTogether.guestSwitchUnavailable' => 'Impossible de changer — serveur indisponible pour la synchronisation',
 			'watchTogether.guestSwitchFailed' => 'Impossible de changer — contenu introuvable sur ce serveur',
+			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} utilise une ancienne version de l’app — synchronisation indisponible',
+			'watchTogether.resumingWithout' => ({required Object name}) => 'Reprise sans ${name}',
+			'watchTogether.waitingForName' => ({required Object name}) => 'En attente de ${name}...',
 			'downloads.title' => 'Téléchargements',
 			'downloads.manage' => 'Gérer',
 			'downloads.tvShows' => 'Show TV',
 			'downloads.movies' => 'Films',
 			'downloads.music' => 'Musique',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.tracksQueued' => ({required Object count}) => '${count} titres en file d\'attente de téléchargement',
 			'downloads.noDownloads' => 'Aucun téléchargement pour le moment',
 			'downloads.noDownloadsDescription' => 'Le contenu téléchargé apparaîtra ici pour être consulté hors ligne.',
@@ -3133,8 +3165,6 @@ extension on TranslationsFr {
 			'downloads.cancelledDownloadTitle' => 'Téléchargement annulé',
 			'downloads.cancelledDownloadMessage' => 'Ce téléchargement a été annulé. Que voulez-vous faire ?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Tous les épisodes sont déjà téléchargés',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.resumeDownload' => 'Reprendre le téléchargement',
 			'downloads.cancelledDownload' => 'Téléchargement annulé',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (synchronisation ${status})',

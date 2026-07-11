@@ -455,6 +455,13 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get subtitlesAndConfig => '字幕与配置';
 	@override String get seekAndTiming => '跳转与计时';
 	@override String get behavior => '行为';
+	@override String get manageLibrariesDescription => '重新排序和隐藏媒体库';
+	@override String get visualEffects => '视觉效果';
+	@override String get visualEffectsAuto => '自动';
+	@override String get visualEffectsAutoDescription => '在性能较低的设备上自动减少效果';
+	@override String get visualEffectsFull => '完整';
+	@override String get visualEffectsReduced => '简化';
+	@override String get visualEffectsReducedDescription => '减少动画并使用较低分辨率的封面图片';
 }
 
 // Path: search
@@ -558,6 +565,8 @@ class _TranslationsRateSheetZh extends TranslationsRateSheetEn {
 	@override String get saved => '已保存';
 	@override String get notAvailable => '未找到匹配项';
 	@override String get noConnectedServices => '在设置中连接服务，即可在此评分。';
+	@override String get favorite => '收藏';
+	@override String get favorited => '已收藏';
 }
 
 // Path: accessibility
@@ -989,6 +998,8 @@ class _TranslationsLibrariesZh extends TranslationsLibrariesEn {
 	@override late final _TranslationsLibrariesGroupingsZh groupings = _TranslationsLibrariesGroupingsZh._(_root);
 	@override late final _TranslationsLibrariesFilterCategoriesZh filterCategories = _TranslationsLibrariesFilterCategoriesZh._(_root);
 	@override late final _TranslationsLibrariesSortLabelsZh sortLabels = _TranslationsLibrariesSortLabelsZh._(_root);
+	@override String get noItemsMatchFilters => '没有项目符合当前筛选条件';
+	@override String get resetFilters => '重置筛选条件';
 }
 
 // Path: about
@@ -1339,6 +1350,9 @@ class _TranslationsWatchTogetherZh extends TranslationsWatchTogetherEn {
 	@override String get removeRoom => '移除';
 	@override String get guestSwitchUnavailable => '无法切换 — 服务器无法同步';
 	@override String get guestSwitchFailed => '无法切换 — 在此服务器上未找到内容';
+	@override String participantNeedsUpdate({required Object name}) => '${name} 正在使用较旧版本的应用，无法同步';
+	@override String resumingWithout({required Object name}) => '不等待 ${name}，继续播放';
+	@override String waitingForName({required Object name}) => '正在等待 ${name}...';
 }
 
 // Path: downloads
@@ -1873,6 +1887,7 @@ class _TranslationsLibrariesFilterCategoriesZh extends TranslationsLibrariesFilt
 	@override String get contentRating => '内容分级';
 	@override String get tag => '标签';
 	@override String get unwatched => '未观看';
+	@override String get favorites => '收藏夹';
 }
 
 // Path: libraries.sortLabels
@@ -2418,6 +2433,13 @@ extension on TranslationsZh {
 			'settings.subtitlesAndConfig' => '字幕与配置',
 			'settings.seekAndTiming' => '跳转与计时',
 			'settings.behavior' => '行为',
+			'settings.manageLibrariesDescription' => '重新排序和隐藏媒体库',
+			'settings.visualEffects' => '视觉效果',
+			'settings.visualEffectsAuto' => '自动',
+			'settings.visualEffectsAutoDescription' => '在性能较低的设备上自动减少效果',
+			'settings.visualEffectsFull' => '完整',
+			'settings.visualEffectsReduced' => '简化',
+			'settings.visualEffectsReducedDescription' => '减少动画并使用较低分辨率的封面图片',
 			'search.hint' => '搜索电影、系列、音乐...',
 			'search.tryDifferentTerm' => '尝试不同的搜索词',
 			'search.searchYourMedia' => '搜索媒体',
@@ -2500,6 +2522,8 @@ extension on TranslationsZh {
 			'rateSheet.saved' => '已保存',
 			'rateSheet.notAvailable' => '未找到匹配项',
 			'rateSheet.noConnectedServices' => '在设置中连接服务，即可在此评分。',
+			'rateSheet.favorite' => '收藏',
+			'rateSheet.favorited' => '已收藏',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, 电影',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, 电视剧',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -2608,6 +2632,8 @@ extension on TranslationsZh {
 			'messages.errorLoading' => ({required Object error}) => '错误: ${error}',
 			'messages.streamInterrupted' => '视频流已中断。按播放键或拖动进度条重试。',
 			'messages.fileInfoNotAvailable' => '文件信息不可用',
+			_ => null,
+		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => '加载文件信息时出错: ${error}',
 			'messages.errorLoadingSeries' => '加载系列时出错',
 			'messages.musicNotSupported' => '尚不支持播放音乐',
@@ -2617,8 +2643,6 @@ extension on TranslationsZh {
 			'messages.unableToDetermineLibrarySection' => '无法确定此项目的库分区',
 			'messages.logsCleared' => '日志已清除',
 			'messages.logsCopied' => '日志已复制到剪贴板',
-			_ => null,
-		} ?? switch (path) {
 			'messages.noLogsAvailable' => '没有可用日志',
 			'messages.libraryScanning' => ({required Object title}) => '正在扫描 “${title}”...',
 			'messages.libraryScanStarted' => ({required Object title}) => '已开始扫描 “${title}” 媒体库',
@@ -2837,6 +2861,7 @@ extension on TranslationsZh {
 			'libraries.filterCategories.contentRating' => '内容分级',
 			'libraries.filterCategories.tag' => '标签',
 			'libraries.filterCategories.unwatched' => '未观看',
+			'libraries.filterCategories.favorites' => '收藏夹',
 			'libraries.sortLabels.title' => '标题',
 			'libraries.sortLabels.dateAdded' => '添加日期',
 			'libraries.sortLabels.releaseDate' => '发行日期',
@@ -2858,6 +2883,8 @@ extension on TranslationsZh {
 			'libraries.sortLabels.dateShared' => '共享日期',
 			'libraries.sortLabels.latestEpisodeAirDate' => '最新一集播出日期',
 			'libraries.sortLabels.lastEpisodeDateAdded' => '最新一集添加日期',
+			'libraries.noItemsMatchFilters' => '没有项目符合当前筛选条件',
+			'libraries.resetFilters' => '重置筛选条件',
 			'about.title' => '关于',
 			'about.openSourceLicenses' => '开源许可证',
 			'about.versionLabel' => ({required Object version}) => '版本 ${version}',
@@ -3111,11 +3138,16 @@ extension on TranslationsZh {
 			'watchTogether.removeRoom' => '移除',
 			'watchTogether.guestSwitchUnavailable' => '无法切换 — 服务器无法同步',
 			'watchTogether.guestSwitchFailed' => '无法切换 — 在此服务器上未找到内容',
+			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} 正在使用较旧版本的应用，无法同步',
+			'watchTogether.resumingWithout' => ({required Object name}) => '不等待 ${name}，继续播放',
+			'watchTogether.waitingForName' => ({required Object name}) => '正在等待 ${name}...',
 			'downloads.title' => '下载',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => '电视剧',
 			'downloads.movies' => '电影',
 			'downloads.music' => '音乐',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.tracksQueued' => ({required Object count}) => '${count} 首曲目已加入下载队列',
 			'downloads.noDownloads' => '暂无下载',
 			'downloads.noDownloadsDescription' => '下载的内容将在此处显示以供离线观看',
@@ -3131,8 +3163,6 @@ extension on TranslationsZh {
 			'downloads.cancelledDownloadTitle' => '已取消的下载',
 			'downloads.cancelledDownloadMessage' => '此下载已取消。你想怎么做？',
 			'downloads.allEpisodesAlreadyDownloaded' => '所有剧集均已下载',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.resumeDownload' => '继续下载',
 			'downloads.cancelledDownload' => '已取消的下载',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file}（正在同步 ${status}）',

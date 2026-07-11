@@ -322,7 +322,14 @@
     "player": "播放器",
     "subtitlesAndConfig": "字幕与配置",
     "seekAndTiming": "跳转与计时",
-    "behavior": "行为"
+    "behavior": "行为",
+    "manageLibrariesDescription": "重新排序和隐藏媒体库",
+    "visualEffects": "视觉效果",
+    "visualEffectsAuto": "自动",
+    "visualEffectsAutoDescription": "在性能较低的设备上自动减少效果",
+    "visualEffectsFull": "完整",
+    "visualEffectsReduced": "简化",
+    "visualEffectsReducedDescription": "减少动画并使用较低分辨率的封面图片"
   },
   "search": {
     "hint": "搜索电影、系列、音乐...",
@@ -416,7 +423,9 @@
     "setScore": "设置分数",
     "saved": "已保存",
     "notAvailable": "未找到匹配项",
-    "noConnectedServices": "在设置中连接服务，即可在此评分。"
+    "noConnectedServices": "在设置中连接服务，即可在此评分。",
+    "favorite": "收藏",
+    "favorited": "已收藏"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, 电影",
@@ -784,7 +793,8 @@
       "year": "年份",
       "contentRating": "内容分级",
       "tag": "标签",
-      "unwatched": "未观看"
+      "unwatched": "未观看",
+      "favorites": "收藏夹"
     },
     "sortLabels": {
       "title": "标题",
@@ -808,7 +818,9 @@
       "dateShared": "共享日期",
       "latestEpisodeAirDate": "最新一集播出日期",
       "lastEpisodeDateAdded": "最新一集添加日期"
-    }
+    },
+    "noItemsMatchFilters": "没有项目符合当前筛选条件",
+    "resetFilters": "重置筛选条件"
   },
   "about": {
     "title": "关于",
@@ -1093,7 +1105,10 @@
     "renameRoom": "重命名房间",
     "removeRoom": "移除",
     "guestSwitchUnavailable": "无法切换 — 服务器无法同步",
-    "guestSwitchFailed": "无法切换 — 在此服务器上未找到内容"
+    "guestSwitchFailed": "无法切换 — 在此服务器上未找到内容",
+    "participantNeedsUpdate": "${name} 正在使用较旧版本的应用，无法同步",
+    "resumingWithout": "不等待 ${name}，继续播放",
+    "waitingForName": "正在等待 ${name}..."
   },
   "downloads": {
     "title": "下载",

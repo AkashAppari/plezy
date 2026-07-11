@@ -322,7 +322,14 @@
     "player": "プレーヤー",
     "subtitlesAndConfig": "字幕と設定",
     "seekAndTiming": "シークとタイミング",
-    "behavior": "動作"
+    "behavior": "動作",
+    "manageLibrariesDescription": "ライブラリを並べ替えたり非表示にしたりできます",
+    "visualEffects": "視覚効果",
+    "visualEffectsAuto": "自動",
+    "visualEffectsAutoDescription": "低性能なデバイスでは効果を自動的に減らします",
+    "visualEffectsFull": "フル",
+    "visualEffectsReduced": "軽減",
+    "visualEffectsReducedDescription": "アニメーションを減らし、低解像度のアートワークを使用します"
   },
   "search": {
     "hint": "映画、番組、音楽を検索...",
@@ -416,7 +423,9 @@
     "setScore": "スコアを設定",
     "saved": "保存済み",
     "notAvailable": "一致なし",
-    "noConnectedServices": "評価するには、設定でサービスを接続してください。"
+    "noConnectedServices": "評価するには、設定でサービスを接続してください。",
+    "favorite": "お気に入り",
+    "favorited": "お気に入りに追加済み"
   },
   "accessibility": {
     "mediaCardMovie": "${title}、映画",
@@ -784,7 +793,8 @@
       "year": "年",
       "contentRating": "視聴年齢区分",
       "tag": "タグ",
-      "unwatched": "未視聴"
+      "unwatched": "未視聴",
+      "favorites": "お気に入り"
     },
     "sortLabels": {
       "title": "タイトル",
@@ -808,7 +818,9 @@
       "dateShared": "共有日",
       "latestEpisodeAirDate": "最新エピソード放送日",
       "lastEpisodeDateAdded": "最新エピソード追加日"
-    }
+    },
+    "noItemsMatchFilters": "有効なフィルターに一致する項目はありません",
+    "resetFilters": "フィルターをリセット"
   },
   "about": {
     "title": "アプリについて",
@@ -1093,7 +1105,10 @@
     "renameRoom": "ルーム名を変更",
     "removeRoom": "削除",
     "guestSwitchUnavailable": "切り替えできません — サーバーが同期できません",
-    "guestSwitchFailed": "切り替えできません — このサーバーにコンテンツが見つかりません"
+    "guestSwitchFailed": "切り替えできません — このサーバーにコンテンツが見つかりません",
+    "participantNeedsUpdate": "${name} は古いバージョンのアプリを使用しているため、同期できません",
+    "resumingWithout": "${name} なしで再開",
+    "waitingForName": "${name}を待っています..."
   },
   "downloads": {
     "title": "ダウンロード",

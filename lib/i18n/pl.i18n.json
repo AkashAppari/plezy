@@ -322,7 +322,14 @@
     "player": "Odtwarzacz",
     "subtitlesAndConfig": "Napisy i konfiguracja",
     "seekAndTiming": "Przewijanie i czas",
-    "behavior": "Zachowanie"
+    "behavior": "Zachowanie",
+    "manageLibrariesDescription": "Zmieniaj kolejność i ukrywaj biblioteki",
+    "visualEffects": "Efekty wizualne",
+    "visualEffectsAuto": "Automatycznie",
+    "visualEffectsAutoDescription": "Automatycznie ograniczaj efekty na urządzeniach o niższej wydajności",
+    "visualEffectsFull": "Pełne",
+    "visualEffectsReduced": "Ograniczone",
+    "visualEffectsReducedDescription": "Mniej animacji i grafiki o niższej rozdzielczości"
   },
   "search": {
     "hint": "Szukaj filmów, seriali, muzyki...",
@@ -416,7 +423,9 @@
     "setScore": "Ustaw ocenę",
     "saved": "Zapisano",
     "notAvailable": "Nie znaleziono dopasowania",
-    "noConnectedServices": "Połącz usługę w Ustawieniach, aby tam oceniać."
+    "noConnectedServices": "Połącz usługę w Ustawieniach, aby tam oceniać.",
+    "favorite": "Dodaj do ulubionych",
+    "favorited": "Dodano do ulubionych"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",
@@ -784,7 +793,8 @@
       "year": "Rok",
       "contentRating": "Klasyfikacja wiekowa",
       "tag": "Tag",
-      "unwatched": "Nieobejrzane"
+      "unwatched": "Nieobejrzane",
+      "favorites": "Ulubione"
     },
     "sortLabels": {
       "title": "Tytuł",
@@ -808,7 +818,9 @@
       "dateShared": "Data udostępnienia",
       "latestEpisodeAirDate": "Data emisji ostatniego odcinka",
       "lastEpisodeDateAdded": "Data dodania ostatniego odcinka"
-    }
+    },
+    "noItemsMatchFilters": "Żadne elementy nie pasują do aktywnych filtrów",
+    "resetFilters": "Resetuj filtry"
   },
   "about": {
     "title": "O aplikacji",
@@ -1099,7 +1111,10 @@
     "renameRoom": "Zmień nazwę pokoju",
     "removeRoom": "Usuń",
     "guestSwitchUnavailable": "Nie można przełączyć — serwer niedostępny do synchronizacji",
-    "guestSwitchFailed": "Nie można przełączyć — nie znaleziono treści na tym serwerze"
+    "guestSwitchFailed": "Nie można przełączyć — nie znaleziono treści na tym serwerze",
+    "participantNeedsUpdate": "${name} używa starszej wersji aplikacji — synchronizacja jest niedostępna",
+    "resumingWithout": "Wznawianie bez ${name}",
+    "waitingForName": "Oczekiwanie na ${name}..."
   },
   "downloads": {
     "title": "Pobrania",

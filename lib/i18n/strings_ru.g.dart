@@ -455,6 +455,13 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get subtitlesAndConfig => 'Субтитры и конфигурация';
 	@override String get seekAndTiming => 'Перемотка и время';
 	@override String get behavior => 'Поведение';
+	@override String get manageLibrariesDescription => 'Изменять порядок и скрывать библиотеки';
+	@override String get visualEffects => 'Визуальные эффекты';
+	@override String get visualEffectsAuto => 'Автоматически';
+	@override String get visualEffectsAutoDescription => 'Автоматически уменьшать эффекты на маломощных устройствах';
+	@override String get visualEffectsFull => 'Полные';
+	@override String get visualEffectsReduced => 'Уменьшенные';
+	@override String get visualEffectsReducedDescription => 'Меньше анимаций и графика с более низким разрешением';
 }
 
 // Path: search
@@ -558,6 +565,8 @@ class _TranslationsRateSheetRu extends TranslationsRateSheetEn {
 	@override String get saved => 'Сохранено';
 	@override String get notAvailable => 'Совпадений не найдено';
 	@override String get noConnectedServices => 'Подключите сервис в настройках, чтобы оценивать здесь.';
+	@override String get favorite => 'Добавить в избранное';
+	@override String get favorited => 'Добавлено в избранное';
 }
 
 // Path: accessibility
@@ -989,6 +998,8 @@ class _TranslationsLibrariesRu extends TranslationsLibrariesEn {
 	@override late final _TranslationsLibrariesGroupingsRu groupings = _TranslationsLibrariesGroupingsRu._(_root);
 	@override late final _TranslationsLibrariesFilterCategoriesRu filterCategories = _TranslationsLibrariesFilterCategoriesRu._(_root);
 	@override late final _TranslationsLibrariesSortLabelsRu sortLabels = _TranslationsLibrariesSortLabelsRu._(_root);
+	@override String get noItemsMatchFilters => 'Нет элементов, соответствующих активным фильтрам';
+	@override String get resetFilters => 'Сбросить фильтры';
 }
 
 // Path: about
@@ -1345,6 +1356,9 @@ class _TranslationsWatchTogetherRu extends TranslationsWatchTogetherEn {
 	@override String get removeRoom => 'Удалить';
 	@override String get guestSwitchUnavailable => 'Не удалось переключиться — сервер недоступен для синхронизации';
 	@override String get guestSwitchFailed => 'Не удалось переключиться — содержимое не найдено на этом сервере';
+	@override String participantNeedsUpdate({required Object name}) => '${name} использует старую версию приложения — синхронизация недоступна';
+	@override String resumingWithout({required Object name}) => 'Возобновление без ${name}';
+	@override String waitingForName({required Object name}) => 'Ожидание ${name}...';
 }
 
 // Path: downloads
@@ -1879,6 +1893,7 @@ class _TranslationsLibrariesFilterCategoriesRu extends TranslationsLibrariesFilt
 	@override String get contentRating => 'Возрастной рейтинг';
 	@override String get tag => 'Тег';
 	@override String get unwatched => 'Непросмотренные';
+	@override String get favorites => 'Избранное';
 }
 
 // Path: libraries.sortLabels
@@ -2424,6 +2439,13 @@ extension on TranslationsRu {
 			'settings.subtitlesAndConfig' => 'Субтитры и конфигурация',
 			'settings.seekAndTiming' => 'Перемотка и время',
 			'settings.behavior' => 'Поведение',
+			'settings.manageLibrariesDescription' => 'Изменять порядок и скрывать библиотеки',
+			'settings.visualEffects' => 'Визуальные эффекты',
+			'settings.visualEffectsAuto' => 'Автоматически',
+			'settings.visualEffectsAutoDescription' => 'Автоматически уменьшать эффекты на маломощных устройствах',
+			'settings.visualEffectsFull' => 'Полные',
+			'settings.visualEffectsReduced' => 'Уменьшенные',
+			'settings.visualEffectsReducedDescription' => 'Меньше анимаций и графика с более низким разрешением',
 			'search.hint' => 'Поиск фильмов, сериалов, музыки...',
 			'search.tryDifferentTerm' => 'Попробуйте другой запрос',
 			'search.searchYourMedia' => 'Поиск в вашей медиатеке',
@@ -2506,6 +2528,8 @@ extension on TranslationsRu {
 			'rateSheet.saved' => 'Сохранено',
 			'rateSheet.notAvailable' => 'Совпадений не найдено',
 			'rateSheet.noConnectedServices' => 'Подключите сервис в настройках, чтобы оценивать здесь.',
+			'rateSheet.favorite' => 'Добавить в избранное',
+			'rateSheet.favorited' => 'Добавлено в избранное',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, фильм',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, сериал',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -2614,6 +2638,8 @@ extension on TranslationsRu {
 			'messages.errorLoading' => ({required Object error}) => 'Ошибка: ${error}',
 			'messages.streamInterrupted' => 'Поток прервался. Нажмите «Воспроизвести» или перемотайте, чтобы повторить попытку.',
 			'messages.fileInfoNotAvailable' => 'Информация о файле недоступна',
+			_ => null,
+		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Ошибка загрузки информации о файле: ${error}',
 			'messages.errorLoadingSeries' => 'Ошибка загрузки сериала',
 			'messages.musicNotSupported' => 'Воспроизведение музыки пока не поддерживается',
@@ -2623,8 +2649,6 @@ extension on TranslationsRu {
 			'messages.unableToDetermineLibrarySection' => 'Не удаётся определить раздел библиотеки для этого элемента',
 			'messages.logsCleared' => 'Логи очищены',
 			'messages.logsCopied' => 'Логи скопированы в буфер обмена',
-			_ => null,
-		} ?? switch (path) {
 			'messages.noLogsAvailable' => 'Логи отсутствуют',
 			'messages.libraryScanning' => ({required Object title}) => 'Сканирование "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Сканирование библиотеки начато для "${title}"',
@@ -2843,6 +2867,7 @@ extension on TranslationsRu {
 			'libraries.filterCategories.contentRating' => 'Возрастной рейтинг',
 			'libraries.filterCategories.tag' => 'Тег',
 			'libraries.filterCategories.unwatched' => 'Непросмотренные',
+			'libraries.filterCategories.favorites' => 'Избранное',
 			'libraries.sortLabels.title' => 'Название',
 			'libraries.sortLabels.dateAdded' => 'Дата добавления',
 			'libraries.sortLabels.releaseDate' => 'Дата выхода',
@@ -2864,6 +2889,8 @@ extension on TranslationsRu {
 			'libraries.sortLabels.dateShared' => 'Дата открытия доступа',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Дата выхода последнего эпизода',
 			'libraries.sortLabels.lastEpisodeDateAdded' => 'Дата добавления последнего эпизода',
+			'libraries.noItemsMatchFilters' => 'Нет элементов, соответствующих активным фильтрам',
+			'libraries.resetFilters' => 'Сбросить фильтры',
 			'about.title' => 'О приложении',
 			'about.openSourceLicenses' => 'Лицензии открытого ПО',
 			'about.versionLabel' => ({required Object version}) => 'Версия ${version}',
@@ -3117,11 +3144,16 @@ extension on TranslationsRu {
 			'watchTogether.removeRoom' => 'Удалить',
 			'watchTogether.guestSwitchUnavailable' => 'Не удалось переключиться — сервер недоступен для синхронизации',
 			'watchTogether.guestSwitchFailed' => 'Не удалось переключиться — содержимое не найдено на этом сервере',
+			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} использует старую версию приложения — синхронизация недоступна',
+			'watchTogether.resumingWithout' => ({required Object name}) => 'Возобновление без ${name}',
+			'watchTogether.waitingForName' => ({required Object name}) => 'Ожидание ${name}...',
 			'downloads.title' => 'Загрузки',
 			'downloads.manage' => 'Управление',
 			'downloads.tvShows' => 'Сериалы',
 			'downloads.movies' => 'Фильмы',
 			'downloads.music' => 'Музыка',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.tracksQueued' => ({required Object count}) => '${count} треков в очереди на загрузку',
 			'downloads.noDownloads' => 'Загрузок пока нет',
 			'downloads.noDownloadsDescription' => 'Загруженный контент появится здесь для просмотра офлайн',
@@ -3137,8 +3169,6 @@ extension on TranslationsRu {
 			'downloads.cancelledDownloadTitle' => 'Загрузка отменена',
 			'downloads.cancelledDownloadMessage' => 'Эта загрузка была отменена. Что вы хотите сделать?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Все эпизоды уже загружены',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.resumeDownload' => 'Возобновить загрузку',
 			'downloads.cancelledDownload' => 'Загрузка отменена',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (синхронизация ${status})',

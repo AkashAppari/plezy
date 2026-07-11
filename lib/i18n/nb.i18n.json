@@ -322,7 +322,14 @@
     "player": "Spiller",
     "subtitlesAndConfig": "Undertekster og konfigurasjon",
     "seekAndTiming": "Søk og tidtaking",
-    "behavior": "Atferd"
+    "behavior": "Atferd",
+    "manageLibrariesDescription": "Omorganiser og skjul biblioteker",
+    "visualEffects": "Visuelle effekter",
+    "visualEffectsAuto": "Automatisk",
+    "visualEffectsAutoDescription": "Reduser effekter automatisk på enheter med lavt strømforbruk",
+    "visualEffectsFull": "Full",
+    "visualEffectsReduced": "Redusert",
+    "visualEffectsReducedDescription": "Færre animasjoner og grafikk med lavere oppløsning"
   },
   "search": {
     "hint": "Søk i filmer, serier, musikk...",
@@ -416,7 +423,9 @@
     "setScore": "Sett en poengsum",
     "saved": "Lagret",
     "notAvailable": "Ingen treff",
-    "noConnectedServices": "Koble til en tjeneste i Innstillinger for å vurdere her."
+    "noConnectedServices": "Koble til en tjeneste i Innstillinger for å vurdere her.",
+    "favorite": "Favoritt",
+    "favorited": "Lagt til i favoritter"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",
@@ -784,7 +793,8 @@
       "year": "År",
       "contentRating": "Aldersgrense",
       "tag": "Tag",
-      "unwatched": "Usette"
+      "unwatched": "Usette",
+      "favorites": "Favoritter"
     },
     "sortLabels": {
       "title": "Tittel",
@@ -808,7 +818,9 @@
       "dateShared": "Delingsdato",
       "latestEpisodeAirDate": "Siste episodes sendedato",
       "lastEpisodeDateAdded": "Dato for sist lagt til episode"
-    }
+    },
+    "noItemsMatchFilters": "Ingen elementer samsvarer med de aktive filtrene",
+    "resetFilters": "Tilbakestill filtre"
   },
   "about": {
     "title": "Om",
@@ -1095,7 +1107,10 @@
     "renameRoom": "Gi nytt navn til rom",
     "removeRoom": "Fjern",
     "guestSwitchUnavailable": "Kunne ikke bytte — server ikke tilgjengelig for synkronisering",
-    "guestSwitchFailed": "Kunne ikke bytte — innhold ble ikke funnet på denne serveren"
+    "guestSwitchFailed": "Kunne ikke bytte — innhold ble ikke funnet på denne serveren",
+    "participantNeedsUpdate": "${name} bruker en eldre appversjon — synkronisering er ikke tilgjengelig",
+    "resumingWithout": "Fortsetter uten ${name}",
+    "waitingForName": "Venter på ${name}..."
   },
   "downloads": {
     "title": "Nedlastinger",

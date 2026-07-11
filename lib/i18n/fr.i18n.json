@@ -322,7 +322,14 @@
     "player": "Lecteur",
     "subtitlesAndConfig": "Sous-titres et configuration",
     "seekAndTiming": "Recherche et minutage",
-    "behavior": "Comportement"
+    "behavior": "Comportement",
+    "manageLibrariesDescription": "Réorganiser et masquer les bibliothèques",
+    "visualEffects": "Effets visuels",
+    "visualEffectsAuto": "Automatique",
+    "visualEffectsAutoDescription": "Réduire automatiquement les effets sur les appareils peu puissants",
+    "visualEffectsFull": "Complets",
+    "visualEffectsReduced": "Réduits",
+    "visualEffectsReducedDescription": "Moins d’animations et d’illustrations de plus faible résolution"
   },
   "search": {
     "hint": "Rechercher des films, des séries, de la musique...",
@@ -416,7 +423,9 @@
     "setScore": "Définir une note",
     "saved": "Enregistré",
     "notAvailable": "Aucune correspondance trouvée",
-    "noConnectedServices": "Connectez un service dans les Réglages pour noter ici."
+    "noConnectedServices": "Connectez un service dans les Réglages pour noter ici.",
+    "favorite": "Favori",
+    "favorited": "Ajouté aux favoris"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",
@@ -784,7 +793,8 @@
       "year": "Année",
       "contentRating": "Classification",
       "tag": "Tag",
-      "unwatched": "Non vus"
+      "unwatched": "Non vus",
+      "favorites": "Favoris"
     },
     "sortLabels": {
       "title": "Titre",
@@ -808,7 +818,9 @@
       "dateShared": "Date de partage",
       "latestEpisodeAirDate": "Dernière date de diffusion",
       "lastEpisodeDateAdded": "Date d'ajout du dernier épisode"
-    }
+    },
+    "noItemsMatchFilters": "Aucun élément ne correspond aux filtres actifs",
+    "resetFilters": "Réinitialiser les filtres"
   },
   "about": {
     "title": "À propos",
@@ -1095,7 +1107,10 @@
     "renameRoom": "Renommer le salon",
     "removeRoom": "Supprimer",
     "guestSwitchUnavailable": "Impossible de changer — serveur indisponible pour la synchronisation",
-    "guestSwitchFailed": "Impossible de changer — contenu introuvable sur ce serveur"
+    "guestSwitchFailed": "Impossible de changer — contenu introuvable sur ce serveur",
+    "participantNeedsUpdate": "${name} utilise une ancienne version de l’app — synchronisation indisponible",
+    "resumingWithout": "Reprise sans ${name}",
+    "waitingForName": "En attente de ${name}..."
   },
   "downloads": {
     "title": "Téléchargements",

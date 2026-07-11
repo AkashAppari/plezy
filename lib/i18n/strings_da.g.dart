@@ -455,6 +455,13 @@ class _TranslationsSettingsDa extends TranslationsSettingsEn {
 	@override String get subtitlesAndConfig => 'Undertekster og konfiguration';
 	@override String get seekAndTiming => 'Søgning og timing';
 	@override String get behavior => 'Adfærd';
+	@override String get manageLibrariesDescription => 'Omarranger og skjul biblioteker';
+	@override String get visualEffects => 'Visuelle effekter';
+	@override String get visualEffectsAuto => 'Automatisk';
+	@override String get visualEffectsAutoDescription => 'Reducer automatisk effekter på enheder med lav ydeevne';
+	@override String get visualEffectsFull => 'Fuld';
+	@override String get visualEffectsReduced => 'Reduceret';
+	@override String get visualEffectsReducedDescription => 'Færre animationer og illustrationer i lavere opløsning';
 }
 
 // Path: search
@@ -558,6 +565,8 @@ class _TranslationsRateSheetDa extends TranslationsRateSheetEn {
 	@override String get saved => 'Gemt';
 	@override String get notAvailable => 'Intet match fundet';
 	@override String get noConnectedServices => 'Forbind en tjeneste i Indstillinger for at bedømme der.';
+	@override String get favorite => 'Favorit';
+	@override String get favorited => 'Føjet til favoritter';
 }
 
 // Path: accessibility
@@ -989,6 +998,8 @@ class _TranslationsLibrariesDa extends TranslationsLibrariesEn {
 	@override late final _TranslationsLibrariesGroupingsDa groupings = _TranslationsLibrariesGroupingsDa._(_root);
 	@override late final _TranslationsLibrariesFilterCategoriesDa filterCategories = _TranslationsLibrariesFilterCategoriesDa._(_root);
 	@override late final _TranslationsLibrariesSortLabelsDa sortLabels = _TranslationsLibrariesSortLabelsDa._(_root);
+	@override String get noItemsMatchFilters => 'Ingen elementer matcher de aktive filtre';
+	@override String get resetFilters => 'Nulstil filtre';
 }
 
 // Path: about
@@ -1341,6 +1352,9 @@ class _TranslationsWatchTogetherDa extends TranslationsWatchTogetherEn {
 	@override String get removeRoom => 'Fjern';
 	@override String get guestSwitchUnavailable => 'Kunne ikke skifte — server ikke tilgængelig for synkronisering';
 	@override String get guestSwitchFailed => 'Kunne ikke skifte — indhold blev ikke fundet på denne server';
+	@override String participantNeedsUpdate({required Object name}) => '${name} bruger en ældre appversion — synkronisering er ikke tilgængelig';
+	@override String resumingWithout({required Object name}) => 'Fortsætter uden ${name}';
+	@override String waitingForName({required Object name}) => 'Venter på ${name}...';
 }
 
 // Path: downloads
@@ -1875,6 +1889,7 @@ class _TranslationsLibrariesFilterCategoriesDa extends TranslationsLibrariesFilt
 	@override String get contentRating => 'Aldersvurdering';
 	@override String get tag => 'Tag';
 	@override String get unwatched => 'Usete';
+	@override String get favorites => 'Favoritter';
 }
 
 // Path: libraries.sortLabels
@@ -2420,6 +2435,13 @@ extension on TranslationsDa {
 			'settings.subtitlesAndConfig' => 'Undertekster og konfiguration',
 			'settings.seekAndTiming' => 'Søgning og timing',
 			'settings.behavior' => 'Adfærd',
+			'settings.manageLibrariesDescription' => 'Omarranger og skjul biblioteker',
+			'settings.visualEffects' => 'Visuelle effekter',
+			'settings.visualEffectsAuto' => 'Automatisk',
+			'settings.visualEffectsAutoDescription' => 'Reducer automatisk effekter på enheder med lav ydeevne',
+			'settings.visualEffectsFull' => 'Fuld',
+			'settings.visualEffectsReduced' => 'Reduceret',
+			'settings.visualEffectsReducedDescription' => 'Færre animationer og illustrationer i lavere opløsning',
 			'search.hint' => 'Søg film, serier, musik...',
 			'search.tryDifferentTerm' => 'Prøv en anden søgning',
 			'search.searchYourMedia' => 'Søg i dine medier',
@@ -2502,6 +2524,8 @@ extension on TranslationsDa {
 			'rateSheet.saved' => 'Gemt',
 			'rateSheet.notAvailable' => 'Intet match fundet',
 			'rateSheet.noConnectedServices' => 'Forbind en tjeneste i Indstillinger for at bedømme der.',
+			'rateSheet.favorite' => 'Favorit',
+			'rateSheet.favorited' => 'Føjet til favoritter',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV-serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -2610,6 +2634,8 @@ extension on TranslationsDa {
 			'messages.errorLoading' => ({required Object error}) => 'Fejl: ${error}',
 			'messages.streamInterrupted' => 'Streamen blev afbrudt. Tryk på afspil, eller spol for at prøve igen.',
 			'messages.fileInfoNotAvailable' => 'Filinfo ikke tilgængelig',
+			_ => null,
+		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Fejl ved indlæsning af filinfo: ${error}',
 			'messages.errorLoadingSeries' => 'Fejl ved indlæsning af serie',
 			'messages.musicNotSupported' => 'Musikafspilning understøttes endnu ikke',
@@ -2619,8 +2645,6 @@ extension on TranslationsDa {
 			'messages.unableToDetermineLibrarySection' => 'Kan ikke bestemme biblioteksafdeling for dette element',
 			'messages.logsCleared' => 'Logs ryddet',
 			'messages.logsCopied' => 'Logs kopieret til udklipsholder',
-			_ => null,
-		} ?? switch (path) {
 			'messages.noLogsAvailable' => 'Ingen logs tilgængelige',
 			'messages.libraryScanning' => ({required Object title}) => 'Scanner "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Biblioteksscanning startet for "${title}"',
@@ -2839,6 +2863,7 @@ extension on TranslationsDa {
 			'libraries.filterCategories.contentRating' => 'Aldersvurdering',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Usete',
+			'libraries.filterCategories.favorites' => 'Favoritter',
 			'libraries.sortLabels.title' => 'Titel',
 			'libraries.sortLabels.dateAdded' => 'Tilføjet dato',
 			'libraries.sortLabels.releaseDate' => 'Udgivelsesdato',
@@ -2860,6 +2885,8 @@ extension on TranslationsDa {
 			'libraries.sortLabels.dateShared' => 'Delt dato',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Seneste episodes premieredato',
 			'libraries.sortLabels.lastEpisodeDateAdded' => 'Dato for senest tilføjede episode',
+			'libraries.noItemsMatchFilters' => 'Ingen elementer matcher de aktive filtre',
+			'libraries.resetFilters' => 'Nulstil filtre',
 			'about.title' => 'Om',
 			'about.openSourceLicenses' => 'Open source-licenser',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
@@ -3113,11 +3140,16 @@ extension on TranslationsDa {
 			'watchTogether.removeRoom' => 'Fjern',
 			'watchTogether.guestSwitchUnavailable' => 'Kunne ikke skifte — server ikke tilgængelig for synkronisering',
 			'watchTogether.guestSwitchFailed' => 'Kunne ikke skifte — indhold blev ikke fundet på denne server',
+			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} bruger en ældre appversion — synkronisering er ikke tilgængelig',
+			'watchTogether.resumingWithout' => ({required Object name}) => 'Fortsætter uden ${name}',
+			'watchTogether.waitingForName' => ({required Object name}) => 'Venter på ${name}...',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Administrer',
 			'downloads.tvShows' => 'TV-serier',
 			'downloads.movies' => 'Film',
 			'downloads.music' => 'Musik',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.tracksQueued' => ({required Object count}) => '${count} numre i kø til download',
 			'downloads.noDownloads' => 'Ingen downloads endnu',
 			'downloads.noDownloadsDescription' => 'Downloadet indhold vises her til offlinevisning',
@@ -3133,8 +3165,6 @@ extension on TranslationsDa {
 			'downloads.cancelledDownloadTitle' => 'Annulleret download',
 			'downloads.cancelledDownloadMessage' => 'Denne download blev annulleret. Hvad vil du gøre?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alle episoder er allerede downloadet',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.resumeDownload' => 'Genoptag download',
 			'downloads.cancelledDownload' => 'Annulleret download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (synkroniserer ${status})',

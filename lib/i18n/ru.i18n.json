@@ -322,7 +322,14 @@
     "player": "Плеер",
     "subtitlesAndConfig": "Субтитры и конфигурация",
     "seekAndTiming": "Перемотка и время",
-    "behavior": "Поведение"
+    "behavior": "Поведение",
+    "manageLibrariesDescription": "Изменять порядок и скрывать библиотеки",
+    "visualEffects": "Визуальные эффекты",
+    "visualEffectsAuto": "Автоматически",
+    "visualEffectsAutoDescription": "Автоматически уменьшать эффекты на маломощных устройствах",
+    "visualEffectsFull": "Полные",
+    "visualEffectsReduced": "Уменьшенные",
+    "visualEffectsReducedDescription": "Меньше анимаций и графика с более низким разрешением"
   },
   "search": {
     "hint": "Поиск фильмов, сериалов, музыки...",
@@ -416,7 +423,9 @@
     "setScore": "Установить оценку",
     "saved": "Сохранено",
     "notAvailable": "Совпадений не найдено",
-    "noConnectedServices": "Подключите сервис в настройках, чтобы оценивать здесь."
+    "noConnectedServices": "Подключите сервис в настройках, чтобы оценивать здесь.",
+    "favorite": "Добавить в избранное",
+    "favorited": "Добавлено в избранное"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, фильм",
@@ -784,7 +793,8 @@
       "year": "Год",
       "contentRating": "Возрастной рейтинг",
       "tag": "Тег",
-      "unwatched": "Непросмотренные"
+      "unwatched": "Непросмотренные",
+      "favorites": "Избранное"
     },
     "sortLabels": {
       "title": "Название",
@@ -808,7 +818,9 @@
       "dateShared": "Дата открытия доступа",
       "latestEpisodeAirDate": "Дата выхода последнего эпизода",
       "lastEpisodeDateAdded": "Дата добавления последнего эпизода"
-    }
+    },
+    "noItemsMatchFilters": "Нет элементов, соответствующих активным фильтрам",
+    "resetFilters": "Сбросить фильтры"
   },
   "about": {
     "title": "О приложении",
@@ -1099,7 +1111,10 @@
     "renameRoom": "Переименовать комнату",
     "removeRoom": "Удалить",
     "guestSwitchUnavailable": "Не удалось переключиться — сервер недоступен для синхронизации",
-    "guestSwitchFailed": "Не удалось переключиться — содержимое не найдено на этом сервере"
+    "guestSwitchFailed": "Не удалось переключиться — содержимое не найдено на этом сервере",
+    "participantNeedsUpdate": "${name} использует старую версию приложения — синхронизация недоступна",
+    "resumingWithout": "Возобновление без ${name}",
+    "waitingForName": "Ожидание ${name}..."
   },
   "downloads": {
     "title": "Загрузки",

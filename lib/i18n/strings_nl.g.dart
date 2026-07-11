@@ -455,6 +455,13 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get subtitlesAndConfig => 'Ondertitels en configuratie';
 	@override String get seekAndTiming => 'Zoeken en timing';
 	@override String get behavior => 'Gedrag';
+	@override String get manageLibrariesDescription => 'Bibliotheken herordenen en verbergen';
+	@override String get visualEffects => 'Visuele effecten';
+	@override String get visualEffectsAuto => 'Automatisch';
+	@override String get visualEffectsAutoDescription => 'Effecten automatisch verminderen op apparaten met laag vermogen';
+	@override String get visualEffectsFull => 'Volledig';
+	@override String get visualEffectsReduced => 'Verminderd';
+	@override String get visualEffectsReducedDescription => 'Minder animaties en illustraties met lagere resolutie';
 }
 
 // Path: search
@@ -558,6 +565,8 @@ class _TranslationsRateSheetNl extends TranslationsRateSheetEn {
 	@override String get saved => 'Opgeslagen';
 	@override String get notAvailable => 'Geen match gevonden';
 	@override String get noConnectedServices => 'Verbind een service in Instellingen om daar te beoordelen.';
+	@override String get favorite => 'Favoriet';
+	@override String get favorited => 'Toegevoegd aan favorieten';
 }
 
 // Path: accessibility
@@ -989,6 +998,8 @@ class _TranslationsLibrariesNl extends TranslationsLibrariesEn {
 	@override late final _TranslationsLibrariesGroupingsNl groupings = _TranslationsLibrariesGroupingsNl._(_root);
 	@override late final _TranslationsLibrariesFilterCategoriesNl filterCategories = _TranslationsLibrariesFilterCategoriesNl._(_root);
 	@override late final _TranslationsLibrariesSortLabelsNl sortLabels = _TranslationsLibrariesSortLabelsNl._(_root);
+	@override String get noItemsMatchFilters => 'Geen items komen overeen met de actieve filters';
+	@override String get resetFilters => 'Filters opnieuw instellen';
 }
 
 // Path: about
@@ -1341,6 +1352,9 @@ class _TranslationsWatchTogetherNl extends TranslationsWatchTogetherEn {
 	@override String get removeRoom => 'Verwijderen';
 	@override String get guestSwitchUnavailable => 'Kon niet schakelen — server niet beschikbaar voor synchronisatie';
 	@override String get guestSwitchFailed => 'Kon niet schakelen — inhoud niet gevonden op deze server';
+	@override String participantNeedsUpdate({required Object name}) => '${name} gebruikt een oudere appversie — synchronisatie niet beschikbaar';
+	@override String resumingWithout({required Object name}) => 'Hervatten zonder ${name}';
+	@override String waitingForName({required Object name}) => 'Wachten op ${name}...';
 }
 
 // Path: downloads
@@ -1875,6 +1889,7 @@ class _TranslationsLibrariesFilterCategoriesNl extends TranslationsLibrariesFilt
 	@override String get contentRating => 'Leeftijdsclassificatie';
 	@override String get tag => 'Tag';
 	@override String get unwatched => 'Onbekeken';
+	@override String get favorites => 'Favorieten';
 }
 
 // Path: libraries.sortLabels
@@ -2420,6 +2435,13 @@ extension on TranslationsNl {
 			'settings.subtitlesAndConfig' => 'Ondertitels en configuratie',
 			'settings.seekAndTiming' => 'Zoeken en timing',
 			'settings.behavior' => 'Gedrag',
+			'settings.manageLibrariesDescription' => 'Bibliotheken herordenen en verbergen',
+			'settings.visualEffects' => 'Visuele effecten',
+			'settings.visualEffectsAuto' => 'Automatisch',
+			'settings.visualEffectsAutoDescription' => 'Effecten automatisch verminderen op apparaten met laag vermogen',
+			'settings.visualEffectsFull' => 'Volledig',
+			'settings.visualEffectsReduced' => 'Verminderd',
+			'settings.visualEffectsReducedDescription' => 'Minder animaties en illustraties met lagere resolutie',
 			'search.hint' => 'Zoek films, series, muziek...',
 			'search.tryDifferentTerm' => 'Probeer een andere zoekterm',
 			'search.searchYourMedia' => 'Zoek in je media',
@@ -2502,6 +2524,8 @@ extension on TranslationsNl {
 			'rateSheet.saved' => 'Opgeslagen',
 			'rateSheet.notAvailable' => 'Geen match gevonden',
 			'rateSheet.noConnectedServices' => 'Verbind een service in Instellingen om daar te beoordelen.',
+			'rateSheet.favorite' => 'Favoriet',
+			'rateSheet.favorited' => 'Toegevoegd aan favorieten',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV-serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -2610,6 +2634,8 @@ extension on TranslationsNl {
 			'messages.errorLoading' => ({required Object error}) => 'Fout: ${error}',
 			'messages.streamInterrupted' => 'De stream is onderbroken. Druk op afspelen of spoel om het opnieuw te proberen.',
 			'messages.fileInfoNotAvailable' => 'Bestand informatie niet beschikbaar',
+			_ => null,
+		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Fout bij laden bestand info: ${error}',
 			'messages.errorLoadingSeries' => 'Fout bij laden serie',
 			'messages.musicNotSupported' => 'Muziek afspelen wordt nog niet ondersteund',
@@ -2619,8 +2645,6 @@ extension on TranslationsNl {
 			'messages.unableToDetermineLibrarySection' => 'Kan bibliotheeksectie voor dit item niet bepalen',
 			'messages.logsCleared' => 'Logs gewist',
 			'messages.logsCopied' => 'Logs gekopieerd naar klembord',
-			_ => null,
-		} ?? switch (path) {
 			'messages.noLogsAvailable' => 'Geen logs beschikbaar',
 			'messages.libraryScanning' => ({required Object title}) => 'Scannen "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Bibliotheek scan gestart voor "${title}"',
@@ -2839,6 +2863,7 @@ extension on TranslationsNl {
 			'libraries.filterCategories.contentRating' => 'Leeftijdsclassificatie',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Onbekeken',
+			'libraries.filterCategories.favorites' => 'Favorieten',
 			'libraries.sortLabels.title' => 'Titel',
 			'libraries.sortLabels.dateAdded' => 'Toegevoegd op',
 			'libraries.sortLabels.releaseDate' => 'Uitgavedatum',
@@ -2860,6 +2885,8 @@ extension on TranslationsNl {
 			'libraries.sortLabels.dateShared' => 'Gedeeld op',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Laatste afleveringsuitzending',
 			'libraries.sortLabels.lastEpisodeDateAdded' => 'Datum laatst toegevoegde aflevering',
+			'libraries.noItemsMatchFilters' => 'Geen items komen overeen met de actieve filters',
+			'libraries.resetFilters' => 'Filters opnieuw instellen',
 			'about.title' => 'Over',
 			'about.openSourceLicenses' => 'Open Source licenties',
 			'about.versionLabel' => ({required Object version}) => 'Versie ${version}',
@@ -3113,11 +3140,16 @@ extension on TranslationsNl {
 			'watchTogether.removeRoom' => 'Verwijderen',
 			'watchTogether.guestSwitchUnavailable' => 'Kon niet schakelen — server niet beschikbaar voor synchronisatie',
 			'watchTogether.guestSwitchFailed' => 'Kon niet schakelen — inhoud niet gevonden op deze server',
+			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} gebruikt een oudere appversie — synchronisatie niet beschikbaar',
+			'watchTogether.resumingWithout' => ({required Object name}) => 'Hervatten zonder ${name}',
+			'watchTogether.waitingForName' => ({required Object name}) => 'Wachten op ${name}...',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Beheren',
 			'downloads.tvShows' => 'Series',
 			'downloads.movies' => 'Films',
 			'downloads.music' => 'Muziek',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.tracksQueued' => ({required Object count}) => '${count} nummers in wachtrij voor download',
 			'downloads.noDownloads' => 'Nog geen downloads',
 			'downloads.noDownloadsDescription' => 'Gedownloade content verschijnt hier voor offline weergave',
@@ -3133,8 +3165,6 @@ extension on TranslationsNl {
 			'downloads.cancelledDownloadTitle' => 'Geannuleerde download',
 			'downloads.cancelledDownloadMessage' => 'Deze download is geannuleerd. Wat wil je doen?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alle afleveringen zijn al gedownload',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.resumeDownload' => 'Download hervatten',
 			'downloads.cancelledDownload' => 'Geannuleerde download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} synchroniseren)',

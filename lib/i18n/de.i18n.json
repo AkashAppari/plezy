@@ -322,7 +322,14 @@
     "player": "Wiedergabe",
     "subtitlesAndConfig": "Untertitel & Konfiguration",
     "seekAndTiming": "Spulen & Timing",
-    "behavior": "Verhalten"
+    "behavior": "Verhalten",
+    "manageLibrariesDescription": "Mediatheken neu anordnen und ausblenden",
+    "visualEffects": "Visuelle Effekte",
+    "visualEffectsAuto": "Automatisch",
+    "visualEffectsAutoDescription": "Effekte auf leistungsschwachen Geräten automatisch reduzieren",
+    "visualEffectsFull": "Vollständig",
+    "visualEffectsReduced": "Reduziert",
+    "visualEffectsReducedDescription": "Weniger Animationen und Grafiken mit niedrigerer Auflösung"
   },
   "search": {
     "hint": "Filme, Serien, Musik suchen...",
@@ -416,7 +423,9 @@
     "setScore": "Eine Wertung festlegen",
     "saved": "Gespeichert",
     "notAvailable": "Keine Übereinstimmung gefunden",
-    "noConnectedServices": "Verbinde einen Dienst in den Einstellungen, um dort zu bewerten."
+    "noConnectedServices": "Verbinde einen Dienst in den Einstellungen, um dort zu bewerten.",
+    "favorite": "Favorit",
+    "favorited": "Favorisiert"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, Film",
@@ -784,7 +793,8 @@
       "year": "Jahr",
       "contentRating": "Altersfreigabe",
       "tag": "Tag",
-      "unwatched": "Ungesehene"
+      "unwatched": "Ungesehene",
+      "favorites": "Favoriten"
     },
     "sortLabels": {
       "title": "Titel",
@@ -808,7 +818,9 @@
       "dateShared": "Datum geteilt",
       "latestEpisodeAirDate": "Letztes Folgenausstrahlungsdatum",
       "lastEpisodeDateAdded": "Datum der zuletzt hinzugefügten Folge"
-    }
+    },
+    "noItemsMatchFilters": "Keine Elemente entsprechen den aktiven Filtern",
+    "resetFilters": "Filter zurücksetzen"
   },
   "about": {
     "title": "Über",
@@ -1095,7 +1107,10 @@
     "renameRoom": "Raum umbenennen",
     "removeRoom": "Entfernen",
     "guestSwitchUnavailable": "Wechsel fehlgeschlagen — Server nicht für Synchronisierung verfügbar",
-    "guestSwitchFailed": "Wechsel fehlgeschlagen — Inhalt auf diesem Server nicht gefunden"
+    "guestSwitchFailed": "Wechsel fehlgeschlagen — Inhalt auf diesem Server nicht gefunden",
+    "participantNeedsUpdate": "${name} verwendet eine ältere Appversion — Synchronisierung nicht verfügbar",
+    "resumingWithout": "Fortfahren ohne ${name}",
+    "waitingForName": "Warten auf ${name}..."
   },
   "downloads": {
     "title": "Downloads",

@@ -322,7 +322,14 @@
     "player": "Afspiller",
     "subtitlesAndConfig": "Undertekster og konfiguration",
     "seekAndTiming": "Søgning og timing",
-    "behavior": "Adfærd"
+    "behavior": "Adfærd",
+    "manageLibrariesDescription": "Omarranger og skjul biblioteker",
+    "visualEffects": "Visuelle effekter",
+    "visualEffectsAuto": "Automatisk",
+    "visualEffectsAutoDescription": "Reducer automatisk effekter på enheder med lav ydeevne",
+    "visualEffectsFull": "Fuld",
+    "visualEffectsReduced": "Reduceret",
+    "visualEffectsReducedDescription": "Færre animationer og illustrationer i lavere opløsning"
   },
   "search": {
     "hint": "Søg film, serier, musik...",
@@ -416,7 +423,9 @@
     "setScore": "Angiv en score",
     "saved": "Gemt",
     "notAvailable": "Intet match fundet",
-    "noConnectedServices": "Forbind en tjeneste i Indstillinger for at bedømme der."
+    "noConnectedServices": "Forbind en tjeneste i Indstillinger for at bedømme der.",
+    "favorite": "Favorit",
+    "favorited": "Føjet til favoritter"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",
@@ -784,7 +793,8 @@
       "year": "År",
       "contentRating": "Aldersvurdering",
       "tag": "Tag",
-      "unwatched": "Usete"
+      "unwatched": "Usete",
+      "favorites": "Favoritter"
     },
     "sortLabels": {
       "title": "Titel",
@@ -808,7 +818,9 @@
       "dateShared": "Delt dato",
       "latestEpisodeAirDate": "Seneste episodes premieredato",
       "lastEpisodeDateAdded": "Dato for senest tilføjede episode"
-    }
+    },
+    "noItemsMatchFilters": "Ingen elementer matcher de aktive filtre",
+    "resetFilters": "Nulstil filtre"
   },
   "about": {
     "title": "Om",
@@ -1095,7 +1107,10 @@
     "renameRoom": "Omdøb rum",
     "removeRoom": "Fjern",
     "guestSwitchUnavailable": "Kunne ikke skifte — server ikke tilgængelig for synkronisering",
-    "guestSwitchFailed": "Kunne ikke skifte — indhold blev ikke fundet på denne server"
+    "guestSwitchFailed": "Kunne ikke skifte — indhold blev ikke fundet på denne server",
+    "participantNeedsUpdate": "${name} bruger en ældre appversion — synkronisering er ikke tilgængelig",
+    "resumingWithout": "Fortsætter uden ${name}",
+    "waitingForName": "Venter på ${name}..."
   },
   "downloads": {
     "title": "Downloads",

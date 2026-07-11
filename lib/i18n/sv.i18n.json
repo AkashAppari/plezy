@@ -322,7 +322,14 @@
     "player": "Spelare",
     "subtitlesAndConfig": "Undertexter och konfiguration",
     "seekAndTiming": "Sök och timing",
-    "behavior": "Beteende"
+    "behavior": "Beteende",
+    "manageLibrariesDescription": "Ordna om och dölj bibliotek",
+    "visualEffects": "Visuella effekter",
+    "visualEffectsAuto": "Automatiskt",
+    "visualEffectsAutoDescription": "Minska effekter automatiskt på enheter med låg effekt",
+    "visualEffectsFull": "Fullständiga",
+    "visualEffectsReduced": "Minskade",
+    "visualEffectsReducedDescription": "Färre animationer och grafik med lägre upplösning"
   },
   "search": {
     "hint": "Sök filmer, serier, musik...",
@@ -416,7 +423,9 @@
     "setScore": "Ange betyg",
     "saved": "Sparat",
     "notAvailable": "Ingen matchning hittades",
-    "noConnectedServices": "Anslut en tjänst i Inställningar för att betygsätta där."
+    "noConnectedServices": "Anslut en tjänst i Inställningar för att betygsätta där.",
+    "favorite": "Favorit",
+    "favorited": "Tillagd i favoriter"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",
@@ -784,7 +793,8 @@
       "year": "År",
       "contentRating": "Åldersgräns",
       "tag": "Tagg",
-      "unwatched": "Osedda"
+      "unwatched": "Osedda",
+      "favorites": "Favoriter"
     },
     "sortLabels": {
       "title": "Titel",
@@ -808,7 +818,9 @@
       "dateShared": "Delningsdatum",
       "latestEpisodeAirDate": "Senaste avsnittets sändningsdatum",
       "lastEpisodeDateAdded": "Datum då senaste avsnittet lades till"
-    }
+    },
+    "noItemsMatchFilters": "Inga objekt matchar de aktiva filtren",
+    "resetFilters": "Återställ filter"
   },
   "about": {
     "title": "Om",
@@ -1095,7 +1107,10 @@
     "renameRoom": "Byt namn på rum",
     "removeRoom": "Ta bort",
     "guestSwitchUnavailable": "Kunde inte byta — server inte tillgänglig för synkronisering",
-    "guestSwitchFailed": "Kunde inte byta — innehåll hittades inte på denna server"
+    "guestSwitchFailed": "Kunde inte byta — innehåll hittades inte på denna server",
+    "participantNeedsUpdate": "${name} använder en äldre appversion — synkronisering är inte tillgänglig",
+    "resumingWithout": "Återupptar utan ${name}",
+    "waitingForName": "Väntar på ${name}..."
   },
   "downloads": {
     "title": "Nedladdningar",

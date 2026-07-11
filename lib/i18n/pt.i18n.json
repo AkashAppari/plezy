@@ -322,7 +322,14 @@
     "player": "Reprodutor",
     "subtitlesAndConfig": "Legendas e configuração",
     "seekAndTiming": "Busca e tempo",
-    "behavior": "Comportamento"
+    "behavior": "Comportamento",
+    "manageLibrariesDescription": "Reordene e oculte bibliotecas",
+    "visualEffects": "Efeitos visuais",
+    "visualEffectsAuto": "Automático",
+    "visualEffectsAutoDescription": "Reduza automaticamente os efeitos em dispositivos de baixo consumo",
+    "visualEffectsFull": "Completos",
+    "visualEffectsReduced": "Reduzidos",
+    "visualEffectsReducedDescription": "Menos animações e artes em menor resolução"
   },
   "search": {
     "hint": "Buscar filmes, séries, músicas...",
@@ -416,7 +423,9 @@
     "setScore": "Definir pontuação",
     "saved": "Salvo",
     "notAvailable": "Nenhuma correspondência encontrada",
-    "noConnectedServices": "Conecte um serviço nas Configurações para avaliar por lá."
+    "noConnectedServices": "Conecte um serviço nas Configurações para avaliar por lá.",
+    "favorite": "Favorito",
+    "favorited": "Adicionado aos favoritos"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, filme",
@@ -784,7 +793,8 @@
       "year": "Ano",
       "contentRating": "Classificação",
       "tag": "Tag",
-      "unwatched": "Não assistidos"
+      "unwatched": "Não assistidos",
+      "favorites": "Favoritos"
     },
     "sortLabels": {
       "title": "Título",
@@ -808,7 +818,9 @@
       "dateShared": "Data de compartilhamento",
       "latestEpisodeAirDate": "Última data de exibição do episódio",
       "lastEpisodeDateAdded": "Data de adição do último episódio"
-    }
+    },
+    "noItemsMatchFilters": "Nenhum item corresponde aos filtros ativos",
+    "resetFilters": "Redefinir filtros"
   },
   "about": {
     "title": "Sobre",
@@ -1095,7 +1107,10 @@
     "renameRoom": "Renomear sala",
     "removeRoom": "Remover",
     "guestSwitchUnavailable": "Não foi possível trocar — servidor indisponível para sincronização",
-    "guestSwitchFailed": "Não foi possível trocar — conteúdo não encontrado neste servidor"
+    "guestSwitchFailed": "Não foi possível trocar — conteúdo não encontrado neste servidor",
+    "participantNeedsUpdate": "${name} está em uma versão mais antiga do aplicativo — sincronização indisponível",
+    "resumingWithout": "Retomando sem ${name}",
+    "waitingForName": "Aguardando ${name}..."
   },
   "downloads": {
     "title": "Downloads",

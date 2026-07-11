@@ -322,7 +322,14 @@
     "player": "Плейър",
     "subtitlesAndConfig": "Субтитри и конфигурация",
     "seekAndTiming": "Търсене и време",
-    "behavior": "Поведение"
+    "behavior": "Поведение",
+    "manageLibrariesDescription": "Пренареждай и скривай библиотеки",
+    "visualEffects": "Визуални ефекти",
+    "visualEffectsAuto": "Автоматично",
+    "visualEffectsAutoDescription": "Автоматично намалявай ефектите на по-слаби устройства",
+    "visualEffectsFull": "Пълни",
+    "visualEffectsReduced": "Намалени",
+    "visualEffectsReducedDescription": "По-малко анимации и изображения с по-ниска резолюция"
   },
   "search": {
     "hint": "Търсене на филми, сериали, музика...",
@@ -416,7 +423,9 @@
     "setScore": "Задай оценка",
     "saved": "Запазено",
     "notAvailable": "Няма намерено съвпадение",
-    "noConnectedServices": "Свържи услуга в Настройки, за да оценяваш там."
+    "noConnectedServices": "Свържи услуга в Настройки, за да оценяваш там.",
+    "favorite": "Добави в любими",
+    "favorited": "Добавено в любими"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, филм",
@@ -784,7 +793,8 @@
       "year": "Година",
       "contentRating": "Възрастов рейтинг",
       "tag": "Таг",
-      "unwatched": "Негледани"
+      "unwatched": "Негледани",
+      "favorites": "Любими"
     },
     "sortLabels": {
       "title": "Заглавие",
@@ -808,7 +818,9 @@
       "dateShared": "Дата на споделяне",
       "latestEpisodeAirDate": "Дата на излъчване на последния епизод",
       "lastEpisodeDateAdded": "Дата на добавяне на последния епизод"
-    }
+    },
+    "noItemsMatchFilters": "Няма елементи, съответстващи на активните филтри",
+    "resetFilters": "Нулирай филтрите"
   },
   "about": {
     "title": "Относно",
@@ -1095,7 +1107,10 @@
     "renameRoom": "Преименувай стая",
     "removeRoom": "Премахни",
     "guestSwitchUnavailable": "Превключването не е възможно — сървърът е недостъпен за синхронизация",
-    "guestSwitchFailed": "Превключването не е възможно — съдържанието не е намерено на този сървър"
+    "guestSwitchFailed": "Превключването не е възможно — съдържанието не е намерено на този сървър",
+    "participantNeedsUpdate": "${name} е с по-стара версия на приложението — синхронизирането не е налично",
+    "resumingWithout": "Продължаване без ${name}",
+    "waitingForName": "Изчакване на ${name}..."
   },
   "downloads": {
     "title": "Изтегляния",

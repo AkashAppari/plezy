@@ -455,6 +455,13 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String get subtitlesAndConfig => 'Undertexter och konfiguration';
 	@override String get seekAndTiming => 'Sök och timing';
 	@override String get behavior => 'Beteende';
+	@override String get manageLibrariesDescription => 'Ordna om och dölj bibliotek';
+	@override String get visualEffects => 'Visuella effekter';
+	@override String get visualEffectsAuto => 'Automatiskt';
+	@override String get visualEffectsAutoDescription => 'Minska effekter automatiskt på enheter med låg effekt';
+	@override String get visualEffectsFull => 'Fullständiga';
+	@override String get visualEffectsReduced => 'Minskade';
+	@override String get visualEffectsReducedDescription => 'Färre animationer och grafik med lägre upplösning';
 }
 
 // Path: search
@@ -558,6 +565,8 @@ class _TranslationsRateSheetSv extends TranslationsRateSheetEn {
 	@override String get saved => 'Sparat';
 	@override String get notAvailable => 'Ingen matchning hittades';
 	@override String get noConnectedServices => 'Anslut en tjänst i Inställningar för att betygsätta där.';
+	@override String get favorite => 'Favorit';
+	@override String get favorited => 'Tillagd i favoriter';
 }
 
 // Path: accessibility
@@ -989,6 +998,8 @@ class _TranslationsLibrariesSv extends TranslationsLibrariesEn {
 	@override late final _TranslationsLibrariesGroupingsSv groupings = _TranslationsLibrariesGroupingsSv._(_root);
 	@override late final _TranslationsLibrariesFilterCategoriesSv filterCategories = _TranslationsLibrariesFilterCategoriesSv._(_root);
 	@override late final _TranslationsLibrariesSortLabelsSv sortLabels = _TranslationsLibrariesSortLabelsSv._(_root);
+	@override String get noItemsMatchFilters => 'Inga objekt matchar de aktiva filtren';
+	@override String get resetFilters => 'Återställ filter';
 }
 
 // Path: about
@@ -1341,6 +1352,9 @@ class _TranslationsWatchTogetherSv extends TranslationsWatchTogetherEn {
 	@override String get removeRoom => 'Ta bort';
 	@override String get guestSwitchUnavailable => 'Kunde inte byta — server inte tillgänglig för synkronisering';
 	@override String get guestSwitchFailed => 'Kunde inte byta — innehåll hittades inte på denna server';
+	@override String participantNeedsUpdate({required Object name}) => '${name} använder en äldre appversion — synkronisering är inte tillgänglig';
+	@override String resumingWithout({required Object name}) => 'Återupptar utan ${name}';
+	@override String waitingForName({required Object name}) => 'Väntar på ${name}...';
 }
 
 // Path: downloads
@@ -1875,6 +1889,7 @@ class _TranslationsLibrariesFilterCategoriesSv extends TranslationsLibrariesFilt
 	@override String get contentRating => 'Åldersgräns';
 	@override String get tag => 'Tagg';
 	@override String get unwatched => 'Osedda';
+	@override String get favorites => 'Favoriter';
 }
 
 // Path: libraries.sortLabels
@@ -2420,6 +2435,13 @@ extension on TranslationsSv {
 			'settings.subtitlesAndConfig' => 'Undertexter och konfiguration',
 			'settings.seekAndTiming' => 'Sök och timing',
 			'settings.behavior' => 'Beteende',
+			'settings.manageLibrariesDescription' => 'Ordna om och dölj bibliotek',
+			'settings.visualEffects' => 'Visuella effekter',
+			'settings.visualEffectsAuto' => 'Automatiskt',
+			'settings.visualEffectsAutoDescription' => 'Minska effekter automatiskt på enheter med låg effekt',
+			'settings.visualEffectsFull' => 'Fullständiga',
+			'settings.visualEffectsReduced' => 'Minskade',
+			'settings.visualEffectsReducedDescription' => 'Färre animationer och grafik med lägre upplösning',
 			'search.hint' => 'Sök filmer, serier, musik...',
 			'search.tryDifferentTerm' => 'Prova en annan sökterm',
 			'search.searchYourMedia' => 'Sök i dina media',
@@ -2502,6 +2524,8 @@ extension on TranslationsSv {
 			'rateSheet.saved' => 'Sparat',
 			'rateSheet.notAvailable' => 'Ingen matchning hittades',
 			'rateSheet.noConnectedServices' => 'Anslut en tjänst i Inställningar för att betygsätta där.',
+			'rateSheet.favorite' => 'Favorit',
+			'rateSheet.favorited' => 'Tillagd i favoriter',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV-serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -2610,6 +2634,8 @@ extension on TranslationsSv {
 			'messages.errorLoading' => ({required Object error}) => 'Fel: ${error}',
 			'messages.streamInterrupted' => 'Uppspelningen avbröts. Tryck på play eller spola för att försöka igen.',
 			'messages.fileInfoNotAvailable' => 'Filinformation inte tillgänglig',
+			_ => null,
+		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Fel vid laddning av filinformation: ${error}',
 			'messages.errorLoadingSeries' => 'Fel vid laddning av serie',
 			'messages.musicNotSupported' => 'Musikuppspelning stöds inte ännu',
@@ -2619,8 +2645,6 @@ extension on TranslationsSv {
 			'messages.unableToDetermineLibrarySection' => 'Kan inte avgöra biblioteksavdelningen för detta objekt',
 			'messages.logsCleared' => 'Loggar rensade',
 			'messages.logsCopied' => 'Loggar kopierade till urklipp',
-			_ => null,
-		} ?? switch (path) {
 			'messages.noLogsAvailable' => 'Inga loggar tillgängliga',
 			'messages.libraryScanning' => ({required Object title}) => 'Skannar "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Biblioteksskanning startad för "${title}"',
@@ -2839,6 +2863,7 @@ extension on TranslationsSv {
 			'libraries.filterCategories.contentRating' => 'Åldersgräns',
 			'libraries.filterCategories.tag' => 'Tagg',
 			'libraries.filterCategories.unwatched' => 'Osedda',
+			'libraries.filterCategories.favorites' => 'Favoriter',
 			'libraries.sortLabels.title' => 'Titel',
 			'libraries.sortLabels.dateAdded' => 'Tillagd',
 			'libraries.sortLabels.releaseDate' => 'Releasedatum',
@@ -2860,6 +2885,8 @@ extension on TranslationsSv {
 			'libraries.sortLabels.dateShared' => 'Delningsdatum',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Senaste avsnittets sändningsdatum',
 			'libraries.sortLabels.lastEpisodeDateAdded' => 'Datum då senaste avsnittet lades till',
+			'libraries.noItemsMatchFilters' => 'Inga objekt matchar de aktiva filtren',
+			'libraries.resetFilters' => 'Återställ filter',
 			'about.title' => 'Om',
 			'about.openSourceLicenses' => 'Öppen källkod-licenser',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
@@ -3113,11 +3140,16 @@ extension on TranslationsSv {
 			'watchTogether.removeRoom' => 'Ta bort',
 			'watchTogether.guestSwitchUnavailable' => 'Kunde inte byta — server inte tillgänglig för synkronisering',
 			'watchTogether.guestSwitchFailed' => 'Kunde inte byta — innehåll hittades inte på denna server',
+			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} använder en äldre appversion — synkronisering är inte tillgänglig',
+			'watchTogether.resumingWithout' => ({required Object name}) => 'Återupptar utan ${name}',
+			'watchTogether.waitingForName' => ({required Object name}) => 'Väntar på ${name}...',
 			'downloads.title' => 'Nedladdningar',
 			'downloads.manage' => 'Hantera',
 			'downloads.tvShows' => 'TV-serier',
 			'downloads.movies' => 'Filmer',
 			'downloads.music' => 'Musik',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.tracksQueued' => ({required Object count}) => '${count} låtar i nedladdningskö',
 			'downloads.noDownloads' => 'Inga nedladdningar ännu',
 			'downloads.noDownloadsDescription' => 'Nedladdat innehåll visas här för offline-visning',
@@ -3133,8 +3165,6 @@ extension on TranslationsSv {
 			'downloads.cancelledDownloadTitle' => 'Avbruten nedladdning',
 			'downloads.cancelledDownloadMessage' => 'Den här nedladdningen avbröts. Vad vill du göra?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alla avsnitt är redan nedladdade',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.resumeDownload' => 'Återuppta nedladdning',
 			'downloads.cancelledDownload' => 'Avbruten nedladdning',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (synkroniserar ${status})',

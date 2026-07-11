@@ -455,6 +455,13 @@ class _TranslationsSettingsBg extends TranslationsSettingsEn {
 	@override String get subtitlesAndConfig => 'Субтитри и конфигурация';
 	@override String get seekAndTiming => 'Търсене и време';
 	@override String get behavior => 'Поведение';
+	@override String get manageLibrariesDescription => 'Пренареждай и скривай библиотеки';
+	@override String get visualEffects => 'Визуални ефекти';
+	@override String get visualEffectsAuto => 'Автоматично';
+	@override String get visualEffectsAutoDescription => 'Автоматично намалявай ефектите на по-слаби устройства';
+	@override String get visualEffectsFull => 'Пълни';
+	@override String get visualEffectsReduced => 'Намалени';
+	@override String get visualEffectsReducedDescription => 'По-малко анимации и изображения с по-ниска резолюция';
 }
 
 // Path: search
@@ -558,6 +565,8 @@ class _TranslationsRateSheetBg extends TranslationsRateSheetEn {
 	@override String get saved => 'Запазено';
 	@override String get notAvailable => 'Няма намерено съвпадение';
 	@override String get noConnectedServices => 'Свържи услуга в Настройки, за да оценяваш там.';
+	@override String get favorite => 'Добави в любими';
+	@override String get favorited => 'Добавено в любими';
 }
 
 // Path: accessibility
@@ -989,6 +998,8 @@ class _TranslationsLibrariesBg extends TranslationsLibrariesEn {
 	@override late final _TranslationsLibrariesGroupingsBg groupings = _TranslationsLibrariesGroupingsBg._(_root);
 	@override late final _TranslationsLibrariesFilterCategoriesBg filterCategories = _TranslationsLibrariesFilterCategoriesBg._(_root);
 	@override late final _TranslationsLibrariesSortLabelsBg sortLabels = _TranslationsLibrariesSortLabelsBg._(_root);
+	@override String get noItemsMatchFilters => 'Няма елементи, съответстващи на активните филтри';
+	@override String get resetFilters => 'Нулирай филтрите';
 }
 
 // Path: about
@@ -1341,6 +1352,9 @@ class _TranslationsWatchTogetherBg extends TranslationsWatchTogetherEn {
 	@override String get removeRoom => 'Премахни';
 	@override String get guestSwitchUnavailable => 'Превключването не е възможно — сървърът е недостъпен за синхронизация';
 	@override String get guestSwitchFailed => 'Превключването не е възможно — съдържанието не е намерено на този сървър';
+	@override String participantNeedsUpdate({required Object name}) => '${name} е с по-стара версия на приложението — синхронизирането не е налично';
+	@override String resumingWithout({required Object name}) => 'Продължаване без ${name}';
+	@override String waitingForName({required Object name}) => 'Изчакване на ${name}...';
 }
 
 // Path: downloads
@@ -1875,6 +1889,7 @@ class _TranslationsLibrariesFilterCategoriesBg extends TranslationsLibrariesFilt
 	@override String get contentRating => 'Възрастов рейтинг';
 	@override String get tag => 'Таг';
 	@override String get unwatched => 'Негледани';
+	@override String get favorites => 'Любими';
 }
 
 // Path: libraries.sortLabels
@@ -2420,6 +2435,13 @@ extension on TranslationsBg {
 			'settings.subtitlesAndConfig' => 'Субтитри и конфигурация',
 			'settings.seekAndTiming' => 'Търсене и време',
 			'settings.behavior' => 'Поведение',
+			'settings.manageLibrariesDescription' => 'Пренареждай и скривай библиотеки',
+			'settings.visualEffects' => 'Визуални ефекти',
+			'settings.visualEffectsAuto' => 'Автоматично',
+			'settings.visualEffectsAutoDescription' => 'Автоматично намалявай ефектите на по-слаби устройства',
+			'settings.visualEffectsFull' => 'Пълни',
+			'settings.visualEffectsReduced' => 'Намалени',
+			'settings.visualEffectsReducedDescription' => 'По-малко анимации и изображения с по-ниска резолюция',
 			'search.hint' => 'Търсене на филми, сериали, музика...',
 			'search.tryDifferentTerm' => 'Опитайте с различна дума за търсене',
 			'search.searchYourMedia' => 'Търсете във вашата медия',
@@ -2502,6 +2524,8 @@ extension on TranslationsBg {
 			'rateSheet.saved' => 'Запазено',
 			'rateSheet.notAvailable' => 'Няма намерено съвпадение',
 			'rateSheet.noConnectedServices' => 'Свържи услуга в Настройки, за да оценяваш там.',
+			'rateSheet.favorite' => 'Добави в любими',
+			'rateSheet.favorited' => 'Добавено в любими',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, филм',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, ТВ сериал',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -2610,6 +2634,8 @@ extension on TranslationsBg {
 			'messages.errorLoading' => ({required Object error}) => 'Грешка: ${error}',
 			'messages.streamInterrupted' => 'Потокът прекъсна. Натиснете „Пусни“ или превъртете, за да опитате отново.',
 			'messages.fileInfoNotAvailable' => 'Информацията за файла не е налична',
+			_ => null,
+		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Грешка при зареждане на информация за файла: ${error}',
 			'messages.errorLoadingSeries' => 'Грешка при зареждане на сериала',
 			'messages.musicNotSupported' => 'Възпроизвеждането на музика все още не се поддържа',
@@ -2619,8 +2645,6 @@ extension on TranslationsBg {
 			'messages.unableToDetermineLibrarySection' => 'Не може да се определи секцията на библиотеката за този елемент',
 			'messages.logsCleared' => 'Логовете са изчистени',
 			'messages.logsCopied' => 'Логовете са копирани в клипборда',
-			_ => null,
-		} ?? switch (path) {
 			'messages.noLogsAvailable' => 'Няма налични логове',
 			'messages.libraryScanning' => ({required Object title}) => 'Сканиране на "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Сканирането на библиотеката е стартирано за "${title}"',
@@ -2839,6 +2863,7 @@ extension on TranslationsBg {
 			'libraries.filterCategories.contentRating' => 'Възрастов рейтинг',
 			'libraries.filterCategories.tag' => 'Таг',
 			'libraries.filterCategories.unwatched' => 'Негледани',
+			'libraries.filterCategories.favorites' => 'Любими',
 			'libraries.sortLabels.title' => 'Заглавие',
 			'libraries.sortLabels.dateAdded' => 'Дата на добавяне',
 			'libraries.sortLabels.releaseDate' => 'Дата на излизане',
@@ -2860,6 +2885,8 @@ extension on TranslationsBg {
 			'libraries.sortLabels.dateShared' => 'Дата на споделяне',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Дата на излъчване на последния епизод',
 			'libraries.sortLabels.lastEpisodeDateAdded' => 'Дата на добавяне на последния епизод',
+			'libraries.noItemsMatchFilters' => 'Няма елементи, съответстващи на активните филтри',
+			'libraries.resetFilters' => 'Нулирай филтрите',
 			'about.title' => 'Относно',
 			'about.openSourceLicenses' => 'Лицензи с отворен код',
 			'about.versionLabel' => ({required Object version}) => 'Версия ${version}',
@@ -3113,11 +3140,16 @@ extension on TranslationsBg {
 			'watchTogether.removeRoom' => 'Премахни',
 			'watchTogether.guestSwitchUnavailable' => 'Превключването не е възможно — сървърът е недостъпен за синхронизация',
 			'watchTogether.guestSwitchFailed' => 'Превключването не е възможно — съдържанието не е намерено на този сървър',
+			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} е с по-стара версия на приложението — синхронизирането не е налично',
+			'watchTogether.resumingWithout' => ({required Object name}) => 'Продължаване без ${name}',
+			'watchTogether.waitingForName' => ({required Object name}) => 'Изчакване на ${name}...',
 			'downloads.title' => 'Изтегляния',
 			'downloads.manage' => 'Управление',
 			'downloads.tvShows' => 'ТВ сериали',
 			'downloads.movies' => 'Филми',
 			'downloads.music' => 'Музика',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.tracksQueued' => ({required Object count}) => '${count} песни в опашката за изтегляне',
 			'downloads.noDownloads' => 'Все още няма изтегляния',
 			'downloads.noDownloadsDescription' => 'Изтегленото съдържание ще се показва тук за офлайн гледане',
@@ -3133,8 +3165,6 @@ extension on TranslationsBg {
 			'downloads.cancelledDownloadTitle' => 'Отменено изтегляне',
 			'downloads.cancelledDownloadMessage' => 'Това изтегляне беше отменено. Какво искате да направите?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Всички епизоди вече са изтеглени',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.resumeDownload' => 'Възобнови изтеглянето',
 			'downloads.cancelledDownload' => 'Отменено изтегляне',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (синхронизира се ${status})',

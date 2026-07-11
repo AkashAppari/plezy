@@ -455,6 +455,13 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get subtitlesAndConfig => '字幕と設定';
 	@override String get seekAndTiming => 'シークとタイミング';
 	@override String get behavior => '動作';
+	@override String get manageLibrariesDescription => 'ライブラリを並べ替えたり非表示にしたりできます';
+	@override String get visualEffects => '視覚効果';
+	@override String get visualEffectsAuto => '自動';
+	@override String get visualEffectsAutoDescription => '低性能なデバイスでは効果を自動的に減らします';
+	@override String get visualEffectsFull => 'フル';
+	@override String get visualEffectsReduced => '軽減';
+	@override String get visualEffectsReducedDescription => 'アニメーションを減らし、低解像度のアートワークを使用します';
 }
 
 // Path: search
@@ -558,6 +565,8 @@ class _TranslationsRateSheetJa extends TranslationsRateSheetEn {
 	@override String get saved => '保存済み';
 	@override String get notAvailable => '一致なし';
 	@override String get noConnectedServices => '評価するには、設定でサービスを接続してください。';
+	@override String get favorite => 'お気に入り';
+	@override String get favorited => 'お気に入りに追加済み';
 }
 
 // Path: accessibility
@@ -989,6 +998,8 @@ class _TranslationsLibrariesJa extends TranslationsLibrariesEn {
 	@override late final _TranslationsLibrariesGroupingsJa groupings = _TranslationsLibrariesGroupingsJa._(_root);
 	@override late final _TranslationsLibrariesFilterCategoriesJa filterCategories = _TranslationsLibrariesFilterCategoriesJa._(_root);
 	@override late final _TranslationsLibrariesSortLabelsJa sortLabels = _TranslationsLibrariesSortLabelsJa._(_root);
+	@override String get noItemsMatchFilters => '有効なフィルターに一致する項目はありません';
+	@override String get resetFilters => 'フィルターをリセット';
 }
 
 // Path: about
@@ -1339,6 +1350,9 @@ class _TranslationsWatchTogetherJa extends TranslationsWatchTogetherEn {
 	@override String get removeRoom => '削除';
 	@override String get guestSwitchUnavailable => '切り替えできません — サーバーが同期できません';
 	@override String get guestSwitchFailed => '切り替えできません — このサーバーにコンテンツが見つかりません';
+	@override String participantNeedsUpdate({required Object name}) => '${name} は古いバージョンのアプリを使用しているため、同期できません';
+	@override String resumingWithout({required Object name}) => '${name} なしで再開';
+	@override String waitingForName({required Object name}) => '${name}を待っています...';
 }
 
 // Path: downloads
@@ -1873,6 +1887,7 @@ class _TranslationsLibrariesFilterCategoriesJa extends TranslationsLibrariesFilt
 	@override String get contentRating => '視聴年齢区分';
 	@override String get tag => 'タグ';
 	@override String get unwatched => '未視聴';
+	@override String get favorites => 'お気に入り';
 }
 
 // Path: libraries.sortLabels
@@ -2418,6 +2433,13 @@ extension on TranslationsJa {
 			'settings.subtitlesAndConfig' => '字幕と設定',
 			'settings.seekAndTiming' => 'シークとタイミング',
 			'settings.behavior' => '動作',
+			'settings.manageLibrariesDescription' => 'ライブラリを並べ替えたり非表示にしたりできます',
+			'settings.visualEffects' => '視覚効果',
+			'settings.visualEffectsAuto' => '自動',
+			'settings.visualEffectsAutoDescription' => '低性能なデバイスでは効果を自動的に減らします',
+			'settings.visualEffectsFull' => 'フル',
+			'settings.visualEffectsReduced' => '軽減',
+			'settings.visualEffectsReducedDescription' => 'アニメーションを減らし、低解像度のアートワークを使用します',
 			'search.hint' => '映画、番組、音楽を検索...',
 			'search.tryDifferentTerm' => '別の検索語をお試しください',
 			'search.searchYourMedia' => 'メディアを検索',
@@ -2500,6 +2522,8 @@ extension on TranslationsJa {
 			'rateSheet.saved' => '保存済み',
 			'rateSheet.notAvailable' => '一致なし',
 			'rateSheet.noConnectedServices' => '評価するには、設定でサービスを接続してください。',
+			'rateSheet.favorite' => 'お気に入り',
+			'rateSheet.favorited' => 'お気に入りに追加済み',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}、映画',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}、テレビ番組',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}、${episodeInfo}',
@@ -2608,6 +2632,8 @@ extension on TranslationsJa {
 			'messages.errorLoading' => ({required Object error}) => 'エラー: ${error}',
 			'messages.streamInterrupted' => 'ストリームが中断されました。再生を押すかシークして再試行してください。',
 			'messages.fileInfoNotAvailable' => 'ファイル情報が利用できません',
+			_ => null,
+		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'ファイル情報の読み込みエラー: ${error}',
 			'messages.errorLoadingSeries' => 'シリーズの読み込みエラー',
 			'messages.musicNotSupported' => '音楽の再生はまだサポートされていません',
@@ -2617,8 +2643,6 @@ extension on TranslationsJa {
 			'messages.unableToDetermineLibrarySection' => 'このアイテムのライブラリセクションを判別できません',
 			'messages.logsCleared' => 'ログをクリアしました',
 			'messages.logsCopied' => 'ログをクリップボードにコピーしました',
-			_ => null,
-		} ?? switch (path) {
 			'messages.noLogsAvailable' => 'ログがありません',
 			'messages.libraryScanning' => ({required Object title}) => '"${title}"をスキャン中...',
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}"のライブラリスキャンを開始しました',
@@ -2837,6 +2861,7 @@ extension on TranslationsJa {
 			'libraries.filterCategories.contentRating' => '視聴年齢区分',
 			'libraries.filterCategories.tag' => 'タグ',
 			'libraries.filterCategories.unwatched' => '未視聴',
+			'libraries.filterCategories.favorites' => 'お気に入り',
 			'libraries.sortLabels.title' => 'タイトル',
 			'libraries.sortLabels.dateAdded' => '追加日',
 			'libraries.sortLabels.releaseDate' => 'リリース日',
@@ -2858,6 +2883,8 @@ extension on TranslationsJa {
 			'libraries.sortLabels.dateShared' => '共有日',
 			'libraries.sortLabels.latestEpisodeAirDate' => '最新エピソード放送日',
 			'libraries.sortLabels.lastEpisodeDateAdded' => '最新エピソード追加日',
+			'libraries.noItemsMatchFilters' => '有効なフィルターに一致する項目はありません',
+			'libraries.resetFilters' => 'フィルターをリセット',
 			'about.title' => 'アプリについて',
 			'about.openSourceLicenses' => 'オープンソースライセンス',
 			'about.versionLabel' => ({required Object version}) => 'バージョン ${version}',
@@ -3111,11 +3138,16 @@ extension on TranslationsJa {
 			'watchTogether.removeRoom' => '削除',
 			'watchTogether.guestSwitchUnavailable' => '切り替えできません — サーバーが同期できません',
 			'watchTogether.guestSwitchFailed' => '切り替えできません — このサーバーにコンテンツが見つかりません',
+			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} は古いバージョンのアプリを使用しているため、同期できません',
+			'watchTogether.resumingWithout' => ({required Object name}) => '${name} なしで再開',
+			'watchTogether.waitingForName' => ({required Object name}) => '${name}を待っています...',
 			'downloads.title' => 'ダウンロード',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => 'テレビ番組',
 			'downloads.movies' => '映画',
 			'downloads.music' => '音楽',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.tracksQueued' => ({required Object count}) => '${count} 曲をダウンロード待機中',
 			'downloads.noDownloads' => 'ダウンロードなし',
 			'downloads.noDownloadsDescription' => 'ダウンロードしたコンテンツはここに表示され、オフラインで視聴できます',
@@ -3131,8 +3163,6 @@ extension on TranslationsJa {
 			'downloads.cancelledDownloadTitle' => 'キャンセルされたダウンロード',
 			'downloads.cancelledDownloadMessage' => 'このダウンロードはキャンセルされました。どうしますか？',
 			'downloads.allEpisodesAlreadyDownloaded' => 'すべてのエピソードはすでにダウンロード済みです',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.resumeDownload' => 'ダウンロードを再開',
 			'downloads.cancelledDownload' => 'キャンセルされたダウンロード',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file}（${status}を同期中）',

@@ -322,7 +322,14 @@
     "player": "Speler",
     "subtitlesAndConfig": "Ondertitels en configuratie",
     "seekAndTiming": "Zoeken en timing",
-    "behavior": "Gedrag"
+    "behavior": "Gedrag",
+    "manageLibrariesDescription": "Bibliotheken herordenen en verbergen",
+    "visualEffects": "Visuele effecten",
+    "visualEffectsAuto": "Automatisch",
+    "visualEffectsAutoDescription": "Effecten automatisch verminderen op apparaten met laag vermogen",
+    "visualEffectsFull": "Volledig",
+    "visualEffectsReduced": "Verminderd",
+    "visualEffectsReducedDescription": "Minder animaties en illustraties met lagere resolutie"
   },
   "search": {
     "hint": "Zoek films, series, muziek...",
@@ -416,7 +423,9 @@
     "setScore": "Score instellen",
     "saved": "Opgeslagen",
     "notAvailable": "Geen match gevonden",
-    "noConnectedServices": "Verbind een service in Instellingen om daar te beoordelen."
+    "noConnectedServices": "Verbind een service in Instellingen om daar te beoordelen.",
+    "favorite": "Favoriet",
+    "favorited": "Toegevoegd aan favorieten"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",
@@ -784,7 +793,8 @@
       "year": "Jaar",
       "contentRating": "Leeftijdsclassificatie",
       "tag": "Tag",
-      "unwatched": "Onbekeken"
+      "unwatched": "Onbekeken",
+      "favorites": "Favorieten"
     },
     "sortLabels": {
       "title": "Titel",
@@ -808,7 +818,9 @@
       "dateShared": "Gedeeld op",
       "latestEpisodeAirDate": "Laatste afleveringsuitzending",
       "lastEpisodeDateAdded": "Datum laatst toegevoegde aflevering"
-    }
+    },
+    "noItemsMatchFilters": "Geen items komen overeen met de actieve filters",
+    "resetFilters": "Filters opnieuw instellen"
   },
   "about": {
     "title": "Over",
@@ -1095,7 +1107,10 @@
     "renameRoom": "Kamer hernoemen",
     "removeRoom": "Verwijderen",
     "guestSwitchUnavailable": "Kon niet schakelen — server niet beschikbaar voor synchronisatie",
-    "guestSwitchFailed": "Kon niet schakelen — inhoud niet gevonden op deze server"
+    "guestSwitchFailed": "Kon niet schakelen — inhoud niet gevonden op deze server",
+    "participantNeedsUpdate": "${name} gebruikt een oudere appversie — synchronisatie niet beschikbaar",
+    "resumingWithout": "Hervatten zonder ${name}",
+    "waitingForName": "Wachten op ${name}..."
   },
   "downloads": {
     "title": "Downloads",
