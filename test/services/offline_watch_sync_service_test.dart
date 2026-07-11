@@ -101,6 +101,7 @@ class _RecordingMediaClient implements MediaServerClient {
     Duration? duration,
     String? playSessionId,
     String? playMethod,
+    String? liveStreamId,
     String? mediaSourceId,
     int? audioStreamIndex,
     int? subtitleStreamIndex,
@@ -114,6 +115,7 @@ class _RecordingMediaClient implements MediaServerClient {
     required Duration position,
     Duration? duration,
     String? playSessionId,
+    String? liveStreamId,
     String? mediaSourceId,
     PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) async {

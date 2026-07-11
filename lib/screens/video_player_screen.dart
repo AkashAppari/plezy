@@ -717,6 +717,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         break;
       case AppLifecycleState.detached:
         _recordLifecycleState('detached');
+        if (widget.isLive) unawaited(_sendStoppedProgressOnce());
         break;
     }
   }
@@ -1221,7 +1222,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     unawaited(_sendStoppedProgressOnce());
     _progressTracker?.stopTracking();
     _progressTracker?.dispose();
-    _sendLiveTimeline('stopped');
     _stopLiveTimelineUpdates();
 
     _detachPipStateListener();
@@ -1449,6 +1449,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   void _onSecondarySubtitleTrackChanged(SubtitleTrack track) => _trackManager?.onSecondarySubtitleTrackChanged(track);
 
   Future<void> _sendStoppedProgressOnce({Duration? positionOverride}) {
+    if (widget.isLive) {
+      _stopLiveTimelineUpdates();
+      return _sendLiveTimeline('stopped');
+    }
+
     final tracker = _progressTracker;
     if (tracker == null) return Future<void>.value();
 

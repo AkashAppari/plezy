@@ -4472,6 +4472,7 @@ class PlexClient
     Duration? duration,
     String? playSessionId,
     String? playMethod,
+    String? liveStreamId,
     String? mediaSourceId,
     int? audioStreamIndex,
     int? subtitleStreamIndex,
@@ -4491,6 +4492,7 @@ class PlexClient
     bool isPaused = false,
     String? playSessionId,
     String? playMethod,
+    String? liveStreamId,
     String? mediaSourceId,
     int? audioStreamIndex,
     int? subtitleStreamIndex,
@@ -4508,6 +4510,7 @@ class PlexClient
     required Duration position,
     Duration? duration,
     String? playSessionId,
+    String? liveStreamId,
     String? mediaSourceId,
     PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) => updateProgress(

@@ -1430,6 +1430,9 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
   final LiveProgramInfo program;
 
   @override
+  LiveTvBackgroundPolicy get backgroundPolicy => LiveTvBackgroundPolicy.retainSession;
+
+  @override
   final CaptureBuffer? captureBuffer;
 
   _PlexLiveTvPlaybackSession._(

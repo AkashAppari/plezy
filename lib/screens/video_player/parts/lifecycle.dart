@@ -88,6 +88,26 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     }
 
     final isTv = PlatformDetector.isTV();
+    if (widget.isLive && shouldStopLiveSessionForTvBackground(isTv: isTv, policy: _live.session?.backgroundPolicy)) {
+      _live.exitOnResume = true;
+      _live.resumeTimelineOnResume = false;
+      _stopLiveTimelineUpdates();
+
+      // Start the server cleanup before releasing the native stream. tvOS may
+      // suspend the process shortly after this lifecycle callback returns.
+      final stoppedReport = _sendStoppedProgressOnce();
+      try {
+        await currentPlayer.stop();
+      } catch (e, stackTrace) {
+        appLogger.w('Failed to stop live player while backgrounding', error: e, stackTrace: stackTrace);
+      }
+      await stoppedReport;
+      if (!mounted || currentPlayer != player) return;
+      await _suspendMediaControlsForTvBackground('hidden_live_stopped');
+      _recordLifecycleState('hidden', action: 'live_stopped_exit_on_resume');
+      return;
+    }
+
     final shouldPauseForBackground = PlatformDetector.isHandheld(context) || isTv;
 
     // Pause first so Android MPV does not keep decoding against a transient
@@ -126,6 +146,13 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
   Future<void> _handleAppResumed() async {
     _recordLifecycleState('resumed', action: 'begin');
     _watchTogetherProvider?.setBackgrounded(false);
+
+    if (_live.exitOnResume) {
+      _live.exitOnResume = false;
+      _recordLifecycleState('resumed', action: 'exit_stopped_live_session');
+      await _handleBackButton();
+      return;
+    }
 
     if (Platform.isAndroid && _androidAutoPipTransitionInFlight && !PipService().isPipActive.value) {
       _setAndroidAutoPipTransitionInFlight(false, reason: 'resume_without_pip');

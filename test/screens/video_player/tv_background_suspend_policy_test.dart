@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/live_tv_support.dart';
 import 'package:plezy/screens/video_player/tv_background_suspend_policy.dart';
 
 void main() {
@@ -32,5 +33,17 @@ void main() {
       shouldSuspendPlayerForTvBackground(isAndroid: true, isTv: true, isLive: false, alreadySuspended: true),
       isFalse,
     );
+  });
+
+  test('TV backgrounding stops non-resumable live sessions', () {
+    expect(shouldStopLiveSessionForTvBackground(isTv: true, policy: LiveTvBackgroundPolicy.stopAndExit), isTrue);
+  });
+
+  test('TV backgrounding retains capture-buffer sessions', () {
+    expect(shouldStopLiveSessionForTvBackground(isTv: true, policy: LiveTvBackgroundPolicy.retainSession), isFalse);
+  });
+
+  test('non-TV backgrounding does not use the TV live-session policy', () {
+    expect(shouldStopLiveSessionForTvBackground(isTv: false, policy: LiveTvBackgroundPolicy.stopAndExit), isFalse);
   });
 }

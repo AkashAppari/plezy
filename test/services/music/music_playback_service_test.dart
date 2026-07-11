@@ -373,6 +373,7 @@ class FakeMediaServerClient extends Fake implements MediaServerClient {
     Duration? duration,
     String? playSessionId,
     String? playMethod,
+    String? liveStreamId,
     String? mediaSourceId,
     int? audioStreamIndex,
     int? subtitleStreamIndex,
@@ -388,6 +389,7 @@ class FakeMediaServerClient extends Fake implements MediaServerClient {
     bool isPaused = false,
     String? playSessionId,
     String? playMethod,
+    String? liveStreamId,
     String? mediaSourceId,
     int? audioStreamIndex,
     int? subtitleStreamIndex,
@@ -401,6 +403,7 @@ class FakeMediaServerClient extends Fake implements MediaServerClient {
     required Duration position,
     Duration? duration,
     String? playSessionId,
+    String? liveStreamId,
     String? mediaSourceId,
     PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) async {

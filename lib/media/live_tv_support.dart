@@ -57,6 +57,9 @@ class LiveProgramInfo {
 abstract class LiveTvPlaybackSession {
   LiveProgramInfo get program;
 
+  /// Whether a TV app may retain this server session while backgrounded.
+  LiveTvBackgroundPolicy get backgroundPolicy;
+
   /// Seekable-history snapshot from session start. Heartbeats may return
   /// fresher ones ([reportTimeline]); the caller owns tracking the current
   /// value.
@@ -85,6 +88,15 @@ abstract class LiveTvPlaybackSession {
   Future<LiveTvPlaybackSession?> recover({required bool directStream, required bool directStreamAudio});
 }
 
+enum LiveTvBackgroundPolicy {
+  /// Keep the tuned session alive so its capture buffer can be resumed.
+  retainSession,
+
+  /// Stop the session when a TV app is backgrounded and leave playback when
+  /// the app resumes.
+  stopAndExit,
+}
+
 enum FavoriteChannelPersistenceMode {
   /// A single write replaces the full backend account's favorite list.
   sharedFullList,
@@ -96,8 +108,10 @@ enum FavoriteChannelPersistenceMode {
 class LiveTvStreamResolution {
   final String url;
   final String? playSessionId;
+  final String? mediaSourceId;
+  final String? liveStreamId;
 
-  const LiveTvStreamResolution({required this.url, this.playSessionId});
+  const LiveTvStreamResolution({required this.url, this.playSessionId, this.mediaSourceId, this.liveStreamId});
 }
 
 /// Backend-neutral live-TV operations. Implementations are obtained via

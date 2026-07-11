@@ -48,6 +48,10 @@ class LiveTvSessionState {
   /// from the background (it is suspended on hide).
   bool resumeTimelineOnResume = false;
 
+  /// A non-resumable live session was stopped while the TV app was hidden.
+  /// The player route is closed instead of attempting to reuse that session.
+  bool exitOnResume = false;
+
   /// Make [newSession] current and seed the seekable window from its tune
   /// snapshot. Every flow that produces a session (start, retry, channel
   /// zap) adopts it here, so a field can't be forgotten in one copy.

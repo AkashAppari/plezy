@@ -311,6 +311,53 @@ void main() {
       expect(body['IsPaused'], isTrue);
     });
 
+    test('live playback reports preserve the same server session identity', () async {
+      final requests = <({String path, Map<String, dynamic> body})>[];
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          requests.add((path: request.url.path, body: jsonDecode(request.body) as Map<String, dynamic>));
+          return http.Response('', 204);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      await scoped.reportPlaybackStarted(
+        itemId: 'channel-1',
+        position: Duration.zero,
+        playSessionId: 'play-1',
+        liveStreamId: 'live-1',
+        mediaSourceId: 'source-1',
+      );
+      await scoped.reportPlaybackProgress(
+        itemId: 'channel-1',
+        position: const Duration(seconds: 10),
+        duration: Duration.zero,
+        playSessionId: 'play-1',
+        liveStreamId: 'live-1',
+        mediaSourceId: 'source-1',
+      );
+      await scoped.reportPlaybackStopped(
+        itemId: 'channel-1',
+        position: const Duration(seconds: 20),
+        playSessionId: 'play-1',
+        liveStreamId: 'live-1',
+        mediaSourceId: 'source-1',
+      );
+
+      expect(requests.map((request) => request.path), [
+        '/Sessions/Playing',
+        '/Sessions/Playing/Progress',
+        '/Sessions/Playing/Stopped',
+      ]);
+      for (final request in requests) {
+        expect(request.body['ItemId'], 'channel-1');
+        expect(request.body['PlaySessionId'], 'play-1');
+        expect(request.body['LiveStreamId'], 'live-1');
+        expect(request.body['MediaSourceId'], 'source-1');
+      }
+    });
+
     test('resolveDownload pins direct stream URL and subtitles to selected media source', () async {
       final requests = <Uri>[];
       String? playbackInfoBody;
@@ -1396,6 +1443,8 @@ void main() {
       expect(body['EnableTranscoding'], isFalse);
       expect(resolution, isNotNull);
       expect(resolution!.playSessionId, 'live-session-1');
+      expect(resolution.mediaSourceId, 'source-1');
+      expect(resolution.liveStreamId, 'open-stream-1');
       final uri = Uri.parse(resolution.url);
       expect(uri.path, '/Videos/channel-1/stream');
       expect(uri.queryParameters['Static'], 'true');
@@ -1405,6 +1454,38 @@ void main() {
       expect(uri.queryParameters['PlaySessionId'], 'live-session-1');
       expect(uri.queryParameters['DeviceId'], 'dev-xyz');
       expect(uri.queryParameters['api_key'], 'tok-abc');
+    });
+
+    test('live TV stream resolution recovers identity from a negotiated direct URL', () async {
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/Items/channel-1/PlaybackInfo') {
+            return http.Response(
+              jsonEncode({
+                'MediaSources': [
+                  {
+                    'Container': 'ts',
+                    'DirectStreamUrl':
+                        '/Videos/channel-1/stream?MediaSourceId=source-url&LiveStreamId=live-url&PlaySessionId=play-url',
+                  },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response('{}', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final resolution = await scoped.liveTv.resolveStreamUrl('channel-1');
+
+      expect(resolution, isNotNull);
+      expect(resolution!.playSessionId, 'play-url');
+      expect(resolution.mediaSourceId, 'source-url');
+      expect(resolution.liveStreamId, 'live-url');
     });
 
     test('buildTrickplayTileUrl wires width, sheet index, api_key, and DeviceId', () {

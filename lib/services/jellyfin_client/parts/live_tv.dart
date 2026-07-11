@@ -189,18 +189,28 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
     String? nonEmptyString(dynamic raw) => raw is String && raw.isNotEmpty ? raw : null;
 
     var playSessionId = nonEmptyString(info?['PlaySessionId']);
+    var mediaSourceId = nonEmptyString(source['Id']);
+    var liveStreamId = nonEmptyString(source['LiveStreamId']);
     final rawUrl = nonEmptyString(source['DirectStreamUrl']);
     final url = rawUrl != null
         ? _client._withApiKey(rawUrl)
         : _client.buildDirectStreamUrl(
             channelKey,
             container: nonEmptyString(source['Container']),
-            mediaSourceId: nonEmptyString(source['Id']),
+            mediaSourceId: mediaSourceId,
             playSessionId: playSessionId,
-            liveStreamId: nonEmptyString(source['LiveStreamId']),
+            liveStreamId: liveStreamId,
           );
-    playSessionId ??= Uri.tryParse(url)?.queryParameters['PlaySessionId'];
-    return LiveTvStreamResolution(url: url, playSessionId: playSessionId);
+    final query = Uri.tryParse(url)?.queryParameters;
+    playSessionId ??= query?['PlaySessionId'];
+    mediaSourceId ??= query?['MediaSourceId'];
+    liveStreamId ??= query?['LiveStreamId'];
+    return LiveTvStreamResolution(
+      url: url,
+      playSessionId: playSessionId,
+      mediaSourceId: mediaSourceId,
+      liveStreamId: liveStreamId,
+    );
   }
 
   @override
@@ -460,10 +470,17 @@ class _JellyfinLiveTvPlaybackSession implements LiveTvPlaybackSession {
 
   _JellyfinLiveTvPlaybackSession(this._client, this._channelKey, LiveTvStreamResolution resolution)
     : _url = resolution.url,
-      _tracker = JellyfinLiveSessionTracker(playSessionId: resolution.playSessionId);
+      _tracker = JellyfinLiveSessionTracker(
+        playSessionId: resolution.playSessionId,
+        mediaSourceId: resolution.mediaSourceId,
+        liveStreamId: resolution.liveStreamId,
+      );
 
   @override
   LiveProgramInfo get program => LiveProgramInfo.none;
+
+  @override
+  LiveTvBackgroundPolicy get backgroundPolicy => LiveTvBackgroundPolicy.stopAndExit;
 
   @override
   CaptureBuffer? get captureBuffer => null;

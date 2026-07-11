@@ -8,6 +8,7 @@ import 'package:plezy/connection/connection.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/ids.dart';
+import 'package:plezy/media/live_tv_support.dart';
 import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/plex_api_cache.dart';
@@ -245,6 +246,7 @@ void main() {
       expect(session!.program.id, isNull);
       expect(session.captureBuffer, isNull);
       expect(session.canTimeShift, isFalse);
+      expect(session.backgroundPolicy, LiveTvBackgroundPolicy.stopAndExit);
 
       final url = await session.streamUrlAt();
       expect(url, isNotNull);

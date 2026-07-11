@@ -1,9 +1,10 @@
+import '../../media/live_tv_support.dart';
+
 /// Whether backgrounding may release the native video pipeline after its
 /// grace period.
 ///
-/// Live TV deliberately stays paused with its player open: the tuned session
-/// owns the capture buffer, so stopping it would lose both the time-shift
-/// position and the user's paused/playing intent when playback is rebuilt.
+/// Retained live sessions stay paused with their player open because stopping
+/// one would discard its capture buffer and time-shift position.
 bool shouldSuspendPlayerForTvBackground({
   required bool isAndroid,
   required bool isTv,
@@ -11,4 +12,9 @@ bool shouldSuspendPlayerForTvBackground({
   required bool alreadySuspended,
 }) {
   return isAndroid && isTv && !isLive && !alreadySuspended;
+}
+
+/// Whether the current TV live session must be closed before suspension.
+bool shouldStopLiveSessionForTvBackground({required bool isTv, required LiveTvBackgroundPolicy? policy}) {
+  return isTv && policy == LiveTvBackgroundPolicy.stopAndExit;
 }

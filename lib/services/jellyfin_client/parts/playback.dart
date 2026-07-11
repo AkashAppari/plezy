@@ -659,6 +659,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     Duration? duration,
     String? playSessionId,
     String? playMethod,
+    String? liveStreamId,
     String? mediaSourceId,
     int? audioStreamIndex,
     int? subtitleStreamIndex,
@@ -678,6 +679,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
         'RepeatMode': 'RepeatNone',
         'PlaybackOrder': 'Default',
         'PlaySessionId': ?playSessionId,
+        'LiveStreamId': ?liveStreamId,
       },
     );
     throwIfHttpError(response);
@@ -694,6 +696,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     bool isPaused = false,
     String? playSessionId,
     String? playMethod,
+    String? liveStreamId,
     String? mediaSourceId,
     int? audioStreamIndex,
     int? subtitleStreamIndex,
@@ -713,6 +716,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
         'RepeatMode': 'RepeatNone',
         'PlaybackOrder': 'Default',
         'PlaySessionId': ?playSessionId,
+        'LiveStreamId': ?liveStreamId,
       },
     );
     throwIfHttpError(response);
@@ -726,6 +730,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     required Duration position,
     Duration? duration,
     String? playSessionId,
+    String? liveStreamId,
     String? mediaSourceId,
     PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) async {
@@ -737,6 +742,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
         'PositionTicks': msToJellyfinTicks(position.inMilliseconds),
         'Failed': false,
         'PlaySessionId': ?playSessionId,
+        'LiveStreamId': ?liveStreamId,
       },
     );
     throwIfHttpError(response);

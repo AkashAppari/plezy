@@ -561,13 +561,15 @@ abstract class MediaServerClient {
   ///
   /// [duration] is the media's total length — passed through to Plex's
   /// timeline param so the server can use it. Jellyfin ignores [duration] but
-  /// uses [mediaSourceId] and stream indexes for active-session state.
+  /// uses [mediaSourceId], [liveStreamId], and stream indexes for active-session
+  /// state. Jellyfin needs [liveStreamId] to close an auto-opened live source.
   Future<void> reportPlaybackStarted({
     required String itemId,
     required Duration position,
     Duration? duration,
     String? playSessionId,
     String? playMethod,
+    String? liveStreamId,
     String? mediaSourceId,
     int? audioStreamIndex,
     int? subtitleStreamIndex,
@@ -583,6 +585,7 @@ abstract class MediaServerClient {
     bool isPaused = false,
     String? playSessionId,
     String? playMethod,
+    String? liveStreamId,
     String? mediaSourceId,
     int? audioStreamIndex,
     int? subtitleStreamIndex,
@@ -596,6 +599,7 @@ abstract class MediaServerClient {
     required Duration position,
     Duration? duration,
     String? playSessionId,
+    String? liveStreamId,
     String? mediaSourceId,
     PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   });
