@@ -50,7 +50,7 @@ extension _VideoPlayerCompanionRemoteMethods on VideoPlayerScreenState {
     // Override home to exit the player first (main screen handler runs after pop)
     _savedOnHome = receiver.onHome;
     receiver.onHome = () {
-      if (mounted) _handleBackButton();
+      if (mounted) _handleHomeButton();
     };
 
     // Store provider reference for use in dispose and notify remote

@@ -808,7 +808,14 @@ class _MainScreenState extends State<MainScreen>
     receiver.onTabSearch = () => _selectTab(NavigationTabId.search);
     receiver.onTabDownloads = () => _selectTab(NavigationTabId.downloads);
     receiver.onTabSettings = () => _selectTab(NavigationTabId.settings);
-    receiver.onHome = () => _selectTab(NavigationTabId.discover);
+    receiver.onHome = () {
+      final tabs = _getVisibleTabs(_isOffline);
+      if (tabs.isEmpty) return;
+      _selectTab(tabs.first.id);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _sideNavKey.currentState?.focusHomeItem();
+      });
+    };
     receiver.onSearchAction = (query) {
       final trimmed = query?.trim() ?? '';
       final hasQuery = trimmed.isNotEmpty;

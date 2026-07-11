@@ -70,6 +70,56 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     _showControlsWithFocus();
   }
 
+  KeyEventResult _handlePlayerNavigationKeyEvent(KeyEvent event) {
+    final navigationKey = classifyPlayerNavigationKey(event, isAppleTV: PlatformDetector.isAppleTV());
+    if (navigationKey == PlayerNavigationKey.none) return KeyEventResult.ignored;
+
+    if (navigationKey != PlayerNavigationKey.home && PlatformDetector.isTV() && event is KeyDownEvent) {
+      BackKeyCoordinator.markHandled();
+    }
+
+    return handlePlayerNavigationKeyAction(event, navigationKey, () {
+      if (navigationKey == PlayerNavigationKey.home) {
+        (widget.onHome ?? widget.onBack ?? () => Navigator.of(context).pop(true))();
+        return;
+      }
+      if (widget.onDismissPrompt != null) {
+        widget.onDismissPrompt!();
+        return;
+      }
+      _handleStagedPlayerBack(navigationKey);
+    });
+  }
+
+  void _handleStagedPlayerBack(PlayerNavigationKey navigationKey) {
+    final disposition = resolvePlayerBackDisposition(
+      navigationKey: navigationKey,
+      contentStripVisible: widget.chromeController.contentStripVisible,
+      controlsVisible: _showControls,
+    );
+    switch (disposition) {
+      case PlayerBackDisposition.closeContentStrip:
+        _desktopControlsKey.currentState?.dismissContentStrip();
+        widget.chromeController.setContentStripVisible(false);
+        _restartHideTimerForCurrentPlaybackState();
+        return;
+      case PlayerBackDisposition.exitFullscreenIfActive:
+        unawaited(_handlePhysicalEscape());
+        return;
+      case PlayerBackDisposition.hideControls:
+        _hideControls();
+        return;
+      case PlayerBackDisposition.exitPlayer:
+        (widget.onBack ?? () => Navigator.of(context).pop(true))();
+        return;
+    }
+  }
+
+  Future<void> _handlePhysicalEscape() async {
+    if (await FullscreenStateManager().exitFullscreenIfActive()) return;
+    if (mounted) _handleStagedPlayerBack(PlayerNavigationKey.back);
+  }
+
   /// Global key event handler for focus-independent shortcuts (desktop only)
   bool _handleGlobalKeyEvent(KeyEvent event) {
     if (!mounted) return false;
@@ -86,45 +136,10 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       return false;
     }
 
-    // Back key fallback when _focusNode lost focus (TV, or desktop with nav on).
-    // Focus.onKeyEvent won't fire if _focusNode lost focus, so handle ESC here.
-    if ((_videoPlayerNavigationEnabled || PlatformDetector.isTV()) && event.logicalKey.isBackKey) {
-      if (!_focusNode.hasFocus) {
-        // Skip if an overlay sheet is open — the sheet's FocusScope handles
-        // back keys via its own onKeyEvent. Without this check, this global
-        // handler would call Navigator.pop() alongside the sheet's handler.
-        final sheetOpen = OverlaySheetController.maybeOf(context)?.isOpen ?? false;
-        if (sheetOpen) return false;
-        // On TV, mark coordinator early (KeyDown) so PopScope.onPopInvokedWithResult
-        // sees it before KeyUp — prevents the system back from racing ahead.
-        if (PlatformDetector.isTV() && event is KeyDownEvent) {
-          BackKeyCoordinator.markHandled();
-        }
-        final promptBackResult = handlePromptDismissBackKey(event, widget.onDismissPrompt);
-        if (promptBackResult != KeyEventResult.ignored) return true;
-        final backResult = handleBackKeyAction(event, () {
-          if (PlatformDetector.isTV()) {
-            if (_showControls) {
-              if (widget.chromeController.contentStripVisible) {
-                _desktopControlsKey.currentState?.dismissContentStrip();
-                widget.chromeController.setContentStripVisible(false);
-                _restartHideTimerForCurrentPlaybackState();
-                return;
-              }
-              _hideControls();
-              return;
-            }
-            (widget.onBack ?? () => Navigator.of(context).pop(true))();
-            return;
-          }
-          if (!_showControls) {
-            _showControlsWithFocus();
-          } else {
-            (widget.onBack ?? () => Navigator.of(context).pop(true))();
-          }
-        });
-        if (backResult != KeyEventResult.ignored) return true;
-      }
+    // Focus.onKeyEvent will not fire if focus drifted outside the controls.
+    if (!_focusNode.hasFocus) {
+      final navigationResult = _handlePlayerNavigationKeyEvent(event);
+      if (navigationResult != KeyEventResult.ignored) return true;
     }
 
     // Only handle when video player navigation is disabled (desktop mode without D-pad nav)
@@ -145,20 +160,6 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     // (e.g. after controls auto-hide). The !hasFocus guard prevents
     // double-handling when the Focus onKeyEvent already processes the event.
     if (!_focusNode.hasFocus && _keyboardService != null) {
-      // On Windows/Linux with navigation off, ESC only exits fullscreen —
-      // never exits the player. Intercept before the keyboard shortcuts
-      // service which would call onBack and pop the route.
-      // Skip if an overlay sheet is open — let the sheet handle ESC.
-      if (!_videoPlayerNavigationEnabled && (Platform.isWindows || Platform.isLinux) && event.logicalKey.isBackKey) {
-        final sheetOpen = OverlaySheetController.maybeOf(context)?.isOpen ?? false;
-        if (!sheetOpen) {
-          if (event is KeyUpEvent) {
-            _exitFullscreenIfNeeded();
-          }
-          _focusNode.requestFocus();
-          return true;
-        }
-      }
       final result = _keyboardService!.handleVideoPlayerKeyEvent(
         event,
         widget.player,
@@ -168,7 +169,6 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
         _nextSubtitleTrack,
         _nextChapter,
         _previousChapter,
-        onBack: widget.onBack ?? () => Navigator.of(context).pop(true),
         onToggleShader: _toggleShader,
         onNextEpisode: widget.onNext,
         onPreviousEpisode: widget.onPrevious,
@@ -190,47 +190,9 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
   }
 
   KeyEventResult _handleControlsKeyEvent(KeyEvent event, bool isMobile) {
-    // On Windows/Linux with navigation off, ESC only exits fullscreen —
-    // never exits the player. Consume all back key events and check
-    // actual window state asynchronously.
-    if (!_videoPlayerNavigationEnabled && (Platform.isWindows || Platform.isLinux) && event.logicalKey.isBackKey) {
-      if (event is KeyUpEvent) {
-        _exitFullscreenIfNeeded();
-      }
-      return KeyEventResult.handled;
-    }
-    // On TV, mark coordinator early (KeyDown) so PopScope.onPopInvokedWithResult
-    // sees it before KeyUp — prevents the system back from racing ahead.
-    if (PlatformDetector.isTV() && event.logicalKey.isBackKey && event is KeyDownEvent) {
-      BackKeyCoordinator.markHandled();
-    }
-    final promptBackResult = handlePromptDismissBackKey(event, widget.onDismissPrompt);
-    if (promptBackResult != KeyEventResult.ignored) {
-      return promptBackResult;
-    }
-    final backResult = handleBackKeyAction(event, () {
-      if (PlatformDetector.isTV()) {
-        if (_showControls) {
-          if (widget.chromeController.contentStripVisible) {
-            _desktopControlsKey.currentState?.dismissContentStrip();
-            widget.chromeController.setContentStripVisible(false);
-            _restartHideTimerForCurrentPlaybackState();
-            return;
-          }
-          _hideControls();
-          return;
-        }
-        (widget.onBack ?? () => Navigator.of(context).pop(true))();
-        return;
-      }
-      if (!_showControls) {
-        _showControlsWithFocus();
-        return;
-      }
-      (widget.onBack ?? () => Navigator.of(context).pop(true))();
-    });
-    if (backResult != KeyEventResult.ignored) {
-      return backResult;
+    final navigationResult = _handlePlayerNavigationKeyEvent(event);
+    if (navigationResult != KeyEventResult.ignored) {
+      return navigationResult;
     }
 
     // Only handle KeyDown and KeyRepeat events.
@@ -325,7 +287,6 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       _nextSubtitleTrack,
       _nextChapter,
       _previousChapter,
-      onBack: widget.onBack ?? () => Navigator.of(context).pop(true),
       onToggleShader: _toggleShader,
       onSkipMarker: _performAutoSkip,
       onNextEpisode: widget.onNext,

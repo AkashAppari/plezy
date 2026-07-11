@@ -1071,8 +1071,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   /// Handle back button press
   /// For non-host participants in Watch Together, shows leave session confirmation
-  Future<void> _handleBackButton() async {
-    if (_showPlayNextDialog || _showStillWatchingPrompt) {
+  Future<void> _handleBackButton({bool navigateHome = false}) async {
+    if (!navigateHome && (_showPlayNextDialog || _showStillWatchingPrompt)) {
       _dismissPlaybackPromptForBack();
       return;
     }
@@ -1101,7 +1101,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
               if (!mounted) return;
               await _restoreSystemUiAndOrientation();
               if (!mounted) return;
-              navigator.pop(true);
+              _finishPlayerNavigation(navigator, navigateHome: navigateHome);
             }
           }
         }
@@ -1119,11 +1119,61 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         if (!mounted) return;
         await _restoreSystemUiAndOrientation();
         if (!mounted) return;
-        navigator.pop(true);
+        _finishPlayerNavigation(navigator, navigateHome: navigateHome);
       }
     } finally {
       _isHandlingBack = false;
     }
+  }
+
+  void _handleHomeButton() {
+    unawaited(_handleBackButton(navigateHome: true));
+  }
+
+  void _finishPlayerNavigation(NavigatorState navigator, {required bool navigateHome}) {
+    if (!navigateHome) {
+      navigator.pop(true);
+      return;
+    }
+
+    final onHome = _savedOnHome;
+    navigator.popUntil((route) => route.isFirst);
+    onHome?.call();
+  }
+
+  void _handleScreenPlayerNavigation(PlayerNavigationKey navigationKey) {
+    if (navigationKey == PlayerNavigationKey.home) {
+      _handleHomeButton();
+      return;
+    }
+    if (_showPlayNextDialog || _showStillWatchingPrompt) {
+      _dismissPlaybackPromptForBack();
+      return;
+    }
+    final disposition = resolvePlayerBackDisposition(
+      navigationKey: navigationKey,
+      contentStripVisible: _chromeController.contentStripVisible,
+      controlsVisible: _chromeController.controlsVisible,
+    );
+    switch (disposition) {
+      case PlayerBackDisposition.closeContentStrip:
+        _chromeController.setContentStripVisible(false);
+        return;
+      case PlayerBackDisposition.exitFullscreenIfActive:
+        unawaited(_handleScreenPhysicalEscape());
+        return;
+      case PlayerBackDisposition.hideControls:
+        _chromeController.hide();
+        return;
+      case PlayerBackDisposition.exitPlayer:
+        unawaited(_handleBackButton());
+        return;
+    }
+  }
+
+  Future<void> _handleScreenPhysicalEscape() async {
+    if (await FullscreenStateManager().exitFullscreenIfActive()) return;
+    if (mounted) _handleScreenPlayerNavigation(PlayerNavigationKey.back);
   }
 
   Future<void> _restoreSystemUiAndOrientation() async {
@@ -1433,15 +1483,20 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       canRequestFocus: isCurrentRoute,
       onKeyEvent: (node, event) {
         if (!isCurrentRoute) return KeyEventResult.ignored;
-        // On Windows/Linux with navigation off, consume ESC so Flutter's
-        // DismissAction doesn't trigger a route pop. The video controls'
-        // global key handler manages fullscreen/controls toggle instead.
-        if (!_videoPlayerNavigationEnabled && (Platform.isWindows || Platform.isLinux) && event.logicalKey.isBackKey) {
-          return KeyEventResult.handled;
+        final navigationKey = classifyPlayerNavigationKey(event, isAppleTV: PlatformDetector.isAppleTV());
+        if (navigationKey != PlayerNavigationKey.none) {
+          // Descendants (controls and sheets) own staged Back while focused.
+          // This fallback covers loading/error phases and focus drift.
+          if (!node.hasPrimaryFocus) return KeyEventResult.ignored;
+          if (navigationKey != PlayerNavigationKey.home && PlatformDetector.isTV() && event is KeyDownEvent) {
+            BackKeyCoordinator.markHandled();
+          }
+          return handlePlayerNavigationKeyAction(
+            event,
+            navigationKey,
+            () => _handleScreenPlayerNavigation(navigationKey),
+          );
         }
-        // Back keys pass through — handled by PopScope (system back
-        // gesture) or overlay sheet's onKeyEvent.
-        if (event.logicalKey.isBackKey) return KeyEventResult.ignored;
         // Hardware media play/pause must act even when focus rests on this
         // node or a sibling overlay — otherwise the key only reveals the
         // chrome and leaks to the (possibly stale/suspended) Android

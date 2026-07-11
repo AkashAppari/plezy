@@ -179,7 +179,6 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onNextSubtitleTrack,
     VoidCallback? onNextChapter,
     VoidCallback? onPreviousChapter, {
-    VoidCallback? onBack,
     VoidCallback? onToggleShader,
     VoidCallback? onSkipMarker,
     VoidCallback? onNextEpisode,
@@ -195,11 +194,6 @@ class KeyboardShortcutsService extends ChangeNotifier {
   }) {
     final isRepeat = event is KeyRepeatEvent;
     if (event is! KeyDownEvent && !isRepeat) return KeyEventResult.ignored;
-
-    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
-      onBack?.call();
-      return KeyEventResult.handled;
-    }
 
     final physicalKey = event.physicalKey;
     final isShiftPressed = HardwareKeyboard.instance.isShiftPressed;

@@ -181,10 +181,60 @@ bool shouldShowSkipMarkerButton({
   return hasFirstFrame && hasMarker && !hasPlayNextPrompt && (!skipButtonDismissed || controlsVisible);
 }
 
-@visibleForTesting
-KeyEventResult handlePromptDismissBackKey(KeyEvent event, VoidCallback? onDismissPrompt) {
-  if (onDismissPrompt == null || !event.logicalKey.isBackKey) return KeyEventResult.ignored;
-  return handleBackKeyAction(event, onDismissPrompt);
+enum PlayerNavigationKey { none, physicalEscape, back, home }
+
+enum PlayerBackDisposition { closeContentStrip, exitFullscreenIfActive, hideControls, exitPlayer }
+
+PlayerBackDisposition resolvePlayerBackDisposition({
+  required PlayerNavigationKey navigationKey,
+  required bool contentStripVisible,
+  required bool controlsVisible,
+}) {
+  assert(navigationKey == PlayerNavigationKey.physicalEscape || navigationKey == PlayerNavigationKey.back);
+  if (contentStripVisible) return PlayerBackDisposition.closeContentStrip;
+  if (navigationKey == PlayerNavigationKey.physicalEscape) {
+    return PlayerBackDisposition.exitFullscreenIfActive;
+  }
+  return controlsVisible ? PlayerBackDisposition.hideControls : PlayerBackDisposition.exitPlayer;
+}
+
+PlayerNavigationKey classifyPlayerNavigationKey(KeyEvent event, {required bool isAppleTV, bool? hasModifiers}) {
+  final key = event.logicalKey;
+  if (key == LogicalKeyboardKey.escape) {
+    return event.isPhysicalKeyboardEvent && !isAppleTV ? PlayerNavigationKey.physicalEscape : PlayerNavigationKey.back;
+  }
+  if (key.isBackKey) return PlayerNavigationKey.back;
+
+  final modifiersPressed =
+      hasModifiers ??
+      (HardwareKeyboard.instance.isShiftPressed ||
+          HardwareKeyboard.instance.isControlPressed ||
+          HardwareKeyboard.instance.isAltPressed ||
+          HardwareKeyboard.instance.isMetaPressed);
+  if (key == LogicalKeyboardKey.backspace && event.isPhysicalKeyboardEvent && !modifiersPressed) {
+    return PlayerNavigationKey.back;
+  }
+  if ((key == LogicalKeyboardKey.home || key == LogicalKeyboardKey.browserHome) && !modifiersPressed) {
+    return PlayerNavigationKey.home;
+  }
+  return PlayerNavigationKey.none;
+}
+
+KeyEventResult handlePlayerNavigationKeyAction(
+  KeyEvent event,
+  PlayerNavigationKey navigationKey,
+  VoidCallback onAction,
+) {
+  if (navigationKey == PlayerNavigationKey.none) return KeyEventResult.ignored;
+  if (event.logicalKey.isBackKey) return handleBackKeyAction(event, onAction);
+
+  if (event is KeyUpEvent) {
+    if (navigationKey != PlayerNavigationKey.home) {
+      BackKeyCoordinator.markHandled();
+    }
+    onAction();
+  }
+  return KeyEventResult.handled;
 }
 
 @visibleForTesting
@@ -250,6 +300,9 @@ class PlexVideoControls extends StatefulWidget {
 
   /// Called when back button is pressed (for Watch Together session leave confirmation)
   final VoidCallback? onBack;
+
+  /// Called for a direct Home command after player-specific input handling.
+  final VoidCallback? onHome;
 
   /// Called when Back should dismiss a visible playback prompt before normal
   /// player back handling.
@@ -355,6 +408,7 @@ class PlexVideoControls extends StatefulWidget {
     this.onPlayPauseRequested,
     this.onSeekCompleted,
     this.onBack,
+    this.onHome,
     this.onDismissPrompt,
     this.onReachedEnd,
     this.canControl = true,

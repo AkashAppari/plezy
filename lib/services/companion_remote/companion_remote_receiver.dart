@@ -60,7 +60,7 @@ class CompanionRemoteReceiver {
       case RemoteCommandType.select:
         simulateKeyPress(LogicalKeyboardKey.enter);
       case RemoteCommandType.back:
-        simulateKeyPress(LogicalKeyboardKey.escape);
+        simulateKeyPress(LogicalKeyboardKey.gameButtonB);
       case RemoteCommandType.contextMenu:
         simulateKeyPress(LogicalKeyboardKey.contextMenu);
 

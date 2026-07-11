@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -215,35 +217,155 @@ void main() {
     });
   });
 
-  group('handlePromptDismissBackKey', () {
-    test('ignores back keys when no prompt is visible', () {
-      var dismissCount = 0;
-
-      final result = handlePromptDismissBackKey(_keyUp(LogicalKeyboardKey.goBack), null);
-
-      expect(result, KeyEventResult.ignored);
-      expect(dismissCount, 0);
+  group('classifyPlayerNavigationKey', () {
+    test('reserves only physical keyboard Escape for fullscreen', () {
+      expect(
+        classifyPlayerNavigationKey(
+          _navigationKeyDown(LogicalKeyboardKey.escape, ui.KeyEventDeviceType.keyboard),
+          isAppleTV: false,
+        ),
+        PlayerNavigationKey.physicalEscape,
+      );
+      expect(
+        classifyPlayerNavigationKey(
+          _navigationKeyDown(LogicalKeyboardKey.escape, ui.KeyEventDeviceType.gamepad),
+          isAppleTV: false,
+        ),
+        PlayerNavigationKey.back,
+      );
+      expect(
+        classifyPlayerNavigationKey(
+          _navigationKeyDown(LogicalKeyboardKey.escape, ui.KeyEventDeviceType.directionalPad),
+          isAppleTV: false,
+        ),
+        PlayerNavigationKey.back,
+      );
     });
 
-    test('consumes key down and dismisses on key up', () {
-      var dismissCount = 0;
-      void dismissPrompt() => dismissCount++;
+    test('treats tvOS keyboard Escape as semantic Back', () {
+      expect(
+        classifyPlayerNavigationKey(
+          _navigationKeyDown(LogicalKeyboardKey.escape, ui.KeyEventDeviceType.keyboard),
+          isAppleTV: true,
+        ),
+        PlayerNavigationKey.back,
+      );
+    });
 
-      final downResult = handlePromptDismissBackKey(_keyDown(LogicalKeyboardKey.goBack), dismissPrompt);
-      final upResult = handlePromptDismissBackKey(_keyUp(LogicalKeyboardKey.goBack), dismissPrompt);
+    test('recognizes controller and browser Back keys', () {
+      for (final key in [LogicalKeyboardKey.gameButtonB, LogicalKeyboardKey.goBack, LogicalKeyboardKey.browserBack]) {
+        expect(
+          classifyPlayerNavigationKey(_navigationKeyDown(key, ui.KeyEventDeviceType.gamepad), isAppleTV: false),
+          PlayerNavigationKey.back,
+        );
+      }
+    });
+
+    test('recognizes only bare physical Backspace as player Back', () {
+      final event = _navigationKeyDown(LogicalKeyboardKey.backspace, ui.KeyEventDeviceType.keyboard);
+
+      expect(classifyPlayerNavigationKey(event, isAppleTV: false, hasModifiers: false), PlayerNavigationKey.back);
+      expect(classifyPlayerNavigationKey(event, isAppleTV: false, hasModifiers: true), PlayerNavigationKey.none);
+    });
+
+    test('recognizes bare keyboard and browser Home', () {
+      for (final key in [LogicalKeyboardKey.home, LogicalKeyboardKey.browserHome]) {
+        expect(
+          classifyPlayerNavigationKey(
+            _navigationKeyDown(key, ui.KeyEventDeviceType.keyboard),
+            isAppleTV: false,
+            hasModifiers: false,
+          ),
+          PlayerNavigationKey.home,
+        );
+      }
+    });
+  });
+
+  group('handlePlayerNavigationKeyAction', () {
+    testWidgets('semantic Back activates once on key up', (tester) async {
+      var actions = 0;
+
+      final downResult = handlePlayerNavigationKeyAction(
+        _keyDown(LogicalKeyboardKey.gameButtonB),
+        PlayerNavigationKey.back,
+        () => actions++,
+      );
+      final upResult = handlePlayerNavigationKeyAction(
+        _keyUp(LogicalKeyboardKey.gameButtonB),
+        PlayerNavigationKey.back,
+        () => actions++,
+      );
 
       expect(downResult, KeyEventResult.handled);
       expect(upResult, KeyEventResult.handled);
-      expect(dismissCount, 1);
+      expect(actions, 1);
+      await tester.pump();
     });
 
-    test('ignores non-back keys', () {
-      var dismissCount = 0;
+    testWidgets('Backspace alias activates once on key up', (tester) async {
+      var actions = 0;
 
-      final result = handlePromptDismissBackKey(_keyDown(LogicalKeyboardKey.arrowLeft), () => dismissCount++);
+      handlePlayerNavigationKeyAction(
+        _keyDown(LogicalKeyboardKey.backspace),
+        PlayerNavigationKey.back,
+        () => actions++,
+      );
+      handlePlayerNavigationKeyAction(_keyUp(LogicalKeyboardKey.backspace), PlayerNavigationKey.back, () => actions++);
 
-      expect(result, KeyEventResult.ignored);
-      expect(dismissCount, 0);
+      expect(actions, 1);
+      await tester.pump();
+    });
+  });
+
+  group('resolvePlayerBackDisposition', () {
+    test('closes a content strip before other Back behavior', () {
+      expect(
+        resolvePlayerBackDisposition(
+          navigationKey: PlayerNavigationKey.physicalEscape,
+          contentStripVisible: true,
+          controlsVisible: true,
+        ),
+        PlayerBackDisposition.closeContentStrip,
+      );
+    });
+
+    test('checks fullscreen only for physical Escape', () {
+      expect(
+        resolvePlayerBackDisposition(
+          navigationKey: PlayerNavigationKey.physicalEscape,
+          contentStripVisible: false,
+          controlsVisible: false,
+        ),
+        PlayerBackDisposition.exitFullscreenIfActive,
+      );
+      expect(
+        resolvePlayerBackDisposition(
+          navigationKey: PlayerNavigationKey.back,
+          contentStripVisible: false,
+          controlsVisible: false,
+        ),
+        PlayerBackDisposition.exitPlayer,
+      );
+    });
+
+    test('semantic Back hides visible controls then exits when hidden', () {
+      expect(
+        resolvePlayerBackDisposition(
+          navigationKey: PlayerNavigationKey.back,
+          contentStripVisible: false,
+          controlsVisible: true,
+        ),
+        PlayerBackDisposition.hideControls,
+      );
+      expect(
+        resolvePlayerBackDisposition(
+          navigationKey: PlayerNavigationKey.back,
+          contentStripVisible: false,
+          controlsVisible: false,
+        ),
+        PlayerBackDisposition.exitPlayer,
+      );
     });
   });
 
@@ -819,6 +941,15 @@ KeyDownEvent _keyDown(LogicalKeyboardKey key) {
 
 KeyUpEvent _keyUp(LogicalKeyboardKey key) {
   return KeyUpEvent(physicalKey: PhysicalKeyboardKey.escape, logicalKey: key, timeStamp: Duration.zero);
+}
+
+KeyDownEvent _navigationKeyDown(LogicalKeyboardKey key, ui.KeyEventDeviceType deviceType) {
+  return KeyDownEvent(
+    physicalKey: PhysicalKeyboardKey.escape,
+    logicalKey: key,
+    timeStamp: Duration.zero,
+    deviceType: deviceType,
+  );
 }
 
 Future<void> _pumpSkipMarkerButton(

@@ -48,7 +48,7 @@ class GamepadDuplicateInputGuard {
       LogicalKeyboardKey.select,
       LogicalKeyboardKey.gameButtonA,
     },
-    LogicalKeyboardKey.escape: {
+    LogicalKeyboardKey.gameButtonB: {
       LogicalKeyboardKey.escape,
       LogicalKeyboardKey.goBack,
       LogicalKeyboardKey.browserBack,
@@ -127,7 +127,7 @@ class GamepadService with WindowListener {
     GamepadButton.dpadLeft: LogicalKeyboardKey.arrowLeft,
     GamepadButton.dpadRight: LogicalKeyboardKey.arrowRight,
     GamepadButton.a: LogicalKeyboardKey.enter,
-    GamepadButton.b: LogicalKeyboardKey.escape,
+    GamepadButton.b: LogicalKeyboardKey.gameButtonB,
     GamepadButton.x: LogicalKeyboardKey.gameButtonX,
   };
 
@@ -395,8 +395,8 @@ class GamepadService with WindowListener {
           _simulateKeyDown(LogicalKeyboardKey.gameButtonX);
         // Immediate actions on press
         case GamepadButton.b:
-          _logGamepadDiag('button simulates key press escape ${_describeGamepadButton(event)}');
-          _simulateKeyPress(LogicalKeyboardKey.escape);
+          _logGamepadDiag('button simulates key press back ${_describeGamepadButton(event)}');
+          _simulateKeyPress(LogicalKeyboardKey.gameButtonB);
         case GamepadButton.leftShoulder:
           onL1Pressed?.call();
         case GamepadButton.rightShoulder:

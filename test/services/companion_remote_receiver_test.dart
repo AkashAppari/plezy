@@ -1,0 +1,39 @@
+import 'dart:ui' as ui;
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/models/companion_remote/remote_command.dart';
+import 'package:plezy/services/companion_remote/companion_remote_receiver.dart';
+
+void main() {
+  testWidgets('Back command dispatches semantic gamepad B events', (tester) async {
+    final focusNode = FocusNode();
+    addTearDown(focusNode.dispose);
+    final events = <KeyEvent>[];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Focus(
+          focusNode: focusNode,
+          onKeyEvent: (_, event) {
+            events.add(event);
+            return KeyEventResult.handled;
+          },
+          child: const SizedBox.expand(),
+        ),
+      ),
+    );
+    focusNode.requestFocus();
+    await tester.pump();
+
+    CompanionRemoteReceiver.instance.handleCommand(const RemoteCommand(type: RemoteCommandType.back), null);
+    await tester.pump();
+
+    expect(events, hasLength(2));
+    expect(events.first, isA<KeyDownEvent>());
+    expect(events.last, isA<KeyUpEvent>());
+    expect(events.map((event) => event.logicalKey), everyElement(LogicalKeyboardKey.gameButtonB));
+    expect(events.map((event) => event.deviceType), everyElement(ui.KeyEventDeviceType.directionalPad));
+  });
+}

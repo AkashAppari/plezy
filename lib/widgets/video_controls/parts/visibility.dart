@@ -178,15 +178,6 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     await FullscreenStateManager().toggleFullscreen();
   }
 
-  /// Exit fullscreen if the window is actually fullscreen (async check).
-  /// Used by ESC handler on Windows/Linux to avoid relying on _isFullscreen flag.
-  Future<void> _exitFullscreenIfNeeded() async {
-    if (!Platform.isWindows && !Platform.isLinux) return;
-    if (await windowManager.isFullScreen()) {
-      await FullscreenStateManager().exitFullscreen();
-    }
-  }
-
   /// Initialize always-on-top state from window manager (desktop only)
   Future<void> _initAlwaysOnTopState() async {
     final isOnTop = await windowManager.isAlwaysOnTop();
