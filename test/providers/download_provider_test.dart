@@ -563,6 +563,28 @@ void main() {
       p.dispose();
     });
 
+    test('queueDownload applies the client server id before checking existing downloads', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {'srv:1': const DownloadProgress(globalKey: 'srv:1', status: DownloadStatus.completed)},
+        metadata: {'srv:1': movie},
+        ownedDownloadKeys: const {},
+      );
+
+      final count = await p.queueDownload(
+        movie.copyWith(serverId: null),
+        _ScopedTestClient(serverId: ServerId('srv'), scopedServerId: 'srv'),
+      );
+
+      expect(count, 1);
+      expect(p.downloads.keys, ['srv:1']);
+      expect(p.downloads, isNot(contains('1')));
+      expect(await db.getDownloadOwnerKeysForProfile('test-profile'), {'srv:1'});
+
+      p.dispose();
+    });
+
     test('queueDownload expands an album into its tracks via fetchPlayableDescendants', () async {
       final album = MediaItem(
         id: 'album-1',

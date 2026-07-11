@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
+import '../media/media_item_merge.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
 import '../media/media_version.dart';
@@ -1128,7 +1129,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     if (!_downloadManager.downloadsSupported) return false;
 
     final ownerProfileId = claimForProfileId ?? _requireActiveProfileId();
-    final globalKey = metadata.globalKey;
+    var metadataToStore = metadata.serverId == null ? metadata.copyWith(serverId: client.serverId) : metadata;
+    final globalKey = metadataToStore.globalKey;
 
     // Don't duplicate the physical download. If another profile already owns
     // the shared row, claiming it makes it visible for the owning profile.
@@ -1152,18 +1154,16 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // Skip the fetch when offline — it would just fail. The partial metadata
     // from whatever hub/grid invoked the queue is good enough to enqueue; the
     // actual video URL resolves later when we're back online.
-    MediaItem metadataToStore = metadata;
     if (_offlineSource?.isOffline ?? false) {
       appLogger.d('Offline — using partial metadata for ${metadata.id}');
     } else {
       try {
         final fullMetadata = await client.fetchItem(metadata.id);
         if (fullMetadata != null) {
-          metadataToStore = fullMetadata.copyWith(
-            serverId: metadata.serverId ?? fullMetadata.serverId,
-            serverName: metadata.serverName ?? fullMetadata.serverName,
-            libraryId: fullMetadata.libraryId ?? metadata.libraryId,
-            libraryTitle: fullMetadata.libraryTitle ?? metadata.libraryTitle,
+          metadataToStore = mergeFetchedMediaItem(
+            fetched: fullMetadata,
+            existing: metadataToStore,
+            fallbackServerId: client.serverId,
           );
         }
       } catch (e) {
@@ -1253,13 +1253,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       try {
         final fetched = await client.fetchItem(ratingKey);
         if (fetched != null) {
-          final existing = metadata;
-          metadata = fetched.copyWith(
-            serverId: existing?.serverId ?? fetched.serverId ?? serverId,
-            serverName: existing?.serverName ?? fetched.serverName,
-            libraryId: fetched.libraryId ?? existing?.libraryId,
-            libraryTitle: fetched.libraryTitle ?? existing?.libraryTitle,
-          );
+          metadata = mergeFetchedMediaItem(fetched: fetched, existing: metadata, fallbackServerId: serverId);
           context.hydratedMetadataKeys.add(globalKey);
           fetchedFreshMetadata = true;
         }

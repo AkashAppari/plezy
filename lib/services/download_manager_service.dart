@@ -14,6 +14,7 @@ import '../database/download_operations.dart';
 import '../media/download_resolution.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
+import '../media/media_item_merge.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
@@ -776,7 +777,7 @@ class DownloadManagerService {
       try {
         final fetched = await client.fetchItem(ratingKey);
         if (fetched != null) {
-          metadata = _mergeFetchedRepairMetadata(serverId: serverId, cached: cached, fetched: fetched);
+          metadata = mergeFetchedMediaItem(fallbackServerId: serverId, existing: cached, fetched: fetched);
           await ApiCache.forBackend(client.backend).pinForOffline(ServerId(client.cacheServerId), metadata.id);
         }
       } catch (e) {
@@ -790,19 +791,6 @@ class DownloadManagerService {
 
   MediaItem _repairMetadataWithServer(MediaItem metadata, ServerId serverId) {
     return metadata.serverId == null ? metadata.copyWith(serverId: serverId) : metadata;
-  }
-
-  MediaItem _mergeFetchedRepairMetadata({
-    required ServerId serverId,
-    required MediaItem? cached,
-    required MediaItem fetched,
-  }) {
-    return fetched.copyWith(
-      serverId: cached?.serverId ?? fetched.serverId ?? serverId,
-      serverName: cached?.serverName ?? fetched.serverName,
-      libraryId: fetched.libraryId ?? cached?.libraryId,
-      libraryTitle: fetched.libraryTitle ?? cached?.libraryTitle,
-    );
   }
 
   Future<void> _backfillArtworkPath(DownloadedMediaItem row, MediaItem metadata) async {
