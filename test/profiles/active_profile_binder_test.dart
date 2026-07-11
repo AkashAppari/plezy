@@ -512,6 +512,73 @@ void main() {
     });
   });
 
+  test('local cached Plex token remints when resources returns zero servers', () async {
+    binder.dispose();
+    multiServerProvider.dispose();
+
+    var resourceCalls = 0;
+    var switchCalls = 0;
+    final httpClient = MockClient((request) async {
+      if (request.url.path.endsWith('/resources')) {
+        resourceCalls++;
+        final body = resourceCalls == 1 ? <dynamic>[] : [_serverJson()];
+        return http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'});
+      }
+      if (request.url.path.endsWith('/home/users/home-user-uuid/switch')) {
+        switchCalls++;
+        return http.Response(
+          jsonEncode({'authToken': 'fresh-user-token'}),
+          201,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      fail('Unexpected request: ${request.method} ${request.url}');
+    });
+
+    final recoveringManager = _FailThenSucceedPlexManager();
+    manager = recoveringManager;
+    multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+    binder = ActiveProfileBinder(
+      activeProfile: activeProfile,
+      connections: connections,
+      profileConnections: profileConnections,
+      serverManager: manager,
+      multiServerProvider: multiServerProvider,
+      pinPrompt: (_, {String? errorMessage}) async => null,
+      shouldDeferInitialBind: (_) async => false,
+      plexAuth: PlexAuthService.forTesting(http: MediaServerHttpClient(client: httpClient)),
+    );
+
+    final account = PlexAccountConnection(
+      id: 'plex.account',
+      accountToken: 'account-token',
+      clientIdentifier: 'client-id',
+      accountLabel: 'Owner',
+      servers: [_server(accessToken: 'stale-server-token')],
+      createdAt: DateTime(2026, 1, 1),
+    );
+    await connections.upsert(account);
+    final profile = await createActiveLocalProfile('local-plex-remint');
+    await profileConnections.upsert(
+      ProfileConnection(
+        profileId: profile.id,
+        connectionId: account.id,
+        userToken: 'stale-user-token',
+        userIdentifier: 'home-user-uuid',
+      ),
+    );
+
+    await binder.rebindActive();
+
+    final row = await profileConnections.get(profile.id, account.id);
+    expect(resourceCalls, 2);
+    expect(switchCalls, 1);
+    expect(row?.userToken, 'fresh-user-token');
+    expect(recoveringManager.calls, 2);
+    expect(activeProfile.lastBindingSucceeded, isTrue);
+    expect(multiServerProvider.onlineServerIds, ['srv-1']);
+  });
+
   group('rebind cycle semantics', () {
     test('queued same-id rebind settles once, after the last pass', () async {
       binder.dispose();
@@ -782,6 +849,24 @@ class _FailingPlexMultiServerManager extends MultiServerManager {
       updateServerStatus(ServerId(server.clientIdentifier), false);
     }
     return const {};
+  }
+}
+
+class _FailThenSucceedPlexManager extends MultiServerManager {
+  int calls = 0;
+
+  @override
+  Future<Set<String>> refreshTokensForProfile(
+    PlexAccountConnection connection, {
+    Duration timeout = MediaServerTimeouts.perServerConnect,
+  }) async {
+    calls++;
+    if (calls == 1) return const {};
+    final ids = connection.servers.map((server) => server.clientIdentifier).toSet();
+    for (final id in ids) {
+      updateServerStatus(ServerId(id), true);
+    }
+    return ids;
   }
 }
 

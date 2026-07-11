@@ -589,6 +589,13 @@ class ActiveProfileBinder {
       }
       try {
         servers = await _unwrapServerFetch(fetchOutcome);
+        if (servers.isEmpty) {
+          appLogger.w(
+            'ActiveProfileBinder: cached local Plex token returned 0 servers for ${profile.displayName} — re-minting',
+          );
+          await profileConnections.recordToken(profile.id, conn.id, '');
+          userToken = null;
+        }
       } on MediaServerHttpException catch (e) {
         if (e.statusCode == 401 || e.statusCode == 403) {
           appLogger.w(
