@@ -268,6 +268,7 @@ class PlayerNavigationCoordinator {
   }
 }
 
+// ignore: unused-code
 PlayerBackDisposition resolvePlayerBackDisposition({
   required PlayerNavigationKey navigationKey,
   required bool contentStripVisible,
