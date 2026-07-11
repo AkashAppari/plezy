@@ -148,37 +148,41 @@ void main() {
       expect(display, customDir.path);
     });
 
-    test('falls back to default when custom path is non-writable', () async {
-      final settings = await SettingsService.getInstance();
+    test(
+      'falls back to default when custom path is non-writable',
+      () async {
+        final settings = await SettingsService.getInstance();
 
-      // Point the custom path to a path inside a read-only parent.
-      final readOnlyParent = Directory(p.join(tmpRoot.path, 'readonly'))..createSync(recursive: true);
-      try {
-        // Make parent unwritable so writing inside fails. Skip if the OS
-        // ignores the chmod (e.g. when running as root).
-        await Process.run('chmod', ['000', readOnlyParent.path]);
-        final blocked = p.join(readOnlyParent.path, 'forbidden');
-        await settings.write(SettingsService.customDownloadPathType, 'file');
-        await settings.write(SettingsService.customDownloadPath, blocked);
+        // Point the custom path to a path inside a read-only parent.
+        final readOnlyParent = Directory(p.join(tmpRoot.path, 'readonly'))..createSync(recursive: true);
+        try {
+          // Make parent unwritable so writing inside fails. Skip if the OS
+          // ignores the chmod (e.g. when running as root).
+          await Process.run('chmod', ['000', readOnlyParent.path]);
+          final blocked = p.join(readOnlyParent.path, 'forbidden');
+          await settings.write(SettingsService.customDownloadPathType, 'file');
+          await settings.write(SettingsService.customDownloadPath, blocked);
 
-        final dss = DownloadStorageService.instance;
-        await dss.initialize(settings);
+          final dss = DownloadStorageService.instance;
+          await dss.initialize(settings);
 
-        final dir = await dss.getDownloadsDirectory();
-        // Either the chmod worked → we fall back to default,
-        // or it didn't → we used the custom path. Both are valid; the
-        // important contract is that the call doesn't throw.
-        expect(dir.existsSync(), isTrue);
-        if (dir.path == blocked) {
-          // chmod was a no-op (root or a filesystem that ignores it). Skip the
-          // strict assertion — the fallback branch only runs when writes fail.
-          return;
+          final dir = await dss.getDownloadsDirectory();
+          // Either the chmod worked → we fall back to default,
+          // or it didn't → we used the custom path. Both are valid; the
+          // important contract is that the call doesn't throw.
+          expect(dir.existsSync(), isTrue);
+          if (dir.path == blocked) {
+            // chmod was a no-op (root or a filesystem that ignores it). Skip the
+            // strict assertion — the fallback branch only runs when writes fail.
+            return;
+          }
+          expect(dir.path, p.join(p.join(tmpRoot.path, 'support'), 'downloads'));
+        } finally {
+          await Process.run('chmod', ['755', readOnlyParent.path]);
         }
-        expect(dir.path, p.join(p.join(tmpRoot.path, 'support'), 'downloads'));
-      } finally {
-        await Process.run('chmod', ['755', readOnlyParent.path]);
-      }
-    });
+      },
+      skip: Platform.isWindows ? 'Windows does not provide chmod permission semantics' : false,
+    );
 
     test('refreshCustomPath picks up settings changes', () async {
       final settings = await SettingsService.getInstance();
@@ -401,7 +405,7 @@ void main() {
       // returns the toAbsolutePath() candidate (joined under the base dir).
       const stored = 'downloads/missing/never.mkv';
       final resolved = await dss.ensureAbsolutePath(stored);
-      final expected = p.join(tmpRoot.path, 'support', stored);
+      final expected = p.normalize(p.join(tmpRoot.path, 'support', stored));
       expect(resolved, expected);
     });
 
@@ -417,7 +421,7 @@ void main() {
       final resolved = await dss.ensureAbsolutePath(stored);
       // Falls back to the original absolute path (it doesn't exist on disk,
       // and no other candidate could be derived from it).
-      expect(resolved, stored);
+      expect(resolved, p.normalize(stored));
     });
   });
 

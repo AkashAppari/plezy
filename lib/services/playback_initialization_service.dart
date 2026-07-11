@@ -303,7 +303,7 @@ class PlaybackInitializationService {
 
         subtitles.add(
           SubtitleTrack.uri(
-            'file://${entity.path}',
+            Uri.file(entity.path).toString(),
             title: cachedTrack?.displayTitle ?? cachedTrack?.language ?? 'Subtitle $fileName',
             language: cachedTrack?.languageCode,
             codec: cachedTrack?.codec,
