@@ -74,6 +74,17 @@ import '../watch_together/watch_together.dart';
 // browse rail can import the scope without an import cycle through this file.
 
 @visibleForTesting
+bool shouldHandleMacOsRootEscape({
+  required bool isMacOS,
+  required bool isPhysicalKeyboardEvent,
+  required LogicalKeyboardKey logicalKey,
+  required bool isCurrentRoute,
+  required bool isHomeTab,
+}) {
+  return isMacOS && isPhysicalKeyboardEvent && logicalKey == LogicalKeyboardKey.escape && isCurrentRoute && isHomeTab;
+}
+
+@visibleForTesting
 ({double left, double width}) mainScreenSideNavigationContentLayout({
   required double viewportWidth,
   required double currentSideNavigationWidth,
@@ -1299,6 +1310,29 @@ class _MainScreenState extends State<MainScreen>
     return KeyEventResult.handled;
   }
 
+  /// On macOS, native fullscreen is window state shared by every route.
+  /// Player Escape therefore leaves it alone; only root Home owns the
+  /// conventional Escape-to-leave-fullscreen behavior.
+  KeyEventResult _handleMacOsRootEscape(KeyEvent event) {
+    final tabs = _getVisibleTabs(_isOffline);
+    final shouldHandle = shouldHandleMacOsRootEscape(
+      isMacOS: Platform.isMacOS,
+      isPhysicalKeyboardEvent: event.isPhysicalKeyboardEvent,
+      logicalKey: event.logicalKey,
+      isCurrentRoute: ModalRoute.of(context)?.isCurrent == true,
+      isHomeTab: tabs.isNotEmpty && _currentTab == tabs.first.id,
+    );
+    if (!shouldHandle) return KeyEventResult.ignored;
+
+    if (event is KeyUpEvent) {
+      BackKeyCoordinator.markHandled();
+      unawaited(FullscreenStateManager().exitFullscreenIfActive());
+    }
+    return event is KeyDownEvent || event is KeyRepeatEvent || event is KeyUpEvent
+        ? KeyEventResult.handled
+        : KeyEventResult.ignored;
+  }
+
   /// Handle Cmd+F (macOS) / Ctrl+F (Windows/Linux) to navigate to search.
   KeyEventResult _handleSearchShortcut(KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
@@ -1693,6 +1727,8 @@ class _MainScreenState extends State<MainScreen>
             canPop: false,
             child: Focus(
               onKeyEvent: (node, event) {
+                final rootEscapeResult = _handleMacOsRootEscape(event);
+                if (rootEscapeResult == KeyEventResult.handled) return rootEscapeResult;
                 final fullscreenResult = _handleFullscreenShortcut(event);
                 if (fullscreenResult == KeyEventResult.handled) return fullscreenResult;
                 final searchResult = _handleSearchShortcut(event);

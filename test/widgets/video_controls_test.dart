@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/media/media_version.dart';
@@ -313,10 +314,109 @@ void main() {
         PlayerNavigationKey.back,
         () => actions++,
       );
+      expect(BackKeyCoordinator.consumeIfHandled(), isTrue, reason: 'parallel route pop is suppressed on key down');
       handlePlayerNavigationKeyAction(_keyUp(LogicalKeyboardKey.backspace), PlayerNavigationKey.back, () => actions++);
 
       expect(actions, 1);
       await tester.pump();
+    });
+  });
+
+  group('primePlayerNavigationFocusForEvent', () {
+    testWidgets('claims loading-route focus on navigation key down', (tester) async {
+      final playerFocus = FocusNode();
+      final otherFocus = FocusNode();
+      addTearDown(playerFocus.dispose);
+      addTearDown(otherFocus.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Column(
+            children: [
+              Focus(focusNode: playerFocus, child: const SizedBox()),
+              Focus(focusNode: otherFocus, child: const SizedBox()),
+            ],
+          ),
+        ),
+      );
+      otherFocus.requestFocus();
+      await tester.pump();
+
+      final primed = primePlayerNavigationFocusForEvent(
+        _keyDown(LogicalKeyboardKey.gameButtonB),
+        focusNode: playerFocus,
+        playerReady: false,
+        isCurrentRoute: true,
+        isAppleTV: false,
+      );
+      await tester.pump();
+
+      expect(primed, isTrue);
+      expect(playerFocus.hasPrimaryFocus, isTrue);
+    });
+
+    testWidgets('does not steal focus after the player is ready', (tester) async {
+      final playerFocus = FocusNode();
+      final otherFocus = FocusNode();
+      addTearDown(playerFocus.dispose);
+      addTearDown(otherFocus.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Column(
+            children: [
+              Focus(focusNode: playerFocus, child: const SizedBox()),
+              Focus(focusNode: otherFocus, child: const SizedBox()),
+            ],
+          ),
+        ),
+      );
+      otherFocus.requestFocus();
+      await tester.pump();
+
+      final primed = primePlayerNavigationFocusForEvent(
+        _keyDown(LogicalKeyboardKey.gameButtonB),
+        focusNode: playerFocus,
+        playerReady: true,
+        isCurrentRoute: true,
+        isAppleTV: false,
+      );
+      await tester.pump();
+
+      expect(primed, isFalse);
+      expect(otherFocus.hasPrimaryFocus, isTrue);
+    });
+
+    testWidgets('does not steal focus from a route above the player', (tester) async {
+      final playerFocus = FocusNode();
+      final overlayFocus = FocusNode();
+      addTearDown(playerFocus.dispose);
+      addTearDown(overlayFocus.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Column(
+            children: [
+              Focus(focusNode: playerFocus, child: const SizedBox()),
+              Focus(focusNode: overlayFocus, child: const SizedBox()),
+            ],
+          ),
+        ),
+      );
+      overlayFocus.requestFocus();
+      await tester.pump();
+
+      final primed = primePlayerNavigationFocusForEvent(
+        _keyDown(LogicalKeyboardKey.gameButtonB),
+        focusNode: playerFocus,
+        playerReady: false,
+        isCurrentRoute: false,
+        isAppleTV: false,
+      );
+      await tester.pump();
+
+      expect(primed, isFalse);
+      expect(overlayFocus.hasPrimaryFocus, isTrue);
     });
   });
 
@@ -325,7 +425,9 @@ void main() {
       PlayerChromeController chromeController, {
       bool Function()? isPromptOpen,
       VoidCallback? dismissPrompt,
+      bool Function()? isChromePresented,
       Future<bool> Function()? exitFullscreenIfActive,
+      bool physicalEscapeExitsFullscreen = true,
       VoidCallback? exitPlayer,
       VoidCallback? navigateHome,
       bool Function()? isActive,
@@ -334,8 +436,9 @@ void main() {
         chromeController: chromeController,
         isPromptOpen: isPromptOpen ?? () => false,
         dismissPrompt: dismissPrompt ?? () {},
-        isChromePresented: () => chromeController.controlsPresented,
+        isChromePresented: isChromePresented ?? () => chromeController.controlsPresented,
         exitFullscreenIfActive: exitFullscreenIfActive ?? () async => false,
+        physicalEscapeExitsFullscreen: physicalEscapeExitsFullscreen,
         exitPlayer: exitPlayer ?? () {},
         navigateHome: navigateHome ?? () {},
         isActive: isActive,
@@ -374,6 +477,19 @@ void main() {
       chromeController.markControlsHidden();
       await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
 
+      expect(exits, 1);
+    });
+
+    testWidgets('Back exits during pre-first-frame loading even when controls default visible', (tester) async {
+      final chromeController = PlayerChromeController();
+      addTearDown(chromeController.dispose);
+      var exits = 0;
+      final coordinator = coordinatorFor(chromeController, isChromePresented: () => false, exitPlayer: () => exits++);
+      await pumpNavigationFocus(tester, coordinator);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
+
+      expect(chromeController.controlsVisible, isTrue);
       expect(exits, 1);
     });
 
@@ -439,6 +555,35 @@ void main() {
 
       expect(chromeController.controlsVisible, isTrue);
       expect(exits, 0);
+    });
+
+    testWidgets('macOS physical Escape stages through chrome and player without leaving fullscreen', (tester) async {
+      final chromeController = PlayerChromeController();
+      addTearDown(chromeController.dispose);
+      var fullscreenChecks = 0;
+      var exits = 0;
+      final coordinator = coordinatorFor(
+        chromeController,
+        exitFullscreenIfActive: () async {
+          fullscreenChecks++;
+          return true;
+        },
+        physicalEscapeExitsFullscreen: false,
+        exitPlayer: () => exits++,
+      );
+      await pumpNavigationFocus(tester, coordinator);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+
+      expect(fullscreenChecks, 0);
+      expect(chromeController.controlsVisible, isFalse);
+      expect(exits, 0);
+
+      chromeController.markControlsHidden();
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+
+      expect(fullscreenChecks, 0);
+      expect(exits, 1);
     });
 
     testWidgets('physical Escape does nothing after its player route is disposed', (tester) async {
@@ -554,6 +699,27 @@ void main() {
           navigationKey: PlayerNavigationKey.back,
           contentStripVisible: false,
           controlsVisible: false,
+        ),
+        PlayerBackDisposition.exitPlayer,
+      );
+    });
+
+    test('macOS physical Escape uses the same staged disposition as semantic Back', () {
+      expect(
+        resolvePlayerBackDisposition(
+          navigationKey: PlayerNavigationKey.physicalEscape,
+          contentStripVisible: false,
+          controlsVisible: true,
+          physicalEscapeExitsFullscreen: false,
+        ),
+        PlayerBackDisposition.hideControls,
+      );
+      expect(
+        resolvePlayerBackDisposition(
+          navigationKey: PlayerNavigationKey.physicalEscape,
+          contentStripVisible: false,
+          controlsVisible: false,
+          physicalEscapeExitsFullscreen: false,
         ),
         PlayerBackDisposition.exitPlayer,
       );

@@ -193,6 +193,7 @@ class PlayerNavigationCoordinator {
   final VoidCallback dismissPrompt;
   final bool Function() isChromePresented;
   final Future<bool> Function() exitFullscreenIfActive;
+  final bool physicalEscapeExitsFullscreen;
   final VoidCallback exitPlayer;
   final VoidCallback navigateHome;
   final bool Function() isActive;
@@ -205,6 +206,7 @@ class PlayerNavigationCoordinator {
     required this.dismissPrompt,
     required this.isChromePresented,
     required this.exitFullscreenIfActive,
+    this.physicalEscapeExitsFullscreen = true,
     required this.exitPlayer,
     required this.navigateHome,
     bool Function()? isActive,
@@ -221,23 +223,30 @@ class PlayerNavigationCoordinator {
       dismissPrompt();
       return;
     }
-    if (chromeController.contentStripVisible) {
-      chromeController.setContentStripVisible(false);
-      return;
-    }
-    if (navigationKey == PlayerNavigationKey.physicalEscape) {
-      unawaited(_handlePhysicalEscape());
-      return;
-    }
-    _handleSemanticBack();
+    final disposition = resolvePlayerBackDisposition(
+      navigationKey: navigationKey,
+      contentStripVisible: chromeController.contentStripVisible,
+      controlsVisible: isChromePresented(),
+      physicalEscapeExitsFullscreen: physicalEscapeExitsFullscreen,
+    );
+    _applyDisposition(disposition);
   }
 
-  void _handleSemanticBack() {
-    if (isChromePresented()) {
-      chromeController.hide();
-      return;
+  void _applyDisposition(PlayerBackDisposition disposition) {
+    switch (disposition) {
+      case PlayerBackDisposition.closeContentStrip:
+        chromeController.setContentStripVisible(false);
+        return;
+      case PlayerBackDisposition.exitFullscreenIfActive:
+        unawaited(_handlePhysicalEscape());
+        return;
+      case PlayerBackDisposition.hideControls:
+        chromeController.hide();
+        return;
+      case PlayerBackDisposition.exitPlayer:
+        exitPlayer();
+        return;
     }
-    exitPlayer();
   }
 
   Future<void> _handlePhysicalEscape() async {
@@ -247,13 +256,12 @@ class PlayerNavigationCoordinator {
     try {
       if (await exitFullscreenIfActive()) return;
       if (!isActive()) return;
-      if (chromeController.contentStripVisible) {
-        chromeController.setContentStripVisible(false);
-      } else if (chromeWasPresented || isChromePresented()) {
-        chromeController.hide();
-      } else {
-        exitPlayer();
-      }
+      final disposition = resolvePlayerBackDisposition(
+        navigationKey: PlayerNavigationKey.back,
+        contentStripVisible: chromeController.contentStripVisible,
+        controlsVisible: chromeWasPresented || isChromePresented(),
+      );
+      _applyDisposition(disposition);
     } finally {
       _handlingPhysicalEscape = false;
     }
@@ -264,10 +272,11 @@ PlayerBackDisposition resolvePlayerBackDisposition({
   required PlayerNavigationKey navigationKey,
   required bool contentStripVisible,
   required bool controlsVisible,
+  bool physicalEscapeExitsFullscreen = true,
 }) {
   assert(navigationKey == PlayerNavigationKey.physicalEscape || navigationKey == PlayerNavigationKey.back);
   if (contentStripVisible) return PlayerBackDisposition.closeContentStrip;
-  if (navigationKey == PlayerNavigationKey.physicalEscape) {
+  if (navigationKey == PlayerNavigationKey.physicalEscape && physicalEscapeExitsFullscreen) {
     return PlayerBackDisposition.exitFullscreenIfActive;
   }
   return controlsVisible ? PlayerBackDisposition.hideControls : PlayerBackDisposition.exitPlayer;
@@ -295,12 +304,35 @@ PlayerNavigationKey classifyPlayerNavigationKey(KeyEvent event, {required bool i
   return PlayerNavigationKey.none;
 }
 
+/// Gives the player route ownership of navigation that arrives while its
+/// loading/error body is still establishing focus. The matching key-up still
+/// performs the action through the normal [Focus.onKeyEvent] path.
+bool primePlayerNavigationFocusForEvent(
+  KeyEvent event, {
+  required FocusNode focusNode,
+  required bool playerReady,
+  required bool isCurrentRoute,
+  required bool isAppleTV,
+}) {
+  if (!isCurrentRoute || playerReady || event is! KeyDownEvent) return false;
+  if (classifyPlayerNavigationKey(event, isAppleTV: isAppleTV) == PlayerNavigationKey.none) return false;
+  focusNode.requestFocus();
+  return true;
+}
+
 KeyEventResult handlePlayerNavigationKeyAction(
   KeyEvent event,
   PlayerNavigationKey navigationKey,
   VoidCallback onAction,
 ) {
   if (navigationKey == PlayerNavigationKey.none) return KeyEventResult.ignored;
+
+  // macOS may also translate Backspace / Escape / browser Back into a route
+  // pop on key-down. Suppress that parallel path before the player performs
+  // its single staged action on key-up.
+  if (navigationKey != PlayerNavigationKey.home && event is KeyDownEvent) {
+    BackKeyCoordinator.markHandled();
+  }
   if (event.logicalKey.isBackKey) return handleBackKeyAction(event, onAction);
 
   if (event is KeyUpEvent) {

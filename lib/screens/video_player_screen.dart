@@ -582,8 +582,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       chromeController: _chromeController,
       isPromptOpen: () => _showPlayNextDialog || _showStillWatchingPrompt,
       dismissPrompt: _dismissPlaybackPromptForBack,
-      isChromePresented: () => _isPlayerInitialized && player != null && _chromeController.controlsPresented,
+      isChromePresented: () =>
+          _isPlayerInitialized && player != null && _hasFirstFrame.value && _chromeController.controlsPresented,
       exitFullscreenIfActive: FullscreenStateManager().exitFullscreenIfActive,
+      // macOS fullscreen belongs to the app window, not the player route.
+      // Escape stages through chrome/player Back and the root Home screen
+      // owns leaving native fullscreen.
+      physicalEscapeExitsFullscreen: !Platform.isMacOS,
       exitPlayer: () => unawaited(_handleBackButton()),
       navigateHome: _handleHomeButton,
       isActive: () => mounted,
@@ -615,6 +620,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Ensures a single stable focus target across loading → initialized phases.
     _screenFocusNode = FocusNode(debugLabel: 'VideoPlayerScreen');
     _screenFocusNode.addListener(_onScreenFocusChanged);
+    HardwareKeyboard.instance.addHandler(_primeInitializationNavigationFocus);
 
     appLogger.d('VideoPlayerScreen initialized for: ${_currentMetadata.title}');
     if (_preferredAudioTrack != null) {
@@ -1270,6 +1276,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _stillWatchingContinueFocusNode.dispose();
 
     _screenFocusNode.removeListener(_onScreenFocusChanged);
+    HardwareKeyboard.instance.removeHandler(_primeInitializationNavigationFocus);
     _screenFocusNode.dispose();
 
     _mediaControlsManager?.clear();
@@ -1340,6 +1347,21 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
       });
     }
+  }
+
+  /// Loading and initialization-error phases can receive a Back key-down
+  /// before their autofocus request has settled. Claim focus immediately so
+  /// the matching key-up reaches the player route and exits exactly once.
+  bool _primeInitializationNavigationFocus(KeyEvent event) {
+    if (!mounted || _isExiting.value) return false;
+    primePlayerNavigationFocusForEvent(
+      event,
+      focusNode: _screenFocusNode,
+      playerReady: _isPlayerInitialized && player != null && _hasFirstFrame.value,
+      isCurrentRoute: ModalRoute.of(context)?.isCurrent == true,
+      isAppleTV: PlatformDetector.isAppleTV(),
+    );
+    return false;
   }
 
   void _setupAppleTvRemotePlaybackActions() {
