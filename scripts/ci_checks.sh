@@ -59,25 +59,17 @@ else
   rm -f "$out"
 fi
 
-# 2. Codegen freshness (build_runner outputs newer than their sources)
+# 2. Codegen freshness
 section "codegen freshness"
-stale=()
-while IFS= read -r -d '' src; do
-  for gen in "${src%.dart}.g.dart" "${src%.dart}.freezed.dart"; do
-    if [ -f "$gen" ] && [ "$src" -nt "$gen" ]; then
-      stale+=("${src#./}")
-      break
-    fi
-  done
-done < <(find lib -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" -type f -print0 2>/dev/null)
-if [ ${#stale[@]} -eq 0 ]; then
-  ok "no stale generated files"
+out="$(mktemp)"
+if scripts/codegen.sh --check >"$out" 2>&1; then
+  ok "generated files are current"
 else
-  fail "${#stale[@]} dart source(s) newer than their generated .g/.freezed:"
-  printf '    %s\n' "${stale[@]}"
-  echo "    Run: scripts/codegen.sh"
+  fail "generated files are stale"
+  sed 's/^/    /' "$out"
   FAILED=1
 fi
+rm -f "$out"
 
 # 3. Native formatting
 section "native format"

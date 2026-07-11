@@ -470,7 +470,7 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-pub-v2-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
 
       - name: Install dependencies
-        run: flutter pub get --no-example
+        run: flutter pub get --enforce-lockfile --no-example
 
       - name: Install patched Flutter engine (DComp)
         shell: pwsh
@@ -768,7 +768,7 @@ jobs:
         run: sudo gem install fpm
 
       - name: Install dependencies
-        run: flutter pub get --no-example
+        run: flutter pub get --enforce-lockfile --no-example
 
       - name: Build Linux arm64
         run: flutter build linux --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} --dart-define=SENTRY_DIST=github-linux-arm64 ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/linux-arm64

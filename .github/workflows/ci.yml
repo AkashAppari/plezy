@@ -40,26 +40,14 @@ jobs:
           flutter pub get
 
       - name: Verify generated files committed
-        run: |
-          scripts/codegen.sh
-          if ! git diff --exit-code lib/; then
-            echo "::error::Generated files (.g.dart / .freezed.dart) are out of date."
-            echo "Run 'scripts/codegen.sh' and commit the result."
-            exit 1
-          fi
+        run: scripts/codegen.sh --check
 
       - name: Verify formatting
         run: |
-          # Find all Dart files excluding generated files
-          find lib $([ -d test ] && echo test) -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" -type f 2>/dev/null | while IFS= read -r file; do
-            files_found=true
-            break
-          done
-          if [ "$files_found" != "true" ]; then
-            echo "No Dart files found to format"
-            exit 0
-          fi
-          find lib $([ -d test ] && echo test) -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" -type f 2>/dev/null -print0 | xargs -0 dart format --output=none --set-exit-if-changed
+          paths=(lib)
+          [ ! -d test ] || paths+=(test)
+          find "${paths[@]}" -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" -type f -print0 |
+            xargs -0 -r dart format --output=none --set-exit-if-changed
       - name: Analyze code
         run: |
           # Run flutter analyze

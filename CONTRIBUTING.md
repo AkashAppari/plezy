@@ -4,7 +4,7 @@
 
 1. Fork and clone the repository
 2. Run `flutter pub get` to install dependencies
-3. Run `dart run build_runner build` to generate code
+3. Run `scripts/codegen.sh` to generate translations and Dart model code
 4. Start developing!
 
 ## Development
@@ -30,7 +30,10 @@ The project includes automated CI checks that run on all pull requests:
    - Run locally: `flutter analyze`
    - Note: CI excludes generated files from analysis (configured in `analysis_options.yaml`)
 
-3. **Tests**: Runs unit and widget tests (when available)
+3. **Generated Code**: Ensures generated translations and model files are current
+   - Run locally: `scripts/codegen.sh --check`
+
+4. **Tests**: Runs unit and widget tests (when available)
    - Run locally: `flutter test`
 
 All these checks must pass before your changes can be merged.

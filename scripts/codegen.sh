@@ -1,5 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+check=false
+if [[ "${1:-}" == "--check" ]]; then
+  check=true
+  shift
+fi
+
 dart run slang
-exec dart run build_runner build --delete-conflicting-outputs "$@"
+dart run build_runner build --delete-conflicting-outputs "$@"
+
+if $check; then
+  generated_changes="$({
+    git diff --name-only -- lib
+    git ls-files --others --exclude-standard -- \
+      ':(glob)lib/**/*.g.dart' \
+      ':(glob)lib/**/*.freezed.dart'
+  } | grep -E '\.(g|freezed)\.dart$' || true)"
+
+  if [[ -n "$generated_changes" ]]; then
+    echo "Generated files are out of date:" >&2
+    printf '  %s\n' "$generated_changes" >&2
+    echo "Run 'scripts/codegen.sh' and commit the result." >&2
+    exit 1
+  fi
+fi
