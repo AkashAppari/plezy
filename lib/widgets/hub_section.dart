@@ -112,6 +112,10 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
       ? TvLayoutConstants.shelfHorizontalInset
       : 12.0;
   double get _leadingPadding => _leadingPaddingFor(PlatformDetector.isTV());
+  String get _focusMemoryKey {
+    final serverId = widget.hub.serverId;
+    return serverId == null ? widget.hub.id : '$serverId:${widget.hub.id}';
+  }
 
   final _selectLongPress = DpadSelectLongPressController();
 
@@ -171,7 +175,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
     final clamped = index.clamp(0, _totalItemCount - 1).toInt();
     _focusedIndex = clamped;
     // Remember this position for this specific hub
-    HubFocusMemory.setForHub(widget.hub.id, clamped);
+    HubFocusMemory.setForHub(_focusMemoryKey, clamped);
     _notifyFocusedItemChanged();
     _scrollToIndex(clamped);
     _hubFocusNode.requestFocus();
@@ -183,7 +187,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
 
   /// Request focus using the stored memory for this hub
   void requestFocusFromMemory() {
-    final index = HubFocusMemory.getForHub(widget.hub.id, _totalItemCount);
+    final index = HubFocusMemory.getForHub(_focusMemoryKey, _totalItemCount);
     requestFocusAt(index);
   }
 
@@ -258,7 +262,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
         setState(() {
           _focusedIndex--;
         });
-        HubFocusMemory.setForHub(widget.hub.id, _focusedIndex);
+        HubFocusMemory.setForHub(_focusMemoryKey, _focusedIndex);
         _notifyFocusedItemChanged();
         _scrollToIndex(_focusedIndex);
       } else if (widget.onNavigateToSidebar != null) {
@@ -275,7 +279,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
         setState(() {
           _focusedIndex++;
         });
-        HubFocusMemory.setForHub(widget.hub.id, _focusedIndex);
+        HubFocusMemory.setForHub(_focusMemoryKey, _focusedIndex);
         _notifyFocusedItemChanged();
         _scrollToIndex(_focusedIndex);
       }
@@ -652,7 +656,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
     setState(() {
       _focusedIndex = clamped;
     });
-    HubFocusMemory.setForHub(widget.hub.id, clamped);
+    HubFocusMemory.setForHub(_focusMemoryKey, clamped);
     _notifyFocusedItemChanged();
     _scrollToIndex(clamped);
     _hubFocusNode.requestFocus();

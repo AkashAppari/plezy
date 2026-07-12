@@ -1,4 +1,4 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show Stream, unawaited;
 import '../../../media/ids.dart';
 
 import 'package:flutter/material.dart';
@@ -79,6 +79,7 @@ class ContentStripState extends State<ContentStrip> {
   int? _lastAutoScrolledQueueIndex;
   final Map<int, GlobalKey> _chapterItemKeys = {};
   final Map<int, GlobalKey> _queueItemKeys = {};
+  late Stream<int?> _chapterIndexStream;
 
   // Focus nodes for focus navigation mode
   final List<FocusNode> _chapterFocusNodes = [];
@@ -92,6 +93,21 @@ class ContentStripState extends State<ContentStrip> {
   void initState() {
     super.initState();
     _activeTab = _hasChapters ? _StripTab.chapters : _StripTab.queue;
+    _bindChapterIndexStream();
+  }
+
+  @override
+  void didUpdateWidget(ContentStrip oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.player, widget.player) || !identical(oldWidget.chapters, widget.chapters)) {
+      _bindChapterIndexStream();
+    }
+  }
+
+  void _bindChapterIndexStream() {
+    _chapterIndexStream = widget.player.streams.position
+        .map((position) => MediaChapter.indexAtPosition(position, widget.chapters))
+        .distinct();
   }
 
   @override
@@ -373,13 +389,11 @@ class ContentStripState extends State<ContentStrip> {
     final thumbWidth = isTablet ? 200.0 : 120.0;
     final thumbHeight = isTablet ? 112.0 : 68.0;
 
-    return StreamBuilder<Duration>(
-      stream: widget.player.streams.position,
-      initialData: widget.player.state.position,
-      builder: (context, positionSnapshot) {
-        final currentPosition = positionSnapshot.data ?? Duration.zero;
-        final currentChapterIndex = MediaChapter.indexAtPosition(currentPosition, widget.chapters);
-
+    return StreamBuilder<int?>(
+      stream: _chapterIndexStream,
+      initialData: MediaChapter.indexAtPosition(widget.player.state.position, widget.chapters),
+      builder: (context, chapterSnapshot) {
+        final currentChapterIndex = chapterSnapshot.data;
         _trimItemKeys(_chapterItemKeys, widget.chapters.length);
 
         if (currentChapterIndex != null && _lastAutoScrolledChapterIndex != currentChapterIndex) {

@@ -17,8 +17,21 @@ import '../../widgets/focused_scroll_scaffold.dart';
 import '../libraries/state_messages.dart';
 import '../../i18n/strings.g.dart';
 
-class SyncRulesScreen extends StatelessWidget {
+class SyncRulesScreen extends StatefulWidget {
   const SyncRulesScreen({super.key});
+
+  @override
+  State<SyncRulesScreen> createState() => _SyncRulesScreenState();
+}
+
+class _SyncRulesScreenState extends State<SyncRulesScreen> {
+  late final Stream<List<Connection>> _connections;
+
+  @override
+  void initState() {
+    super.initState();
+    _connections = context.read<ConnectionRegistry>().watchConnections();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,10 +39,9 @@ class SyncRulesScreen extends StatelessWidget {
       builder: (context, downloadProvider, _) {
         final syncRules = downloadProvider.syncRules;
         final multiServerProvider = context.watch<MultiServerProvider>();
-        final connectionRegistry = context.read<ConnectionRegistry>();
 
         return StreamBuilder<List<Connection>>(
-          stream: connectionRegistry.watchConnections(),
+          stream: _connections,
           initialData: const [],
           builder: (context, snapshot) {
             final connections = snapshot.data ?? const <Connection>[];

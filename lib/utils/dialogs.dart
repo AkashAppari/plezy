@@ -290,7 +290,7 @@ Future<T?> showOptionPickerDialog<T>(
   Future<T?> Function(T value)? onBeforeClose,
   OptionPickerToggle? toggle,
 }) {
-  final focusFirstItem = InputModeTracker.isKeyboardMode(context);
+  final focusFirstItem = InputModeTracker.isKeyboardMode(context, listen: false);
   return showScopedDialog<T>(
     context: context,
     builder: (context) => _OptionPickerDialog<T>(

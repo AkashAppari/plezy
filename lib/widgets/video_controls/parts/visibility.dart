@@ -252,7 +252,9 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
       });
       _reclaimFocusAfterControlsHide();
     } else {
-      _setControlsState(() {});
+      _setControlsState(() {
+        if (controlsVisible) _controlsMounted = true;
+      });
     }
 
     if (visibilityChanged && Platform.isMacOS) {

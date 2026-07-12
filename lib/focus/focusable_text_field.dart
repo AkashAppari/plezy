@@ -133,20 +133,25 @@ KeyEventResult _handleInputKey({
   VoidCallback? onNavigateDown,
 }) {
   final key = event.logicalKey;
+  final diagnosticsEnabled = TextInputDiagnostics.enabled;
   KeyEventResult finish(KeyEventResult result, String reason) {
-    _logTvTextInput(
-      'result=$result reason=$reason key=(${_describeTextInputKey(event)}) '
-      'usesTvKeyboard=$usesTvKeyboard enabled=$enabled textLength=${controller.text.length} '
-      'selection=${controller.selection} onNav(up=${onNavigateUp != null},down=${onNavigateDown != null},'
-      'left=${onNavigateLeft != null},right=${onNavigateRight != null}) onSelect=${onSelect != null} onBack=${onBack != null}',
-    );
+    if (diagnosticsEnabled) {
+      _logTvTextInput(
+        'result=$result reason=$reason key=(${_describeTextInputKey(event)}) '
+        'usesTvKeyboard=$usesTvKeyboard enabled=$enabled textLength=${controller.text.length} '
+        'selection=${controller.selection} onNav(up=${onNavigateUp != null},down=${onNavigateDown != null},'
+        'left=${onNavigateLeft != null},right=${onNavigateRight != null}) onSelect=${onSelect != null} onBack=${onBack != null}',
+      );
+    }
     return result;
   }
 
-  _logTvTextInput(
-    'received key=(${_describeTextInputKey(event)}) usesTvKeyboard=$usesTvKeyboard enabled=$enabled '
-    'textLength=${controller.text.length} selection=${controller.selection}',
-  );
+  if (diagnosticsEnabled) {
+    _logTvTextInput(
+      'received key=(${_describeTextInputKey(event)}) usesTvKeyboard=$usesTvKeyboard enabled=$enabled '
+      'textLength=${controller.text.length} selection=${controller.selection}',
+    );
+  }
 
   if (_shouldPassNativeTvKeyToPlatform(usesTvKeyboard: usesTvKeyboard, enabled: enabled, event: event)) {
     return finish(KeyEventResult.skipRemainingHandlers, 'pass-native-tv-key-to-platform');
@@ -243,10 +248,12 @@ KeyEventResult _handleInputKey({
 
 bool _shouldPassNativeTvKeyToPlatform({required bool usesTvKeyboard, required bool enabled, required KeyEvent event}) {
   if (!enabled || usesTvKeyboard || !PlatformDetector.isTV()) {
-    _logTvTextInput(
-      'native-pass=false reason=disabled-or-custom-keyboard enabled=$enabled usesTvKeyboard=$usesTvKeyboard '
-      'isTv=${PlatformDetector.isTV()} key=(${_describeTextInputKey(event)})',
-    );
+    if (TextInputDiagnostics.enabled) {
+      _logTvTextInput(
+        'native-pass=false reason=disabled-or-custom-keyboard enabled=$enabled usesTvKeyboard=$usesTvKeyboard '
+        'isTv=${PlatformDetector.isTV()} key=(${_describeTextInputKey(event)})',
+      );
+    }
     return false;
   }
 
@@ -256,10 +263,12 @@ bool _shouldPassNativeTvKeyToPlatform({required bool usesTvKeyboard, required bo
   // native TV navigation cannot rely on deviceType.
   final key = event.logicalKey;
   final shouldPass = key.isDpadDirection || key.isBackKey || event.isTvSelectEvent;
-  _logTvTextInput(
-    'native-pass=$shouldPass reason=${shouldPass ? "remote-navigation-key" : "not-navigation-key"} '
-    'key=(${_describeTextInputKey(event)})',
-  );
+  if (TextInputDiagnostics.enabled) {
+    _logTvTextInput(
+      'native-pass=$shouldPass reason=${shouldPass ? "remote-navigation-key" : "not-navigation-key"} '
+      'key=(${_describeTextInputKey(event)})',
+    );
+  }
   return shouldPass;
 }
 
@@ -745,25 +754,29 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
 
   void _syncNativeTextInputFocus() {
     final focused = _installedFocusNode?.hasFocus == true && widget.input.enabled && widget.input._usesNativeTvKeyboard;
-    _logTvTextInput(
-      'Host.syncNativeTextInputFocus focused=$focused installed=${_installedFocusNode?.debugLabel} '
-      'hasFocus=${_installedFocusNode?.hasFocus} enabled=${widget.input.enabled} '
-      'usesNativeTvKeyboard=${widget.input._usesNativeTvKeyboard}',
-    );
+    if (TextInputDiagnostics.enabled) {
+      _logTvTextInput(
+        'Host.syncNativeTextInputFocus focused=$focused installed=${_installedFocusNode?.debugLabel} '
+        'hasFocus=${_installedFocusNode?.hasFocus} enabled=${widget.input.enabled} '
+        'usesNativeTvKeyboard=${widget.input._usesNativeTvKeyboard}',
+      );
+    }
     _setNativeTextInputFocused(focused);
   }
 
   void _syncTvKeyboardAutoOpen() {
     final focused = _installedFocusNode?.hasFocus == true && widget.input.enabled && widget.input._hasTvKeyboard;
     final visible = _canShowTvKeyboard;
-    _logTvTextInput(
-      'Host.syncTvKeyboardAutoOpen focused=$focused open=$_tvKeyboardOpen scheduled=$_tvKeyboardOpenScheduled '
-      'suppressed=$_suppressTvKeyboardAutoOpen behavior=${widget.input.tvKeyboardAutoOpenBehavior} '
-      'seenFocus=$_hasSeenTvKeyboardFocus suppressCurrent=$_suppressTvKeyboardForCurrentFocus '
-      'installed=${_installedFocusNode?.debugLabel} '
-      'hasFocus=${_installedFocusNode?.hasFocus} enabled=${widget.input.enabled} '
-      'usesTvKeyboard=${widget.input._hasTvKeyboard} visible=$visible',
-    );
+    if (TextInputDiagnostics.enabled) {
+      _logTvTextInput(
+        'Host.syncTvKeyboardAutoOpen focused=$focused open=$_tvKeyboardOpen scheduled=$_tvKeyboardOpenScheduled '
+        'suppressed=$_suppressTvKeyboardAutoOpen behavior=${widget.input.tvKeyboardAutoOpenBehavior} '
+        'seenFocus=$_hasSeenTvKeyboardFocus suppressCurrent=$_suppressTvKeyboardForCurrentFocus '
+        'installed=${_installedFocusNode?.debugLabel} '
+        'hasFocus=${_installedFocusNode?.hasFocus} enabled=${widget.input.enabled} '
+        'usesTvKeyboard=${widget.input._hasTvKeyboard} visible=$visible',
+      );
+    }
 
     if (!focused) {
       _suppressTvKeyboardForCurrentFocus = false;

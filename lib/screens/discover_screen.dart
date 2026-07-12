@@ -95,6 +95,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   final PageController _heroController = PageController();
   final ScrollController _scrollController = ScrollController();
   int _currentHeroIndex = 0;
+  final ValueNotifier<int> _heroIndex = ValueNotifier<int>(0);
   Timer? _autoScrollTimer;
   Timer? _indicatorTimer;
   final ValueNotifier<double> _indicatorProgress = ValueNotifier(0.0);
@@ -357,6 +358,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       setState(() {
         if (isNewLoad || heroOutOfBounds) {
           _currentHeroIndex = 0;
+          _heroIndex.value = 0;
         }
         _updateHubKeys();
       });
@@ -443,6 +445,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _indicatorTimer?.cancel();
     _spotlight.dispose();
     _indicatorProgress.dispose();
+    _heroIndex.dispose();
     _heroController.dispose();
     _scrollController.dispose();
     _heroFocusNode.removeListener(_onHeroFocusChanged);
@@ -481,6 +484,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       // Validate current index is within bounds before calculating next page
       if (_currentHeroIndex >= _onDeck.length) {
         _currentHeroIndex = 0;
+        _heroIndex.value = 0;
       }
 
       final nextPage = (_currentHeroIndex + 1) % _onDeck.length;
@@ -1258,11 +1262,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 controller: _heroController,
                 itemCount: _onDeck.length,
                 onPageChanged: (index) {
-                  // Validate index is within bounds before updating
                   if (index >= 0 && index < _onDeck.length) {
-                    setState(() {
-                      _currentHeroIndex = index;
-                    });
+                    _currentHeroIndex = index;
+                    _heroIndex.value = index;
                     _resetAutoScrollTimer();
                   }
                 },
@@ -1302,57 +1304,61 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         ),
                       ),
                       const SizedBox(width: 8),
-                      ...() {
-                        final range = _getVisibleDotRange();
-                        return List.generate(range.end - range.start + 1, (i) {
-                          final index = range.start + i;
-                          final isActive = _currentHeroIndex == index;
-                          final dotSize = _getDotSize(index, range.start, range.end);
+                      ValueListenableBuilder<int>(
+                        valueListenable: _heroIndex,
+                        builder: (context, _, _) {
+                          final range = _getVisibleDotRange();
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: List.generate(range.end - range.start + 1, (i) {
+                              final index = range.start + i;
+                              final isActive = _currentHeroIndex == index;
+                              final dotSize = _getDotSize(index, range.start, range.end);
 
-                          return isActive
-                              // Progress indicator for active page (~5fps via Timer)
-                              ? ValueListenableBuilder<double>(
-                                  valueListenable: _indicatorProgress,
-                                  builder: (context, progress, child) {
-                                    final maxWidth = dotSize * 3; // 24px for normal, 15px for small
-                                    final fillWidth = dotSize + ((maxWidth - dotSize) * progress);
-                                    final onSurface = Theme.of(context).colorScheme.onSurface;
-                                    return Container(
-                                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                                      width: maxWidth,
-                                      height: dotSize,
-                                      decoration: BoxDecoration(
-                                        color: onSurface.withValues(alpha: 0.4),
-                                        borderRadius: BorderRadius.circular(dotSize / 2),
-                                      ),
-                                      child: Align(
-                                        alignment: .centerLeft,
-                                        child: Container(
-                                          width: fillWidth,
+                              return isActive
+                                  ? ValueListenableBuilder<double>(
+                                      valueListenable: _indicatorProgress,
+                                      builder: (context, progress, child) {
+                                        final maxWidth = dotSize * 3;
+                                        final fillWidth = dotSize + ((maxWidth - dotSize) * progress);
+                                        final onSurface = Theme.of(context).colorScheme.onSurface;
+                                        return Container(
+                                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                                          width: maxWidth,
                                           height: dotSize,
                                           decoration: BoxDecoration(
-                                            color: onSurface,
+                                            color: onSurface.withValues(alpha: 0.4),
                                             borderRadius: BorderRadius.circular(dotSize / 2),
                                           ),
-                                        ),
+                                          child: Align(
+                                            alignment: .centerLeft,
+                                            child: Container(
+                                              width: fillWidth,
+                                              height: dotSize,
+                                              decoration: BoxDecoration(
+                                                color: onSurface,
+                                                borderRadius: BorderRadius.circular(dotSize / 2),
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    )
+                                  : AnimatedContainer(
+                                      duration: tokens(context).slow,
+                                      curve: Curves.easeInOut,
+                                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                                      width: dotSize,
+                                      height: dotSize,
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                                        borderRadius: BorderRadius.circular(dotSize / 2),
                                       ),
                                     );
-                                  },
-                                )
-                              // Static indicator for inactive pages
-                              : AnimatedContainer(
-                                  duration: tokens(context).slow,
-                                  curve: Curves.easeInOut,
-                                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                                  width: dotSize,
-                                  height: dotSize,
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-                                    borderRadius: BorderRadius.circular(dotSize / 2),
-                                  ),
-                                );
-                        });
-                      }(),
+                            }),
+                          );
+                        },
+                      ),
                     ],
                   ),
                 ),

@@ -105,7 +105,7 @@ Future<T?> showSelectionDialog<T>({
   required List<DialogOption<T>> options,
   required T currentValue,
 }) {
-  final focusFirstItem = InputModeTracker.isKeyboardMode(context);
+  final focusFirstItem = InputModeTracker.isKeyboardMode(context, listen: false);
   return showScopedDialog<T>(
     context: context,
     builder: (dialogContext) => AlertDialog(
@@ -148,7 +148,7 @@ void showNumericInputDialog({
   required int currentValue,
   required Future<void> Function(int value) onSave,
 }) {
-  final useDpadControls = InputModeTracker.isKeyboardMode(context);
+  final useDpadControls = InputModeTracker.isKeyboardMode(context, listen: false);
 
   if (useDpadControls) {
     _showNumericInputDialogTV(
@@ -300,7 +300,7 @@ void showColorInputDialog({
   required String currentHex,
   required Future<void> Function(String hex) onSave,
 }) {
-  if (InputModeTracker.isKeyboardMode(context)) {
+  if (InputModeTracker.isKeyboardMode(context, listen: false)) {
     _showColorInputDialogTV(context: context, title: title, currentHex: currentHex, onSave: onSave);
   } else {
     _showColorInputDialogStandard(context: context, title: title, currentHex: currentHex, onSave: onSave);

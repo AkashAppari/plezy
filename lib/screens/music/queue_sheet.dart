@@ -126,7 +126,7 @@ class _QueueListState extends State<QueueList> {
     if (widget.autofocusCurrent) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Timer.run(() {
-          if (!mounted || !InputModeTracker.isKeyboardMode(context)) return;
+          if (!mounted || !InputModeTracker.isKeyboardMode(context, listen: false)) return;
           // Schedule after the overlay host's _autoFocus second callback so
           // we override its focus-first-descendant default.
           WidgetsBinding.instance.addPostFrameCallback((_) {

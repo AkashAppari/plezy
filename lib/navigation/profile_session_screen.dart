@@ -103,9 +103,9 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ActiveProfileProvider>(
-      builder: (context, activeProfile, _) {
-        final activeId = activeProfile.activeId;
+    return Selector<ActiveProfileProvider, String?>(
+      selector: (_, activeProfile) => activeProfile.activeId,
+      builder: (context, activeId, _) {
         _onSessionProfileChanged(activeId);
         final initialPromptHandled = widget.initialPromptHandled || _hasBuiltSession;
         return KeyedSubtree(

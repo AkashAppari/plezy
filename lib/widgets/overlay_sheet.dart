@@ -415,13 +415,13 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
 
   double? _resolveSheetHorizontalAnchor(Alignment alignment) {
     if (!PlatformDetector.isDesktopOS() || PlatformDetector.isTV()) return null;
-    if (InputModeTracker.isKeyboardMode(context)) return null;
+    if (InputModeTracker.isKeyboardMode(context, listen: false)) return null;
     if (alignment.x != 0 || alignment.y <= 0) return null;
     return _lastPointerPosition?.dx;
   }
 
   void _autoFocus() {
-    final focusDescendant = InputModeTracker.isKeyboardMode(context);
+    final focusDescendant = InputModeTracker.isKeyboardMode(context, listen: false);
 
     // First post-frame: the FocusScope is now built and the node is attached.
     // Always grab scope focus so key events (especially back) are trapped, even
@@ -457,7 +457,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
   }
 
   void _refocus() {
-    final focusDescendant = InputModeTracker.isKeyboardMode(context);
+    final focusDescendant = InputModeTracker.isKeyboardMode(context, listen: false);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_isOpen) return;

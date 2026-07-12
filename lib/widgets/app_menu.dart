@@ -184,7 +184,7 @@ class AppMenuButtonState<T> extends State<AppMenuButton<T>> {
   }
 
   Future<void> _handlePressed() async {
-    await showButtonMenu(focusFirstItem: InputModeTracker.isKeyboardMode(context));
+    await showButtonMenu(focusFirstItem: InputModeTracker.isKeyboardMode(context, listen: false));
   }
 
   @override

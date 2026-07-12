@@ -29,6 +29,7 @@ import '../../utils/dialogs.dart';
 import '../../utils/download_utils.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/ios_status_bar_tap_scroll_to_top.dart';
+import '../../widgets/listenable_selector.dart';
 import '../base_media_list_detail_screen.dart';
 import '../focusable_detail_screen_mixin.dart';
 import '../../mixins/grid_focus_node_mixin.dart';
@@ -190,6 +191,9 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   // Navigation state for regular (non-smart) playlists
   int _focusedIndex = 0;
   int _focusedColumn = 0; // 0=content, 1=drag handle, 2=remove button
+  final ValueNotifier<int> _focusRevision = ValueNotifier<int>(0);
+
+  void _notifyFocusChanged() => _focusRevision.value++;
 
   // Move mode state
   int? _movingIndex;
@@ -215,6 +219,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   void dispose() {
     _continuation.dispose();
     _listFocusNode.dispose();
+    _focusRevision.dispose();
     disposeFocusResources();
     super.dispose();
   }
@@ -475,6 +480,8 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     if (!_canEditPlaylist) return;
     if (items.isEmpty || index < 0 || index >= items.length) return;
     final item = items[index];
+    final previousItem = index > 0 ? items[index - 1] : null;
+    final nextItem = index + 1 < items.length ? items[index + 1] : null;
 
     appLogger.d('Removing item ${item.title} from playlist');
 
@@ -500,11 +507,19 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       if (success) {
         showSuccessSnackBar(context, t.playlists.itemRemoved);
       } else {
-        // Revert on failure
+        // Restore relative to surviving neighbors; concurrent mutations can
+        // make the original numeric index stale.
         appLogger.e('Failed to remove playlist item, reverting UI');
         setState(() {
-          items.insert(index, item);
-          _focusedIndex = index;
+          final nextIndex = nextItem == null ? -1 : items.indexOf(nextItem);
+          final previousIndex = previousItem == null ? -1 : items.indexOf(previousItem);
+          final restoreIndex = nextIndex >= 0
+              ? nextIndex
+              : previousIndex >= 0
+              ? previousIndex + 1
+              : index.clamp(0, items.length);
+          items.insert(restoreIndex, item);
+          _focusedIndex = restoreIndex;
         });
 
         showErrorSnackBar(context, t.playlists.errorRemoving);
@@ -612,10 +627,9 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       // Navigation mode
       if (key.isUpKey) {
         if (_focusedIndex > 0) {
-          setState(() {
-            _focusedIndex--;
-            _focusedColumn = 0; // Reset to row when changing rows
-          });
+          _focusedIndex--;
+          _focusedColumn = 0;
+          _notifyFocusChanged();
           _ensureFocusedVisible();
         } else {
           // First item - navigate to app bar
@@ -624,10 +638,9 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         return KeyEventResult.handled;
       }
       if (key.isDownKey && _focusedIndex < items.length - 1) {
-        setState(() {
-          _focusedIndex++;
-          _focusedColumn = 0; // Reset to row when changing rows
-        });
+        _focusedIndex++;
+        _focusedColumn = 0;
+        _notifyFocusChanged();
         _ensureFocusedVisible();
         return KeyEventResult.handled;
       }
@@ -635,11 +648,13 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         // Navigate left within columns
         if (_focusedColumn == 0 && _canEditPlaylist) {
           // Go to drag handle (column 1)
-          setState(() => _focusedColumn = 1);
+          _focusedColumn = 1;
+          _notifyFocusChanged();
           return KeyEventResult.handled;
         } else if (_focusedColumn == 2) {
           // Go back to content
-          setState(() => _focusedColumn = 0);
+          _focusedColumn = 0;
+          _notifyFocusChanged();
           return KeyEventResult.handled;
         }
       }
@@ -647,11 +662,13 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         // Navigate right within columns
         if (_focusedColumn == 0 && _canEditPlaylist) {
           // Go to remove button (column 2)
-          setState(() => _focusedColumn = 2);
+          _focusedColumn = 2;
+          _notifyFocusChanged();
           return KeyEventResult.handled;
         } else if (_focusedColumn == 1) {
           // Go to content from drag handle
-          setState(() => _focusedColumn = 0);
+          _focusedColumn = 0;
+          _notifyFocusChanged();
           return KeyEventResult.handled;
         }
       }
@@ -806,32 +823,35 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
-        // Check keyboard mode directly to ensure we get latest value
-        final inKeyboardMode = InputModeTracker.isKeyboardMode(context);
-        final isFocused = inKeyboardMode && index == _focusedIndex && !isAppBarFocused;
-        final isMoving = index == _movingIndex;
-
-        // Both backends populate playlistItemId in playlist responses; the
-        // backend prefix avoids collisions if the same numeric/uuid string
-        // ever shows up across servers in the same key namespace.
         final keyId = switch (item) {
           PlexMediaItem(:final playlistItemId?) => 'p:$playlistItemId',
           JellyfinMediaItem(:final playlistItemId?) => 'j:$playlistItemId',
           _ => item.id,
         };
-        return RepaintBoundary(
+        return ListenableSelector<(bool, int?, bool)>(
           key: ValueKey(keyId),
-          child: PlaylistItemCard(
-            item: item,
-            index: index,
-            onRemove: () => _removeItem(index),
-            onTap: () => _playFromItem(index),
-            onRefresh: updateItem,
-            canReorder: _canEditPlaylist,
-            isFocused: isFocused,
-            focusedColumn: isFocused ? _focusedColumn : null,
-            isMoving: isMoving,
-          ),
+          listenable: _focusRevision,
+          selector: () {
+            final focused = index == _focusedIndex && !isAppBarFocused;
+            return (focused, focused ? _focusedColumn : null, index == _movingIndex);
+          },
+          builder: (context, focusState, _) {
+            final inKeyboardMode = InputModeTracker.isKeyboardMode(context);
+            final isFocused = inKeyboardMode && focusState.$1;
+            return RepaintBoundary(
+              child: PlaylistItemCard(
+                item: item,
+                index: index,
+                onRemove: () => _removeItem(index),
+                onTap: () => _playFromItem(index),
+                onRefresh: updateItem,
+                canReorder: _canEditPlaylist,
+                isFocused: isFocused,
+                focusedColumn: isFocused ? focusState.$2 : null,
+                isMoving: focusState.$3,
+              ),
+            );
+          },
         );
       },
     );

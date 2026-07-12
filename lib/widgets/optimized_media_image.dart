@@ -201,15 +201,18 @@ class OptimizedMediaImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final localFile = localFilePath != null ? File(localFilePath!) : null;
-    final hasLocal = localFile != null && localFile.existsSync();
+    final path = localFilePath;
+    if (path == null) return _buildResolved(context, null);
+    return _ResolvedLocalFile(path: path, builder: _buildResolved);
+  }
 
-    // No local file and no network path → fallback
+  Widget _buildResolved(BuildContext context, File? localFile) {
+    final hasLocal = localFile != null;
+
     if (!hasLocal && (imagePath == null || imagePath!.isEmpty)) {
       return _buildFallback(context);
     }
 
-    // Fast path: skip LayoutBuilder when both dimensions are explicitly known
     if (_hasKnownDimensions) {
       return blurArtwork(
         hasLocal
@@ -508,4 +511,50 @@ class _FadeInNetworkImageState extends State<_FadeInNetworkImage> with SingleTic
       },
     );
   }
+}
+
+class _ResolvedLocalFile extends StatefulWidget {
+  const _ResolvedLocalFile({required this.path, required this.builder});
+
+  final String path;
+  final Widget Function(BuildContext context, File? file) builder;
+
+  @override
+  State<_ResolvedLocalFile> createState() => _ResolvedLocalFileState();
+}
+
+class _ResolvedLocalFileState extends State<_ResolvedLocalFile> {
+  File? _file;
+  int _generation = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolve();
+  }
+
+  @override
+  void didUpdateWidget(_ResolvedLocalFile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.path != widget.path) _resolve();
+  }
+
+  void _resolve() {
+    final generation = ++_generation;
+    _file = null;
+    final candidate = File(widget.path);
+    candidate.exists().then((exists) {
+      if (!mounted || generation != _generation) return;
+      setState(() => _file = exists ? candidate : null);
+    });
+  }
+
+  @override
+  void dispose() {
+    ++_generation;
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.builder(context, _file);
 }

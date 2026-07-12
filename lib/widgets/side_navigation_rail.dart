@@ -63,7 +63,6 @@ class NavigationRailItem extends StatelessWidget {
   final Widget? iconWidget;
   final Widget label;
   final bool isSelected;
-  final bool isFocused;
   final bool isCollapsed;
   final bool useSimpleLayout;
   final VoidCallback onTap;
@@ -84,7 +83,6 @@ class NavigationRailItem extends StatelessWidget {
     this.iconWidget,
     required this.label,
     required this.isSelected,
-    required this.isFocused,
     this.isCollapsed = false,
     this.useSimpleLayout = false,
     required this.onTap,
@@ -102,71 +100,77 @@ class NavigationRailItem extends StatelessWidget {
     final t = tokens(context);
     final showSelectedBackground = isSelected && !suppressSelectedBackground;
 
-    return Focus(
-      focusNode: focusNode,
-      autofocus: autofocus,
-      onKeyEvent: (node, event) {
-        if (event is! KeyDownEvent) return KeyEventResult.ignored;
-        if (event.logicalKey.isSelectKey) {
-          onTap();
-          return KeyEventResult.handled;
-        }
-        if (event.logicalKey == LogicalKeyboardKey.arrowRight && onNavigateRight != null) {
-          onNavigateRight!();
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          canRequestFocus: false,
-          onTap: onTap,
-          borderRadius: borderRadius,
-          child: Container(
-            decoration: BoxDecoration(
-              color: () {
-                if (isCollapsed) return isFocused ? t.text.withValues(alpha: 0.12) : null;
-                if (isFocused) return t.text.withValues(alpha: showSelectedBackground ? 0.15 : 0.12);
-                if (showSelectedBackground) return t.text.withValues(alpha: 0.1);
-                return null;
-              }(),
+    return ListenableBuilder(
+      listenable: focusNode,
+      builder: (context, _) {
+        final focused = focusNode.hasFocus;
+        return Focus(
+          focusNode: focusNode,
+          autofocus: autofocus,
+          onKeyEvent: (node, event) {
+            if (event is! KeyDownEvent) return KeyEventResult.ignored;
+            if (event.logicalKey.isSelectKey) {
+              onTap();
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.arrowRight && onNavigateRight != null) {
+              onNavigateRight!();
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
+          },
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              canRequestFocus: false,
+              onTap: onTap,
               borderRadius: borderRadius,
-            ),
-            clipBehavior: Clip.hardEdge,
-            child: UnconstrainedBox(
-              alignment: .centerLeft,
-              constrainedAxis: Axis.vertical,
-              clipBehavior: Clip.hardEdge,
-              child: SizedBox(
-                width: SideNavigationRailState.expandedWidth - 24,
-                child: Padding(
-                  padding: .symmetric(vertical: 12, horizontal: horizontalPadding),
-                  child: Row(
-                    children: [
-                      iconWidget ??
-                          AppIcon(
-                            isSelected && selectedIcon != null ? selectedIcon! : icon,
-                            fill: 1,
-                            size: iconSize,
-                            color: isSelected ? t.text : t.textMuted,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: () {
+                    if (isCollapsed) return focused ? t.text.withValues(alpha: 0.12) : null;
+                    if (focused) return t.text.withValues(alpha: showSelectedBackground ? 0.15 : 0.12);
+                    if (showSelectedBackground) return t.text.withValues(alpha: 0.1);
+                    return null;
+                  }(),
+                  borderRadius: borderRadius,
+                ),
+                clipBehavior: Clip.hardEdge,
+                child: UnconstrainedBox(
+                  alignment: .centerLeft,
+                  constrainedAxis: Axis.vertical,
+                  clipBehavior: Clip.hardEdge,
+                  child: SizedBox(
+                    width: SideNavigationRailState.expandedWidth - 24,
+                    child: Padding(
+                      padding: .symmetric(vertical: 12, horizontal: horizontalPadding),
+                      child: Row(
+                        children: [
+                          iconWidget ??
+                              AppIcon(
+                                isSelected && selectedIcon != null ? selectedIcon! : icon,
+                                fill: 1,
+                                size: iconSize,
+                                color: isSelected ? t.text : t.textMuted,
+                              ),
+                          const SizedBox(width: 11),
+                          Expanded(
+                            child: () {
+                              if (useSimpleLayout) return label;
+                              final opacity = isCollapsed ? 0.0 : 1.0;
+                              return AnimatedOpacity(opacity: opacity, duration: t.fast, child: label);
+                            }(),
                           ),
-                      const SizedBox(width: 11),
-                      Expanded(
-                        child: () {
-                          if (useSimpleLayout) return label;
-                          final opacity = isCollapsed ? 0.0 : 1.0;
-                          return AnimatedOpacity(opacity: opacity, duration: t.fast, child: label);
-                        }(),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -274,13 +278,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   @override
   void initState() {
     super.initState();
-    _focusTracker = FocusMemoryTracker(
-      onFocusChanged: () {
-        // ignore: no-empty-block - setState triggers rebuild to update focus styling
-        setStateIfMounted(() {});
-      },
-      debugLabelPrefix: 'nav',
-    );
+    _focusTracker = FocusMemoryTracker(debugLabelPrefix: 'nav');
   }
 
   @override
@@ -741,7 +739,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                                       selectedIcon: Symbols.home_rounded,
                                       label: Translations.of(context).common.home,
                                       isSelected: widget.selectedTab == NavigationTabId.discover,
-                                      isFocused: _focusTracker.isFocused(_kHome),
                                       onTap: () => widget.onDestinationSelected(NavigationTabId.discover),
                                       focusNode: _focusTracker.get(_kHome),
                                       isCollapsed: isCollapsed,
@@ -767,7 +764,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                                         selectedIcon: Symbols.live_tv_rounded,
                                         label: Translations.of(context).navigation.liveTv,
                                         isSelected: widget.selectedTab == NavigationTabId.liveTv,
-                                        isFocused: _focusTracker.isFocused('liveTv'),
                                         onTap: () => widget.onDestinationSelected(NavigationTabId.liveTv),
                                         focusNode: _focusTracker.get('liveTv'),
                                         isCollapsed: isCollapsed,
@@ -780,7 +776,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                                         selectedIcon: Symbols.explore_rounded,
                                         label: Translations.of(context).navigation.explore,
                                         isSelected: widget.selectedTab == NavigationTabId.explore,
-                                        isFocused: _focusTracker.isFocused(_kExplore),
                                         onTap: () => widget.onDestinationSelected(NavigationTabId.explore),
                                         focusNode: _focusTracker.get(_kExplore),
                                         isCollapsed: isCollapsed,
@@ -792,7 +787,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                                       selectedIcon: Symbols.search_rounded,
                                       label: Translations.of(context).common.search,
                                       isSelected: widget.selectedTab == NavigationTabId.search,
-                                      isFocused: _focusTracker.isFocused(_kSearch),
                                       onTap: () => widget.onDestinationSelected(NavigationTabId.search),
                                       focusNode: _focusTracker.get(_kSearch),
                                       isCollapsed: isCollapsed,
@@ -807,7 +801,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                                       selectedIcon: Symbols.download_rounded,
                                       label: Translations.of(context).navigation.downloads,
                                       isSelected: widget.selectedTab == NavigationTabId.downloads,
-                                      isFocused: _focusTracker.isFocused(_kDownloads),
                                       onTap: () => widget.onDestinationSelected(NavigationTabId.downloads),
                                       focusNode: _focusTracker.get(_kDownloads),
                                       isCollapsed: isCollapsed,
@@ -819,7 +812,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                                     selectedIcon: Symbols.settings_rounded,
                                     label: Translations.of(context).common.settings,
                                     isSelected: widget.selectedTab == NavigationTabId.settings,
-                                    isFocused: _focusTracker.isFocused(_kSettings),
                                     onTap: () => widget.onDestinationSelected(NavigationTabId.settings),
                                     focusNode: _focusTracker.get(_kSettings),
                                     isCollapsed: isCollapsed,
@@ -851,7 +843,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     required IconData selectedIcon,
     required String label,
     required bool isSelected,
-    required bool isFocused,
     required VoidCallback onTap,
     required FocusNode focusNode,
     required bool isCollapsed,
@@ -874,7 +865,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         maxLines: 1,
       ),
       isSelected: isSelected,
-      isFocused: isFocused,
       isCollapsed: isCollapsed,
       onTap: onTap,
       focusNode: focusNode,
@@ -919,7 +909,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         ],
       ),
       isSelected: false,
-      isFocused: _focusTracker.isFocused(_kNowPlaying),
       isCollapsed: isCollapsed,
       useSimpleLayout: true,
       onTap: () => unawaited(openNowPlaying(context)),
@@ -931,7 +920,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
 
   Widget _buildReconnectItem({required bool isCollapsed}) {
     final t = tokens(context);
-    final isFocused = _focusTracker.isFocused(_kReconnect);
     final itemHorizontalPadding = itemHorizontalPaddingForContext(context, isCollapsed: isCollapsed);
 
     return NavigationRailItem(
@@ -945,7 +933,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
               maxLines: 1,
             ),
       isSelected: false,
-      isFocused: isFocused,
       isCollapsed: isCollapsed,
       // ignore: no-empty-block - no-op tap handler while reconnecting
       onTap: widget.isReconnecting ? () {} : () => widget.onReconnect?.call(),
@@ -958,7 +945,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   Widget _buildFullscreenItem({required bool isCollapsed}) {
     final t = tokens(context);
     final isFullscreen = FullscreenStateManager().isFullscreen;
-    final isFocused = _focusTracker.isFocused(_kFullscreen);
     final itemHorizontalPadding = itemHorizontalPaddingForContext(context, isCollapsed: isCollapsed);
 
     return NavigationRailItem(
@@ -970,7 +956,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         maxLines: 1,
       ),
       isSelected: false,
-      isFocused: isFocused,
       isCollapsed: isCollapsed,
       onTap: () => unawaited(FullscreenStateManager().toggleFullscreen()),
       focusNode: _focusTracker.get(_kFullscreen),
@@ -990,95 +975,98 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final librariesProvider = context.watch<LibrariesProvider>();
     final isLoading = librariesProvider.isLoading;
     final isLibrariesSelected = widget.selectedTab == NavigationTabId.libraries && widget.selectedLibraryKey == null;
-    final isLibrariesFocused = _focusTracker.isFocused(_kLibraries);
+    final librariesFocusNode = _focusTracker.get(_kLibraries);
     final showLibrariesSelectedBackground = isLibrariesSelected && !widget.isSidebarFocused;
     final allEmpty = visibleRows.isEmpty && hiddenLibraryCount == 0;
 
     return Column(
       crossAxisAlignment: .start,
       children: [
-        Focus(
-          focusNode: _focusTracker.get(_kLibraries),
-          onKeyEvent: (node, event) {
-            if (event is! KeyDownEvent) return KeyEventResult.ignored;
-            if (event.logicalKey.isSelectKey) {
-              setState(() {
-                _librariesExpanded = !_librariesExpanded;
-              });
-              return KeyEventResult.handled;
-            }
-            // RIGHT arrow navigates to content area
-            if (event.logicalKey == LogicalKeyboardKey.arrowRight && widget.onNavigateToContent != null) {
-              widget.onNavigateToContent!();
-              return KeyEventResult.handled;
-            }
-            return KeyEventResult.ignored;
-          },
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              canRequestFocus: false,
-              onTap: () {
+        ListenableBuilder(
+          listenable: librariesFocusNode,
+          builder: (context, _) => Focus(
+            focusNode: librariesFocusNode,
+            onKeyEvent: (node, event) {
+              if (event is! KeyDownEvent) return KeyEventResult.ignored;
+              if (event.logicalKey.isSelectKey) {
                 setState(() {
                   _librariesExpanded = !_librariesExpanded;
                 });
-              },
-              borderRadius: BorderRadius.circular(tokens(context).radiusMd),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: () {
-                    if (isCollapsed) return isLibrariesFocused ? t.text.withValues(alpha: 0.08) : null;
-                    if (showLibrariesSelectedBackground) return t.text.withValues(alpha: 0.1);
-                    if (isLibrariesFocused) return t.text.withValues(alpha: 0.08);
-                    return null;
-                  }(),
-                  borderRadius: BorderRadius.circular(tokens(context).radiusMd),
-                ),
-                clipBehavior: Clip.hardEdge,
-                child: UnconstrainedBox(
-                  alignment: .centerLeft,
-                  constrainedAxis: Axis.vertical,
+                return KeyEventResult.handled;
+              }
+              // RIGHT arrow navigates to content area
+              if (event.logicalKey == LogicalKeyboardKey.arrowRight && widget.onNavigateToContent != null) {
+                widget.onNavigateToContent!();
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+            },
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                canRequestFocus: false,
+                onTap: () {
+                  setState(() {
+                    _librariesExpanded = !_librariesExpanded;
+                  });
+                },
+                borderRadius: BorderRadius.circular(tokens(context).radiusMd),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: () {
+                      if (isCollapsed) return librariesFocusNode.hasFocus ? t.text.withValues(alpha: 0.08) : null;
+                      if (showLibrariesSelectedBackground) return t.text.withValues(alpha: 0.1);
+                      if (librariesFocusNode.hasFocus) return t.text.withValues(alpha: 0.08);
+                      return null;
+                    }(),
+                    borderRadius: BorderRadius.circular(tokens(context).radiusMd),
+                  ),
                   clipBehavior: Clip.hardEdge,
-                  child: SizedBox(
-                    width: expandedWidth - 24,
-                    child: Padding(
-                      padding: .symmetric(vertical: 12, horizontal: itemHorizontalPadding),
-                      child: Row(
-                        children: [
-                          AppIcon(
-                            Symbols.video_library_rounded,
-                            fill: 1,
-                            size: 22,
-                            color: widget.selectedTab == NavigationTabId.libraries ? t.text : t.textMuted,
-                          ),
-                          const SizedBox(width: 11),
-                          Expanded(
-                            child: AnimatedOpacity(
-                              opacity: isCollapsed ? 0.0 : 1.0,
-                              duration: tokens(context).fast,
-                              child: Text(
-                                Translations.of(context).navigation.libraries,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: widget.selectedTab == NavigationTabId.libraries
-                                      ? FontWeight.w600
-                                      : FontWeight.w400,
-                                  color: widget.selectedTab == NavigationTabId.libraries ? t.text : t.textMuted,
+                  child: UnconstrainedBox(
+                    alignment: .centerLeft,
+                    constrainedAxis: Axis.vertical,
+                    clipBehavior: Clip.hardEdge,
+                    child: SizedBox(
+                      width: expandedWidth - 24,
+                      child: Padding(
+                        padding: .symmetric(vertical: 12, horizontal: itemHorizontalPadding),
+                        child: Row(
+                          children: [
+                            AppIcon(
+                              Symbols.video_library_rounded,
+                              fill: 1,
+                              size: 22,
+                              color: widget.selectedTab == NavigationTabId.libraries ? t.text : t.textMuted,
+                            ),
+                            const SizedBox(width: 11),
+                            Expanded(
+                              child: AnimatedOpacity(
+                                opacity: isCollapsed ? 0.0 : 1.0,
+                                duration: tokens(context).fast,
+                                child: Text(
+                                  Translations.of(context).navigation.libraries,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: widget.selectedTab == NavigationTabId.libraries
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                    color: widget.selectedTab == NavigationTabId.libraries ? t.text : t.textMuted,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          AnimatedOpacity(
-                            opacity: isCollapsed ? 0.0 : 1.0,
-                            duration: tokens(context).fast,
-                            child: AppIcon(
-                              _librariesExpanded ? Symbols.expand_less_rounded : Symbols.expand_more_rounded,
-                              fill: 1,
-                              size: 20,
-                              color: t.textMuted,
+                            AnimatedOpacity(
+                              opacity: isCollapsed ? 0.0 : 1.0,
+                              duration: tokens(context).fast,
+                              child: AppIcon(
+                                _librariesExpanded ? Symbols.expand_less_rounded : Symbols.expand_more_rounded,
+                                fill: 1,
+                                size: 20,
+                                color: t.textMuted,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -1223,56 +1211,62 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     required VoidCallback onToggle,
     required dynamic t,
   }) {
-    final isFocused = _focusTracker.isFocused(focusKey);
+    final focusNode = _focusTracker.get(focusKey);
     final radius = BorderRadius.circular(tokens(context).radiusSm);
     // Match library-item indent: outer Padding(left: 12) + inner horizontal 17.
     return Padding(
       padding: const EdgeInsets.only(left: 12),
-      child: Focus(
-        focusNode: _focusTracker.get(focusKey),
-        onKeyEvent: (node, event) {
-          if (event is! KeyDownEvent) return KeyEventResult.ignored;
-          if (event.logicalKey.isSelectKey) {
-            onToggle();
-            return KeyEventResult.handled;
-          }
-          if (event.logicalKey == LogicalKeyboardKey.arrowRight && widget.onNavigateToContent != null) {
-            widget.onNavigateToContent!();
-            return KeyEventResult.handled;
-          }
-          return KeyEventResult.ignored;
-        },
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            canRequestFocus: false,
-            onTap: onToggle,
-            borderRadius: radius,
-            child: Container(
-              decoration: BoxDecoration(color: isFocused ? t.text.withValues(alpha: 0.08) : null, borderRadius: radius),
-              clipBehavior: Clip.hardEdge,
-              child: UnconstrainedBox(
-                alignment: .centerLeft,
-                constrainedAxis: Axis.vertical,
+      child: ListenableBuilder(
+        listenable: focusNode,
+        builder: (context, _) => Focus(
+          focusNode: focusNode,
+          onKeyEvent: (node, event) {
+            if (event is! KeyDownEvent) return KeyEventResult.ignored;
+            if (event.logicalKey.isSelectKey) {
+              onToggle();
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.arrowRight && widget.onNavigateToContent != null) {
+              widget.onNavigateToContent!();
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
+          },
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              canRequestFocus: false,
+              onTap: onToggle,
+              borderRadius: radius,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: focusNode.hasFocus ? t.text.withValues(alpha: 0.08) : null,
+                  borderRadius: radius,
+                ),
                 clipBehavior: Clip.hardEdge,
-                child: SizedBox(
-                  width: expandedWidth - 24,
-                  child: Padding(
-                    padding: .symmetric(vertical: verticalPadding, horizontal: 17),
-                    child: Row(
-                      children: [
-                        leading ?? AppIcon(icon, fill: 1, size: iconSize, color: t.textMuted),
-                        const SizedBox(width: 11),
-                        Expanded(
-                          child: Text(label, style: labelStyle, overflow: .ellipsis),
-                        ),
-                        AppIcon(
-                          isExpanded ? Symbols.expand_less_rounded : Symbols.expand_more_rounded,
-                          fill: 1,
-                          size: 16,
-                          color: t.textMuted,
-                        ),
-                      ],
+                child: UnconstrainedBox(
+                  alignment: .centerLeft,
+                  constrainedAxis: Axis.vertical,
+                  clipBehavior: Clip.hardEdge,
+                  child: SizedBox(
+                    width: expandedWidth - 24,
+                    child: Padding(
+                      padding: .symmetric(vertical: verticalPadding, horizontal: 17),
+                      child: Row(
+                        children: [
+                          leading ?? AppIcon(icon, fill: 1, size: iconSize, color: t.textMuted),
+                          const SizedBox(width: 11),
+                          Expanded(
+                            child: Text(label, style: labelStyle, overflow: .ellipsis),
+                          ),
+                          AppIcon(
+                            isExpanded ? Symbols.expand_less_rounded : Symbols.expand_more_rounded,
+                            fill: 1,
+                            size: 16,
+                            color: t.textMuted,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -1288,7 +1282,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final isSelected =
         widget.selectedTab == NavigationTabId.libraries && widget.selectedLibraryKey == library.globalKey;
     final focusKey = _libraryItemFocusKey(section, library);
-    final isFocused = _focusTracker.isFocused(focusKey);
     final focusNode = _focusTracker.get(focusKey);
 
     return Padding(
@@ -1318,7 +1311,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           ],
         ),
         isSelected: isSelected,
-        isFocused: isFocused,
         useSimpleLayout: true,
         onTap: () => widget.onLibrarySelected(library.globalKey),
         focusNode: focusNode,

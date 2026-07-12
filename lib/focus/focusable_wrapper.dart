@@ -347,17 +347,22 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     final key = event.logicalKey;
+    final diagnosticsEnabled = TextInputDiagnostics.enabled;
     KeyEventResult finish(KeyEventResult result, String reason) {
-      _logFocusableWrapper(
-        'node=${node.debugLabel} result=$result reason=$reason key=(${_describeFocusableKey(event)}) '
-        'onNav(up=${widget.onNavigateUp != null},down=${widget.onNavigateDown != null},'
-        'left=${widget.onNavigateLeft != null},right=${widget.onNavigateRight != null}) '
-        'onSelect=${widget.onSelect != null} onBack=${widget.onBack != null}',
-      );
+      if (diagnosticsEnabled) {
+        _logFocusableWrapper(
+          'node=${node.debugLabel} result=$result reason=$reason key=(${_describeFocusableKey(event)}) '
+          'onNav(up=${widget.onNavigateUp != null},down=${widget.onNavigateDown != null},'
+          'left=${widget.onNavigateLeft != null},right=${widget.onNavigateRight != null}) '
+          'onSelect=${widget.onSelect != null} onBack=${widget.onBack != null}',
+        );
+      }
       return result;
     }
 
-    _logFocusableWrapper('node=${node.debugLabel} received key=(${_describeFocusableKey(event)})');
+    if (diagnosticsEnabled) {
+      _logFocusableWrapper('node=${node.debugLabel} received key=(${_describeFocusableKey(event)})');
+    }
 
     if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
       if (event is KeyUpEvent && key.isSelectKey) {

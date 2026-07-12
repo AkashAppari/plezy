@@ -149,7 +149,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
     if (mounted && hasItems) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        if (InputModeTracker.isKeyboardMode(context)) {
+        if (InputModeTracker.isKeyboardMode(context, listen: false)) {
           setState(() {
             isAppBarFocused = false;
           });

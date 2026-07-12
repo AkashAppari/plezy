@@ -126,6 +126,7 @@ class _AlphaScrollHandleState extends State<AlphaScrollHandle> with SingleTicker
     _dragFraction = newFraction;
 
     final letter = _helper.letterAtFraction(newFraction);
+    if (letter == _dragLetter) return;
 
     setState(() => _dragLetter = letter);
     widget.onJump(_helper.indexForLetter(letter) ?? 0);

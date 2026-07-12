@@ -32,14 +32,20 @@ class InputModeTracker extends StatefulWidget {
   const InputModeTracker({super.key, required this.child});
 
   /// Get the current input mode.
-  static InputMode of(BuildContext context) {
-    final provider = context.dependOnInheritedWidgetOfExactType<_InputModeProvider>();
+  ///
+  /// Set [listen] to false for event handlers and post-frame callbacks that
+  /// only need a one-shot value. Those reads must not subscribe their owning
+  /// screen to future input-mode changes.
+  static InputMode of(BuildContext context, {bool listen = true}) {
+    final provider = listen
+        ? context.dependOnInheritedWidgetOfExactType<_InputModeProvider>()
+        : context.getInheritedWidgetOfExactType<_InputModeProvider>();
     return provider?.mode ?? InputMode.pointer;
   }
 
   /// Convenience method to check if we're in keyboard mode.
-  static bool isKeyboardMode(BuildContext context) {
-    return of(context) == InputMode.keyboard;
+  static bool isKeyboardMode(BuildContext context, {bool listen = true}) {
+    return of(context, listen: listen) == InputMode.keyboard;
   }
 
   /// Whether system back must be blocked because the dpad key handler owns

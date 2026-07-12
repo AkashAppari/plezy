@@ -64,7 +64,7 @@ class _FocusedScrollScaffoldState extends State<FocusedScrollScaffold> {
   }
 
   void _requestInitialFocus() {
-    if (_focusRequested || !mounted || !InputModeTracker.isKeyboardMode(context)) return;
+    if (_focusRequested || !mounted || !InputModeTracker.isKeyboardMode(context, listen: false)) return;
     _focusRequested = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;

@@ -111,7 +111,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
   @override
   void focusActiveTabIfReady() {
-    if (InputModeTracker.isKeyboardMode(context)) {
+    if (InputModeTracker.isKeyboardMode(context, listen: false)) {
       _focusTracker.restoreFocus(fallbackKey: DonationService.isEnabled ? _kDonate : _kAppearance);
     }
   }

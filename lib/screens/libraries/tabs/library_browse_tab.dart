@@ -1434,8 +1434,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     // MediaQuery (not the absorber handle) avoids rebuilding during layout —
     // listening to the handle from a builder fires notifyListeners during the
     // build phase and triggers a setState-in-build assertion.
-    final media = MediaQuery.of(context);
-    final overlayTopPadding = media.padding.top + kToolbarHeight;
+    final overlayTopPadding = MediaQuery.paddingOf(context).top + kToolbarHeight;
 
     return Stack(
       children: [

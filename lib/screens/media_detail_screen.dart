@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import '../navigation/profile_navigation_scope.dart';
 import '../services/device_performance.dart';
 import '../services/image_cache_service.dart';
+import '../services/fullscreen_state_manager.dart';
 import 'package:flutter/services.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -358,6 +359,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   // Locked focus pattern for extras
   int _focusedExtraIndex = 0;
+  final ValueNotifier<int> _focusedExtraIndexNotifier = ValueNotifier<int>(0);
   late final FocusNode _extrasFocusNode;
   final Map<int, GlobalKey<MediaCardState>> _extraCardKeys = {};
   final _extrasSectionKey = GlobalKey();
@@ -368,6 +370,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   // Locked focus pattern for cast
   int _focusedCastIndex = 0;
+  final ValueNotifier<int> _focusedCastIndexNotifier = ValueNotifier<int>(0);
   late final FocusNode _castFocusNode;
   final ScrollController _castScrollController = ScrollController();
   final _castSectionKey = GlobalKey();
@@ -853,10 +856,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _extrasScrollController.dispose();
     _extrasFocusNode.removeListener(_handleExtrasFocusChange);
     _extrasFocusNode.dispose();
+    _focusedExtraIndexNotifier.dispose();
     _playButtonFocusNode.dispose();
     _ratingChipFocusNode.dispose();
     _overviewFocusNode.dispose();
     _castFocusNode.dispose();
+    _focusedCastIndexNotifier.dispose();
     _infoRowsFocusNode.dispose();
     _castScrollController.dispose();
     _extrasSelectLongPress.dispose();
@@ -2441,7 +2446,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     // LEFT: previous extra
     if (key.isLeftKey) {
       if (_focusedExtraIndex > 0) {
-        setState(() => _focusedExtraIndex--);
+        _focusedExtraIndex--;
+        _focusedExtraIndexNotifier.value = _focusedExtraIndex;
         scrollListToIndex(
           _extrasScrollController,
           _focusedExtraIndex,
@@ -2455,7 +2461,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     // RIGHT: next extra
     if (key.isRightKey) {
       if (_focusedExtraIndex < _extras!.length - 1) {
-        setState(() => _focusedExtraIndex++);
+        _focusedExtraIndex++;
+        _focusedExtraIndexNotifier.value = _focusedExtraIndex;
         scrollListToIndex(
           _extrasScrollController,
           _focusedExtraIndex,
@@ -2504,7 +2511,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     // LEFT: previous cast member
     if (key.isLeftKey) {
       if (_focusedCastIndex > 0) {
-        setState(() => _focusedCastIndex--);
+        _focusedCastIndex--;
+        _focusedCastIndexNotifier.value = _focusedCastIndex;
         scrollListToIndex(
           _castScrollController,
           _focusedCastIndex,
@@ -2518,7 +2526,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     // RIGHT: next cast member
     if (key.isRightKey) {
       if (_focusedCastIndex < roleCount - 1) {
-        setState(() => _focusedCastIndex++);
+        _focusedCastIndex++;
+        _focusedCastIndexNotifier.value = _focusedCastIndex;
         scrollListToIndex(
           _castScrollController,
           _focusedCastIndex,
@@ -2978,7 +2987,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final render = tailContext.findRenderObject();
     if (render is! RenderBox || !render.hasSize) return;
     final tailTop = render.localToGlobal(Offset.zero).dy;
-    final viewportHeight = MediaQuery.of(context).size.height;
+    final viewportHeight = MediaQuery.sizeOf(context).height;
     // Prefetch once the tail is within ~one viewport of the visible bottom.
     if (tailTop <= viewportHeight * 2) unawaited(_loadMoreEpisodeList());
   }
@@ -3151,14 +3160,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         style: BackButtonStyle.plain,
         onPressed: () => Navigator.pop(context, _watchStateChanged),
       );
-      final loading = Focus(
-        onKeyEvent: _handleMediaDetailBackKey,
-        child: Scaffold(
-          appBar: AppBar(
-            leading: DesktopAppBarSections.buildLeadingSection(leading: backButton, context: context),
-            leadingWidth: DesktopAppBarSections.calculateLeadingWidthForSection(leading: backButton, context: context),
+      final loading = ListenableBuilder(
+        listenable: FullscreenStateManager(),
+        builder: (context, _) => Focus(
+          onKeyEvent: _handleMediaDetailBackKey,
+          child: Scaffold(
+            appBar: AppBar(
+              leading: DesktopAppBarSections.buildLeadingSection(leading: backButton, context: context),
+              leadingWidth: DesktopAppBarSections.calculateLeadingWidthForSection(
+                leading: backButton,
+                context: context,
+              ),
+            ),
+            body: const Center(child: CircularProgressIndicator()),
           ),
-          body: const Center(child: CircularProgressIndicator()),
         ),
       );
       final blockSystemBack = InputModeTracker.shouldBlockSystemBack(context);
@@ -4488,7 +4503,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       focusNode: _castFocusNode,
       onKeyEvent: _handleCastKeyEvent,
       child: ListenableBuilder(
-        listenable: _castFocusNode,
+        listenable: Listenable.merge([_castFocusNode, _focusedCastIndexNotifier]),
         builder: (context, _) => CastMemberStrip(
           members: [for (final actor in roles) (name: actor.tag, secondary: actor.role, imagePath: actor.thumbPath)],
           imageClient: getServerBoundMediaClient(context),
@@ -4517,7 +4532,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       focusNode: _extrasFocusNode,
       onKeyEvent: _handleExtrasKeyEvent,
       child: ListenableBuilder(
-        listenable: _extrasFocusNode,
+        listenable: Listenable.merge([_extrasFocusNode, _focusedExtraIndexNotifier]),
         builder: (context, _) {
           final hasFocus = _extrasFocusNode.hasFocus;
 
