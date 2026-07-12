@@ -101,17 +101,29 @@ void main() {
               {'start': 1, 'end': 9.25},
             ],
           });
+          await sendObservation('audio-device-list', const [
+            {'name': 'speakers', 'description': 'Main speakers'},
+          ]);
 
           expect(player.state.tracks.audio.single.id, '7');
           expect(player.state.tracks.audio.single.title, 'Main');
           expect(player.state.buffer, const Duration(milliseconds: 12500));
           expect(player.state.bufferRanges.single.start, const Duration(seconds: 1));
           expect(player.state.bufferRanges.single.end, const Duration(milliseconds: 9250));
+          expect(player.state.audioDevices.single.name, 'speakers');
 
           // Unsupported mpv_node formats cross the native bridge as null and
           // must not erase the last valid structured observation.
-          await sendObservation('track-list', null);
-          expect(player.state.tracks.audio.single.id, '7');
+          for (final invalid in [null, '{not-json', 42]) {
+            await sendObservation('track-list', invalid);
+            await sendObservation('demuxer-cache-state', invalid);
+            await sendObservation('audio-device-list', invalid);
+
+            expect(player.state.tracks.audio.single.id, '7');
+            expect(player.state.buffer, const Duration(milliseconds: 12500));
+            expect(player.state.bufferRanges.single.end, const Duration(milliseconds: 9250));
+            expect(player.state.audioDevices.single.name, 'speakers');
+          }
         } finally {
           await player.dispose();
         }

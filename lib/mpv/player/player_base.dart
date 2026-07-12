@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
@@ -11,6 +10,7 @@ import '../../utils/app_logger.dart';
 import '../../utils/track_label_builder.dart';
 import '../font_loader.dart';
 import '../models.dart';
+import 'mpv_node_decoder.dart';
 import 'player.dart';
 import 'player_state.dart';
 import 'player_stream_controllers.dart';
@@ -258,17 +258,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         break;
 
       case 'track-list':
-        List? trackList;
-        if (value is List) {
-          trackList = value;
-        } else if (value is String && value.isNotEmpty) {
-          try {
-            final parsed = jsonDecode(value);
-            if (parsed is List) trackList = parsed;
-          } catch (e) {
-            appLogger.d('Player: track-list parse failed', error: e);
-          }
-        }
+        final trackList = MpvNodeDecoder.decodeList(value);
         if (trackList != null) {
           final result = parseTrackList(trackList);
           _state = _state.copyWith(tracks: result.tracks);
@@ -298,17 +288,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         break;
 
       case 'audio-device-list':
-        List? deviceList;
-        if (value is List) {
-          deviceList = value;
-        } else if (value is String && value.isNotEmpty) {
-          try {
-            final parsed = jsonDecode(value);
-            if (parsed is List) deviceList = parsed;
-          } catch (e) {
-            appLogger.d('Player: device-list parse failed', error: e);
-          }
-        }
+        final deviceList = MpvNodeDecoder.decodeList(value);
         if (deviceList != null) {
           final devices = deviceList
               .whereType<Map>()
@@ -331,19 +311,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   /// Parse demuxer-cache-state property to extract seekable ranges and buffer end.
   void _handleDemuxerCacheState(dynamic value) {
-    Map? cacheState;
-    if (value is Map) {
-      cacheState = value;
-    } else if (value is String && value.isNotEmpty) {
+    if (value is String && value.isNotEmpty) {
       // Throttle JSON parsing to avoid ANR on low-end devices
       final nowMs = _throttleSw.elapsedMilliseconds;
       if (nowMs - _lastCacheStateMs < 250) return;
       _lastCacheStateMs = nowMs;
-      try {
-        final parsed = jsonDecode(value);
-        if (parsed is Map) cacheState = parsed;
-      } catch (_) {}
     }
+    final cacheState = MpvNodeDecoder.decodeMap(value);
     if (cacheState == null) return;
 
     // Extract cache-end for the single buffer duration (replaces demuxer-cache-time)
