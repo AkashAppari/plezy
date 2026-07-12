@@ -19,11 +19,11 @@ class SafDocumentFile {
 
   static SafDocumentFile fromMap(Map<dynamic, dynamic> map) {
     return SafDocumentFile(
-      uri: map['uri'],
-      name: map['name'],
-      isDir: map['isDir'] ?? false,
-      length: map['length'] ?? 0,
-      lastModified: map['lastModified'] ?? 0,
+      uri: map['uri'] as String,
+      name: map['name'] as String,
+      isDir: map['isDir'] as bool? ?? false,
+      length: map['length'] as int? ?? -1,
+      lastModified: map['lastModified'] as int? ?? 0,
     );
   }
 
@@ -54,17 +54,19 @@ abstract class SafUtilPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<SafDocumentFile?> pickDirectory(
-      {String? initialUri,
-      bool? writePermission,
-      bool? persistablePermission}) {
+  Future<SafDocumentFile?> pickDirectory({
+    String? initialUri,
+    bool? writePermission,
+    bool? persistablePermission,
+  }) {
     throw UnimplementedError('pickDirectory() has not been implemented.');
   }
 
-  Future<String?> openDirectory(
-      {String? initialUri,
-      bool? writePermission,
-      bool? persistablePermission}) {
+  Future<String?> openDirectory({
+    String? initialUri,
+    bool? writePermission,
+    bool? persistablePermission,
+  }) {
     throw UnimplementedError('openDirectory() has not been implemented.');
   }
 
@@ -75,25 +77,29 @@ abstract class SafUtilPlatform extends PlatformInterface {
     throw UnimplementedError('pickFile() has not been implemented.');
   }
 
-  Future<String?> openFile({
-    String? initialUri,
-    List<String>? mimeTypes,
-  }) {
+  Future<String?> openFile({String? initialUri, List<String>? mimeTypes}) {
     throw UnimplementedError('openFile() has not been implemented.');
   }
 
   Future<List<SafDocumentFile>?> pickFiles({
     String? initialUri,
     List<String>? mimeTypes,
-    multiple = true,
+    bool multiple = true,
   }) {
     throw UnimplementedError('pickFiles() has not been implemented.');
+  }
+
+  Future<List<SafDocumentFile>?> pickMedia({
+    bool multiple = true,
+    String mode = 'all',
+  }) {
+    throw UnimplementedError('pickMedia() has not been implemented.');
   }
 
   Future<List<String>?> openFiles({
     String? initialUri,
     List<String>? mimeTypes,
-    multiple = true,
+    bool multiple = true,
   }) {
     throw UnimplementedError('openFiles() has not been implemented.');
   }
@@ -106,7 +112,7 @@ abstract class SafUtilPlatform extends PlatformInterface {
     throw UnimplementedError('documentFileFromUri() has not been implemented.');
   }
 
-  Future<SafDocumentFile?> stat(String uri, bool? isDir) {
+  Future<SafDocumentFile?> stat(String uri, bool? isDir, {bool? throws}) {
     throw UnimplementedError('stat() has not been implemented.');
   }
 
@@ -131,7 +137,11 @@ abstract class SafUtilPlatform extends PlatformInterface {
   }
 
   Future<SafDocumentFile> moveTo(
-      String uri, bool isDir, String parentUri, String newParentUri) {
+    String uri,
+    bool isDir,
+    String parentUri,
+    String newParentUri,
+  ) {
     throw UnimplementedError('moveTo() has not been implemented.');
   }
 
@@ -164,12 +174,17 @@ abstract class SafUtilPlatform extends PlatformInterface {
     bool checkWrite = false,
   }) {
     throw UnimplementedError(
-        'hasPersistedPermission() has not been implemented.');
+      'hasPersistedPermission() has not been implemented.',
+    );
   }
 
-  Future<void> releasePersistedPermission(String uri,
-      {bool read = true, bool write = false}) {
+  Future<void> releasePersistedPermission(
+    String uri, {
+    bool read = true,
+    bool write = false,
+  }) {
     throw UnimplementedError(
-        'releasePersistedPermission() has not been implemented.');
+      'releasePersistedPermission() has not been implemented.',
+    );
   }
 }

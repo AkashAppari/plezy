@@ -1,10 +1,28 @@
-## 2.0.0 (plezy vendored patch)
+## 3.1.0 (Plezy vendored patch)
 
-Vendored from pub.dev saf_util 2.0.0 with a Result-lifecycle fix:
-pending picker replies are take-and-clear (no reply to an already-answered
-Result → no "Reply already submitted" crash), unrelated activity request
-codes no longer consume the pending picker, and failed picker launches
-clear the stale pending state.
+Vendored from `flutter-cavalry/saf_util` at
+`e300a03ea34b49414b42f309e02531ece57cd0d1`. The local Result-lifecycle patch
+take-and-clears picker replies, ignores unrelated request codes, reattaches the
+listener across configuration changes, and clears state after launch failures.
+When updating, reapply those behaviors to every picker request code and run the
+Android plugin tests.
+
+## 3.1.0
+
+- Set `length` to -1 when the length is unknown, matching Android `DocumentFile.length()`.
+
+## 3.0.0
+
+- **Breaking**: Migrate to AGP 9.
+- **Breaking**: Minimum Flutter version is 3.44.0.
+
+## 2.2.0
+
+- Add `pickMedia`.
+
+## 2.1.0
+
+- Add the `throws` parameter to `stat`.
 
 ## 2.0.0
 

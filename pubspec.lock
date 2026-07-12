@@ -242,11 +242,11 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/connectivity_plus/connectivity_plus"
-      ref: "4c0d4071150481f76d753c6ce1ff325bb959b9b5"
-      resolved-ref: "4c0d4071150481f76d753c6ce1ff325bb959b9b5"
-      url: "https://github.com/edde746/plus_plugins"
+      ref: bf04cdf66598dc3fca274b8b1db2b92b0bf6b73e
+      resolved-ref: bf04cdf66598dc3fca274b8b1db2b92b0bf6b73e
+      url: "https://github.com/fluttercommunity/plus_plugins"
     source: git
-    version: "7.1.1"
+    version: "7.2.0"
   connectivity_plus_platform_interface:
     dependency: transitive
     description:
@@ -702,12 +702,11 @@ packages:
   material_symbols_icons:
     dependency: "direct main"
     description:
-      path: "."
-      ref: "1d8cd83"
-      resolved-ref: "1d8cd8325db29691a01738a25f220dd3515bd1e2"
-      url: "https://github.com/edde746/material_symbols_icons"
-    source: git
-    version: "4.2906.0"
+      name: material_symbols_icons
+      sha256: "49c532dd0b74544e9d8d93ec0f821d52ec532e7c9263c889ebe71b1be4f34ba7"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.2951.0"
   meta:
     dependency: transitive
     description:
@@ -987,7 +986,7 @@ packages:
       path: "packages/saf_util"
       relative: true
     source: path
-    version: "2.0.0"
+    version: "3.1.0"
   screen_retriever:
     dependency: transitive
     description:
@@ -1029,14 +1028,13 @@ packages:
     source: hosted
     version: "0.2.0"
   sentry:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
-      path: "packages/dart"
-      ref: "build/fetch-native-zip"
-      resolved-ref: "711f54f34d6cda9cccfb57519b9e3b72dd116b69"
-      url: "https://github.com/edde746/sentry-dart"
-    source: git
-    version: "9.16.0"
+      name: sentry
+      sha256: "09c573f98ff6c5e98d527f351f037eb8ea9ff684a6e9e84b2e91357144016254"
+      url: "https://pub.dev"
+    source: hosted
+    version: "9.24.0"
   sentry_dart_plugin:
     dependency: "direct dev"
     description:
@@ -1048,12 +1046,11 @@ packages:
   sentry_flutter:
     dependency: "direct main"
     description:
-      path: "packages/flutter"
-      ref: "build/fetch-native-zip"
-      resolved-ref: "711f54f34d6cda9cccfb57519b9e3b72dd116b69"
-      url: "https://github.com/edde746/sentry-dart"
-    source: git
-    version: "9.16.0"
+      name: sentry_flutter
+      sha256: "4a04b7e1901b8128df783b6d36d48706b07b0cd055e621517c998de87f5dafb9"
+      url: "https://pub.dev"
+    source: hosted
+    version: "9.24.0"
   serial_csv:
     dependency: transitive
     description:
@@ -1406,12 +1403,10 @@ packages:
   wakelock_plus:
     dependency: "direct main"
     description:
-      path: wakelock_plus
-      ref: "8595fee595c952b73d430f2eab05f2e0d858290e"
-      resolved-ref: "8595fee595c952b73d430f2eab05f2e0d858290e"
-      url: "https://github.com/edde746/wakelock_plus"
-    source: git
-    version: "1.4.0"
+      path: "packages/wakelock_plus"
+      relative: true
+    source: path
+    version: "1.5.2"
   wakelock_plus_platform_interface:
     dependency: transitive
     description:

@@ -29,8 +29,8 @@ dependencies:
   duration: ^4.0.3
   connectivity_plus:
     git:
-      url: https://github.com/edde746/plus_plugins
-      ref: 4c0d4071150481f76d753c6ce1ff325bb959b9b5
+      url: https://github.com/fluttercommunity/plus_plugins
+      ref: bf04cdf66598dc3fca274b8b1db2b92b0bf6b73e
       path: packages/connectivity_plus/connectivity_plus
   os_media_controls:
     git:
@@ -38,10 +38,7 @@ dependencies:
       ref: 75556a968a4a1ebc42fbb8c31942c2418d4326e1
   rate_limiter: ^1.0.0
   wakelock_plus:
-    git:
-      url: https://github.com/edde746/wakelock_plus
-      ref: 8595fee595c952b73d430f2eab05f2e0d858290e
-      path: wakelock_plus
+    path: packages/wakelock_plus
   path_provider: ^2.1.0
   path: ^1.9.0
   universal_gamepad: ^1.5.7
@@ -51,23 +48,27 @@ dependencies:
   cryptography: ^2.9.0
   file_picker: ^10.3.10
   saf_util:
-    # Vendored 2.0.0 with a pendingResult lifecycle fix (see its CHANGELOG) —
-    # upstream double-replies MethodChannel results and crashes the activity.
+    # Vendored upstream 3.1.0 with a pending Result lifecycle fix (CHANGELOG) —
+    # upstream still double-replies MethodChannel results and crashes the Activity.
     path: packages/saf_util
   saf_stream: ^2.0.0
-  material_symbols_icons: ^4.2906.0
+  material_symbols_icons: ^4.2951.0
   web_socket_channel: ^3.0.1
   dart_discord_presence: ^1.2.0
   flutter_svg: ^2.2.3
+  # Fork note: 41c16be creates the desktop temp parent before opening the
+  # partial file, independently fixing upstream #649's missing-directory case.
+  # Upstream's later target-directory fallback is unnecessary while this fork
+  # retains its same-filesystem move and resume-data cleanup implementation.
+  # No per-host trust bypass is carried: Plezy has no app-wide certificate
+  # exception policy, and weakening only background downloads would make API
+  # and playback behavior inconsistent. Revisit only with an explicit,
+  # host-scoped trust setting shared by every media-server HTTP client.
   background_downloader:
     git:
       url: https://github.com/edde746/background_downloader
       ref: 021e2075260e324b7440a5c81b57bf0242d35020
-  sentry_flutter:
-    git:
-      url: https://github.com/edde746/sentry-dart
-      path: packages/flutter
-      ref: build/fetch-native-zip
+  sentry_flutter: ^9.24.0
   auto_updater:
     git:
       url: https://github.com/edde746/auto_updater
@@ -113,20 +114,6 @@ dependency_overrides:
       url: https://github.com/edde746/auto_updater
       ref: 9e150f7
       path: packages/auto_updater_windows
-  sentry:
-    git:
-      url: https://github.com/edde746/sentry-dart
-      path: packages/dart
-      ref: build/fetch-native-zip
-  sentry_flutter:
-    git:
-      url: https://github.com/edde746/sentry-dart
-      path: packages/flutter
-      ref: build/fetch-native-zip
-  material_symbols_icons:
-    git:
-      url: https://github.com/edde746/material_symbols_icons
-      ref: 1d8cd83
 sentry:
   org: plezy
   project: plezy

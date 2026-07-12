@@ -6,14 +6,16 @@ class SafUtil {
   /// [initialUri] is the initial URI to show in the dialog.
   /// [writePermission] is true if the folder should have write permission.
   /// [persistablePermission] is true if the permission should be persistable.
-  Future<SafDocumentFile?> pickDirectory(
-      {String? initialUri,
-      bool? writePermission,
-      bool? persistablePermission}) {
+  Future<SafDocumentFile?> pickDirectory({
+    String? initialUri,
+    bool? writePermission,
+    bool? persistablePermission,
+  }) {
     return SafUtilPlatform.instance.pickDirectory(
-        initialUri: initialUri,
-        writePermission: writePermission,
-        persistablePermission: persistablePermission);
+      initialUri: initialUri,
+      writePermission: writePermission,
+      persistablePermission: persistablePermission,
+    );
   }
 
   /// Shows a file picker dialog and returns the selected file [SafDocumentFile].
@@ -39,13 +41,27 @@ class SafUtil {
   Future<List<SafDocumentFile>?> pickFiles({
     String? initialUri,
     List<String>? mimeTypes,
-    multiple = true,
+    bool multiple = true,
   }) {
     return SafUtilPlatform.instance.pickFiles(
       initialUri: initialUri,
       mimeTypes: mimeTypes,
       multiple: multiple,
     );
+  }
+
+  /// Shows a media picker dialog and returns selected media as [SafDocumentFile].
+  ///
+  /// [multiple] is true if multiple media files can be selected.
+  /// [mode] controls what can be picked and must be one of:
+  /// - 'photo'
+  /// - 'video'
+  /// - 'all'
+  Future<List<SafDocumentFile>?> pickMedia({
+    bool multiple = true,
+    String mode = 'all',
+  }) {
+    return SafUtilPlatform.instance.pickMedia(multiple: multiple, mode: mode);
   }
 
   /// Lists the contents of the specified directory URI.
@@ -72,8 +88,9 @@ class SafUtil {
   /// [uri] is the URI of the file or directory.
   /// [isDir] is true if the URI is a directory. [null] means
   /// auto-detect.
-  Future<SafDocumentFile?> stat(String uri, bool? isDir) {
-    return SafUtilPlatform.instance.stat(uri, isDir);
+  /// [throws] when true, throws an exception if the URI does not exist or is inaccessible.
+  Future<SafDocumentFile?> stat(String uri, bool? isDir, {bool? throws}) {
+    return SafUtilPlatform.instance.stat(uri, isDir, throws: throws);
   }
 
   /// Checks if the specified file or directory exists.
@@ -126,7 +143,11 @@ class SafUtil {
   /// [parentUri] is the URI of the current parent directory.
   /// [newParentUri] is the URI of the new parent directory.
   Future<SafDocumentFile> moveTo(
-      String uri, bool isDir, String parentUri, String newParentUri) {
+    String uri,
+    bool isDir,
+    String parentUri,
+    String newParentUri,
+  ) {
     return SafUtilPlatform.instance.moveTo(uri, isDir, parentUri, newParentUri);
   }
 
@@ -178,14 +199,16 @@ class SafUtil {
   /// [writePermission] is true if the folder should have write permission.
   /// [persistablePermission] is true if the permission should be persistable.
   @Deprecated('Use [pickDirectory] instead, which returns a [SafDocumentFile].')
-  Future<String?> openDirectory(
-      {String? initialUri,
-      bool? writePermission,
-      bool? persistablePermission}) {
+  Future<String?> openDirectory({
+    String? initialUri,
+    bool? writePermission,
+    bool? persistablePermission,
+  }) {
     return SafUtilPlatform.instance.openDirectory(
-        initialUri: initialUri,
-        writePermission: writePermission,
-        persistablePermission: persistablePermission);
+      initialUri: initialUri,
+      writePermission: writePermission,
+      persistablePermission: persistablePermission,
+    );
   }
 
   /// Shows a file picker dialog and returns the selected file URI.
@@ -194,10 +217,7 @@ class SafUtil {
   /// [initialUri] is the initial URI to show in the dialog.
   /// [mimeTypes] is a list of MIME types to filter the files.
   @Deprecated('Use [pickFile] instead, which returns a [SafDocumentFile].')
-  Future<String?> openFile({
-    String? initialUri,
-    List<String>? mimeTypes,
-  }) {
+  Future<String?> openFile({String? initialUri, List<String>? mimeTypes}) {
     return SafUtilPlatform.instance.openFile(
       initialUri: initialUri,
       mimeTypes: mimeTypes,
@@ -212,7 +232,7 @@ class SafUtil {
   Future<List<String>?> openFiles({
     String? initialUri,
     List<String>? mimeTypes,
-    multiple = true,
+    bool multiple = true,
   }) {
     return SafUtilPlatform.instance.openFiles(
       initialUri: initialUri,
@@ -240,17 +260,26 @@ class SafUtil {
     bool checkRead = true,
     bool checkWrite = false,
   }) {
-    return SafUtilPlatform.instance.hasPersistedPermission(uri,
-        checkRead: checkRead, checkWrite: checkWrite);
+    return SafUtilPlatform.instance.hasPersistedPermission(
+      uri,
+      checkRead: checkRead,
+      checkWrite: checkWrite,
+    );
   }
 
   /// Releases the persisted permission of the specified URI.
   /// Use [read] and [write] to specify the type of permission to release.
   /// [read] defaults to true.
   /// [write] defaults to false.
-  Future<void> releasePersistedPermission(String uri,
-      {bool read = true, bool write = false}) async {
-    return SafUtilPlatform.instance
-        .releasePersistedPermission(uri, read: read, write: write);
+  Future<void> releasePersistedPermission(
+    String uri, {
+    bool read = true,
+    bool write = false,
+  }) async {
+    return SafUtilPlatform.instance.releasePersistedPermission(
+      uri,
+      read: read,
+      write: write,
+    );
   }
 }
