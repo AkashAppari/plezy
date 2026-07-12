@@ -70,11 +70,7 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
       execute: (dismissLoading) async {
         final client = clientForTesting ?? _resolveClient(ServerId(serverId));
         if (client == null) {
-          await dismissLoading();
-          if (context.mounted) {
-            showErrorSnackBar(context, t.errors.noClientAvailable);
-          }
-          return PlayQueueError(Exception('No client for server $serverId'));
+          return _missingClientError(serverId, dismissLoading);
         }
 
         // Playlists go through the dedicated `/Playlists/{id}/Items` endpoint
@@ -145,11 +141,7 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
       execute: (dismissLoading) async {
         final client = clientForTesting ?? _resolveClient(ServerId(serverId));
         if (client == null) {
-          await dismissLoading();
-          if (context.mounted) {
-            showErrorSnackBar(context, t.errors.noClientAvailable);
-          }
-          return PlayQueueError(Exception('No client for server $serverId'));
+          return _missingClientError(serverId, dismissLoading);
         }
 
         final fetched = client is JellyfinClient
@@ -221,11 +213,7 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
       execute: (dismissLoading) async {
         final client = clientForTesting ?? _resolveClient(ServerId(serverId));
         if (client == null) {
-          await dismissLoading();
-          if (context.mounted) {
-            showErrorSnackBar(context, t.errors.noClientAvailable);
-          }
-          return PlayQueueError(Exception('No client for server $serverId'));
+          return _missingClientError(serverId, dismissLoading);
         }
 
         final raw = await client.fetchClientSideEpisodeQueue(seriesId);
@@ -265,5 +253,13 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
   MediaServerClient? _resolveClient(ServerId serverId) {
     final provider = Provider.of<MultiServerProvider>(context, listen: false);
     return provider.serverManager.getClient(serverId);
+  }
+
+  Future<PlayQueueError> _missingClientError(String serverId, Future<void> Function() dismissLoading) async {
+    await dismissLoading();
+    if (context.mounted) {
+      showErrorSnackBar(context, t.errors.noClientAvailable);
+    }
+    return PlayQueueError(Exception('No client for server $serverId'));
   }
 }

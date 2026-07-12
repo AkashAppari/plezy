@@ -1,15 +1,19 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/services/jellyfin_auth_service.dart';
+import 'package:plezy/services/jellyfin_endpoint_discovery.dart';
 import 'package:plezy/utils/log_redaction_manager.dart';
+import 'package:plezy/utils/media_server_timeouts.dart';
 
 /// Helpers for stubbing http responses keyed by request path.
-typedef _Handler = http.Response Function(http.BaseRequest req);
+typedef _Handler = FutureOr<http.Response> Function(http.BaseRequest req);
 
 http.Response _ok(Object json) => http.Response(jsonEncode(json), 200, headers: {'content-type': 'application/json'});
 http.Response _bareOk(String body) => http.Response(body, 200, headers: {'content-type': 'application/json'});
@@ -36,6 +40,17 @@ JellyfinConnectionAuthService _service({required _Handler handler}) {
     testHttpClientFactory: () => MockClient((req) async => handler(req)),
   );
 }
+
+Future<Object> _captureError(Future<dynamic> future) async {
+  try {
+    await future;
+  } catch (error) {
+    return error;
+  }
+  throw StateError('Expected future to fail');
+}
+
+const _serverInfo = JellyfinServerInfo(serverName: 'Home', machineId: 'srv-1', version: '10.9.0');
 
 void main() {
   setUp(LogRedactionManager.clearTrackedValues);
@@ -448,6 +463,95 @@ void main() {
         ),
         throwsA(isA<MediaServerAuthException>().having((e) => e.statusCode, 'statusCode', 400)),
       );
+    });
+  });
+
+  group('Jellyfin authentication response parity', () {
+    test('password and Quick Connect exchange use the same timeout', () {
+      fakeAsync((async) {
+        final passwordResponse = Completer<http.Response>();
+        final quickConnectResponse = Completer<http.Response>();
+        final passwordService = _service(handler: (_) => passwordResponse.future);
+        final quickConnectService = _service(
+          handler: (req) {
+            if (req.url.path == '/QuickConnect/Connect') return _ok({'Authenticated': true});
+            return quickConnectResponse.future;
+          },
+        );
+
+        Object? passwordError;
+        Object? quickConnectError;
+        unawaited(
+          _captureError(
+            passwordService.authenticateByName(
+              baseUrl: 'https://jf.example.com',
+              username: 'edde',
+              password: 'pw',
+              deviceId: 'dev-xyz',
+              serverInfo: _serverInfo,
+            ),
+          ).then((error) => passwordError = error),
+        );
+        unawaited(
+          _captureError(
+            quickConnectService.authenticateByQuickConnect(
+              baseUrl: 'https://jf.example.com',
+              secret: 'sec',
+              deviceId: 'dev-xyz',
+              serverInfo: _serverInfo,
+            ),
+          ).then((error) => quickConnectError = error),
+        );
+
+        async.flushMicrotasks();
+        expect(passwordError, isNull);
+        expect(quickConnectError, isNull);
+
+        async.elapse(MediaServerTimeouts.jellyfinProbe + const Duration(milliseconds: 1));
+        async.flushMicrotasks();
+
+        for (final error in [passwordError, quickConnectError]) {
+          expect(
+            error,
+            isA<MediaServerHttpException>().having(
+              (exception) => exception.type,
+              'type',
+              MediaServerHttpErrorType.connectionTimeout,
+            ),
+          );
+        }
+      });
+    });
+
+    test('password and Quick Connect exchange preserve non-auth HTTP errors', () async {
+      final passwordService = _service(handler: (_) => _status(500));
+      final quickConnectService = _service(
+        handler: (req) => req.url.path == '/QuickConnect/Connect' ? _ok({'Authenticated': true}) : _status(500),
+      );
+
+      final errors = [
+        await _captureError(
+          passwordService.authenticateByName(
+            baseUrl: 'https://jf.example.com',
+            username: 'edde',
+            password: 'pw',
+            deviceId: 'dev-xyz',
+            serverInfo: _serverInfo,
+          ),
+        ),
+        await _captureError(
+          quickConnectService.authenticateByQuickConnect(
+            baseUrl: 'https://jf.example.com',
+            secret: 'sec',
+            deviceId: 'dev-xyz',
+            serverInfo: _serverInfo,
+          ),
+        ),
+      ];
+
+      for (final error in errors) {
+        expect(error, isA<MediaServerHttpException>().having((exception) => exception.statusCode, 'statusCode', 500));
+      }
     });
   });
 

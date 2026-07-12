@@ -239,8 +239,8 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
       smart: false,
       playlistType: (json['MediaType'] as String?)?.toLowerCase() ?? 'video',
       leafCount: json['ChildCount'] as int?,
-      addedAt: _epochSecondsFromJson(json['DateCreated'] as String?),
-      updatedAt: _epochSecondsFromJson(json['DateLastSaved'] as String?),
+      addedAt: jellyfinIsoToEpochSeconds(json['DateCreated'] as String?),
+      updatedAt: jellyfinIsoToEpochSeconds(json['DateLastSaved'] as String?),
       thumbPath: _absolutizeImagePath(_imageTagPath(id, json['ImageTags'])),
       serverId: serverId,
       serverName: serverName,
@@ -257,12 +257,6 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
     if (requestedType.isNotEmpty && playlist.playlistType.toLowerCase() != requestedType) return false;
     if (smart != null && playlist.smart != smart) return false;
     return true;
-  }
-
-  int? _epochSecondsFromJson(String? iso) {
-    if (iso == null || iso.isEmpty) return null;
-    final dt = DateTime.tryParse(iso);
-    return dt == null ? null : dt.millisecondsSinceEpoch ~/ 1000;
   }
 
   String? _imageTagPath(String id, Object? tags) {

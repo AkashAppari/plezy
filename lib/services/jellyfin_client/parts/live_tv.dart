@@ -73,11 +73,6 @@ mixin _JellyfinLiveTvMethods on MediaServerCacheMixin {
 
   LiveTvProgram _programFromJson(Map<String, dynamic> json) {
     final id = json['Id'] as String?;
-    int? toEpochSec(dynamic raw) {
-      if (raw is! String || raw.isEmpty) return null;
-      final ms = DateTime.tryParse(raw)?.toUtc().millisecondsSinceEpoch;
-      return ms != null ? ms ~/ 1000 : null;
-    }
 
     final tags = json['ImageTags'];
     String? primaryTag;
@@ -95,8 +90,8 @@ mixin _JellyfinLiveTvMethods on MediaServerCacheMixin {
       summary: json['Overview'] as String?,
       type: 'episode',
       year: (json['ProductionYear'] as num?)?.toInt(),
-      beginsAt: toEpochSec(json['StartDate']),
-      endsAt: toEpochSec(json['EndDate']),
+      beginsAt: jellyfinIsoToEpochSeconds(json['StartDate'] as String?),
+      endsAt: jellyfinIsoToEpochSeconds(json['EndDate'] as String?),
       grandparentTitle: json['SeriesName'] as String?,
       parentTitle: json['SeasonName'] as String?,
       index: (json['IndexNumber'] as num?)?.toInt(),
