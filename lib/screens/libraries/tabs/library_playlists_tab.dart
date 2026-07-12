@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../../../focus/input_mode_tracker.dart';
 import '../../../media/library_query.dart';
 import '../../../media/media_kind.dart';
 import '../../../media/media_playlist.dart';
@@ -12,10 +13,12 @@ import '../../../utils/layout_constants.dart';
 import '../../../utils/library_refresh_notifier.dart';
 import '../../../utils/media_server_http_client.dart';
 import '../../../utils/platform_detector.dart';
+import '../../../widgets/card_inflation_budget.dart';
 import '../../../widgets/focusable_media_card.dart';
 import '../../../widgets/media_grid_delegate.dart';
 import '../../../widgets/settings_builder.dart';
 import '../../../widgets/skeleton_media_card.dart';
+import '../../../widgets/sliver_child_memo.dart';
 import '../../../widgets/sliver_cross_axis_layout_builder.dart';
 import '../../../i18n/strings.g.dart';
 import '../../main_screen.dart';
@@ -40,8 +43,15 @@ class LibraryPlaylistsTab extends BaseLibraryTab<MediaPlaylist> {
 }
 
 class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, LibraryPlaylistsTab>
-    with LibraryTabFocusMixin<LibraryPlaylistsTab>, PaginatedItemLoader<MediaPlaylist, LibraryPlaylistsTab> {
+    with
+        LibraryTabFocusMixin<LibraryPlaylistsTab>,
+        PaginatedItemLoader<MediaPlaylist, LibraryPlaylistsTab>,
+        SkeletonUpgradeScheduler {
   static const int _pageSize = 200;
+
+  /// Reuses card widgets across delegate swaps so tab-level setStates
+  /// (pagination, refreshes) don't rebuild every realized card inside layout.
+  final SliverChildMemo<MediaPlaylist> _cardMemo = SliverChildMemo<MediaPlaylist>();
 
   @override
   String get focusNodeDebugLabel => 'playlists_first_item';
@@ -149,8 +159,19 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
         addAutomaticKeepAlives: false,
         addSemanticIndexes: false,
         itemCount: totalSize,
-        itemBuilder: (context, index) =>
-            _buildPlaylistCard(index, isFirstRow: index == 0, isFirstColumn: true, disableScale: true),
+        itemBuilder: (context, index) {
+          final playlist = loadedItems[index];
+          if (playlist == null) {
+            ensureIndexLoaded(index, pageSize: _pageSize);
+            return const SkeletonMediaCard();
+          }
+          return _cardMemo.widgetFor(
+            index,
+            playlist,
+            epoch: (ViewMode.list, totalSize, density),
+            build: () => _buildPlaylistCard(index, isFirstRow: index == 0, isFirstColumn: true, disableScale: true),
+          );
+        },
       ),
     );
   }
@@ -166,6 +187,8 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
             density: density,
             fullBleedImage: fullCardLayout,
           );
+          // Everything the card closures capture; a change flushes the memo.
+          final cardEpoch = (ViewMode.grid, geometry.columnCount, totalSize, fullCardLayout, density);
           return SliverGrid.builder(
             // Inert on media lists (no keep-alive clients): dropping the
             // per-child wrappers shrinks build + semantics work per item.
@@ -173,12 +196,34 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
             addSemanticIndexes: false,
             gridDelegate: geometry.delegate,
             itemCount: totalSize,
-            itemBuilder: (context, index) => _buildPlaylistCard(
-              index,
-              isFirstRow: GridSizeCalculator.isFirstRow(index, geometry.columnCount),
-              isFirstColumn: GridSizeCalculator.isFirstColumn(index, geometry.columnCount),
-              fullBleedImage: fullCardLayout,
-            ),
+            itemBuilder: (context, index) {
+              final playlist = loadedItems[index];
+              if (playlist == null) {
+                ensureIndexLoaded(index, pageSize: _pageSize);
+                return const SkeletonMediaCard();
+              }
+              final cached = _cardMemo.tryGet(index, playlist, epoch: cardEpoch);
+              if (cached != null) return cached;
+              // Budget fresh inflations while scrolling in pointer/touch mode
+              // (see CardInflationBudget); skeletons upgrade a frame later.
+              if (CardInflationBudget.isScrollingContext(context) &&
+                  !InputModeTracker.isKeyboardMode(context) &&
+                  !CardInflationBudget.tryTake()) {
+                scheduleSkeletonUpgrade();
+                return const SkeletonMediaCard();
+              }
+              return _cardMemo.widgetFor(
+                index,
+                playlist,
+                epoch: cardEpoch,
+                build: () => _buildPlaylistCard(
+                  index,
+                  isFirstRow: GridSizeCalculator.isFirstRow(index, geometry.columnCount),
+                  isFirstColumn: GridSizeCalculator.isFirstColumn(index, geometry.columnCount),
+                  fullBleedImage: fullCardLayout,
+                ),
+              );
+            },
           );
         },
       ),
