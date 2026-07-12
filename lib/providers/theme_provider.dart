@@ -8,7 +8,7 @@ import '../services/settings_binding_owner.dart';
 import '../services/settings_service.dart' as settings;
 import '../theme/mono_theme.dart';
 
-class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
+class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin, WidgetsBindingObserver {
   late final SettingsBindingOwner _settingsBinding;
   settings.ThemeMode _themeMode = settings.ThemeMode.system;
   late Brightness _systemBrightness;
@@ -25,10 +25,11 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
       onRefresh: (service) => _syncThemeMode(service.read(settings.SettingsService.themeMode)),
     );
     unawaited(_settingsBinding.bind());
-    WidgetsBinding.instance.platformDispatcher.onPlatformBrightnessChanged = _onBrightnessChanged;
+    WidgetsBinding.instance.addObserver(this);
   }
 
-  void _onBrightnessChanged() {
+  @override
+  void didChangePlatformBrightness() {
     _systemBrightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
     if (_themeMode == settings.ThemeMode.system) {
       safeNotifyListeners();
@@ -38,9 +39,7 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   @override
   void dispose() {
     _settingsBinding.dispose();
-    if (WidgetsBinding.instance.platformDispatcher.onPlatformBrightnessChanged == _onBrightnessChanged) {
-      WidgetsBinding.instance.platformDispatcher.onPlatformBrightnessChanged = null;
-    }
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 

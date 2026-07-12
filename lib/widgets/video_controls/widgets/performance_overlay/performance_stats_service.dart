@@ -41,6 +41,7 @@ class PerformanceStatsService {
   String _runtimePlayerType = 'unknown';
   StreamSubscription<void>? _backendSwitchedSubscription;
   bool _fetchInProgress = false;
+  bool _disposed = false;
 
   PerformanceStatsService(this.player);
 
@@ -110,7 +111,7 @@ class PerformanceStatsService {
 
   /// Fetch all performance stats from the player.
   Future<void> _fetchStats() async {
-    if (_fetchInProgress) return;
+    if (_disposed || _fetchInProgress) return;
     _fetchInProgress = true;
     try {
       // Ensure we know the runtime type on first fetch
@@ -127,7 +128,7 @@ class PerformanceStatsService {
         await _fetchMpvStats();
       }
     } catch (e) {
-      appLogger.w('Failed to fetch performance stats', error: e);
+      if (!_disposed) appLogger.w('Failed to fetch performance stats', error: e);
     } finally {
       _fetchInProgress = false;
     }
@@ -185,7 +186,7 @@ class PerformanceStatsService {
         appMemoryBytes: appMemory,
         uiFps: _currentUiFps,
       );
-      _statsController.add(stats);
+      _emit(stats);
     } else {
       // Parse ExoPlayer stats format
       final stats = PerformanceStats(
@@ -225,7 +226,7 @@ class PerformanceStatsService {
         appMemoryBytes: appMemory,
         uiFps: _currentUiFps,
       );
-      _statsController.add(stats);
+      _emit(stats);
     }
   }
 
@@ -323,7 +324,11 @@ class PerformanceStatsService {
       uiFps: _currentUiFps,
     );
 
-    _statsController.add(stats);
+    _emit(stats);
+  }
+
+  void _emit(PerformanceStats stats) {
+    if (!_disposed && !_statsController.isClosed) _statsController.add(stats);
   }
 
   /// Parse a string to int, returning null if parsing fails.
@@ -361,6 +366,8 @@ class PerformanceStatsService {
 
   /// Dispose of the service and release resources.
   void dispose() {
+    if (_disposed) return;
+    _disposed = true;
     _backendSwitchedSubscription?.cancel();
     _backendSwitchedSubscription = null;
     stopPolling();

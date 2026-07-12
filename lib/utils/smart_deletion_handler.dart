@@ -14,13 +14,12 @@ class SmartDeletionHandler {
     required String globalKey,
     int delayMs = 500,
   }) async {
-    bool dialogShown = false;
     bool deletionComplete = false;
+    final dialogKey = GlobalKey();
 
     Future.delayed(Duration(milliseconds: delayMs), () {
       if (!deletionComplete && context.mounted) {
-        dialogShown = true;
-        _showProgressDialog(context, provider, globalKey);
+        _showProgressDialog(context, provider, globalKey, dialogKey);
       }
     });
 
@@ -28,32 +27,38 @@ class SmartDeletionHandler {
       await provider.deleteDownload(globalKey);
     } finally {
       deletionComplete = true;
-      // Close dialog if shown (with canPop guard to prevent double-pop)
-      if (dialogShown && context.mounted && Navigator.canPop(context)) {
-        Navigator.of(context).pop();
+      final dialogContext = dialogKey.currentContext;
+      if (dialogContext != null && dialogContext.mounted) {
+        final route = ModalRoute.of(dialogContext);
+        if (route != null && route.isActive) {
+          Navigator.of(dialogContext).removeRoute(route);
+        }
       }
     }
   }
 
-  static void _showProgressDialog(BuildContext context, DownloadProvider _, String globalKey) {
+  static void _showProgressDialog(BuildContext context, DownloadProvider _, String globalKey, GlobalKey dialogKey) {
     showScopedDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) => Consumer<DownloadProvider>(
-        builder: (context, provider, child) {
-          final progress = provider.getDeletionProgress(globalKey);
+      builder: (dialogContext) => KeyedSubtree(
+        key: dialogKey,
+        child: Consumer<DownloadProvider>(
+          builder: (context, provider, child) {
+            final progress = provider.getDeletionProgress(globalKey);
 
-          if (progress == null) {
-            return AlertDialog(
-              content: Row(
-                mainAxisSize: .min,
-                children: [const CircularProgressIndicator(), const SizedBox(width: 20), Text(t.downloads.deleting)],
-              ),
-            );
-          }
+            if (progress == null) {
+              return AlertDialog(
+                content: Row(
+                  mainAxisSize: .min,
+                  children: [const CircularProgressIndicator(), const SizedBox(width: 20), Text(t.downloads.deleting)],
+                ),
+              );
+            }
 
-          return DeletionProgressDialog(progress: progress);
-        },
+            return DeletionProgressDialog(progress: progress);
+          },
+        ),
       ),
     );
   }

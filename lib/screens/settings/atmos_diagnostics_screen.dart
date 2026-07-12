@@ -63,6 +63,7 @@ class _AtmosDiagnosticsScreenState extends State<AtmosDiagnosticsScreen> {
     }
     try {
       await _channel.invokeMethod('start', {'mode': mode, if (needsUrl) 'url': url});
+      if (!mounted) return;
       setState(() => _activeMode = mode);
     } on PlatformException catch (e) {
       if (mounted) showErrorSnackBar(context, e.message ?? e.code);

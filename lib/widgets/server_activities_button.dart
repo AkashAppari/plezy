@@ -141,6 +141,7 @@ class ServerActivitiesButtonState extends State<ServerActivitiesButton> {
     } catch (_) {
       return;
     }
+    if (!mounted || _overlayEntry == null) return;
     _pollTimer?.cancel();
     _pollTimer = null;
     _panelNotifier.value = _PanelData.loading;
