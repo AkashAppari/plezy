@@ -20,6 +20,7 @@ import '../providers/libraries_provider.dart';
 import '../services/music/music_playback_service.dart';
 import '../services/settings_service.dart';
 import '../utils/music_navigation.dart';
+import '../utils/content_utils.dart';
 import '../utils/platform_detector.dart';
 import '../utils/scroll_utils.dart';
 import '../utils/library_grouping.dart';
@@ -590,23 +591,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   void reloadLibraries() {
     final librariesProvider = context.read<LibrariesProvider>();
     librariesProvider.refresh();
-  }
-
-  IconData _getLibraryIcon(String type) {
-    switch (type.toLowerCase()) {
-      case 'movie':
-        return Symbols.movie_rounded;
-      case 'show':
-        return Symbols.tv_rounded;
-      case 'artist':
-        return Symbols.music_note_rounded;
-      case 'photo':
-        return Symbols.photo_rounded;
-      case 'mixed':
-        return Symbols.share_rounded;
-      default:
-        return Symbols.folder_rounded;
-    }
   }
 
   /// Calculate top padding for macOS traffic lights
@@ -1310,8 +1294,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     return Padding(
       padding: const EdgeInsets.only(left: 12),
       child: NavigationRailItem(
-        icon: _getLibraryIcon(library.kind.id),
-        selectedIcon: _getLibraryIcon(library.kind.id),
+        icon: ContentTypeHelper.getLibraryIcon(library.kind.id),
+        selectedIcon: ContentTypeHelper.getLibraryIcon(library.kind.id),
         label: Column(
           crossAxisAlignment: .start,
           mainAxisSize: .min,
