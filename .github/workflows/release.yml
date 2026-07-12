@@ -32,10 +32,8 @@ jobs:
       - name: Extract current build number
         id: get_build
         run: |
-          # Extract current build number from pubspec.yaml
-          CURRENT_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
-          CURRENT_BUILD=$(echo "$CURRENT_VERSION" | cut -d'+' -f2)
-          NEW_BUILD=$((CURRENT_BUILD + 1))
+          CURRENT_BUILD=$(python3 scripts/pubspec_version.py --build-number pubspec.yaml)
+          NEW_BUILD=$((10#$CURRENT_BUILD + 1))
 
           echo "current_build=$CURRENT_BUILD" >> $GITHUB_OUTPUT
           echo "new_build=$NEW_BUILD" >> $GITHUB_OUTPUT
