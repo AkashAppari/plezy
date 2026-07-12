@@ -91,7 +91,6 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   final FocusNode _lyricsPaneFocusNode = FocusNode(debugLabel: 'now_playing_lyrics_pane');
   final GlobalKey<FocusableActionBarState> _utilityBarKey = GlobalKey<FocusableActionBarState>();
 
-  bool _overflowFocused = false;
   bool _poppedForIdle = false;
 
   @override
@@ -535,35 +534,41 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   /// sessions. Mono styling matches the seek bar: text-colored active track
   /// on outline.
   Widget _buildVolumeCluster(MusicPlaybackService service) {
-    final tk = tokens(context);
-    final icon = service.volume <= 0
-        ? Symbols.volume_off_rounded
-        : service.volume < 50
-        ? Symbols.volume_down_rounded
-        : Symbols.volume_up_rounded;
-    return Row(
-      mainAxisSize: .min,
-      children: [
-        AppIcon(icon, fill: 1, size: 20, color: tk.textMuted),
-        SizedBox(
-          width: 140,
-          child: SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 3,
-              activeTrackColor: tk.text,
-              inactiveTrackColor: tk.outline,
-              thumbColor: tk.text,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+    return ValueListenableBuilder<double>(
+      valueListenable: service.volumeListenable,
+      builder: (context, volume, _) {
+        final tk = tokens(context);
+        final icon = volume <= 0
+            ? Symbols.volume_off_rounded
+            : volume < 50
+            ? Symbols.volume_down_rounded
+            : Symbols.volume_up_rounded;
+        return Row(
+          mainAxisSize: .min,
+          children: [
+            AppIcon(icon, fill: 1, size: 20, color: tk.textMuted),
+            SizedBox(
+              width: 140,
+              child: SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  trackHeight: 3,
+                  activeTrackColor: tk.text,
+                  inactiveTrackColor: tk.outline,
+                  thumbColor: tk.text,
+                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                ),
+                child: Slider(
+                  value: volume.clamp(0.0, 100.0),
+                  max: 100,
+                  onChanged: (value) => unawaited(service.setVolume(value, persist: false)),
+                  onChangeEnd: (value) => unawaited(service.setVolume(value)),
+                ),
+              ),
             ),
-            child: Slider(
-              value: service.volume.clamp(0.0, 100.0),
-              max: 100,
-              onChanged: (value) => unawaited(service.setVolume(value)),
-            ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 
@@ -578,26 +583,30 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
 
     Widget child = button;
     if (focusable) {
-      final showFocus = _overflowFocused && InputModeTracker.isKeyboardMode(context);
-      child = Focus(
-        focusNode: _overflowFocusNode,
-        descendantsAreFocusable: false,
-        onFocusChange: (hasFocus) => setState(() => _overflowFocused = hasFocus),
-        onKeyEvent: (node, event) {
-          final backResult = handleBackKeyAction(event, _pop);
-          if (backResult != KeyEventResult.ignored) return backResult;
-          return dpadKeyHandler(
-            onSelect: () => contextMenuKey.currentState?.showContextMenu(context),
-            onDown: _seekFocusNode.requestFocus,
-            onUp: () {}, // top of the chain — trap
-            trapHorizontalEdges: true,
-          )(node, event);
+      child = ListenableBuilder(
+        listenable: _overflowFocusNode,
+        builder: (context, _) {
+          final showFocus = _overflowFocusNode.hasFocus && InputModeTracker.isKeyboardMode(context);
+          return Focus(
+            focusNode: _overflowFocusNode,
+            descendantsAreFocusable: false,
+            onKeyEvent: (node, event) {
+              final backResult = handleBackKeyAction(event, _pop);
+              if (backResult != KeyEventResult.ignored) return backResult;
+              return dpadKeyHandler(
+                onSelect: () => contextMenuKey.currentState?.showContextMenu(context),
+                onDown: _seekFocusNode.requestFocus,
+                onUp: () {},
+                trapHorizontalEdges: true,
+              )(node, event);
+            },
+            child: AnimatedContainer(
+              duration: FocusTheme.getAnimationDuration(context),
+              decoration: FocusTheme.textFillFocusDecoration(context, isFocused: showFocus, borderRadius: 20),
+              child: button,
+            ),
+          );
         },
-        child: AnimatedContainer(
-          duration: FocusTheme.getAnimationDuration(context),
-          decoration: FocusTheme.textFillFocusDecoration(context, isFocused: showFocus, borderRadius: 20),
-          child: button,
-        ),
       );
     }
 

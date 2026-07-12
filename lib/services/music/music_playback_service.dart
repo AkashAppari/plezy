@@ -91,10 +91,11 @@ abstract class MusicPlaybackService extends ChangeNotifier {
 
   Future<void> seek(Duration position);
 
-  /// Music playback volume, 0–100. Persisted across sessions and applied to
-  /// every audio player instance; independent of the video player volume.
+  /// Music playback volume, 0–100. Preview updates are exposed separately so
+  /// a slider does not notify every service consumer on each drag event.
   double get volume;
-  Future<void> setVolume(double volume);
+  ValueListenable<double> get volumeListenable;
+  Future<void> setVolume(double volume, {bool persist = true});
 
   void setRepeatMode(MusicRepeatMode mode);
   void toggleShuffle();
@@ -144,6 +145,7 @@ abstract class MusicPlaybackService extends ChangeNotifier {
 /// on platforms where it failed to initialize). Keeps every UI consumer
 /// null-safe without per-call-site feature checks.
 class StubMusicPlaybackService extends MusicPlaybackService {
+  final ValueNotifier<double> _volumeNotifier = ValueNotifier<double>(100);
   @override
   bool get isAvailable => false;
 
@@ -211,9 +213,11 @@ class StubMusicPlaybackService extends MusicPlaybackService {
 
   @override
   double get volume => 100;
+  @override
+  ValueListenable<double> get volumeListenable => _volumeNotifier;
 
   @override
-  Future<void> setVolume(double volume) async {}
+  Future<void> setVolume(double volume, {bool persist = true}) async {}
 
   @override
   void setRepeatMode(MusicRepeatMode mode) {}
@@ -259,4 +263,9 @@ class StubMusicPlaybackService extends MusicPlaybackService {
 
   @override
   Future<Lyrics?> fetchLyrics(MediaItem track) async => null;
+  @override
+  void dispose() {
+    _volumeNotifier.dispose();
+    super.dispose();
+  }
 }

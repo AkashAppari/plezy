@@ -88,6 +88,7 @@ class FakePlayer implements Player {
   final List<String> openedUris = [];
   final List<Media?> setNextCalls = [];
   final List<Duration> seeks = [];
+  final List<double> volumes = [];
 
   /// Arming these URIs throws, simulating a native setNext failure.
   final Set<String> failingSetNextUris = {};
@@ -249,7 +250,7 @@ class FakePlayer implements Player {
   Future<void> addSubtitleTrack({required String uri, String? title, String? language, bool select = false}) async {}
 
   @override
-  Future<void> setVolume(double volume) async {}
+  Future<void> setVolume(double volume) async => volumes.add(volume);
 
   @override
   Future<void> setRate(double rate) async {}
@@ -551,6 +552,21 @@ void main() {
       player.closeControllers();
     }
     h.controls.closeControllers();
+  });
+
+  test('volume updates notify only the dedicated volume listenable', () async {
+    await h.playTracks([t1]);
+    var serviceNotifications = 0;
+    var volumeNotifications = 0;
+    h.service.addListener(() => serviceNotifications++);
+    h.service.volumeListenable.addListener(() => volumeNotifications++);
+
+    await h.service.setVolume(42, persist: false);
+
+    expect(h.service.volume, 42);
+    expect(h.player.volumes, [42]);
+    expect(volumeNotifications, 1);
+    expect(serviceNotifications, 0);
   });
 
   test('playFromList opens the first track and arms the second', () async {

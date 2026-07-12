@@ -630,6 +630,52 @@ void main() {
       p.dispose();
     });
 
+    test('deleting an album emits one provider notification for all tracks', () async {
+      MediaItem track(String id) => testMediaItem(
+        id: id,
+        backend: MediaBackend.plex,
+        kind: MediaKind.track,
+        title: id,
+        parentId: 'album-1',
+        serverId: ServerId('srv'),
+      );
+      final album = testMediaItem(
+        id: 'album-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.album,
+        title: 'Album',
+        serverId: ServerId('srv'),
+      );
+      for (final id in ['t1', 't2']) {
+        await db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: id,
+          globalKey: 'srv:$id',
+          type: 'track',
+          status: DownloadStatus.completed.index,
+        );
+        await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'srv:$id');
+      }
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {
+          'srv:t1': const DownloadProgress(globalKey: 'srv:t1', status: DownloadStatus.completed),
+          'srv:t2': const DownloadProgress(globalKey: 'srv:t2', status: DownloadStatus.completed),
+        },
+        metadata: {'srv:album-1': album, 'srv:t1': track('t1'), 'srv:t2': track('t2')},
+        ownedDownloadKeys: {'srv:t1', 'srv:t2'},
+      );
+      var notifications = 0;
+      p.addListener(() => notifications++);
+
+      await p.deleteDownload(album.globalKey);
+
+      expect(notifications, 1);
+      expect(p.downloads, isEmpty);
+      p.dispose();
+    });
+
     test('album aggregates, downloadedAlbums, and per-album track order come from track downloads', () async {
       MediaItem track(String id, {required int disc, required int number}) => testMediaItem(
         id: id,

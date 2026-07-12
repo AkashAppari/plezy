@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
 import 'package:os_media_controls/os_media_controls.dart';
 
@@ -102,6 +103,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   /// (the core is recreated after video claims playback). Falls back to full
   /// volume when settings aren't bootstrapped (tests).
   double _volume = SettingsService.instanceOrNull?.read(SettingsService.musicVolume) ?? 100.0;
+  late final ValueNotifier<double> _volumeNotifier = ValueNotifier<double>(_volume);
 
   Player? _player;
   final List<StreamSubscription<Object?>> _playerSubs = [];
@@ -842,16 +844,21 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
 
   @override
   double get volume => _volume;
+  @override
+  ValueListenable<double> get volumeListenable => _volumeNotifier;
 
   @override
-  Future<void> setVolume(double volume) async {
+  Future<void> setVolume(double volume, {bool persist = true}) async {
     final clamped = volume.clamp(0.0, 100.0);
-    if (clamped == _volume) return;
-    _volume = clamped;
-    notifyListeners();
-    final settings = SettingsService.instanceOrNull;
-    if (settings != null) unawaited(settings.write(SettingsService.musicVolume, clamped));
-    await _player?.setVolume(clamped);
+    if (clamped != _volume) {
+      _volume = clamped;
+      _volumeNotifier.value = clamped;
+      await _player?.setVolume(clamped);
+    }
+    if (persist) {
+      final settings = SettingsService.instanceOrNull;
+      if (settings != null) await settings.write(SettingsService.musicVolume, clamped);
+    }
   }
 
   @override
@@ -1114,6 +1121,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     }
     unawaited(_positionController.close());
     unawaited(_errorsController.close());
+    _volumeNotifier.dispose();
     super.dispose();
   }
 }

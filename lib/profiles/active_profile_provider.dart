@@ -152,6 +152,7 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
       safeNotifyListeners();
     });
     _plexHomeSub = _plexHome.stream.listen((cache) {
+      if (_samePlexHomeUsers(cache, _plexHomeUsers)) return;
       _plexHomeUsers = cache;
       _recomputeProfiles();
       _resolveActive();
@@ -185,6 +186,15 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
       if (other == null) return false;
       if (identical(entry.value, other)) continue;
       if (jsonEncode(entry.value.toConfigJson()) != jsonEncode(other.toConfigJson())) return false;
+    }
+    return true;
+  }
+
+  static bool _samePlexHomeUsers(Map<String, List<PlexHomeUser>> a, Map<String, List<PlexHomeUser>> b) {
+    if (a.length != b.length) return false;
+    for (final entry in a.entries) {
+      final other = b[entry.key];
+      if (other == null || !listEquals(entry.value, other)) return false;
     }
     return true;
   }

@@ -390,12 +390,15 @@ class WaitingForParticipantsIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<WatchTogetherProvider, (bool, List<String>)>(
-      selector: (_, provider) => (provider.isWaitingForPeers, provider.waitingOnNames),
+    return Selector<WatchTogetherProvider, (bool, String)>(
+      selector: (_, provider) {
+        final waiting = provider.isWaitingForPeers;
+        return (waiting, waiting ? _label(provider.waitingOnNames) : '');
+      },
       builder: (context, value, child) {
-        final (isWaiting, names) = value;
+        final (isWaiting, label) = value;
         if (!isWaiting) return const SizedBox.shrink();
-        return _StatusPill(tvIcon: Symbols.hourglass_empty_rounded, label: _label(names));
+        return _StatusPill(tvIcon: Symbols.hourglass_empty_rounded, label: label);
       },
     );
   }

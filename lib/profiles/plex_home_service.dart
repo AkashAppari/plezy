@@ -101,6 +101,10 @@ class PlexHomeService {
     for (final conn in current.whereType<PlexAccountConnection>()) {
       final cached = _readCache(conn.id);
       if (cached == null) continue;
+      final previous = _byConnection[conn.id];
+      if (previous != null && encodePlexHomeUsersCacheJson(previous) == encodePlexHomeUsersCacheJson(cached)) {
+        continue;
+      }
       _byConnection[conn.id] = cached;
       changed = true;
     }

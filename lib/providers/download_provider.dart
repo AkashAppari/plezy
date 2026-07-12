@@ -61,6 +61,7 @@ typedef _MetadataHydrationResult = ({MediaItem? metadata, bool networkFilled, bo
 
 /// Provider for managing download state and operations.
 class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
+  int _batchDeletionDepth = 0;
   final DownloadManagerService _downloadManager;
   final AppDatabase _database;
   final SyncRuleExecutor _syncRuleExecutor;
@@ -413,16 +414,15 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   void _onProgressUpdate(DownloadProgress progress) {
     appLogger.d('Progress update received: ${progress.globalKey} - ${progress.status} - ${progress.progress}%');
-
+    final ownedByActiveProfile = _ownsDownloadKey(progress.globalKey);
     _downloads[progress.globalKey] = progress;
 
-    // Sync artwork paths when they are available
+    // Sync artwork paths when they are available.
     if (progress.hasArtworkPaths) {
       _artworkPaths[progress.globalKey] = DownloadedArtwork(thumbPath: progress.thumbPath);
     }
 
-    appLogger.d('Notifying listeners for ${progress.globalKey}');
-    safeNotifyListeners();
+    if (ownedByActiveProfile) safeNotifyListeners();
   }
 
   @override
@@ -1315,8 +1315,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     }
   }
 
-  /// Delete a downloaded item
-  Future<void> deleteDownload(String globalKey) async {
+  /// Delete a downloaded item.
+  Future<void> deleteDownload(String globalKey) => _deleteDownload(globalKey, notify: true);
+
+  Future<void> _deleteDownload(String globalKey, {required bool notify}) async {
     try {
       final meta = _metadata[globalKey];
       if (meta != null &&
@@ -1329,40 +1331,38 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       final released = await _releaseDownloadForActiveProfile(globalKey);
       final hasOtherOwners = await _database.hasDownloadOwner(globalKey);
       if (hasOtherOwners) {
-        if (meta != null) {
+        if (notify && meta != null) {
           DeletionNotifier().notifyDeletedItem(item: meta, isDownloadOnly: true);
         }
-        if (released) safeNotifyListeners();
+        if (notify && released) safeNotifyListeners();
         return;
       }
 
-      // Start deletion (progress will be tracked via stream)
       await _downloadManager.deleteDownload(globalKey);
-
-      // Remove from local state
       _downloads.remove(globalKey);
       _metadata.remove(globalKey);
       _artworkPaths.remove(globalKey);
 
-      // Notify any open screens so they can drop the item from their lists
-      // immediately instead of waiting for an exit/re-enter.
-      if (meta != null) {
+      if (notify && meta != null) {
         DeletionNotifier().notifyDeletedItem(item: meta, isDownloadOnly: true);
       }
-
-      safeNotifyListeners();
+      if (notify) safeNotifyListeners();
     } catch (e) {
-      // Remove from deletion tracking on error
       _deletionProgress.remove(globalKey);
-      safeNotifyListeners();
+      if (notify) safeNotifyListeners();
       rethrow;
     }
   }
 
   Future<void> _deleteOwnedContainerDownloads(String globalKey, MediaItem container) async {
     final descendants = _ownedDescendantEntries(container).toList();
-    for (final entry in descendants) {
-      await deleteDownload(entry.key);
+    _batchDeletionDepth++;
+    try {
+      for (final entry in descendants) {
+        await _deleteDownload(entry.key, notify: false);
+      }
+    } finally {
+      _batchDeletionDepth--;
     }
 
     DeletionNotifier().notifyDeletedItem(item: container, isDownloadOnly: true);
@@ -1383,16 +1383,16 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     });
   }
 
-  /// Handle deletion progress updates
+  /// Handle deletion progress updates.
   void _onDeletionProgressUpdate(DeletionProgress progress) {
     if (progress.isComplete) {
-      // Deletion complete - remove from tracking
       _deletionProgress.remove(progress.globalKey);
     } else {
-      // Update progress
       _deletionProgress[progress.globalKey] = progress;
     }
-    safeNotifyListeners();
+    if (_batchDeletionDepth == 0 && _ownsDownloadKey(progress.globalKey)) {
+      safeNotifyListeners();
+    }
   }
 
   /// Get deletion progress for an item
@@ -1719,15 +1719,18 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   Future<void> _loadSyncRules() async {
     try {
-      _syncRules.clear();
       final profileId = _activeProfileId;
-      if (profileId == null || profileId.isEmpty) return;
+      if (profileId == null || profileId.isEmpty) {
+        _syncRules.clear();
+        return;
+      }
       await _database.adoptLegacySyncRulesForProfile(profileId);
       if (_activeProfileId != profileId) return;
       final rules = await _database.getSyncRules(profileId: profileId);
-      for (final rule in rules) {
-        _syncRules[rule.globalKey] = rule;
-      }
+      if (_activeProfileId != profileId) return;
+      _syncRules
+        ..clear()
+        ..addEntries(rules.map((rule) => MapEntry(rule.globalKey, rule)));
     } catch (e) {
       appLogger.w('Failed to load sync rules', error: e);
     }
@@ -1735,12 +1738,18 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   Future<void> _loadDownloadOwners() async {
     try {
-      _ownedDownloadKeys.clear();
       final profileId = _activeProfileId;
-      if (profileId == null || profileId.isEmpty) return;
+      if (profileId == null || profileId.isEmpty) {
+        _ownedDownloadKeys.clear();
+        return;
+      }
       await _database.adoptLegacyDownloadsForProfile(profileId);
       if (_activeProfileId != profileId) return;
-      _ownedDownloadKeys.addAll(await _database.getDownloadOwnerKeysForProfile(profileId));
+      final ownedKeys = await _database.getDownloadOwnerKeysForProfile(profileId);
+      if (_activeProfileId != profileId) return;
+      _ownedDownloadKeys
+        ..clear()
+        ..addAll(ownedKeys);
     } catch (e) {
       appLogger.w('Failed to load download ownership', error: e);
     }
