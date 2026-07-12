@@ -176,6 +176,10 @@ for artifact in (
     "linux-arm64",
 ):
     require(f"name: {artifact}" in release, f"release download lost {artifact}")
+require(
+    "tag_name: ${{ steps.version.outputs.version }}" in release,
+    "release must explicitly use the pubspec version as its tag",
+)
 
 if errors:
     for error in errors:
