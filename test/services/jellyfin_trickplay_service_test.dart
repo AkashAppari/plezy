@@ -10,12 +10,9 @@ import 'package:plezy/services/jellyfin_trickplay_service.dart';
 import 'package:plezy/services/scrub_preview_source.dart';
 import 'package:plezy/utils/device_identity.dart';
 
-JellyfinConnection _conn() => JellyfinConnection(
-  id: 'srv-1/user-1',
-  baseUrl: 'https://jf.example.com',
-  serverName: 'Home',
-  serverMachineId: 'srv-1',
-  userId: 'user-1',
+import '../test_helpers/backend_client_fixtures.dart';
+
+JellyfinConnection _conn() => testJellyfinConnection(
   userName: 'edde',
   accessToken: 'tok-abc',
   deviceId: 'dev-xyz',

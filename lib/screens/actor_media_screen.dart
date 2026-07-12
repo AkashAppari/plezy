@@ -98,30 +98,29 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
 
   @override
   Future<void> loadItems() async {
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
-      items = [];
-      resetPaginationState();
-    });
-
-    try {
-      final initialPage = await loadInitialPageWithStatus(_pageSize);
-      if (!initialPage.applied || !mounted) return;
-      setState(() {
-        items = loadedItems.values.toList();
+    await loadInitialPaginatedItems(
+      pageSize: _pageSize,
+      resetViewState: () {
+        isLoading = true;
+        errorMessage = null;
+        items = [];
+      },
+      applyLoadedItems: (loaded) {
+        items = loaded;
         isLoading = false;
-      });
-      appLogger.d('Loaded ${loadedItems.length} of $totalSize items for actor: ${widget.actorName}');
-      autoFocusFirstItemAfterLoad();
-    } catch (e, st) {
-      appLogger.e('Failed to load actor media', error: e, stackTrace: st);
-      if (!mounted) return;
-      setState(() {
-        errorMessage = t.messages.errorLoading(error: e.toString());
+      },
+      applyError: (error, _) {
+        errorMessage = t.messages.errorLoading(error: error.toString());
         isLoading = false;
-      });
-    }
+      },
+      onLoaded: (loadedCount, totalCount) {
+        appLogger.d('Loaded $loadedCount of $totalCount items for actor: ${widget.actorName}');
+        autoFocusFirstItemAfterLoad();
+      },
+      onError: (error, stackTrace) {
+        appLogger.e('Failed to load actor media', error: error, stackTrace: stackTrace);
+      },
+    );
   }
 
   @override

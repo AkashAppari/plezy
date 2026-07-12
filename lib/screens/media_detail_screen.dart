@@ -20,6 +20,7 @@ import '../focus/dpad_navigator.dart';
 import '../focus/dpad_select_long_press_controller.dart';
 import '../focus/focusable_action_bar.dart';
 import '../focus/focusable_wrapper.dart';
+import '../focus/hub_vertical_navigation.dart';
 import '../focus/key_event_utils.dart';
 import '../focus/input_mode_tracker.dart';
 import '../widgets/cast_member_strip.dart';
@@ -2568,26 +2569,23 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   /// Handle vertical navigation between related hub sections
   bool _handleRelatedHubNavigation(int hubIndex, bool isUp) {
-    if (_relatedHubKeys.isEmpty) return false;
-
-    if (isUp && hubIndex == 0) {
-      if (_extras != null && _extras!.isNotEmpty) {
-        _extrasFocusNode.requestFocus();
-        _scrollSectionIntoView(_extrasSectionKey);
-      } else {
-        _focusSectionAboveExtras();
-      }
-      return true;
-    }
-
-    final targetIndex = isUp ? hubIndex - 1 : hubIndex + 1;
-    if (targetIndex < 0 || targetIndex >= _relatedHubKeys.length) {
-      if (!isUp && _hasInfoRows) _focusInfoRows();
-      return true; // at boundary, consume
-    }
-
-    _relatedHubKeys[targetIndex].currentState?.requestFocusFromMemory();
-    return true;
+    return navigateVerticalHubRows(
+      hubCount: _relatedHubKeys.length,
+      hubIndex: hubIndex,
+      isUp: isUp,
+      onTopBoundary: () {
+        if (_extras != null && _extras!.isNotEmpty) {
+          _extrasFocusNode.requestFocus();
+          _scrollSectionIntoView(_extrasSectionKey);
+        } else {
+          _focusSectionAboveExtras();
+        }
+      },
+      onBottomBoundary: _hasInfoRows ? _focusInfoRows : null,
+      requestFocus: (targetIndex) {
+        _relatedHubKeys[targetIndex].currentState?.requestFocusFromMemory();
+      },
+    );
   }
 
   /// Handle key events for the trailing info rows (studio / contentRating).

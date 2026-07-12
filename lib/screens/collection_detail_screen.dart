@@ -86,32 +86,29 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
 
   @override
   Future<void> loadItems() async {
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
-      items = [];
-      resetPaginationState();
-    });
-    try {
-      final initialPage = await loadInitialPageWithStatus(_pageSize);
-      if (!initialPage.applied || !mounted) return;
-      // Mirror loadedItems into base-class [items] once so state-sliver checks
-      // (items.isEmpty vs items.isEmpty && isLoading) pick the right branch.
-      // Further pages only update loadedItems; items.isEmpty stays false.
-      setState(() {
-        items = loadedItems.values.toList();
+    await loadInitialPaginatedItems(
+      pageSize: _pageSize,
+      resetViewState: () {
+        isLoading = true;
+        errorMessage = null;
+        items = [];
+      },
+      applyLoadedItems: (loaded) {
+        items = loaded;
         isLoading = false;
-      });
-      appLogger.d('Loaded ${loadedItems.length} of $totalSize items for collection: ${widget.collection.title}');
-      autoFocusFirstItemAfterLoad();
-    } catch (e) {
-      appLogger.e('Failed to load collection items', error: e);
-      if (!mounted) return;
-      setState(() {
-        errorMessage = t.collections.failedToLoadItems(error: e.toString());
+      },
+      applyError: (error, _) {
+        errorMessage = t.collections.failedToLoadItems(error: error.toString());
         isLoading = false;
-      });
-    }
+      },
+      onLoaded: (loadedCount, totalCount) {
+        appLogger.d('Loaded $loadedCount of $totalCount items for collection: ${widget.collection.title}');
+        autoFocusFirstItemAfterLoad();
+      },
+      onError: (error, stackTrace) {
+        appLogger.e('Failed to load collection items', error: error, stackTrace: stackTrace);
+      },
+    );
   }
 
   @override

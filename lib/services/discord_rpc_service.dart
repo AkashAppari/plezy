@@ -5,6 +5,7 @@ import 'package:dart_discord_presence/dart_discord_presence.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
+import '../media/playback_timeline.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/platform_detector.dart';
@@ -50,8 +51,7 @@ class DiscordRPCService {
   MediaServerClient? _currentClient;
   String? _cachedThumbnailUrl;
   DateTime? _playbackStartTime;
-  Duration? _mediaDuration;
-  Duration? _currentPosition;
+  final PlaybackTimeline _timeline = PlaybackTimeline();
   double _playbackSpeed = 1.0;
   int _playbackRevision = 0;
   Timer? _reconnectTimer;
@@ -111,8 +111,7 @@ class DiscordRPCService {
     _currentMetadata = metadata;
     _currentClient = client;
     _playbackStartTime = DateTime.now();
-    _mediaDuration = metadata.durationMs != null ? Duration(milliseconds: metadata.durationMs!) : null;
-    _currentPosition = Duration.zero;
+    _timeline.reset(duration: metadata.durationMs != null ? Duration(milliseconds: metadata.durationMs!) : null);
     _cachedThumbnailUrl = null;
     _playbackSpeed = 1.0;
 
@@ -124,20 +123,15 @@ class DiscordRPCService {
 
   /// Update current playback position (for progress bar)
   void updatePosition(Duration position) {
-    final previousPosition = _currentPosition;
-    _currentPosition = position;
+    final isSeek = _timeline.updatePosition(position);
 
     // Update presence if position jumped significantly (seek detected)
-    if (_isEnabled && _isConnected && _playbackStartTime != null && previousPosition != null) {
-      final drift = (position - previousPosition).abs();
-      // If position changed by more than 5 seconds, likely a seek
-      if (drift > const Duration(seconds: 5)) {
-        // Throttle updates to max once per second
-        final now = DateTime.now();
-        if (_lastPresenceUpdate == null || now.difference(_lastPresenceUpdate!) > const Duration(seconds: 1)) {
-          _lastPresenceUpdate = now;
-          _updatePresence();
-        }
+    if (_isEnabled && _isConnected && _playbackStartTime != null && isSeek) {
+      // Throttle updates to max once per second
+      final now = DateTime.now();
+      if (_lastPresenceUpdate == null || now.difference(_lastPresenceUpdate!) > const Duration(seconds: 1)) {
+        _lastPresenceUpdate = now;
+        _updatePresence();
       }
     }
   }
@@ -397,17 +391,16 @@ class DiscordRPCService {
     // When paused, don't show timestamps (progress bar would be inaccurate)
     if (_playbackStartTime == null) return null;
 
-    // If we have duration, show progress bar
-    if (_mediaDuration != null) {
+    final duration = _timeline.duration;
+    if (duration != null) {
       final now = DateTime.now();
-      final position = _currentPosition ?? Duration.zero;
 
       // Calculate remaining time accounting for playback speed
-      final remainingDuration = _mediaDuration! - position;
+      final remainingDuration = duration - _timeline.position;
       final adjustedRemaining = Duration(microseconds: (remainingDuration.inMicroseconds / _playbackSpeed).round());
 
       // Calculate total adjusted duration for progress bar
-      final adjustedTotal = Duration(microseconds: (_mediaDuration!.inMicroseconds / _playbackSpeed).round());
+      final adjustedTotal = Duration(microseconds: (duration.inMicroseconds / _playbackSpeed).round());
 
       final effectiveEnd = now.add(adjustedRemaining);
       final effectiveStart = effectiveEnd.subtract(adjustedTotal);

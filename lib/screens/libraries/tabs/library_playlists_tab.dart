@@ -86,38 +86,34 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
 
   @override
   Future<void> loadItems() async {
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
-      items = [];
-      resetPaginationState();
-    });
-
-    try {
-      final initialPage = await loadInitialPageWithStatus(_pageSize);
-      if (!initialPage.applied || !mounted) return;
-
-      setState(() {
-        items = loadedItems.values.toList();
+    await loadInitialPaginatedItems(
+      pageSize: _pageSize,
+      resetViewState: () {
+        isLoading = true;
+        errorMessage = null;
+        items = [];
+      },
+      applyLoadedItems: (loaded) {
+        items = loaded;
         isLoading = false;
-      });
-
-      hasLoadedData = true;
-      tryFocus();
-
-      if (widget.onDataLoaded != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) widget.onDataLoaded!();
-        });
-      }
-    } catch (e, st) {
-      appLogger.e('Error loading $errorContext', error: e, stackTrace: st);
-      if (!mounted) return;
-      setState(() {
-        errorMessage = 'Failed to load $errorContext: ${e.toString()}';
+      },
+      applyError: (error, _) {
+        errorMessage = 'Failed to load $errorContext: ${error.toString()}';
         isLoading = false;
-      });
-    }
+      },
+      onLoaded: (_, _) {
+        hasLoadedData = true;
+        tryFocus();
+        if (widget.onDataLoaded != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) widget.onDataLoaded!();
+          });
+        }
+      },
+      onError: (error, stackTrace) {
+        appLogger.e('Error loading $errorContext', error: error, stackTrace: stackTrace);
+      },
+    );
   }
 
   @override

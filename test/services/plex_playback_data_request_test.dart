@@ -4,18 +4,18 @@ import 'package:plezy/media/ids.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/mpv/mpv.dart';
-import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
+
+import '../test_helpers/backend_client_fixtures.dart';
 
 void main() {
   late AppDatabase db;
@@ -29,19 +29,8 @@ void main() {
     await db.close();
   });
 
-  PlexClient makeClient(Future<http.Response> Function(http.Request request) handler) {
-    return PlexClient.forTesting(
-      config: PlexConfig(
-        baseUrl: 'https://plex.example.com',
-        token: 'token',
-        clientIdentifier: 'client-id',
-        product: 'Plezy',
-        version: '1',
-      ),
-      serverId: ServerId('server-id'),
-      httpClient: MockClient(handler),
-    );
-  }
+  PlexClient makeClient(Future<http.Response> Function(http.Request request) handler) =>
+      testPlexClient(serverId: ServerId('server-id'), handler: handler);
 
   MediaSourceInfo mediaInfoWithSubtitles(List<MediaSubtitleTrack> subtitleTracks) {
     return MediaSourceInfo(

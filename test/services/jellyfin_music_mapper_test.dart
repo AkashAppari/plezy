@@ -9,6 +9,8 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/jellyfin_mappers.dart';
 
+import '../test_helpers/backend_client_fixtures.dart';
+
 const _serverId = 'jf-machine-1';
 
 /// Captured (trimmed) from a live Jellyfin 10.11 server — an `Audio` row
@@ -65,12 +67,7 @@ Map<String, dynamic> _albumJson() => {
   'MediaType': 'Unknown',
 };
 
-JellyfinConnection _conn() => JellyfinConnection(
-  id: 'srv-1/user-1',
-  baseUrl: 'https://jf.example.com',
-  serverName: 'Home',
-  serverMachineId: 'srv-1',
-  userId: 'user-1',
+JellyfinConnection _conn() => testJellyfinConnection(
   userName: 'edde',
   accessToken: 'tok-abc',
   deviceId: 'dev-xyz',

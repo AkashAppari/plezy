@@ -1,3 +1,4 @@
+import '../test_helpers/paged_fakes.dart';
 import 'dart:convert';
 
 import 'package:drift/native.dart';
@@ -432,9 +433,7 @@ class _AudioPlaylistClient implements MediaServerClient {
 
   @override
   Future<LibraryPage<MediaItem>> fetchPlaylistPage(String id, {int? start, int? size, AbortController? abort}) async {
-    final offset = start ?? 0;
-    final limit = size ?? tracks.length;
-    return LibraryPage(items: tracks.skip(offset).take(limit).toList(), totalCount: tracks.length, offset: offset);
+    return fakeLibraryPage(tracks, start: start, size: size);
   }
 
   @override

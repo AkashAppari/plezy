@@ -17,14 +17,13 @@ import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/sync_rule_executor.dart';
 
+import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
-JellyfinConnection _jellyfinConnection(String userId) => JellyfinConnection(
-  id: 'jf-machine/$userId',
-  baseUrl: 'https://jf.example.com',
-  serverName: 'Shared JF',
-  serverMachineId: 'jf-machine',
+JellyfinConnection _jellyfinConnection(String userId) => testJellyfinConnection(
+  machineId: 'jf-machine',
   userId: userId,
+  serverName: 'Shared JF',
   userName: userId,
   accessToken: 'token-$userId',
   deviceId: 'device',

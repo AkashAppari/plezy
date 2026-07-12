@@ -19,6 +19,7 @@ import 'package:plezy/services/offline_mode_source.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
 
+import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
 // NOTE on coverage scope:
@@ -154,12 +155,10 @@ class _ScopedRecordingMediaClient extends _RecordingMediaClient implements Scope
   return (svc: svc, db: db, mgr: mgr);
 }
 
-JellyfinConnection _jellyfinConnection(String userId) => JellyfinConnection(
-  id: 'jf-machine/$userId',
-  baseUrl: 'https://jf.example.com',
-  serverName: 'Shared JF',
-  serverMachineId: 'jf-machine',
+JellyfinConnection _jellyfinConnection(String userId) => testJellyfinConnection(
+  machineId: 'jf-machine',
   userId: userId,
+  serverName: 'Shared JF',
   userName: userId,
   accessToken: 'token-$userId',
   deviceId: 'device',

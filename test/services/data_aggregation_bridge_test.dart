@@ -20,14 +20,10 @@ import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/services/settings_service.dart';
 
+import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
-JellyfinConnection _conn() => JellyfinConnection(
-  id: 'srv-1/user-1',
-  baseUrl: 'https://jf.example.com',
-  serverName: 'Home',
-  serverMachineId: 'srv-1',
-  userId: 'user-1',
+JellyfinConnection _conn() => testJellyfinConnection(
   userName: 'edde',
   accessToken: 'tok-abc',
   deviceId: 'dev-xyz',

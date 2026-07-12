@@ -1,3 +1,4 @@
+import '../test_helpers/paged_fakes.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -67,11 +68,7 @@ class _RecordingClient implements MediaServerClient {
   Future<LibraryPage<MediaItem>> fetchChildrenPage(String parentId, {int? start, int? size, abort}) async {
     childrenPageCalls.add((parentId: parentId, start: start, size: size));
     final all = childrenPageByParent[parentId] ?? const <MediaItem>[];
-    final offset = start ?? 0;
-    final limit = size ?? all.length;
-    final end = (offset + limit).clamp(0, all.length).toInt();
-    final items = offset >= all.length ? const <MediaItem>[] : all.sublist(offset, end);
-    return LibraryPage(items: items, totalCount: all.length, offset: offset);
+    return fakeLibraryPage(all, start: start, size: size);
   }
 
   @override
@@ -97,11 +94,7 @@ class _SeasonPagingRecordingClient extends _RecordingClient implements SeasonEpi
   }) async {
     seasonEpisodePageCalls.add((seriesId: seriesId, seasonId: seasonId, start: start, size: size));
     final all = seasonPageBySeason[(seriesId: seriesId, seasonId: seasonId)] ?? const <MediaItem>[];
-    final offset = start ?? 0;
-    final limit = size ?? all.length;
-    final end = (offset + limit).clamp(0, all.length).toInt();
-    final items = offset >= all.length ? const <MediaItem>[] : all.sublist(offset, end);
-    return LibraryPage(items: items, totalCount: all.length, offset: offset);
+    return fakeLibraryPage(all, start: start, size: size);
   }
 }
 

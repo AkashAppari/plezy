@@ -18,12 +18,12 @@ class OwnedFocusNodeBinding {
 
   FocusNode get node => _node!;
 
-  void bind({required FocusNode? externalNode, required VoidCallback listener, String? debugLabel}) {
+  void bind({required FocusNode? externalNode, VoidCallback? listener, String? debugLabel}) {
     dispose();
     _node = externalNode ?? _createNode(debugLabel);
     _ownsNode = externalNode == null;
     _listener = listener;
-    _node!.addListener(listener);
+    if (listener != null) _node!.addListener(listener);
   }
 
   void dispose() {

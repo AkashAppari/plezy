@@ -14,13 +14,12 @@ import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/utils/device_identity.dart';
 
+import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/paged_fakes.dart';
+
 JellyfinConnection _conn({String accessToken = 'tok-abc', String baseUrl = 'https://jf.example.com'}) =>
-    JellyfinConnection(
-      id: 'srv-1/user-1',
+    testJellyfinConnection(
       baseUrl: baseUrl,
-      serverName: 'Home',
-      serverMachineId: 'srv-1',
-      userId: 'user-1',
       userName: 'edde',
       accessToken: accessToken,
       deviceId: 'dev-xyz',
@@ -3282,7 +3281,10 @@ void main() {
           final start = int.parse(req.url.queryParameters['StartIndex'] ?? '0');
           final limit = int.parse(req.url.queryParameters['Limit'] ?? '2');
           return http.Response(
-            jsonEncode({'Items': allItems.skip(start).take(limit).toList(), 'TotalRecordCount': allItems.length}),
+            jsonEncode({
+              'Items': sliceFakePage(allItems, start: start, size: limit),
+              'TotalRecordCount': allItems.length,
+            }),
             200,
             headers: {'content-type': 'application/json'},
           );

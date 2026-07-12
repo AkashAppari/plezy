@@ -108,6 +108,58 @@ void main() {
       expect(hooked, [(0, 5)]);
     });
 
+    testWidgets('loadInitialPaginatedItems applies reset, data, and success callback', (tester) async {
+      late _PaginatedProbeState state;
+      var reset = false;
+      List<MediaItem>? applied;
+      (int, int)? counts;
+      await tester.pumpWidget(
+        _PaginatedProbe(
+          onState: (s) => state = s,
+          fetcher: (start, size, abort) async => _result(start: start, size: size, totalSize: 7),
+        ),
+      );
+
+      final succeeded = await state.loadInitialPaginatedItems(
+        pageSize: 3,
+        resetViewState: () => reset = true,
+        applyLoadedItems: (items) => applied = items,
+        applyError: (error, stackTrace) => fail('unexpected error: $error'),
+        onLoaded: (loaded, total) => counts = (loaded, total),
+      );
+      await tester.pump();
+
+      expect(succeeded, isTrue);
+      expect(reset, isTrue);
+      expect(applied?.map((item) => item.id), ['k0', 'k1', 'k2']);
+      expect(counts, (3, 7));
+    });
+
+    testWidgets('loadInitialPaginatedItems applies one error transaction', (tester) async {
+      late _PaginatedProbeState state;
+      Object? appliedError;
+      Object? loggedError;
+      await tester.pumpWidget(
+        _PaginatedProbe(
+          onState: (s) => state = s,
+          fetcher: (start, size, abort) async => throw StateError('failed page'),
+        ),
+      );
+
+      final succeeded = await state.loadInitialPaginatedItems(
+        pageSize: 3,
+        resetViewState: () {},
+        applyLoadedItems: (_) => fail('items must not be applied'),
+        applyError: (error, stackTrace) => appliedError = error,
+        onError: (error, stackTrace) => loggedError = error,
+      );
+      await tester.pump();
+
+      expect(succeeded, isFalse);
+      expect(appliedError, isA<StateError>());
+      expect(loggedError, same(appliedError));
+    });
+
     testWidgets('totalSize == 0 means no more pages — ensureRangeLoaded is a no-op', (tester) async {
       late _PaginatedProbeState state;
       await tester.pumpWidget(

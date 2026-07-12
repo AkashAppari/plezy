@@ -12,6 +12,8 @@ import 'package:plezy/services/jellyfin_endpoint_discovery.dart';
 import 'package:plezy/utils/log_redaction_manager.dart';
 import 'package:plezy/utils/media_server_timeouts.dart';
 
+import '../test_helpers/backend_client_fixtures.dart';
+
 /// Helpers for stubbing http responses keyed by request path.
 typedef _Handler = FutureOr<http.Response> Function(http.BaseRequest req);
 
@@ -20,12 +22,7 @@ http.Response _bareOk(String body) => http.Response(body, 200, headers: {'conten
 http.Response _status(int code, [Object? json]) =>
     http.Response(json == null ? '' : jsonEncode(json), code, headers: {'content-type': 'application/json'});
 
-JellyfinConnection _existingConn({String accessToken = 'tok-old'}) => JellyfinConnection(
-  id: 'srv-1/user-1',
-  baseUrl: 'https://jf.example.com',
-  serverName: 'Home',
-  serverMachineId: 'srv-1',
-  userId: 'user-1',
+JellyfinConnection _existingConn({String accessToken = 'tok-old'}) => testJellyfinConnection(
   userName: 'edde',
   accessToken: accessToken,
   deviceId: 'dev-xyz',

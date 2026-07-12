@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../focus/focusable_action_bar.dart';
+import '../focus/hub_vertical_navigation.dart';
 import '../i18n/strings.g.dart';
 import '../media/ids.dart';
 import '../media/media_hub.dart';
@@ -118,18 +119,15 @@ class ExploreScreenState extends State<ExploreScreen>
 
   bool _handleVerticalNavigation(int hubIndex, bool isUp) {
     final keys = _orderedHubKeys;
-    if (keys.isEmpty) return false;
-
-    if (isUp && hubIndex == 0) {
-      _actionBarKey.currentState?.requestFocusOnFirst();
-      return true;
-    }
-
-    final targetIndex = isUp ? hubIndex - 1 : hubIndex + 1;
-    // At a boundary, consume the event so focus can't escape the rows.
-    if (targetIndex < 0 || targetIndex >= keys.length) return true;
-    keys[targetIndex].currentState?.requestFocusFromMemory();
-    return true;
+    return navigateVerticalHubRows(
+      hubCount: keys.length,
+      hubIndex: hubIndex,
+      isUp: isUp,
+      onTopBoundary: _actionBarKey.currentState?.requestFocusOnFirst,
+      requestFocus: (targetIndex) {
+        keys[targetIndex].currentState?.requestFocusFromMemory();
+      },
+    );
   }
 
   void _navigateToSidebar() {

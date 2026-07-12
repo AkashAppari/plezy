@@ -31,6 +31,8 @@ import '../utils/global_key_utils.dart';
 import '../utils/watch_state_notifier.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 
+part 'download_metadata_store.dart';
+
 /// Filter mode for batch downloads (shows/seasons).
 /// Use [all] to download everything, or [unwatched] with an optional maxCount.
 enum DownloadFilter { all, unwatched }
@@ -62,8 +64,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   final SyncRuleExecutor _syncRuleExecutor;
   StreamSubscription<DownloadProgress>? _progressSubscription;
   StreamSubscription<DeletionProgress>? _deletionProgressSubscription;
-  StreamSubscription<WatchStateEvent>? _watchStateSubscription;
-  final WatchStateStore _watchStateStore = WatchStateStore();
   late final Future<void> _initFuture;
 
   // Track download progress by public globalKey (serverId:ratingKey).
@@ -71,12 +71,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   // watch actions, cache namespaces, and sync-rule ownership.
   final Map<String, DownloadProgress> _downloads = {};
 
-  // Store metadata for display
-  final Map<String, MediaItem> _metadata = {};
-
-  // Store Plex thumb paths for offline display (actual file path computed from hash)
-  final Map<String, DownloadedArtwork> _artworkPaths = {};
-  final Map<String, String?> _watchScopesByServer = {};
+  // Metadata and artwork cache lifecycle is isolated from queue ownership.
+  late final _DownloadMetadataStore _metadataStore;
+  Map<String, MediaItem> get _metadata => _metadataStore.items;
+  Map<String, DownloadedArtwork> get _artworkPaths => _metadataStore.artworkPaths;
 
   // Track items currently being queued (building download queue)
   final Set<String> _queueing = {};
@@ -100,16 +98,13 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   DownloadProvider({required this._downloadManager, required this._database})
     : _syncRuleExecutor = SyncRuleExecutor(database: _database) {
+    _metadataStore = _DownloadMetadataStore(downloadManager: _downloadManager, database: _database)
+      ..addListener(_onMetadataStoreChanged);
     // Listen to progress updates from the download manager
     _progressSubscription = _downloadManager.progressStream.listen(_onProgressUpdate);
 
     // Listen to deletion progress updates
     _deletionProgressSubscription = _downloadManager.deletionProgressStream.listen(_onDeletionProgressUpdate);
-
-    // Keep cached metadata fresh when items get marked watched/unwatched anywhere
-    // in the app, so re-entering a screen reflects the latest state.
-    _watchStateSubscription = WatchStateNotifier().stream.listen(_onWatchStateChanged);
-    _watchStateStore.addListener(_onWatchStateOverlayChanged);
 
     // Load persisted downloads from database
     _initFuture = _loadPersistedDownloads();
@@ -126,11 +121,13 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     required this._database,
     this._activeProfileId = 'test-profile',
   }) : _syncRuleExecutor = SyncRuleExecutor(database: _database) {
+    _metadataStore = _DownloadMetadataStore(
+      downloadManager: _downloadManager,
+      database: _database,
+      activeProfileId: _activeProfileId,
+    )..addListener(_onMetadataStoreChanged);
     _progressSubscription = _downloadManager.progressStream.listen(_onProgressUpdate);
     _deletionProgressSubscription = _downloadManager.deletionProgressStream.listen(_onDeletionProgressUpdate);
-    _watchStateSubscription = WatchStateNotifier().stream.listen(_onWatchStateChanged);
-    _watchStateStore.addListener(_onWatchStateOverlayChanged);
-    _watchStateStore.setActiveProfileId(_activeProfileId);
     _initFuture = _loadProfileScopedState();
   }
 
@@ -150,9 +147,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   void setActiveProfileId(String? profileId) {
     if (_activeProfileId == profileId) return;
     _activeProfileId = profileId;
-    _watchStateStore.setActiveProfileId(profileId);
-    _watchScopesByServer.clear();
-    _watchStateStore.setActiveClientScopesByServer(const {});
+    _metadataStore.setActiveProfileId(profileId);
     _profileGeneration++;
     final reload = _reloadProfileScopedStateForActiveProfile();
     _profileScopedReloadFuture = reload;
@@ -219,6 +214,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // reload may still finish its DB adoption, but cannot repopulate the
     // active-profile view after this point.
     _activeProfileId = null;
+    _metadataStore.setActiveProfileId(null);
     _profileGeneration++;
     await _initFuture;
     await _profileScopedReloadFuture;
@@ -378,120 +374,21 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Hydrate queued OfflineWatchProgress actions into the canonical
   /// hierarchy-aware watch-state layer.
-  Future<void> _applyOfflineWatchOverlay({int? expectedProfileGeneration}) async {
-    bool isStale() =>
-        expectedProfileGeneration != null && (isDisposed || expectedProfileGeneration != _profileGeneration);
-    try {
-      final profileId = _activeProfileId;
-      if (profileId == null || profileId.isEmpty) {
-        _watchStateStore.setHydratedPatches(const []);
-        return;
-      }
-      final keys = <String>{};
-      for (final item in _metadata.values) {
-        keys.add(item.globalKey);
-        final serverId = serverIdOrNull(item.serverId);
-        if (serverId == null) continue;
-        for (final parentId in item.parentChain) {
-          keys.add(buildGlobalKey(serverId, parentId));
-        }
-      }
-      if (keys.isEmpty) {
-        _watchStateStore.setHydratedPatches(const []);
-        return;
-      }
-      final scopes = <String, String?>{};
-      final scopesByServer = <String, String?>{};
-      for (final key in keys) {
-        final parsed = parseGlobalKey(key);
-        if (parsed == null) continue;
-        var scope = scopesByServer[parsed.serverId];
-        if (!scopesByServer.containsKey(parsed.serverId)) {
-          scope = await _offlineWatchScopeForServer(parsed.serverId);
-          scopesByServer[parsed.serverId] = scope;
-        }
-        scopes[key] = scope;
-        if (isStale()) return;
-      }
-      _watchScopesByServer
-        ..clear()
-        ..addAll(scopesByServer);
-      _watchStateStore.setActiveClientScopesByServer(_watchScopesByServer);
-      final actions = await _database.getWatchActionsForKeys(
-        keys,
-        profileId: profileId,
-        filterProfile: true,
-        clientScopeIdsByGlobalKey: scopes,
-      );
-      if (isStale()) return;
-      final hydrated = <HydratedWatchStatePatch>[];
-      for (final entry in actions.entries) {
-        final snapshot = WatchStateResolver.fromActions(entry.value);
-        if (snapshot.isEmpty) continue;
-        final latest = entry.value.firstWhere(
-          (action) =>
-              action.actionType == 'watched' || action.actionType == 'unwatched' || action.actionType == 'progress',
-        );
-        final scopedKey = latest.clientScopeId != null && latest.clientScopeId!.isNotEmpty
-            ? buildGlobalKey(ServerId(latest.clientScopeId!), latest.ratingKey)
-            : latest.globalKey;
-        hydrated.add(
-          HydratedWatchStatePatch(
-            globalKey: scopedKey,
-            patch: WatchStatePatch.fromSnapshot(snapshot),
-            updatedAt: latest.updatedAt,
-            order: latest.id,
-          ),
-        );
-      }
-      _watchStateStore.setHydratedPatches(hydrated);
-    } catch (e) {
-      appLogger.w('Failed to apply offline watch overlay', error: e);
-    }
-  }
-
-  Future<String?> _offlineWatchScopeForServer(String serverId) async {
-    final activeScope = _downloadManager.activeClientScopeIdForServer(ServerId(serverId));
-    if (activeScope != null && activeScope.isNotEmpty) return activeScope;
-    for (final globalKey in _downloads.keys) {
-      if (!_ownsDownloadKey(globalKey)) continue;
-      final parsed = parseGlobalKey(globalKey);
-      if (parsed?.serverId != serverId) continue;
-      final downloadedScope = (await _database.getDownloadedMedia(globalKey))?.clientScopeId;
-      if (downloadedScope != null && downloadedScope.isNotEmpty) return downloadedScope;
-    }
-    return null;
+  Future<void> _applyOfflineWatchOverlay({int? expectedProfileGeneration}) {
+    return _metadataStore.hydrateOfflineWatchOverlay(
+      downloads: _downloads,
+      ownsDownloadKey: _ownsDownloadKey,
+      isStale: expectedProfileGeneration == null
+          ? null
+          : () => isDisposed || expectedProfileGeneration != _profileGeneration,
+    );
   }
 
   /// Load parent metadata (show + season for episodes, artist + album for
   /// tracks) from a pre-loaded map (no DB I/O). Used during bulk
   /// initialization to avoid per-item DB queries.
   void _loadParentMetadataFromMap(MediaItem leaf, Map<String, MediaItem> allMetadata, {String? clientScopeId}) {
-    final serverId = leaf.serverId;
-    if (serverId == null) return;
-
-    MediaItem? lookupParent(String ratingKey) {
-      if (clientScopeId != null && clientScopeId.isNotEmpty) {
-        final scoped = allMetadata[buildGlobalKey(ServerId(clientScopeId), ratingKey)];
-        if (scoped != null) return scoped;
-      }
-      return allMetadata[buildGlobalKey(ServerId(serverId), ratingKey)];
-    }
-
-    void loadParent(String? ratingKey) {
-      if (ratingKey == null) return;
-      final parentGlobalKey = buildGlobalKey(ServerId(serverId), ratingKey);
-      if (_metadata.containsKey(parentGlobalKey)) return;
-      final parentMetadata = lookupParent(ratingKey);
-      if (parentMetadata == null) return;
-      _metadata[parentGlobalKey] = parentMetadata;
-      if (parentMetadata.thumbPath != null) {
-        _artworkPaths[parentGlobalKey] = DownloadedArtwork(thumbPath: parentMetadata.thumbPath);
-      }
-    }
-
-    loadParent(leaf.grandparentId); // show / artist
-    loadParent(leaf.parentId); // season / album
+    _metadataStore.loadParentMetadataFromMap(leaf, allMetadata, clientScopeId: clientScopeId);
   }
 
   void _onProgressUpdate(DownloadProgress progress) {
@@ -512,62 +409,13 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   void dispose() {
     _progressSubscription?.cancel();
     _deletionProgressSubscription?.cancel();
-    _watchStateSubscription?.cancel();
-    _watchStateStore.removeListener(_onWatchStateOverlayChanged);
-    _watchStateStore.dispose();
+    _metadataStore
+      ..removeListener(_onMetadataStoreChanged)
+      ..dispose();
     super.dispose();
   }
 
-  void _onWatchStateOverlayChanged() => safeNotifyListeners();
-
-  void _onWatchStateChanged(WatchStateEvent event) {
-    final snapshot = WatchStateResolver.fromEvent(event);
-    if (snapshot.isEmpty) return;
-
-    final globalKey = buildGlobalKey(ServerId(event.serverId), event.itemId);
-    final base = _metadata[globalKey];
-    final eventScope = event.cacheServerId;
-    final activeScope = _downloadManager.activeClientScopeIdForServer(ServerId(event.serverId));
-    if (activeScope != null && activeScope.isNotEmpty) {
-      _watchScopesByServer[event.serverId] = activeScope;
-      _watchStateStore.setActiveClientScopesByServer(_watchScopesByServer);
-    }
-    if (base == null) return;
-    if (eventScope != null && eventScope.isNotEmpty && eventScope != event.serverId && eventScope != activeScope) {
-      return;
-    }
-
-    final isWatched = snapshot.isWatched;
-    // Sub-threshold progress ticks are frequent; offline reloads re-apply them
-    // from queued watch actions, so only durable watch flips hit the cache here.
-    final shouldPersistToCache =
-        isWatched != null && (event.changeType != WatchStateChangeType.progressUpdate || event.isNowWatched == true);
-
-    // Persist into the per-backend pinned cache so the patch survives reloads
-    // (`_loadPersistedDownloads` rehydrates `_metadata` from the cache).
-    if (shouldPersistToCache) {
-      unawaited(
-        () async {
-          // Jellyfin cache rows are per-user (cacheServerId embeds the user);
-          // Plex rows are keyed by server only, so persisting one user's flip
-          // into a download SHARED with another profile would surface as that
-          // profile's watch state too. Skip the shared case — each profile's
-          // own queued watch actions still re-apply its state on reload.
-          if (base.backend == MediaBackend.plex &&
-              await _database.hasDownloadOwner(globalKey, excludingProfileId: _activeProfileId)) {
-            return;
-          }
-          await ApiCache.forBackend(base.backend).applyWatchState(
-            serverId: ServerId(event.cacheServerId ?? event.serverId),
-            itemId: event.itemId,
-            isWatched: isWatched,
-          );
-        }().catchError((Object e) {
-          appLogger.w('Failed to apply watch state to cache for $globalKey', error: e);
-        }),
-      );
-    }
-  }
+  void _onMetadataStoreChanged() => safeNotifyListeners();
 
   /// Ensure metadata has a serverId, falling back to a parent's serverId.
   MediaItem _ensureServerId(MediaItem metadata, String? fallbackServerId) =>
@@ -578,8 +426,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       Map.unmodifiable(Map.fromEntries(_downloads.entries.where(_ownsProgressEntry)));
 
   /// All metadata for downloads
-  Map<String, MediaItem> get metadata =>
-      Map.unmodifiable({for (final entry in _metadata.entries) entry.key: _watchStateStore.apply(entry.value)});
+  Map<String, MediaItem> get metadata => _metadataStore.resolvedItems;
 
   /// Get unique TV shows that have downloaded episodes
   /// Returns stored show metadata, or synthesizes from episode metadata as fallback
@@ -589,7 +436,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     for (final entry in _metadata.entries) {
       final globalKey = entry.key;
       if (!_ownsDownloadKey(globalKey)) continue;
-      final meta = _watchStateStore.apply(entry.value);
+      final meta = _metadataStore.applyWatchState(entry.value);
       final progress = _downloads[globalKey];
 
       if (progress?.status == DownloadStatus.completed && meta.isEpisode) {
@@ -637,7 +484,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
           final progress = _downloads[entry.key];
           return progress?.status == DownloadStatus.completed && entry.value.isMovie;
         })
-        .map((entry) => _watchStateStore.apply(entry.value))
+        .map((entry) => _metadataStore.applyWatchState(entry.value))
         .toList();
   }
 
@@ -650,7 +497,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     for (final entry in _metadata.entries) {
       final globalKey = entry.key;
       if (!_ownsDownloadKey(globalKey)) continue;
-      final meta = _watchStateStore.apply(entry.value);
+      final meta = _metadataStore.applyWatchState(entry.value);
       if (meta.kind != MediaKind.track) continue;
       if (_downloads[globalKey]?.status != DownloadStatus.completed) continue;
 
@@ -695,7 +542,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
               meta.parentId == albumRatingKey &&
               _downloads[entry.key]?.status == DownloadStatus.completed;
         })
-        .map((entry) => _watchStateStore.apply(entry.value))
+        .map((entry) => _metadataStore.applyWatchState(entry.value))
         .toList();
     tracks.sort((a, b) {
       final byDisc = (a.discNumber ?? 1).compareTo(b.discNumber ?? 1);
@@ -706,10 +553,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   /// Get metadata for a specific download
-  MediaItem? _resolvedMetadata(String globalKey) {
-    final item = _metadata[globalKey];
-    return item == null ? null : _watchStateStore.apply(item);
-  }
+  MediaItem? _resolvedMetadata(String globalKey) => _metadataStore.resolved(globalKey);
 
   MediaItem? getMetadata(String globalKey) => _resolvedMetadata(globalKey);
 
@@ -732,7 +576,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
           final meta = entry.value;
           return progress?.status == DownloadStatus.completed && meta.isEpisode && meta.grandparentId == showRatingKey;
         })
-        .map((entry) => _watchStateStore.apply(entry.value))
+        .map((entry) => _metadataStore.applyWatchState(entry.value))
         .toList();
   }
 

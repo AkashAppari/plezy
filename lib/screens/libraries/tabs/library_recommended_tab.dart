@@ -4,6 +4,7 @@ import '../../../media/ids.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../focus/hub_vertical_navigation.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../media/media_hub.dart';
 import '../../../media/media_item.dart';
@@ -267,27 +268,15 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
 
   /// Handle vertical navigation between hubs
   bool _handleVerticalNavigation(int hubIndex, bool isUp) {
-    final targetIndex = isUp ? hubIndex - 1 : hubIndex + 1;
-
-    // Check if target is valid
-    if (targetIndex < 0) {
-      // At top boundary - return false to allow onNavigateUp to handle it
-      return false;
-    }
-
-    if (targetIndex >= _hubKeys.length) {
-      // At bottom boundary, block navigation
-      return true;
-    }
-
-    // Navigate to target hub with column memory
-    final targetState = _hubKeys[targetIndex].currentState;
-    if (targetState != null) {
-      targetState.requestFocusFromMemory();
-      return true;
-    }
-
-    return false;
+    return navigateVerticalHubRows(
+      hubCount: items.length,
+      hubIndex: hubIndex,
+      isUp: isUp,
+      propagateTopBoundary: true,
+      requestFocus: (targetIndex) {
+        _hubKeys[targetIndex].currentState?.requestFocusFromMemory();
+      },
+    );
   }
 
   /// Focus the first item in the first hub (for tab activation)

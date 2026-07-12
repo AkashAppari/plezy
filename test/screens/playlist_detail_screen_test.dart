@@ -23,6 +23,8 @@ import 'package:plezy/services/playlist_items_loader.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
+
+import '../test_helpers/paged_fakes.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:provider/provider.dart';
 
@@ -271,8 +273,7 @@ class _PagedPlaylistClient implements MediaServerClient {
       _hasFailed = true;
       throw StateError('temporary continuation failure');
     }
-    final limit = size ?? items.length;
-    return LibraryPage(items: items.skip(offset).take(limit).toList(), totalCount: items.length, offset: offset);
+    return fakeLibraryPage(items, start: start, size: size);
   }
 
   @override

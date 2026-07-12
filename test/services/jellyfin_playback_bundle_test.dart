@@ -10,12 +10,9 @@ import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 
-JellyfinConnection _conn() => JellyfinConnection(
-  id: 'srv-1/user-1',
-  baseUrl: 'https://jf.example.com',
-  serverName: 'Home',
-  serverMachineId: 'srv-1',
-  userId: 'user-1',
+import '../test_helpers/backend_client_fixtures.dart';
+
+JellyfinConnection _conn() => testJellyfinConnection(
   userName: 'edde',
   accessToken: 'tok-abc',
   deviceId: 'dev-xyz',
@@ -44,10 +41,10 @@ void main() {
   });
 
   JellyfinClient buildClient(String body) {
-    final mock = MockClient((req) async {
-      return http.Response(body, 200, headers: {'content-type': 'application/json'});
-    });
-    return JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+    return testJellyfinClient(
+      connection: _conn(),
+      handler: (_) async => http.Response(body, 200, headers: {'content-type': 'application/json'}),
+    );
   }
 
   group('JellyfinClient.fetchPlaybackBundle', () {

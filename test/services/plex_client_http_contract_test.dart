@@ -3,13 +3,13 @@ import 'dart:convert';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/ids.dart';
-import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
+
+import '../test_helpers/backend_client_fixtures.dart';
 
 void main() {
   late AppDatabase db;
@@ -21,19 +21,8 @@ void main() {
 
   tearDown(() => db.close());
 
-  PlexClient makeClient(Future<http.Response> Function(http.Request request) handler) {
-    return PlexClient.forTesting(
-      config: PlexConfig(
-        baseUrl: 'https://plex.example.com',
-        token: 'token',
-        clientIdentifier: 'client-id',
-        product: 'Plezy',
-        version: '1',
-      ),
-      serverId: ServerId('server-id'),
-      httpClient: MockClient(handler),
-    );
-  }
+  PlexClient makeClient(Future<http.Response> Function(http.Request request) handler) =>
+      testPlexClient(serverId: ServerId('server-id'), handler: handler);
 
   test('void mutations surface non-success responses', () async {
     final client = makeClient((_) async => http.Response('rejected', 500));

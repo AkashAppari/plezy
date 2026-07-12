@@ -8,6 +8,7 @@ import '../utils/platform_detector.dart';
 import '../utils/text_input_diagnostics.dart';
 import '../widgets/tv_virtual_keyboard.dart';
 import 'dpad_navigator.dart';
+import 'owned_focus_node_binding.dart';
 
 bool _usesTvKeyboard(bool enableTvKeyboard) => enableTvKeyboard && PlatformDetector.isTV();
 
@@ -667,7 +668,7 @@ class _FocusableTextInputHost extends StatefulWidget {
 }
 
 class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
-  FocusNode? _ownedFocusNode;
+  final OwnedFocusNodeBinding _focusNodeBinding = OwnedFocusNodeBinding();
   FocusNode? _installedFocusNode;
   FocusOnKeyEventCallback? _previousOnKeyEvent;
   late final FocusOnKeyEventCallback _keyHandler = _handleKey;
@@ -681,12 +682,12 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
   bool _hasSeenTvKeyboardFocus = false;
   bool _suppressTvKeyboardForCurrentFocus = false;
 
-  FocusNode get _effectiveFocusNode =>
-      widget.input.focusNode ?? (_ownedFocusNode ??= FocusNode(debugLabel: 'FocusableTextInput'));
+  FocusNode get _effectiveFocusNode => _focusNodeBinding.node;
 
   @override
   void initState() {
     super.initState();
+    _focusNodeBinding.bind(externalNode: widget.input.focusNode, debugLabel: 'FocusableTextInput');
     widget.input.tvKeyboardController?._attach(this);
   }
 
@@ -701,6 +702,7 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
       // An open keyboard dialog intentionally survives rebuilds and focusNode
       // swaps; it is closed only when this host unmounts — see dispose.
       _restoreInstalledHandler();
+      _focusNodeBinding.bind(externalNode: widget.input.focusNode, debugLabel: 'FocusableTextInput');
       _suppressTvKeyboardAutoOpen = false;
       _tvKeyboardOpenScheduled = false;
       _hasSeenTvKeyboardFocus = false;
@@ -720,7 +722,7 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
     if (keyboard != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => keyboard.close());
     }
-    _ownedFocusNode?.dispose();
+    _focusNodeBinding.dispose();
     super.dispose();
   }
 

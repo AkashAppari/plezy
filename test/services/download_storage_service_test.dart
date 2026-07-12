@@ -9,41 +9,9 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/settings_service.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import '../test_helpers/io_fakes.dart';
 import '../test_helpers/prefs.dart';
-
-/// In-test fake PathProviderPlatform that points all directories at a real
-/// on-disk temp folder. Required because the production service calls
-/// [getApplicationDocumentsDirectory] / [getApplicationSupportDirectory] —
-/// both of which fail outside an app context unless the platform interface
-/// is mocked.
-class _FakePathProvider extends PathProviderPlatform with MockPlatformInterfaceMixin {
-  _FakePathProvider(this.root);
-
-  final Directory root;
-  String get _docs => p.join(root.path, 'documents');
-  String get _support => p.join(root.path, 'support');
-  String get _cache => p.join(root.path, 'cache');
-  String get _temp => p.join(root.path, 'temp');
-
-  @override
-  Future<String?> getApplicationDocumentsPath() async => _ensure(_docs);
-
-  @override
-  Future<String?> getApplicationSupportPath() async => _ensure(_support);
-
-  @override
-  Future<String?> getApplicationCachePath() async => _ensure(_cache);
-
-  @override
-  Future<String?> getTemporaryPath() async => _ensure(_temp);
-
-  String _ensure(String dir) {
-    Directory(dir).createSync(recursive: true);
-    return dir;
-  }
-}
 
 void main() {
   late Directory tmpRoot;
@@ -53,7 +21,7 @@ void main() {
     SettingsService.resetForTesting();
     DownloadStorageService.resetForTesting();
     tmpRoot = await Directory.systemTemp.createTemp('dss_test_');
-    PathProviderPlatform.instance = _FakePathProvider(tmpRoot);
+    PathProviderPlatform.instance = FakePathProvider(tmpRoot);
   });
 
   tearDown(() async {

@@ -14,24 +14,20 @@ import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 
+import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
-JellyfinConnection _jellyfinConnection(String userId) => JellyfinConnection(
-  id: 'jf-machine/$userId',
-  baseUrl: 'https://jf.example.com',
-  serverName: 'Shared JF',
-  serverMachineId: 'jf-machine',
+JellyfinConnection _jellyfinConnection(String userId) => testJellyfinConnection(
+  machineId: 'jf-machine',
   userId: userId,
+  serverName: 'Shared JF',
   userName: userId,
   accessToken: 'token-$userId',
   deviceId: 'device',
   createdAt: DateTime.fromMillisecondsSinceEpoch(0),
 );
 
-JellyfinClient _jellyfinClient(String userId) => JellyfinClient.forTesting(
-  connection: _jellyfinConnection(userId),
-  httpClient: MockClient((_) async => http.Response('{}', 200)),
-);
+JellyfinClient _jellyfinClient(String userId) => testJellyfinClient(connection: _jellyfinConnection(userId));
 
 // NOTE on coverage scope:
 // [MultiServerManager.addServer] / `connectToAllServers` / `_createClientForServer`

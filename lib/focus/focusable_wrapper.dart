@@ -9,6 +9,7 @@ import 'dpad_select_long_press_controller.dart';
 import 'focus_glow_overlay.dart';
 import 'focus_theme.dart';
 import 'input_mode_tracker.dart';
+import 'owned_focus_node_binding.dart';
 import 'key_event_utils.dart';
 
 String _describeFocusableKey(KeyEvent event) {
@@ -164,8 +165,8 @@ class FocusableWrapper extends StatefulWidget {
 }
 
 class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerProviderStateMixin {
-  late FocusNode _focusNode;
-  bool _ownsNode = false;
+  final OwnedFocusNodeBinding _focusNodeBinding = OwnedFocusNodeBinding();
+  FocusNode get _focusNode => _focusNodeBinding.node;
   bool _isFocused = false;
 
   // Created lazily on first focus/keyboard-mode build: touch scrolling builds
@@ -178,20 +179,12 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
   @override
   void initState() {
     super.initState();
-    _initFocusNode();
+    _bindFocusNode();
   }
 
-  void _initFocusNode() {
-    if (widget.focusNode != null) {
-      _focusNode = widget.focusNode!;
-      _ownsNode = false;
-    } else {
-      _focusNode = FocusNode(
-        debugLabel: widget.semanticLabel ?? 'FocusableWrapper',
-        canRequestFocus: widget.canRequestFocus,
-      );
-      _ownsNode = true;
-    }
+  void _bindFocusNode() {
+    _focusNodeBinding.bind(externalNode: widget.focusNode, debugLabel: widget.semanticLabel ?? 'FocusableWrapper');
+    _focusNode.canRequestFocus = widget.canRequestFocus;
   }
 
   AnimationController _ensureAnimationController() {
@@ -216,10 +209,7 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
 
     // Handle focusNode changes
     if (widget.focusNode != oldWidget.focusNode) {
-      if (_ownsNode) {
-        _focusNode.dispose();
-      }
-      _initFocusNode();
+      _bindFocusNode();
     }
 
     // Update canRequestFocus
@@ -239,9 +229,7 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
   void dispose() {
     _selectLongPress.dispose();
     _animationController?.dispose();
-    if (_ownsNode) {
-      _focusNode.dispose();
-    }
+    _focusNodeBinding.dispose();
     super.dispose();
   }
 

@@ -11,20 +11,18 @@ import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 
-JellyfinConnection _conn({String baseUrl = 'https://jf.example.com', List<String>? baseUrls}) => JellyfinConnection(
-  id: 'srv-1/user-1',
+import '../test_helpers/backend_client_fixtures.dart';
+
+JellyfinConnection _conn({String baseUrl = 'https://jf.example.com', List<String>? baseUrls}) => testJellyfinConnection(
   baseUrl: baseUrl,
   baseUrls: baseUrls,
-  serverName: 'Home',
-  serverMachineId: 'srv-1',
-  userId: 'user-1',
   userName: 'edde',
   accessToken: 'tok-abc',
   deviceId: 'dev-xyz',
   createdAt: DateTime.fromMillisecondsSinceEpoch(0),
 );
 
-JellyfinClient _withMock(MockClient mock) => JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+JellyfinClient _withMock(MockClient mock) => testJellyfinClient(connection: _conn(), httpClient: mock);
 
 /// Failure-path coverage for the Jellyfin HTTP layer.
 ///

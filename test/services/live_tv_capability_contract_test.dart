@@ -8,13 +8,14 @@ import 'package:plezy/connection/connection.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_server_client.dart';
-import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
+
+import '../test_helpers/backend_client_fixtures.dart';
 
 void main() {
   late AppDatabase db;
@@ -26,29 +27,19 @@ void main() {
 
   tearDown(() => db.close());
 
-  PlexClient plexClient(http.Client httpClient) => PlexClient.forTesting(
-    config: PlexConfig(
-      baseUrl: 'https://plex.example.com',
-      token: 'plex-token',
-      clientIdentifier: 'plex-device',
-      product: 'Plezy',
-      version: '1',
-      machineIdentifier: 'plex-machine',
-    ),
+  PlexClient plexClient(http.Client httpClient) => testPlexClient(
+    config: testPlexConfig(token: 'plex-token', clientIdentifier: 'plex-device', machineIdentifier: 'plex-machine'),
     serverId: ServerId('plex-machine'),
     httpClient: httpClient,
   );
 
-  JellyfinClient jellyfinClient(http.Client httpClient) => JellyfinClient.forTesting(
-    connection: JellyfinConnection(
-      id: 'jellyfin-machine/user-1',
+  JellyfinClient jellyfinClient(http.Client httpClient) => testJellyfinClient(
+    connection: testJellyfinConnection(
+      machineId: 'jellyfin-machine',
+      userId: 'user-1',
       baseUrl: 'https://jellyfin.example.com',
       serverName: 'Jellyfin',
-      serverMachineId: 'jellyfin-machine',
-      userId: 'user-1',
-      userName: 'User',
       accessToken: 'jellyfin-token',
-      deviceId: 'device-1',
       createdAt: DateTime.fromMillisecondsSinceEpoch(0),
     ),
     httpClient: httpClient,

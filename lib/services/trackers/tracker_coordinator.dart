@@ -3,6 +3,7 @@ import 'dart:async';
 import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
 import '../../media/media_server_client.dart';
+import '../../media/playback_timeline.dart';
 import '../../models/trackers/tracker_context.dart';
 import '../../utils/app_logger.dart';
 import '../../media/episode_collection.dart';
@@ -38,20 +39,16 @@ class TrackerCoordinator {
   AnimeEpisodeProgressLookup? _debugAnimeProgress;
 
   TrackerContext? _ctx;
-  Duration _duration = Duration.zero;
-  Duration _lastPosition = Duration.zero;
-  bool _thresholdCrossed = false;
 
   /// Seed used before [startPlayback] captures the server's threshold; never
   /// actually consulted (a crossing is only evaluated once `_ctx` is set,
   /// after the client value is assigned).
   static const double _fallbackWatchedThreshold = TrackerConstants.watchedThresholdPercent / 100.0;
 
-  /// Captured from the active server client in [startPlayback]; trackers mark
-  /// watched once progress crosses it (Plex's `LibraryVideoPlayedThreshold`,
-  /// Jellyfin's fixed 0.9). Mirrors [PlaybackProgressTracker]'s local-marking
-  /// path so trackers and the server stay in lock-step.
-  double _watchedThreshold = _fallbackWatchedThreshold;
+  /// Captures position, duration, and the active client's watched threshold so
+  /// tracker crossing semantics stay aligned with playback progress reporting.
+  final PlaybackTimeline _timeline = PlaybackTimeline(watchedThreshold: _fallbackWatchedThreshold);
+  bool _thresholdCrossed = false;
 
   Future<void> initialize() async {
     await Future.wait(_trackers.map((t) => t.initialize()));
@@ -82,7 +79,7 @@ class TrackerCoordinator {
     }
     _reset();
     _ctx = ctx;
-    _watchedThreshold = client.watchedThreshold;
+    _timeline.watchedThreshold = client.watchedThreshold;
   }
 
   bool _anyTrackerNeedsFribb() => _anyTrackerNeedsFribbForLibrary(_activeLibraryGlobalKey);
@@ -304,24 +301,23 @@ class TrackerCoordinator {
       return;
     }
     // Safety net: fire if we passed the threshold but missed the tick.
-    if (!_thresholdCrossed && _crossed(_duration, _lastPosition)) {
+    if (!_thresholdCrossed && _timeline.watchedThresholdReached) {
       await _dispatchMarkWatched(ctx);
     }
     _reset();
   }
 
   void updatePosition(Duration position) {
-    _lastPosition = position;
+    _timeline.updatePosition(position);
     final ctx = _ctx;
     if (ctx == null || _thresholdCrossed) return;
-    if (!_crossed(_duration, position)) return;
+    if (!_timeline.watchedThresholdReached) return;
     _thresholdCrossed = true;
     unawaited(_dispatchMarkWatched(ctx));
   }
 
   void updateDuration(Duration duration) {
-    if (duration == _duration) return;
-    _duration = duration;
+    _timeline.updateDuration(duration);
   }
 
   /// Called on Plex profile switch — drops in-flight state across all
@@ -341,16 +337,8 @@ class TrackerCoordinator {
   void _reset() {
     _ctx = null;
     _activeLibraryGlobalKey = null;
-    _duration = Duration.zero;
-    _lastPosition = Duration.zero;
+    _timeline.reset(watchedThreshold: _fallbackWatchedThreshold);
     _thresholdCrossed = false;
-    _watchedThreshold = _fallbackWatchedThreshold;
-  }
-
-  bool _crossed(Duration duration, Duration position) {
-    final dMs = duration.inMilliseconds;
-    if (dMs == 0) return false;
-    return position.inMilliseconds / dMs >= _watchedThreshold;
   }
 
   Future<void> _dispatchMarkWatched(TrackerContext ctx) async {

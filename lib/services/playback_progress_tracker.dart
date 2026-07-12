@@ -7,6 +7,7 @@ import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_server_client.dart';
 import '../media/media_source_info.dart';
+import '../media/watch_progress.dart';
 import 'offline_watch_sync_service.dart';
 import 'playback_report_session.dart';
 import 'settings_service.dart';
@@ -334,34 +335,37 @@ class PlaybackProgressTracker {
     // Explicitly scrobble once progress crosses the watched threshold.
     // Some servers (Plex with no active play session, Jellyfin always)
     // don't auto-mark from progress updates alone.
-    if (!_scrobbled && duration.inMilliseconds > 0) {
+    if (!_scrobbled &&
+        isWatchedProgress(
+          positionMs: position.inMilliseconds,
+          durationMs: duration.inMilliseconds,
+          threshold: c.watchedThreshold,
+        )) {
       final percent = position.inMilliseconds / duration.inMilliseconds;
       final threshold = c.watchedThreshold;
-      if (percent >= threshold) {
-        _scrobbled = true;
+      _scrobbled = true;
+      try {
+        // Backends that mark the item played from the playback-stopped report
+        // (Jellyfin) only emit the local watch event here — an explicit
+        // markWatched would double-scrobble via the Trakt plugin (#1287).
+        // Plex still issues the server call. Either path emits the watched
+        // event through WatchStateNotifier, so no extra notify is needed.
+        await c.markWatchedFromPlaybackStop(metadata);
+        appLogger.d(
+          'Scrobbled ${metadata.id} (${(percent * 100).toStringAsFixed(0)}% >= ${(threshold * 100).toStringAsFixed(0)}%)',
+        );
+      } catch (e) {
+        appLogger.w('Failed to scrobble ${metadata.id}', error: e);
+        _scrobbled = false; // Retry on next tick
+      }
+      // After (and only after) the primary mark succeeded. A failure here
+      // must not reset _scrobbled — that would re-scrobble the primary
+      // item and inflate its view count.
+      if (_scrobbled && onScrobbled != null) {
         try {
-          // Backends that mark the item played from the playback-stopped report
-          // (Jellyfin) only emit the local watch event here — an explicit
-          // markWatched would double-scrobble via the Trakt plugin (#1287).
-          // Plex still issues the server call. Either path emits the watched
-          // event through WatchStateNotifier, so no extra notify is needed.
-          await c.markWatchedFromPlaybackStop(metadata);
-          appLogger.d(
-            'Scrobbled ${metadata.id} (${(percent * 100).toStringAsFixed(0)}% >= ${(threshold * 100).toStringAsFixed(0)}%)',
-          );
+          await onScrobbled!();
         } catch (e) {
-          appLogger.w('Failed to scrobble ${metadata.id}', error: e);
-          _scrobbled = false; // Retry on next tick
-        }
-        // After (and only after) the primary mark succeeded. A failure here
-        // must not reset _scrobbled — that would re-scrobble the primary
-        // item and inflate its view count.
-        if (_scrobbled && onScrobbled != null) {
-          try {
-            await onScrobbled!();
-          } catch (e) {
-            appLogger.w('Post-scrobble hook failed for ${metadata.id}', error: e);
-          }
+          appLogger.w('Post-scrobble hook failed for ${metadata.id}', error: e);
         }
       }
     }

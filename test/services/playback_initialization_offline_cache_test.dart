@@ -5,7 +5,6 @@ import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -21,36 +20,9 @@ import 'package:plezy/services/playback_initialization_service.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_mappers.dart';
 import 'package:plezy/services/settings_service.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import '../test_helpers/io_fakes.dart';
 import '../test_helpers/prefs.dart';
-
-class _FakePathProvider extends PathProviderPlatform with MockPlatformInterfaceMixin {
-  _FakePathProvider(this.root);
-
-  final Directory root;
-  String get _docs => p.join(root.path, 'documents');
-  String get _support => p.join(root.path, 'support');
-  String get _cache => p.join(root.path, 'cache');
-  String get _temp => p.join(root.path, 'temp');
-
-  @override
-  Future<String?> getApplicationDocumentsPath() async => _ensure(_docs);
-
-  @override
-  Future<String?> getApplicationSupportPath() async => _ensure(_support);
-
-  @override
-  Future<String?> getApplicationCachePath() async => _ensure(_cache);
-
-  @override
-  Future<String?> getTemporaryPath() async => _ensure(_temp);
-
-  String _ensure(String dir) {
-    Directory(dir).createSync(recursive: true);
-    return dir;
-  }
-}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -63,7 +35,7 @@ void main() {
     SettingsService.resetForTesting();
     DownloadStorageService.resetForTesting();
     tmpRoot = await Directory.systemTemp.createTemp('playback_init_test_');
-    PathProviderPlatform.instance = _FakePathProvider(tmpRoot);
+    PathProviderPlatform.instance = FakePathProvider(tmpRoot);
     db = AppDatabase.forTesting(NativeDatabase.memory());
     PlexApiCache.initialize(db);
     JellyfinApiCache.initialize(db);

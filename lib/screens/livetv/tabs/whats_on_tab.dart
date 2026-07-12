@@ -9,6 +9,7 @@ import '../../../focus/dpad_navigator.dart';
 import '../../../focus/dpad_select_long_press_controller.dart';
 import '../../../focus/key_event_utils.dart';
 import '../../../focus/locked_hub_controller.dart';
+import '../../../focus/hub_vertical_navigation.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../media/media_item_types.dart';
 import '../../../mixins/mounted_set_state_mixin.dart';
@@ -118,26 +119,15 @@ class WhatsOnTabState extends State<WhatsOnTab> with LiveTvActionsMixin<WhatsOnT
   }
 
   bool _handleVerticalNavigation(int hubIndex, bool isUp) {
-    if (_hubKeys.isEmpty) return false;
-
-    if (isUp && hubIndex == 0) {
-      widget.onNavigateUp?.call();
-      return true;
-    }
-
-    final targetIndex = isUp ? hubIndex - 1 : hubIndex + 1;
-
-    if (targetIndex < 0 || targetIndex >= _hubKeys.length) {
-      return true; // At boundary, consume the event
-    }
-
-    final targetState = _hubKeys[targetIndex].currentState;
-    if (targetState != null) {
-      targetState.requestFocusFromMemory();
-      return true;
-    }
-
-    return false;
+    return navigateVerticalHubRows(
+      hubCount: _hubKeys.length,
+      hubIndex: hubIndex,
+      isUp: isUp,
+      onTopBoundary: widget.onNavigateUp,
+      requestFocus: (targetIndex) {
+        _hubKeys[targetIndex].currentState?.requestFocusFromMemory();
+      },
+    );
   }
 
   void _onItemTap(LiveTvHubEntry entry) {

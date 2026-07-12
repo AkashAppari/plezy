@@ -23,6 +23,8 @@ import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/watch_state_store.dart';
 import 'package:plezy/screens/media_detail_screen.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
+
+import '../test_helpers/paged_fakes.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
@@ -1024,11 +1026,7 @@ class _FakeMediaServerClient implements MediaServerClient {
     if (error != null) throw error;
     final all =
         await (childrenPageFutures[parentId] ?? Future.value(childrenByParent[parentId] ?? const <MediaItem>[]));
-    final offset = start ?? 0;
-    final limit = size ?? all.length;
-    final end = (offset + limit).clamp(0, all.length).toInt();
-    final items = offset >= all.length ? const <MediaItem>[] : all.sublist(offset, end);
-    return LibraryPage(items: items, totalCount: all.length, offset: offset);
+    return fakeLibraryPage(all, start: start, size: size);
   }
 
   @override

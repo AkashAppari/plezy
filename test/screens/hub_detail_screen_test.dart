@@ -18,6 +18,7 @@ import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:provider/provider.dart';
 
+import '../test_helpers/paged_fakes.dart';
 import '../test_helpers/prefs.dart';
 
 void main() {
@@ -159,12 +160,7 @@ class _PagedHubClient implements MediaServerClient {
     AbortController? abort,
   }) async {
     requestedStarts.add(start);
-    final offset = start ?? 0;
-    return LibraryPage(
-      items: items.skip(offset).take(size ?? items.length).toList(growable: false),
-      totalCount: items.length,
-      offset: offset,
-    );
+    return fakeLibraryPage(items, start: start, size: size);
   }
 
   @override

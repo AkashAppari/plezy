@@ -9,6 +9,7 @@ import '../widgets/server_activities_button.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../focus/focusable_action_bar.dart';
+import '../focus/hub_vertical_navigation.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
@@ -330,34 +331,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   /// Returns true if the navigation was handled
   bool _handleVerticalNavigation(int hubIndex, bool isUp) {
     final keys = _allHubKeys;
-    if (keys.isEmpty) return false;
-
-    // UP from first hub: navigate to hero when visible, otherwise app bar
-    if (isUp && hubIndex == 0) {
-      if (PlatformDetector.isTV()) {
-        _focusTopActions();
-        return true;
-      }
-      _focusTopBoundary();
-      return true;
-    }
-
-    final targetIndex = isUp ? hubIndex - 1 : hubIndex + 1;
-
-    // Check if target is valid
-    if (targetIndex < 0 || targetIndex >= keys.length) {
-      // At boundary, block navigation (return true to consume the event)
-      return true;
-    }
-
-    // Navigate to target hub, clamping to available items
-    final targetState = keys[targetIndex].currentState;
-    if (targetState != null) {
-      targetState.requestFocusFromMemory();
-      return true;
-    }
-
-    return false;
+    return navigateVerticalHubRows(
+      hubCount: keys.length,
+      hubIndex: hubIndex,
+      isUp: isUp,
+      onTopBoundary: _focusTopBoundary,
+      requestFocus: (targetIndex) {
+        keys[targetIndex].currentState?.requestFocusFromMemory();
+      },
+    );
   }
 
   /// Navigate focus to the sidebar

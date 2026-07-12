@@ -13,6 +13,8 @@ import 'package:plezy/services/media_list_playback_launcher.dart';
 import 'package:plezy/services/playlist_items_loader.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 
+import '../test_helpers/paged_fakes.dart';
+
 /// Recording fake that satisfies [JellyfinClient] via `implements` +
 /// `noSuchMethod`. The launcher only needs the
 /// [MediaServerClient.fetchPlayableDescendants] /
@@ -62,17 +64,9 @@ class _RecordingJellyfinClient implements JellyfinClient {
   @override
   Future<LibraryPage<MediaItem>> fetchPlaylistPage(String id, {int? start, int? size, AbortController? abort}) async {
     final offset = start ?? 0;
-    final limit = size ?? 100;
+    final limit = size ?? fakeMediaPageSize;
     fetchPlaylistItemsCalls.add((id: id, offset: offset, limit: limit));
-    if (offset >= playlistItemsResponse.length) {
-      return LibraryPage<MediaItem>(items: const [], totalCount: playlistItemsResponse.length, offset: offset);
-    }
-    final end = (offset + limit).clamp(0, playlistItemsResponse.length);
-    return LibraryPage<MediaItem>(
-      items: playlistItemsResponse.sublist(offset, end),
-      totalCount: playlistItemsResponse.length,
-      offset: offset,
-    );
+    return fakeLibraryPage(playlistItemsResponse, start: start, size: size);
   }
 
   @override

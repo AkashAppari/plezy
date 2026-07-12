@@ -6,7 +6,6 @@ import 'package:background_downloader/background_downloader.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plezy/database/app_database.dart';
@@ -26,9 +25,9 @@ import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/saf_storage_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:saf_util/saf_util_platform_interface.dart';
 
+import '../test_helpers/io_fakes.dart';
 import '../test_helpers/prefs.dart';
 
 void main() {
@@ -190,7 +189,7 @@ void main() {
       SettingsService.resetForTesting();
       DownloadStorageService.resetForTesting();
       final tmpRoot = await Directory.systemTemp.createTemp('download_manager_artwork_repair_test_');
-      PathProviderPlatform.instance = _FakePathProvider(tmpRoot);
+      PathProviderPlatform.instance = FakePathProvider(tmpRoot);
       addTearDown(() async {
         DownloadStorageService.resetForTesting();
         SettingsService.resetForTesting();
@@ -263,7 +262,7 @@ void main() {
         database: db,
         storageService: storage,
         clientResolver: (serverId, {clientScopeId}) => client,
-        http: MediaServerHttpClient(client: _FakeHttpClient(200, utf8.encode('image bytes'))),
+        http: MediaServerHttpClient(client: FakeHttpClient(200, utf8.encode('image bytes'))),
       );
 
       await manager.repairMissingArtworkForDownloads();
@@ -284,7 +283,7 @@ void main() {
       SettingsService.resetForTesting();
       DownloadStorageService.resetForTesting();
       final tmpRoot = await Directory.systemTemp.createTemp('download_manager_delete_test_');
-      PathProviderPlatform.instance = _FakePathProvider(tmpRoot);
+      PathProviderPlatform.instance = FakePathProvider(tmpRoot);
       addTearDown(() async {
         DownloadStorageService.resetForTesting();
         SettingsService.resetForTesting();
@@ -551,7 +550,7 @@ Future<_DeletionResult> _runEpisodeDeletion({required bool saf, bool failVideoDe
   SettingsService.resetForTesting();
   DownloadStorageService.resetForTesting();
   final tmpRoot = await Directory.systemTemp.createTemp('download_manager_backend_delete_test_');
-  PathProviderPlatform.instance = _FakePathProvider(tmpRoot);
+  PathProviderPlatform.instance = FakePathProvider(tmpRoot);
 
   final storage = saf ? DownloadStorageService.forTestingSaf('content://downloads') : DownloadStorageService.instance;
   if (!saf) {
@@ -664,7 +663,7 @@ Future<_ContainerDeletionResult> _runContainerDeletion({required MediaKind kind,
   SettingsService.resetForTesting();
   DownloadStorageService.resetForTesting();
   final tmpRoot = await Directory.systemTemp.createTemp('download_manager_container_delete_test_');
-  PathProviderPlatform.instance = _FakePathProvider(tmpRoot);
+  PathProviderPlatform.instance = FakePathProvider(tmpRoot);
 
   final storage = saf ? DownloadStorageService.forTestingSaf('content://downloads') : DownloadStorageService.instance;
   if (!saf) await storage.initialize(await SettingsService.getInstance());
@@ -937,42 +936,6 @@ class _ScopedJellyfinClient implements MediaServerClient, ScopedMediaServerClien
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
-class _FakePathProvider extends PathProviderPlatform with MockPlatformInterfaceMixin {
-  _FakePathProvider(this.root);
-
-  final Directory root;
-
-  @override
-  Future<String?> getApplicationDocumentsPath() async => _ensure('documents');
-
-  @override
-  Future<String?> getApplicationSupportPath() async => _ensure('support');
-
-  @override
-  Future<String?> getApplicationCachePath() async => _ensure('cache');
-
-  @override
-  Future<String?> getTemporaryPath() async => _ensure('temp');
-
-  String _ensure(String name) {
-    final path = p.join(root.path, name);
-    Directory(path).createSync(recursive: true);
-    return path;
-  }
-}
-
-class _FakeHttpClient extends http.BaseClient {
-  _FakeHttpClient(this.statusCode, this.body);
-
-  final int statusCode;
-  final List<int> body;
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    return http.StreamedResponse(Stream<List<int>>.value(body), statusCode, request: request);
-  }
 }
 
 class _ArtworkRepairClient implements MediaServerClient {
