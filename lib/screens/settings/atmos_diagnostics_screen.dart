@@ -6,12 +6,12 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../services/settings_service.dart';
+import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_page.dart';
 import '../../widgets/settings_section.dart';
-import 'settings_utils.dart';
 
 /// #1300 diagnostics: plays known test signals through a bare AVPlayer (via
 /// the native AtmosProbe plugin) so a tester can read the receiver's format
@@ -145,13 +145,18 @@ class _AtmosDiagnosticsScreenState extends State<AtmosDiagnosticsScreen> {
                 icon: Symbols.link_rounded,
                 title: t.settings.atmosTestUrl,
                 subtitle: value.isEmpty ? t.settings.atmosTestUrlDescription : value,
-                onTap: () => showTextInputDialog(
-                  context: context,
-                  title: t.settings.atmosTestUrl,
-                  labelText: 'URL',
-                  currentValue: value,
-                  onSave: (v) => SettingsService.instance.write(SettingsService.atmosProbeUrl, v),
-                ),
+                onTap: () async {
+                  final result = await showTextInputDialog(
+                    context,
+                    title: t.settings.atmosTestUrl,
+                    labelText: 'URL',
+                    initialValue: value,
+                    allowEmpty: true,
+                  );
+                  if (result != null) {
+                    await SettingsService.instance.write(SettingsService.atmosProbeUrl, result.trim());
+                  }
+                },
               ),
             ),
           ],

@@ -106,11 +106,13 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
     if (draft == null) return;
     final currentValue = draft.value<String>(field.id) ?? '';
     final result = multiline
-        ? await showMultilineTextInputDialog(
+        ? await showTextInputDialog(
             context,
             title: field.label,
             labelText: field.label,
             initialValue: currentValue,
+            allowEmpty: true,
+            multiline: true,
           )
         : await showTextInputDialog(
             context,

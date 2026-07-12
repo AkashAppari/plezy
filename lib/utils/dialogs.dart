@@ -124,19 +124,24 @@ Future<bool> showDeleteConfirmation(
   );
 }
 
-/// Shows a text input dialog for creating/naming items
-/// Returns the entered text, or null if cancelled
+/// Shows a text input dialog and returns validated submitted text.
+///
+/// Returns `null` when the dialog is cancelled or dismissed. Validation errors
+/// are shown in the field and keep the dialog open, so a non-null result always
+/// represents an explicit, valid submission.
 Future<String?> showTextInputDialog(
   BuildContext context, {
   required String title,
   required String labelText,
-  required String hintText,
+  String? hintText,
   String? initialValue,
   String? confirmText,
   TextInputType? keyboardType,
   List<TextInputFormatter>? inputFormatters,
   String? Function(String)? validator,
   bool allowEmpty = false,
+  bool multiline = false,
+  bool obscureText = false,
 }) {
   return showScopedDialog<String>(
     context: context,
@@ -150,112 +155,24 @@ Future<String?> showTextInputDialog(
       inputFormatters: inputFormatters,
       validator: validator,
       allowEmpty: allowEmpty,
+      multiline: multiline,
+      obscureText: obscureText,
     ),
   );
-}
-
-/// Shows a multiline text input dialog for editing longer text like summaries.
-/// Returns the entered text, or null if cancelled.
-/// Allows empty text to be submitted (for clearing fields).
-Future<String?> showMultilineTextInputDialog(
-  BuildContext context, {
-  required String title,
-  required String labelText,
-  String? initialValue,
-}) {
-  return showScopedDialog<String>(
-    context: context,
-    builder: (context) => _MultilineTextInputDialog(title: title, labelText: labelText, initialValue: initialValue),
-  );
-}
-
-/// Shared lifecycle for the two private text-input dialogs below: a single
-/// [TextEditingController] seeded from [initialValue], plus a focus node for
-/// the save button.
-mixin _TextInputDialogStateMixin<T extends StatefulWidget> on State<T>, ControllerDisposerMixin<T> {
-  late final TextEditingController _controller;
-  final _fieldFocusNode = FocusNode();
-  final _cancelFocusNode = FocusNode();
-  final _saveFocusNode = FocusNode();
-
-  String? get initialValue;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = createTextEditingController(text: initialValue);
-  }
-
-  @override
-  void dispose() {
-    _fieldFocusNode.dispose();
-    _cancelFocusNode.dispose();
-    _saveFocusNode.dispose();
-    super.dispose();
-  }
-}
-
-class _MultilineTextInputDialog extends StatefulWidget {
-  final String title;
-  final String labelText;
-  final String? initialValue;
-
-  const _MultilineTextInputDialog({required this.title, required this.labelText, this.initialValue});
-
-  @override
-  State<_MultilineTextInputDialog> createState() => _MultilineTextInputDialogState();
-}
-
-class _MultilineTextInputDialogState extends State<_MultilineTextInputDialog>
-    with ControllerDisposerMixin, _TextInputDialogStateMixin<_MultilineTextInputDialog> {
-  @override
-  String? get initialValue => widget.initialValue;
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.title),
-      content: SizedBox(
-        width: 400,
-        child: FocusableTextField(
-          controller: _controller,
-          focusNode: _fieldFocusNode,
-          autofocus: true,
-          decoration: InputDecoration(labelText: widget.labelText),
-          keyboardType: TextInputType.multiline,
-          maxLines: 8,
-          minLines: 3,
-          onNavigateDown: _saveFocusNode.requestFocus,
-        ),
-      ),
-      actions: [
-        DialogActionButton(
-          focusNode: _cancelFocusNode,
-          onPressed: () => Navigator.pop(context),
-          onNavigateRight: _saveFocusNode.requestFocus,
-          label: t.common.cancel,
-        ),
-        DialogActionButton(
-          onPressed: () => Navigator.pop(context, _controller.text),
-          label: t.common.save,
-          focusNode: _saveFocusNode,
-          onNavigateLeft: _cancelFocusNode.requestFocus,
-        ),
-      ],
-    );
-  }
 }
 
 class _TextInputDialog extends StatefulWidget {
   final String title;
   final String labelText;
-  final String hintText;
+  final String? hintText;
   final String? initialValue;
   final String? confirmText;
   final TextInputType? keyboardType;
   final List<TextInputFormatter>? inputFormatters;
   final String? Function(String)? validator;
   final bool allowEmpty;
+  final bool multiline;
+  final bool obscureText;
 
   const _TextInputDialog({
     required this.title,
@@ -267,39 +184,60 @@ class _TextInputDialog extends StatefulWidget {
     this.inputFormatters,
     this.validator,
     this.allowEmpty = false,
-  });
+    this.multiline = false,
+    this.obscureText = false,
+  }) : assert(!multiline || !obscureText, 'A text input dialog cannot be both multiline and obscure.');
 
   @override
   State<_TextInputDialog> createState() => _TextInputDialogState();
 }
 
-class _TextInputDialogState extends State<_TextInputDialog>
-    with ControllerDisposerMixin, _TextInputDialogStateMixin<_TextInputDialog> {
+class _TextInputDialogState extends State<_TextInputDialog> with ControllerDisposerMixin {
+  late final TextEditingController _controller;
+  final _fieldFocusNode = FocusNode(debugLabel: 'TextInputField');
+  final _cancelFocusNode = FocusNode(debugLabel: 'TextInputCancel');
+  final _saveFocusNode = FocusNode(debugLabel: 'TextInputSave');
+  String? _errorText;
+
   @override
-  String? get initialValue => widget.initialValue;
+  void initState() {
+    super.initState();
+    _controller = createTextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    _fieldFocusNode.dispose();
+    _cancelFocusNode.dispose();
+    _saveFocusNode.dispose();
+    super.dispose();
+  }
+
+  String? _validate(String text) {
+    if (text.isEmpty && !widget.allowEmpty) return t.addServer.required;
+    return widget.validator?.call(text);
+  }
 
   void _submit() {
     final text = _controller.text;
-    if (text.isEmpty && !widget.allowEmpty) return;
-    if (widget.validator != null && widget.validator!(text) != null) return;
+    final errorText = _validate(text);
+    if (errorText != null) {
+      setState(() => _errorText = errorText);
+      return;
+    }
     Navigator.pop(context, text);
+  }
+
+  void _handleChanged(String text) {
+    if (_errorText == null) return;
+    setState(() => _errorText = _validate(text));
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.title),
-      content: FocusableTextField(
-        controller: _controller,
-        focusNode: _fieldFocusNode,
-        autofocus: true,
-        decoration: InputDecoration(labelText: widget.labelText, hintText: widget.hintText),
-        keyboardType: widget.keyboardType,
-        inputFormatters: widget.inputFormatters,
-        textInputAction: TextInputAction.done,
-        onNavigateDown: _saveFocusNode.requestFocus,
-        onSubmitted: (_) => _saveFocusNode.requestFocus(),
-      ),
+      content: widget.multiline ? SizedBox(width: 400, child: textField) : textField,
       actions: [
         DialogActionButton(
           focusNode: _cancelFocusNode,
@@ -314,6 +252,24 @@ class _TextInputDialogState extends State<_TextInputDialog>
           onNavigateLeft: _cancelFocusNode.requestFocus,
         ),
       ],
+    );
+  }
+
+  Widget get textField {
+    return FocusableTextField(
+      controller: _controller,
+      focusNode: _fieldFocusNode,
+      autofocus: true,
+      decoration: InputDecoration(labelText: widget.labelText, hintText: widget.hintText, errorText: _errorText),
+      keyboardType: widget.keyboardType ?? (widget.multiline ? TextInputType.multiline : null),
+      inputFormatters: widget.inputFormatters,
+      textInputAction: widget.multiline ? TextInputAction.newline : TextInputAction.done,
+      obscureText: widget.obscureText,
+      maxLines: widget.multiline ? 8 : 1,
+      minLines: widget.multiline ? 3 : 1,
+      onChanged: _handleChanged,
+      onNavigateDown: _saveFocusNode.requestFocus,
+      onSubmitted: widget.multiline ? null : (_) => _saveFocusNode.requestFocus(),
     );
   }
 }
