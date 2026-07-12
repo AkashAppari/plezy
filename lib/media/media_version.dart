@@ -28,7 +28,7 @@ String _videoResolutionDisplayLabel(String resolution) {
 @JsonSerializable(includeIfNull: false, explicitToJson: true)
 class MediaVersion {
   /// Backend-opaque version identifier.
-  @JsonKey(fromJson: _stringFromJson)
+  @JsonKey(fromJson: stringOrEmpty)
   final String id;
   @JsonKey(fromJson: flexibleInt)
   final int? width;
@@ -140,7 +140,6 @@ class MediaVersion {
   }
 }
 
-String _stringFromJson(Object? raw) => (raw ?? '').toString();
 
 List<MediaPart> _partsFromJson(Object? raw) {
   return raw is List

@@ -8,6 +8,10 @@ int? flexibleInt(Object? v) => switch (v) {
   _ => null,
 };
 
+int flexibleIntOrZero(Object? v) => flexibleInt(v) ?? 0;
+
+String stringOrEmpty(Object? v) => (v ?? '').toString();
+
 /// Parse a value that may be [bool], [int] (0/1), or [String] ('1'/'true'/'false') to [bool].
 /// Returns `false` for `null` or unrecognised values.
 /// Handles Plex API responses where boolean fields may arrive as integers.

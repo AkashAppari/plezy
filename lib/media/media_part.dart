@@ -11,7 +11,7 @@ part 'media_part.g.dart';
 @JsonSerializable(includeIfNull: false)
 class MediaPart {
   /// Backend-opaque part identifier.
-  @JsonKey(fromJson: _stringFromJson)
+  @JsonKey(fromJson: stringOrEmpty)
   final String id;
 
   /// Backend-specific path used to construct a direct stream URL — e.g. Plex's
@@ -58,5 +58,3 @@ class MediaPart {
   /// metadata request includes `checkFiles=1`.
   bool get isPlayable => accessible != false && exists != false;
 }
-
-String _stringFromJson(Object? raw) => (raw ?? '').toString();

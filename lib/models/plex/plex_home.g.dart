@@ -7,7 +7,7 @@ part of 'plex_home.dart';
 // **************************************************************************
 
 PlexHome _$PlexHomeFromJson(Map<String, dynamic> json) => PlexHome(
-  id: _intOr0(json['id']),
+  id: flexibleIntOrZero(json['id']),
   name: readStringField(json, 'name') as String? ?? '',
   guestUserID: flexibleInt(json['guestUserID']),
   guestUserUUID: readStringField(json, 'guestUserUUID') as String? ?? '',

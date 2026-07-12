@@ -7,7 +7,7 @@ part 'plex_home.g.dart';
 
 @JsonSerializable()
 class PlexHome {
-  @JsonKey(fromJson: _intOr0)
+  @JsonKey(fromJson: flexibleIntOrZero)
   final int id;
   @JsonKey(readValue: readStringField, defaultValue: '')
   final String name;
@@ -52,5 +52,3 @@ class PlexHome {
 
   bool get hasMultipleUsers => users.length > 1;
 }
-
-int _intOr0(Object? value) => flexibleInt(value) ?? 0;

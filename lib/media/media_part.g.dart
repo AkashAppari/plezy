@@ -7,7 +7,7 @@ part of 'media_part.dart';
 // **************************************************************************
 
 MediaPart _$MediaPartFromJson(Map<String, dynamic> json) => MediaPart(
-  id: _stringFromJson(json['id']),
+  id: stringOrEmpty(json['id']),
   streamPath: json['streamPath'] as String?,
   file: json['file'] as String?,
   sizeBytes: flexibleInt(json['sizeBytes']),

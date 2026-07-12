@@ -10,18 +10,22 @@ PlexUserProfile _$PlexUserProfileFromJson(
   Map<String, dynamic> json,
 ) => PlexUserProfile(
   autoSelectAudio: _boolOrTrue(json['autoSelectAudio']),
-  defaultAudioAccessibility: _intOr0(json['defaultAudioAccessibility']),
+  defaultAudioAccessibility: flexibleIntOrZero(
+    json['defaultAudioAccessibility'],
+  ),
   defaultAudioLanguage: _flexibleLanguage(json['defaultAudioLanguage']),
   defaultAudioLanguages: flexibleCsvStringList(json['defaultAudioLanguages']),
   defaultSubtitleLanguage: _flexibleLanguage(json['defaultSubtitleLanguage']),
   defaultSubtitleLanguages: flexibleCsvStringList(
     json['defaultSubtitleLanguages'],
   ),
-  autoSelectSubtitle: _intOr0(json['autoSelectSubtitle']),
-  defaultSubtitleAccessibility: _intOr0(json['defaultSubtitleAccessibility']),
+  autoSelectSubtitle: flexibleIntOrZero(json['autoSelectSubtitle']),
+  defaultSubtitleAccessibility: flexibleIntOrZero(
+    json['defaultSubtitleAccessibility'],
+  ),
   defaultSubtitleForced: _intOr1(json['defaultSubtitleForced']),
   watchedIndicator: _intOr1(json['watchedIndicator']),
-  mediaReviewsVisibility: _intOr0(json['mediaReviewsVisibility']),
+  mediaReviewsVisibility: flexibleIntOrZero(json['mediaReviewsVisibility']),
   mediaReviewsLanguages: flexibleCsvStringList(json['mediaReviewsLanguages']),
 );
 

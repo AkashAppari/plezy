@@ -9,7 +9,7 @@ part 'plex_home_user.g.dart';
 /// coerce tolerantly instead of hard-casting.
 @JsonSerializable()
 class PlexHomeUser {
-  @JsonKey(fromJson: _intOr0)
+  @JsonKey(fromJson: flexibleIntOrZero)
   final int id;
   @JsonKey(readValue: readStringField, defaultValue: '')
   final String uuid;
@@ -63,5 +63,3 @@ class PlexHomeUser {
   bool get isGuestUser => guest;
   bool get requiresPassword => protected;
 }
-
-int _intOr0(Object? v) => flexibleInt(v) ?? 0;

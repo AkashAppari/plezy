@@ -33,6 +33,21 @@ void main() {
     });
   });
 
+  test('flexibleIntOrZero defaults unsupported values to zero', () {
+    expect(flexibleIntOrZero(3.9), 3);
+    expect(flexibleIntOrZero('42'), 42);
+    expect(flexibleIntOrZero(null), 0);
+    expect(flexibleIntOrZero('bad'), 0);
+    expect(flexibleIntOrZero(true), 0);
+  });
+
+  test('stringOrEmpty stringifies values and defaults null', () {
+    expect(stringOrEmpty('value'), 'value');
+    expect(stringOrEmpty(42), '42');
+    expect(stringOrEmpty(true), 'true');
+    expect(stringOrEmpty(null), '');
+  });
+
   group('flexibleBool', () {
     test('returns bool as-is', () {
       expect(flexibleBool(true), isTrue);

@@ -48,8 +48,6 @@ Map<String, dynamic> _obfuscatePlaylistJson(Map<String, dynamic> json) {
   return copy;
 }
 
-int _flexibleIntOrZero(Object? v) => flexibleInt(v) ?? 0;
-
 Map? _firstPartMap(Object? raw) {
   final parts = _partMaps(raw);
   return parts.isEmpty ? null : parts.first;
@@ -307,7 +305,7 @@ class PlexRoleDto {
 
 @JsonSerializable(createToJson: false)
 class PlexMediaVersionDto {
-  @JsonKey(fromJson: _flexibleIntOrZero)
+  @JsonKey(fromJson: flexibleIntOrZero)
   final int id;
   @JsonKey(readValue: readStringField)
   final String? videoResolution;
@@ -506,7 +504,7 @@ class PlexHubDto {
   @JsonKey(defaultValue: 'hub')
   final String type;
   final String? hubIdentifier;
-  @JsonKey(fromJson: _flexibleIntOrZero)
+  @JsonKey(fromJson: flexibleIntOrZero)
   final int size;
   @JsonKey(fromJson: flexibleBool)
   final bool more;

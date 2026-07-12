@@ -17,7 +17,7 @@ class PlexUserProfile implements MediaServerUserProfile {
   @JsonKey(fromJson: _boolOrTrue)
   @override
   final bool autoSelectAudio;
-  @JsonKey(fromJson: _intOr0)
+  @JsonKey(fromJson: flexibleIntOrZero)
   final int defaultAudioAccessibility;
   @JsonKey(fromJson: _flexibleLanguage)
   @override
@@ -31,15 +31,15 @@ class PlexUserProfile implements MediaServerUserProfile {
   @JsonKey(fromJson: flexibleCsvStringList)
   @override
   final List<String>? defaultSubtitleLanguages;
-  @JsonKey(fromJson: _intOr0)
+  @JsonKey(fromJson: flexibleIntOrZero)
   final int autoSelectSubtitle;
-  @JsonKey(fromJson: _intOr0)
+  @JsonKey(fromJson: flexibleIntOrZero)
   final int defaultSubtitleAccessibility;
   @JsonKey(fromJson: _intOr1)
   final int defaultSubtitleForced;
   @JsonKey(fromJson: _intOr1)
   final int watchedIndicator;
-  @JsonKey(fromJson: _intOr0)
+  @JsonKey(fromJson: flexibleIntOrZero)
   final int mediaReviewsVisibility;
   @JsonKey(fromJson: flexibleCsvStringList)
   final List<String>? mediaReviewsLanguages;
@@ -88,5 +88,4 @@ class PlexUserProfile implements MediaServerUserProfile {
 String? _flexibleLanguage(Object? v) => flexibleCsvStringList(v)?.first;
 
 bool _boolOrTrue(Object? v) => flexibleBoolNullable(v) ?? true;
-int _intOr0(Object? v) => flexibleInt(v) ?? 0;
 int _intOr1(Object? v) => flexibleInt(v) ?? 1;
