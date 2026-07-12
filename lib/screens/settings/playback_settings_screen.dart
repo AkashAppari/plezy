@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../models/audio_quality_preset.dart';
 import '../../models/transcode_quality_preset.dart';
 import '../../mpv/player/platform/player_android.dart';
 import '../../utils/quality_preset_labels.dart';
@@ -91,6 +92,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                 if (exoActive) _dvConversionModeTile(),
                 _bufferSizeTile(),
                 _defaultQualityTile(),
+                _musicQualityTile(),
               ],
             ),
 
@@ -442,6 +444,19 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     decode: (p) => p,
     encode: (p) => p,
   );
+
+  Widget _musicQualityTile() => SettingSelectionTile<AudioQualityPreset, AudioQualityPreset>(
+    pref: SettingsService.musicQualityPreset,
+    icon: Symbols.music_note_rounded,
+    title: t.settings.musicQualityTitle,
+    subtitleBuilder: _musicQualityLabel,
+    options: AudioQualityPreset.values.map((p) => DialogOption(value: p, title: _musicQualityLabel(p))).toList(),
+    decode: (p) => p,
+    encode: (p) => p,
+  );
+
+  String _musicQualityLabel(AudioQualityPreset preset) =>
+      preset.isOriginal ? t.videoControls.qualityOriginal : '${preset.bitrateKbps} kbps';
 
   Widget _mpvConfigTile() => SettingNavigationTile(
     icon: Symbols.tune_rounded,

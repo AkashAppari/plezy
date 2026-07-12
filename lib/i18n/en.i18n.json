@@ -158,6 +158,7 @@
     "bufferSizeWarning": "${heap}MB memory available. A ${size}MB buffer may affect playback.",
     "defaultQualityTitle": "Default Quality",
     "defaultQualityDescription": "Used when starting playback. Lower values reduce bandwidth.",
+    "musicQualityTitle": "Music Quality",
     "subtitleStyling": "Subtitle Styling",
     "subtitleStylingDescription": "Customize subtitle appearance",
     "smallSkipDuration": "Small Skip Duration",

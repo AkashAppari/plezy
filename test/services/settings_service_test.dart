@@ -1,6 +1,8 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/models/audio_quality_preset.dart';
 import 'package:plezy/models/hotkey_model.dart';
+import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/trackers/tracker_constants.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -142,6 +144,23 @@ void main() {
 
       await settings.resetAllSettings();
       expect(settings.read(SettingsService.episodeAction), EpisodeAction.play);
+    });
+  });
+
+  group('SettingsService music quality', () {
+    test('defaults to original and persists changes by enum name', () async {
+      var settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.musicQualityPreset), AudioQualityPreset.original);
+
+      await settings.write(SettingsService.musicQualityPreset, AudioQualityPreset.medium);
+      expect(settings.prefs.getString(SettingsService.musicQualityPreset.key), 'medium');
+
+      BaseSharedPreferencesService.resetForTesting();
+      SettingsService.resetForTesting();
+      settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.musicQualityPreset), AudioQualityPreset.medium);
     });
   });
 

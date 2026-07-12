@@ -588,6 +588,9 @@ class TranslationsSettingsEn {
 	/// en: 'Used when starting playback. Lower values reduce bandwidth.'
 	String get defaultQualityDescription => 'Used when starting playback. Lower values reduce bandwidth.';
 
+	/// en: 'Music Quality'
+	String get musicQualityTitle => 'Music Quality';
+
 	/// en: 'Subtitle Styling'
 	String get subtitleStyling => 'Subtitle Styling';
 
@@ -5111,6 +5114,7 @@ extension on Translations {
 			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '${heap}MB memory available. A ${size}MB buffer may affect playback.',
 			'settings.defaultQualityTitle' => 'Default Quality',
 			'settings.defaultQualityDescription' => 'Used when starting playback. Lower values reduce bandwidth.',
+			'settings.musicQualityTitle' => 'Music Quality',
 			'settings.subtitleStyling' => 'Subtitle Styling',
 			'settings.subtitleStylingDescription' => 'Customize subtitle appearance',
 			'settings.smallSkipDuration' => 'Small Skip Duration',
@@ -5474,9 +5478,9 @@ extension on Translations {
 			'messages.removedFromContinueWatching' => 'Removed from Continue Watching',
 			'messages.errorLoading' => ({required Object error}) => 'Error: ${error}',
 			'messages.streamInterrupted' => 'The stream was interrupted. Press play or seek to retry.',
-			'messages.fileInfoNotAvailable' => 'File information not available',
 			_ => null,
 		} ?? switch (path) {
+			'messages.fileInfoNotAvailable' => 'File information not available',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Error loading file info: ${error}',
 			'messages.errorLoadingSeries' => 'Error loading series',
 			'messages.musicNotSupported' => 'Music playback is not yet supported',
@@ -5988,9 +5992,9 @@ extension on Translations {
 			'downloads.manage' => 'Manage',
 			'downloads.tvShows' => 'TV Shows',
 			'downloads.movies' => 'Movies',
-			'downloads.music' => 'Music',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.music' => 'Music',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} tracks queued for download',
 			'downloads.noDownloads' => 'No downloads yet',
 			'downloads.noDownloadsDescription' => 'Downloaded content will appear here for offline viewing',
