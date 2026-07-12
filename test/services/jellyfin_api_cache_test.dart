@@ -314,5 +314,45 @@ void main() {
       expect((byKey['$machineId/user-a:/Users/user-a/Items/item-1']!['UserData'] as Map)['Played'], isTrue);
       expect((byKey['$machineId/user-b:/Users/user-b/Items/item-1']!['UserData'] as Map)['Played'], isFalse);
     });
+
+    test('bare Jellyfin server id updates the only cached user scope', () async {
+      const machineId = 'jf-machine';
+      await putItemRow(
+        serverId: ServerId(machineId),
+        userId: 'user-a',
+        itemId: 'item-1',
+        data: {
+          ...jellyfinItem(id: 'item-1'),
+          'UserData': {'Played': false, 'PlayCount': 0},
+        },
+      );
+
+      await cache.applyWatchState(serverId: ServerId(machineId), itemId: 'item-1', isWatched: true);
+
+      final row = await db.select(db.apiCache).getSingle();
+      expect((jsonDecode(row.data)['UserData'] as Map)['Played'], isTrue);
+    });
+
+    test('bare Jellyfin server id skips ambiguous multi-user cache updates', () async {
+      const machineId = 'jf-machine';
+      for (final userId in ['user-a', 'user-b']) {
+        await putItemRow(
+          serverId: ServerId(machineId),
+          userId: userId,
+          itemId: 'item-1',
+          data: {
+            ...jellyfinItem(id: 'item-1'),
+            'UserData': {'Played': false, 'PlayCount': 0},
+          },
+        );
+      }
+
+      await cache.applyWatchState(serverId: ServerId(machineId), itemId: 'item-1', isWatched: true);
+
+      final rows = await db.select(db.apiCache).get();
+      for (final row in rows) {
+        expect((jsonDecode(row.data)['UserData'] as Map)['Played'], isFalse);
+      }
+    });
   });
 }

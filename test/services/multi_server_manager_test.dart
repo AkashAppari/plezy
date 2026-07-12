@@ -195,6 +195,62 @@ void main() {
       expect(m.authErrorServerIds, isNot(contains('server-1')));
       expect(client.config.token, 'new-token');
     });
+
+    test('concurrent Plex account refreshes do not invalidate each other', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      addTearDown(db.close);
+
+      final manager = MultiServerManager();
+      addTearDown(manager.dispose);
+
+      PlexClient client(String serverId) => PlexClient.forTesting(
+        config: PlexConfig(
+          baseUrl: 'https://$serverId.example',
+          token: 'old-$serverId',
+          clientIdentifier: 'client-$serverId',
+          product: 'Plezy',
+          version: '1.0.0',
+        ),
+        serverId: ServerId(serverId),
+        serverName: serverId,
+        httpClient: MockClient((_) async => http.Response('{}', 200)),
+      );
+
+      final clientA = client('server-a');
+      final clientB = client('server-b');
+      manager.debugRegisterClientForTesting(clientA, online: true);
+      manager.debugRegisterClientForTesting(clientB, online: true);
+
+      PlexAccountConnection account(String accountId, String serverId) => PlexAccountConnection(
+        id: accountId,
+        accountToken: 'account-token',
+        clientIdentifier: 'client-$serverId',
+        accountLabel: accountId,
+        servers: [
+          PlexServer(
+            name: serverId,
+            clientIdentifier: serverId,
+            accessToken: 'new-$serverId',
+            connections: const [],
+            owned: true,
+          ),
+        ],
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      );
+
+      final results = await Future.wait([
+        manager.refreshTokensForProfile(account('account-a', 'server-a')),
+        manager.refreshTokensForProfile(account('account-b', 'server-b')),
+      ]);
+
+      expect(results, [
+        {'server-a'},
+        {'server-b'},
+      ]);
+      expect(clientA.config.token, 'new-server-a');
+      expect(clientB.config.token, 'new-server-b');
+    });
   });
 
   group('Jellyfin connection updates', () {

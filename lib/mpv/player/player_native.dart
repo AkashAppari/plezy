@@ -459,8 +459,16 @@ class PlayerNative extends PlayerBase {
     _armedNextUri = null;
     _armedNextFd = null;
     appLogger.d('MPV-audio: armed entry advanced → playlist-remove 0, ${_uriTail(uri ?? '')}');
-    unawaited(command(['playlist-remove', '0']));
+    unawaited(_removeSpentPlaylistEntry());
     if (uri != null) trackTransitionController.add(uri);
+  }
+
+  Future<void> _removeSpentPlaylistEntry() async {
+    try {
+      await command(['playlist-remove', '0']);
+    } catch (error, stackTrace) {
+      appLogger.w('MPV-audio: failed to remove spent playlist entry', error: error, stackTrace: stackTrace);
+    }
   }
 
   @override

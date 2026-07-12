@@ -292,6 +292,9 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     }
   }
 
+  @visibleForTesting
+  Future<void> debugHydrateOfflineWatchOverlay() => _applyOfflineWatchOverlay();
+
   /// Load all persisted downloads and metadata from the database/cache
   Future<void> _loadPersistedDownloads() async {
     try {
@@ -901,24 +904,23 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
     final globalKey = metadata.globalKey;
     final config = versionConfig ?? DownloadVersionConfig();
-
-    // Check if downloads are blocked on cellular
-    if (await DownloadManagerService.shouldBlockDownloadOnCellular()) {
-      throw CellularDownloadBlockedException();
-    }
+    if (!_queueing.add(globalKey)) return 0;
+    safeNotifyListeners();
 
     try {
-      // Mark as queueing to show loading state in UI
-      _queueing.add(globalKey);
-      safeNotifyListeners();
+      // Claim the operation before the first await so a second tap cannot
+      // launch a duplicate container expansion.
+      if (await DownloadManagerService.shouldBlockDownloadOnCellular()) {
+        throw CellularDownloadBlockedException();
+      }
 
       if (metadata.isMovie || metadata.isEpisode || metadata.kind == MediaKind.track) {
         final queued = await _queueSingleDownload(metadata, client, mediaIndex: config.mediaIndex);
         return queued ? 1 : 0;
       } else if (metadata.kind == MediaKind.album || metadata.kind == MediaKind.artist) {
-        return _withStashedMetadata(metadata, () => _queueMusicContainerDownload(metadata, client));
+        return await _withStashedMetadata(metadata, () => _queueMusicContainerDownload(metadata, client));
       } else if (metadata.isShow || metadata.isSeason) {
-        return _withStashedMetadata(
+        return await _withStashedMetadata(
           metadata,
           () => _expandAndQueue(
             container: metadata,
@@ -1360,6 +1362,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     try {
       for (final entry in descendants) {
         await _deleteDownload(entry.key, notify: false);
+        DeletionNotifier().notifyDeletedItem(item: entry.value, isDownloadOnly: true);
       }
     } finally {
       _batchDeletionDepth--;

@@ -90,7 +90,8 @@ class MultiServerManager {
 
   /// Coalescing guard for reconnectOfflineServers — prevents concurrent reconnect sweeps
   Future<void>? _activeReconnect;
-  int _profileRefreshGeneration = 0;
+  int _profileRefreshEpoch = 0;
+  final Map<String, int> _profileRefreshGenerations = {};
 
   /// Debounce timer for connectivity events — collapses rapid network flapping
   Timer? _connectivityDebounce;
@@ -500,8 +501,15 @@ class MultiServerManager {
     PlexAccountConnection connection, {
     Duration timeout = MediaServerTimeouts.perServerConnect,
   }) async {
-    final generation = ++_profileRefreshGeneration;
-    if (connection.servers.isEmpty) return const {};
+    final accountId = connection.id;
+    final epoch = _profileRefreshEpoch;
+    final generation = (_profileRefreshGenerations[accountId] ?? 0) + 1;
+    _profileRefreshGenerations[accountId] = generation;
+    bool isStale() => epoch != _profileRefreshEpoch || _profileRefreshGenerations[accountId] != generation;
+    if (connection.servers.isEmpty) {
+      if (!isStale()) _profileRefreshGenerations.remove(accountId);
+      return const {};
+    }
     final bound = <String>{};
     final futures = connection.servers.map((server) async {
       final serverId = server.clientIdentifier;
@@ -510,9 +518,7 @@ class MultiServerManager {
       final existing = _clients[serverId];
       if (existing is PlexClient && ((_serverStatus[serverId] ?? false) || _authErrorServers.contains(serverId))) {
         await existing.applyTokenUpdate(server.accessToken);
-        if (generation != _profileRefreshGeneration ||
-            !identical(_plexServers[serverId], server) ||
-            !identical(_clients[serverId], existing)) {
+        if (isStale() || !identical(_plexServers[serverId], server) || !identical(_clients[serverId], existing)) {
           return;
         }
         _authErrorServers.remove(serverId);
@@ -526,7 +532,7 @@ class MultiServerManager {
           server: server,
           clientIdentifier: connection.clientIdentifier,
         ).namedTimeout(timeout, operation: 'connect to ${server.name}');
-        if (generation != _profileRefreshGeneration || !identical(_plexServers[serverId], server)) {
+        if (isStale() || !identical(_plexServers[serverId], server)) {
           _closeClient(client);
           return;
         }
@@ -538,18 +544,19 @@ class MultiServerManager {
         bound.add(serverId);
         _connectProgressController.add((serverId: serverId, online: true));
       } catch (e, stackTrace) {
-        if (generation != _profileRefreshGeneration || !identical(_plexServers[serverId], server)) return;
+        if (isStale() || !identical(_plexServers[serverId], server)) return;
         appLogger.e('refreshTokensForProfile: failed to connect ${server.name}', error: e, stackTrace: stackTrace);
         _serverStatus[serverId] = false;
         _connectProgressController.add((serverId: serverId, online: false));
       }
     });
     await Future.wait(futures);
-    if (generation != _profileRefreshGeneration) return const {};
+    if (isStale()) return const {};
     _statusController.add(Map.from(_serverStatus));
     if (bound.isNotEmpty && _connectivitySubscription == null) {
       _startNetworkMonitoring();
     }
+    _profileRefreshGenerations.remove(accountId);
     return bound;
   }
 
@@ -1171,7 +1178,8 @@ class MultiServerManager {
   }
 
   Set<MediaServerClient> _detachAllClients() {
-    ++_profileRefreshGeneration;
+    ++_profileRefreshEpoch;
+    _profileRefreshGenerations.clear();
     _stopNetworkMonitoring();
     for (final timer in _reconnectDebounce.values) {
       timer.cancel();

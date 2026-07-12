@@ -202,12 +202,15 @@ class OptimizedMediaImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final path = localFilePath;
-    if (path == null) return _buildResolved(context, null);
+    if (path == null) {
+      return _buildResolved(context, _LocalFileResolution.missing, null);
+    }
     return _ResolvedLocalFile(path: path, builder: _buildResolved);
   }
 
-  Widget _buildResolved(BuildContext context, File? localFile) {
-    final hasLocal = localFile != null;
+  Widget _buildResolved(BuildContext context, _LocalFileResolution resolution, File? localFile) {
+    if (resolution == _LocalFileResolution.pending) return _surfacePlaceholder(context);
+    final hasLocal = resolution == _LocalFileResolution.present;
 
     if (!hasLocal && (imagePath == null || imagePath!.isEmpty)) {
       return _buildFallback(context);
@@ -216,7 +219,7 @@ class OptimizedMediaImage extends StatelessWidget {
     if (_hasKnownDimensions) {
       return blurArtwork(
         hasLocal
-            ? _buildLocalFileImage(context, localFile, width!, height!)
+            ? _buildLocalFileImage(context, localFile!, width!, height!)
             : _buildCachedImage(context, width!, height!),
       );
     }
@@ -227,7 +230,7 @@ class OptimizedMediaImage extends StatelessWidget {
           final effectiveWidth = _resolvedDimension(width, constraints.maxWidth, 300.0);
           final effectiveHeight = _resolvedDimension(height, constraints.maxHeight, 450.0);
           return hasLocal
-              ? _buildLocalFileImage(context, localFile, effectiveWidth, effectiveHeight)
+              ? _buildLocalFileImage(context, localFile!, effectiveWidth, effectiveHeight)
               : _buildCachedImage(context, effectiveWidth, effectiveHeight);
         },
       ),
@@ -513,11 +516,13 @@ class _FadeInNetworkImageState extends State<_FadeInNetworkImage> with SingleTic
   }
 }
 
+enum _LocalFileResolution { pending, missing, present }
+
 class _ResolvedLocalFile extends StatefulWidget {
   const _ResolvedLocalFile({required this.path, required this.builder});
 
   final String path;
-  final Widget Function(BuildContext context, File? file) builder;
+  final Widget Function(BuildContext context, _LocalFileResolution resolution, File? file) builder;
 
   @override
   State<_ResolvedLocalFile> createState() => _ResolvedLocalFileState();
@@ -525,6 +530,7 @@ class _ResolvedLocalFile extends StatefulWidget {
 
 class _ResolvedLocalFileState extends State<_ResolvedLocalFile> {
   File? _file;
+  _LocalFileResolution _resolution = _LocalFileResolution.pending;
   int _generation = 0;
 
   @override
@@ -536,16 +542,20 @@ class _ResolvedLocalFileState extends State<_ResolvedLocalFile> {
   @override
   void didUpdateWidget(_ResolvedLocalFile oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.path != widget.path) _resolve();
+    if (oldWidget.path != widget.path || _resolution == _LocalFileResolution.missing) _resolve();
   }
 
   void _resolve() {
     final generation = ++_generation;
     _file = null;
+    _resolution = _LocalFileResolution.pending;
     final candidate = File(widget.path);
     candidate.exists().then((exists) {
       if (!mounted || generation != _generation) return;
-      setState(() => _file = exists ? candidate : null);
+      setState(() {
+        _file = exists ? candidate : null;
+        _resolution = exists ? _LocalFileResolution.present : _LocalFileResolution.missing;
+      });
     });
   }
 
@@ -556,5 +566,5 @@ class _ResolvedLocalFileState extends State<_ResolvedLocalFile> {
   }
 
   @override
-  Widget build(BuildContext context) => widget.builder(context, _file);
+  Widget build(BuildContext context) => widget.builder(context, _resolution, _file);
 }

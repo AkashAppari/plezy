@@ -20,6 +20,7 @@ import '../../../providers/multi_server_provider.dart';
 import '../../../media/media_server_client.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../utils/app_logger.dart';
+import '../live_tv_refresh_lifecycle.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/live_tv_grouping.dart';
 import '../../../utils/live_tv_matching.dart';
@@ -195,14 +196,12 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    switch (state) {
-      case AppLifecycleState.paused:
-      case AppLifecycleState.hidden:
+    switch (liveTvRefreshTransition(state)) {
+      case LiveTvRefreshLifecycleTransition.pause:
         pauseRefresh();
-      case AppLifecycleState.resumed:
+      case LiveTvRefreshLifecycleTransition.resume:
         if (_isGuideVisible) resumeRefresh();
-      case AppLifecycleState.inactive:
-      case AppLifecycleState.detached:
+      case LiveTvRefreshLifecycleTransition.ignore:
         break;
     }
   }

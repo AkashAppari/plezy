@@ -6,6 +6,7 @@ import 'package:drift/drift.dart';
 import '../database/app_database.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
+import '../utils/app_logger.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/isolate_helper.dart';
 import 'api_cache.dart';
@@ -116,10 +117,11 @@ class JellyfinApiCache extends ApiCache {
     }
   }
 
-  /// Persist a watched/unwatched flip into every cached `BaseItemDto` row
-  /// for [itemId] (one per cached userId). Mirrors what the server returns
-  /// after the flip so a later cache reload reflects the current watched
-  /// state without a network roundtrip.
+  /// Persist a watched/unwatched flip into cached `BaseItemDto` rows for
+  /// [itemId]. Compound Jellyfin scope ids update only their user. A legacy
+  /// bare machine id is accepted only when its matching rows belong to one
+  /// user; ambiguous multi-user writes are skipped rather than bleeding watch
+  /// state across profiles.
   ///
   /// [viewOffsetMs] is converted to Jellyfin's 100-ns ticks for
   /// `UserData.PlaybackPositionTicks`. [lastViewedAt] is treated as Plex's
@@ -141,6 +143,19 @@ class JellyfinApiCache extends ApiCache {
       ..where((t) => _resolver.itemKeyPredicate(t.cacheKey, serverId, itemId));
     final rows = await query.get();
     if (rows.isEmpty) return;
+    if (!serverId.contains('/')) {
+      final userIds = <String>{
+        for (final row in rows)
+          if (JellyfinCacheResolver.parseItemKey(row.cacheKey) case final key?) key.userId,
+      };
+      if (userIds.length > 1) {
+        appLogger.w(
+          'Skipping ambiguous bare-scope Jellyfin watch-state cache write',
+          error: {'serverId': serverId, 'itemId': itemId, 'userCount': userIds.length},
+        );
+        return;
+      }
+    }
     for (final row in rows) {
       try {
         final data = jsonDecode(row.data) as Map<String, dynamic>;

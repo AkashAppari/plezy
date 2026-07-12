@@ -20,6 +20,7 @@ import '../../../widgets/hub_section.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../live_tv_actions_mixin.dart';
 import '../live_tv_show_schedule_screen.dart';
+import '../live_tv_refresh_lifecycle.dart';
 
 class WhatsOnTab extends StatefulWidget {
   final List<LiveTvChannel> channels;
@@ -41,7 +42,7 @@ class WhatsOnTabState extends State<WhatsOnTab>
   List<GlobalKey<HubSectionState>> _hubKeys = [];
   bool _refreshRequested = true;
   bool _tickerEnabled = false;
-  bool _appResumed = true;
+  bool _appRefreshActive = true;
 
   @override
   List<LiveTvChannel> get liveTvChannels => widget.channels;
@@ -64,10 +65,18 @@ class WhatsOnTabState extends State<WhatsOnTab>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    final resumed = state == AppLifecycleState.resumed;
-    if (resumed == _appResumed) return;
-    _appResumed = resumed;
-    _syncRefreshTimer();
+    switch (liveTvRefreshTransition(state)) {
+      case LiveTvRefreshLifecycleTransition.pause:
+        if (!_appRefreshActive) return;
+        _appRefreshActive = false;
+        _syncRefreshTimer();
+      case LiveTvRefreshLifecycleTransition.resume:
+        if (_appRefreshActive) return;
+        _appRefreshActive = true;
+        _syncRefreshTimer();
+      case LiveTvRefreshLifecycleTransition.ignore:
+        break;
+    }
   }
 
   void pauseRefresh() {
@@ -83,7 +92,7 @@ class WhatsOnTabState extends State<WhatsOnTab>
   void _syncRefreshTimer() {
     _refreshTimer?.cancel();
     _refreshTimer = null;
-    if (!_refreshRequested || !_tickerEnabled || !_appResumed || !mounted) return;
+    if (!_refreshRequested || !_tickerEnabled || !_appRefreshActive || !mounted) return;
     _refreshTimer = Timer.periodic(const Duration(seconds: 60), (_) => _loadHubs());
   }
 

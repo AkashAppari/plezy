@@ -21,6 +21,7 @@ import '../../widgets/settings_builder.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../utils/platform_detector.dart';
+import '../../utils/serial_future_queue.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focusable_tab_chip.dart';
@@ -74,7 +75,9 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   final Map<String, FavoriteChannelPersistenceMode> _favoriteModeByStore = {};
   Future<void>? _channelsLoadFuture;
   int _favoritesLoadGeneration = 0;
-  int _favoritesMutationGeneration = 0;
+  Future<void>? _favoritesLoadFuture;
+  final SerialFutureQueue _favoritesMutationQueue = SerialFutureQueue();
+  bool _favoritesLoaded = false;
 
   List<LiveTvChannel> get _filteredChannels => filterLiveTvChannelsForFavorites(
     channels: _channels,
@@ -402,7 +405,15 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       _refreshVisibleTabs(multiServer);
 
       // Load favorites by backend store: Plex is cloud/account-scoped, Jellyfin per server.
-      unawaited(_loadFavorites(multiServer));
+      final favoritesLoad = _loadFavorites(multiServer);
+      _favoritesLoadFuture = favoritesLoad;
+      unawaited(
+        favoritesLoad.whenComplete(() {
+          if (identical(_favoritesLoadFuture, favoritesLoad)) {
+            _favoritesLoadFuture = null;
+          }
+        }),
+      );
 
       if (allChannels.isNotEmpty && PlatformDetector.shouldUseSideNavigation(context)) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -422,7 +433,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
   Future<void> _loadFavorites(MultiServerProvider multiServer) async {
     final loadGeneration = ++_favoritesLoadGeneration;
-    final mutationGeneration = _favoritesMutationGeneration;
+    _favoritesLoaded = false;
     try {
       final sourceByLiveServer = Map<String, String>.of(_favoriteSourceByLiveServer);
       final storeByLiveServer = Map<String, String>.of(_favoriteStoreByLiveServer);
@@ -450,11 +461,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         }
       }
 
-      if (!mounted ||
-          loadGeneration != _favoritesLoadGeneration ||
-          mutationGeneration != _favoritesMutationGeneration) {
-        return;
-      }
+      if (!mounted || loadGeneration != _favoritesLoadGeneration) return;
       setState(() {
         _favoriteSourceByLiveServer
           ..clear()
@@ -471,6 +478,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         _favoriteChannels = merged;
         _refreshFavoriteKeys();
       });
+      _favoritesLoaded = true;
       appLogger.d('Live TV: loaded ${merged.length} favorite channels');
     } catch (e) {
       appLogger.e('Failed to load favorite channels', error: e);
@@ -484,23 +492,42 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   }
 
   void _toggleFavorite(LiveTvChannel channel) {
-    ++_favoritesMutationGeneration;
-    final source = _sourceForChannel(channel);
-    final favoriteKey = favoriteChannelKey(source, channel.key);
-    final scopeKey = liveTvChannelScopeKey(channel);
-    final storeKey = channel.favoriteStoreKey ?? _favoriteStoreByChannel[scopeKey];
-    if (storeKey != null) _favoriteStoreBySource[source] = storeKey;
+    _enqueueFavoriteMutation(() {
+      final source = _sourceForChannel(channel);
+      final favoriteKey = favoriteChannelKey(source, channel.key);
+      final scopeKey = liveTvChannelScopeKey(channel);
+      final storeKey = channel.favoriteStoreKey ?? _favoriteStoreByChannel[scopeKey];
+      if (storeKey != null) _favoriteStoreBySource[source] = storeKey;
 
-    setState(() {
-      if (_favoriteKeys.contains(favoriteKey)) {
-        _favoriteChannels = _favoriteChannels.where((f) => f.id != channel.key || f.source != source).toList();
-      } else {
-        _favoriteChannels = [..._favoriteChannels, FavoriteChannel.fromLiveTvChannel(channel, source)];
-      }
-      _refreshFavoriteKeys();
+      setState(() {
+        if (_favoriteKeys.contains(favoriteKey)) {
+          _favoriteChannels = _favoriteChannels.where((f) => f.id != channel.key || f.source != source).toList();
+        } else {
+          _favoriteChannels = [..._favoriteChannels, FavoriteChannel.fromLiveTvChannel(channel, source)];
+        }
+        _refreshFavoriteKeys();
+      });
     });
+  }
 
-    _persistFavorites();
+  void _enqueueFavoriteMutation(VoidCallback mutation) {
+    final pendingLoad = _favoritesLoadFuture;
+    unawaited(
+      _favoritesMutationQueue
+          .run(() async {
+            if (pendingLoad != null) await pendingLoad;
+            if (!mounted) return;
+            if (!_favoritesLoaded) {
+              showErrorSnackBar(context, t.liveTv.favoritesLoadFailed);
+              return;
+            }
+            mutation();
+            await _persistFavorites();
+          })
+          .catchError((Object error, StackTrace stackTrace) {
+            appLogger.e('Failed to mutate favorite channels', error: error, stackTrace: stackTrace);
+          }),
+    );
   }
 
   void _showReorderFavorites() {
@@ -512,34 +539,35 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         favorites: List.from(_favoriteChannels),
         channelMap: channelMap,
         onReorder: (reordered) {
-          ++_favoritesMutationGeneration;
-          setState(() {
-            _favoriteChannels = reordered;
-            _refreshFavoriteKeys();
+          _enqueueFavoriteMutation(() {
+            setState(() {
+              _favoriteChannels = reordered;
+              _refreshFavoriteKeys();
+            });
           });
-          _persistFavorites();
         },
         onRemove: (removed) {
-          ++_favoritesMutationGeneration;
-          setState(() {
-            _favoriteChannels = _favoriteChannels.where((f) => f.stableKey != removed.stableKey).toList();
-            _refreshFavoriteKeys();
+          _enqueueFavoriteMutation(() {
+            setState(() {
+              _favoriteChannels = _favoriteChannels.where((f) => f.stableKey != removed.stableKey).toList();
+              _refreshFavoriteKeys();
+            });
           });
-          _persistFavorites();
         },
       ),
     );
   }
 
-  void _persistFavorites() {
+  Future<void> _persistFavorites() async {
     final multiServer = context.read<MultiServerProvider>();
     final byStore = <String, List<FavoriteChannel>>{};
-    for (final f in _favoriteChannels) {
-      final storeKey = _favoriteStoreBySource[f.source];
+    for (final favorite in _favoriteChannels) {
+      final storeKey = _favoriteStoreBySource[favorite.source];
       if (storeKey == null) continue;
-      byStore.putIfAbsent(storeKey, () => []).add(f);
+      byStore.putIfAbsent(storeKey, () => []).add(favorite);
     }
     final writtenStores = <String>{};
+    final writes = <Future<void>>[];
     for (final serverInfo in multiServer.liveTvServers) {
       final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
       if (client == null) continue;
@@ -548,14 +576,15 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       if (storeKey == null || !writtenStores.add(storeKey)) continue;
       final mode = _favoriteModeByStore[storeKey] ?? client.liveTv.favoritePersistenceMode;
       final source = _favoriteSourceByLiveServer[liveServerKey];
-      if (source == null) continue; // not yet resolved — skip; next toggle will catch up
+      if (source == null) continue;
       final channels = switch (mode) {
         FavoriteChannelPersistenceMode.sharedFullList => byStore[storeKey] ?? const <FavoriteChannel>[],
         FavoriteChannelPersistenceMode.serverSlice =>
-          (byStore[storeKey] ?? const <FavoriteChannel>[]).where((f) => f.source == source).toList(),
+          (byStore[storeKey] ?? const <FavoriteChannel>[]).where((favorite) => favorite.source == source).toList(),
       };
-      unawaited(client.liveTv.setFavoriteChannels(channels));
+      writes.add(client.liveTv.setFavoriteChannels(channels));
     }
+    await Future.wait(writes);
   }
 
   void _focusCurrentTab() {

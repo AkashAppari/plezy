@@ -74,20 +74,39 @@ class JellyfinCacheResolver {
               ..where((t) => t.pinned.equals(true))
               ..orderBy([(t) => OrderingTerm.asc(t.cacheKey)]))
             .get();
+    if (rows.isEmpty) return const [];
+
+    final connections = await (database.select(database.connections)..where((t) => t.kind.equals('jellyfin'))).get();
+    final connectionById = {for (final connection in connections) connection.id: connection};
+    final bindings = await database.select(database.profileConnections).get();
+    final bindingsByConnection = <String, List<ProfileConnectionRow>>{};
+    for (final binding in bindings) {
+      bindingsByConnection.putIfAbsent(binding.connectionId, () => []).add(binding);
+    }
+
+    bool matchesBinding(String connectionId, String userId) {
+      final connectionBindings = bindingsByConnection[connectionId];
+      return connectionBindings == null ||
+          connectionBindings.isEmpty ||
+          connectionBindings.any((binding) => binding.userIdentifier == userId);
+    }
+
     final matches = <ResolvedJellyfinCacheItem>[];
     for (final row in rows) {
-      final resolved = await _resolveRow(row);
-      if (resolved != null) matches.add(resolved);
+      final key = parseItemKey(row.cacheKey);
+      if (key == null) continue;
+      final compoundId = '${key.machineId}/${key.userId}';
+      final compound = connectionById[compoundId];
+      if (compound != null && matchesBinding(compound.id, key.userId)) {
+        matches.add((cacheRow: row, connection: compound, key: key));
+        continue;
+      }
+      final legacy = connectionById[key.machineId];
+      if (legacy != null && matchesBinding(legacy.id, key.userId)) {
+        matches.add((cacheRow: row, connection: legacy, key: key));
+      }
     }
     return matches;
-  }
-
-  Future<ResolvedJellyfinCacheItem?> _resolveRow(ApiCacheData row) async {
-    final key = parseItemKey(row.cacheKey);
-    if (key == null) return null;
-    final connection = await findConnection(key.scopeId, userId: key.userId);
-    if (connection == null) return null;
-    return (cacheRow: row, connection: connection, key: key);
   }
 
   Future<ConnectionRow?> findConnection(String serverOrScopeId, {String? userId}) async {

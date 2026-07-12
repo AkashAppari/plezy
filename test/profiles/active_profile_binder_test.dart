@@ -789,6 +789,47 @@ void main() {
       expect(activeProfile.isBinding, isFalse);
     });
 
+    test('A to B to A during one pass forces a complete final A bind', () async {
+      binder.dispose();
+      multiServerProvider.dispose();
+
+      final gated = _GatedJellyfinManager();
+      manager = gated;
+      multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      binder = ActiveProfileBinder(
+        activeProfile: activeProfile,
+        connections: connections,
+        profileConnections: profileConnections,
+        serverManager: manager,
+        multiServerProvider: multiServerProvider,
+        pinPrompt: (_, {String? errorMessage}) async => null,
+        shouldDeferInitialBind: (_) async => false,
+      );
+
+      final profileA = await createActiveLocalProfile('local-a');
+      final profileB = Profile.local(id: 'local-b', displayName: 'B', createdAt: DateTime(2026, 1, 2));
+      await profiles.upsert(profileB);
+      await pumpUntil(() async => activeProfile.profiles.any((profile) => profile.id == profileB.id));
+
+      final jellyfin = _jellyfinConnection();
+      await connections.upsert(jellyfin);
+      await profileConnections.upsert(
+        ProfileConnection(profileId: profileA.id, connectionId: jellyfin.id, userIdentifier: jellyfin.userId),
+      );
+
+      binder.start();
+      await pumpUntil(() async => gated.calls == 1);
+
+      expect(await activeProfile.activate(profileB), isTrue);
+      expect(await activeProfile.activate(profileA), isTrue);
+      gated.gate.complete();
+      await activeProfile.awaitBindingSettle();
+
+      expect(gated.calls, 2);
+      expect(binder.debugLastBoundProfileId, profileA.id);
+      expect(multiServerProvider.onlineServerIds, ['jf-machine']);
+      expect(activeProfile.lastBindingSucceeded, isTrue);
+    });
     test('passive notifications do not retry a failed profile; explicit rebind does', () async {
       binder.dispose();
       multiServerProvider.dispose();

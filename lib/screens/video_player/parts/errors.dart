@@ -29,12 +29,12 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
       if (_live.fallbackLevel < 2) {
         _live.fallbackLevel++;
         _live.retrying = true;
-        appLogger.w('Live stream failed, retrying with fallback level $_live.fallbackLevel');
+        appLogger.w('Live stream failed, retrying with fallback level ${_live.fallbackLevel}');
         unawaited(_retryLiveStream());
         return;
       }
       if (_live.retryFailed) {
-        showGlobalErrorSnackBar(t.messages.streamInterrupted);
+        showGlobalErrorSnackBar(t.messages.liveStreamInterrupted);
         return;
       }
     }

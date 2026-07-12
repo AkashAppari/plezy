@@ -42,7 +42,13 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   static const int continueWatchingPreviewLimit = 20;
   static const int _continueWatchingProbeLimit = continueWatchingPreviewLimit + 1;
 
-  DiscoverProvider(this._multiServer, this._hiddenLibraries, this._libraries, {required this.isProfileBinding}) {
+  DiscoverProvider(
+    this._multiServer,
+    this._hiddenLibraries,
+    this._libraries, {
+    required this.isProfileBinding,
+    Future<void> Function(List<MediaItem>)? syncSystemShelf,
+  }) : _syncSystemShelfOverride = syncSystemShelf {
     _loadCoordinator = CoalescedLoadCoordinator<String>(onFull: _loadOnce, onDelta: _loadDeltaOnce);
     // Late server connects (reconnect after outage, slow wave) refresh
     // discover the same way they refresh libraries. Removed in [dispose] so a
@@ -79,6 +85,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// instead of flashing the empty placeholder (main_screen primes another
   /// load once binding settles).
   final bool Function() isProfileBinding;
+  final Future<void> Function(List<MediaItem>)? _syncSystemShelfOverride;
 
   StreamSubscription<WatchStateEvent>? _watchStateSubscription;
   StreamSubscription<DeletionEvent>? _deletionSubscription;
@@ -499,6 +506,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       if (viewOffset != null && index != -1 && _onDeck[index].viewOffsetMs != viewOffset) {
         _onDeck = List.of(_onDeck)..[index] = _onDeck[index].copyWith(viewOffsetMs: viewOffset);
         safeNotifyListeners();
+        unawaited(_syncSystemShelf(_onDeck));
       }
       return;
     }
@@ -629,6 +637,11 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         if (isDisposed) return;
 
         try {
+          final syncOverride = _syncSystemShelfOverride;
+          if (syncOverride != null) {
+            await syncOverride(onDeck);
+            continue;
+          }
           final settings = await SettingsService.getInstance();
           if (isDisposed) return;
           final syncableOnDeck = onDeck

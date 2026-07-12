@@ -123,10 +123,11 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
         _live.adoptSession(recovered);
         _live.markStreamRestartedAtLiveEdge();
       },
+      discardSession: _abandonLiveSession,
       reportFailure: (error, stackTrace) {
         appLogger.e('Failed to recover live stream', error: error, stackTrace: stackTrace);
         _live.retryFailed = true;
-        showGlobalErrorSnackBar(t.messages.streamInterrupted);
+        showGlobalErrorSnackBar(t.messages.liveStreamInterrupted);
       },
       onFinished: () {
         if (isCurrent()) _live.retrying = false;

@@ -80,6 +80,18 @@ else
   FAILED=1
 fi
 
+# 4. Workflow and script regression guards
+section "workflow and script guards"
+if python3 scripts/check_build_workflow.py &&
+   python3 scripts/check_update_packages_workflow.py &&
+   python3 scripts/test_pubspec_version.py &&
+   python3 scripts/test_clean_translations.py; then
+  ok "workflow and script guards passed"
+else
+  fail "workflow or script guard failed"
+  FAILED=1
+fi
+
 # 3. Native formatting
 section "native format"
 out="$(mktemp)"

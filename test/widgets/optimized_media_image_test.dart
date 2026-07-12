@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -63,5 +66,50 @@ void main() {
     final placeholder = find.descendant(of: find.byType(OptimizedMediaImage), matching: find.byType(Container));
     expect(placeholder, findsOneWidget);
     expect(tester.getSize(placeholder), const Size(96, 96));
+  });
+
+  testWidgets('same local artwork path re-resolves after the file appears', (tester) async {
+    final directory = Directory.systemTemp.createTempSync('plezy-image-test');
+    addTearDown(() => directory.deleteSync(recursive: true));
+    final file = File('${directory.path}/poster.png');
+    late StateSetter rebuild;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            rebuild = setState;
+            return OptimizedMediaImage.thumb(
+              imagePath: null,
+              localFilePath: file.path,
+              width: 80,
+              height: 120,
+              fallbackIcon: Symbols.image_not_supported_rounded,
+            );
+          },
+        ),
+      ),
+    );
+
+    expect(find.byIcon(Symbols.image_not_supported_rounded), findsNothing);
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    await tester.pump();
+    expect(find.byIcon(Symbols.image_not_supported_rounded), findsOneWidget);
+
+    file.writeAsBytesSync(
+      base64Decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='),
+      flush: true,
+    );
+    rebuild(() {});
+    await tester.pump();
+
+    expect(find.byIcon(Symbols.image_not_supported_rounded), findsNothing);
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+    await tester.pump();
+    await tester.pump();
+    expect(file.existsSync(), isTrue);
+    expect(find.byIcon(Symbols.image_not_supported_rounded), findsNothing);
+    expect(find.byType(Image), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 }

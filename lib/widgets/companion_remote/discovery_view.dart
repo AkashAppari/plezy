@@ -16,9 +16,33 @@ import '../../profiles/active_profile_provider.dart';
 import '../../profiles/plex_home_service.dart';
 import '../../profiles/profile_connection_registry.dart';
 import '../../providers/companion_remote_provider.dart';
+import '../../services/base_peer_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
+
 import '../loading_indicator_box.dart';
+
+@visibleForTesting
+String companionRemotePairingErrorMessage(Object error) {
+  if (error is PeerError) {
+    return switch (error.type) {
+      PeerErrorType.timeout => t.companionRemote.pairing.connectionTimedOut,
+      PeerErrorType.connectionFailed || PeerErrorType.invalidSession => t.companionRemote.pairing.sessionNotFound,
+      PeerErrorType.authFailed => t.companionRemote.pairing.authFailed,
+      _ => error.message,
+    };
+  }
+
+  final message = error.toString().replaceFirst('Exception: ', '');
+  if (message.contains('timeout') || message.contains('Timed out')) {
+    return t.companionRemote.pairing.connectionTimedOut;
+  } else if (message.contains('Failed to connect')) {
+    return t.companionRemote.pairing.sessionNotFound;
+  } else if (message.contains('Authentication failed')) {
+    return t.companionRemote.pairing.authFailed;
+  }
+  return t.companionRemote.pairing.failedToConnect(error: message);
+}
 
 /// Discovers LAN hosts and provides UI to connect to them.
 class DiscoveryView extends StatefulWidget {
@@ -158,7 +182,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
     } catch (e) {
       appLogger.e('Failed to connect', error: e);
       if (!mounted) return;
-      setState(() => _errorMessage = _parseErrorMessage(e.toString()));
+      setState(() => _errorMessage = companionRemotePairingErrorMessage(e));
     } finally {
       setStateIfMounted(() => _isConnecting = false);
     }
@@ -182,17 +206,6 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
         await _saveManualHostAddress(hostAddress);
       }),
     );
-  }
-
-  String _parseErrorMessage(String error) {
-    if (error.contains('timeout') || error.contains('Timed out')) {
-      return t.companionRemote.pairing.connectionTimedOut;
-    } else if (error.contains('Failed to connect')) {
-      return t.companionRemote.pairing.sessionNotFound;
-    } else if (error.contains('Authentication failed')) {
-      return t.companionRemote.pairing.authFailed;
-    }
-    return t.companionRemote.pairing.failedToConnect(error: error.replaceAll('Exception: ', ''));
   }
 
   IconData _platformIcon(String platform) {

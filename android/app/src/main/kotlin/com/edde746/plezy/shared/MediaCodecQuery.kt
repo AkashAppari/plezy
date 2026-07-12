@@ -23,13 +23,20 @@ internal object MediaCodecQuery {
     return null
   }
 
-  fun isHardwareAccelerated(info: MediaCodecInfo): Boolean {
-    // API 29 added the manufacturer-provided classification. Older releases
-    // expose only component names, so retain the legacy software-name fallback.
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-      info.isHardwareAccelerated
+  fun isHardwareAccelerated(info: MediaCodecInfo): Boolean = isHardwareAccelerated(Build.VERSION.SDK_INT, info.isHardwareAccelerated, info.name)
+
+  internal fun isHardwareAccelerated(
+    sdkInt: Int,
+    platformReportsHardware: Boolean,
+    name: String
+  ): Boolean {
+    // API 29 added manufacturer-provided classification, but some Codec2
+    // builders still flag known software components as hardware. Require both
+    // signals there; older releases expose only component names.
+    return if (sdkInt >= Build.VERSION_CODES.Q) {
+      platformReportsHardware && !isSoftwareCodecName(name)
     } else {
-      !isSoftwareCodecName(info.name)
+      !isSoftwareCodecName(name)
     }
   }
 

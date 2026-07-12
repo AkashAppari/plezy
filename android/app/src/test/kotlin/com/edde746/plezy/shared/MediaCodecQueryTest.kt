@@ -31,4 +31,17 @@ class MediaCodecQueryTest {
       assertFalse("expected hardware codec: $name", MediaCodecQuery.isSoftwareCodecName(name))
     }
   }
+
+  @Test
+  fun api29RequiresPlatformHardwareFlagAndNonSoftwareComponentName() {
+    assertFalse(MediaCodecQuery.isHardwareAccelerated(29, true, "c2.ffmpeg.aac.decoder"))
+    assertFalse(MediaCodecQuery.isHardwareAccelerated(29, false, "c2.qti.avc.decoder"))
+    assertTrue(MediaCodecQuery.isHardwareAccelerated(29, true, "c2.qti.avc.decoder"))
+  }
+
+  @Test
+  fun preApi29RetainsNameBasedFallback() {
+    assertFalse(MediaCodecQuery.isHardwareAccelerated(28, true, "OMX.google.h264.decoder"))
+    assertTrue(MediaCodecQuery.isHardwareAccelerated(28, false, "OMX.qcom.video.decoder.avc"))
+  }
 }

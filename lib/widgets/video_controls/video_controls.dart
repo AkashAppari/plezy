@@ -541,6 +541,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   late bool _lastControlsVisible;
   late bool _controlsMounted;
+  late bool _controlsOpaque;
   bool _isLoadingExtras = false;
   // Item key the in-flight extras load belongs to, so a load for a swapped
   // item can start while a stale one is still in flight (and the stale
@@ -658,6 +659,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     super.initState();
     _lastControlsVisible = widget.chromeController.controlsVisible;
     _controlsMounted = _lastControlsVisible;
+    _controlsOpaque = _lastControlsVisible;
     _focusNode = FocusNode();
     _skipMarkerFocusNode = FocusNode(debugLabel: 'SkipMarkerButton');
     _seekThrottle = throttle(
@@ -750,6 +752,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     if (oldWidget.chromeController != widget.chromeController) {
       oldWidget.chromeController.removeListener(_onChromeChanged);
       _lastControlsVisible = widget.chromeController.controlsVisible;
+      _controlsMounted = _lastControlsVisible;
+      _controlsOpaque = _lastControlsVisible;
       widget.chromeController.addListener(_onChromeChanged);
     }
     // The same controls instance survives in-place episode swaps — re-key
@@ -948,7 +952,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                               // Prevent focus from entering controls when hidden
                               canRequestFocus: _showControls,
                               child: AnimatedOpacity(
-                                opacity: _showControls ? 1.0 : 0.0,
+                                opacity: _controlsOpaque ? 1.0 : 0.0,
                                 duration: const Duration(milliseconds: 200),
                                 onEnd: () {
                                   if (!_showControls) {

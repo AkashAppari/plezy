@@ -11,6 +11,7 @@ void main() {
       expect(harness.failures, hasLength(1));
       expect(harness.finished, isTrue);
       expect(harness.adopted, isFalse);
+      expect(harness.discarded, isFalse);
     });
 
     test('reports stream URL lookup failures and finishes retry state', () async {
@@ -21,6 +22,7 @@ void main() {
       expect(harness.failures, hasLength(1));
       expect(harness.finished, isTrue);
       expect(harness.adopted, isFalse);
+      expect(harness.discarded, isTrue);
     });
 
     test('reports player option failures and finishes retry state', () async {
@@ -31,6 +33,7 @@ void main() {
       expect(harness.failures, hasLength(1));
       expect(harness.finished, isTrue);
       expect(harness.adopted, isFalse);
+      expect(harness.discarded, isTrue);
     });
 
     test('reports player open failures and finishes retry state', () async {
@@ -41,6 +44,7 @@ void main() {
       expect(harness.failures, hasLength(1));
       expect(harness.finished, isTrue);
       expect(harness.adopted, isFalse);
+      expect(harness.discarded, isTrue);
     });
 
     test('adopts the recovered session after a successful open', () async {
@@ -52,6 +56,7 @@ void main() {
       expect(harness.failures, isEmpty);
       expect(harness.finished, isTrue);
       expect(harness.adopted, isTrue);
+      expect(harness.discarded, isFalse);
     });
 
     test('stale operation does not report an async failure', () async {
@@ -63,6 +68,7 @@ void main() {
       expect(harness.failures, isEmpty);
       expect(harness.finished, isTrue);
       expect(harness.adopted, isFalse);
+      expect(harness.discarded, isTrue);
     });
   });
 }
@@ -79,6 +85,7 @@ class _RetryHarness {
   bool current = true;
   bool finished = false;
   bool adopted = false;
+  bool discarded = false;
 
   Future<LiveStreamRetryResult> run() => runLiveStreamRetry<Object>(
     recover: () => _stage(_Stage.recover, Object.new),
@@ -88,6 +95,7 @@ class _RetryHarness {
     isCurrent: () => current,
     adoptSession: (_) => adopted = true,
     reportFailure: (error, _) => failures.add(error),
+    discardSession: (_) => discarded = true,
     onFinished: () => finished = true,
   );
 

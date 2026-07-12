@@ -10,6 +10,7 @@ import '../../i18n/strings.g.dart';
 import '../../models/companion_remote/remote_command.dart';
 import '../../models/companion_remote/remote_session.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/serial_future_queue.dart';
 import '../base_peer_service.dart';
 import 'remote_auth_context.dart';
 import 'remote_auth_service.dart';
@@ -29,6 +30,8 @@ class CompanionRemotePeerService with KeepaliveMixin {
 
   // Client-side (remote) fields
   IOWebSocketChannel? _channel;
+  StreamSubscription<dynamic>? _clientSocketSubscription;
+  StreamSubscription<dynamic>? _channelSubscription;
 
   String? _myPeerId;
   String? _hostAddress; // Format: "ip:port"
@@ -223,7 +226,8 @@ class CompanionRemotePeerService with KeepaliveMixin {
       }
     });
 
-    socket.listen(
+    late final StreamSubscription<dynamic> socketSubscription;
+    socketSubscription = socket.listen(
       (data) async {
         try {
           if (!isAuthenticated) {
@@ -313,6 +317,15 @@ class CompanionRemotePeerService with KeepaliveMixin {
                 unawaited(_clientSocket!.close(4004, 'Replaced by new connection'));
               }
 
+              final previousSubscription = _clientSocketSubscription;
+              if (previousSubscription != null) {
+                try {
+                  await previousSubscription.cancel();
+                } catch (e) {
+                  appLogger.d('CompanionRemote: previous client listener cancel ignored', error: e);
+                }
+              }
+              _clientSocketSubscription = socketSubscription;
               _clientSocket = socket;
               _sessionEncKey = sessionEncKey;
               _sendCounter = 0;
@@ -350,6 +363,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
         }
       },
       onDone: () {
+        unawaited(socketSubscription.cancel());
         authTimeout?.cancel();
         appLogger.d('CompanionRemote: WebSocket connection closed');
         // A replaced client's socket closes AFTER the new client already took
@@ -357,6 +371,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
         // tear it down, or we'd clobber the live connection.
         if (isAuthenticated && identical(_clientSocket, socket)) {
           _clientSocket = null;
+          _clientSocketSubscription = null;
           _sessionEncKey = null;
           _isAuthenticated = false;
           _selectedAuthContextId = null;
@@ -429,7 +444,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
       List<int>? clientNonce;
       String? receivedHostClientId;
 
-      _channel!.stream.listen(
+      _channelSubscription = _channel!.stream.listen(
         (data) async {
           try {
             if (_isAuthenticated) {
@@ -596,6 +611,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
           _deviceDisconnectedController.add(null);
           _connectionStateController.add(RemoteSessionStatus.disconnected);
           _isAuthenticated = false;
+          _channelSubscription = null;
           _sessionEncKey = null;
           _selectedAuthContextId = null;
           _selectedHostClientId = null;
@@ -770,12 +786,12 @@ class CompanionRemotePeerService with KeepaliveMixin {
 
   // Serialize cryptographic operations so implicit nonce counters cannot
   // interleave when stream callbacks overlap.
-  Future<void>? _encryptChain;
-  Future<void>? _decryptChain;
-  Future<void>? _sendChain;
+  final SerialFutureQueue _encryptQueue = SerialFutureQueue();
+  final SerialFutureQueue _decryptQueue = SerialFutureQueue();
+  final SerialFutureQueue _sendQueue = SerialFutureQueue();
 
   Future<List<int>> _encryptOutgoing(String plaintext) {
-    final result = (_encryptChain ?? Future<void>.value()).then((_) async {
+    return _encryptQueue.run(() async {
       final encrypted = await RemoteAuthService.instance.encrypt(
         _sessionEncKey!,
         utf8.encode(plaintext),
@@ -785,8 +801,6 @@ class CompanionRemotePeerService with KeepaliveMixin {
       _sendCounter++;
       return encrypted;
     });
-    _encryptChain = result.then<void>((_) {});
-    return result;
   }
 
   Future<void> _sendEncryptedToSocket(WebSocket socket, String plaintext) async {
@@ -797,9 +811,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
 
   Future<String?> _decryptIncoming(dynamic data) {
     if (_sessionEncKey == null) return Future<String?>.value();
-    final result = (_decryptChain ?? Future<void>.value()).then((_) => _decryptIncomingNow(data));
-    _decryptChain = result.then<void>((_) {});
-    return result;
+    return _decryptQueue.run(() => _decryptIncomingNow(data));
   }
 
   Future<String?> _decryptIncomingNow(dynamic data) async {
@@ -881,7 +893,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
     }
 
     // Chain sends to prevent counter interleaving from concurrent async encrypts
-    _sendChain = (_sendChain ?? Future.value()).then((_) async {
+    _sendQueue.run(() async {
       try {
         final json = jsonEncode(command.toJson());
         final encrypted = await _encryptOutgoing(json);
@@ -905,56 +917,64 @@ class CompanionRemotePeerService with KeepaliveMixin {
     });
   }
 
+  Future<void> _runDisconnectCleanup(Future<dynamic>? operation, String name) async {
+    if (operation == null) return;
+    try {
+      await operation;
+    } catch (e) {
+      appLogger.d('CompanionRemote: $name cleanup ignored', error: e);
+    }
+  }
+
   Future<void> disconnect() async {
     appLogger.d('CompanionRemote: Disconnecting');
 
+    _isAuthenticated = false;
     stopKeepalive();
 
-    // Flush commands already decoded by the overlapping stream callbacks
-    // before closing their transport, then reject any later send request.
-    await _decryptChain;
-    await _sendChain;
-    await _encryptChain;
-    _isAuthenticated = false;
+    final clientSocket = _clientSocket;
+    final channel = _channel;
+    final server = _server;
 
-    if (_clientSocket != null) {
-      try {
-        await _clientSocket!.close();
-      } catch (e) {
-        appLogger.d('CompanionRemote: client socket close ignored', error: e);
-      }
+    _server = null;
+
+    try {
+      // Stop inbound callbacks before taking queue snapshots. New sends are
+      // already rejected by `_isAuthenticated = false`.
+      await _runDisconnectCleanup(_clientSocketSubscription?.cancel(), 'client listener');
+      _clientSocketSubscription = null;
+      await _runDisconnectCleanup(_channelSubscription?.cancel(), 'channel listener');
+      _channelSubscription = null;
+      final serverClose = server?.close(force: true);
+
+      // Decrypted commands may enqueue acknowledgements, and sends enqueue
+      // encryption, so drain in dependency order.
+      await _decryptQueue.settled;
+      await _sendQueue.settled;
+      await _encryptQueue.settled;
+
+      await _runDisconnectCleanup(clientSocket?.close(), 'client socket');
+      await _runDisconnectCleanup(channel?.sink.close(), 'channel');
+      await _runDisconnectCleanup(serverClose, 'server');
+    } finally {
       _clientSocket = null;
-    }
-
-    if (_channel != null) {
-      try {
-        await _channel!.sink.close();
-      } catch (e) {
-        appLogger.d('CompanionRemote: channel close ignored', error: e);
-      }
       _channel = null;
+      _myPeerId = null;
+      _hostAddress = null;
+      _role = null;
+      _selectedAuthContextId = null;
+      _selectedHostClientId = null;
+      _sessionEncKey = null;
+      _sendCounter = 0;
+      _recvCounter = 0;
+      _sendQueue.reset();
+      _encryptQueue.reset();
+      _decryptQueue.reset();
+      _failedAuthAttempts.clear();
+      _authLockouts.clear();
+
+      _connectionStateController.add(RemoteSessionStatus.disconnected);
     }
-
-    if (_server != null) {
-      await _server!.close();
-      _server = null;
-    }
-
-    _myPeerId = null;
-    _hostAddress = null;
-    _role = null;
-    _selectedAuthContextId = null;
-    _selectedHostClientId = null;
-    _sessionEncKey = null;
-    _sendCounter = 0;
-    _recvCounter = 0;
-    _sendChain = null;
-    _encryptChain = null;
-    _decryptChain = null;
-    _failedAuthAttempts.clear();
-    _authLockouts.clear();
-
-    _connectionStateController.add(RemoteSessionStatus.disconnected);
   }
 
   /// Whether the HTTP server is currently running.

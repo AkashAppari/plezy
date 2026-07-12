@@ -16,6 +16,7 @@ import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/utils/deletion_notifier.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
 import '../test_helpers/media_items.dart';
 
@@ -37,14 +38,18 @@ class _ThrowingClient implements MediaServerClient {
 /// Returns canned tracks from [fetchPlayableDescendants] (album/artist
 /// expansion) and records the requested parent ids.
 class _MusicExpansionClient implements MediaServerClient {
-  _MusicExpansionClient(this.tracks);
+  _MusicExpansionClient(this.tracks, {this.gate, this.started});
 
   final List<MediaItem> tracks;
+  final Future<void>? gate;
+  final Completer<void>? started;
   final fetchPlayableDescendantsCalls = <String>[];
 
   @override
   Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async {
     fetchPlayableDescendantsCalls.add(parentId);
+    if (started != null && !started!.isCompleted) started!.complete();
+    if (gate != null) await gate;
     return tracks;
   }
 
@@ -630,6 +635,45 @@ void main() {
       p.dispose();
     });
 
+    test('container queue ownership remains claimed until expansion finishes', () async {
+      final album = testMediaItem(
+        id: 'album-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.album,
+        title: 'Album',
+        serverId: ServerId('srv'),
+      );
+      final track = testMediaItem(
+        id: 't1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.track,
+        title: 'Track',
+        parentId: album.id,
+        serverId: ServerId('srv'),
+      );
+      final provider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await provider.ensureInitialized();
+      provider.debugSeedState(
+        downloads: {track.globalKey: DownloadProgress(globalKey: track.globalKey, status: DownloadStatus.completed)},
+        metadata: {track.globalKey: track},
+        ownedDownloadKeys: const {},
+      );
+
+      final started = Completer<void>();
+      final release = Completer<void>();
+      final client = _MusicExpansionClient([track], gate: release.future, started: started);
+      final first = provider.queueDownload(album, client);
+      await started.future;
+
+      expect(await provider.queueDownload(album, client), 0);
+      expect(client.fetchPlayableDescendantsCalls, ['album-1']);
+
+      release.complete();
+      expect(await first, 1);
+      expect(client.fetchPlayableDescendantsCalls, ['album-1']);
+      provider.dispose();
+    });
+
     test('deleting an album emits one provider notification for all tracks', () async {
       MediaItem track(String id) => testMediaItem(
         id: id,
@@ -668,11 +712,16 @@ void main() {
       );
       var notifications = 0;
       p.addListener(() => notifications++);
+      final deletionEvents = <DeletionEvent>[];
+      final deletionSubscription = DeletionNotifier().stream.listen(deletionEvents.add);
+      addTearDown(deletionSubscription.cancel);
 
       await p.deleteDownload(album.globalKey);
+      await pumpEventQueue();
 
       expect(notifications, 1);
       expect(p.downloads, isEmpty);
+      expect(deletionEvents.map((event) => event.itemId), unorderedEquals(['t1', 't2', 'album-1']));
       p.dispose();
     });
 
@@ -1028,6 +1077,42 @@ void main() {
       expect(p.getMetadata('jf-machine:ep-1')?.isWatched, isTrue);
 
       p.dispose();
+    });
+
+    test('offline watch hydration snapshots downloads before database awaits', () async {
+      final provider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await provider.ensureInitialized();
+      final item = testMediaItem(
+        id: '1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Movie',
+        serverId: ServerId('srv'),
+        viewCount: 0,
+      );
+      provider.debugSeedState(
+        downloads: {
+          'srv:1': const DownloadProgress(globalKey: 'srv:1', status: DownloadStatus.completed),
+          'srv:2': const DownloadProgress(globalKey: 'srv:2', status: DownloadStatus.completed),
+        },
+        metadata: {item.globalKey: item},
+      );
+      await db.insertWatchAction(
+        profileId: 'test-profile',
+        serverId: ServerId('srv'),
+        ratingKey: item.id,
+        actionType: 'watched',
+      );
+
+      scheduleMicrotask(() {
+        provider.debugSeedState(
+          downloads: {'srv:3': const DownloadProgress(globalKey: 'srv:3', status: DownloadStatus.completed)},
+        );
+      });
+      await provider.debugHydrateOfflineWatchOverlay();
+
+      expect(provider.getMetadata(item.globalKey)?.isWatched, isTrue);
+      provider.dispose();
     });
 
     test('profile switch discards an in-flight metadata refresh from the old scope', () async {

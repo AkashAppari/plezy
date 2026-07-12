@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart' show ApplyInterceptor, QueryExecutor, QueryInterceptor, Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
@@ -9,9 +9,11 @@ import 'package:plezy/services/jellyfin_cache_resolver.dart';
 void main() {
   late AppDatabase db;
   late JellyfinCacheResolver resolver;
+  late _SelectCounter selectCounter;
 
   setUp(() {
-    db = AppDatabase.forTesting(NativeDatabase.memory());
+    selectCounter = _SelectCounter();
+    db = AppDatabase.forTesting(NativeDatabase.memory().interceptWith(selectCounter));
     resolver = JellyfinCacheResolver(db);
   });
 
@@ -130,4 +132,32 @@ void main() {
 
     expect(matches.map((match) => match.connection.id).toSet(), {'server/user-a', 'server/user-b'});
   });
+
+  test('pinned resolution uses a constant number of selects as rows grow', () async {
+    await insertConnection('server', 'user-a', profileId: 'profile-a');
+    await insertItem('server/user-a', 'user-a', 'item-1', pinned: true);
+
+    selectCounter.count = 0;
+    expect(await resolver.findPinnedItems(), hasLength(1));
+    final oneRowSelects = selectCounter.count;
+
+    for (var i = 2; i <= 100; i++) {
+      await insertItem('server/user-a', 'user-a', 'item-$i', pinned: true);
+    }
+
+    selectCounter.count = 0;
+    expect(await resolver.findPinnedItems(), hasLength(100));
+    expect(selectCounter.count, oneRowSelects);
+    expect(oneRowSelects, 3);
+  });
+}
+
+class _SelectCounter extends QueryInterceptor {
+  int count = 0;
+
+  @override
+  Future<List<Map<String, Object?>>> runSelect(QueryExecutor executor, String statement, List<Object?> args) {
+    count++;
+    return executor.runSelect(statement, args);
+  }
 }

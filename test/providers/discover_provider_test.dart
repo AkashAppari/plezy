@@ -151,6 +151,7 @@ void main() {
   late HiddenLibrariesProvider hiddenLibraries;
   late LibrariesProvider libraries;
   late DiscoverProvider provider;
+  late List<List<MediaItem>> shelfSyncs;
   bool isBinding = false;
 
   setUp(() async {
@@ -158,6 +159,7 @@ void main() {
     SettingsService.resetForTesting();
     await SettingsService.getInstance();
     isBinding = false;
+    shelfSyncs = [];
 
     client = _FakeClient();
     final manager = MultiServerManager()..debugRegisterClientForTesting(client);
@@ -165,7 +167,13 @@ void main() {
     multiServer = MultiServerProvider(manager, aggregation);
     hiddenLibraries = HiddenLibrariesProvider();
     libraries = LibrariesProvider();
-    provider = DiscoverProvider(multiServer, hiddenLibraries, libraries, isProfileBinding: () => isBinding);
+    provider = DiscoverProvider(
+      multiServer,
+      hiddenLibraries,
+      libraries,
+      isProfileBinding: () => isBinding,
+      syncSystemShelf: (items) async => shelfSyncs.add(List<MediaItem>.of(items)),
+    );
   });
 
   tearDown(() {
@@ -290,6 +298,8 @@ void main() {
     aggregation.onDeckResult = () => [playing, for (var i = 2; i <= 21; i++) _item('ep-$i')];
     aggregation.hubsResult = () => [_hub('hub-1')];
     await provider.load();
+    await pumpEventQueue();
+    shelfSyncs.clear();
     final onDeckCallsBefore = aggregation.onDeckCalls;
     final hubCallsBefore = aggregation.hubCalls;
 
@@ -302,6 +312,8 @@ void main() {
     expect(provider.hasMoreContinueWatching, isTrue);
     expect(aggregation.onDeckCalls, onDeckCallsBefore);
     expect(aggregation.hubCalls, hubCallsBefore);
+    expect(shelfSyncs, hasLength(1));
+    expect(shelfSyncs.single.first.viewOffsetMs, 30000);
   });
 
   test('watched-threshold progress refreshes continue watching only', () async {

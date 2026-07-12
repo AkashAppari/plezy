@@ -73,6 +73,20 @@ void main() {
       });
     });
 
+    test('advance cleanup failure is contained after the transition', () async {
+      final core = _AudioCoreMock()..failPlaylistRemove0 = true;
+      await run(core, (player, transitions) async {
+        await openFirst(player);
+        await player.setNext(Media('https://example.test/t2.flac'));
+
+        player.handlePlayerEvent('file-loaded', null);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(transitions, ['https://example.test/t2.flac']);
+        expect(core.commands('playlist-remove').last, ['playlist-remove', '0']);
+      });
+    });
+
     test('open() still converts content:// (regression)', () async {
       final core = _AudioCoreMock();
       await run(core, (player, transitions) async {
@@ -269,6 +283,7 @@ class _AudioCoreMock {
   int _nextFd = 7;
   bool failOpenContentFd = false;
   bool failPlaylistRemove1 = false;
+  bool failPlaylistRemove0 = false;
 
   Future<Object?> handle(MethodCall call) async {
     calls.add(call);
@@ -289,6 +304,9 @@ class _AudioCoreMock {
         return null;
       case 'command':
         final args = (_args(call)['args'] as List).cast<Object?>();
+        if (failPlaylistRemove0 && args.length >= 2 && args[0] == 'playlist-remove' && args[1] == '0') {
+          throw PlatformException(code: 'error', message: 'playlist-remove failed');
+        }
         if (failPlaylistRemove1 && args.length >= 2 && args[0] == 'playlist-remove' && args[1] == '1') {
           throw PlatformException(code: 'error', message: 'playlist-remove failed');
         }

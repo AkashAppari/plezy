@@ -16,10 +16,13 @@ Future<LiveStreamRetryResult> runLiveStreamRetry<Session>({
   required bool Function() isCurrent,
   required void Function(Session session) adoptSession,
   required void Function(Object error, StackTrace stackTrace) reportFailure,
+  required void Function(Session session) discardSession,
   required void Function() onFinished,
 }) async {
+  Session? recovered;
+  var adopted = false;
   try {
-    final recovered = await recover();
+    recovered = await recover();
     if (!isCurrent()) return LiveStreamRetryResult.stale;
     if (recovered == null) throw StateError('Live stream recovery returned no session');
 
@@ -34,12 +37,14 @@ Future<LiveStreamRetryResult> runLiveStreamRetry<Session>({
     if (!isCurrent()) return LiveStreamRetryResult.stale;
 
     adoptSession(recovered);
+    adopted = true;
     return LiveStreamRetryResult.succeeded;
   } catch (error, stackTrace) {
     if (!isCurrent()) return LiveStreamRetryResult.stale;
     reportFailure(error, stackTrace);
     return LiveStreamRetryResult.failed;
   } finally {
+    if (recovered != null && !adopted) discardSession(recovered);
     onFinished();
   }
 }

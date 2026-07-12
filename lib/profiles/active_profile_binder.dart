@@ -172,7 +172,14 @@ class ActiveProfileBinder {
       // notifications. They don't mean the active profile changed, and a
       // failed bind intentionally leaves `_lastBoundProfileId` unset so the
       // same profile can be retried later.
-      if (id == _bindingProfileId) return;
+      if (id == _bindingProfileId) {
+        // The active id can briefly move away and back while this pass is
+        // awaiting multiple connection binds. Any component that observed the
+        // intermediate id may already have returned an empty stale result, so
+        // the current pass cannot be committed as the final same-id bind.
+        if (_pendingRebind) _pendingSameIdRebind = true;
+        return;
+      }
       // A rebind is already in flight — flag a follow-up so the loop in
       // [_rebind] picks up the new active id once the current pass settles.
       // Otherwise the switch is silently dropped (the early-return on

@@ -248,12 +248,23 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
       _desktopControlsKey.currentState?.hideContentStrip();
       _cancelSkipButtonDismissTimer();
       _setControlsState(() {
+        _controlsOpaque = false;
         if (_currentMarker != null) _skipButtonDismissed = true;
       });
       _reclaimFocusAfterControlsHide();
-    } else {
+    } else if (visibilityChanged) {
       _setControlsState(() {
-        if (controlsVisible) _controlsMounted = true;
+        _controlsMounted = true;
+        _controlsOpaque = false;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_showControls || !_controlsMounted) return;
+        _setControlsState(() => _controlsOpaque = true);
+      });
+    } else if (controlsVisible && !_controlsMounted) {
+      _setControlsState(() {
+        _controlsMounted = true;
+        _controlsOpaque = true;
       });
     }
 

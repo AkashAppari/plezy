@@ -165,7 +165,7 @@ class _DownloadMetadataStore extends ChangeNotifier {
   }) async {
     final activeScope = _downloadManager.activeClientScopeIdForServer(ServerId(serverId));
     if (activeScope != null && activeScope.isNotEmpty) return activeScope;
-    for (final globalKey in downloads.keys) {
+    for (final globalKey in downloads.keys.toList(growable: false)) {
       if (!ownsDownloadKey(globalKey)) continue;
       final parsed = parseGlobalKey(globalKey);
       if (parsed?.serverId != serverId) continue;
