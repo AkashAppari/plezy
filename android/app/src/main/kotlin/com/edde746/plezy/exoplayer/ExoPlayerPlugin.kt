@@ -2,14 +2,12 @@ package com.edde746.plezy.exoplayer
 
 import android.app.Activity
 import android.app.ActivityManager
-import android.content.ContentResolver
 import android.content.Context
-import android.net.Uri
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import com.edde746.plezy.libass.media.AssHandler
 import com.edde746.plezy.mpv.MpvPlayerCore
+import com.edde746.plezy.shared.MpvContentUriResolver
+import com.edde746.plezy.shared.PlayerChannelBinding
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -27,12 +25,10 @@ class ExoPlayerPlugin :
   companion object {
     private const val TAG = "ExoPlayerPlugin"
     private const val METHOD_CHANNEL = "com.plezy/exo_player"
-    private const val EVENT_CHANNEL = "com.plezy/exo_player/events"
   }
 
-  private lateinit var methodChannel: MethodChannel
-  private lateinit var eventChannel: EventChannel
-  private var eventSink: EventChannel.EventSink? = null
+  private val channels = PlayerChannelBinding(METHOD_CHANNEL, this, this, TAG)
+  private val mainHandler get() = channels.mainHandler
   private var playerCore: ExoPlayerCore? = null
   private var mpvCore: MpvPlayerCore? = null // MPV fallback player
   private var usingMpvFallback: Boolean = false
@@ -46,7 +42,6 @@ class ExoPlayerPlugin :
   private data class ObservedProperty(val id: Int, val format: String)
   private val observedProperties = LinkedHashMap<String, ObservedProperty>()
 
-  private val mainHandler = Handler(Looper.getMainLooper())
   private var configuredBufferSizeBytes: Int? = null
 
   private var sessionGeneration = 0
@@ -64,19 +59,11 @@ class ExoPlayerPlugin :
   // FlutterPlugin
 
   override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-    methodChannel = MethodChannel(binding.binaryMessenger, METHOD_CHANNEL)
-    methodChannel.setMethodCallHandler(this)
-
-    eventChannel = EventChannel(binding.binaryMessenger, EVENT_CHANNEL)
-    eventChannel.setStreamHandler(this)
-
-    Log.d(TAG, "Attached to engine")
+    channels.attach(binding)
   }
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-    methodChannel.setMethodCallHandler(null)
-    eventChannel.setStreamHandler(null)
-    Log.d(TAG, "Detached from engine")
+    channels.detach()
   }
 
   // ActivityAware
@@ -119,13 +106,11 @@ class ExoPlayerPlugin :
   // EventChannel.StreamHandler
 
   override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
-    eventSink = events
-    Log.d(TAG, "Event stream connected")
+    channels.listen(events)
   }
 
   override fun onCancel(arguments: Any?) {
-    eventSink = null
-    Log.d(TAG, "Event stream disconnected")
+    channels.cancel()
   }
 
   // MethodChannel.MethodCallHandler
@@ -224,28 +209,34 @@ class ExoPlayerPlugin :
       }
 
       try {
-        playerCore = ExoPlayerCore(currentActivity).apply {
+        val core = ExoPlayerCore(currentActivity).apply {
           delegate = this@ExoPlayerPlugin
           this.debugLoggingEnabled = this@ExoPlayerPlugin.debugLoggingEnabled
         }
-        val success = playerCore?.initialize(
+        playerCore = core
+        val success = core.initialize(
           bufferSizeBytes = bufferSizeBytes,
           tunnelingEnabled = tunnelingEnabled,
           audioPassthroughEnabled = audioPassthroughEnabled
-        ) ?: false
-        if (success && playerCore?.setDebugDvConversionMode(dvConversionMode) != true) {
+        )
+        if (!success) {
+          if (playerCore === core) playerCore = null
+          result.success(false)
+          return@runOnUiThread
+        }
+        if (core.setDebugDvConversionMode(dvConversionMode) != true) {
           Log.w(TAG, "Invalid DV conversion mode during initialize: $dvConversionMode")
         }
         // Seed from this device's persisted calibration, falling back to the Dart perf-tier proxy.
-        playerCore?.seedAssVideoLatencyFrames(assVideoLatencyFrames)
+        core.seedAssVideoLatencyFrames(assVideoLatencyFrames)
+        core.setVisible(false)
 
-        // Start hidden
-        playerCore?.setVisible(false)
-
-        Log.d(TAG, "Initialized: $success")
-        result.success(success)
+        Log.d(TAG, "Initialized: true")
+        result.success(true)
       } catch (e: Exception) {
         Log.e(TAG, "Failed to initialize: ${e.message}", e)
+        playerCore?.dispose()
+        playerCore = null
         result.error("INIT_FAILED", e.message, null)
       }
     }
@@ -281,6 +272,11 @@ class ExoPlayerPlugin :
       result.error("INVALID_ARGS", "Missing 'uri'", null)
       return
     }
+    val currentActivity = activity
+    if (currentActivity == null) {
+      result.error("NO_ACTIVITY", "Activity not available", null)
+      return
+    }
     val externalSubtitleSnapshot = externalSubtitles?.map { it.toMap() }
     currentExternalSubtitles = externalSubtitleSnapshot
 
@@ -290,32 +286,54 @@ class ExoPlayerPlugin :
     // potential ExoPlayer→MPV fallback.
     if (usingMpvFallback) {
       pendingMpvProperties.clear()
+      val generation = sessionGeneration
+      MpvContentUriResolver.resolve(uri, currentActivity.contentResolver, mainHandler) { source ->
+        if (generation != sessionGeneration || activity !== currentActivity || !usingMpvFallback) {
+          source.closeIfUnused()
+          result.success(null)
+          return@resolve
+        }
+        loadMpvMedia(
+          source.value,
+          headers,
+          startPositionMs,
+          hasStartPosition,
+          autoPlay,
+          externalSubtitleSnapshot
+        )
+        result.success(null)
+      }
+      return
     }
 
-    activity?.runOnUiThread {
-      if (usingMpvFallback) {
-        // MPV: Build loadfile command with options
-        val startSeconds = startPositionMs / 1000.0
-        val options = mutableListOf<String>()
-        options.add(if (hasStartPosition && startPositionMs > 0L) "start=$startSeconds" else "start=none")
-        if (!autoPlay) options.add("pause=yes")
-        options.add("sid=no")
-        options.add("secondary-sid=no")
-        appendExternalSubtitleOptions(options, externalSubtitleSnapshot)
-        appendHttpHeaderOptions(options, headers)
-        val optionsStr = options.joinToString(",")
-        // Convert content:// URIs to fdclose:// for MPV (SAF SD card downloads)
-        val mpvUri = openContentFd(uri)?.let { "fdclose://$it" } ?: uri
-        mpvCore?.command(arrayOf("loadfile", mpvUri, "replace", "-1", optionsStr)) { success ->
-          if (success && autoPlay) {
-            mpvCore?.setProperty("pause", "no")
-          }
-        }
-      } else {
-        playerCore?.open(uri, headers, startPositionMs, autoPlay, isLive, externalSubtitleSnapshot)
-      }
+    currentActivity.runOnUiThread {
+      playerCore?.open(uri, headers, startPositionMs, autoPlay, isLive, externalSubtitleSnapshot)
       result.success(null)
-    } ?: result.error("NO_ACTIVITY", "Activity not available", null)
+    }
+  }
+
+  private fun loadMpvMedia(
+    uri: String,
+    headers: Map<String, String>?,
+    startPositionMs: Long,
+    hasStartPosition: Boolean,
+    autoPlay: Boolean,
+    externalSubtitles: List<Map<String, Any?>>?
+  ) {
+    val startSeconds = startPositionMs / 1000.0
+    val options = mutableListOf<String>()
+    options.add(if (hasStartPosition && startPositionMs > 0L) "start=$startSeconds" else "start=none")
+    if (!autoPlay) options.add("pause=yes")
+    options.add("sid=no")
+    options.add("secondary-sid=no")
+    appendExternalSubtitleOptions(options, externalSubtitles)
+    appendHttpHeaderOptions(options, headers)
+    val optionsStr = options.joinToString(",")
+    mpvCore?.command(arrayOf("loadfile", uri, "replace", "-1", optionsStr)) { success ->
+      if (success && autoPlay) {
+        mpvCore?.setProperty("pause", "no")
+      }
+    }
   }
 
   private fun handlePlay(result: MethodChannel.Result) {
@@ -730,8 +748,15 @@ class ExoPlayerPlugin :
   private fun handleGetStats(result: MethodChannel.Result) {
     if (usingMpvFallback) {
       Thread {
-        val stats = getMpvStats()
-        activity?.runOnUiThread { result.success(stats) }
+        val stats = try {
+          getMpvStats()
+        } catch (error: Throwable) {
+          Log.w(TAG, "Failed to collect mpv fallback stats", error)
+          mapOf("playerType" to "mpv")
+        }
+        // Platform-channel replies must return to Android's platform thread.
+        // Do not depend on an Activity: it may detach while this work runs.
+        mainHandler.post { result.success(stats) }
       }.start()
     } else {
       activity?.runOnUiThread {
@@ -764,47 +789,15 @@ class ExoPlayerPlugin :
 
   override fun onPropertyChange(name: String, value: Any?) {
     val propId = observedProperties[name]?.id ?: return
-    mainHandler.post { eventSink?.success(listOf(propId, value)) }
-  }
-
-  private fun eventPayload(name: String, data: Map<String, Any>? = null): Map<String, Any> {
-    val event = mutableMapOf<String, Any>(
-      "type" to "event",
-      "name" to name
-    )
-    data?.let { event["data"] = it }
-    return event
+    channels.emitProperty(propId, value)
   }
 
   override fun onEvent(name: String, data: Map<String, Any>?) {
-    val event = eventPayload(name, data)
-    mainHandler.post { eventSink?.success(event) }
+    channels.emitEvent(name, data)
   }
 
   private fun notifyBackendSwitched() {
-    mainHandler.post { eventSink?.success(eventPayload("backend-switched")) }
-  }
-
-  /**
-   * Opens a content:// URI via ContentResolver and returns the raw FD number,
-   * or null if the URI is not a content:// scheme or opening fails.
-   * The returned FD is detached so MPV can own and close it via fdclose://.
-   */
-  private fun openContentFd(
-    uriString: String,
-    resolver: ContentResolver? = activity?.contentResolver
-  ): Int? {
-    if (!uriString.startsWith("content://")) return null
-    return try {
-      val uri = Uri.parse(uriString)
-      val pfd = resolver?.openFileDescriptor(uri, "r") ?: return null
-      val fd = pfd.detachFd()
-      Log.d(TAG, "Opened content FD $fd for $uriString")
-      fd
-    } catch (e: Exception) {
-      Log.e(TAG, "Failed to open content FD: ${e.message}", e)
-      null
-    }
+    channels.emitEvent("backend-switched")
   }
 
   private fun appendExternalSubtitleOptions(
@@ -848,79 +841,71 @@ class ExoPlayerPlugin :
     headers: Map<String, String>?,
     positionMs: Long,
     externalSubtitles: List<Map<String, Any?>>?,
-    playWhenReady: Boolean
+    playWhenReady: Boolean,
+    generation: Int
   ) {
-    // Snapshot Dart-registered state on main thread before clearing
+    // Snapshot Dart-registered state on main thread before clearing.
     val pendingProps = pendingMpvProperties.toList()
     pendingMpvProperties.clear()
     val observedProps = observedProperties.toList()
-
-    // Compute content FD on main thread (needs contentResolver)
-    val mpvUri = openContentFd(uri, act.contentResolver)
-      ?.let { "fdclose://$it" } ?: uri
-
-    // Buffer size for closure
     val bufferSize = configuredBufferSizeBytes
 
-    if (mpvCore !== core) {
-      core.dispose()
-      fallbackInProgress = false
-      return
-    }
-    // Configure basic MPV properties for Plex playback
-    core.setProperty("hwdec", "mediacodec,mediacodec-copy")
-    core.setProperty("vo", "gpu")
-    core.setProperty("ao", "audiotrack")
-
-    // Forward user's buffer config to MPV fallback
-    if (bufferSize != null && bufferSize > 0) {
-      core.setProperty("demuxer-max-bytes", bufferSize.toString())
-    }
-
-    // Apply pending MPV properties from Dart
-    for ((propName, propValue) in pendingProps) {
-      core.setProperty(propName, propValue)
-    }
-
-    // Re-observe exactly what Dart registered via observeProperty, so the
-    // event stream keeps flowing for every property the Dart side consumes.
-    for ((propName, observed) in observedProps) {
-      core.observeProperty(propName, observed.format)
-    }
-
-    // Show the MPV surface (internally posts to UI)
-    core.setVisible(true)
-
-    // Load media at the same position
-    val startSeconds = positionMs / 1000.0
-    val options = mutableListOf<String>()
-    options.add(if (positionMs > 0L) "start=$startSeconds" else "start=none")
-    if (!playWhenReady) options.add("pause=yes")
-    options.add("sid=no")
-    options.add("secondary-sid=no")
-    appendExternalSubtitleOptions(options, externalSubtitles)
-    appendHttpHeaderOptions(options, headers)
-    val optionsStr = options.joinToString(",")
-    notifyBackendSwitched()
-    core.command(arrayOf("loadfile", mpvUri, "replace", "-1", optionsStr))
-
-    // On GPUs without compute shaders, MPV can't do dynamic peak detection
-    // and spline tone-mapping produces dim/washed-out results with extreme
-    // static HDR peak metadata. Use reinhard which handles this better.
-    Thread {
-      val peakDetection = core.getProperty("hdr-compute-peak")
-      if (peakDetection == "no") {
-        Log.i(TAG, "No compute shaders — overriding tone-mapping to reinhard")
-        core.setProperty("tone-mapping", "reinhard")
-        core.setProperty("tone-mapping-param", "0.7")
-        core.setProperty("tone-mapping-mode", "luma")
+    MpvContentUriResolver.resolve(uri, act.contentResolver, mainHandler) { source ->
+      if (generation != sessionGeneration || mpvCore !== core || activity !== act || !usingMpvFallback) {
+        source.closeIfUnused()
+        core.dispose()
+        return@resolve
       }
-    }.start()
 
-    // Request audio focus
-    core.requestAudioFocus()
+      // Configure basic MPV properties for Plex playback.
+      core.setProperty("hwdec", "mediacodec,mediacodec-copy")
+      core.setProperty("vo", "gpu")
+      core.setProperty("ao", "audiotrack")
 
-    Log.i(TAG, "Successfully switched to MPV fallback")
+      if (bufferSize != null && bufferSize > 0) {
+        core.setProperty("demuxer-max-bytes", bufferSize.toString())
+      }
+
+      for ((propName, propValue) in pendingProps) {
+        core.setProperty(propName, propValue)
+      }
+
+      // Re-observe exactly what Dart registered via observeProperty, so the
+      // event stream keeps flowing for every property the Dart side consumes.
+      for ((propName, observed) in observedProps) {
+        core.observeProperty(propName, observed.format)
+      }
+
+      core.setVisible(true)
+
+      val startSeconds = positionMs / 1000.0
+      val options = mutableListOf<String>()
+      options.add(if (positionMs > 0L) "start=$startSeconds" else "start=none")
+      if (!playWhenReady) options.add("pause=yes")
+      options.add("sid=no")
+      options.add("secondary-sid=no")
+      appendExternalSubtitleOptions(options, externalSubtitles)
+      appendHttpHeaderOptions(options, headers)
+      val optionsStr = options.joinToString(",")
+      notifyBackendSwitched()
+      core.command(arrayOf("loadfile", source.value, "replace", "-1", optionsStr))
+
+      // On GPUs without compute shaders, MPV can't do dynamic peak detection
+      // and spline tone-mapping produces dim/washed-out results with extreme
+      // static HDR peak metadata. Use reinhard which handles this better.
+      Thread {
+        val peakDetection = core.getProperty("hdr-compute-peak")
+        if (peakDetection == "no") {
+          Log.i(TAG, "No compute shaders — overriding tone-mapping to reinhard")
+          core.setProperty("tone-mapping", "reinhard")
+          core.setProperty("tone-mapping-param", "0.7")
+          core.setProperty("tone-mapping-mode", "luma")
+        }
+      }.start()
+
+      core.requestAudioFocus()
+      Log.i(TAG, "Successfully switched to MPV fallback")
+    }
   }
 
   override fun onFormatUnsupported(
@@ -962,7 +947,7 @@ class ExoPlayerPlugin :
 
         val generation = sessionGeneration
 
-        Handler(Looper.getMainLooper()).post {
+        mainHandler.post {
           if (generation != sessionGeneration) {
             fallbackInProgress = false
             return@post
@@ -1002,7 +987,7 @@ class ExoPlayerPlugin :
               usingMpvFallback = true
               fallbackInProgress = false
 
-              setupMpvFallback(core, act, uri, headers, positionMs, fallbackExternalSubtitles, playWhenReady)
+              setupMpvFallback(core, act, uri, headers, positionMs, fallbackExternalSubtitles, playWhenReady, generation)
             }
           } catch (e: Exception) {
             fallbackInProgress = false

@@ -3,10 +3,9 @@ package com.edde746.plezy.mpv
 import android.app.Activity
 import android.content.Context
 import android.net.Uri
-import android.os.Handler
-import android.os.Looper
 import android.os.ParcelFileDescriptor
 import android.util.Log
+import com.edde746.plezy.shared.PlayerChannelBinding
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -36,9 +35,7 @@ open class MpvPlayerPlugin(
 
   private val tag = if (audioOnly) "MpvAudioPlayerPlugin" else "MpvPlayerPlugin"
 
-  private lateinit var methodChannel: MethodChannel
-  private lateinit var eventChannel: EventChannel
-  private var eventSink: EventChannel.EventSink? = null
+  private val channels = PlayerChannelBinding(channelBase, this, this, tag)
   private var playerCore: MpvPlayerCore? = null
   private var activity: Activity? = null
   private var activityBinding: ActivityPluginBinding? = null
@@ -46,12 +43,8 @@ open class MpvPlayerPlugin(
   private val nameToId = mutableMapOf<String, Int>()
   private var sessionGeneration = 0
 
-  private val mainHandler = Handler(Looper.getMainLooper())
-
   /** Same semantics as Activity.runOnUiThread, without needing an Activity. */
-  private fun runOnMain(block: () -> Unit) {
-    if (Looper.myLooper() == Looper.getMainLooper()) block() else mainHandler.post(block)
-  }
+  private fun runOnMain(block: () -> Unit) = channels.runOnMain(block)
 
   // Pending `MethodChannel.Result`s for an init that is currently in flight.
   // Concurrent `invoke('initialize')` calls share the same outcome instead
@@ -65,26 +58,17 @@ open class MpvPlayerPlugin(
 
   override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
     applicationContext = binding.applicationContext
-
-    methodChannel = MethodChannel(binding.binaryMessenger, channelBase)
-    methodChannel.setMethodCallHandler(this)
-
-    eventChannel = EventChannel(binding.binaryMessenger, "$channelBase/events")
-    eventChannel.setStreamHandler(this)
-
-    Log.d(tag, "Attached to engine")
+    channels.attach(binding)
   }
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-    methodChannel.setMethodCallHandler(null)
-    eventChannel.setStreamHandler(null)
+    channels.detach()
     if (audioOnly) {
       // The audio core is not activity-bound; engine detach is its terminal
       // native lifecycle event (mirrors the video core's activity detach).
       disposeCoreForTeardown()
     }
     applicationContext = null
-    Log.d(tag, "Detached from engine")
   }
 
   private fun disposeCoreForTeardown() {
@@ -130,13 +114,11 @@ open class MpvPlayerPlugin(
   // EventChannel.StreamHandler
 
   override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
-    eventSink = events
-    Log.d(tag, "Event stream connected")
+    channels.listen(events)
   }
 
   override fun onCancel(arguments: Any?) {
-    eventSink = null
-    Log.d(tag, "Event stream disconnected")
+    channels.cancel()
   }
 
   // MethodChannel.MethodCallHandler
@@ -496,16 +478,11 @@ open class MpvPlayerPlugin(
 
   override fun onPropertyChange(name: String, value: Any?) {
     val propId = nameToId[name] ?: return
-    eventSink?.success(listOf(propId, value))
+    channels.emitProperty(propId, value)
   }
 
   override fun onEvent(name: String, data: Map<String, Any>?) {
-    val event = mutableMapOf<String, Any>(
-      "type" to "event",
-      "name" to name
-    )
-    data?.let { event["data"] = it }
-    eventSink?.success(event)
+    channels.emitEvent(name, data)
   }
 }
 

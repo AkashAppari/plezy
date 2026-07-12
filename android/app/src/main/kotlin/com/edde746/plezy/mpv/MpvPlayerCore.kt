@@ -2,7 +2,6 @@ package com.edde746.plezy.mpv
 
 import android.app.Activity
 import android.content.Context
-import android.graphics.Color
 import android.graphics.PixelFormat
 import android.media.AudioAttributes
 import android.media.ImageReader
@@ -16,9 +15,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import com.edde746.plezy.shared.AudioFocusManager
-import com.edde746.plezy.shared.FlutterOverlayHelper
 import com.edde746.plezy.shared.FrameRateManager
 import com.edde746.plezy.shared.PlayerDelegate
+import com.edde746.plezy.shared.PlayerSurfaceHost
 import dev.jdtech.mpv.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
@@ -124,14 +123,7 @@ class MpvPlayerCore(
     val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
     contentView.post {
       if (disposing || !isInitialized) return@post
-      val container = FlutterOverlayHelper.findFlutterContainer(contentView, surfaceContainer)
-        ?: return@post
-      if (contentView.getChildAt(contentView.childCount - 1) == container) {
-        flutterOverlayApplied = true
-        return@post
-      }
-      FlutterOverlayHelper.configureFlutterZOrder(contentView, container, compositionOrder = 1)
-      flutterOverlayApplied = true
+      flutterOverlayApplied = PlayerSurfaceHost.ensureFlutterOverlayOnTop(contentView, surfaceContainer)
     }
   }
 
@@ -231,42 +223,12 @@ class MpvPlayerCore(
           log = { emitLog("info", "framerate", it) }
         )
 
-        // Create FrameLayout container for video
-        surfaceContainer = android.widget.FrameLayout(activity).apply {
-          layoutParams = ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-          )
-          setBackgroundColor(Color.BLACK)
-        }
-
-        // Create SurfaceView for video rendering
-        surfaceView = SurfaceView(activity).apply {
-          layoutParams = android.widget.FrameLayout.LayoutParams(
-            android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-            android.widget.FrameLayout.LayoutParams.MATCH_PARENT
-          )
-          holder.addCallback(this@MpvPlayerCore)
-          setZOrderOnTop(false)
-          setZOrderMediaOverlay(false)
-          FlutterOverlayHelper.applyCompositionOrder(this, -2)
-        }
-
-        // Add SurfaceView to container
+        surfaceContainer = PlayerSurfaceHost.createContainer(activity)
+        surfaceView = PlayerSurfaceHost.createVideoSurface(activity, this@MpvPlayerCore)
         surfaceContainer!!.addView(surfaceView)
 
-        // Insert container at bottom of view hierarchy (behind Flutter)
-        val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
-        contentView.addView(surfaceContainer, 0)
-
-        // Find FlutterView and set it on top of our video surface.
-        // compositionOrder maps directly to SurfaceView mSubLayer on API 36+:
-        // negative is hole-punched behind the parent canvas, non-negative is above.
-        // Stack (back → front): video (-2, hole-punched) → parent canvas → Flutter UI (+1).
-        FlutterOverlayHelper.findFlutterContainer(contentView, surfaceContainer)?.let { container ->
-          FlutterOverlayHelper.configureFlutterZOrder(contentView, container, compositionOrder = 1)
-          flutterOverlayApplied = true
-        }
+        val contentView = PlayerSurfaceHost.attachToContent(activity, surfaceContainer!!)
+        flutterOverlayApplied = PlayerSurfaceHost.ensureFlutterOverlayOnTop(contentView, surfaceContainer)
         ensureFlutterOverlayOnTop()
         overlayLayoutListener = ViewTreeObserver.OnGlobalLayoutListener {
           ensureFlutterOverlayOnTop()

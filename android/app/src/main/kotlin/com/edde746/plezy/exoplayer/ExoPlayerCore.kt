@@ -9,6 +9,8 @@ import android.media.AudioDeviceInfo
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
+import android.media.MediaCodecInfo
+import android.media.MediaCodecList
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
@@ -68,6 +70,8 @@ import com.edde746.plezy.shared.AudioFocusManager
 import com.edde746.plezy.shared.DeviceQuirks
 import com.edde746.plezy.shared.FlutterOverlayHelper
 import com.edde746.plezy.shared.FrameRateManager
+import com.edde746.plezy.shared.MediaCodecQuery
+import com.edde746.plezy.shared.PlayerSurfaceHost
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
 import org.chromium.net.CronetEngine
@@ -390,13 +394,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
     contentView.post {
       if (disposing || !isInitialized) return@post
-      val container = FlutterOverlayHelper.findFlutterContainer(contentView, surfaceContainer)
-        ?: return@post
-      // Fires on every layout pass via OnGlobalLayoutListener; skip when the
-      // container is already at the front to avoid recursing the view tree
-      // and re-writing compositionOrder each time.
-      if (contentView.getChildAt(contentView.childCount - 1) === container) return@post
-      FlutterOverlayHelper.configureFlutterZOrder(contentView, container, compositionOrder = 1)
+      PlayerSurfaceHost.ensureFlutterOverlayOnTop(contentView, surfaceContainer)
     }
   }
 
@@ -458,15 +456,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         log = { emitLog("info", "framerate", it) }
       )
 
-      // Create FrameLayout container for video (clips overflow for ZOOM crop mode)
-      surfaceContainer = FrameLayout(activity).apply {
-        layoutParams = ViewGroup.LayoutParams(
-          ViewGroup.LayoutParams.MATCH_PARENT,
-          ViewGroup.LayoutParams.MATCH_PARENT
-        )
-        setBackgroundColor(Color.BLACK)
-        clipChildren = true
-      }
+      // Create FrameLayout container for video (clips overflow for ZOOM crop mode).
+      surfaceContainer = PlayerSurfaceHost.createContainer(activity, clipChildren = true)
 
       // AspectRatioFrameLayout drives FIT/ZOOM/FILL via Media3's resizeMode.
       // Centered inside the container; in ZOOM mode it measures larger than
@@ -481,17 +472,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
       }
 
-      // Create SurfaceView for video rendering (fills the ARFL)
-      surfaceView = SurfaceView(activity).apply {
-        layoutParams = FrameLayout.LayoutParams(
-          FrameLayout.LayoutParams.MATCH_PARENT,
-          FrameLayout.LayoutParams.MATCH_PARENT
-        )
-        holder.addCallback(surfaceCallback)
-        setZOrderOnTop(false)
-        setZOrderMediaOverlay(false)
-        FlutterOverlayHelper.applyCompositionOrder(this, -2)
-      }
+      // Create SurfaceView for video rendering (fills the ARFL).
+      surfaceView = PlayerSurfaceHost.createVideoSurface(activity, surfaceCallback)
 
       videoAspectContainer!!.addView(surfaceView)
       surfaceContainer!!.addView(videoAspectContainer)
@@ -521,19 +503,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       surfaceContainer!!.addView(subtitleView)
       Log.d(TAG, "SubtitleViews created and added to surfaceContainer")
 
-      val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
-      contentView.addView(surfaceContainer, 0)
-
-      // Find FlutterView and configure z-order. compositionOrder maps directly to
-      // SurfaceView mSubLayer on API 36+: negative values are hole-punched behind
-      // the parent canvas, non-negative are composited above. Media3's
-      // CanvasSubtitleOutput renders SRT/VTT/SDH text on the parent canvas, so the
-      // video and libass surfaces must be negative for non-ASS subs to be visible.
-      // Stack (back → front): video (-2) → libass overlay (-1) → parent canvas
-      // (CanvasSubtitleOutput) → Flutter UI (+1). Pre-36 falls back to legacy buckets.
-      FlutterOverlayHelper.findFlutterContainer(contentView, surfaceContainer)?.let { container ->
-        FlutterOverlayHelper.configureFlutterZOrder(contentView, container, compositionOrder = 1)
-      }
+      val contentView = PlayerSurfaceHost.attachToContent(activity, surfaceContainer!!)
 
       ensureFlutterOverlayOnTop()
       overlayLayoutListener = ViewTreeObserver.OnGlobalLayoutListener {
@@ -862,6 +832,11 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       return true
     } catch (e: Exception) {
       Log.e(TAG, "Failed to initialize: ${e.message}", e)
+      try {
+        dispose()
+      } catch (cleanupError: Exception) {
+        Log.e(TAG, "Failed to clean up partial initialization", cleanupError)
+      }
       return false
     }
   }
@@ -972,76 +947,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private fun renderSubtitleCues(cues: List<Cue>) {
     val textCues = cues.filter { it.bitmap == null }
     val bitmapCues = cues.filter { it.bitmap != null }
-    val stacked = stackUnpositionedCues(textCues)
-    val outgoing = applySubtitlePosition(stacked)
+    val outgoing = SubtitleCueLayout.layout(textCues, subtitlePositionPercent, subtitleFontSize)
     subtitleView?.setCues(outgoing)
     bitmapSubtitleView?.setCues(bitmapCues)
-  }
-
-  // SRT carries no per-cue positioning, so SubripParser emits cues with
-  // lineType = TYPE_UNSET. SubtitlePainter then renders every such cue at the
-  // same default bottom-anchored position, causing visible overlap when more
-  // than one is active. Reassign line numbers from the bottom up so concurrent
-  // unpositioned cues stack instead. Workaround for
-  // https://github.com/androidx/media/issues/2237; can be removed once
-  // https://github.com/androidx/media/pull/3151 lands and we upgrade Media3.
-  private fun stackUnpositionedCues(cues: List<Cue>): List<Cue> {
-    if (cues.size < 2) return cues
-    val toStack = cues.indices.filter {
-      cues[it].lineType == Cue.TYPE_UNSET && cues[it].text != null
-    }
-    if (toStack.size < 2) return cues
-    val rebuilt = cues.toMutableList()
-    var nextRow = -1
-    // Reverse so the last cue in the group lands on row -1 (bottom).
-    for (idx in toStack.reversed()) {
-      val cue = cues[idx]
-      rebuilt[idx] = cue.buildUpon()
-        .setLine(nextRow.toFloat(), Cue.LINE_TYPE_NUMBER)
-        .setLineAnchor(Cue.ANCHOR_TYPE_END)
-        .build()
-      val rowsConsumed = (cue.text?.toString()?.count { it == '\n' } ?: 0) + 1
-      nextRow -= rowsConsumed
-    }
-    return rebuilt
-  }
-
-  private fun applySubtitlePosition(cues: List<Cue>): List<Cue> {
-    val clampedPosition = subtitlePositionPercent.coerceIn(0, 100)
-    if (clampedPosition == 100 || cues.isEmpty()) return cues
-
-    val baseLine = clampedPosition / 100f
-    val rowHeight = (subtitleFontSize / 720f * 1.2f).coerceAtLeast(0.01f)
-    var changed = false
-
-    val rebuilt = cues.map { cue ->
-      if (!usesDefaultVerticalPlacement(cue)) return@map cue
-
-      val rowOffset = if (cue.lineType == Cue.LINE_TYPE_NUMBER && cue.line < 0f) {
-        (-cue.line - 1f).coerceAtLeast(0f)
-      } else {
-        0f
-      }
-      val line = if (clampedPosition == 0) {
-        (rowOffset * rowHeight).coerceAtMost(1f)
-      } else {
-        (baseLine - rowOffset * rowHeight).coerceIn(0f, 1f)
-      }
-      val lineAnchor = if (clampedPosition == 0) Cue.ANCHOR_TYPE_START else Cue.ANCHOR_TYPE_END
-
-      changed = true
-      cue.buildUpon()
-        .setLine(line, Cue.LINE_TYPE_FRACTION)
-        .setLineAnchor(lineAnchor)
-        .build()
-    }
-
-    return if (changed) rebuilt else cues
-  }
-
-  private fun usesDefaultVerticalPlacement(cue: Cue): Boolean {
-    if (cue.text == null || cue.bitmap != null || cue.verticalType != Cue.TYPE_UNSET) return false
-    return cue.line == Cue.DIMEN_UNSET || (cue.lineType == Cue.LINE_TYPE_NUMBER && cue.line < 0f)
   }
 
   override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -2233,28 +2141,14 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     if (shouldForceAppAudioDecoder(mimeType)) return false
     hwAudioDecoderCache[mimeType]?.let { return it }
     val result = try {
-      val codecList = android.media.MediaCodecList(android.media.MediaCodecList.REGULAR_CODECS)
-      var found = false
-      for (info in codecList.codecInfos) {
-        if (info.isEncoder) continue
-        for (type in info.supportedTypes) {
-          if (type.equals(mimeType, ignoreCase = true)) {
-            val name = info.name
-            if (!name.startsWith("OMX.google.") &&
-              !name.startsWith("c2.android.") &&
-              !name.contains(".sw.") &&
-              !name.startsWith("c2.ffmpeg.")
-            ) {
-              Log.d(TAG, "Found hardware audio decoder for $mimeType: $name")
-              found = true
-              break
-            }
-          }
-        }
-        if (found) break
+      val decoder = MediaCodecQuery.findHardwareDecoder(mimeType)
+      if (decoder == null) {
+        Log.d(TAG, "No hardware audio decoder for $mimeType — app decoder may handle it")
+        false
+      } else {
+        Log.d(TAG, "Found hardware audio decoder for $mimeType: ${decoder.name}")
+        true
       }
-      if (!found) Log.d(TAG, "No hardware audio decoder for $mimeType — app decoder may handle it")
-      found
     } catch (e: Exception) {
       Log.w(TAG, "Failed to query audio decoders for $mimeType: ${e.message}")
       false
@@ -2266,33 +2160,18 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private fun videoCodecSupportsTunneledPlayback(mimeType: String): Boolean {
     tunneledPlaybackCache[mimeType]?.let { return it }
     val result = try {
-      val codecList = android.media.MediaCodecList(android.media.MediaCodecList.REGULAR_CODECS)
-      var supported = false
-      for (info in codecList.codecInfos) {
-        if (info.isEncoder) continue
-        for (type in info.supportedTypes) {
-          if (type.equals(mimeType, ignoreCase = true)) {
-            val name = info.name
-            if (name.startsWith("OMX.google.") ||
-              name.startsWith("c2.android.") ||
-              name.contains(".sw.") ||
-              name.startsWith("c2.ffmpeg.")
-            ) {
-              continue // Skip software decoders
-            }
-            val caps = info.getCapabilitiesForType(type)
-            if (caps.isFeatureSupported(android.media.MediaCodecInfo.CodecCapabilities.FEATURE_TunneledPlayback)) {
-              Log.d(TAG, "Hardware video decoder $name supports tunneled playback for $mimeType")
-              supported = true
-              break
-            } else {
-              Log.d(TAG, "Hardware video decoder $name does NOT support tunneled playback for $mimeType")
-            }
-          }
-        }
-        if (supported) break
+      val decoder = MediaCodecQuery.findHardwareDecoder(mimeType) { info, type ->
+        info.getCapabilitiesForType(type).isFeatureSupported(
+          MediaCodecInfo.CodecCapabilities.FEATURE_TunneledPlayback
+        )
       }
-      supported
+      if (decoder != null) {
+        Log.d(TAG, "Hardware video decoder ${decoder.name} supports tunneled playback for $mimeType")
+        true
+      } else {
+        Log.d(TAG, "No hardware video decoder supports tunneled playback for $mimeType")
+        false
+      }
     } catch (e: Exception) {
       Log.w(TAG, "Failed to query video decoders for tunneling support ($mimeType): ${e.message}")
       false
@@ -3691,25 +3570,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     if (videoFormat == null) return null
     val mimeType = videoFormat.sampleMimeType ?: return null
 
-    // Check available decoders for this mime type
-    try {
-      val codecList = android.media.MediaCodecList(android.media.MediaCodecList.ALL_CODECS)
-      for (info in codecList.codecInfos) {
-        if (info.isEncoder) continue
-        for (type in info.supportedTypes) {
-          if (type.equals(mimeType, ignoreCase = true)) {
-            // Return the first hardware decoder found, or software if none
-            val name = info.name
-            if (!name.startsWith("OMX.google.") && !name.contains(".sw.")) {
-              return name // Hardware decoder
-            }
-          }
-        }
-      }
-      // Fallback - assume software if no HW decoder found
-      return "Software"
+    return try {
+      MediaCodecQuery.findHardwareDecoder(mimeType, MediaCodecList.ALL_CODECS)?.name ?: "Software"
     } catch (e: Exception) {
-      return null
+      null
     }
   }
 
