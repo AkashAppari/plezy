@@ -104,6 +104,14 @@ class WatchTogetherProvider with ChangeNotifier {
   /// drives the "Waiting for …" pill.
   bool get isWaitingForPeers => _isWaitingForPeers;
 
+  String? _displayNameForPeer(String? peerId) {
+    if (peerId == null) return null;
+    return _participants
+        .where((participant) => participant.peerId == peerId)
+        .map((participant) => participant.displayName)
+        .firstOrNull;
+  }
+
   /// Display names of the peers the room is waiting on (excluding self).
   List<String> get waitingOnNames {
     final myPeerId = _peerService?.myPeerId;
@@ -117,8 +125,7 @@ class WatchTogetherProvider with ChangeNotifier {
     }
     return [
       for (final peerId in _waitingOnPeerIds)
-        if (peerId != myPeerId)
-          _participants.where((p) => p.peerId == peerId).map((p) => p.displayName).firstOrNull ?? '?',
+        if (peerId != myPeerId) _displayNameForPeer(peerId) ?? '?',
     ];
   }
 
@@ -261,7 +268,7 @@ class WatchTogetherProvider with ChangeNotifier {
     };
 
     controller.onPeerNeedsUpdate = (peerId) {
-      final name = _participants.where((p) => p.peerId == peerId).map((p) => p.displayName).firstOrNull;
+      final name = _displayNameForPeer(peerId);
       _participantEventController.add(
         ParticipantEvent(displayName: name ?? peerId, type: ParticipantEventType.needsUpdate),
       );
@@ -269,7 +276,7 @@ class WatchTogetherProvider with ChangeNotifier {
 
     controller.onResumedWithout = (peerIds) {
       for (final peerId in peerIds) {
-        final name = _participants.where((p) => p.peerId == peerId).map((p) => p.displayName).firstOrNull;
+        final name = _displayNameForPeer(peerId);
         if (name != null) {
           _participantEventController.add(
             ParticipantEvent(displayName: name, type: ParticipantEventType.resumedWithout),
@@ -530,7 +537,7 @@ class WatchTogetherProvider with ChangeNotifier {
       appLogger.d('WatchTogether: Peer disconnected: $peerId');
 
       // Capture display name before removal for notification
-      final disconnectedName = _participants.where((p) => p.peerId == peerId).map((p) => p.displayName).firstOrNull;
+      final disconnectedName = _displayNameForPeer(peerId);
 
       // The sync controller observes peer disconnects itself.
       _participants.removeWhere((p) => p.peerId == peerId);
@@ -603,10 +610,7 @@ class WatchTogetherProvider with ChangeNotifier {
 
       case SyncMessageType.leave:
         if (message.peerId != null) {
-          final leavingName = _participants
-              .where((p) => p.peerId == message.peerId)
-              .map((p) => p.displayName)
-              .firstOrNull;
+          final leavingName = _displayNameForPeer(message.peerId);
           _participants.removeWhere((p) => p.peerId == message.peerId);
           if (leavingName != null) {
             _participantEventController.add(
@@ -645,7 +649,7 @@ class WatchTogetherProvider with ChangeNotifier {
     if (now - last < 1000) return;
     _lastActionEventMs[key] = now;
 
-    final name = _participants.where((p) => p.peerId == peerId).map((p) => p.displayName).firstOrNull;
+    final name = _displayNameForPeer(peerId);
     if (name != null) {
       _participantEventController.add(ParticipantEvent(displayName: name, type: type));
     }
