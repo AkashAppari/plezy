@@ -611,10 +611,6 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       SendEvent("playback-restart");
       break;
     }
-    case MPV_EVENT_SEEK: {
-      SendEvent("seek");
-      break;
-    }
     default:
       break;
   }
