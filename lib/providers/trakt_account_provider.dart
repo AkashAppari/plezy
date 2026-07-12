@@ -8,11 +8,11 @@ import '../services/trackers/tracker_account_store.dart';
 import '../services/trackers/tracker_connect_runner.dart';
 import '../services/trackers/tracker_constants.dart';
 import '../services/trackers/tracker_session.dart';
+import '../services/trackers/tracker_username_enricher.dart';
 import '../services/trakt/trakt_auth_service.dart';
 import '../services/trakt/trakt_client.dart';
 import '../services/trakt/trakt_scrobble_service.dart';
 import '../services/trakt/trakt_sync_service.dart';
-import '../utils/app_logger.dart';
 
 /// Owns the active Trakt session for the currently-selected Plex profile.
 ///
@@ -87,19 +87,12 @@ class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
     }
   }
 
-  Future<TrackerSession> _enrichUsername(TrackerSession raw) async {
-    TraktClient? tmp;
-    try {
-      tmp = TraktClient(raw, onSessionInvalidated: () {});
-      final user = await tmp.getUserSettings();
-      return raw.copyWith(username: user.username);
-    } catch (e) {
-      appLogger.d('Trakt: getUserSettings failed (non-fatal)', error: e);
-      return raw;
-    } finally {
-      tmp?.dispose();
-    }
-  }
+  Future<TrackerSession> _enrichUsername(TrackerSession raw) => enrichTrackerSessionUsername(
+    session: raw,
+    failureMessage: 'Trakt: getUserSettings failed (non-fatal)',
+    createClient: () => TraktClient(raw, onSessionInvalidated: () {}),
+    fetchUsername: (client) async => (await client.getUserSettings()).username,
+  );
 
   /// Revoke the access token and clear local state.
   Future<void> disconnect() async {

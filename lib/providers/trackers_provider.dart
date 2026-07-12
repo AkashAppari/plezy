@@ -18,7 +18,7 @@ import '../services/trackers/tracker_connect_runner.dart';
 import '../services/trackers/tracker_constants.dart';
 import '../services/trackers/tracker_coordinator.dart';
 import '../services/trackers/tracker_session.dart';
-import '../utils/app_logger.dart';
+import '../services/trackers/tracker_username_enricher.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 
 /// Owns the active MAL / AniList / Simkl sessions for the currently-selected
@@ -224,50 +224,29 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return !isDisposed && userUuid == _activeUserUuid && generation == _profileBindingGeneration;
   }
 
-  Future<TrackerSession> _enrichMal(TrackerSession raw) async {
-    MalClient? tmp;
-    try {
-      tmp = MalClient(raw, onSessionInvalidated: () {});
-      final user = await tmp.getMyUser();
-      final name = user?['name'] as String?;
-      return name != null ? raw.copyWith(username: name) : raw;
-    } catch (e) {
-      appLogger.d('MAL: getMyUser failed (non-fatal)', error: e);
-      return raw;
-    } finally {
-      tmp?.dispose();
-    }
-  }
+  Future<TrackerSession> _enrichMal(TrackerSession raw) => enrichTrackerSessionUsername(
+    session: raw,
+    failureMessage: 'MAL: getMyUser failed (non-fatal)',
+    createClient: () => MalClient(raw, onSessionInvalidated: () {}),
+    fetchUsername: (client) async => (await client.getMyUser())?['name'] as String?,
+  );
 
-  Future<TrackerSession> _enrichAnilist(TrackerSession raw) async {
-    AnilistClient? tmp;
-    try {
-      tmp = AnilistClient(raw, onSessionInvalidated: () {});
-      final name = await tmp.getViewerName();
-      return name != null ? raw.copyWith(username: name) : raw;
-    } catch (e) {
-      appLogger.d('AniList: getViewerName failed (non-fatal)', error: e);
-      return raw;
-    } finally {
-      tmp?.dispose();
-    }
-  }
+  Future<TrackerSession> _enrichAnilist(TrackerSession raw) => enrichTrackerSessionUsername(
+    session: raw,
+    failureMessage: 'AniList: getViewerName failed (non-fatal)',
+    createClient: () => AnilistClient(raw, onSessionInvalidated: () {}),
+    fetchUsername: (client) => client.getViewerName(),
+  );
 
-  Future<TrackerSession> _enrichSimkl(TrackerSession raw) async {
-    SimklClient? tmp;
-    try {
-      tmp = SimklClient(raw, onSessionInvalidated: () {});
-      final user = await tmp.getUserSettings();
-      final userObj = user?['user'];
-      final name = userObj is Map ? userObj['name'] as String? : null;
-      return name != null ? raw.copyWith(username: name) : raw;
-    } catch (e) {
-      appLogger.d('Simkl: getUserSettings failed (non-fatal)', error: e);
-      return raw;
-    } finally {
-      tmp?.dispose();
-    }
-  }
+  Future<TrackerSession> _enrichSimkl(TrackerSession raw) => enrichTrackerSessionUsername(
+    session: raw,
+    failureMessage: 'Simkl: getUserSettings failed (non-fatal)',
+    createClient: () => SimklClient(raw, onSessionInvalidated: () {}),
+    fetchUsername: (client) async {
+      final userObj = (await client.getUserSettings())?['user'];
+      return userObj is Map ? userObj['name'] as String? : null;
+    },
+  );
 
   /// Snapshot the active profile + bump this service's rebind generation,
   /// returning the bound uuid and an `isCurrent` predicate. Bumping here is what

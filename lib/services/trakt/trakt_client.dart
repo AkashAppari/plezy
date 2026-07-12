@@ -10,6 +10,7 @@ import '../../models/trakt/trakt_scrobble_request.dart';
 import '../../models/trakt/trakt_user.dart';
 import '../../utils/app_logger.dart';
 import '../trackers/future_coalescer.dart';
+import '../trackers/tracker.dart';
 import '../trackers/tracker_constants.dart';
 import '../trackers/tracker_exceptions.dart';
 import '../trackers/tracker_http_client.dart';
@@ -21,7 +22,7 @@ import 'trakt_page.dart';
 ///
 /// Holds a [TrackerSession] (refreshed in place on 401). Concurrent 401s are
 /// coalesced so we only hit `/oauth/token` once per refresh.
-class TraktClient {
+class TraktClient implements DisposableTrackerClient {
   static const Set<int> _scrobbleAllowedStatuses = {200, 201, 409};
   static const Set<int> _permanentRefreshFailureStatuses = {400, 401, 403};
   static final KeyedFutureCoalescer<String, TrackerSession> _refreshesByToken = KeyedFutureCoalescer();
@@ -51,6 +52,7 @@ class TraktClient {
     _session = session;
   }
 
+  @override
   void dispose() => _http.dispose();
 
   Future<TraktUser> getUserSettings() async {
