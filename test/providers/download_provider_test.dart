@@ -1114,6 +1114,209 @@ void main() {
 
       p.dispose();
     });
+
+    test('show, season, and episode events resolve by hierarchical freshness', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+
+      final show = MediaItem(
+        id: 'show-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.show,
+        serverId: ServerId('srv'),
+        leafCount: 3,
+        viewedLeafCount: 0,
+      );
+      final season1 = MediaItem(
+        id: 'season-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.season,
+        parentId: 'show-1',
+        serverId: ServerId('srv'),
+        leafCount: 2,
+        viewedLeafCount: 0,
+      );
+      final episode1 = MediaItem(
+        id: 'episode-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        parentId: 'season-1',
+        grandparentId: 'show-1',
+        serverId: ServerId('srv'),
+        viewCount: 0,
+        viewOffsetMs: 40000,
+      );
+      final episode2 = episode1.copyWith(id: 'episode-2', viewOffsetMs: 50000);
+      final episode3 = episode1.copyWith(id: 'episode-3', parentId: 'season-2', viewOffsetMs: 60000);
+      p.debugSeedState(
+        metadata: {
+          show.globalKey: show,
+          season1.globalKey: season1,
+          episode1.globalKey: episode1,
+          episode2.globalKey: episode2,
+          episode3.globalKey: episode3,
+        },
+      );
+
+      WatchStateNotifier().notifyWatched(item: show);
+      await Future<void>.delayed(Duration.zero);
+      expect(p.getMetadata(episode1.globalKey)?.isWatched, isTrue);
+      expect(p.getMetadata(episode2.globalKey)?.viewOffsetMs, 0);
+      expect(p.getMetadata(episode3.globalKey)?.isWatched, isTrue);
+
+      WatchStateNotifier().notifyWatched(item: season1, isNowWatched: false);
+      await Future<void>.delayed(Duration.zero);
+      expect(p.getMetadata(episode1.globalKey)?.isWatched, isFalse);
+      expect(p.getMetadata(episode2.globalKey)?.isWatched, isFalse);
+      expect(p.getMetadata(episode3.globalKey)?.isWatched, isTrue);
+
+      WatchStateNotifier().notifyWatched(item: episode1);
+      await Future<void>.delayed(Duration.zero);
+      expect(p.getMetadata(episode1.globalKey)?.isWatched, isTrue);
+      expect(p.getMetadata(episode2.globalKey)?.isWatched, isFalse);
+
+      WatchStateNotifier().notifyWatched(item: show, isNowWatched: false);
+      await Future<void>.delayed(Duration.zero);
+      expect(p.getMetadata(episode1.globalKey)?.isWatched, isFalse);
+      expect(p.getMetadata(episode2.globalKey)?.isWatched, isFalse);
+      expect(p.getMetadata(episode3.globalKey)?.isWatched, isFalse);
+      expect(p.getMetadata(episode3.globalKey)?.viewOffsetMs, 0);
+
+      p.dispose();
+    });
+
+    test('queued parent and episode overrides survive provider reload', () async {
+      await db.insertWatchAction(
+        profileId: 'profile-a',
+        serverId: ServerId('srv'),
+        ratingKey: 'show-1',
+        actionType: 'watched',
+      );
+      await db.insertWatchAction(
+        profileId: 'profile-a',
+        serverId: ServerId('srv'),
+        ratingKey: 'episode-1',
+        actionType: 'unwatched',
+      );
+
+      final episode1 = MediaItem(
+        id: 'episode-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        parentId: 'season-1',
+        grandparentId: 'show-1',
+        serverId: ServerId('srv'),
+        viewCount: 0,
+        viewOffsetMs: 45000,
+      );
+      final episode2 = episode1.copyWith(id: 'episode-2', viewOffsetMs: 55000);
+
+      Future<DownloadProvider> hydrate() async {
+        final provider = DownloadProvider.forTesting(
+          downloadManager: downloadManager,
+          database: db,
+          activeProfileId: 'profile-a',
+        );
+        await provider.ensureInitialized();
+        provider.debugSeedState(metadata: {episode1.globalKey: episode1, episode2.globalKey: episode2});
+        await provider.refreshMetadataFromCache();
+        return provider;
+      }
+
+      var p = await hydrate();
+      expect(p.getMetadata(episode1.globalKey)?.isWatched, isFalse);
+      expect(p.getMetadata(episode1.globalKey)?.viewOffsetMs, 0);
+      expect(p.getMetadata(episode2.globalKey)?.isWatched, isTrue);
+      expect(p.getMetadata(episode2.globalKey)?.viewOffsetMs, 0);
+      p.dispose();
+
+      p = await hydrate();
+      expect(p.getMetadata(episode1.globalKey)?.isWatched, isFalse);
+      expect(p.getMetadata(episode2.globalKey)?.isWatched, isTrue);
+      p.dispose();
+    });
+
+    test('queued overlays are isolated to the active profile', () async {
+      await db.insertWatchAction(
+        profileId: 'profile-a',
+        serverId: ServerId('srv'),
+        ratingKey: 'show-1',
+        actionType: 'watched',
+      );
+      await db.insertWatchAction(
+        profileId: 'profile-b',
+        serverId: ServerId('srv'),
+        ratingKey: 'show-1',
+        actionType: 'unwatched',
+      );
+      final episode = MediaItem(
+        id: 'episode-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        parentId: 'season-1',
+        grandparentId: 'show-1',
+        serverId: ServerId('srv'),
+        viewCount: 0,
+      );
+      final p = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: 'profile-a',
+      );
+      await p.ensureInitialized();
+      p.debugSeedState(metadata: {episode.globalKey: episode});
+
+      await p.refreshMetadataFromCache();
+      expect(p.getMetadata(episode.globalKey)?.isWatched, isTrue);
+
+      p.setActiveProfileId('profile-b');
+      await p.refreshMetadataFromCache();
+      expect(p.getMetadata(episode.globalKey)?.isWatched, isFalse);
+
+      p.dispose();
+    });
+
+    test('queued overlays are isolated to the active Jellyfin client scope', () async {
+      await db.insertWatchAction(
+        profileId: 'test-profile',
+        serverId: ServerId('jf-machine'),
+        clientScopeId: 'jf-machine/user-a',
+        ratingKey: 'show-1',
+        actionType: 'watched',
+      );
+      await db.insertWatchAction(
+        profileId: 'test-profile',
+        serverId: ServerId('jf-machine'),
+        clientScopeId: 'jf-machine/user-b',
+        ratingKey: 'show-1',
+        actionType: 'unwatched',
+      );
+      final episode = MediaItem(
+        id: 'episode-1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.episode,
+        parentId: 'season-1',
+        grandparentId: 'show-1',
+        serverId: ServerId('jf-machine'),
+        viewCount: 0,
+      );
+      var activeScope = 'jf-machine/user-a';
+      testClientResolver = (serverId, {clientScopeId}) => serverId == 'jf-machine'
+          ? _ScopedTestClient(serverId: ServerId('jf-machine'), scopedServerId: activeScope)
+          : null;
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(metadata: {episode.globalKey: episode});
+
+      await p.refreshMetadataFromCache();
+      expect(p.getMetadata(episode.globalKey)?.isWatched, isTrue);
+
+      activeScope = 'jf-machine/user-b';
+      await p.refreshMetadataFromCache();
+      expect(p.getMetadata(episode.globalKey)?.isWatched, isFalse);
+
+      p.dispose();
+    });
   });
 
   group('DownloadProvider — progress stream', () {

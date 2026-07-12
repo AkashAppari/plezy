@@ -157,4 +157,51 @@ void main() {
     expect(resolved.viewedLeafCount, 10);
     expect(resolved.isWatched, isTrue);
   });
+
+  test('hydrated parent and item patches retain persisted freshness', () {
+    final store = WatchStateStore();
+    addTearDown(store.dispose);
+    store.setHydratedPatches(const [
+      HydratedWatchStatePatch(
+        globalKey: 'jf-machine:show-1',
+        patch: WatchStatePatch(isWatched: true, hasViewOffsetMs: true, viewOffsetMs: 0),
+        updatedAt: 100,
+        order: 1,
+      ),
+      HydratedWatchStatePatch(
+        globalKey: 'jf-machine:episode-1',
+        patch: WatchStatePatch(isWatched: false, hasViewOffsetMs: true, viewOffsetMs: 0),
+        updatedAt: 200,
+        order: 2,
+      ),
+    ]);
+
+    final resolved = store.apply(_episode.copyWith(viewOffsetMs: 30000));
+    expect(resolved.isWatched, isFalse);
+    expect(resolved.viewOffsetMs, 0);
+  });
+
+  test('hydrated patches are isolated to the active client scope', () {
+    final store = WatchStateStore();
+    addTearDown(store.dispose);
+    store.setHydratedPatches(const [
+      HydratedWatchStatePatch(
+        globalKey: 'jf-machine/user-a:show-1',
+        patch: WatchStatePatch(isWatched: true),
+        updatedAt: 100,
+        order: 1,
+      ),
+      HydratedWatchStatePatch(
+        globalKey: 'jf-machine/user-b:show-1',
+        patch: WatchStatePatch(isWatched: false),
+        updatedAt: 100,
+        order: 2,
+      ),
+    ]);
+
+    store.setActiveClientScopesByServer({'jf-machine': 'jf-machine/user-a'});
+    expect(store.apply(_episode).isWatched, isTrue);
+    store.setActiveClientScopesByServer({'jf-machine': 'jf-machine/user-b'});
+    expect(store.apply(_episode).isWatched, isFalse);
+  });
 }

@@ -37,11 +37,50 @@ class WatchStatePatch {
   int get hashCode => Object.hash(isWatched, hasViewOffsetMs, viewOffsetMs);
 }
 
+@immutable
+class HydratedWatchStatePatch {
+  final String globalKey;
+  final WatchStatePatch patch;
+  final int updatedAt;
+  final int order;
+
+  const HydratedWatchStatePatch({
+    required this.globalKey,
+    required this.patch,
+    required this.updatedAt,
+    required this.order,
+  });
+}
+
 class _WatchStatePatchEntry {
   final WatchStatePatch patch;
+  final int updatedAt;
   final int sequence;
+  final bool isSessionEvent;
 
-  const _WatchStatePatchEntry(this.patch, this.sequence);
+  const _WatchStatePatchEntry(
+    this.patch, {
+    required this.updatedAt,
+    required this.sequence,
+    required this.isSessionEvent,
+  });
+
+  bool isNewerThan(_WatchStatePatchEntry other) {
+    if (updatedAt != other.updatedAt) return updatedAt > other.updatedAt;
+    if (isSessionEvent != other.isSessionEvent) return isSessionEvent;
+    return sequence > other.sequence;
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is _WatchStatePatchEntry &&
+      other.patch == patch &&
+      other.updatedAt == updatedAt &&
+      other.sequence == sequence &&
+      other.isSessionEvent == isSessionEvent;
+
+  @override
+  int get hashCode => Object.hash(patch, updatedAt, sequence, isSessionEvent);
 }
 
 /// The single session-local layer for watch-state freshness.
@@ -60,9 +99,18 @@ class WatchStateStore extends ChangeNotifier with DisposableChangeNotifierMixin 
 
   StreamSubscription<WatchStateEvent>? _subscription;
   final Map<String, _WatchStatePatchEntry> _patches = {};
+  final Map<String, _WatchStatePatchEntry> _hydratedPatches = {};
   String? _activeProfileId;
   Map<String, String?> _activeClientScopesByServer = const {};
   int _sequence = 0;
+
+  _WatchStatePatchEntry? _exactEntryFor(String globalKey) {
+    final session = _patches[globalKey];
+    final hydrated = _hydratedPatches[globalKey];
+    if (session == null) return hydrated;
+    if (hydrated == null) return session;
+    return session.isNewerThan(hydrated) ? session : hydrated;
+  }
 
   _WatchStatePatchEntry? _entryFor(String globalKey) {
     _WatchStatePatchEntry? scopedEntry;
@@ -70,13 +118,13 @@ class WatchStateStore extends ChangeNotifier with DisposableChangeNotifierMixin 
     if (parsed != null) {
       final scoped = _activeClientScopesByServer[parsed.serverId];
       if (scoped != null && scoped.isNotEmpty) {
-        scopedEntry = _patches[buildGlobalKey(ServerId(scoped), parsed.ratingKey)];
+        scopedEntry = _exactEntryFor(buildGlobalKey(ServerId(scoped), parsed.ratingKey));
       }
     }
-    final unscopedEntry = _patches[globalKey];
+    final unscopedEntry = _exactEntryFor(globalKey);
     if (scopedEntry == null) return unscopedEntry;
     if (unscopedEntry == null) return scopedEntry;
-    return scopedEntry.sequence >= unscopedEntry.sequence ? scopedEntry : unscopedEntry;
+    return scopedEntry.isNewerThan(unscopedEntry) ? scopedEntry : unscopedEntry;
   }
 
   WatchStatePatch? patchForGlobalKey(String globalKey) => _entryFor(globalKey)?.patch;
@@ -88,7 +136,7 @@ class WatchStateStore extends ChangeNotifier with DisposableChangeNotifierMixin 
       for (final parentId in item.parentChain) {
         // Mirror MediaItem.globalKey's bare-id fallback when serverId is missing.
         final entry = _entryFor(serverId != null ? buildGlobalKey(serverId, parentId) : parentId);
-        if (entry != null && (best == null || entry.sequence > best.sequence)) best = entry;
+        if (entry != null && (best == null || entry.isNewerThan(best))) best = entry;
       }
     }
     return best?.patch;
@@ -99,7 +147,7 @@ class WatchStateStore extends ChangeNotifier with DisposableChangeNotifierMixin 
   }
 
   List<MediaItem> applyAll(List<MediaItem> items) {
-    if (_patches.isEmpty) return items;
+    if (_patches.isEmpty && _hydratedPatches.isEmpty) return items;
     return [for (final item in items) apply(item)];
   }
 
@@ -115,8 +163,9 @@ class WatchStateStore extends ChangeNotifier with DisposableChangeNotifierMixin 
   void setActiveProfileId(String? profileId) {
     if (_activeProfileId == profileId) return;
     _activeProfileId = profileId;
-    if (_patches.isEmpty) return;
+    if (_patches.isEmpty && _hydratedPatches.isEmpty) return;
     _patches.clear();
+    _hydratedPatches.clear();
     safeNotifyListeners();
   }
 
@@ -127,7 +176,30 @@ class WatchStateStore extends ChangeNotifier with DisposableChangeNotifierMixin 
     };
     if (mapEquals(_activeClientScopesByServer, normalized)) return;
     _activeClientScopesByServer = Map.unmodifiable(normalized);
-    if (_patches.isNotEmpty) safeNotifyListeners();
+    if (_patches.isNotEmpty || _hydratedPatches.isNotEmpty) safeNotifyListeners();
+  }
+
+  /// Replace the persisted local-action layer without disturbing newer
+  /// session events. Timestamps preserve freshness across item/ancestor keys.
+  void setHydratedPatches(Iterable<HydratedWatchStatePatch> patches) {
+    final next = <String, _WatchStatePatchEntry>{};
+    for (final hydrated in patches) {
+      final candidate = _WatchStatePatchEntry(
+        hydrated.patch,
+        updatedAt: hydrated.updatedAt,
+        sequence: hydrated.order,
+        isSessionEvent: false,
+      );
+      final existing = next[hydrated.globalKey];
+      if (existing == null || candidate.isNewerThan(existing)) {
+        next[hydrated.globalKey] = candidate;
+      }
+    }
+    if (mapEquals(_hydratedPatches, next)) return;
+    _hydratedPatches
+      ..clear()
+      ..addAll(next);
+    safeNotifyListeners();
   }
 
   void _onWatchStateEvent(WatchStateEvent event) {
@@ -139,7 +211,12 @@ class WatchStateStore extends ChangeNotifier with DisposableChangeNotifierMixin 
     final key = cacheServerId != null && cacheServerId.isNotEmpty && cacheServerId != event.serverId
         ? buildGlobalKey(ServerId(cacheServerId), event.itemId)
         : event.globalKey;
-    _patches[key] = _WatchStatePatchEntry(patch, ++_sequence);
+    _patches[key] = _WatchStatePatchEntry(
+      patch,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
+      sequence: ++_sequence,
+      isSessionEvent: true,
+    );
     safeNotifyListeners();
   }
 
