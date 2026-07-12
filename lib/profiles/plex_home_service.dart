@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import '../connection/connection.dart';
 import '../connection/connection_registry.dart';
@@ -9,6 +8,7 @@ import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
 import 'profile_connection_registry.dart';
+import 'plex_home_cache_codec.dart';
 
 /// Live source of truth for Plex Home users — Plex owns these, so we never
 /// persist them as `Profile` rows. The service fetches `/home/users` per
@@ -188,11 +188,12 @@ class PlexHomeService {
         appLogger.d('PlexHomeService: dropping fetch result for removed account ${conn.accountLabel}');
         return false;
       }
-      final encoded = users.map((u) => u.toJson()).toList();
+      final encoded = encodePlexHomeUsersCache(users);
       // Unchanged fetches (the hourly ticker, mostly) must not emit: every
       // emission fans out through ActiveProfileProvider into a full
       // recompute/notify cascade across the app.
-      if (_byConnection.containsKey(conn.id) && storage.getPlexHomeUsersCacheJson(conn.id) == jsonEncode(encoded)) {
+      if (_byConnection.containsKey(conn.id) &&
+          storage.getPlexHomeUsersCacheJson(conn.id) == encodePlexHomeUsersCacheJson(users)) {
         appLogger.d('PlexHomeService: home users unchanged for ${conn.accountLabel}');
         return true;
       }
@@ -213,12 +214,7 @@ class PlexHomeService {
     final raw = storage.getPlexHomeUsersCacheJson(connectionId);
     if (raw == null) return null;
     try {
-      final decoded = jsonDecode(raw);
-      if (decoded is! List) {
-        appLogger.w('PlexHomeService: cache for $connectionId is not a list — ignoring');
-        return null;
-      }
-      return decoded.whereType<Map<String, dynamic>>().map(PlexHomeUser.fromJson).toList();
+      return decodePlexHomeUsersCache(raw);
     } catch (e, st) {
       appLogger.w('PlexHomeService: failed to read cache for $connectionId', error: e, stackTrace: st);
       return null;
