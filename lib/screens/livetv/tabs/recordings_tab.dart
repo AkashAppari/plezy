@@ -124,10 +124,11 @@ class RecordingsTabState extends State<RecordingsTab> {
       if (!seenServers.add(serverInfo.serverId)) continue;
       final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
       if (client == null) continue;
-      if (!client.capabilities.liveTvDvr) continue;
+      final dvr = client.liveTvDvr;
+      if (dvr == null) continue;
       try {
-        final grabs = await client.liveTv.fetchScheduledRecordings();
-        final rules = await client.liveTv.fetchRecordingRules();
+        final grabs = await dvr.fetchScheduledRecordings();
+        final rules = await dvr.fetchRecordingRules();
         results.add(_ServerRecordings(serverId: serverInfo.serverId, client: client, grabs: grabs, rules: rules));
       } catch (e) {
         appLogger.e('Failed to load recordings for ${serverInfo.serverId}', error: e);

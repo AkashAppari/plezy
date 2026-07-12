@@ -619,7 +619,8 @@ abstract class MediaServerClient {
 
   /// Backend-neutral live-TV operations. Always returns a wrapper; consult
   /// [LiveTvSupport.isAvailable] to find out whether the server actually
-  /// has live TV configured before calling other methods.
+  /// has live TV configured before calling other methods. Recording and DVR
+  /// administration are available through [MediaServerClientLiveTv.liveTvDvr].
   LiveTvSupport get liveTv;
 
   /// Resolve the download URL for [item]'s primary video file along with
@@ -679,6 +680,13 @@ extension MediaServerClientScope on MediaServerClient {
     }
     WatchStateNotifier().notifyWatched(item: item, isNowWatched: true, cacheServerId: cacheServerId);
   }
+}
+
+extension MediaServerClientLiveTv on MediaServerClient {
+  /// Optional recording/admin adapter, gated by the backend capability flag.
+  /// Call sites use this rather than assuming every Live TV backend supports
+  /// Plex's DVR surface.
+  LiveTvDvrSupport? get liveTvDvr => capabilities.liveTvDvr ? liveTv.dvr : null;
 }
 
 /// Optional capability for clients that can fetch a season's episodes without

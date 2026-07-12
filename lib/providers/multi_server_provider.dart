@@ -294,7 +294,8 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
 
       try {
         final liveTv = genericClient.liveTv;
-        final dvrs = await liveTv.fetchDvrs();
+        final dvr = genericClient.liveTvDvr;
+        final dvrs = dvr == null ? const <LiveTvDvr>[] : await dvr.fetchDvrs();
         if (dvrs.isNotEmpty) {
           // Plex: one entry per DVR with its own lineup.
           for (final dvr in dvrs) {

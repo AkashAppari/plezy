@@ -190,6 +190,11 @@ class _RecordOptionsContentState extends State<_RecordOptionsContent> {
   }
 
   Future<void> _save() async {
+    final dvr = widget.client.liveTvDvr;
+    if (dvr == null) {
+      _close(RecordOutcome.failed);
+      return;
+    }
     final targetSectionId = widget.isEdit ? null : _effectiveSectionId(_eligibleLibraries);
     if (!widget.isEdit && targetSectionId == null) {
       _close(RecordOutcome.targetMissing);
@@ -203,7 +208,7 @@ class _RecordOptionsContentState extends State<_RecordOptionsContent> {
           _close(RecordOutcome.failed);
           return;
         }
-        await widget.client.liveTv.updateRecordingRule(id, Map.of(_dirtyPrefs));
+        await dvr.updateRecordingRule(id, Map.of(_dirtyPrefs));
         if (!mounted) return;
         _close(RecordOutcome.updated);
       } else {
@@ -212,7 +217,7 @@ class _RecordOptionsContentState extends State<_RecordOptionsContent> {
           prefs: Map.of(_dirtyPrefs),
           targetLibrarySectionID: targetSectionId,
         );
-        await widget.client.liveTv.createRecordingRule(request);
+        await dvr.createRecordingRule(request);
         _persistTargetPick();
         if (!mounted) return;
         _close(RecordOutcome.scheduled);

@@ -167,7 +167,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     final futures = <Future<void>>[];
     for (final serverInfo in multiServer.liveTvServers) {
       final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
-      if (client == null || !client.capabilities.liveTvDvr) continue;
+      if (client == null || client.liveTvDvr == null) continue;
       futures.add(_reloadGuideSafe(client, serverInfo.dvrKey));
     }
     if (futures.isEmpty) return;
@@ -178,7 +178,9 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
   Future<void> _reloadGuideSafe(MediaServerClient client, String dvrId) async {
     try {
-      await client.liveTv.reloadGuide(dvrId);
+      final dvr = client.liveTvDvr;
+      if (dvr == null) return;
+      await dvr.reloadGuide(dvrId);
     } catch (e) {
       // 403 (admin only) and transient errors are non-fatal — caller still
       // re-fetches client-side channels.
@@ -191,7 +193,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     final futures = <Future<void>>[];
     for (final serverInfo in multiServer.liveTvServers) {
       final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
-      if (client == null || !client.capabilities.liveTvDvr) continue;
+      if (client == null || client.liveTvDvr == null) continue;
       futures.add(_processRulesSafe(client));
     }
     if (futures.isEmpty) return;
@@ -203,7 +205,9 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
   Future<void> _processRulesSafe(MediaServerClient client) async {
     try {
-      await client.liveTv.processRecordingRules();
+      final dvr = client.liveTvDvr;
+      if (dvr == null) return;
+      await dvr.processRecordingRules();
     } catch (e) {
       appLogger.d('processRecordingRules failed: $e');
     }
@@ -215,7 +219,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   void _refreshVisibleTabs(MultiServerProvider multiServer) {
     final hasDvr = multiServer.liveTvServers.any((s) {
       final c = multiServer.getClientForServer(ServerId(s.serverId));
-      return c != null && c.capabilities.liveTvDvr;
+      return c?.liveTvDvr != null;
     });
     final newTabs = [LiveTvTab.guide, LiveTvTab.whatsOn, if (hasDvr) LiveTvTab.recordings];
     if (listEquals(_visibleTabs, newTabs)) return;

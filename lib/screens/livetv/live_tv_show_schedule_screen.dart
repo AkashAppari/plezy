@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../focus/focusable_action_bar.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
+import '../../media/media_server_client.dart';
 import '../../models/livetv_channel.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
 import '../../models/livetv_program.dart';
@@ -92,7 +93,7 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen>
   /// lookup is needed.
   bool get _canRecord {
     final client = context.read<MultiServerProvider>().getClientForServer(ServerId(widget.serverId));
-    return client != null && client.capabilities.liveTvDvr;
+    return client?.liveTvDvr != null;
   }
 
   Future<void> _onRecordShow() async {

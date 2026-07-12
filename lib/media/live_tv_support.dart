@@ -115,28 +115,30 @@ class LiveTvStreamResolution {
 }
 
 /// Backend-neutral live-TV operations. Implementations are obtained via
-/// [MediaServerClient.liveTv]; the getter returns `null` when the server has no
-/// live-TV support configured.
+/// [MediaServerClient.liveTv]. Runtime availability is reported by
+/// [isAvailable]; recording and DVR administration are exposed separately by
+/// the optional [dvr] adapter.
 ///
 /// Plex servers expose multiple per-DVR lineups (`/livetv/dvrs`), Jellyfin
 /// servers expose a single flat channel list. The interface flattens both:
 /// callers that need DVR identity for Plex's per-lineup channel fetch use
-/// [fetchDvrs]; callers that only need the channel list pass the optional
-/// [lineup] (Plex provider identifier) to [fetchChannels].
+/// [LiveTvDvrSupport.fetchDvrs]; callers that only need the channel list pass
+/// the optional [lineup] (Plex provider identifier) to [fetchChannels].
 ///
 /// Stream URL resolution differs sharply by backend: Plex's DVR allocates a
 /// transcode session and returns a session-scoped path; Jellyfin negotiates
 /// a direct-play URL. [startPlayback] owns that difference behind
 /// [LiveTvPlaybackSession] — it is the only entry playback callers use.
 abstract class LiveTvSupport {
+  /// Recording and DVR administration, when implemented by this backend.
+  /// Jellyfin's channel, guide, and playback support remains available while
+  /// this is `null` until its recording API is wired.
+  LiveTvDvrSupport? get dvr;
+
   /// Fast probe — `true` when this server has live-TV configured. Plex calls
   /// `/livetv/dvrs` and returns true when any DVR exists; Jellyfin probes
   /// `/LiveTv/Channels?limit=1`.
   Future<bool> isAvailable();
-
-  /// Plex returns one entry per configured DVR; Jellyfin returns an empty
-  /// list (it has no per-DVR partitioning).
-  Future<List<LiveTvDvr>> fetchDvrs();
 
   /// Channel list. Plex callers may pass [lineup] (the EPG provider
   /// identifier from a DVR's lineup) to scope to a specific provider's
@@ -183,7 +185,15 @@ abstract class LiveTvSupport {
   /// `/UserFavoriteItems/{channelId}?userId=...` flag and saves the order
   /// locally.
   Future<void> setFavoriteChannels(List<FavoriteChannel> channels);
+}
 
+/// Optional Plex-style recording and DVR administration capability.
+///
+/// Kept separate from [LiveTvSupport] so backends that support channels,
+/// guide data, and playback do not need placeholder methods for unsupported
+/// recording APIs.
+abstract class LiveTvDvrSupport {
+  Future<List<LiveTvDvr>> fetchDvrs();
   Future<LiveTvServerStatus> fetchLiveTvServerStatus();
   Future<LiveTvDvr?> fetchDvr(String dvrId);
   Future<LiveTvActivityResult<LiveTvDvr?>> createDvr({

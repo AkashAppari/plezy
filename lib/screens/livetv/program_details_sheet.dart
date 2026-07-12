@@ -97,7 +97,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
   bool get _canRecord {
     final client = widget.client;
     if (client == null) return false;
-    if (!client.capabilities.liveTvDvr) return false;
+    if (client.liveTvDvr == null) return false;
     final guid = widget.program.guid;
     return guid != null && guid.isNotEmpty;
   }
@@ -130,7 +130,12 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
       return;
     }
     try {
-      final mapped = await client.liveTv.fetchSubscriptionMapping(providerId: providerId, ratingKeys: [ratingKey]);
+      final dvr = client.liveTvDvr;
+      if (dvr == null) {
+        setStateIfMounted(() => _checkedMapping = true);
+        return;
+      }
+      final mapped = await dvr.fetchSubscriptionMapping(providerId: providerId, ratingKeys: [ratingKey]);
       final match = mapped.where((s) => s.key.isNotEmpty).firstOrNull;
       if (!mounted) return;
       setState(() {

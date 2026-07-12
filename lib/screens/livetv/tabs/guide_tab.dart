@@ -402,9 +402,10 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
     required ServerId serverId,
     required Set<String> keys,
   }) async {
-    if (!client.capabilities.liveTvDvr) return;
+    final dvr = client.liveTvDvr;
+    if (dvr == null) return;
     try {
-      final grabs = await client.liveTv.fetchScheduledRecordings();
+      final grabs = await dvr.fetchScheduledRecordings();
       for (final grab in grabs) {
         _addRecordingKeysForGrab(grab, serverId: ServerId(serverId), keys: keys);
       }
@@ -413,7 +414,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
     }
 
     try {
-      final rules = await client.liveTv.fetchRecordingRules(includeGrabs: true, includeStorage: false);
+      final rules = await dvr.fetchRecordingRules(includeGrabs: true, includeStorage: false);
       for (final rule in rules) {
         for (final grab in rule.grabOperations) {
           _addRecordingKeysForGrab(grab, serverId: ServerId(serverId), keys: keys);

@@ -6,6 +6,7 @@ import 'package:drift/native.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/media_subscription.dart';
 import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/services/plex_api_cache.dart';
@@ -96,7 +97,7 @@ void main() {
     });
     addTearDown(client.close);
 
-    final dvrs = await client.liveTv.fetchDvrs();
+    final dvrs = await client.liveTvDvr!.fetchDvrs();
 
     expect(dvrs, hasLength(1));
     expect(dvrs.single.tuners, 2);
@@ -122,7 +123,7 @@ void main() {
     });
     addTearDown(client.close);
 
-    final result = await client.liveTv.createDvr(
+    final result = await client.liveTvDvr!.createDvr(
       devices: const ['dev-a', 'dev-b'],
       lineups: const ['lineup-a', 'lineup-b'],
       language: 'eng',
@@ -163,7 +164,7 @@ void main() {
     });
     addTearDown(client.close);
 
-    final templates = await client.liveTv.getSubscriptionTemplate('plex://episode/1');
+    final templates = await client.liveTvDvr!.getSubscriptionTemplate('plex://episode/1');
 
     final subscription = templates.single.subscriptions.single;
     expect(subscription.selected, isTrue);
@@ -200,7 +201,7 @@ void main() {
       prefs: const {'startOffsetMinutes': 5},
     );
 
-    final created = await client.liveTv.createRecordingRule(request);
+    final created = await client.liveTvDvr!.createRecordingRule(request);
 
     expect(captured.method, 'POST');
     expect(captured.url.path, '/media/subscriptions');
@@ -235,7 +236,7 @@ void main() {
     expect(overridden.targetLibrarySectionID, 5);
     expect(overridden.targetSectionLocationID, isNull);
 
-    await client.liveTv.createRecordingRule(overridden);
+    await client.liveTvDvr!.createRecordingRule(overridden);
     expect(captured.url.queryParameters['targetLibrarySectionID'], '5');
     expect(captured.url.queryParameters.containsKey('targetSectionLocationID'), isFalse);
   });
@@ -266,7 +267,7 @@ void main() {
     });
     addTearDown(client.close);
 
-    final updated = await client.liveTv.updateRecordingRule('18', const {'startOffsetMinutes': 5});
+    final updated = await client.liveTvDvr!.updateRecordingRule('18', const {'startOffsetMinutes': 5});
 
     expect(captured.method, 'PUT');
     expect(captured.url.path, '/media/subscriptions/18');
@@ -307,7 +308,7 @@ void main() {
     });
     addTearDown(client.close);
 
-    final rules = await client.liveTv.fetchRecordingRules(includeGrabs: true, includeStorage: false);
+    final rules = await client.liveTvDvr!.fetchRecordingRules(includeGrabs: true, includeStorage: false);
 
     expect(captured.url.path, '/media/subscriptions');
     expect(captured.url.queryParameters['includeGrabs'], '1');
@@ -327,7 +328,7 @@ void main() {
     });
     addTearDown(client.close);
 
-    await client.liveTv.cancelGrab('/media/grabbers/operations/grab-1');
+    await client.liveTvDvr!.cancelGrab('/media/grabbers/operations/grab-1');
 
     expect(captured.method, 'DELETE');
     expect(captured.url.path, '/media/grabbers/operations/grab-1');
@@ -360,7 +361,7 @@ void main() {
     });
     addTearDown(client.close);
 
-    final operations = await client.liveTv.fetchScheduledRecordings();
+    final operations = await client.liveTvDvr!.fetchScheduledRecordings();
 
     expect(operations.single.id, 'grab-1');
     expect(operations.single.operationKey, '/media/grabbers/operations/grab-1');
