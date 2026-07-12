@@ -24,12 +24,12 @@ enum DiscoverLoadState { initial, loading, loaded, error }
 
 /// Owns the Discover tab's data: the Continue Watching row and the home hub
 /// list, including the refresh policy that used to live in the screen —
-/// watch events refresh only Continue Watching (one on-deck call, zero hub
-/// refetches), deletions drop the item from every visible list in place and
-/// then refresh only Continue Watching, hidden-library changes trigger a
-/// full reload, library-order changes re-sort hubs in place without
-/// refetching, and the platform launcher shelf syncs from every on-deck
-/// update.
+/// durable watch events refresh only Continue Watching (one on-deck call,
+/// zero hub refetches), playback progress patches the visible row in place,
+/// deletions drop the item from every visible list in place and then refresh
+/// only Continue Watching, hidden-library changes trigger a full reload,
+/// library-order changes re-sort hubs in place without refetching, and the
+/// platform launcher shelf syncs from every on-deck update.
 ///
 /// Lives inside the profile-keyed provider subtree, so a profile switch
 /// resets it by construction. The screen is a consumer: it renders this
@@ -476,6 +476,16 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   void _onWatchStateChanged(WatchStateEvent event) {
+    if (event.changeType == WatchStateChangeType.progressUpdate && event.isNowWatched != true) {
+      final viewOffset = event.viewOffset;
+      final index = _onDeck.indexWhere((item) => item.globalKey == event.globalKey);
+      if (viewOffset != null && index != -1 && _onDeck[index].viewOffsetMs != viewOffset) {
+        _onDeck = List.of(_onDeck)..[index] = _onDeck[index].copyWith(viewOffsetMs: viewOffset);
+        safeNotifyListeners();
+      }
+      return;
+    }
+
     if (event.changeType == WatchStateChangeType.removedFromContinueWatching) {
       final remaining = _onDeck.where((item) => item.id != event.itemId).toList();
       if (remaining.length != _onDeck.length) {

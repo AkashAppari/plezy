@@ -54,8 +54,9 @@ MediaHub _hub(
 );
 
 /// Counting fake — the provider's fetch-cost policy is the contract under
-/// test: a watch event must cost exactly one on-deck call and zero hub
-/// refetches, an order change zero calls, a hidden-set change one full pass.
+/// test: a durable watch event must cost exactly one on-deck call and zero hub
+/// refetches, progress zero calls, an order change zero calls, and a hidden-set
+/// change one full pass.
 class _FakeAggregationService extends DataAggregationService {
   _FakeAggregationService(super.serverManager);
 
@@ -198,7 +199,7 @@ void main() {
     expect(provider.hubs.map((h) => h.id), ['keep']);
   });
 
-  test('watch event refreshes continue watching with one call and zero hub refetches', () async {
+  test('watched and unwatched events refresh continue watching only', () async {
     aggregation.onDeckResult = () => [_item('ep-1', parentId: 'season-1')];
     aggregation.hubsResult = () => [_hub('hub-1')];
     await provider.load();
@@ -210,11 +211,53 @@ void main() {
 
     expect(aggregation.onDeckCalls, onDeckCallsBefore + 1);
     expect(aggregation.hubCalls, hubCallsBefore);
+
+    WatchStateNotifier().notifyWatched(item: _item('ep-1', parentId: 'season-1'), isNowWatched: false);
+    await pumpEventQueue();
+
+    expect(aggregation.onDeckCalls, onDeckCallsBefore + 2);
+    expect(aggregation.hubCalls, hubCallsBefore);
+  });
+
+  test('sub-threshold progress patches the row without refetching', () async {
+    final playing = _item('ep-1').copyWith(durationMs: 100000, viewOffsetMs: 10000, viewCount: 0);
+    aggregation.onDeckResult = () => [playing, for (var i = 2; i <= 21; i++) _item('ep-$i')];
+    aggregation.hubsResult = () => [_hub('hub-1')];
+    await provider.load();
+    final onDeckCallsBefore = aggregation.onDeckCalls;
+    final hubCallsBefore = aggregation.hubCalls;
+
+    WatchStateNotifier().notifyProgress(item: playing, viewOffset: 30000, duration: 100000);
+    await pumpEventQueue();
+
+    expect(provider.onDeck.first.viewOffsetMs, 30000);
+    expect(provider.onDeck.first.isWatched, isFalse);
+    expect(provider.onDeck, hasLength(DiscoverProvider.continueWatchingPreviewLimit));
+    expect(provider.hasMoreContinueWatching, isTrue);
+    expect(aggregation.onDeckCalls, onDeckCallsBefore);
+    expect(aggregation.hubCalls, hubCallsBefore);
+  });
+
+  test('watched-threshold progress refreshes continue watching only', () async {
+    final playing = _item('ep-1').copyWith(durationMs: 100000, viewOffsetMs: 80000);
+    aggregation.onDeckResult = () => [playing];
+    aggregation.hubsResult = () => [_hub('hub-1')];
+    await provider.load();
+    final onDeckCallsBefore = aggregation.onDeckCalls;
+    final hubCallsBefore = aggregation.hubCalls;
+
+    WatchStateNotifier().notifyProgress(item: playing, viewOffset: 95000, duration: 100000);
+    await pumpEventQueue();
+
+    expect(aggregation.onDeckCalls, onDeckCallsBefore + 1);
+    expect(aggregation.hubCalls, hubCallsBefore);
   });
 
   test('removal event drops the row immediately, then refreshes in background', () async {
     aggregation.onDeckResult = () => [_item('ep-1'), _item('ep-2')];
     await provider.load();
+    final onDeckCallsBefore = aggregation.onDeckCalls;
+    final hubCallsBefore = aggregation.hubCalls;
 
     var sawImmediateRemoval = false;
     provider.addListener(() {
@@ -229,6 +272,8 @@ void main() {
 
     expect(sawImmediateRemoval, isTrue);
     expect(provider.onDeck.map((i) => i.id), ['ep-2']);
+    expect(aggregation.onDeckCalls, onDeckCallsBefore + 1);
+    expect(aggregation.hubCalls, hubCallsBefore);
   });
 
   test('deletion drops the item from on-deck and hubs, then refreshes continue watching only', () async {
