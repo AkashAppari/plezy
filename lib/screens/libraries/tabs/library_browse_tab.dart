@@ -1198,7 +1198,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
   /// Navigate focus to the sidebar
   void _navigateToSidebar() {
-    MainScreenFocusScope.of(context, listen: false)?.focusSidebar();
+    MainScreenFocusScope.focusSidebarOf(context);
   }
 
   /// Navigate focus to the alpha jump bar

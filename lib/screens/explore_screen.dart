@@ -133,7 +133,7 @@ class ExploreScreenState extends State<ExploreScreen>
   }
 
   void _navigateToSidebar() {
-    MainScreenFocusScope.of(context, listen: false)?.focusSidebar();
+    MainScreenFocusScope.focusSidebarOf(context);
   }
 
   static IconData _rowIcon(CatalogRowId row) => switch (row) {

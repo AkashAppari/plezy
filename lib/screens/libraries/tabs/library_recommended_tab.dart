@@ -317,7 +317,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
 
   /// Navigate focus to the sidebar
   void _navigateToSidebar() {
-    MainScreenFocusScope.of(context, listen: false)?.focusSidebar();
+    MainScreenFocusScope.focusSidebarOf(context);
   }
 
   // Extra top padding for focus decoration (scale + border extends beyond item bounds)

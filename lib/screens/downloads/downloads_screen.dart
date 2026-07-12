@@ -220,7 +220,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
                             },
                             onCancel: downloadProvider.cancelDownload,
                             onDelete: downloadProvider.deleteDownload,
-                            onNavigateLeft: () => MainScreenFocusScope.of(context, listen: false)?.focusSidebar(),
+                            onNavigateLeft: () => MainScreenFocusScope.focusSidebarOf(context),
                             onBack: focusTabBar,
                             suppressAutoFocus: suppressAutoFocus,
                           );
@@ -287,7 +287,7 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent> {
 
   /// Navigate focus to the sidebar
   void _navigateToSidebar() {
-    MainScreenFocusScope.of(context, listen: false)?.focusSidebar();
+    MainScreenFocusScope.focusSidebarOf(context);
   }
 
   @override

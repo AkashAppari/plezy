@@ -84,7 +84,7 @@ mixin TabNavigationMixin<T extends StatefulWidget> on State<T>, TickerProviderSt
   }
 
   void onTabBarBack() {
-    MainScreenFocusScope.of(context, listen: false)?.focusSidebar();
+    MainScreenFocusScope.focusSidebarOf(context);
   }
 
   /// Shared tab chip builder — eliminates duplication between screens.
