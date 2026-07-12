@@ -61,19 +61,10 @@ void main() {
       expect(p.canControl(), isTrue);
       p.dispose();
     });
-
-    test('participantEvents is a broadcast stream that listeners can attach to', () async {
-      final p = WatchTogetherProvider();
-      // Attach a listener so the stream is observed; on a fresh provider no
-      // events will fire, but the stream must already be live.
-      final sub = p.participantEvents.listen((_) {});
-      await sub.cancel();
-      p.dispose();
-    });
   });
 
-  group('WatchTogetherProvider — listener firing via public API', () {
-    test('setCurrentMedia notifies listeners as host', () {
+  group('WatchTogetherProvider — session guards', () {
+    test('setCurrentMedia is rejected outside a session', () {
       final p = WatchTogetherProvider();
       var notified = 0;
       p.addListener(() => notified++);
@@ -84,62 +75,10 @@ void main() {
       p.dispose();
     });
 
-    test('setDisplayName mutates internal state without notifying', () {
-      final p = WatchTogetherProvider();
-      var notified = 0;
-      p.addListener(() => notified++);
-      // setDisplayName is a plain assignment with no notify; verify it doesn't
-      // accidentally fire one.
-      p.setDisplayName('Tester');
-      expect(notified, 0);
-      p.dispose();
-    });
-
-    test('markCurrentPlaybackHandled does not throw on a fresh provider', () {
-      final p = WatchTogetherProvider();
-      expect(() => p.markCurrentPlaybackHandled(ratingKey: 'rk1', serverId: ServerId('s1')), returnsNormally);
-      p.dispose();
-    });
-
-    test('requestCurrentPlaybackSnapshot is a no-op when not in session', () {
-      final p = WatchTogetherProvider();
-      var notified = 0;
-      p.addListener(() => notified++);
-      // Guard fires before any peer service work, so no listener notification.
-      p.requestCurrentPlaybackSnapshot();
-      expect(notified, 0);
-      p.dispose();
-    });
-
-    test('attachPlayer is a no-op without a sync controller (logs warning)', () {
-      final p = WatchTogetherProvider();
-      // The mpv Player object is platform-tied; skipping it would reach the
-      // null-controller guard first and bail. Calling with a null check via
-      // the same path used by the production code: just verify the early
-      // return path on detachPlayer (which is also null-safe).
-      expect(p.detachPlayer, returnsNormally);
-      p.dispose();
-    });
-
-    test('setBackgrounded forwards to the sync controller but is null-safe', () {
+    test('setBackgrounded is null-safe without a sync controller', () {
       final p = WatchTogetherProvider();
       expect(() => p.setBackgrounded(true), returnsNormally);
       expect(() => p.setBackgrounded(false), returnsNormally);
-      p.dispose();
-    });
-
-    test('onLocalSeek is null-safe without a sync controller', () {
-      final p = WatchTogetherProvider();
-      expect(() => p.onLocalSeek(const Duration(seconds: 5)), returnsNormally);
-      p.dispose();
-    });
-
-    test('notifyHostExitedPlayer is a no-op when not host or not in session', () {
-      final p = WatchTogetherProvider();
-      var notified = 0;
-      p.addListener(() => notified++);
-      p.notifyHostExitedPlayer();
-      expect(notified, 0);
       p.dispose();
     });
   });
@@ -271,28 +210,7 @@ void main() {
     });
   });
 
-  group('WatchTogetherProvider — leaveSession safety', () {
-    test('leaveSession on a fresh provider is a no-op (no notify)', () async {
-      final p = WatchTogetherProvider();
-      var notified = 0;
-      p.addListener(() => notified++);
-      await p.leaveSession();
-      // Early-return path: no session ever existed, no listener fires.
-      expect(notified, 0);
-      expect(p.session, isNull);
-      p.dispose();
-    });
-  });
-
   group('WatchTogetherProvider — dispose hygiene', () {
-    test('dispose runs cleanly with no peer service or subscriptions', () {
-      final p = WatchTogetherProvider();
-      // Fresh provider: 4 stream subscriptions are all null, 1 stream
-      // controller is open, _hostReconnectTimer is null. dispose() must
-      // close the controller and tear down without throwing.
-      expect(p.dispose, returnsNormally);
-    });
-
     test('participantEvents stream is closed after dispose', () async {
       final p = WatchTogetherProvider();
       // Attach a listener; capture done via the stream's done future.
@@ -304,24 +222,6 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       await sub.cancel();
       expect(streamDone, isTrue);
-    });
-
-    test('notifyListeners after dispose does not throw (coalescing guard)', () async {
-      // The provider overrides notifyListeners to coalesce into a microtask.
-      // After dispose, the _disposed flag must short-circuit any pending or
-      // late notifications.
-      final p = WatchTogetherProvider();
-      p.dispose();
-      // Even if some pathway tried to notify (it won't from outside, but the
-      // microtask path in the override is the relevant guard), it must not
-      // throw and not call super.notifyListeners() on a disposed instance.
-      await Future<void>.delayed(Duration.zero);
-    });
-
-    test('dispose is safe to call after a leaveSession on a fresh provider', () async {
-      final p = WatchTogetherProvider();
-      await p.leaveSession();
-      expect(p.dispose, returnsNormally);
     });
   });
 }

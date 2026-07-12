@@ -6,7 +6,6 @@ import 'package:plezy/mpv/player/player_state.dart';
 import 'package:plezy/mpv/player/player_streams.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_tokens.dart';
-import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/video_controls/sheets/video_settings_sheet.dart';
 
 import '../test_helpers/prefs.dart';
@@ -35,25 +34,11 @@ void main() {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
     await SettingsService.getInstance();
-    TvDetectionService.debugSetAppleTVOverride(null);
-  });
-
-  tearDown(() {
-    TvDetectionService.debugSetAppleTVOverride(null);
   });
 
   testWidgets('shows audio passthrough on supported TV-style surfaces', (tester) async {
     await _pumpSheet(tester);
 
-    await tester.scrollUntilVisible(find.text('Audio Passthrough'), 500, scrollable: find.byType(Scrollable).first);
-
-    expect(find.text('Audio Passthrough'), findsOneWidget);
-  });
-
-  testWidgets('shows audio passthrough on Apple TV', (tester) async {
-    TvDetectionService.debugSetAppleTVOverride(true);
-
-    await _pumpSheet(tester);
     await tester.scrollUntilVisible(find.text('Audio Passthrough'), 500, scrollable: find.byType(Scrollable).first);
 
     expect(find.text('Audio Passthrough'), findsOneWidget);

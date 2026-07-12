@@ -272,7 +272,7 @@ class SpecRenderEngineTest {
     // last-rendered slot so GL skips the upload entirely.
     val h = Harness()
     h.script.add(changed())
-    val first = h.engine.service(0, pinned = true) as SpecRenderEngine.Outcome.Post
+    h.engine.service(0, pinned = true)
     var pts = 0L
     repeat(4) {
       // build cadence; renders return changed for simplicity
@@ -287,7 +287,6 @@ class SpecRenderEngineTest {
     assertTrue(outcome.specHit)
     assertFalse(outcome.newContent)
     assertEquals(before, h.calls.size)
-    assertNotNull(first) // first slot existed; hit reposts whichever slot was last rendered
   }
 
   @Test

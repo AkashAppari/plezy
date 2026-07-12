@@ -93,18 +93,6 @@ void main() {
       expect(url, contains('h=240'));
     });
 
-    test('near-minimum slots request a sized transcode', () {
-      final url = MediaImageHelper.getOptimizedImageUrl(
-        client: client,
-        thumbPath: '/library/metadata/1/thumb/2',
-        maxWidth: 96,
-        maxHeight: 144,
-        devicePixelRatio: 1,
-      );
-
-      expect(url, startsWith('sized:'));
-    });
-
     test('regular slots request DPR-scaled dimensions', () {
       final url = MediaImageHelper.getOptimizedImageUrl(
         client: client,

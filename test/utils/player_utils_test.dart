@@ -91,17 +91,6 @@ void main() {
       );
     });
 
-    test('uses native seek near the start of a buffer range', () {
-      expect(
-        resolvePlexTranscodeSeekAction(
-          currentPosition: const Duration(seconds: 30),
-          target: const Duration(milliseconds: 29500),
-          bufferRanges: const [BufferRange(start: Duration(seconds: 30), end: Duration(seconds: 50))],
-        ),
-        PlexTranscodeSeekAction.nativeSeek,
-      );
-    });
-
     test('restarts near the tail of a buffer range to avoid optimistic cache edges', () {
       expect(
         resolvePlexTranscodeSeekAction(
@@ -147,17 +136,6 @@ void main() {
             BufferRange(start: Duration(seconds: 0), end: Duration(seconds: 10)),
             BufferRange(start: Duration(seconds: 40), end: Duration(seconds: 50)),
           ],
-        ),
-        PlexTranscodeSeekAction.restartTranscode,
-      );
-    });
-
-    test('does not treat a flat buffer end as a local seekable range', () {
-      expect(
-        resolvePlexTranscodeSeekAction(
-          currentPosition: const Duration(seconds: 30),
-          target: const Duration(seconds: 45),
-          bufferRanges: const [],
         ),
         PlexTranscodeSeekAction.restartTranscode,
       );

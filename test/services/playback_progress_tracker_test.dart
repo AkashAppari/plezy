@@ -322,18 +322,6 @@ void main() {
         throwsA(isA<AssertionError>()),
       );
     });
-
-    test('valid online construction succeeds', () {
-      final tracker = PlaybackProgressTracker(
-        client: _FakePlexClient(),
-        metadata: _meta(),
-        player: _FakePlayer(),
-        isOffline: false,
-      );
-      addTearDown(tracker.dispose);
-      // No assertion — the constructor returned cleanly.
-      expect(tracker, isNotNull);
-    });
   });
 
   // ============================================================

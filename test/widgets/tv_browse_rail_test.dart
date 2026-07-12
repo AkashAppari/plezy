@@ -665,38 +665,6 @@ void main() {
     expect(find.byType(CompositedTransformFollower), findsOneWidget);
   });
 
-  testWidgets('detailed card layout can still show media text', (tester) async {
-    await SettingsService.instanceOrNull!.write(SettingsService.tvFullCardLayout, false);
-
-    final serverManager = MultiServerManager();
-    final movie = testMediaItem(
-      id: 'movie_1',
-      backend: MediaBackend.plex,
-      kind: MediaKind.movie,
-      title: 'Visible Movie',
-    );
-    final hub = MediaHub(id: 'movies', title: 'Movies', type: 'movie', items: [movie], size: 1);
-
-    await tester.pumpWidget(
-      ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
-        child: MaterialApp(
-          theme: monoTheme(dark: true),
-          home: Scaffold(
-            body: SizedBox(
-              width: 1280,
-              height: 720,
-              child: TvBrowseRail(hubs: [hub], iconForHub: (_, _) => Icons.movie_rounded),
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.pump();
-
-    expect(find.text('Visible Movie'), findsOneWidget);
-  });
-
   testWidgets('detailed card focus border hugs the poster, captions outside', (tester) async {
     await SettingsService.instanceOrNull!.write(SettingsService.tvFullCardLayout, false);
     TvDetectionService.debugSetAppleTVOverride(true);

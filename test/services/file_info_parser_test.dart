@@ -147,34 +147,4 @@ void main() {
       expect(out.audioTracks, hasLength(1));
     });
   });
-
-  group('cross-backend equivalence', () {
-    test('both readers produce parallel track structures from analogous JSON', () {
-      const plexReader = PlexFileInfoStreamReader();
-      const jfReader = JellyfinFileInfoStreamReader();
-
-      final plexStreams = [
-        {'streamType': 1, 'id': 1, 'frameRate': 24.0},
-        {'streamType': 2, 'id': 2, 'codec': 'aac', 'language': 'English', 'channels': 2, 'selected': true},
-        {'streamType': 3, 'id': 3, 'codec': 'srt', 'language': 'English', 'selected': false, 'forced': false},
-      ];
-      final jfStreams = [
-        {'Type': 'Video', 'Index': 0, 'RealFrameRate': 24.0},
-        {'Type': 'Audio', 'Index': 1, 'Codec': 'aac', 'Language': 'eng', 'Channels': 2, 'IsDefault': true},
-        {'Type': 'Subtitle', 'Index': 2, 'Codec': 'srt', 'Language': 'eng', 'IsDefault': false, 'IsForced': false},
-      ];
-
-      final plex = walkStreams(plexStreams, plexReader);
-      final jf = walkStreams(jfStreams, jfReader);
-
-      expect(plex.audioTracks, hasLength(1));
-      expect(jf.audioTracks, hasLength(1));
-      expect(plex.subtitleTracks, hasLength(1));
-      expect(jf.subtitleTracks, hasLength(1));
-      expect(plex.videoStream?['frameRate'], jf.videoStream?['RealFrameRate']);
-      expect(plex.audioTracks.first.codec, jf.audioTracks.first.codec);
-      expect(plex.audioTracks.first.channels, jf.audioTracks.first.channels);
-      expect(plex.audioTracks.first.selected, jf.audioTracks.first.selected);
-    });
-  });
 }

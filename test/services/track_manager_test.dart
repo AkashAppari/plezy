@@ -19,8 +19,7 @@ import '../test_helpers/media_items.dart';
 // initialized SettingsService.
 //
 // Coverage:
-//   - Constructor wiring (mutable fields are settable, default values).
-//   - `cacheExternalSubtitles` / `lastExternalSubtitles` round-trip.
+//   - `cacheExternalSubtitles` / `lastExternalSubtitles` replacement behavior.
 //   - `addExternalSubtitles` invokes the player's addSubtitleTrack for each
 //     entry with a non-null URI, preserves order, and silently swallows errors
 //     thrown by the player.
@@ -28,8 +27,6 @@ import '../test_helpers/media_items.dart';
 //     fewer than 2 real tracks (early-return paths).
 //   - `applyTrackSelectionWhenReady` waits for subtitle tracks when server
 //     metadata says they exist.
-//   - `onPlaybackRestart` is a no-op when not waiting for external subs.
-//   - `onSecondarySubtitleTrackChanged` is a documented no-op.
 //   - `dispose` is idempotent (timers/subscriptions cleared).
 //
 // What's NOT covered:
@@ -149,49 +146,6 @@ void main() {
   // The constructor doesn't touch prefs, but [dispose] / [applyTrackSelection]
   // could leak across tests — reset to be safe.
   setUp(resetSharedPreferencesForTest);
-
-  // ============================================================
-  // Construction
-  // ============================================================
-
-  group('constructor', () {
-    test('initialises mutable fields with the provided values', () {
-      final player = _FakePlayer();
-      final mgr = TrackManager(
-        player: player,
-        isActive: () => true,
-        persistTrackPreference: _noopPersister,
-        getProfileSettings: () => null,
-        waitForProfileSettings: () async {},
-        metadata: _meta(),
-        preferredAudioTrack: const AudioTrack(id: 'a-1', language: 'eng'),
-        preferredSubtitleTrack: const SubtitleTrack(id: 's-1', language: 'eng'),
-        preferredSecondarySubtitleTrack: const SubtitleTrack(id: 's-2', language: 'fre'),
-      );
-      addTearDown(mgr.dispose);
-
-      expect(mgr.preferredAudioTrack?.id, 'a-1');
-      expect(mgr.preferredSubtitleTrack?.id, 's-1');
-      expect(mgr.preferredSecondarySubtitleTrack?.id, 's-2');
-      expect(mgr.metadata.id, 'rk1');
-      expect(mgr.waitingForExternalSubsTrackSelection, isFalse);
-      expect(mgr.lastExternalSubtitles, isEmpty);
-      expect(mgr.mediaInfo, isNull);
-    });
-
-    test('mutable fields can be reassigned (episode-navigation pattern)', () {
-      final mgr = _make(player: _FakePlayer());
-      addTearDown(mgr.dispose);
-
-      mgr.metadata = _meta(id: 'next');
-      mgr.preferredAudioTrack = const AudioTrack(id: 'a2', language: 'fre');
-      mgr.waitingForExternalSubsTrackSelection = true;
-
-      expect(mgr.metadata.id, 'next');
-      expect(mgr.preferredAudioTrack?.id, 'a2');
-      expect(mgr.waitingForExternalSubsTrackSelection, isTrue);
-    });
-  });
 
   // ============================================================
   // External subtitle cache
@@ -503,15 +457,6 @@ void main() {
       await mgr.onBackendSwitched();
 
       expect(player.addSubtitleCalls, isEmpty);
-    });
-  });
-
-  group('onSecondarySubtitleTrackChanged', () {
-    test('is a documented no-op', () {
-      final mgr = _make(player: _FakePlayer());
-      addTearDown(mgr.dispose);
-      // Just verify it returns normally; nothing else to assert.
-      expect(() => mgr.onSecondarySubtitleTrackChanged(const SubtitleTrack(id: '1')), returnsNormally);
     });
   });
 

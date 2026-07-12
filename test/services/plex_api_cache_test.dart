@@ -55,10 +55,6 @@ void main() {
       await newDb.close();
     });
 
-    test('database getter exposes the underlying AppDatabase', () {
-      expect(identical(cache.database, db), isTrue);
-    });
-
     test('registered cleanup ignores backend initialization order and preserves pinned rows', () async {
       await cache.put(ServerId('srv'), '/volatile', {'value': 1});
       await cache.put(ServerId('srv'), '/pinned', {'value': 2});

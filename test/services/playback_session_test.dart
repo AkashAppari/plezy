@@ -97,28 +97,4 @@ void main() {
       expect(session.mediaSourceId, 'downloaded');
     });
   });
-
-  test('forwarding getters mirror the resolver output', () {
-    final result = PlaybackInitializationResult(
-      availableVersions: [MediaVersion(id: 'v0')],
-      videoUrl: 'u',
-      isTranscoding: true,
-      playSessionId: 'psid',
-      playMethod: 'Transcode',
-      activeAudioStreamId: 7,
-    );
-    final session = PlaybackSession.fromContext(
-      _context(result),
-      requestedQualityPreset: TranscodeQualityPreset.original,
-    );
-
-    expect(session.isTranscoding, isTrue);
-    expect(session.isOffline, isFalse);
-    expect(session.playSessionId, 'psid');
-    expect(session.playMethod, 'Transcode');
-    expect(session.audioStreamId, 7);
-    expect(session.availableVersions, hasLength(1));
-    expect(session.streamHeaders, containsPair('X-Test', 'token'));
-    expect(session.metadata.id, 'item-1');
-  });
 }

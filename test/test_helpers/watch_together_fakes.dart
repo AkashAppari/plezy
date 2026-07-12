@@ -186,57 +186,6 @@ class FakeSyncPlayer implements Player {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-/// Standalone recording fake peer service (no relay behind it).
-class FakeWatchTogetherPeerService extends WatchTogetherPeerService {
-  FakeWatchTogetherPeerService({required this.peerId}) : super(customBaseUrl: 'http://localhost');
-
-  final String peerId;
-  final _messages = StreamController<SyncMessage>.broadcast();
-  final _peerConnected = StreamController<String>.broadcast();
-  final _peerDisconnected = StreamController<String>.broadcast();
-
-  final List<SyncMessage> broadcasts = [];
-  final Map<String, List<SyncMessage>> sent = {};
-
-  @override
-  String? get myPeerId => peerId;
-
-  @override
-  Stream<SyncMessage> get onMessageReceived => _messages.stream;
-
-  @override
-  Stream<String> get onPeerConnected => _peerConnected.stream;
-
-  @override
-  Stream<String> get onPeerDisconnected => _peerDisconnected.stream;
-
-  @override
-  void broadcast(SyncMessage message) {
-    broadcasts.add(message);
-  }
-
-  @override
-  void sendTo(String peerId, SyncMessage message) {
-    sent.putIfAbsent(peerId, () => []).add(message);
-  }
-
-  /// All recorded outgoing messages of [type], broadcast and targeted.
-  Iterable<SyncMessage> outgoing(SyncMessageType type) =>
-      [...broadcasts, ...sent.values.expand((m) => m)].where((m) => m.type == type);
-
-  void emit(SyncMessage message) => _messages.add(message);
-
-  void emitPeerConnected(String peerId) => _peerConnected.add(peerId);
-
-  void emitPeerDisconnected(String peerId) => _peerDisconnected.add(peerId);
-
-  Future<void> close() async {
-    await _messages.close();
-    await _peerConnected.close();
-    await _peerDisconnected.close();
-  }
-}
-
 /// In-memory relay linking [HubPeerService]s for duplex end-to-end tests.
 ///
 /// Mirrors the real relay's contract: broadcasts fan out to every other

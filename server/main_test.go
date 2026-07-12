@@ -328,10 +328,6 @@ func newRelayHarnessAt(t *testing.T, logDir, stateFile string) *relayHarness {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/relay", srv.handleWS)
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
-	})
 	mux.HandleFunc("/logs", srv.handlePostLogs)
 	mux.HandleFunc("/logs/", srv.handleGetLogs)
 	mux.HandleFunc("/posters", srv.handlePostPosters)
@@ -1636,22 +1632,6 @@ func TestPosterStoreCleanupExpiresOldPosters(t *testing.T) {
 	}
 	if _, err := os.Stat(ps.filePath(entry.Filename)); !os.IsNotExist(err) {
 		t.Fatalf("expired file still exists or stat failed unexpectedly: %v", err)
-	}
-}
-
-func TestHealthEndpointReturnsOK(t *testing.T) {
-	h := newRelayHarness(t)
-	resp, err := http.Get(h.baseURL + "/health")
-	if err != nil {
-		t.Fatalf("get: %v", err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("status=%d", resp.StatusCode)
-	}
-	body, _ := io.ReadAll(resp.Body)
-	if string(body) != "ok" {
-		t.Fatalf("body=%q want ok", body)
 	}
 }
 

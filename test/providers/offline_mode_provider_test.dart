@@ -70,16 +70,6 @@ void main() {
       manager.dispose();
     });
 
-    test('dispose without initialize is safe (no subscriptions to cancel)', () {
-      final manager = MultiServerManager();
-      final p = OfflineModeProvider(manager);
-
-      // Both subscriptions are null since initialize() was never called.
-      // dispose must tolerate this without throwing.
-      expect(p.dispose, returnsNormally);
-      manager.dispose();
-    });
-
     test('dispose marks provider as disposed; later notifies are no-ops', () {
       final manager = MultiServerManager();
       final p = OfflineModeProvider(manager);
@@ -89,19 +79,6 @@ void main() {
       // We can't call private safeNotifyListeners, but `isDisposed` reflects state.
       expect(p.isDisposed, isTrue);
 
-      manager.dispose();
-    });
-
-    test('OfflineModeSource interface contract: isOffline is exposed', () {
-      final manager = MultiServerManager();
-      manager.updateServerStatus(ServerId('srv'), true);
-      final p = OfflineModeProvider(manager);
-
-      // The provider implements OfflineModeSource — its isOffline getter is the
-      // sole observable surface for downstream consumers.
-      expect(p.isOffline, isFalse);
-
-      p.dispose();
       manager.dispose();
     });
 

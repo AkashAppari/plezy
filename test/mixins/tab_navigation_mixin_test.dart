@@ -52,8 +52,12 @@ class _ProbeState extends State<_Probe> with TickerProviderStateMixin<_Probe>, T
   }
 
   @override
-  Widget build(BuildContext context) =>
-      const Directionality(textDirection: TextDirection.ltr, child: SizedBox.shrink());
+  Widget build(BuildContext context) => Directionality(
+    textDirection: TextDirection.ltr,
+    child: Column(
+      children: [for (final node in _nodes) Focus(focusNode: node, child: const SizedBox.shrink())],
+    ),
+  );
 }
 
 void main() {
@@ -210,22 +214,17 @@ void main() {
 
       expect(state.onTabChangedCalls, greaterThan(before));
     });
-
-    testWidgets('focusTabBar sets suppressAutoFocus and calls requestFocus on the active chip', (tester) async {
+    testWidgets('focusTabBar focuses the active chip and suppresses content auto-focus', (tester) async {
       late _ProbeState state;
-      await tester.pumpWidget(_Probe(tabCount: 3, onState: (s) => state = s));
+      await tester.pumpWidget(_Probe(tabCount: 3, initialIndex: 1, onState: (s) => state = s));
+      final activeNode = state.getTabChipFocusNode(1);
 
-      // Pre-condition: nothing is focused.
-      final activeNode = state.getTabChipFocusNode(state.tabController.index);
       expect(activeNode.hasFocus, isFalse);
-
       state.focusTabBar();
       await tester.pump();
 
-      // The flag flip is the deterministic, mountable side-effect of
-      // focusTabBar; actual focus delivery requires a real Focus widget tree
-      // (the production usage attaches each node to a FocusableTabChip).
       expect(state.suppressAutoFocus, isTrue);
+      expect(activeNode.hasFocus, isTrue);
     });
 
     testWidgets('onTabBarBack is null-safe outside MainScreenFocusScope (no throw)', (tester) async {

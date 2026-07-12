@@ -104,44 +104,6 @@ class _ProbeWidgetState extends State<_ProbeWidget> {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  // ===========================================================
-  // AdjacentEpisodes data class
-  // ===========================================================
-
-  group('AdjacentEpisodes', () {
-    test('default constructor reports no neighbours', () {
-      final ae = AdjacentEpisodes();
-      expect(ae.next, isNull);
-      expect(ae.previous, isNull);
-      expect(ae.hasNext, isFalse);
-      expect(ae.hasPrevious, isFalse);
-    });
-
-    test('next/previous flags reflect non-null fields', () {
-      final ae = AdjacentEpisodes(next: _meta('n'), previous: _meta('p'));
-      expect(ae.hasNext, isTrue);
-      expect(ae.hasPrevious, isTrue);
-      expect(ae.next!.id, 'n');
-      expect(ae.previous!.id, 'p');
-    });
-
-    test('only-next variant', () {
-      final ae = AdjacentEpisodes(next: _meta('n'));
-      expect(ae.hasNext, isTrue);
-      expect(ae.hasPrevious, isFalse);
-    });
-
-    test('only-previous variant', () {
-      final ae = AdjacentEpisodes(previous: _meta('p'));
-      expect(ae.hasNext, isFalse);
-      expect(ae.hasPrevious, isTrue);
-    });
-  });
-
-  // ===========================================================
-  // loadAdjacentEpisodes: short-circuit without an active queue
-  // ===========================================================
-
   group('loadAdjacentEpisodes', () {
     testWidgets('returns empty AdjacentEpisodes when no play queue is active', (tester) async {
       // Bare provider — no setPlaybackFromPlayQueue() call → isQueueActive = false.

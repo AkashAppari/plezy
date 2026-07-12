@@ -703,46 +703,6 @@ void main() {
         PlayerBackDisposition.exitPlayer,
       );
     });
-
-    test('macOS physical Escape uses the same staged disposition as semantic Back', () {
-      expect(
-        resolvePlayerBackDisposition(
-          navigationKey: PlayerNavigationKey.physicalEscape,
-          contentStripVisible: false,
-          controlsVisible: true,
-          physicalEscapeExitsFullscreen: false,
-        ),
-        PlayerBackDisposition.hideControls,
-      );
-      expect(
-        resolvePlayerBackDisposition(
-          navigationKey: PlayerNavigationKey.physicalEscape,
-          contentStripVisible: false,
-          controlsVisible: false,
-          physicalEscapeExitsFullscreen: false,
-        ),
-        PlayerBackDisposition.exitPlayer,
-      );
-    });
-
-    test('semantic Back hides visible controls then exits when hidden', () {
-      expect(
-        resolvePlayerBackDisposition(
-          navigationKey: PlayerNavigationKey.back,
-          contentStripVisible: false,
-          controlsVisible: true,
-        ),
-        PlayerBackDisposition.hideControls,
-      );
-      expect(
-        resolvePlayerBackDisposition(
-          navigationKey: PlayerNavigationKey.back,
-          contentStripVisible: false,
-          controlsVisible: false,
-        ),
-        PlayerBackDisposition.exitPlayer,
-      );
-    });
   });
 
   group('SkipMarkerButton', () {

@@ -2,13 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/watch_together/primitives.dart';
 
 void main() {
-  test('host and guest derive the same host peer ID', () {
-    final hostPeerId = watchTogetherHostPeerId('ROOM1');
-    final guestExpectedHostPeerId = watchTogetherHostPeerId('room1');
-
-    expect(guestExpectedHostPeerId, hostPeerId);
-  });
-
   test('stored room codes preserve the established host peer wire format', () {
     const persistedSessionId = 'Ab12z';
 

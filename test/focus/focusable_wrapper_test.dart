@@ -4,9 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/focusable_wrapper.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 
-/// The wrapper's focus chrome (scale Transform + border AnimatedContainer)
-/// must only exist in keyboard/d-pad mode: on touch it is pure dead weight
-/// multiplied by every card in a grid (see library scroll jank).
 void main() {
   Finder chromeIn(Type type) => find.descendant(of: find.byType(FocusableWrapper), matching: find.byType(type));
 
@@ -19,15 +16,12 @@ void main() {
 
     expect(chromeIn(Transform), findsNothing);
     expect(chromeIn(AnimatedContainer), findsNothing);
-    // The Focus node stays mounted so d-pad traversal finds the card the
-    // moment keyboard mode activates.
     expect(chromeIn(Focus), findsWidgets);
   });
 
   testWidgets('keyboard mode builds the scale/border chrome', (tester) async {
     await tester.pumpWidget(InputModeTracker(child: MaterialApp(home: buildWrapper())));
 
-    // A navigation key press flips the tracker into keyboard mode.
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump();
 

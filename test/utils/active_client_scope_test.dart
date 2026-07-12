@@ -23,10 +23,6 @@ void main() {
       expect(resolveActiveClientScopeId(serverId: serverId, cacheServerId: 'other-machine/user-a'), isNull);
     });
 
-    test('resolves a compound user scope', () {
-      expect(resolveActiveClientScopeId(serverId: serverId, cacheServerId: 'jf-machine/user-a'), 'jf-machine/user-a');
-    });
-
     test('keeps users on the same server in distinct active scopes', () {
       expect(resolveActiveClientScopeId(serverId: serverId, cacheServerId: 'jf-machine/user-a'), 'jf-machine/user-a');
       expect(resolveActiveClientScopeId(serverId: serverId, cacheServerId: 'jf-machine/user-b'), 'jf-machine/user-b');

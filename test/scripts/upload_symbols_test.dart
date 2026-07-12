@@ -18,7 +18,7 @@ void main() {
 
   test('discovers symbols and passes the complete upload request to the plugin', () async {
     final symbolRoot = Directory(path.join(repository.path, 'debug-info', 'linux-x64'))..createSync(recursive: true);
-    final archive = File(path.join(symbolRoot.path, 'symbols.zip'))..writeAsStringSync('symbols');
+    File(path.join(symbolRoot.path, 'symbols.zip')).writeAsStringSync('symbols');
     final symbolMap = File(path.join(symbolRoot.path, 'obfuscation.map.json'))..writeAsStringSync('{}');
     late List<String> uploadArguments;
     late Map<String, String> uploadEnvironment;
@@ -42,7 +42,6 @@ void main() {
     );
 
     expect(result, 0);
-    expect(archive.existsSync(), isTrue);
     expect(uploadWorkingDirectory, path.normalize(path.absolute(repository.path)));
     expect(uploadEnvironment['SENTRY_AUTH_TOKEN'], 'admin-token');
     expect(uploadEnvironment['SENTRY_LOG_LEVEL'], 'info');

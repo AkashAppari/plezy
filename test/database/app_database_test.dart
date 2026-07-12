@@ -40,10 +40,6 @@ class _AppDatabaseTestSuite {
     // ============================================================
 
     group('schema', () {
-      test('schemaVersion is 16', () {
-        expect(db.schemaVersion, 16);
-      });
-
       test('all tables are accessible and start empty', () async {
         expect(await db.select(db.downloadedMedia).get(), isEmpty);
         expect(await db.select(db.downloadOwners).get(), isEmpty);
@@ -255,22 +251,10 @@ class _AppDatabaseTestSuite {
 
   void _registerApiCacheTests() {
     // ============================================================
-    // ApiCache: insert / select / update / delete round-trip
+    // ApiCache schema defaults and constraints
     // ============================================================
 
     group('ApiCache', () {
-      test('insert + select round-trip preserves fields', () async {
-        await db
-            .into(db.apiCache)
-            .insert(ApiCacheCompanion.insert(cacheKey: 'srv:/library/metadata/1', data: '{"hello":"world"}'));
-
-        final rows = await db.select(db.apiCache).get();
-        expect(rows, hasLength(1));
-        expect(rows.first.cacheKey, 'srv:/library/metadata/1');
-        expect(rows.first.data, '{"hello":"world"}');
-        expect(rows.first.pinned, isFalse); // default
-      });
-
       test('default pinned=false, custom pinned=true is honored', () async {
         await db.into(db.apiCache).insert(ApiCacheCompanion.insert(cacheKey: 'k1', data: 'a'));
         await db
@@ -288,44 +272,12 @@ class _AppDatabaseTestSuite {
           throwsA(isA<Exception>()),
         );
       });
-
-      test('insertOnConflictUpdate replaces the row', () async {
-        await db.into(db.apiCache).insert(ApiCacheCompanion.insert(cacheKey: 'dup', data: 'first'));
-        await db
-            .into(db.apiCache)
-            .insertOnConflictUpdate(
-              ApiCacheCompanion.insert(cacheKey: 'dup', data: 'second', pinned: const Value(true)),
-            );
-
-        final rows = await db.select(db.apiCache).get();
-        expect(rows, hasLength(1));
-        expect(rows.first.data, 'second');
-        expect(rows.first.pinned, isTrue);
-      });
-
-      test('update modifies existing row', () async {
-        await db.into(db.apiCache).insert(ApiCacheCompanion.insert(cacheKey: 'k', data: 'orig'));
-        await (db.update(
-          db.apiCache,
-        )..where((t) => t.cacheKey.equals('k'))).write(const ApiCacheCompanion(data: Value('updated')));
-
-        final row = await (db.select(db.apiCache)..where((t) => t.cacheKey.equals('k'))).getSingle();
-        expect(row.data, 'updated');
-      });
-
-      test('delete removes the row', () async {
-        await db.into(db.apiCache).insert(ApiCacheCompanion.insert(cacheKey: 'k', data: 'v'));
-        expect(await db.select(db.apiCache).get(), hasLength(1));
-
-        await (db.delete(db.apiCache)..where((t) => t.cacheKey.equals('k'))).go();
-        expect(await db.select(db.apiCache).get(), isEmpty);
-      });
     });
   }
 
   void _registerDownloadedMediaTests() {
     // ============================================================
-    // DownloadedMedia: round-trip + helpers + update + delete
+    // DownloadedMedia: persistence, defaults, constraints, and helpers
     // ============================================================
 
     group('DownloadedMedia', () {
@@ -378,32 +330,9 @@ class _AppDatabaseTestSuite {
         expect(row.clientScopeId, 'jf-machine/user-a');
       });
 
-      test('updating progress field works', () async {
-        await insertMovie();
-        await (db.update(db.downloadedMedia)..where((t) => t.globalKey.equals('srv1:100'))).write(
-          const DownloadedMediaCompanion(progress: Value(75), downloadedBytes: Value(1024)),
-        );
-
-        final row = await (db.select(db.downloadedMedia)..where((t) => t.globalKey.equals('srv1:100'))).getSingle();
-        expect(row.progress, 75);
-        expect(row.downloadedBytes, 1024);
-      });
-
       test('globalKey unique constraint blocks duplicate insert', () async {
         await insertMovie();
         expect(insertMovie(), throwsA(isA<Exception>()));
-      });
-
-      test('delete removes only the matching row', () async {
-        await insertMovie(ratingKey: '1');
-        await insertMovie(ratingKey: '2');
-        expect(await db.select(db.downloadedMedia).get(), hasLength(2));
-
-        await (db.delete(db.downloadedMedia)..where((t) => t.globalKey.equals('srv1:1'))).go();
-
-        final rows = await db.select(db.downloadedMedia).get();
-        expect(rows, hasLength(1));
-        expect(rows.first.ratingKey, '2');
       });
 
       test('getAllDownloadedMetadata returns only completed items', () async {

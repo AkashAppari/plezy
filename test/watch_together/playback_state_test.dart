@@ -77,10 +77,6 @@ void main() {
         expect(paused.targetPositionMs(fullState.anchorHostTimeMs + 60000), 90000);
       });
     });
-
-    test('mediaKey matches mediaKeyFor', () {
-      expect(fullState.mediaKey, PlaybackState.mediaKeyFor(ratingKey: '12345', serverId: 'srv-1'));
-    });
   });
 
   group('PeerStatus', () {

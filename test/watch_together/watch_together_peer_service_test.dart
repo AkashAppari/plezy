@@ -8,6 +8,21 @@ import 'package:plezy/watch_together/models/sync_message.dart';
 
 typedef _MessageHandler = FutureOr<void> Function(int connection, WebSocket socket, Map<String, dynamic> message);
 
+Future<T> _withShortenedTimer<T>({
+  required Duration original,
+  required Duration replacement,
+  required Future<T> Function() body,
+}) {
+  return runZoned(
+    body,
+    zoneSpecification: ZoneSpecification(
+      createTimer: (self, parent, zone, duration, callback) {
+        return parent.createTimer(zone, duration == original ? replacement : duration, callback);
+      },
+    ),
+  );
+}
+
 class _RelayServer {
   _RelayServer._(this._server, this._handler);
 
@@ -147,7 +162,11 @@ void main() {
       reconnected.complete();
     };
 
-    await service.createSession(sessionId: 'room2');
+    await _withShortenedTimer(
+      original: const Duration(seconds: 2),
+      replacement: const Duration(milliseconds: 10),
+      body: () => service.createSession(sessionId: 'room2'),
+    );
     await relay.sockets.single.close();
     await reconnected.future.timeout(const Duration(seconds: 6));
 
@@ -167,7 +186,11 @@ void main() {
     final timeoutService = serviceFor(timeoutRelay);
 
     await expectLater(
-      timeoutService.createSession(sessionId: 'slow1'),
+      _withShortenedTimer(
+        original: const Duration(seconds: 10),
+        replacement: const Duration(milliseconds: 10),
+        body: () => timeoutService.createSession(sessionId: 'slow1'),
+      ),
       throwsA(
         isA<PeerError>()
             .having((error) => error.type, 'type', PeerErrorType.timeout)

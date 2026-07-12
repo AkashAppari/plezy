@@ -1594,25 +1594,12 @@ void main() {
   });
 
   group('DownloadProvider — dispose hygiene', () {
-    test('dispose cancels stream subscriptions and is safe to call once', () async {
-      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
-      await p.ensureInitialized();
-      expect(p.dispose, returnsNormally);
-    });
-
     test('isDisposed flips from false to true on dispose', () async {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
       expect(p.isDisposed, isFalse);
       p.dispose();
       expect(p.isDisposed, isTrue);
-    });
-  });
-
-  group('DownloadProvider — DownloadFilter enum', () {
-    test('DownloadFilter has all/unwatched values', () {
-      expect(DownloadFilter.values, contains(DownloadFilter.all));
-      expect(DownloadFilter.values, contains(DownloadFilter.unwatched));
     });
   });
 }

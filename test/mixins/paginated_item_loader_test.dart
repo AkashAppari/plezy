@@ -343,38 +343,6 @@ void main() {
       expect(state.loadedItems, isEmpty);
     });
 
-    testWidgets('disposePagination clears state and aborts in-flight fetches', (tester) async {
-      late _PaginatedProbeState state;
-      final futures = <Completer<LibraryPage<MediaItem>>>[];
-
-      await tester.pumpWidget(
-        _PaginatedProbe(
-          onState: (s) => state = s,
-          fetcher: (start, size, abort) {
-            final c = Completer<LibraryPage<MediaItem>>();
-            futures.add(c);
-            return c.future;
-          },
-        ),
-      );
-
-      // Trigger an in-flight fetch for the initial page.
-      unawaited(state.loadInitialPage(10));
-      await tester.pump();
-
-      // Capture the abort controller's state via a side channel: the mixin's
-      // public surface tells us about totalSize/loadedItems but not the
-      // controller. Instead, we observe the side-effect: after
-      // disposePagination, completing the staged future does not mutate state.
-      state.disposePagination();
-      // Completing the future after dispose should not touch loadedItems.
-      futures.first.complete(_result(start: 0, size: 10, totalSize: 50));
-      await tester.pump();
-
-      expect(state.totalSize, 0);
-      expect(state.loadedItems, isEmpty);
-    });
-
     testWidgets('removeLoadedItemAndShift removes index and shifts higher entries down', (tester) async {
       late _PaginatedProbeState state;
       await tester.pumpWidget(

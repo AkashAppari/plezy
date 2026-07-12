@@ -2,18 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/utils/external_ids.dart';
 
 void main() {
-  group('ExternalIds.intersects with Plex Guid arrays', () {
-    test('verifies a raw Plex Guid array against target ids', () {
-      final candidate = ExternalIds.fromGuids(const [
-        {'id': 'imdb://tt15398776'},
-        {'id': 'tmdb://872585'},
-        {'id': 'tvdb://287533'},
-      ]);
-      expect(const ExternalIds(tmdb: 872585).intersects(candidate), isTrue);
-      expect(const ExternalIds(imdb: 'tt0000001').intersects(candidate), isFalse);
-    });
-  });
-
   group('ExternalIds.intersects', () {
     test('matches when any shared id form is equal', () {
       const trakt = ExternalIds(imdb: 'tt0133093', tmdb: 603);

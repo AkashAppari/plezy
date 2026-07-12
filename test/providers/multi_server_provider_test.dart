@@ -30,13 +30,6 @@ void main() {
       p.dispose();
     });
 
-    test('exposes the injected manager and aggregation service', () {
-      final p = MultiServerProvider(manager, aggregation);
-      expect(identical(p.serverManager, manager), isTrue);
-      expect(identical(p.aggregationService, aggregation), isTrue);
-      p.dispose();
-    });
-
     test('isServerOnline / getClientForServer return defaults for unknown ids', () {
       final p = MultiServerProvider(manager, aggregation);
       expect(p.isServerOnline(ServerId('nope')), isFalse);

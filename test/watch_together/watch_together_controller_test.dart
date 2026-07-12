@@ -209,14 +209,14 @@ void main() {
     });
   });
 
-  test('clock sync runs over the relay and converges', () {
+  test('guest controller starts clock-sync pings automatically', () {
     fakeAsync((async) {
       final room = _Room(async);
-      // The guest's clock-sync burst pings the host; pongs come back with the
-      // shared fake clock → offset 0.
+      // The guest's clock-sync burst starts immediately and sends pings
+      // through its relay-backed peer service.
       async.elapse(const Duration(seconds: 2));
-      final pongs = room.guestService.outgoingLog.where((m) => m.type == SyncMessageType.ping);
-      expect(pongs, isNotEmpty);
+      final pings = room.guestService.outgoingLog.where((m) => m.type == SyncMessageType.ping);
+      expect(pings, isNotEmpty);
       room.dispose();
     });
   });

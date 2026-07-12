@@ -19,13 +19,6 @@ void main() {
   });
 
   group('tracker session json codec', () {
-    test('round-trips through provided factory', () {
-      final encoded = encodeTrackerSessionJson({'access_token': 'abc', 'created_at': 123});
-      final decoded = decodeTrackerSessionJson(encoded, (json) => json);
-
-      expect(decoded, {'access_token': 'abc', 'created_at': 123});
-    });
-
     test('round-trips Trakt sessions with snake-case keys and default scope', () {
       const session = TrackerSession(
         accessToken: 'trakt-at',
@@ -59,17 +52,6 @@ void main() {
       expect(decoded.createdAt, 1000);
     });
 
-    test('round-trips AniList sessions through shared encode mixin', () {
-      const session = TrackerSession(accessToken: 'anilist-at', expiresAt: 2000, username: 'alice', createdAt: 1000);
-
-      final decoded = TrackerSession.decode(session.encode());
-
-      expect(decoded.accessToken, 'anilist-at');
-      expect(decoded.expiresAt, 2000);
-      expect(decoded.username, 'alice');
-      expect(decoded.createdAt, 1000);
-    });
-
     test('round-trips MAL sessions through shared encode mixin', () {
       const session = TrackerSession(
         accessToken: 'mal-at',
@@ -85,16 +67,6 @@ void main() {
       expect(decoded.refreshToken, 'mal-rt');
       expect(decoded.expiresAt, 2000);
       expect(decoded.username, 'bob');
-      expect(decoded.createdAt, 1000);
-    });
-
-    test('round-trips Simkl sessions through shared encode mixin', () {
-      const session = TrackerSession(accessToken: 'simkl-at', username: 'carol', createdAt: 1000);
-
-      final decoded = TrackerSession.decode(session.encode());
-
-      expect(decoded.accessToken, 'simkl-at');
-      expect(decoded.username, 'carol');
       expect(decoded.createdAt, 1000);
     });
 

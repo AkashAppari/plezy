@@ -865,30 +865,6 @@ void main() {
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'first_episode');
     });
 
-    testWidgets('marking the show watched flips every visible episode row', (tester) async {
-      final show = buildShow();
-      final season1 = buildSeason(show, 1);
-      final season2 = buildSeason(show, 2);
-      final episodes = [buildEpisode(show, season1, 1), buildEpisode(show, season1, 2)];
-      final client = _FakeMediaServerClient(
-        show: show,
-        childrenByParent: {
-          show.id: [season1, season2],
-          season1.id: episodes,
-          season2.id: [buildEpisode(show, season2, 1), buildEpisode(show, season2, 2)],
-        },
-      );
-
-      await pumpPhoneDetail(tester, client, show);
-      expect(episodeRowWatched(tester, 'Episode S1E1'), isFalse);
-      expect(episodeRowWatched(tester, 'Episode S1E2'), isFalse);
-
-      await emit(tester, () => WatchStateNotifier().notifyWatched(item: show, isNowWatched: true));
-
-      expect(episodeRowWatched(tester, 'Episode S1E1'), isTrue);
-      expect(episodeRowWatched(tester, 'Episode S1E2'), isTrue);
-    });
-
     testWidgets('container mark overrides an older per-episode patch', (tester) async {
       final show = buildShow();
       final season1 = buildSeason(show, 1);

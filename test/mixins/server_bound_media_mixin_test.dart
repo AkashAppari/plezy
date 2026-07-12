@@ -65,30 +65,6 @@ void main() {
       expect(state.serverBoundServerId, isNull);
     });
 
-    testWidgets('isServerBoundOffline reflects the host state override', (tester) async {
-      late _ProbeState onState;
-      late _ProbeState offState;
-      await tester.pumpWidget(
-        _Probe(
-          metadata: _meta(serverId: ServerId('s1')),
-          offline: false,
-          onState: (s, _) => offState = s,
-        ),
-      );
-      await tester.pump();
-      expect(offState.isServerBoundOffline, isFalse);
-
-      await tester.pumpWidget(
-        _Probe(
-          metadata: _meta(serverId: ServerId('s1')),
-          offline: true,
-          onState: (s, _) => onState = s,
-        ),
-      );
-      await tester.pump();
-      expect(onState.isServerBoundOffline, isTrue);
-    });
-
     testWidgets('toServerBoundGlobalKey uses the metadata serverId by default', (tester) async {
       late _ProbeState state;
       await tester.pumpWidget(

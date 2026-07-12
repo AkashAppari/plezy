@@ -88,11 +88,6 @@ void main() {
   });
 
   group('CompanionRemoteProvider — dispose hygiene', () {
-    test('dispose runs cleanly with no peer service or subscriptions', () {
-      final p = CompanionRemoteProvider();
-      expect(p.dispose, returnsNormally);
-    });
-
     test('cancelReconnect on a fresh provider does not throw', () {
       final p = CompanionRemoteProvider();
       // No timer, no session — copyWith on null _session is a no-op so
@@ -131,17 +126,6 @@ void main() {
       final p = CompanionRemoteProvider();
       await expectLater(
         () => p.connectToManualHost('192.0.2.1:9999'),
-        throwsA(
-          isA<PeerError>().having((error) => error.message, 'message', t.companionRemote.pairing.cryptoInitFailed),
-        ),
-      );
-      p.dispose();
-    });
-
-    test('connectToManualHost rejects empty host strings via localized crypto guard', () async {
-      final p = CompanionRemoteProvider();
-      await expectLater(
-        () => p.connectToManualHost(''),
         throwsA(
           isA<PeerError>().having((error) => error.message, 'message', t.companionRemote.pairing.cryptoInitFailed),
         ),

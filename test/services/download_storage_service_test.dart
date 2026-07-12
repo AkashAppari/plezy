@@ -33,22 +33,16 @@ void main() {
     }
   });
 
-  // ============================================================
-  // Singleton + reset
-  // ============================================================
-
-  group('singleton', () {
-    test('instance returns same object across calls', () {
-      final a = DownloadStorageService.instance;
-      final b = DownloadStorageService.instance;
-      expect(identical(a, b), isTrue);
-    });
-
-    test('resetForTesting yields a fresh instance', () {
+  group('singleton lifecycle', () {
+    test('reacquiring the instance preserves initialized state', () async {
+      final settings = await SettingsService.getInstance();
       final first = DownloadStorageService.instance;
-      DownloadStorageService.resetForTesting();
+      await first.initialize(settings);
+
       final second = DownloadStorageService.instance;
-      expect(identical(first, second), isFalse);
+      expect(identical(first, second), isTrue);
+      expect(second.artworkDirectoryPath, isNotNull);
+      expect(second.artworkDirectoryPath, first.artworkDirectoryPath);
     });
   });
 
@@ -273,15 +267,6 @@ void main() {
       // base dir.
       const uri = '/Volumes/External/Movies/x.mkv';
       expect(await dss.toRelativePath(uri), uri);
-    });
-
-    test('returns the input unchanged when not under the base dir', () async {
-      final settings = await SettingsService.getInstance();
-      final dss = DownloadStorageService.instance;
-      await dss.initialize(settings);
-
-      const foreign = '/some/other/place/file.mkv';
-      expect(await dss.toRelativePath(foreign), foreign);
     });
 
     test('toAbsolutePath joins relative paths against the base dir', () async {

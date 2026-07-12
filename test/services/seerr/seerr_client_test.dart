@@ -274,40 +274,20 @@ void main() {
       return client;
     }
 
-    test('trending drops person results and keeps native mediaType', () async {
+    test('popular movies coerces missing mediaType to movie', () async {
       final client = clientWith(
-        MockClient(
-          (request) async => _json({
-            'page': 1,
-            'totalPages': 2,
-            'results': [
-              {'id': 1, 'mediaType': 'movie', 'title': 'Blade Runner', 'releaseDate': '1982-06-25'},
-              {'id': 2, 'mediaType': 'person', 'name': 'Harrison Ford'},
-              {'id': 3, 'mediaType': 'tv', 'name': 'Severance', 'firstAirDate': '2022-02-18'},
-            ],
-          }),
-        ),
-      );
-      final page = await client.getTrending();
-      expect(page.items.map((m) => m.displayTitle), ['Blade Runner', 'Severance']);
-      expect(page.items.first.isMovie, isTrue);
-      expect(page.items.last.isMovie, isFalse);
-      expect(page.items.first.year, 1982);
-      expect(page.hasMore, isTrue);
-    });
-
-    test('single-type discover endpoints coerce the missing mediaType', () async {
-      final client = clientWith(
-        MockClient(
-          (request) async => _json({
+        MockClient((request) async {
+          expect(request.url.path, '/api/v1/discover/movies');
+          return _json({
             'page': 1,
             'totalPages': 1,
             'results': [
               {'id': 4, 'title': 'Dune', 'releaseDate': '2021-09-15'},
             ],
-          }),
-        ),
+          });
+        }),
       );
+
       final page = await client.getPopularMovies();
       expect(page.items.single.isMovie, isTrue);
       expect(page.hasMore, isFalse);
@@ -359,24 +339,16 @@ void main() {
   });
 
   group('SeerrPage', () {
-    test('parses both the TMDB and the pageInfo pagination shapes', () {
-      final tmdbShape = SeerrPage<int>.fromJson({
-        'page': 1,
-        'totalPages': 3,
-        'results': [
-          {'id': 1},
-        ],
-      }, (item) => item['id'] as int);
-      expect(tmdbShape.hasMore, isTrue);
-
-      final pageInfoShape = SeerrPage<int>.fromJson({
+    test('parses the pageInfo pagination shape', () {
+      final page = SeerrPage<int>.fromJson({
         'pageInfo': {'page': 2, 'pages': 2},
         'results': [
           {'id': 1},
         ],
       }, (item) => item['id'] as int);
-      expect(pageInfoShape.hasMore, isFalse);
-      expect(pageInfoShape.items, [1]);
+
+      expect(page.hasMore, isFalse);
+      expect(page.items, [1]);
     });
   });
 

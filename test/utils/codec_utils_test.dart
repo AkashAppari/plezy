@@ -40,21 +40,6 @@ void main() {
       expect(CodecUtils.getSubtitleExtension('dvb_subtitle'), 'sub');
     });
 
-    test('every image subtitle codec maps to a non-srt extension', () {
-      for (final codec in [
-        'pgs',
-        'pgssub',
-        'hdmv_pgs_subtitle',
-        'dvd_subtitle',
-        'dvdsub',
-        'vobsub',
-        'dvb_sub',
-        'dvb_subtitle',
-      ]) {
-        expect(CodecUtils.getSubtitleExtension(codec), isNot('srt'), reason: codec);
-      }
-    });
-
     test('defaults to srt for unknown codec', () {
       expect(CodecUtils.getSubtitleExtension('weirdcodec'), 'srt');
       expect(CodecUtils.getSubtitleExtension(''), 'srt');

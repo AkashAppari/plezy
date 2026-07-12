@@ -15,7 +15,6 @@ import androidx.media3.extractor.mkv.MatroskaExtractor
 import java.io.EOFException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -188,16 +187,6 @@ class LatmMatroskaExtractorTest {
     assertFalse(isLoasAcmTrack("A_MS/ACM", null))
     assertFalse(isLoasAcmTrack("A_MS/ACM", byteArrayOf(0x02)))
     assertFalse(isLoasAcmTrack(null, loas))
-  }
-
-  @Test
-  fun formatIsEmittedBeforeFirstSample() {
-    val output = extractFixture()
-    val track = output.tracks.values.first()
-    assertNotNull(track.formats.firstOrNull())
-    // LatmReader emits the format from the first StreamMuxConfig, which arrives
-    // with the first LOAS frame — before any sample metadata is committed.
-    assertTrue(track.samples.isNotEmpty())
   }
 
   @Test
