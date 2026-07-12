@@ -12,6 +12,30 @@ import '../utils/platform_detector.dart';
 import '../utils/media_server_http_client.dart';
 import 'settings_service.dart';
 
+const Duration _defaultPosterCacheTtl = Duration(hours: 3);
+const Duration _maxPosterCacheTtl = Duration(days: 365);
+
+DateTime posterCacheExpiryFromResponse(Object? responseData, {required DateTime receivedAt}) {
+  final expiresIn = switch (responseData) {
+    {'expiresIn': final int seconds} => seconds,
+    _ => null,
+  };
+  if (expiresIn == null) {
+    return receivedAt.add(_defaultPosterCacheTtl);
+  }
+  if (expiresIn <= 0) {
+    return receivedAt;
+  }
+  if (expiresIn > _maxPosterCacheTtl.inSeconds) {
+    return receivedAt.add(_defaultPosterCacheTtl);
+  }
+  try {
+    return receivedAt.add(Duration(seconds: expiresIn));
+  } on RangeError {
+    return receivedAt.add(_defaultPosterCacheTtl);
+  }
+}
+
 /// Cached poster URL with expiry timestamp.
 class _CachedUrl {
   final String url;
@@ -29,7 +53,6 @@ class _CachedUrl {
 class DiscordRPCService {
   static const String _applicationId = '1453773470306402439';
   static const String _posterUploadUrl = 'https://ice.plezy.app/posters';
-  static const Duration _posterCacheTtl = Duration(hours: 3);
   static const int _maxPosterUploadBytes = 5 * 1024 * 1024;
 
   /// Cache of thumbnail paths to hosted poster URLs. Keyed by
@@ -320,14 +343,21 @@ class DiscordRPCService {
         timeout: const Duration(seconds: 15),
       );
 
-      final uploadedUrl = switch (uploadResponse.data) {
+      final responseData = uploadResponse.data;
+      final uploadedUrl = switch (responseData) {
         {'url': final String url} when uploadResponse.statusCode >= 200 && uploadResponse.statusCode < 300 => url,
         _ => null,
       };
       final hostedUrl = _absolutePosterUrl(uploadedUrl);
       if (hostedUrl != null) {
-        _posterUrlCache[cacheKey] = _CachedUrl(hostedUrl, DateTime.now().add(_posterCacheTtl));
-        appLogger.d('Uploaded and cached thumbnail: $hostedUrl');
+        final receivedAt = DateTime.now();
+        final expiresAt = posterCacheExpiryFromResponse(responseData, receivedAt: receivedAt);
+        if (expiresAt.isAfter(receivedAt)) {
+          _posterUrlCache[cacheKey] = _CachedUrl(hostedUrl, expiresAt);
+          appLogger.d('Uploaded and cached thumbnail until $expiresAt: $hostedUrl');
+        } else {
+          appLogger.d('Uploaded thumbnail without caching expired URL: $hostedUrl');
+        }
         return hostedUrl;
       }
     } catch (e) {

@@ -8,16 +8,18 @@ if [[ "${1:-}" == "--check" ]]; then
   shift
 fi
 
+python3 scripts/generate_relay_protocol.py
 dart run slang
 dart run build_runner build --delete-conflicting-outputs "$@"
 
 if $check; then
   generated_changes="$({
-    git diff --name-only -- lib
+    git diff --name-only -- lib server/relay_protocol_gen.go
     git ls-files --others --exclude-standard -- \
       ':(glob)lib/**/*.g.dart' \
-      ':(glob)lib/**/*.freezed.dart'
-  } | grep -E '\.(g|freezed)\.dart$' || true)"
+      ':(glob)lib/**/*.freezed.dart' \
+      server/relay_protocol_gen.go
+  } | grep -E '(\.(g|freezed)\.dart|relay_protocol_gen\.go)$' || true)"
 
   if [[ -n "$generated_changes" ]]; then
     echo "Generated files are out of date:" >&2

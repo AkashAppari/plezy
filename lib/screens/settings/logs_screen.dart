@@ -24,6 +24,38 @@ import '../../utils/snackbar_helper.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/ios_status_bar_tap_scroll_to_top.dart';
 
+/// Relay `/logs` accepts 1 MiB. The in-memory buffer intentionally remains
+/// larger for local viewing and copying; uploads retain the device header and
+/// newest log lines within this transport contract.
+const int maxLogUploadBytes = 1 * 1024 * 1024;
+
+String constrainLogUploadPayload({required String header, required String logs, int maxBytes = maxLogUploadBytes}) {
+  if (maxBytes <= 0) return '';
+
+  final headerBytes = utf8.encode(header);
+  if (headerBytes.length >= maxBytes) {
+    var end = maxBytes;
+    while (end > 0 && end < headerBytes.length && (headerBytes[end] & 0xC0) == 0x80) {
+      end--;
+    }
+    return utf8.decode(headerBytes.sublist(0, end));
+  }
+
+  final logBytes = utf8.encode(logs);
+  final availableLogBytes = maxBytes - headerBytes.length;
+  if (logBytes.length <= availableLogBytes) return '$header$logs';
+
+  var start = logBytes.length - availableLogBytes;
+  while (start < logBytes.length && (logBytes[start] & 0xC0) == 0x80) {
+    start++;
+  }
+  final nextLine = logBytes.indexOf(0x0A, start);
+  if (nextLine >= 0 && nextLine + 1 < logBytes.length) {
+    start = nextLine + 1;
+  }
+  return header + utf8.decode(logBytes.sublist(start));
+}
+
 class LogsScreen extends StatefulWidget {
   const LogsScreen({super.key});
 
@@ -114,28 +146,28 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
     showSuccessSnackBar(context, t.messages.logsCleared);
   }
 
-  String _formatAllLogs() {
-    final buffer = StringBuffer();
-    if (_deviceInfo.isNotEmpty) {
-      buffer.writeln(_deviceInfo);
-      buffer.writeln('---');
-    }
-    bool isFirst = true;
+  String _formatAllLogs({int? maxBytes}) {
+    final header = _deviceInfo.isEmpty ? '' : '$_deviceInfo\n---\n';
+    final logs = StringBuffer();
+    var isFirst = true;
     for (final log in _logs.reversed) {
       if (!isFirst) {
-        buffer.write('\n');
+        logs.write('\n');
       }
       isFirst = false;
 
-      buffer.write('[${_formatTime(log.timestamp)}] [${log.level.name.toUpperCase()}] ${log.message}');
+      logs.write('[${_formatTime(log.timestamp)}] [${log.level.name.toUpperCase()}] ${log.message}');
       if (log.error != null) {
-        buffer.write('\nError: ${log.error}');
+        logs.write('\nError: ${log.error}');
       }
       if (log.stackTrace != null) {
-        buffer.write('\nStack trace:\n${log.stackTrace}');
+        logs.write('\nStack trace:\n${log.stackTrace}');
       }
     }
-    return buffer.toString();
+    final logText = logs.toString();
+    return maxBytes == null
+        ? '$header$logText'
+        : constrainLogUploadPayload(header: header, logs: logText, maxBytes: maxBytes);
   }
 
   void _copyAllLogs() {
@@ -144,7 +176,7 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
   }
 
   Future<void> _uploadLogs() async {
-    final logText = _formatAllLogs();
+    final logText = _formatAllLogs(maxBytes: maxLogUploadBytes);
 
     showLoadingDialog(context);
 

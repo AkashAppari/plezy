@@ -11,6 +11,7 @@ import '../../services/base_peer_service.dart';
 import '../../utils/app_logger.dart';
 import '../models/sync_message.dart';
 import '../primitives.dart';
+import 'relay_protocol.g.dart';
 
 // Re-export so existing callers that import from here keep working.
 export '../../services/base_peer_service.dart' show PeerError, PeerErrorType;
@@ -185,7 +186,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
       final type = msg['type'] as String?;
 
       switch (type) {
-        case 'created':
+        case RelayProtocol.created:
           appLogger.d('WatchTogether: Room created: ${msg['sessionId']}');
           _safeAdd(_connectionStateController, true);
           if (_setupCompleter case final completer? when !completer.isCompleted) {
@@ -193,7 +194,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
             _setupCompleter = null;
           }
 
-        case 'joined':
+        case RelayProtocol.joined:
           final peers = (msg['peers'] as List<dynamic>?)?.cast<String>() ?? [];
           appLogger.d('WatchTogether: Joined room ${msg['sessionId']} with peers: $peers');
           for (final peerId in peers) {
@@ -206,14 +207,14 @@ class WatchTogetherPeerService with KeepaliveMixin {
             _setupCompleter = null;
           }
 
-        case 'peerJoined':
+        case RelayProtocol.peerJoined:
           final peerId = msg['peerId'] as String;
           appLogger.d('WatchTogether: Peer joined: $peerId');
           _connectedPeers.add(peerId);
           _safeAdd(_peerConnectedController, peerId);
           _safeAdd(_connectionStateController, true);
 
-        case 'peerLeft':
+        case RelayProtocol.peerLeft:
           final peerId = msg['peerId'] as String;
           appLogger.d('WatchTogether: Peer left: $peerId');
           _connectedPeers.remove(peerId);
@@ -222,7 +223,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
             _safeAdd(_connectionStateController, false);
           }
 
-        case 'message':
+        case RelayProtocol.message:
           final payload = msg['payload'];
           final serverFrom = msg['from'] as String?;
           if (payload != null) {
@@ -240,7 +241,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
             }
           }
 
-        case 'error':
+        case RelayProtocol.error:
           final code = msg['code'] as String? ?? 'unknown';
           final message = msg['message'] as String? ?? t.common.unknown;
           appLogger.e('WatchTogether: Server error: $code - $message');
@@ -251,7 +252,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
             _setupCompleter = null;
           }
 
-        case 'pong':
+        case RelayProtocol.pong:
           // Handled by resetPongTimer() already
           break;
 
@@ -264,7 +265,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
   }
 
   @override
-  void sendPing() => _sendRaw({'type': 'ping'});
+  void sendPing() => _sendRaw({'type': RelayProtocol.ping});
 
   @override
   void onPongTimeout() {
@@ -329,14 +330,14 @@ class WatchTogetherPeerService with KeepaliveMixin {
         // Always try join first — the room may still have peers (e.g. host
         // reconnecting while guests remain). Fall back to create only if
         // the room no longer exists and we were the host.
-        final completer = await _connectAndAnnounce('join');
+        final completer = await _connectAndAnnounce(RelayProtocol.join);
 
         try {
           await completer.future.namedTimeout(const Duration(seconds: 10), operation: 'WatchTogether reconnect');
         } on PeerError catch (e) {
-          if (_isHost && e.serverCode == 'room_not_found') {
+          if (_isHost && e.serverCode == RelayProtocol.roomNotFoundCode) {
             appLogger.d('WatchTogether: Room gone, re-creating as host');
-            final createCompleter = _announce('create');
+            final createCompleter = _announce(RelayProtocol.create);
             await createCompleter.future.namedTimeout(
               const Duration(seconds: 10),
               operation: 'WatchTogether reconnect create',
@@ -369,13 +370,21 @@ class WatchTogetherPeerService with KeepaliveMixin {
       await disconnect();
     }
 
+    final resolvedSessionId = sessionId?.toUpperCase() ?? _generateSessionId();
+    if (!RelayProtocol.isValidSessionId(resolvedSessionId)) {
+      throw ArgumentError.value(
+        sessionId,
+        'sessionId',
+        'Must be 1–${RelayProtocol.maxSessionIdLength} letters, digits, _ or -',
+      );
+    }
     _isHost = true;
-    _sessionId = sessionId?.toUpperCase() ?? _generateSessionId();
-    _myPeerId = watchTogetherHostPeerId(_sessionId!);
+    _sessionId = resolvedSessionId;
+    _myPeerId = watchTogetherHostPeerId(resolvedSessionId);
     _reconnectAttempts = 0;
 
     try {
-      final completer = await _connectAndAnnounce('create');
+      final completer = await _connectAndAnnounce(RelayProtocol.create);
 
       await completer.future.timeout(
         const Duration(seconds: 10),
@@ -399,13 +408,21 @@ class WatchTogetherPeerService with KeepaliveMixin {
       await disconnect();
     }
 
+    final resolvedSessionId = sessionId.toUpperCase();
+    if (!RelayProtocol.isValidSessionId(resolvedSessionId)) {
+      throw ArgumentError.value(
+        sessionId,
+        'sessionId',
+        'Must be 1–${RelayProtocol.maxSessionIdLength} letters, digits, _ or -',
+      );
+    }
     _isHost = false;
-    _sessionId = sessionId.toUpperCase();
+    _sessionId = resolvedSessionId;
     _myPeerId = const Uuid().v4();
     _reconnectAttempts = 0;
 
     try {
-      final completer = await _connectAndAnnounce('join');
+      final completer = await _connectAndAnnounce(RelayProtocol.join);
 
       await completer.future.timeout(
         const Duration(seconds: 10),
@@ -425,13 +442,16 @@ class WatchTogetherPeerService with KeepaliveMixin {
   /// Broadcast a message to all connected peers
   void broadcast(SyncMessage message) {
     final payload = message.toJson();
-    _sendRaw({'type': 'broadcast', 'payload': payload});
+    _sendRaw({'type': RelayProtocol.broadcast, 'payload': payload});
   }
 
   /// Send a message to a specific peer
   void sendTo(String peerId, SyncMessage message) {
+    if (!RelayProtocol.isValidPeerId(peerId)) {
+      throw ArgumentError.value(peerId, 'peerId', 'Must be 1–${RelayProtocol.maxPeerIdLength} letters, digits, _ or -');
+    }
     final payload = message.toJson();
-    _sendRaw({'type': 'sendTo', 'to': peerId, 'payload': payload});
+    _sendRaw({'type': RelayProtocol.sendTo, 'to': peerId, 'payload': payload});
   }
 
   /// Disconnect from all peers and close the session

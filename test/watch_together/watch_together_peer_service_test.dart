@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/watch_together/services/watch_together_peer_service.dart';
+import 'package:plezy/watch_together/models/sync_message.dart';
 
 typedef _MessageHandler = FutureOr<void> Function(int connection, WebSocket socket, Map<String, dynamic> message);
 
@@ -70,6 +71,18 @@ void main() {
       await relay.close();
     }
     relays.clear();
+  });
+
+  test('invalid relay identifiers fail before network access', () async {
+    final service = WatchTogetherPeerService();
+    services.add(service);
+
+    await expectLater(service.createSession(sessionId: 'bad room'), throwsArgumentError);
+    await expectLater(service.joinSession('bad/room'), throwsArgumentError);
+    expect(
+      () => service.sendTo('bad peer', const SyncMessage(type: SyncMessageType.requestState, timestamp: 0)),
+      throwsArgumentError,
+    );
   });
 
   test('host connects, listens, and announces create with the existing wire format', () async {
