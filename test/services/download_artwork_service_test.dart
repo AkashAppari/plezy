@@ -10,7 +10,7 @@ import 'package:path_provider_platform_interface/path_provider_platform_interfac
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/download_resolution.dart';
 import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_item.dart';
+
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/download_artwork_helpers.dart';
 import 'package:plezy/services/download_artwork_service.dart';

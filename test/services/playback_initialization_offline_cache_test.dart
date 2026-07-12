@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_item.dart';
+
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/download_models.dart';

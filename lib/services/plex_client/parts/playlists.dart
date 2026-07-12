@@ -5,15 +5,20 @@ mixin _PlexPlaylistMethods on MediaServerCacheMixin {
   static const int _defaultPlaylistContainerSize = 100;
 
   FailoverHttpClient get _http;
+  @override
   ServerId get serverId;
+  @override
   String? get serverName;
 
   Future<MediaServerResponse> _getWithFailover(
     String path, {
     Map<String, dynamic>? queryParameters,
+    // ignore: unused_element_parameter
     Map<String, String>? headers,
+    // ignore: unused_element_parameter
     Duration? timeout,
     AbortController? abort,
+    // ignore: unused_element_parameter
     bool allowEndpointFailover = true,
   });
 
@@ -161,8 +166,8 @@ mixin _PlexPlaylistMethods on MediaServerCacheMixin {
       'type': type,
       'title': title,
       'smart': '0',
-      if (uri != null) 'uri': uri,
-      if (playQueueId != null) 'playQueueID': playQueueId.toString(),
+      'uri': ?uri,
+      'playQueueID': ?playQueueId?.toString(),
     };
     final response = await _http.post('/playlists', queryParameters: queryParameters);
     throwIfHttpError(response);

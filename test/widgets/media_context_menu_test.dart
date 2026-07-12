@@ -49,11 +49,7 @@ void main() {
       final profile = Profile.virtualPlexHome(connectionId: 'plex-1', homeUser: _homeUser(admin: false));
 
       expect(
-        isAdminActionAllowedFortestMediaItem(
-          isOwnerOrAdmin: true,
-          itemBackend: MediaBackend.plex,
-          activeProfile: profile,
-        ),
+        isAdminActionAllowedForMediaItem(isOwnerOrAdmin: true, itemBackend: MediaBackend.plex, activeProfile: profile),
         isFalse,
       );
     });
@@ -62,7 +58,7 @@ void main() {
       final profile = Profile.virtualPlexHome(connectionId: 'plex-1', homeUser: _homeUser(admin: false));
 
       expect(
-        isAdminActionAllowedFortestMediaItem(
+        isAdminActionAllowedForMediaItem(
           isOwnerOrAdmin: true,
           itemBackend: MediaBackend.jellyfin,
           activeProfile: profile,
@@ -75,11 +71,7 @@ void main() {
       final profile = Profile.virtualPlexHome(connectionId: 'plex-1', homeUser: _homeUser(admin: true));
 
       expect(
-        isAdminActionAllowedFortestMediaItem(
-          isOwnerOrAdmin: true,
-          itemBackend: MediaBackend.plex,
-          activeProfile: profile,
-        ),
+        isAdminActionAllowedForMediaItem(isOwnerOrAdmin: true, itemBackend: MediaBackend.plex, activeProfile: profile),
         isTrue,
       );
     });

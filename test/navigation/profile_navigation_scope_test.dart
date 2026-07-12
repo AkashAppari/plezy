@@ -18,11 +18,12 @@ void main() {
     );
 
     registry.attachNavigator(firstKey);
-    firstKey.currentState!.push(MaterialPageRoute<void>(builder: (_) => const Text('second')));
+    final pushedRoute = firstKey.currentState!.push(MaterialPageRoute<void>(builder: (_) => const Text('second')));
     await tester.pumpAndSettle();
     expect(find.text('second'), findsOneWidget);
 
     expect(await registry.maybePopProfileRoute(), isTrue);
+    await pushedRoute;
     await tester.pumpAndSettle();
     expect(find.text('second'), findsNothing);
 

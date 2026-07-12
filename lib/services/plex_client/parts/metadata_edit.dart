@@ -3,14 +3,19 @@ part of '../../plex_client.dart';
 mixin _PlexMetadataEditMethods on MediaServerCacheMixin {
   FailoverHttpClient get _http;
   PlexApiCache get _cache;
+  @override
   ServerId get serverId;
 
   Future<MediaServerResponse> _getWithFailover(
     String path, {
     Map<String, dynamic>? queryParameters,
+    // ignore: unused_element_parameter
     Map<String, String>? headers,
+    // ignore: unused_element_parameter
     Duration? timeout,
+    // ignore: unused_element_parameter
     AbortController? abort,
+    // ignore: unused_element_parameter
     bool allowEndpointFailover = true,
   });
 

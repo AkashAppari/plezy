@@ -18,7 +18,6 @@ import '../providers/catalog_sources_provider.dart';
 import '../providers/explore_provider.dart';
 import '../services/catalog/catalog_source.dart';
 import '../services/settings_service.dart';
-import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
 import '../widgets/app_icon.dart';

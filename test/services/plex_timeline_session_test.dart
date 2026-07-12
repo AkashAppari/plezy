@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_item.dart';
+
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/services/playback_initialization_types.dart';

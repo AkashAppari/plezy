@@ -6,9 +6,12 @@ mixin _PlexCollectionMethods on MediaServerCacheMixin {
   Future<MediaServerResponse> _getWithFailover(
     String path, {
     Map<String, dynamic>? queryParameters,
+    // ignore: unused_element_parameter
     Map<String, String>? headers,
+    // ignore: unused_element_parameter
     Duration? timeout,
     AbortController? abort,
+    // ignore: unused_element_parameter
     bool allowEndpointFailover = true,
   });
 
@@ -18,6 +21,7 @@ mixin _PlexCollectionMethods on MediaServerCacheMixin {
   _LibraryContentResult _extractLibraryContentResult(
     MediaServerResponse response, {
     int? librarySectionID,
+    // ignore: unused_element_parameter
     String? librarySectionTitle,
     int? start,
     int? requestedSize,
@@ -34,6 +38,7 @@ mixin _PlexCollectionMethods on MediaServerCacheMixin {
 
   Future<List<PlexMetadataDto>> _fetchAllPages(
     Future<_LibraryContentResult> Function(int start, int size, AbortController? abort) fetchPage, {
+    // ignore: unused_element_parameter
     AbortController? abort,
   });
 

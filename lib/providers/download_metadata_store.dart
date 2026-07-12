@@ -5,13 +5,8 @@ part of 'download_provider.dart';
 /// orchestration; this store keeps cache hydration and watch synchronization in
 /// one lifecycle-bound component.
 class _DownloadMetadataStore extends ChangeNotifier {
-  _DownloadMetadataStore({
-    required DownloadManagerService downloadManager,
-    required AppDatabase database,
-    String? activeProfileId,
-  }) : _downloadManager = downloadManager,
-       _database = database,
-       _activeProfileId = activeProfileId {
+  _DownloadMetadataStore(this._downloadManager, this._database, {String? activeProfileId})
+    : _activeProfileId = activeProfileId {
     _watchStateSubscription = WatchStateNotifier().stream.listen(_onWatchStateChanged);
     _watchStateStore.addListener(notifyListeners);
     _watchStateStore.setActiveProfileId(activeProfileId);

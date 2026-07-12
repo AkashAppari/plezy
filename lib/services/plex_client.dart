@@ -237,6 +237,7 @@ class PlexClient
   final String? serverName;
 
   /// API response cache for offline support
+  @override
   final PlexApiCache _cache = PlexApiCache.instance;
 
   /// Expose the cache through the [MediaServerClient] interface so the shared
@@ -680,6 +681,7 @@ class PlexClient
   @override
   PlexMetadataDto _createTaggedMetadata(Map<String, dynamic> json) => _tagMetadata(PlexMetadataDto.fromJson(json));
 
+  @override
   PlexMetadataDto _createTaggedMetadataWithLibrary(
     Map<String, dynamic> json, {
     int? librarySectionID,
@@ -784,6 +786,7 @@ class PlexClient
     return fallbackPageTotal(offset: offset, itemCount: itemCount, requestedSize: requestedSize);
   }
 
+  @override
   ({List<PlexPlaylistDto> items, int totalSize}) _extractPlaylistListResult(
     MediaServerResponse response, {
     int? start,
@@ -890,6 +893,7 @@ class PlexClient
     );
   }
 
+  @override
   Map<String, dynamic> _buildPaginationParams(int? start, int? size) {
     final params = <String, dynamic>{};
     if (start != null) params['X-Plex-Container-Start'] = start;
@@ -897,6 +901,7 @@ class PlexClient
     return params;
   }
 
+  @override
   _LibraryContentResult _extractLibraryContentResult(
     MediaServerResponse response, {
     int? librarySectionID,
@@ -913,6 +918,7 @@ class PlexClient
     return _LibraryContentResult(items: items, totalSize: totalSize);
   }
 
+  @override
   Future<_LibraryContentResult> _fetchPaginatedList(
     String path, {
     int? start,
@@ -974,6 +980,7 @@ class PlexClient
 
   /// Build a proper metadata URI for adding to playlists
   /// Returns URI in format: server://{machineId}/com.plexapp.plugins.library/library/metadata/{ratingKey}
+  @override
   Future<String> buildMetadataUri(String ratingKey) async {
     // Use cached machine identifier from config if available
     final machineId = config.machineIdentifier ?? await getMachineIdentifier();
@@ -1119,6 +1126,7 @@ class PlexClient
   ///   - Non-2xx success that the server reports without an error code is
   ///     vanishingly rare for these endpoints; we still return `false` so
   ///     callers don't celebrate a non-200 silently.
+  @override
   Future<bool> _wrapBoolApiCall(Future<MediaServerResponse> Function() apiCall, String errorMessage) async {
     try {
       final response = await apiCall();
@@ -1146,15 +1154,13 @@ class PlexClient
     }
   }
 
-  /// Default cap for list-style endpoints when a caller doesn't pass a size.
-  static const int _defaultListContainerSize = 1000;
-
   /// Page size used when walking all pages of a paginated endpoint.
   static const int _fetchAllPageSize = 200;
 
   /// Iterate every page of a paginated endpoint and concatenate the results.
   /// Stops as soon as [_LibraryContentResult.totalSize] is reached or a page
   /// returns no items. Errors propagate.
+  @override
   Future<List<PlexMetadataDto>> _fetchAllPages(
     Future<_LibraryContentResult> Function(int start, int size, AbortController? abort) fetchPage, {
     AbortController? abort,

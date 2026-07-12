@@ -217,7 +217,7 @@ void main() {
     });
 
     test('preserves Plex-only fields when omitted', () {
-      const original = PlextestMediaItem(
+      const original = PlexMediaItem(
         id: 'p1',
         kind: MediaKind.movie,
         title: 'Old',
@@ -251,7 +251,7 @@ void main() {
     });
 
     test('preserves Jellyfin playlist item id when omitted', () {
-      const original = JellyfintestMediaItem(
+      const original = JellyfinMediaItem(
         id: 'j1',
         kind: MediaKind.movie,
         title: 'Old',
@@ -277,7 +277,7 @@ void main() {
 
   group('MediaItem JSON', () {
     test('round-trips Plex-only fields', () {
-      const original = PlextestMediaItem(
+      const original = PlexMediaItem(
         id: 'p1',
         kind: MediaKind.movie,
         title: 'Movie',
@@ -328,12 +328,7 @@ void main() {
     });
 
     test('round-trips Jellyfin playlist item id', () {
-      const original = JellyfintestMediaItem(
-        id: 'j1',
-        kind: MediaKind.movie,
-        title: 'Movie',
-        playlistItemId: 'entry-1',
-      );
+      const original = JellyfinMediaItem(id: 'j1', kind: MediaKind.movie, title: 'Movie', playlistItemId: 'entry-1');
 
       final json = original.toJson();
       final decoded = MediaItem.fromJson(json);

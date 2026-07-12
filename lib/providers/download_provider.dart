@@ -100,8 +100,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   DownloadProvider({required this._downloadManager, required this._database})
     : _syncRuleExecutor = SyncRuleExecutor(database: _database) {
-    _metadataStore = _DownloadMetadataStore(downloadManager: _downloadManager, database: _database)
-      ..addListener(_onMetadataStoreChanged);
+    _metadataStore = _DownloadMetadataStore(_downloadManager, _database)..addListener(_onMetadataStoreChanged);
     // Listen to progress updates from the download manager
     _progressSubscription = _downloadManager.progressStream.listen(_onProgressUpdate);
 
@@ -123,11 +122,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     required this._database,
     this._activeProfileId = 'test-profile',
   }) : _syncRuleExecutor = SyncRuleExecutor(database: _database) {
-    _metadataStore = _DownloadMetadataStore(
-      downloadManager: _downloadManager,
-      database: _database,
-      activeProfileId: _activeProfileId,
-    )..addListener(_onMetadataStoreChanged);
+    _metadataStore = _DownloadMetadataStore(_downloadManager, _database, activeProfileId: _activeProfileId)
+      ..addListener(_onMetadataStoreChanged);
     _progressSubscription = _downloadManager.progressStream.listen(_onProgressUpdate);
     _deletionProgressSubscription = _downloadManager.deletionProgressStream.listen(_onDeletionProgressUpdate);
     _initFuture = _loadProfileScopedState();

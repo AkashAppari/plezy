@@ -6,9 +6,13 @@ mixin _PlexPlayQueueMethods on MediaServerCacheMixin {
   Future<MediaServerResponse> _getWithFailover(
     String path, {
     Map<String, dynamic>? queryParameters,
+    // ignore: unused_element_parameter
     Map<String, String>? headers,
+    // ignore: unused_element_parameter
     Duration? timeout,
+    // ignore: unused_element_parameter
     AbortController? abort,
+    // ignore: unused_element_parameter
     bool allowEndpointFailover = true,
   });
 
@@ -77,9 +81,9 @@ mixin _PlexPlayQueueMethods on MediaServerCacheMixin {
         'shuffle': shuffle,
         'repeat': repeat,
         'continuous': continuous,
-        if (uri != null) 'uri': uri,
-        if (playlistID != null) 'playlistID': playlistID,
-        if (key != null) 'key': key,
+        'uri': ?uri,
+        'playlistID': ?playlistID,
+        'key': ?key,
       };
       final response = await _http.post('/playQueues', queryParameters: queryParameters);
       throwIfHttpError(response);
@@ -108,7 +112,7 @@ mixin _PlexPlayQueueMethods on MediaServerCacheMixin {
         'window': window,
         'includeBefore': includeBefore,
         'includeAfter': includeAfter,
-        if (center != null) 'center': center,
+        'center': ?center,
       };
       final response = await _getWithFailover('/playQueues/$playQueueId', queryParameters: queryParameters);
       return _parsePlayQueueResponse(

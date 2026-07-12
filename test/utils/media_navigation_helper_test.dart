@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_item.dart';
+
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/media_navigation_helper.dart';

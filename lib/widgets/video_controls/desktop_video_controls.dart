@@ -519,7 +519,6 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     }
 
     final duration = widget.player.state.duration;
-    final position = widget.player.state.position;
 
     // UP arrow - hide controls and reset seek state
     if (key == LogicalKeyboardKey.arrowUp) {

@@ -4,7 +4,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:plezy/connection/connection.dart';
+
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_server_client.dart';

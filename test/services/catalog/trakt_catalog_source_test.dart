@@ -10,7 +10,6 @@ import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/trakt_catalog_source.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
 import 'package:plezy/services/trakt/trakt_client.dart';
-import '../../test_helpers/media_items.dart';
 
 TrackerSession _session() {
   final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
@@ -106,7 +105,7 @@ void main() {
       expect(show.rating, 8.5);
       expect(page.items[0].airStatus, isNull);
 
-      final rendered = page.items[0].totestMediaItem();
+      final rendered = page.items[0].toMediaItem();
       expect(rendered.serverId, isNull);
       expect(rendered.title, 'The Matrix');
       expect(rendered.isCatalogItem, isTrue);

@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/testing.dart';
+
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/models/livetv_channel.dart';
 import 'package:plezy/services/jellyfin_client.dart';

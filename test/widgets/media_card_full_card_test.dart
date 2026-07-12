@@ -4,7 +4,7 @@ import 'package:plezy/focus/focus_glow_overlay.dart';
 import 'package:plezy/focus/focus_theme.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_item.dart';
+
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
