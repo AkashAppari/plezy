@@ -227,4 +227,31 @@ void main() {
       expect(flexibleCsvStringList(<dynamic>[]), isNull);
     });
   });
+
+  group('flexible JSON objects', () {
+    String parseId(Map<String, dynamic> json) => json['id'] as String;
+
+    test('list parser keeps valid siblings around malformed entries', () {
+      final parsed = parseFlexibleJsonList([
+        {'id': 'first'},
+        {'id': 2},
+        'not-a-map',
+        {'id': 'last'},
+      ], parseId);
+
+      expect(parsed, ['first', 'last']);
+    });
+
+    test('object parser finds the first map and contains parse failures', () {
+      expect(
+        parseFlexibleJsonObject([
+          'not-a-map',
+          {'id': 'value'},
+        ], parseId),
+        'value',
+      );
+      expect(parseFlexibleJsonObject({'id': 2}, parseId), isNull);
+      expect(parseFlexibleJsonObject(null, parseId), isNull);
+    });
+  });
 }

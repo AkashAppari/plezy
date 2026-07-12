@@ -5,6 +5,7 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/providers/watch_state_store.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
+import '../test_helpers/media_items.dart';
 
 Future<void> _emit(WatchStateEvent event) async {
   WatchStateNotifier().notify(event);
@@ -33,7 +34,7 @@ WatchStateEvent _event({
   );
 }
 
-final _episode = MediaItem(
+final _episode = testMediaItem(
   id: 'episode-1',
   backend: MediaBackend.jellyfin,
   kind: MediaKind.episode,
@@ -144,7 +145,7 @@ void main() {
 
     await _emit(_event(changeType: WatchStateChangeType.watched, isNowWatched: true, itemId: 'season-1'));
 
-    final season = MediaItem(
+    final season = testMediaItem(
       id: 'season-1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.season,

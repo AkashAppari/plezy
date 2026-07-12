@@ -21,6 +21,7 @@ import 'package:plezy/utils/watch_state_notifier.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/prefs.dart';
+import '../test_helpers/media_items.dart';
 
 // NOTE on coverage scope:
 // The actual sync-to-server path (`syncPendingItems`, `syncWatchStatesFromServer`,
@@ -93,7 +94,7 @@ class _RecordingMediaClient implements MediaServerClient {
 
   @override
   Future<MediaItem?> fetchItem(String id) async =>
-      MediaItem(id: id, backend: backend, kind: MediaKind.movie, serverId: serverId);
+      testMediaItem(id: id, backend: backend, kind: MediaKind.movie, serverId: serverId);
 
   @override
   Future<void> reportPlaybackStarted({

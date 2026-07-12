@@ -11,6 +11,7 @@ import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/track_manager.dart';
 
 import '../test_helpers/prefs.dart';
+import '../test_helpers/media_items.dart';
 
 // NOTE on coverage scope:
 // `TrackManager` orchestrates the player + Plex client + SettingsService
@@ -42,7 +43,7 @@ import '../test_helpers/prefs.dart';
 //     therefore gated on the same SettingsService dependency.
 //   - `resumeAfterSubtitleLoad` — schedules a real wall-clock fallback Timer.
 
-MediaItem _meta({String id = 'rk1'}) => MediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.movie);
+MediaItem _meta({String id = 'rk1'}) => testMediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.movie);
 
 /// Player that records calls and can be configured per-test.
 class _FakePlayer with PlayerStreamControllersMixin implements Player {

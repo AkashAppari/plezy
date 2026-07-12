@@ -340,23 +340,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
               unawaited(socket.close(4002, 'Authentication required'));
             }
           } else {
-            // Encrypted command — data is binary
-            final decrypted = await _decryptIncoming(data);
-            if (decrypted == null) return;
-
-            final json = jsonDecode(decrypted) as Map<String, dynamic>;
-            final command = RemoteCommand.fromJson(json);
-            appLogger.d('CompanionRemote: Received command: ${command.type}');
-
-            if (_shouldSendAck(command)) {
-              _sendAck(command);
-            }
-
-            _commandReceivedController.add(command);
-
-            if (command.type == RemoteCommandType.ping) {
-              _sendPong();
-            }
+            await _handleEncryptedCommand(data);
           }
         } catch (e) {
           appLogger.e('CompanionRemote: Failed to process message', error: e);
@@ -443,23 +427,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
         (data) async {
           try {
             if (_isAuthenticated) {
-              // Post-auth: all messages are encrypted binary
-              final decrypted = await _decryptIncoming(data);
-              if (decrypted == null) return;
-
-              final json = jsonDecode(decrypted) as Map<String, dynamic>;
-              final command = RemoteCommand.fromJson(json);
-              appLogger.d('CompanionRemote: Received command: ${command.type}');
-
-              if (_shouldSendAck(command)) {
-                _sendAck(command);
-              }
-
-              _commandReceivedController.add(command);
-
-              if (command.type == RemoteCommandType.ping) {
-                _sendPong();
-              }
+              await _handleEncryptedCommand(data);
             } else if (_sessionEncKey != null) {
               // Keys derived, waiting for encrypted authSuccess
               final decrypted = await _decryptIncoming(data);
@@ -781,18 +749,25 @@ class CompanionRemotePeerService with KeepaliveMixin {
 
   // ── Encrypted send/receive ──
 
-  // Serializes async sends to prevent counter interleaving
+  // Serialize cryptographic operations so implicit nonce counters cannot
+  // interleave when stream callbacks overlap.
+  Future<void>? _encryptChain;
+  Future<void>? _decryptChain;
   Future<void>? _sendChain;
 
-  Future<List<int>> _encryptOutgoing(String plaintext) async {
-    final encrypted = await RemoteAuthService.instance.encrypt(
-      _sessionEncKey!,
-      utf8.encode(plaintext),
-      isHost: _role == RemoteSessionRole.host,
-      counter: _sendCounter,
-    );
-    _sendCounter++;
-    return encrypted;
+  Future<List<int>> _encryptOutgoing(String plaintext) {
+    final result = (_encryptChain ?? Future<void>.value()).then((_) async {
+      final encrypted = await RemoteAuthService.instance.encrypt(
+        _sessionEncKey!,
+        utf8.encode(plaintext),
+        isHost: _role == RemoteSessionRole.host,
+        counter: _sendCounter,
+      );
+      _sendCounter++;
+      return encrypted;
+    });
+    _encryptChain = result.then<void>((_) {});
+    return result;
   }
 
   Future<void> _sendEncryptedToSocket(WebSocket socket, String plaintext) async {
@@ -801,15 +776,20 @@ class CompanionRemotePeerService with KeepaliveMixin {
     socket.add(encrypted);
   }
 
-  Future<String?> _decryptIncoming(dynamic data) async {
-    if (_sessionEncKey == null) return null;
+  Future<String?> _decryptIncoming(dynamic data) {
+    if (_sessionEncKey == null) return Future<String?>.value();
+    final result = (_decryptChain ?? Future<void>.value()).then((_) => _decryptIncomingNow(data));
+    _decryptChain = result.then<void>((_) {});
+    return result;
+  }
+
+  Future<String?> _decryptIncomingNow(dynamic data) async {
     try {
-      final auth = RemoteAuthService.instance;
       final bytes = data is List<int> ? data : utf8.encode(data as String);
-      final decrypted = await auth.decrypt(
+      final decrypted = await RemoteAuthService.instance.decrypt(
         bytes,
         _sessionEncKey!,
-        fromHost: _role == RemoteSessionRole.remote, // If we're remote, incoming is from host
+        fromHost: _role == RemoteSessionRole.remote,
         expectedCounter: _recvCounter,
       );
       _recvCounter++;
@@ -817,6 +797,23 @@ class CompanionRemotePeerService with KeepaliveMixin {
     } catch (e) {
       appLogger.e('CompanionRemote: Decryption failed (counter=$_recvCounter)', error: e);
       return null;
+    }
+  }
+
+  Future<void> _handleEncryptedCommand(dynamic data) async {
+    final decrypted = await _decryptIncoming(data);
+    if (decrypted == null) return;
+
+    final command = RemoteCommand.fromJson(jsonDecode(decrypted) as Map<String, dynamic>);
+    appLogger.d('CompanionRemote: Received command: ${command.type}');
+
+    if (_shouldSendAck(command)) {
+      _sendAck(command);
+    }
+    _commandReceivedController.add(command);
+
+    if (command.type == RemoteCommandType.ping) {
+      _sendPong();
     }
   }
 
@@ -894,6 +891,13 @@ class CompanionRemotePeerService with KeepaliveMixin {
 
     stopKeepalive();
 
+    // Flush commands already decoded by the overlapping stream callbacks
+    // before closing their transport, then reject any later send request.
+    await _decryptChain;
+    await _sendChain;
+    await _encryptChain;
+    _isAuthenticated = false;
+
     if (_clientSocket != null) {
       try {
         await _clientSocket!.close();
@@ -925,8 +929,9 @@ class CompanionRemotePeerService with KeepaliveMixin {
     _sessionEncKey = null;
     _sendCounter = 0;
     _recvCounter = 0;
-    _isAuthenticated = false;
     _sendChain = null;
+    _encryptChain = null;
+    _decryptChain = null;
     _failedAuthAttempts.clear();
     _authLockouts.clear();
 

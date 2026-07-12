@@ -715,6 +715,31 @@ void main() {
     expect(find.byType(Dialog), findsNothing);
   });
 
+  testWidgets('TV hardware input replaces a reversed text selection', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    final controller = TextEditingController(text: 'ab')
+      ..selection = const TextSelection(baseOffset: 2, extentOffset: 0);
+    final fieldFocusNode = FocusNode(debugLabel: 'selection_field');
+    addTearDown(controller.dispose);
+    addTearDown(fieldFocusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FocusableTextField(controller: controller, focusNode: fieldFocusNode),
+        ),
+      ),
+    );
+
+    fieldFocusNode.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyC, character: 'c');
+    await tester.pump();
+
+    expect(controller.text, 'c');
+    expect(controller.selection, const TextSelection.collapsed(offset: 1));
+  });
+
   testWidgets('TV keyboard done resolves callbacks against the latest field widget', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(null);
     await TvDetectionService.getInstance(forceTv: true);

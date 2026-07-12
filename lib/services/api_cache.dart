@@ -20,32 +20,59 @@ import '../utils/isolate_helper.dart';
 /// implement the abstract [getMetadata] / [pinForOffline] / [deleteForItem]
 /// methods so callers can dispatch via [forBackend] instead of switching on
 /// the backend type at every call site.
-abstract class ApiCache {
-  static ApiCache? _instance;
+class ApiCacheSingleton<T extends ApiCache> {
+  ApiCacheSingleton(this.backend, this.typeName);
 
-  /// Returns the most recently registered cache instance — used by callers
-  /// that don't care which backend's helpers they're hitting (e.g. plain
-  /// `get`/`put` from `JellyfinClient`). Backend-specific operations should
-  /// route through [forBackend] instead.
-  static ApiCache get instance {
-    if (_instance == null) {
-      throw StateError('ApiCache not initialized. Call initialize() on a backend cache first.');
+  final MediaBackend backend;
+  final String typeName;
+  T? _instance;
+
+  T get instance {
+    final value = _instance;
+    if (value == null) {
+      throw StateError('$typeName not initialized. Call $typeName.initialize() first.');
     }
-    return _instance!;
+    return value;
   }
 
-  /// Like [instance], but `null` before any backend cache registered —
-  /// for best-effort callers (nothing cached yet means nothing to clear).
-  static ApiCache? get maybeInstance => _instance;
+  void install(T instance) {
+    _instance = instance;
+    ApiCache.registerInstance(backend, instance);
+  }
+}
 
+/// Decodes independent cached JSON rows, dropping only the malformed row.
+Map<String, MediaItem> decodeCachedMediaRows<T>(
+  Iterable<T> rows, {
+  required String Function(T row) serializedData,
+  required MapEntry<String, MediaItem>? Function(T row, Map<String, dynamic> json) decode,
+}) {
+  final result = <String, MediaItem>{};
+  for (final row in rows) {
+    try {
+      final json = jsonDecode(serializedData(row)) as Map<String, dynamic>;
+      final decoded = decode(row, json);
+      if (decoded != null) {
+        result[decoded.key] = decoded.value;
+      }
+    } catch (_) {
+      // A malformed cache row does not invalidate its siblings.
+    }
+  }
+  return result;
+}
+
+abstract class ApiCache {
   static final Map<MediaBackend, ApiCache> _byBackend = {};
 
-  /// Subclasses call this from their own `initialize` to register themselves
-  /// for backend dispatch. Also seeds [instance] so the legacy singleton
-  /// surface keeps working.
+  /// Registers a backend cache. A new database marks a new application/test
+  /// lifecycle, so registrations tied to the previous database are discarded
+  /// instead of leaving backend dispatch pointed at a closed connection.
   static void registerInstance(MediaBackend backend, ApiCache cache) {
+    if (_byBackend.values.any((registered) => !identical(registered.database, cache.database))) {
+      _byBackend.clear();
+    }
     _byBackend[backend] = cache;
-    _instance = cache;
   }
 
   /// Pick the cache for [backend]. Plex is the legacy default — covers items
@@ -56,6 +83,20 @@ abstract class ApiCache {
       throw StateError('No ApiCache registered for backend $backend');
     }
     return picked;
+  }
+
+  /// Clears volatile rows for every distinct registered database.
+  ///
+  /// Production backend caches share one [AppDatabase], while focused tests
+  /// may register only one backend. This operation is therefore independent
+  /// of backend initialization order and is a no-op before registration.
+  static Future<void> clearRegisteredVolatile() async {
+    final cleared = <AppDatabase>{};
+    for (final cache in _byBackend.values) {
+      if (cleared.add(cache.database)) {
+        await cache.clearVolatile();
+      }
+    }
   }
 
   final AppDatabase _db;

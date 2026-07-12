@@ -17,10 +17,10 @@ import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
+import '../test_helpers/media_items.dart';
 
-/// Implements only [fetchPlayableDescendants] (the surface queueDownload
-/// reaches via [collectEpisodesForShow] / [collectEpisodesForSeason]);
-/// every other call falls through to noSuchMethod and trips a NoSuchMethodError.
+/// Implements only [fetchPlayableDescendants], the surface [collectEpisodes]
+/// uses. Every other call reaches [noSuchMethod] and throws.
 class _ThrowingClient implements MediaServerClient {
   @override
   Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async {
@@ -389,7 +389,7 @@ void main() {
 
       // Collection rule with stashed metadata (the "no underlying episode
       // download to populate _metadata" case from createSyncRule's docs).
-      final target = MediaItem(
+      final target = testMediaItem(
         id: '20',
         backend: MediaBackend.plex,
         kind: MediaKind.collection,
@@ -415,7 +415,7 @@ void main() {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
 
-      final target = MediaItem(
+      final target = testMediaItem(
         id: '30',
         backend: MediaBackend.plex,
         kind: MediaKind.show,
@@ -493,7 +493,7 @@ void main() {
   });
 
   group('DownloadProvider — profile-scoped download ownership', () {
-    final movie = MediaItem(
+    final movie = testMediaItem(
       id: '1',
       backend: MediaBackend.plex,
       kind: MediaKind.movie,
@@ -591,14 +591,14 @@ void main() {
     });
 
     test('queueDownload expands an album into its tracks via fetchPlayableDescendants', () async {
-      final album = MediaItem(
+      final album = testMediaItem(
         id: 'album-1',
         backend: MediaBackend.plex,
         kind: MediaKind.album,
         title: 'Album',
         serverId: ServerId('srv'),
       );
-      MediaItem track(String id) => MediaItem(
+      MediaItem track(String id) => testMediaItem(
         id: id,
         backend: MediaBackend.plex,
         kind: MediaKind.track,
@@ -631,7 +631,7 @@ void main() {
     });
 
     test('album aggregates, downloadedAlbums, and per-album track order come from track downloads', () async {
-      MediaItem track(String id, {required int disc, required int number}) => MediaItem(
+      MediaItem track(String id, {required int disc, required int number}) => testMediaItem(
         id: id,
         backend: MediaBackend.plex,
         kind: MediaKind.track,
@@ -656,7 +656,7 @@ void main() {
         metadata: {
           'srv:t1': track('t1', disc: 2, number: 1),
           'srv:t2': track('t2', disc: 1, number: 2),
-          'srv:album-1': MediaItem(
+          'srv:album-1': testMediaItem(
             id: 'album-1',
             backend: MediaBackend.plex,
             kind: MediaKind.album,
@@ -1003,7 +1003,7 @@ void main() {
         fetchItemHandler: (id) async {
           fetchStarted.complete();
           await releaseFetch.future;
-          return MediaItem(
+          return testMediaItem(
             id: id,
             backend: MediaBackend.jellyfin,
             kind: MediaKind.movie,
@@ -1035,7 +1035,7 @@ void main() {
       activeClient = _ScopedTestClient(
         serverId: ServerId('jf-machine'),
         scopedServerId: 'jf-machine/user-b',
-        fetchItemHandler: (id) async => MediaItem(
+        fetchItemHandler: (id) async => testMediaItem(
           id: id,
           backend: MediaBackend.jellyfin,
           kind: MediaKind.movie,
@@ -1067,7 +1067,7 @@ void main() {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
 
-      final item = MediaItem(
+      final item = testMediaItem(
         id: '42',
         backend: MediaBackend.plex,
         kind: MediaKind.movie,
@@ -1093,7 +1093,7 @@ void main() {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
 
-      final item = MediaItem(
+      final item = testMediaItem(
         id: '42',
         backend: MediaBackend.plex,
         kind: MediaKind.movie,
@@ -1119,7 +1119,7 @@ void main() {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
 
-      final show = MediaItem(
+      final show = testMediaItem(
         id: 'show-1',
         backend: MediaBackend.plex,
         kind: MediaKind.show,
@@ -1127,7 +1127,7 @@ void main() {
         leafCount: 3,
         viewedLeafCount: 0,
       );
-      final season1 = MediaItem(
+      final season1 = testMediaItem(
         id: 'season-1',
         backend: MediaBackend.plex,
         kind: MediaKind.season,
@@ -1136,7 +1136,7 @@ void main() {
         leafCount: 2,
         viewedLeafCount: 0,
       );
-      final episode1 = MediaItem(
+      final episode1 = testMediaItem(
         id: 'episode-1',
         backend: MediaBackend.plex,
         kind: MediaKind.episode,
@@ -1199,7 +1199,7 @@ void main() {
         actionType: 'unwatched',
       );
 
-      final episode1 = MediaItem(
+      final episode1 = testMediaItem(
         id: 'episode-1',
         backend: MediaBackend.plex,
         kind: MediaKind.episode,
@@ -1249,7 +1249,7 @@ void main() {
         ratingKey: 'show-1',
         actionType: 'unwatched',
       );
-      final episode = MediaItem(
+      final episode = testMediaItem(
         id: 'episode-1',
         backend: MediaBackend.plex,
         kind: MediaKind.episode,
@@ -1291,7 +1291,7 @@ void main() {
         ratingKey: 'show-1',
         actionType: 'unwatched',
       );
-      final episode = MediaItem(
+      final episode = testMediaItem(
         id: 'episode-1',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.episode,
@@ -1337,7 +1337,7 @@ void main() {
       p.debugSeedState(
         downloads: {key: const DownloadProgress(globalKey: key, status: DownloadStatus.queued)},
         metadata: {
-          key: MediaItem(
+          key: testMediaItem(
             id: '42',
             backend: MediaBackend.plex,
             kind: MediaKind.episode,
@@ -1410,7 +1410,7 @@ void main() {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
 
-      final season = MediaItem(
+      final season = testMediaItem(
         id: '7',
         backend: MediaBackend.plex,
         kind: MediaKind.season,
@@ -1433,7 +1433,7 @@ void main() {
 
       // Pre-existing metadata under the same key (e.g. from a prior sync rule's
       // targetMetadata). The rollback must not delete it on queue failure.
-      final preexisting = MediaItem(
+      final preexisting = testMediaItem(
         id: '7',
         backend: MediaBackend.plex,
         kind: MediaKind.season,
@@ -1442,7 +1442,7 @@ void main() {
       );
       p.debugSeedState(metadata: {'srv:7': preexisting});
 
-      final season = MediaItem(
+      final season = testMediaItem(
         id: '7',
         backend: MediaBackend.plex,
         kind: MediaKind.season,

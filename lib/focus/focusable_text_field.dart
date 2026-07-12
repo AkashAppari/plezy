@@ -390,6 +390,14 @@ void _defaultEditingComplete(TextInputAction? textInputAction) {
   }
 }
 
+({int start, int end}) _normalizedSelectionRange(TextEditingValue value) {
+  final selection = value.selection;
+  if (!selection.isValid) {
+    return (start: value.text.length, end: value.text.length);
+  }
+  return (start: selection.start.clamp(0, value.text.length), end: selection.end.clamp(0, value.text.length));
+}
+
 void _insertText({
   required TextEditingController controller,
   required String text,
@@ -398,13 +406,9 @@ void _insertText({
   ValueChanged<String>? onChanged,
 }) {
   final value = controller.value;
-  final selection = value.selection;
-  final start = selection.isValid
-      ? (selection.start < selection.end ? selection.start : selection.end)
-      : value.text.length;
-  final end = selection.isValid
-      ? (selection.start > selection.end ? selection.start : selection.end)
-      : value.text.length;
+  final range = _normalizedSelectionRange(value);
+  final start = range.start;
+  final end = range.end;
   final newText = value.text.replaceRange(start, end, text);
   _replaceTextValue(
     controller: controller,
@@ -426,13 +430,9 @@ void _backspace({
   ValueChanged<String>? onChanged,
 }) {
   final value = controller.value;
-  final selection = value.selection;
-  final start = selection.isValid
-      ? (selection.start < selection.end ? selection.start : selection.end)
-      : value.text.length;
-  final end = selection.isValid
-      ? (selection.start > selection.end ? selection.start : selection.end)
-      : value.text.length;
+  final range = _normalizedSelectionRange(value);
+  final start = range.start;
+  final end = range.end;
   if (start != end) {
     _replaceTextRange(
       controller,
@@ -462,13 +462,9 @@ void _deleteForward({
   ValueChanged<String>? onChanged,
 }) {
   final value = controller.value;
-  final selection = value.selection;
-  final start = selection.isValid
-      ? (selection.start < selection.end ? selection.start : selection.end)
-      : value.text.length;
-  final end = selection.isValid
-      ? (selection.start > selection.end ? selection.start : selection.end)
-      : value.text.length;
+  final range = _normalizedSelectionRange(value);
+  final start = range.start;
+  final end = range.end;
   if (start != end) {
     _replaceTextRange(
       controller,
@@ -624,6 +620,23 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
     }
   }
 
+  ({
+    TextInputType? keyboardType,
+    bool readOnly,
+    bool? showCursor,
+    bool? enableInteractiveSelection,
+    VoidCallback? onTap,
+  })
+  _tvInputConfiguration(bool usesTvKeyboard, VoidCallback openKeyboard) {
+    return (
+      keyboardType: usesTvKeyboard ? TextInputType.none : keyboardType,
+      readOnly: usesTvKeyboard,
+      showCursor: usesTvKeyboard ? true : null,
+      enableInteractiveSelection: usesTvKeyboard ? false : enableInteractiveSelection,
+      onTap: usesTvKeyboard ? openKeyboard : null,
+    );
+  }
+
   KeyEventResult _handleKey(BuildContext context, FocusNode node, KeyEvent event, VoidCallback openKeyboard) {
     return _handleInputKey(
       controller: controller,
@@ -650,7 +663,6 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
   }
 
   Widget buildFocusableInput(
-    BuildContext context,
     Widget Function(bool usesTvKeyboard, FocusNode focusNode, VoidCallback openKeyboard) builder,
   ) {
     return _FocusableTextInputHost(input: this, builder: builder);
@@ -994,14 +1006,14 @@ class FocusableTextField extends _FocusableTextInputBase {
 
   @override
   Widget build(BuildContext context) {
-    return buildFocusableInput(
-      context,
-      (usesTvKeyboard, effectiveFocusNode, openKeyboard) => TextField(
+    return buildFocusableInput((usesTvKeyboard, effectiveFocusNode, openKeyboard) {
+      final tvInput = _tvInputConfiguration(usesTvKeyboard, openKeyboard);
+      return TextField(
         controller: controller,
         focusNode: effectiveFocusNode,
         enabled: enabled,
         decoration: decoration,
-        keyboardType: usesTvKeyboard ? TextInputType.none : keyboardType,
+        keyboardType: tvInput.keyboardType,
         textInputAction: textInputAction,
         inputFormatters: inputFormatters,
         onChanged: onChanged,
@@ -1017,12 +1029,12 @@ class FocusableTextField extends _FocusableTextInputBase {
         textAlign: textAlign,
         textCapitalization: textCapitalization,
         style: style,
-        readOnly: usesTvKeyboard,
-        showCursor: usesTvKeyboard ? true : null,
-        enableInteractiveSelection: usesTvKeyboard ? false : enableInteractiveSelection,
-        onTap: usesTvKeyboard ? openKeyboard : null,
-      ),
-    );
+        readOnly: tvInput.readOnly,
+        showCursor: tvInput.showCursor,
+        enableInteractiveSelection: tvInput.enableInteractiveSelection,
+        onTap: tvInput.onTap,
+      );
+    });
   }
 }
 
@@ -1071,14 +1083,14 @@ class FocusableTextFormField extends _FocusableTextInputBase {
 
   @override
   Widget build(BuildContext context) {
-    return buildFocusableInput(
-      context,
-      (usesTvKeyboard, effectiveFocusNode, openKeyboard) => TextFormField(
+    return buildFocusableInput((usesTvKeyboard, effectiveFocusNode, openKeyboard) {
+      final tvInput = _tvInputConfiguration(usesTvKeyboard, openKeyboard);
+      return TextFormField(
         controller: controller,
         focusNode: effectiveFocusNode,
         enabled: enabled,
         decoration: decoration,
-        keyboardType: usesTvKeyboard ? TextInputType.none : keyboardType,
+        keyboardType: tvInput.keyboardType,
         textInputAction: textInputAction,
         inputFormatters: inputFormatters,
         onChanged: onChanged,
@@ -1097,11 +1109,11 @@ class FocusableTextFormField extends _FocusableTextInputBase {
         textAlign: textAlign,
         textCapitalization: textCapitalization,
         style: style,
-        readOnly: usesTvKeyboard,
-        showCursor: usesTvKeyboard ? true : null,
-        enableInteractiveSelection: usesTvKeyboard ? false : enableInteractiveSelection,
-        onTap: usesTvKeyboard ? openKeyboard : null,
-      ),
-    );
+        readOnly: tvInput.readOnly,
+        showCursor: tvInput.showCursor,
+        enableInteractiveSelection: tvInput.enableInteractiveSelection,
+        onTap: tvInput.onTap,
+      );
+    });
   }
 }

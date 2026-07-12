@@ -5,9 +5,10 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_item_types.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/utils/content_utils.dart';
+import '../test_helpers/media_items.dart';
 
 MediaItem _episode({int? viewOffsetMs, int? durationMs, int? viewCount, int? leafCount, int? viewedLeafCount}) {
-  return MediaItem(
+  return testMediaItem(
     id: '1',
     backend: MediaBackend.plex,
     kind: MediaKind.episode,
@@ -20,7 +21,7 @@ MediaItem _episode({int? viewOffsetMs, int? durationMs, int? viewCount, int? lea
 }
 
 MediaItem _movie({int? viewCount}) {
-  return MediaItem(id: '1', backend: MediaBackend.plex, kind: MediaKind.movie, viewCount: viewCount);
+  return testMediaItem(id: '1', backend: MediaBackend.plex, kind: MediaKind.movie, viewCount: viewCount);
 }
 
 void main() {
@@ -58,7 +59,7 @@ void main() {
   group('MediaItemTypes.shouldHideSpoiler', () {
     test('false for non-episodes', () {
       expect(_movie().shouldHideSpoiler, isFalse);
-      final show = MediaItem(id: '1', backend: MediaBackend.plex, kind: MediaKind.show);
+      final show = testMediaItem(id: '1', backend: MediaBackend.plex, kind: MediaKind.show);
       expect(show.shouldHideSpoiler, isFalse);
     });
 

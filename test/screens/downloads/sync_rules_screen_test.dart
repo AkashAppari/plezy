@@ -26,6 +26,7 @@ import 'package:plezy/services/plex_auth_service.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/prefs.dart';
+import '../../test_helpers/media_items.dart';
 
 PlexConnection _plexConnection() {
   return PlexConnection(
@@ -75,7 +76,13 @@ JellyfinClient _jellyfinClient(JellyfinConnection connection) {
 }
 
 MediaItem _show(ServerId serverId, String ratingKey, String title) {
-  return MediaItem(id: ratingKey, backend: MediaBackend.plex, kind: MediaKind.show, title: title, serverId: serverId);
+  return testMediaItem(
+    id: ratingKey,
+    backend: MediaBackend.plex,
+    kind: MediaKind.show,
+    title: title,
+    serverId: serverId,
+  );
 }
 
 class _FakeConnectionRegistry extends ConnectionRegistry {

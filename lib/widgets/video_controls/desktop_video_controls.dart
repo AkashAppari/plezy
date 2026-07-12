@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 
 import '../../focus/dpad_navigator.dart';
 import '../../media/media_item.dart';
+import '../../media/stepped_seek.dart';
 import '../../mpv/mpv.dart';
 import '../../media/media_source_info.dart';
 import '../../services/fullscreen_state_manager.dart';
@@ -193,18 +194,8 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   // Preview thumbnail during sustained dpad/keyboard seeking
   bool _showKeyRepeatThumbnail = false;
   Timer? _keyRepeatThumbnailTimer;
-  Timer? _timelineSeekDebounceTimer;
-  Timer? _timelinePreviewClearTimer;
-  Duration? _timelinePreviewPosition;
-  Duration? _lastFlushedTimelinePreviewPosition;
+  late final DebouncedSeekAccumulator _timelineSeek;
   static const _keyRepeatThumbnailTimeout = Duration(milliseconds: 400);
-  // Must exceed the OS initial key-repeat delay (~400-500ms on Android/TV),
-  // or a held key commits an extra seek in the gap before repeats begin.
-  // Release still flushes synchronously, so this adds no tap latency.
-  static const _timelineSeekDebounce = Duration(milliseconds: 800);
-  static const _timelinePreviewClearDelay = Duration(seconds: 2);
-  static const _timelinePreviewSettleTolerance = Duration(seconds: 3);
-  static const _timelinePreviewClearCeiling = Duration(seconds: 10);
 
   // Content strip state
   bool _contentStripVisible = false;
@@ -246,6 +237,14 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       _goToLiveFocusNode,
     ];
     widget.chromeController?.addListener(_onChromeControllerChanged);
+    _timelineSeek = DebouncedSeekAccumulator(
+      currentPosition: () => widget.player.state.position,
+      duration: () => widget.player.state.duration,
+      seek: widget.onSeekEnd,
+      onChanged: () {
+        if (mounted) setState(() {});
+      },
+    );
   }
 
   @override
@@ -261,8 +260,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   void dispose() {
     widget.chromeController?.removeListener(_onChromeControllerChanged);
     _keyRepeatThumbnailTimer?.cancel();
-    _timelineSeekDebounceTimer?.cancel();
-    _timelinePreviewClearTimer?.cancel();
+    _timelineSeek.dispose();
     _prevItemFocusNode.dispose();
     _prevChapterFocusNode.dispose();
     _skipBackFocusNode.dispose();
@@ -334,7 +332,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       widget.onFocusActivity?.call();
     } else {
       // Reset progressive seek state when timeline loses focus
-      _flushTimelinePreviewSeek();
+      _timelineSeek.flush();
       _resetSeekState();
     }
   }
@@ -488,56 +486,6 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     }
   }
 
-  void _clearTimelinePreviewIfStill(Duration target, Duration elapsed) {
-    if (!mounted || _timelinePreviewPosition != target) return;
-    // Hold the preview until playback has actually reached the committed
-    // target: clearing while a slow device is still buffering re-bases the
-    // next key-seek off the stale live position, silently discarding the
-    // seek that was just committed. The ceiling is a backstop for streams
-    // that never settle (mirrors LiveSeekAccumulator._scheduleClear).
-    final live = widget.player.state.position;
-    if ((live - target).abs() > _timelinePreviewSettleTolerance && elapsed < _timelinePreviewClearCeiling) {
-      _timelinePreviewClearTimer = Timer(
-        _timelinePreviewClearDelay,
-        () => _clearTimelinePreviewIfStill(target, elapsed + _timelinePreviewClearDelay),
-      );
-      return;
-    }
-    setState(() => _timelinePreviewPosition = null);
-  }
-
-  void _scheduleTimelinePreviewClear(Duration target) {
-    _timelinePreviewClearTimer?.cancel();
-    _timelinePreviewClearTimer = Timer(
-      _timelinePreviewClearDelay,
-      () => _clearTimelinePreviewIfStill(target, Duration.zero),
-    );
-  }
-
-  void _flushTimelinePreviewSeek() {
-    final target = _timelinePreviewPosition;
-    _timelineSeekDebounceTimer?.cancel();
-    _timelineSeekDebounceTimer = null;
-    if (target == null) return;
-    if (_lastFlushedTimelinePreviewPosition == target) return;
-    _lastFlushedTimelinePreviewPosition = target;
-    widget.onSeekEnd(target);
-    _scheduleTimelinePreviewClear(target);
-  }
-
-  void _scheduleTimelinePreviewSeekFlush() {
-    _timelineSeekDebounceTimer?.cancel();
-    _timelineSeekDebounceTimer = Timer(_timelineSeekDebounce, _flushTimelinePreviewSeek);
-  }
-
-  void _setTimelinePreviewPosition(Duration position) {
-    _timelinePreviewClearTimer?.cancel();
-    _timelinePreviewClearTimer = null;
-    if (_timelinePreviewPosition == position) return;
-    _lastFlushedTimelinePreviewPosition = null;
-    setState(() => _timelinePreviewPosition = position);
-  }
-
   /// Show the timeline preview thumbnail during sustained key-repeat seeking.
   /// Arms a short timer that hides the thumbnail once repeats stop.
   void _triggerKeyRepeatThumbnail() {
@@ -551,19 +499,6 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     });
   }
 
-  /// Calculate seek multiplier based on repeat count (stepped tiers)
-  double _getSeekMultiplier() {
-    if (_seekRepeatCount <= 5) {
-      return 1.5;
-    } else if (_seekRepeatCount <= 15) {
-      return 3.0;
-    } else if (_seekRepeatCount <= 30) {
-      return 6.0;
-    } else {
-      return 10.0;
-    }
-  }
-
   /// Handle key events for timeline navigation
   KeyEventResult _handleTimelineKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
@@ -572,7 +507,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     // seek (a no-op when nothing is pending) and reset progressive seek state.
     if (event is KeyUpEvent) {
       if (key == LogicalKeyboardKey.arrowLeft || key == LogicalKeyboardKey.arrowRight) {
-        _flushTimelinePreviewSeek();
+        _timelineSeek.flush();
         _resetSeekState();
         return KeyEventResult.handled;
       }
@@ -588,7 +523,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
 
     // UP arrow - hide controls and reset seek state
     if (key == LogicalKeyboardKey.arrowUp) {
-      _flushTimelinePreviewSeek();
+      _timelineSeek.flush();
       _resetSeekState();
       widget.onHideControls?.call();
       return KeyEventResult.handled;
@@ -596,7 +531,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
 
     // DOWN arrow - move focus to play/pause button and reset seek state
     if (key == LogicalKeyboardKey.arrowDown) {
-      _flushTimelinePreviewSeek();
+      _timelineSeek.flush();
       _resetSeekState();
       _playPauseFocusNode.requestFocus();
       widget.onFocusActivity?.call();
@@ -619,7 +554,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       }
 
       final isForward = key == LogicalKeyboardKey.arrowRight;
-      final effectiveMultiplier = event is KeyRepeatEvent ? _getSeekMultiplier() : 1.0;
+      final effectiveMultiplier = event is KeyRepeatEvent ? steppedSeekMultiplier(_seekRepeatCount) : 1.0;
 
       // Live TV: relative epoch-based seeking via the parent accumulator, which
       // coalesces a rapid/held burst into one transcode re-open (#1253). The
@@ -638,13 +573,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       final stepMs = (baseStepMs * effectiveMultiplier).clamp(500, 120_000).toInt();
       final step = Duration(milliseconds: stepMs);
 
-      // Accumulate the scrub target from a stable base — the in-flight preview
-      // when a burst is already running, otherwise the live position — so the
-      // marker never snaps back when a real seek lands mid-burst.
-      final previewBase = _timelinePreviewPosition ?? position;
-      final rawTarget = isForward ? previewBase + step : previewBase - step;
-      final target = Duration(milliseconds: rawTarget.inMilliseconds.clamp(0, duration.inMilliseconds));
-      _setTimelinePreviewPosition(target);
+      _timelineSeek.seekBy(isForward ? step : -step);
 
       // Move only the preview while the key is held; commit a single seek once
       // the burst pauses (debounce) or the key is released. Firing a real seek
@@ -653,7 +582,6 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       // The player's `buffering` flag lags the key-repeat rate, so it can't gate
       // this reliably — coalescing unconditionally matches the existing transcode
       // path and cannot flood regardless of hardware.
-      _scheduleTimelinePreviewSeekFlush();
       widget.onFocusActivity?.call();
       return KeyEventResult.handled;
     }
@@ -823,7 +751,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
               enabled: canInteract,
               thumbnailDataBuilder: widget.thumbnailDataBuilder,
               showKeyRepeatThumbnail: _showKeyRepeatThumbnail,
-              previewPosition: _timelinePreviewPosition,
+              previewPosition: _timelineSeek.pendingPosition,
             ),
           ],
           // Row 2: Playback controls and options

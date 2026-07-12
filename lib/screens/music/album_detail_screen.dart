@@ -19,7 +19,6 @@ import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/formatters.dart';
-import '../../utils/layout_constants.dart';
 import '../../utils/media_image_helper.dart';
 import '../../utils/music_navigation.dart';
 import '../../utils/platform_detector.dart';
@@ -31,6 +30,7 @@ import '../../widgets/download_status_icon.dart';
 import '../../widgets/ios_status_bar_tap_scroll_to_top.dart';
 import '../../widgets/media_context_menu.dart';
 import '../../widgets/music/mini_player.dart';
+import '../../widgets/music/music_detail_header.dart';
 import '../../widgets/music/music_actions.dart';
 import '../../widgets/music/track_row.dart';
 import '../../widgets/optimized_media_image.dart';
@@ -315,38 +315,13 @@ class _AlbumDetailScreenState extends BaseMediaListDetailScreen<AlbumDetailScree
       onBack: () => Navigator.pop(context),
     );
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final narrow = constraints.maxWidth < ScreenBreakpoints.mobile;
-          if (narrow) {
-            return Column(
-              children: [
-                cover(200),
-                const SizedBox(height: 16),
-                info(centered: true),
-                const SizedBox(height: 16),
-                actionRow,
-              ],
-            );
-          }
-          return Row(
-            crossAxisAlignment: .end,
-            children: [
-              cover(180),
-              const SizedBox(width: 24),
-              Expanded(
-                child: Column(
-                  mainAxisSize: .min,
-                  crossAxisAlignment: .start,
-                  children: [info(centered: false), const SizedBox(height: 16), actionRow],
-                ),
-              ),
-            ],
-          );
-        },
-      ),
+    return MusicDetailHeader(
+      artworkBuilder: cover,
+      infoBuilder: info,
+      actionBar: actionRow,
+      compactArtworkSize: 200,
+      compactArtworkSpacing: 16,
+      wideAlignment: CrossAxisAlignment.end,
     );
   }
 

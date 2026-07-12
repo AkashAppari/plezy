@@ -4,6 +4,7 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/mixins/item_updatable.dart';
+import '../test_helpers/media_items.dart';
 
 /// Probe that mixes in [ItemUpdatable]. These tests exercise the
 /// `updateItemInLists` contract directly — the override-point screens
@@ -46,7 +47,7 @@ class _ProbeState extends State<_Probe> with ItemUpdatable {
 }
 
 MediaItem _meta(String id, {String? title}) =>
-    MediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.movie, title: title);
+    testMediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.movie, title: title);
 
 void main() {
   group('ItemUpdatable', () {

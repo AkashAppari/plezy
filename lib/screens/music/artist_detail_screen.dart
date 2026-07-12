@@ -13,7 +13,6 @@ import '../../mixins/grid_focus_node_mixin.dart';
 import '../../services/music/music_playback_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/formatters.dart';
-import '../../utils/layout_constants.dart';
 import '../../utils/media_image_helper.dart';
 import '../../utils/music_navigation.dart';
 import '../../utils/platform_detector.dart';
@@ -23,6 +22,7 @@ import '../../widgets/collapsible_text.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/ios_status_bar_tap_scroll_to_top.dart';
 import '../../widgets/music/mini_player.dart';
+import '../../widgets/music/music_detail_header.dart';
 import '../../widgets/music/music_actions.dart';
 import '../../widgets/optimized_media_image.dart';
 import '../../widgets/overlay_sheet.dart';
@@ -179,42 +179,13 @@ class _ArtistDetailScreenState extends BaseMediaListDetailScreen<ArtistDetailScr
       onBack: () => Navigator.pop(context),
     );
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final narrow = constraints.maxWidth < ScreenBreakpoints.mobile;
-          if (narrow) {
-            return Column(
-              children: [
-                portrait(140),
-                const SizedBox(height: 12),
-                info(centered: true),
-                const SizedBox(height: 16),
-                actionRow,
-                const SizedBox(height: 8),
-              ],
-            );
-          }
-          // Wide/desktop: portrait left, left-aligned text + actions beside
-          // it — mirrors the album header so the two screens read as one
-          // family (and the grid below starts at the same left inset).
-          return Row(
-            crossAxisAlignment: .center,
-            children: [
-              portrait(180),
-              const SizedBox(width: 24),
-              Expanded(
-                child: Column(
-                  mainAxisSize: .min,
-                  crossAxisAlignment: .start,
-                  children: [info(centered: false), const SizedBox(height: 16), actionRow],
-                ),
-              ),
-            ],
-          );
-        },
-      ),
+    return MusicDetailHeader(
+      artworkBuilder: portrait,
+      infoBuilder: info,
+      actionBar: actionRow,
+      compactArtworkSize: 140,
+      compactArtworkSpacing: 12,
+      compactBottomSpacing: 8,
     );
   }
 

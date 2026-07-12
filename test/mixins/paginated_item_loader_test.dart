@@ -9,6 +9,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/mixins/paginated_item_loader.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
+import '../test_helpers/media_items.dart';
 
 /// Test probe wired with a controllable `fetchPage` so individual tests can
 /// stage successes, failures, and slow responses.
@@ -58,7 +59,7 @@ class _PaginatedProbeState extends State<_PaginatedProbe> with PaginatedItemLoad
   Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
-MediaItem _meta(int i) => MediaItem(id: 'k$i', backend: MediaBackend.plex, kind: MediaKind.movie, title: 't$i');
+MediaItem _meta(int i) => testMediaItem(id: 'k$i', backend: MediaBackend.plex, kind: MediaKind.movie, title: 't$i');
 
 LibraryPage<MediaItem> _result({required int start, required int size, required int totalSize}) {
   return LibraryPage<MediaItem>(

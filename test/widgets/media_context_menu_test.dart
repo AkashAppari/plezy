@@ -39,6 +39,7 @@ import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/media_context_menu.dart';
 import 'package:provider/provider.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -48,7 +49,11 @@ void main() {
       final profile = Profile.virtualPlexHome(connectionId: 'plex-1', homeUser: _homeUser(admin: false));
 
       expect(
-        isAdminActionAllowedForMediaItem(isOwnerOrAdmin: true, itemBackend: MediaBackend.plex, activeProfile: profile),
+        isAdminActionAllowedFortestMediaItem(
+          isOwnerOrAdmin: true,
+          itemBackend: MediaBackend.plex,
+          activeProfile: profile,
+        ),
         isFalse,
       );
     });
@@ -57,7 +62,7 @@ void main() {
       final profile = Profile.virtualPlexHome(connectionId: 'plex-1', homeUser: _homeUser(admin: false));
 
       expect(
-        isAdminActionAllowedForMediaItem(
+        isAdminActionAllowedFortestMediaItem(
           isOwnerOrAdmin: true,
           itemBackend: MediaBackend.jellyfin,
           activeProfile: profile,
@@ -70,7 +75,11 @@ void main() {
       final profile = Profile.virtualPlexHome(connectionId: 'plex-1', homeUser: _homeUser(admin: true));
 
       expect(
-        isAdminActionAllowedForMediaItem(isOwnerOrAdmin: true, itemBackend: MediaBackend.plex, activeProfile: profile),
+        isAdminActionAllowedFortestMediaItem(
+          isOwnerOrAdmin: true,
+          itemBackend: MediaBackend.plex,
+          activeProfile: profile,
+        ),
         isTrue,
       );
     });
@@ -97,14 +106,14 @@ void main() {
       addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
 
       final tracks = [
-        MediaItem(
+        testMediaItem(
           id: 'track-1',
           backend: MediaBackend.jellyfin,
           kind: MediaKind.track,
           title: 'Track One',
           serverId: 'srv-1',
         ),
-        MediaItem(
+        testMediaItem(
           id: 'track-2',
           backend: MediaBackend.jellyfin,
           kind: MediaKind.track,
@@ -222,7 +231,7 @@ void main() {
       });
 
       final menuKey = GlobalKey<MediaContextMenuState>();
-      final item = MediaItem(
+      final item = testMediaItem(
         id: 'movie-1',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.movie,
@@ -372,7 +381,7 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
   });
 
   final menuKey = GlobalKey<MediaContextMenuState>();
-  final item = MediaItem(
+  final item = testMediaItem(
     id: 'movie-1',
     backend: MediaBackend.plex,
     kind: MediaKind.movie,

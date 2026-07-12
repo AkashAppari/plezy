@@ -12,6 +12,7 @@ import 'package:plezy/services/settings_service.dart';
 
 import '../test_helpers/io_fakes.dart';
 import '../test_helpers/prefs.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   late Directory tmpRoot;
@@ -558,7 +559,7 @@ void main() {
 // ============================================================
 
 MediaItem _movie({required String title, int? year}) {
-  return MediaItem(
+  return testMediaItem(
     id: 'm-${title.hashCode}',
     backend: MediaBackend.plex,
     kind: MediaKind.movie,
@@ -568,7 +569,7 @@ MediaItem _movie({required String title, int? year}) {
 }
 
 MediaItem _show({required String title, int? year}) {
-  return MediaItem(
+  return testMediaItem(
     id: 's-${title.hashCode}',
     backend: MediaBackend.plex,
     kind: MediaKind.show,
@@ -578,7 +579,7 @@ MediaItem _show({required String title, int? year}) {
 }
 
 MediaItem _season({required String showTitle, int? showYear, required int seasonNumber}) {
-  return MediaItem(
+  return testMediaItem(
     id: 'season-$showTitle-$seasonNumber',
     backend: MediaBackend.plex,
     kind: MediaKind.season,
@@ -596,7 +597,7 @@ MediaItem _episode({
   required int episodeNumber,
   required String episodeTitle,
 }) {
-  return MediaItem(
+  return testMediaItem(
     id: 'ep-$showTitle-$seasonNumber-$episodeNumber',
     backend: MediaBackend.plex,
     kind: MediaKind.episode,

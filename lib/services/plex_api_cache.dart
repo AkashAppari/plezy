@@ -1,4 +1,3 @@
-import 'dart:convert';
 import '../media/ids.dart';
 
 import 'package:drift/drift.dart';
@@ -20,23 +19,15 @@ import 'plex_mappers.dart';
 /// endpoint shape and parse cached JSON into [MediaItem] via
 /// [PlexMappers.mediaItemFromCacheJson].
 class PlexApiCache extends ApiCache {
-  static PlexApiCache? _instance;
-  static PlexApiCache get instance {
-    if (_instance == null) {
-      throw StateError('PlexApiCache not initialized. Call PlexApiCache.initialize() first.');
-    }
-    return _instance!;
-  }
+  static final _singleton = ApiCacheSingleton<PlexApiCache>(MediaBackend.plex, 'PlexApiCache');
+  static PlexApiCache get instance => _singleton.instance;
 
   PlexApiCache._(super.db);
 
   /// Initialize the singleton with an [AppDatabase] instance. Also registers
   /// this instance with the [ApiCache] backend dispatch so callers using
   /// `ApiCache.forBackend(MediaBackend.plex)` resolve here.
-  static void initialize(AppDatabase db) {
-    _instance = PlexApiCache._(db);
-    ApiCache.registerInstance(MediaBackend.plex, _instance!);
-  }
+  static void initialize(AppDatabase db) => _singleton.install(PlexApiCache._(db));
 
   /// Delete cached data for a specific item (when removing a download).
   @override
@@ -144,23 +135,20 @@ class PlexApiCache extends ApiCache {
     final entries = await listPinnedRowsByPattern(_metadataKeyPattern);
     if (entries.isEmpty) return {};
 
-    return await tryIsolateRun(() {
-      final result = <String, MediaItem>{};
-      for (final entry in entries) {
-        try {
-          final data = jsonDecode(entry.data) as Map<String, dynamic>;
+    return await tryIsolateRun(
+      () => decodeCachedMediaRows(
+        entries,
+        serializedData: (entry) => entry.data,
+        decode: (entry, data) {
           final container = PlexCacheParser.extractMediaContainer(data);
           final json = PlexCacheParser.extractFirstMetadata(data);
-          if (json == null) continue;
-          result[buildGlobalKey(ServerId(entry.serverId), entry.id)] = PlexMappers.mediaItemFromCacheJson(
-            _withContainerLibrary(json, container),
-            serverId: entry.serverId,
+          if (json == null) return null;
+          return MapEntry(
+            buildGlobalKey(ServerId(entry.serverId), entry.id),
+            PlexMappers.mediaItemFromCacheJson(_withContainerLibrary(json, container), serverId: entry.serverId),
           );
-        } catch (_) {
-          // Skip malformed entries
-        }
-      }
-      return result;
-    });
+        },
+      ),
+    );
   }
 }

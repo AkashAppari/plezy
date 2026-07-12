@@ -251,7 +251,7 @@ Future<void> logoutAllProfiles(BuildContext context) async {
   await scope.database.clearAllSyncRules();
   // Preserve pinned rows backing offline downloads; all session/API data is
   // volatile and must not cross into the next sign-in.
-  await ApiCache.instance.clearVolatile();
+  await ApiCache.clearRegisteredVolatile();
   await scope.hiddenLibraries?.refresh();
   playbackState.clearShuffle();
 

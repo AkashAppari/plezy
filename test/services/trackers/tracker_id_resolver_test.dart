@@ -10,6 +10,7 @@ import 'package:plezy/services/trackers/anime_lists_mapping_store.dart';
 import 'package:plezy/services/trackers/fribb_mapping_store.dart';
 import 'package:plezy/services/trackers/tracker_id_resolver.dart';
 import 'package:plezy/utils/external_ids.dart';
+import '../../test_helpers/media_items.dart';
 
 class _FakeMediaServerClient implements MediaServerClient {
   final Map<String, ExternalIds> externalIdsByItem;
@@ -94,7 +95,7 @@ class _FakeAnimeListsLookup implements AnimeListsMappingLookup {
   Future<Set<int>> lookupAnimeIdsForShow({int? tvdbId, int? tmdbId}) async => const <int>{};
 }
 
-MediaItem _episode({int season = 23, int number = 6}) => MediaItem(
+MediaItem _episode({int season = 23, int number = 6}) => testMediaItem(
   id: 'episode-$season-$number',
   backend: MediaBackend.plex,
   kind: MediaKind.episode,

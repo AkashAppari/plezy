@@ -9,6 +9,7 @@ import 'package:plezy/media/media_version.dart';
 import 'package:plezy/services/jellyfin_mappers.dart';
 import 'package:plezy/services/plex_mappers.dart';
 import 'package:plezy/utils/media_quality_labels.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   group('buildMediaQualityLabels', () {
@@ -216,7 +217,7 @@ void main() {
 }
 
 MediaItem _episodeWithVersion(MediaVersion? version) {
-  return MediaItem(
+  return testMediaItem(
     id: 'episode-1',
     backend: MediaBackend.plex,
     kind: MediaKind.episode,

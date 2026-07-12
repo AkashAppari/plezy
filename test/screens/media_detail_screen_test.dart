@@ -42,6 +42,7 @@ import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
 import '../test_helpers/profile_navigation.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -65,7 +66,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     const title = 'The Surprisingly Long Movie Title That Needs Two Whole Lines';
-    final movie = MediaItem(
+    final movie = testMediaItem(
       id: 'movie_1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.movie,
@@ -99,7 +100,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final movie = MediaItem(
+    final movie = testMediaItem(
       id: 'semantic_movie',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.movie,
@@ -141,7 +142,7 @@ void main() {
   testWidgets('TV detail reveals without waiting for directional input', (tester) async {
     await SettingsService.getInstance();
 
-    final movie = MediaItem(
+    final movie = testMediaItem(
       id: 'movie_1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.movie,
@@ -240,7 +241,7 @@ void main() {
   testWidgets('TV detail defaults to first regular season when specials precede it', (tester) async {
     await SettingsService.getInstance();
 
-    final show = MediaItem(
+    final show = testMediaItem(
       id: 'show_1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.show,
@@ -248,7 +249,7 @@ void main() {
       serverId: 'server_1',
       serverName: 'Server',
     );
-    final specials = MediaItem(
+    final specials = testMediaItem(
       id: 'season_0',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.season,
@@ -258,7 +259,7 @@ void main() {
       serverId: show.serverId,
       serverName: show.serverName,
     );
-    final season1 = MediaItem(
+    final season1 = testMediaItem(
       id: 'season_1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.season,
@@ -268,7 +269,7 @@ void main() {
       serverId: show.serverId,
       serverName: show.serverName,
     );
-    final specialEpisode = MediaItem(
+    final specialEpisode = testMediaItem(
       id: 'episode_special_1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.episode,
@@ -280,7 +281,7 @@ void main() {
       serverId: show.serverId,
       serverName: show.serverName,
     );
-    final episode1 = MediaItem(
+    final episode1 = testMediaItem(
       id: 'episode_1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.episode,
@@ -339,7 +340,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     const summary = 'Light theme detail text should stay readable.';
-    final movie = MediaItem(
+    final movie = testMediaItem(
       id: 'movie_1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.movie,
@@ -368,7 +369,7 @@ void main() {
   testWidgets('TV detail shows every season tab and prefetches adjacent first page', (tester) async {
     await SettingsService.getInstance();
 
-    final show = MediaItem(
+    final show = testMediaItem(
       id: 'show_1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.show,
@@ -376,7 +377,7 @@ void main() {
       serverId: 'server_1',
       serverName: 'Server',
     );
-    final season1 = MediaItem(
+    final season1 = testMediaItem(
       id: 'season_1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.season,
@@ -386,7 +387,7 @@ void main() {
       serverId: show.serverId,
       serverName: show.serverName,
     );
-    final season2 = MediaItem(
+    final season2 = testMediaItem(
       id: 'season_2',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.season,
@@ -396,7 +397,7 @@ void main() {
       serverId: show.serverId,
       serverName: show.serverName,
     );
-    final episode1 = MediaItem(
+    final episode1 = testMediaItem(
       id: 'episode_1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.episode,
@@ -408,7 +409,7 @@ void main() {
       serverId: show.serverId,
       serverName: show.serverName,
     );
-    final episode2 = MediaItem(
+    final episode2 = testMediaItem(
       id: 'episode_2',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.episode,
@@ -464,7 +465,7 @@ void main() {
   testWidgets('TV detail keeps every season tab when a season episode load fails', (tester) async {
     await SettingsService.getInstance();
 
-    final show = MediaItem(
+    final show = testMediaItem(
       id: 'show_1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.show,
@@ -472,7 +473,7 @@ void main() {
       serverId: 'server_1',
       serverName: 'Server',
     );
-    final season1 = MediaItem(
+    final season1 = testMediaItem(
       id: 'season_1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.season,
@@ -482,7 +483,7 @@ void main() {
       serverId: show.serverId,
       serverName: show.serverName,
     );
-    final season2 = MediaItem(
+    final season2 = testMediaItem(
       id: 'season_2',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.season,
@@ -492,7 +493,7 @@ void main() {
       serverId: show.serverId,
       serverName: show.serverName,
     );
-    final episode1 = MediaItem(
+    final episode1 = testMediaItem(
       id: 'episode_1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.episode,
@@ -504,7 +505,7 @@ void main() {
       serverId: show.serverId,
       serverName: show.serverName,
     );
-    final episode2 = MediaItem(
+    final episode2 = testMediaItem(
       id: 'episode_2',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.episode,
@@ -556,7 +557,7 @@ void main() {
   testWidgets('TV detail completes adjacent prefetch after focus moves to that season', (tester) async {
     await SettingsService.getInstance();
 
-    final show = MediaItem(
+    final show = testMediaItem(
       id: 'show_1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.show,
@@ -564,7 +565,7 @@ void main() {
       serverId: 'server_1',
       serverName: 'Server',
     );
-    final season1 = MediaItem(
+    final season1 = testMediaItem(
       id: 'season_1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.season,
@@ -574,7 +575,7 @@ void main() {
       serverId: show.serverId,
       serverName: show.serverName,
     );
-    final season2 = MediaItem(
+    final season2 = testMediaItem(
       id: 'season_2',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.season,
@@ -584,7 +585,7 @@ void main() {
       serverId: show.serverId,
       serverName: show.serverName,
     );
-    final episode1 = MediaItem(
+    final episode1 = testMediaItem(
       id: 'episode_1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.episode,
@@ -596,7 +597,7 @@ void main() {
       serverId: show.serverId,
       serverName: show.serverName,
     );
-    final episode2 = MediaItem(
+    final episode2 = testMediaItem(
       id: 'episode_2',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.episode,
@@ -656,7 +657,7 @@ void main() {
   });
 
   group('watch state freshness (phone layout)', () {
-    MediaItem buildShow() => MediaItem(
+    MediaItem buildShow() => testMediaItem(
       id: 'show_1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.show,
@@ -667,7 +668,7 @@ void main() {
       serverName: 'Server',
     );
 
-    MediaItem buildSeason(MediaItem show, int index) => MediaItem(
+    MediaItem buildSeason(MediaItem show, int index) => testMediaItem(
       id: 'season_$index',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.season,
@@ -680,7 +681,7 @@ void main() {
       serverName: show.serverName,
     );
 
-    MediaItem buildEpisode(MediaItem show, MediaItem season, int index) => MediaItem(
+    MediaItem buildEpisode(MediaItem show, MediaItem season, int index) => testMediaItem(
       id: '${season.id}_episode_$index',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.episode,

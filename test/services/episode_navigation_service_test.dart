@@ -12,6 +12,7 @@ import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/episode_navigation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:provider/provider.dart';
+import '../test_helpers/media_items.dart';
 
 // NOTE on coverage scope:
 // `EpisodeNavigationService` has two methods:
@@ -31,9 +32,9 @@ import 'package:provider/provider.dart';
 // the public surface callers depend on.
 
 MediaItem _meta(String id, {String? title}) =>
-    MediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.episode, title: title ?? 'Episode $id');
+    testMediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.episode, title: title ?? 'Episode $id');
 
-MediaItem _jfEpisode(String id, {required String seriesId, ServerId? serverId}) => MediaItem(
+MediaItem _jfEpisode(String id, {required String seriesId, ServerId? serverId}) => testMediaItem(
   id: id,
   backend: MediaBackend.jellyfin,
   kind: MediaKind.episode,

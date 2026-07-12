@@ -54,6 +54,48 @@ List<dynamic>? flexibleList(Object? v) => switch (v) {
   _ => <dynamic>[v],
 };
 
+/// Return only JSON object entries from a value that may be one object, a
+/// heterogeneous list, or null.
+List<Map<String, dynamic>> flexibleMapList(Object? value) {
+  return [
+    for (final item in flexibleList(value) ?? const <dynamic>[])
+      if (item is Map<String, dynamic>) item,
+  ];
+}
+
+/// Return the first JSON object from a single object or heterogeneous list.
+Map<String, dynamic>? firstFlexibleMap(Object? value) {
+  for (final item in flexibleList(value) ?? const <dynamic>[]) {
+    if (item is Map<String, dynamic>) return item;
+  }
+  return null;
+}
+
+/// Parse every valid JSON object independently, dropping malformed entries
+/// instead of letting one row discard an otherwise usable response.
+List<T> parseFlexibleJsonList<T>(Object? value, T Function(Map<String, dynamic> json) parse) {
+  final result = <T>[];
+  for (final json in flexibleMapList(value)) {
+    try {
+      result.add(parse(json));
+    } catch (_) {
+      // A malformed row does not invalidate its siblings.
+    }
+  }
+  return result;
+}
+
+/// Parse the first JSON object, returning null for missing or malformed data.
+T? parseFlexibleJsonObject<T>(Object? value, T Function(Map<String, dynamic> json) parse) {
+  final json = firstFlexibleMap(value);
+  if (json == null) return null;
+  try {
+    return parse(json);
+  } catch (_) {
+    return null;
+  }
+}
+
 /// Coerce a single String, a List of Strings, or null into `List<String>?`.
 /// Non-string elements are dropped; an empty result (or null input) yields
 /// `null`. Typed sibling of [flexibleList] — a bare String is wrapped into a

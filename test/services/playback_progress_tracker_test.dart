@@ -17,6 +17,7 @@ import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
 
 import '../test_helpers/prefs.dart';
+import '../test_helpers/media_items.dart';
 
 // NOTE on coverage scope:
 // `PlaybackProgressTracker` periodically samples the player's position and
@@ -291,13 +292,14 @@ class _StopMarksWatchedClient extends _FakePlexClient {
 
 const Object _defaultServerId = Object();
 
-MediaItem _meta({String ratingKey = '42', Object? serverId = _defaultServerId, String? type = 'movie'}) => MediaItem(
-  id: ratingKey,
-  backend: MediaBackend.plex,
-  kind: MediaKind.fromString(type),
-  title: 'Test Item',
-  serverId: identical(serverId, _defaultServerId) ? ServerId('srv') : serverId as ServerId?,
-);
+MediaItem _meta({String ratingKey = '42', Object? serverId = _defaultServerId, String? type = 'movie'}) =>
+    testMediaItem(
+      id: ratingKey,
+      backend: MediaBackend.plex,
+      kind: MediaKind.fromString(type),
+      title: 'Test Item',
+      serverId: identical(serverId, _defaultServerId) ? ServerId('srv') : serverId as ServerId?,
+    );
 
 void main() {
   setUp(resetSharedPreferencesForTest);
@@ -593,7 +595,7 @@ void main() {
       );
       final tracker = PlaybackProgressTracker(
         client: client,
-        metadata: MediaItem(id: '42', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv'),
+        metadata: testMediaItem(id: '42', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv'),
         player: player,
         isOffline: false,
         mediaInfo: mediaInfo,

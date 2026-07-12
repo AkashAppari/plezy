@@ -14,8 +14,9 @@ import 'package:plezy/widgets/optimized_media_image.dart';
 import 'package:plezy/widgets/watched_indicator.dart';
 
 import '../test_helpers/prefs.dart';
+import '../test_helpers/media_items.dart';
 
-MediaItem _item(MediaKind kind, {String? parentTitle, int? durationMs}) => MediaItem(
+MediaItem _item(MediaKind kind, {String? parentTitle, int? durationMs}) => testMediaItem(
   id: '${kind.id}_1',
   backend: MediaBackend.plex,
   kind: kind,

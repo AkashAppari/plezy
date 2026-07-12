@@ -11,6 +11,7 @@ import 'package:plezy/metadata_edit/jellyfin_metadata_edit_adapter.dart';
 import 'package:plezy/metadata_edit/metadata_edit_models.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/utils/media_image_helper.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   test('load fails when the full editable Jellyfin DTO is unavailable', () async {
@@ -21,7 +22,7 @@ void main() {
     addTearDown(client.close);
 
     final adapter = JellyfinMetadataEditAdapter(client);
-    final item = MediaItem(
+    final item = testMediaItem(
       id: 'item-1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.movie,
@@ -40,7 +41,7 @@ void main() {
     final adapter = JellyfinMetadataEditAdapter(client);
 
     MetadataArtworkConfig posterConfig(MediaKind kind) {
-      final item = MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: kind);
+      final item = testMediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: kind);
       final draft = MetadataEditDraft(sourceItem: item, currentItem: item, values: {});
       final artwork = adapter.buildSchema(draft).singleWhere((section) => section.id == 'artwork');
       return artwork.fields.singleWhere((field) => field.id == 'artwork:Primary').artwork!;
@@ -74,7 +75,7 @@ void main() {
     addTearDown(client.close);
 
     final adapter = JellyfinMetadataEditAdapter(client);
-    final item = MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie);
+    final item = testMediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie);
     final draft = await adapter.load(item);
 
     draft.setValue('director', ['Alice', 'Charlie']);

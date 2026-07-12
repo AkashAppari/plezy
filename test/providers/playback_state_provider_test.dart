@@ -7,8 +7,9 @@ import 'package:plezy/media/media_version.dart';
 import 'package:plezy/media/play_queue.dart';
 import 'package:plezy/models/plex/play_queue_response.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
+import '../test_helpers/media_items.dart';
 
-PlexMediaItem _item(String ratingKey, int playQueueItemID) => PlexMediaItem(
+PlexMediaItem _item(String ratingKey, int playQueueItemID) => PlextestMediaItem(
   id: ratingKey,
   kind: MediaKind.episode,
   playQueueItemId: playQueueItemID,
@@ -18,7 +19,7 @@ PlexMediaItem _item(String ratingKey, int playQueueItemID) => PlexMediaItem(
 /// Episode queue entry carrying file identity, as Plex play-queue items do.
 /// Episodes of a multi-episode file (`S02E24-E25.mkv`) get *distinct* part
 /// ids (`part-<ratingKey>` here, mirroring real servers) but share [file].
-PlexMediaItem _itemWithFile(String ratingKey, int playQueueItemID, String file) => PlexMediaItem(
+PlexMediaItem _itemWithFile(String ratingKey, int playQueueItemID, String file) => PlextestMediaItem(
   id: ratingKey,
   kind: MediaKind.episode,
   playQueueItemId: playQueueItemID,
@@ -32,7 +33,7 @@ PlexMediaItem _itemWithFile(String ratingKey, int playQueueItemID, String file) 
 );
 
 PlexMediaItem _miItem(String id, int playQueueItemId) =>
-    PlexMediaItem(id: id, kind: MediaKind.episode, playQueueItemId: playQueueItemId);
+    PlextestMediaItem(id: id, kind: MediaKind.episode, playQueueItemId: playQueueItemId);
 
 PlayQueueResponse _queue({
   int playQueueID = 1,
@@ -155,7 +156,7 @@ void main() {
       expect(notified, preNotify + 1);
 
       // Item without playQueueItemId → no update, no notify
-      p.setCurrentItem(MediaItem(id: 'd', backend: MediaBackend.plex, kind: MediaKind.episode));
+      p.setCurrentItem(testMediaItem(id: 'd', backend: MediaBackend.plex, kind: MediaKind.episode));
       expect(p.currentPlayQueueItemID, 2002);
 
       p.dispose();
@@ -269,9 +270,9 @@ void main() {
       final p = PlaybackStateProvider();
       addTearDown(p.dispose);
 
-      final ep1 = MediaItem(id: 'ep1', backend: MediaBackend.jellyfin, kind: MediaKind.episode);
-      final ep2 = MediaItem(id: 'ep2', backend: MediaBackend.jellyfin, kind: MediaKind.episode);
-      final outsider = MediaItem(id: 'ep-other', backend: MediaBackend.jellyfin, kind: MediaKind.episode);
+      final ep1 = testMediaItem(id: 'ep1', backend: MediaBackend.jellyfin, kind: MediaKind.episode);
+      final ep2 = testMediaItem(id: 'ep2', backend: MediaBackend.jellyfin, kind: MediaKind.episode);
+      final outsider = testMediaItem(id: 'ep-other', backend: MediaBackend.jellyfin, kind: MediaKind.episode);
 
       p.setPlaybackFromLocalQueue(
         LocalPlayQueue(id: 'jellyfin:playlist-X', items: [ep1, ep2], currentIndex: 0, backendId: 'jellyfin'),
@@ -298,7 +299,7 @@ void main() {
       // A real-world non-queue item (e.g. tapped from media detail) carries
       // no `playQueueItemId` — that's how the helper distinguishes it from
       // a launcher-seeded queue member.
-      final outsider = PlexMediaItem(id: 'ep-different-show', kind: MediaKind.episode);
+      final outsider = PlextestMediaItem(id: 'ep-different-show', kind: MediaKind.episode);
 
       await p.setPlaybackFromPlayQueue(
         _queue(

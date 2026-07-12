@@ -20,6 +20,7 @@ import 'package:plezy/utils/platform_detector.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -216,7 +217,7 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
     items:
         items ??
         [
-          MediaItem(
+          testMediaItem(
             id: 'movie_1',
             backend: MediaBackend.plex,
             kind: MediaKind.movie,

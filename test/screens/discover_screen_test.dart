@@ -45,6 +45,7 @@ import 'package:plezy/widgets/tv_spotlight_background.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -70,7 +71,7 @@ void main() {
       tester.view.resetPhysicalSize();
     });
 
-    final item = MediaItem(
+    final item = testMediaItem(
       id: 'movie_1',
       backend: MediaBackend.plex,
       kind: MediaKind.movie,
@@ -249,7 +250,7 @@ void main() {
 
     final onDeck = [
       for (var i = 0; i < 3; i++)
-        MediaItem(
+        testMediaItem(
           id: 'movie_$i',
           backend: MediaBackend.plex,
           kind: MediaKind.movie,

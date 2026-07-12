@@ -20,6 +20,7 @@ import 'package:plezy/utils/media_server_http_client.dart';
 
 import '../test_helpers/io_fakes.dart';
 import '../test_helpers/prefs.dart';
+import '../test_helpers/media_items.dart';
 
 class _DelayedCountingHttpClient extends http.BaseClient {
   _DelayedCountingHttpClient(this.body);
@@ -54,7 +55,7 @@ void main() {
   });
 
   test('buildArtworkSpecs includes all standard artwork with sanitized local keys', () {
-    final item = MediaItem(
+    final item = testMediaItem(
       id: 'item-1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.movie,

@@ -7,10 +7,11 @@ import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/services/playback_context.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/playback_session.dart';
+import '../test_helpers/media_items.dart';
 
 PlaybackContext _context(PlaybackInitializationResult result) {
   return PlaybackContext(
-    metadata: MediaItem(id: 'item-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv'),
+    metadata: testMediaItem(id: 'item-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv'),
     result: result,
     sourceKind: result.usesLocalMedia ? PlaybackSourceKind.localFile : PlaybackSourceKind.remoteDirect,
     reportingMode: PlaybackReportingMode.online,

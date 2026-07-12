@@ -5,6 +5,7 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/mixins/server_bound_media_mixin.dart';
+import '../test_helpers/media_items.dart';
 
 /// Probe widget exposing the mixin's surface so tests can read its getters
 /// and call its helpers against a real BuildContext.
@@ -38,7 +39,7 @@ class _ProbeState extends State<_Probe> with ServerBoundMediaMixin<_Probe> {
 }
 
 MediaItem _meta({ServerId? serverId, String ratingKey = 'rk1'}) =>
-    MediaItem(id: ratingKey, backend: MediaBackend.plex, kind: MediaKind.movie, serverId: serverId);
+    testMediaItem(id: ratingKey, backend: MediaBackend.plex, kind: MediaKind.movie, serverId: serverId);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

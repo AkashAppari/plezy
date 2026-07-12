@@ -29,6 +29,7 @@ import 'package:saf_util/saf_util_platform_interface.dart';
 
 import '../test_helpers/io_fakes.dart';
 import '../test_helpers/prefs.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   group('downloadExtensionFromUrl', () {
@@ -140,7 +141,7 @@ void main() {
         clientResolver: (serverId, {clientScopeId}) => null,
       );
       final year = await manager.debugResolveSafRecoveryShowYear(
-        MediaItem(
+        testMediaItem(
           id: 'ep-1',
           backend: MediaBackend.plex,
           kind: MediaKind.episode,
@@ -245,7 +246,7 @@ void main() {
       final client = _ArtworkRepairClient(
         serverId: ServerId('srv'),
         items: {
-          'show-1': MediaItem(
+          'show-1': testMediaItem(
             id: 'show-1',
             backend: MediaBackend.plex,
             kind: MediaKind.show,
@@ -562,7 +563,7 @@ Future<_DeletionResult> _runEpisodeDeletion({required bool saf, bool failVideoDe
   JellyfinApiCache.initialize(db);
   final serverId = ServerId('srv');
   const globalKey = 'srv:episode-1';
-  final episode = MediaItem(
+  final episode = testMediaItem(
     id: 'episode-1',
     backend: MediaBackend.plex,
     kind: MediaKind.episode,
@@ -674,7 +675,7 @@ Future<_ContainerDeletionResult> _runContainerDeletion({required MediaKind kind,
   final serverId = ServerId('srv');
   final id = '${kind.id}-1';
   final globalKey = 'srv:$id';
-  final metadata = MediaItem(
+  final metadata = testMediaItem(
     id: id,
     backend: MediaBackend.plex,
     kind: kind,
@@ -913,7 +914,7 @@ DownloadTask _downloadTask(String taskId, String globalKey) {
 }
 
 MediaItem _movie({String? thumbPath}) {
-  return MediaItem(
+  return testMediaItem(
     id: 'item-1',
     backend: MediaBackend.jellyfin,
     kind: MediaKind.movie,

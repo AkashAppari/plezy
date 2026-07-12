@@ -4,9 +4,10 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_item_merge.dart';
 import 'package:plezy/media/media_kind.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
-  MediaItem item({String? serverId, String? serverName, String? libraryId, String? libraryTitle}) => MediaItem(
+  MediaItem item({String? serverId, String? serverName, String? libraryId, String? libraryTitle}) => testMediaItem(
     id: 'item',
     backend: MediaBackend.plex,
     kind: MediaKind.movie,
@@ -17,14 +18,14 @@ void main() {
   );
 
   test('uses the authoritative fallback when both items omit server identity', () {
-    final merged = mergeFetchedMediaItem(fetched: item(), fallbackServerId: ServerId('fallback'));
+    final merged = mergeFetchedtestMediaItem(fetched: item(), fallbackServerId: ServerId('fallback'));
 
     expect(merged.serverId, 'fallback');
     expect(merged.globalKey, 'fallback:item');
   });
 
   test('preserves existing identity while preferring fetched library context', () {
-    final merged = mergeFetchedMediaItem(
+    final merged = mergeFetchedtestMediaItem(
       fetched: item(serverId: 'fetched', serverName: 'Fetched', libraryId: 'new-lib', libraryTitle: 'New'),
       existing: item(serverId: 'existing', serverName: 'Existing', libraryId: 'old-lib', libraryTitle: 'Old'),
       fallbackServerId: ServerId('fallback'),
@@ -37,7 +38,7 @@ void main() {
   });
 
   test('fills missing fetched library context from the existing item', () {
-    final merged = mergeFetchedMediaItem(
+    final merged = mergeFetchedtestMediaItem(
       fetched: item(),
       existing: item(libraryId: 'old-lib', libraryTitle: 'Old'),
       fallbackServerId: ServerId('fallback'),

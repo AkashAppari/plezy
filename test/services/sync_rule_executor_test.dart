@@ -19,6 +19,7 @@ import 'package:plezy/services/sync_rule_executor.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/prefs.dart';
+import '../test_helpers/media_items.dart';
 
 JellyfinConnection _jellyfinConnection(String userId) => testJellyfinConnection(
   machineId: 'jf-machine',
@@ -314,7 +315,7 @@ void main() {
     manager.debugRegisterClientForTesting(client);
 
     const ruleKey = 'profile-a|plex-machine:show-1';
-    final show = MediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
+    final show = testMediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
     await db.insertSyncRule(
       profileId: 'profile-a',
       serverId: ServerId('plex-machine'),
@@ -357,7 +358,7 @@ void main() {
     manager.debugRegisterClientForTesting(client);
 
     const ruleKey = 'profile-a|plex-machine:collection-1';
-    final collection = MediaItem(
+    final collection = testMediaItem(
       id: 'collection-1',
       backend: MediaBackend.plex,
       kind: MediaKind.collection,
@@ -406,10 +407,10 @@ void main() {
 
     final items = [
       _track('loose-track'),
-      MediaItem(id: 'album-1', backend: MediaBackend.plex, kind: MediaKind.album, title: 'Album'),
-      MediaItem(id: 'artist-1', backend: MediaBackend.plex, kind: MediaKind.artist, title: 'Artist'),
+      testMediaItem(id: 'album-1', backend: MediaBackend.plex, kind: MediaKind.album, title: 'Album'),
+      testMediaItem(id: 'artist-1', backend: MediaBackend.plex, kind: MediaKind.artist, title: 'Artist'),
       // Still skipped: nested lists / unplayable kinds.
-      MediaItem(id: 'photo-1', backend: MediaBackend.plex, kind: MediaKind.photo, title: 'Photo'),
+      testMediaItem(id: 'photo-1', backend: MediaBackend.plex, kind: MediaKind.photo, title: 'Photo'),
     ];
 
     final out = <MediaItem>[];
@@ -431,11 +432,11 @@ void main() {
 }
 
 MediaItem _track(String id, {bool played = false}) {
-  return MediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.track, title: id, viewCount: played ? 1 : 0);
+  return testMediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.track, title: id, viewCount: played ? 1 : 0);
 }
 
 MediaItem _episode(String id, {required int parentIndex, required int index, String? originallyAvailableAt}) {
-  return MediaItem(
+  return testMediaItem(
     id: id,
     backend: MediaBackend.plex,
     kind: MediaKind.episode,
@@ -526,7 +527,7 @@ class _CollectionPagingClient implements MediaServerClient {
     collectionPageCalls.add((start: start, size: size));
     expect(collectionId, 'collection-1');
     return LibraryPage(
-      items: [MediaItem(id: 'movie-1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie')],
+      items: [testMediaItem(id: 'movie-1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie')],
       totalCount: 1,
       offset: start ?? 0,
     );

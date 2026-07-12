@@ -20,6 +20,7 @@ import 'package:plezy/utils/deletion_notifier.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
 
 import '../test_helpers/prefs.dart';
+import '../test_helpers/media_items.dart';
 
 MediaItem _item(
   String id, {
@@ -27,7 +28,7 @@ MediaItem _item(
   String? grandparentId,
   MediaKind kind = MediaKind.episode,
   String serverId = 'server_1',
-}) => MediaItem(
+}) => testMediaItem(
   id: id,
   backend: MediaBackend.plex,
   kind: kind,

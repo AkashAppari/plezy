@@ -16,6 +16,7 @@ import '../../i18n/strings.g.dart';
 import '../../media/ids.dart';
 import '../../media/lyrics.dart';
 import '../../media/media_item.dart';
+import '../../media/stepped_seek.dart';
 import '../../media/media_server_client.dart';
 import '../../mixins/context_menu_tap_mixin.dart';
 import '../../services/device_performance.dart';
@@ -1004,27 +1005,37 @@ class _NowPlayingSeekBarState extends State<_NowPlayingSeekBar> {
 
   int _seekRepeatCount = 0;
   LogicalKeyboardKey? _seekDirection;
-  Duration? _keySeekTarget;
+  late final DebouncedSeekAccumulator _keySeek;
 
-  /// Stepped acceleration tiers, mirroring the video timeline's key-repeat
-  /// scrubbing.
-  double _seekMultiplier() {
-    if (_seekRepeatCount <= 5) return 1.5;
-    if (_seekRepeatCount <= 15) return 3.0;
-    if (_seekRepeatCount <= 30) return 6.0;
-    return 10.0;
+  @override
+  void initState() {
+    super.initState();
+    _keySeek = DebouncedSeekAccumulator(
+      currentPosition: () => context.read<MusicPlaybackService>().position,
+      duration: () => context.read<MusicPlaybackService>().duration ?? Duration.zero,
+      seek: (target) => unawaited(context.read<MusicPlaybackService>().seek(target)),
+      onChanged: () {
+        if (mounted) setState(() {});
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _keySeek.dispose();
+    super.dispose();
   }
 
   void _resetSeekState() {
     _seekRepeatCount = 0;
     _seekDirection = null;
-    _keySeekTarget = null;
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     final key = event.logicalKey;
 
     if (event is KeyUpEvent && (key.isLeftKey || key.isRightKey)) {
+      _keySeek.flush();
       _resetSeekState();
       return KeyEventResult.handled;
     }
@@ -1054,16 +1065,11 @@ class _NowPlayingSeekBarState extends State<_NowPlayingSeekBar> {
         _seekRepeatCount = 0;
       }
       if (event is KeyRepeatEvent) _seekRepeatCount++;
-      final multiplier = event is KeyRepeatEvent ? _seekMultiplier() : 1.0;
+      final multiplier = event is KeyRepeatEvent ? steppedSeekMultiplier(_seekRepeatCount) : 1.0;
       final stepMs = (_baseStepMs * multiplier).round();
 
-      // Step from the in-flight target during a held burst — the position
-      // stream lags behind the seeks.
-      final base = _keySeekTarget ?? service.position;
-      final targetMs = (base.inMilliseconds + (key.isRightKey ? stepMs : -stepMs)).clamp(0, duration.inMilliseconds);
-      final target = Duration(milliseconds: targetMs);
-      _keySeekTarget = target;
-      unawaited(service.seek(target));
+      final step = Duration(milliseconds: stepMs);
+      _keySeek.seekBy(key.isRightKey ? step : -step);
       return KeyEventResult.handled;
     }
 
@@ -1082,7 +1088,10 @@ class _NowPlayingSeekBarState extends State<_NowPlayingSeekBar> {
         final duration = service.duration ?? Duration.zero;
         final durationMs = duration.inMilliseconds.toDouble();
         final hasDuration = durationMs > 0;
-        final rawPositionMs = _dragValueMs ?? (snapshot.data ?? service.position).inMilliseconds.toDouble();
+        final rawPositionMs =
+            _dragValueMs ??
+            _keySeek.pendingPosition?.inMilliseconds.toDouble() ??
+            (snapshot.data ?? service.position).inMilliseconds.toDouble();
         final positionMs = hasDuration ? rawPositionMs.clamp(0.0, durationMs) : 0.0;
         final dragging = _dragValueMs != null;
 
@@ -1103,7 +1112,12 @@ class _NowPlayingSeekBarState extends State<_NowPlayingSeekBar> {
               child: Slider(
                 max: hasDuration ? durationMs : 1,
                 value: positionMs,
-                onChangeStart: hasDuration ? (value) => setState(() => _dragValueMs = value) : null,
+                onChangeStart: hasDuration
+                    ? (value) {
+                        _keySeek.cancel();
+                        setState(() => _dragValueMs = value);
+                      }
+                    : null,
                 onChanged: hasDuration ? (value) => setState(() => _dragValueMs = value) : null,
                 onChangeEnd: hasDuration
                     ? (value) {
@@ -1135,10 +1149,13 @@ class _NowPlayingSeekBarState extends State<_NowPlayingSeekBar> {
       focusNode: widget.focusNode,
       descendantsAreFocusable: false,
       onKeyEvent: _handleKeyEvent,
-      onFocusChange: (hasFocus) => setState(() {
-        _focused = hasFocus;
-        if (!hasFocus) _resetSeekState();
-      }),
+      onFocusChange: (hasFocus) {
+        if (!hasFocus) {
+          _keySeek.flush();
+          _resetSeekState();
+        }
+        setState(() => _focused = hasFocus);
+      },
       child: AnimatedContainer(
         duration: FocusTheme.getAnimationDuration(context),
         padding: const EdgeInsets.symmetric(vertical: 4),

@@ -16,6 +16,7 @@ import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   late AppDatabase db;
@@ -315,7 +316,7 @@ void main() {
 
     final result = await client.getPlaybackInitialization(
       PlaybackInitializationOptions(
-        metadata: MediaItem(id: '42', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'server-id'),
+        metadata: testMediaItem(id: '42', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'server-id'),
         selectedMediaIndex: 0,
       ),
     );

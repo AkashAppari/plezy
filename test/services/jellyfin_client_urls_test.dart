@@ -16,6 +16,7 @@ import 'package:plezy/utils/device_identity.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/paged_fakes.dart';
+import '../test_helpers/media_items.dart';
 
 JellyfinConnection _conn({String accessToken = 'tok-abc', String baseUrl = 'https://jf.example.com'}) =>
     testJellyfinConnection(
@@ -423,7 +424,7 @@ void main() {
       addTearDown(scoped.close);
 
       final resolution = await scoped.resolveDownload(
-        MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+        testMediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
         mediaIndex: 1,
       );
 
@@ -470,7 +471,7 @@ void main() {
       addTearDown(scoped.close);
 
       final url = await scoped.resolveExternalPlaybackUrl(
-        MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+        testMediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
         mediaIndex: 0,
         mediaSourceId: 'item-1',
       );
@@ -535,7 +536,7 @@ void main() {
 
       final result = await scoped.getPlaybackInitialization(
         PlaybackInitializationOptions(
-          metadata: MediaItem(
+          metadata: testMediaItem(
             id: 'item-1',
             backend: MediaBackend.jellyfin,
             kind: MediaKind.movie,
@@ -611,7 +612,12 @@ void main() {
 
       final result = await scoped.getPlaybackInitialization(
         PlaybackInitializationOptions(
-          metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
           selectedMediaIndex: 0,
           qualityPreset: TranscodeQualityPreset.p720_2mbps,
         ),
@@ -694,7 +700,12 @@ void main() {
 
       final result = await scoped.getPlaybackInitialization(
         PlaybackInitializationOptions(
-          metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
           selectedMediaIndex: 0,
         ),
       );
@@ -795,7 +806,12 @@ void main() {
 
       final result = await scoped.getPlaybackInitialization(
         PlaybackInitializationOptions(
-          metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
           selectedMediaIndex: 0,
         ),
       );
@@ -857,7 +873,12 @@ void main() {
 
       final result = await scoped.getPlaybackInitialization(
         PlaybackInitializationOptions(
-          metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
           selectedMediaIndex: 0,
         ),
       );
@@ -918,7 +939,12 @@ void main() {
 
       final result = await scoped.getPlaybackInitialization(
         PlaybackInitializationOptions(
-          metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
           selectedMediaIndex: 0,
           selectedAudioStreamId: 4,
         ),
@@ -986,7 +1012,12 @@ void main() {
 
       final result = await scoped.getPlaybackInitialization(
         PlaybackInitializationOptions(
-          metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
           selectedMediaIndex: 1,
           selectedAudioStreamId: 4,
         ),
@@ -1048,7 +1079,12 @@ void main() {
 
       final result = await scoped.getPlaybackInitialization(
         PlaybackInitializationOptions(
-          metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
           selectedMediaIndex: 0,
           selectedMediaSourceId: 'src-1080',
         ),
@@ -1108,7 +1144,12 @@ void main() {
 
       final result = await scoped.getPlaybackInitialization(
         PlaybackInitializationOptions(
-          metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
           selectedMediaIndex: 0,
           selectedMediaSourceId: 'item-1',
         ),
@@ -1176,7 +1217,12 @@ void main() {
 
       final result = await scoped.getPlaybackInitialization(
         PlaybackInitializationOptions(
-          metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
           selectedMediaIndex: 0,
           selectedMediaSourceId: 'src-1080',
         ),
@@ -1265,7 +1311,7 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      final item = MediaItem(
+      final item = testMediaItem(
         id: 'folder/item #1?x',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.movie,
@@ -1303,7 +1349,12 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      final item = MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1');
+      final item = testMediaItem(
+        id: 'item-1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.movie,
+        serverId: 'srv-1',
+      );
 
       await expectLater(scoped.removeFromContinueWatching(item), throwsA(isA<UnsupportedError>()));
       expect(requested, isFalse);
@@ -1345,7 +1396,12 @@ void main() {
 
       final result = await scoped.getPlaybackInitialization(
         PlaybackInitializationOptions(
-          metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
           selectedMediaIndex: 0,
           qualityPreset: TranscodeQualityPreset.p720_2mbps,
         ),
@@ -1386,7 +1442,12 @@ void main() {
 
       final result = await scoped.getPlaybackInitialization(
         PlaybackInitializationOptions(
-          metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
           selectedMediaIndex: 0,
         ),
       );
@@ -1578,7 +1639,12 @@ void main() {
 
       final result = await scoped.getPlaybackInitialization(
         PlaybackInitializationOptions(
-          metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
           selectedMediaIndex: 0,
           qualityPreset: TranscodeQualityPreset.p720_2mbps,
         ),
@@ -1883,7 +1949,7 @@ void main() {
       addTearDown(scoped.close);
 
       final items = await scoped.fetchFolderChildren(
-        MediaItem(id: 'folder-1', backend: MediaBackend.jellyfin, kind: MediaKind.folder),
+        testMediaItem(id: 'folder-1', backend: MediaBackend.jellyfin, kind: MediaKind.folder),
         onPage: pages.add,
       );
 
@@ -1925,7 +1991,7 @@ void main() {
       addTearDown(scoped.close);
 
       final items = await scoped.fetchFolderChildren(
-        MediaItem(id: 'season-1', backend: MediaBackend.jellyfin, kind: MediaKind.season),
+        testMediaItem(id: 'season-1', backend: MediaBackend.jellyfin, kind: MediaKind.season),
         onPage: pages.add,
       );
 

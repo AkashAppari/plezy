@@ -6,9 +6,10 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/music/music_queue_controller.dart';
+import '../../test_helpers/media_items.dart';
 
 MediaItem _track(String id) =>
-    MediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.track, title: 'Track $id', serverId: 'srv');
+    testMediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.track, title: 'Track $id', serverId: 'srv');
 
 List<String> _ids(List<MediaItem> items) => [for (final i in items) i.id];
 

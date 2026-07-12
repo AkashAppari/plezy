@@ -980,15 +980,9 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         await queueItem(item);
       } else if (item.isShow || item.isSeason) {
         if (!expandShows) continue;
-        // One-shot recursive expansion (Plex /grandchildren, Jellyfin
-        // Recursive=true) — the per-season walk that used to live here
-        // was the same pattern as collectEpisodes*, just inlined.
+        // One-shot recursive expansion for both shows and seasons.
         final episodes = <MediaItem>[];
-        if (item.isShow) {
-          await collectEpisodesForShow(client, item.id, unwatchedOnly: unwatchedOnly, out: episodes, fallback: item);
-        } else {
-          await collectEpisodesForSeason(client, item.id, unwatchedOnly: unwatchedOnly, out: episodes, fallback: item);
-        }
+        await collectEpisodes(client, item.id, unwatchedOnly: unwatchedOnly, out: episodes, fallback: item);
         for (final ep in episodes) {
           await queueItem(ep);
         }
@@ -1264,25 +1258,14 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         includeSpecials || (container.kind == MediaKind.season && isSpecialSeasonNumber(container.index));
     final relatedContext = _RelatedMetadataDownloadContext();
     final episodes = <MediaItem>[];
-    if (container.kind == MediaKind.show) {
-      await collectEpisodesForShow(
-        client,
-        container.id,
-        unwatchedOnly: unwatchedOnly,
-        out: episodes,
-        fallback: container,
-        includeSpecials: effectiveIncludeSpecials,
-      );
-    } else {
-      await collectEpisodesForSeason(
-        client,
-        container.id,
-        unwatchedOnly: unwatchedOnly,
-        out: episodes,
-        fallback: container,
-        includeSpecials: effectiveIncludeSpecials,
-      );
-    }
+    await collectEpisodes(
+      client,
+      container.id,
+      unwatchedOnly: unwatchedOnly,
+      out: episodes,
+      fallback: container,
+      includeSpecials: effectiveIncludeSpecials,
+    );
 
     int count = 0;
     for (final episode in episodes) {

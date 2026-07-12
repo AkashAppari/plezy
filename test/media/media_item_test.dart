@@ -5,6 +5,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_part.dart';
 import 'package:plezy/media/media_role.dart';
 import 'package:plezy/media/media_version.dart';
+import '../test_helpers/media_items.dart';
 
 /// Backend-agnostic [MediaItem] tests. Existing coverage is split between
 /// `plex_mappers_test` and `jellyfin_mappers_test` — those exercise the
@@ -22,7 +23,7 @@ MediaItem _movie({
   String? artPath,
   String? backgroundSquarePath,
   MediaBackend backend = MediaBackend.plex,
-}) => MediaItem(
+}) => testMediaItem(
   id: id,
   backend: backend,
   kind: MediaKind.movie,
@@ -50,7 +51,7 @@ void main() {
     });
 
     test('show with all leaves watched is watched', () {
-      final show = MediaItem(
+      final show = testMediaItem(
         id: 's',
         backend: MediaBackend.plex,
         kind: MediaKind.show,
@@ -62,7 +63,7 @@ void main() {
     });
 
     test('show with viewedLeafCount > leafCount is still watched (defensive)', () {
-      final show = MediaItem(
+      final show = testMediaItem(
         id: 's',
         backend: MediaBackend.plex,
         kind: MediaKind.show,
@@ -74,7 +75,13 @@ void main() {
     });
 
     test('show with no leaf info falls back to viewCount', () {
-      final show = MediaItem(id: 's', backend: MediaBackend.plex, kind: MediaKind.show, viewCount: 1, serverId: 's1');
+      final show = testMediaItem(
+        id: 's',
+        backend: MediaBackend.plex,
+        kind: MediaKind.show,
+        viewCount: 1,
+        serverId: 's1',
+      );
       expect(show.isWatched, isTrue);
     });
   });
@@ -102,7 +109,7 @@ void main() {
     });
 
     test('episodes prefer show art before episode art for wide hero containers', () {
-      final episode = MediaItem(
+      final episode = testMediaItem(
         id: 'e1',
         backend: MediaBackend.plex,
         kind: MediaKind.episode,
@@ -122,7 +129,7 @@ void main() {
 
   group('MediaItem.isPartiallyWatched', () {
     test('show with some leaves watched is partially watched', () {
-      final show = MediaItem(
+      final show = testMediaItem(
         id: 's',
         backend: MediaBackend.plex,
         kind: MediaKind.show,
@@ -134,7 +141,7 @@ void main() {
     });
 
     test('show with zero leaves watched is NOT partially watched', () {
-      final show = MediaItem(
+      final show = testMediaItem(
         id: 's',
         backend: MediaBackend.plex,
         kind: MediaKind.show,
@@ -146,7 +153,7 @@ void main() {
     });
 
     test('show with all leaves watched is NOT partially watched', () {
-      final show = MediaItem(
+      final show = testMediaItem(
         id: 's',
         backend: MediaBackend.plex,
         kind: MediaKind.show,
@@ -210,7 +217,7 @@ void main() {
     });
 
     test('preserves Plex-only fields when omitted', () {
-      const original = PlexMediaItem(
+      const original = PlextestMediaItem(
         id: 'p1',
         kind: MediaKind.movie,
         title: 'Old',
@@ -244,7 +251,7 @@ void main() {
     });
 
     test('preserves Jellyfin playlist item id when omitted', () {
-      const original = JellyfinMediaItem(
+      const original = JellyfintestMediaItem(
         id: 'j1',
         kind: MediaKind.movie,
         title: 'Old',
@@ -270,7 +277,7 @@ void main() {
 
   group('MediaItem JSON', () {
     test('round-trips Plex-only fields', () {
-      const original = PlexMediaItem(
+      const original = PlextestMediaItem(
         id: 'p1',
         kind: MediaKind.movie,
         title: 'Movie',
@@ -321,7 +328,12 @@ void main() {
     });
 
     test('round-trips Jellyfin playlist item id', () {
-      const original = JellyfinMediaItem(id: 'j1', kind: MediaKind.movie, title: 'Movie', playlistItemId: 'entry-1');
+      const original = JellyfintestMediaItem(
+        id: 'j1',
+        kind: MediaKind.movie,
+        title: 'Movie',
+        playlistItemId: 'entry-1',
+      );
 
       final json = original.toJson();
       final decoded = MediaItem.fromJson(json);
@@ -343,7 +355,7 @@ void main() {
 
   group('MediaItem.displayTitle', () {
     test('episode prefers grandparent (show) title', () {
-      final ep = MediaItem(
+      final ep = testMediaItem(
         id: 'e1',
         backend: MediaBackend.plex,
         kind: MediaKind.episode,
@@ -357,7 +369,7 @@ void main() {
     });
 
     test('season prefers grandparent over parent (when both present)', () {
-      final season = MediaItem(
+      final season = testMediaItem(
         id: 'sn1',
         backend: MediaBackend.plex,
         kind: MediaKind.season,

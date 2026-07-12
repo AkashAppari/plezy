@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
@@ -9,11 +10,21 @@ import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/video_player_navigation.dart';
 
 import '../test_helpers/prefs.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
+  test('VOD and Live TV route contract is opaque, named, and transition-free', () {
+    final route = buildVideoPlayerRoute(builder: (_) => const SizedBox());
+
+    expect(route.settings.name, kVideoPlayerRouteName);
+    expect(route.opaque, isTrue);
+    expect(route.transitionDuration, Duration.zero);
+    expect(route.reverseTransitionDuration, Duration.zero);
+  });
+
   test('in-flight video player navigation rejects duplicate requests', () {
     final guard = VideoPlayerNavigationInFlightGuard();
-    final item = MediaItem(
+    final item = testMediaItem(
       id: 'episode_1',
       backend: MediaBackend.plex,
       kind: MediaKind.episode,
@@ -48,7 +59,7 @@ void main() {
       MediaVersion(id: '102', videoResolution: '4k', videoCodec: 'hevc', container: 'mkv'),
     ];
 
-    final episode = MediaItem(
+    final episode = testMediaItem(
       id: 'ep-1',
       backend: MediaBackend.plex,
       kind: MediaKind.episode,
@@ -122,7 +133,7 @@ void main() {
       );
       SettingsService.resetForTesting();
 
-      final bare = MediaItem(
+      final bare = testMediaItem(
         id: 'ep-2',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.episode,

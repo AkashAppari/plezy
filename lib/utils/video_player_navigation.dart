@@ -25,6 +25,20 @@ import 'platform_detector.dart';
 
 const String kVideoPlayerRouteName = '/video_player';
 
+/// The route contract shared by VOD and Live TV playback.
+///
+/// The stable route name drives player lifecycle observation, while the
+/// opaque zero-duration route prevents the underlying detail screen flashing
+/// during player startup and teardown.
+PageRouteBuilder<bool> buildVideoPlayerRoute({required WidgetBuilder builder}) {
+  return PageRouteBuilder<bool>(
+    settings: const RouteSettings(name: kVideoPlayerRouteName),
+    pageBuilder: (context, _, _) => builder(context),
+    transitionDuration: Duration.zero,
+    reverseTransitionDuration: Duration.zero,
+  );
+}
+
 class VideoPlayerNavigationInFlightGuard {
   final Set<String> _keys = <String>{};
 
@@ -324,9 +338,8 @@ Future<bool?> navigateToVideoPlayer(
       return null;
     }
 
-    final route = PageRouteBuilder<bool>(
-      settings: const RouteSettings(name: kVideoPlayerRouteName),
-      pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
+    final route = buildVideoPlayerRoute(
+      builder: (_) => VideoPlayerScreen(
         metadata: metadata,
         preferredAudioTrack: preferredAudioTrack,
         preferredSubtitleTrack: preferredSubtitleTrack,
@@ -337,8 +350,6 @@ Future<bool?> navigateToVideoPlayer(
         selectedQualityPreset: selectedQualityPreset,
         isOffline: isOffline,
       ),
-      transitionDuration: Duration.zero,
-      reverseTransitionDuration: Duration.zero,
     );
 
     return usePushReplacement ? navigator.pushReplacement<bool, bool>(route) : navigator.push<bool>(route);

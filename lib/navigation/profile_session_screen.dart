@@ -98,8 +98,7 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
     }
     if (_lastSessionActiveId == activeId) return;
     _lastSessionActiveId = activeId;
-    final cache = ApiCache.maybeInstance;
-    if (cache != null) unawaited(cache.clearVolatile());
+    unawaited(ApiCache.clearRegisteredVolatile());
   }
 
   @override

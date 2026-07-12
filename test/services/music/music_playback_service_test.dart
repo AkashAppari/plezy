@@ -19,10 +19,11 @@ import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/music/music_playback_service_impl.dart';
 import 'package:plezy/services/music/music_source_resolver.dart';
 import 'package:plezy/services/playback_coordinator.dart';
+import '../../test_helpers/media_items.dart';
 
 const _trackDuration = Duration(minutes: 3);
 
-MediaItem _track(String id) => MediaItem(
+MediaItem _track(String id) => testMediaItem(
   id: id,
   backend: MediaBackend.plex,
   kind: MediaKind.track,

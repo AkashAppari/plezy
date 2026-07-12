@@ -15,6 +15,7 @@ import 'package:plezy/widgets/media_card.dart';
 import 'package:plezy/widgets/media_grid_delegate.dart';
 
 import '../test_helpers/prefs.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -69,7 +70,7 @@ void main() {
   });
 
   testWidgets('full bleed grid media cards hide text when constrained by a grid cell', (tester) async {
-    final item = MediaItem(
+    final item = testMediaItem(
       id: 'movie_1',
       backend: MediaBackend.plex,
       kind: MediaKind.movie,
@@ -93,7 +94,12 @@ void main() {
   });
 
   testWidgets('standard grid media cards still show text', (tester) async {
-    final item = MediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Visible Movie');
+    final item = testMediaItem(
+      id: 'movie_1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Visible Movie',
+    );
 
     await tester.pumpWidget(
       _TestApp(
@@ -105,7 +111,7 @@ void main() {
   });
 
   testWidgets('full bleed flag does not hide list media card text', (tester) async {
-    final item = MediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'List Movie');
+    final item = testMediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'List Movie');
 
     await tester.pumpWidget(
       _TestApp(
@@ -205,7 +211,7 @@ void main() {
 }
 
 Widget _fullCardHarness({required FocusNode focusNode, required bool fullBleed}) {
-  final item = MediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Focused Movie');
+  final item = testMediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Focused Movie');
   return InputModeTracker(
     child: _TestApp(
       child: SizedBox(

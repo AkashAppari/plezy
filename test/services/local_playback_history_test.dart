@@ -6,6 +6,7 @@ import 'package:plezy/services/local_playback_history.dart';
 import 'package:plezy/services/settings_service.dart';
 
 import '../test_helpers/prefs.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   setUp(() {
@@ -15,7 +16,7 @@ void main() {
   });
 
   test('recordPlayback writes item and series keys for an episode', () async {
-    final episode = MediaItem(
+    final episode = testMediaItem(
       id: 'ep-1',
       backend: MediaBackend.plex,
       kind: MediaKind.episode,
@@ -32,7 +33,7 @@ void main() {
   });
 
   test('recordPlayback writes only the item key for a movie', () async {
-    final movie = MediaItem(
+    final movie = testMediaItem(
       id: 'movie-1',
       backend: MediaBackend.plex,
       kind: MediaKind.movie,
@@ -47,7 +48,7 @@ void main() {
   });
 
   test('repeat writes for the same item within the rewrite window are skipped', () async {
-    final movie = MediaItem(
+    final movie = testMediaItem(
       id: 'movie-1',
       backend: MediaBackend.plex,
       kind: MediaKind.movie,
@@ -67,7 +68,7 @@ void main() {
     final settings = await SettingsService.getInstance();
     await settings.write(SettingsService.localLastPlayedAt, {for (var i = 0; i < 400; i++) 'srv-1:old-$i': i + 1});
 
-    final movie = MediaItem(
+    final movie = testMediaItem(
       id: 'fresh',
       backend: MediaBackend.plex,
       kind: MediaKind.movie,

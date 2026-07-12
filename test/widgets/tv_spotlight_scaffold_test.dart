@@ -4,8 +4,9 @@ import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/widgets/tv_spotlight_scaffold.dart';
+import '../test_helpers/media_items.dart';
 
-MediaItem _item(String id) => MediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.movie, title: id);
+MediaItem _item(String id) => testMediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.movie, title: id);
 
 MediaHub _hub(String id, List<MediaItem> items) =>
     MediaHub(id: id, title: id, type: 'movie', size: items.length, items: items);

@@ -1430,7 +1430,7 @@ class _MainScreenState extends State<MainScreen>
     // Drop volatile API cache rows before screens kick off their refetch.
     // Pinned rows back offline downloads and must survive profile switches.
     try {
-      await ApiCache.instance.clearVolatile();
+      await ApiCache.clearRegisteredVolatile();
     } catch (e, st) {
       appLogger.w('Failed to clear ApiCache on profile switch', error: e, stackTrace: st);
     }

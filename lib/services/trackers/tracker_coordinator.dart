@@ -142,11 +142,7 @@ class TrackerCoordinator {
     }
 
     final episodes = <MediaItem>[];
-    if (kind == MediaKind.show) {
-      await collectEpisodesForShow(client, item.id, unwatchedOnly: false, out: episodes, fallback: item);
-    } else {
-      await collectEpisodesForSeason(client, item.id, unwatchedOnly: false, out: episodes, fallback: item);
-    }
+    await collectEpisodes(client, item.id, unwatchedOnly: false, out: episodes, fallback: item);
     appLogger.d('Trackers: manual ${kind.name} ${item.id} expanded to ${episodes.length} episodes');
 
     await _markContainerEpisodesWatched(episodes, resolver);
@@ -169,11 +165,7 @@ class TrackerCoordinator {
     }
 
     final episodes = <MediaItem>[];
-    if (kind == MediaKind.show) {
-      await collectEpisodesForShow(client, item.id, unwatchedOnly: false, out: episodes, fallback: item);
-    } else {
-      await collectEpisodesForSeason(client, item.id, unwatchedOnly: false, out: episodes, fallback: item);
-    }
+    await collectEpisodes(client, item.id, unwatchedOnly: false, out: episodes, fallback: item);
     appLogger.d('Trackers: manual ${kind.name} ${item.id} unwatched expanded to ${episodes.length} episodes');
 
     await _markContainerEpisodesUnwatched(episodes, resolver);

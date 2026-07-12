@@ -21,23 +21,15 @@ import 'jellyfin_mappers.dart';
 /// the bare machine id; the compound prefix only isolates local user-scoped
 /// state such as `UserData`.
 class JellyfinApiCache extends ApiCache {
-  static JellyfinApiCache? _instance;
-  static JellyfinApiCache get instance {
-    if (_instance == null) {
-      throw StateError('JellyfinApiCache not initialized. Call JellyfinApiCache.initialize() first.');
-    }
-    return _instance!;
-  }
+  static final _singleton = ApiCacheSingleton<JellyfinApiCache>(MediaBackend.jellyfin, 'JellyfinApiCache');
+  static JellyfinApiCache get instance => _singleton.instance;
 
   JellyfinApiCache._(super.db);
 
   /// Initialize the singleton with an [AppDatabase] instance. Also registers
   /// this instance with the [ApiCache] backend dispatch so callers using
   /// `ApiCache.forBackend(MediaBackend.jellyfin)` resolve here.
-  static void initialize(AppDatabase db) {
-    _instance = JellyfinApiCache._(db);
-    ApiCache.registerInstance(MediaBackend.jellyfin, _instance!);
-  }
+  static void initialize(AppDatabase db) => _singleton.install(JellyfinApiCache._(db));
 
   JellyfinCacheResolver get _resolver => JellyfinCacheResolver(database);
 
@@ -211,29 +203,25 @@ class JellyfinApiCache extends ApiCache {
       }
     }
 
-    return await tryIsolateRun(() {
-      final result = <String, MediaItem>{};
-      for (final entry in entries) {
-        final ctx = contexts[entry.connection.id];
-        final absolutizer = absolutizers[entry.connection.id];
-        if (ctx == null || absolutizer == null) continue;
-        try {
-          final data = jsonDecode(entry.cacheRow.data) as Map<String, dynamic>;
+    return await tryIsolateRun(
+      () => decodeCachedMediaRows(
+        entries,
+        serializedData: (entry) => entry.cacheRow.data,
+        decode: (entry, data) {
+          final ctx = contexts[entry.connection.id];
+          final absolutizer = absolutizers[entry.connection.id];
+          if (ctx == null || absolutizer == null) return null;
           final mapped = JellyfinMappers.mediaItem(
             data,
             serverId: ServerId(ctx.machineId),
             serverName: ctx.name,
             absolutizer: absolutizer,
           );
-          if (mapped != null) {
-            result[buildGlobalKey(ServerId(entry.key.scopeId), entry.key.itemId)] = mapped;
-          }
-        } catch (_) {
-          // Skip malformed entries
-        }
-      }
-      return result;
-    });
+          if (mapped == null) return null;
+          return MapEntry(buildGlobalKey(ServerId(entry.key.scopeId), entry.key.itemId), mapped);
+        },
+      ),
+    );
   }
 
   /// Resolve the connection context (server name + base URL + access token)

@@ -8,6 +8,7 @@ import 'package:plezy/models/jellyfin/jellyfin_user_profile.dart';
 import 'package:plezy/models/plex/plex_user_profile.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/services/track_selection_service.dart';
+import '../test_helpers/media_items.dart';
 
 // NOTE on coverage scope:
 // `TrackSelectionService` is a large pure logic surface with one async
@@ -44,7 +45,7 @@ import 'package:plezy/services/track_selection_service.dart';
 // ============================================================
 
 MediaItem _meta({MediaBackend backend = MediaBackend.plex, String? audioLanguage, String? subtitleLanguage}) =>
-    MediaItem(
+    testMediaItem(
       id: 'rk1',
       backend: backend,
       kind: MediaKind.movie,

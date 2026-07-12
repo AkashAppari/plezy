@@ -259,24 +259,14 @@ class SyncRuleExecutor {
   }) async {
     final fromServer = <MediaItem>[];
     final sourceMetadata = metadata[rule.globalKey];
-    if (rule.targetType == ContentTypes.show) {
-      await collectEpisodesForShow(
-        client,
-        rule.ratingKey,
-        unwatchedOnly: true,
-        out: fromServer,
-        fallback: sourceMetadata,
-        includeSpecials: rule.includeSpecials,
-      );
-    } else {
-      await collectEpisodesForSeason(
-        client,
-        rule.ratingKey,
-        unwatchedOnly: true,
-        out: fromServer,
-        fallback: sourceMetadata,
-      );
-    }
+    await collectEpisodes(
+      client,
+      rule.ratingKey,
+      unwatchedOnly: true,
+      out: fromServer,
+      fallback: sourceMetadata,
+      includeSpecials: rule.targetType != ContentTypes.show || rule.includeSpecials,
+    );
 
     final unwatchedEpisodes = await _excludeLocallyWatched(
       episodes: fromServer,
@@ -442,9 +432,8 @@ class SyncRuleExecutor {
           if (unwatchedOnly && !item.isUnwatchedOrInProgress) break;
           out.add(item);
         case MediaKind.show:
-          await collectEpisodesForShow(client, item.id, unwatchedOnly: unwatchedOnly, out: out, fallback: item);
         case MediaKind.season:
-          await collectEpisodesForSeason(client, item.id, unwatchedOnly: unwatchedOnly, out: out, fallback: item);
+          await collectEpisodes(client, item.id, unwatchedOnly: unwatchedOnly, out: out, fallback: item);
         case MediaKind.album:
         case MediaKind.artist:
           // One recursive-leaves call per container on both backends

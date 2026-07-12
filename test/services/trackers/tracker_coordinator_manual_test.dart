@@ -18,6 +18,7 @@ import 'package:plezy/services/trackers/simkl/simkl_tracker.dart';
 import 'package:plezy/services/trackers/tracker_coordinator.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
 import 'package:plezy/utils/external_ids.dart';
+import '../../test_helpers/media_items.dart';
 
 class _FakeMediaServerClient implements MediaServerClient {
   @override
@@ -88,7 +89,7 @@ class _FakeAnimeListsLookup implements AnimeListsMappingLookup {
   Future<Set<int>> lookupAnimeIdsForShow({int? tvdbId, int? tmdbId}) async => const <int>{};
 }
 
-MediaItem _season() => MediaItem(
+MediaItem _season() => testMediaItem(
   id: 'season-1',
   backend: MediaBackend.plex,
   kind: MediaKind.season,
@@ -99,7 +100,7 @@ MediaItem _season() => MediaItem(
   parentId: 'show-1',
 );
 
-MediaItem _episode(int number, {int season = 1}) => MediaItem(
+MediaItem _episode(int number, {int season = 1}) => testMediaItem(
   id: 'episode-$season-$number',
   backend: MediaBackend.plex,
   kind: MediaKind.episode,
@@ -110,7 +111,7 @@ MediaItem _episode(int number, {int season = 1}) => MediaItem(
   index: number,
 );
 
-MediaItem _show() => MediaItem(
+MediaItem _show() => testMediaItem(
   id: 'show-1',
   backend: MediaBackend.plex,
   kind: MediaKind.show,
@@ -119,7 +120,7 @@ MediaItem _show() => MediaItem(
   libraryId: 'lib-1',
 );
 
-MediaItem _movie() => MediaItem(
+MediaItem _movie() => testMediaItem(
   id: 'movie-1',
   backend: MediaBackend.plex,
   kind: MediaKind.movie,

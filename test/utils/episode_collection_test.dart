@@ -9,8 +9,9 @@ import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/media_version.dart';
 import 'package:plezy/utils/download_version_utils.dart';
 import 'package:plezy/media/episode_collection.dart';
+import '../test_helpers/media_items.dart';
 
-MediaItem _season(String id, {int index = 1, int? leafCount, int? viewedLeafCount}) => MediaItem(
+MediaItem _season(String id, {int index = 1, int? leafCount, int? viewedLeafCount}) => testMediaItem(
   id: id,
   backend: MediaBackend.plex,
   kind: MediaKind.season,
@@ -31,7 +32,7 @@ MediaItem _episode(
   int? viewOffsetMs,
   int? durationMs,
   String? originallyAvailableAt,
-}) => MediaItem(
+}) => testMediaItem(
   id: id,
   backend: MediaBackend.plex,
   kind: MediaKind.episode,
@@ -47,7 +48,7 @@ MediaItem _episode(
   originallyAvailableAt: originallyAvailableAt,
 );
 
-MediaItem _clip(String id) => MediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.clip, title: 'Clip');
+MediaItem _clip(String id) => testMediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.clip, title: 'Clip');
 
 class _RecordingClient implements MediaServerClient {
   _RecordingClient({this.childrenByParent = const {}, this.childrenPageByParent = const {}, this.itemsById = const {}});
@@ -111,7 +112,7 @@ class _LeavesClient implements MediaServerClient {
 }
 
 void main() {
-  test('collectEpisodesForShow drops Specials when includeSpecials is false', () async {
+  test('collectEpisodes drops Specials when includeSpecials is false', () async {
     final client = _LeavesClient([
       _episode('s1e1', parentIndex: 1, index: 1, originallyAvailableAt: '2022-10-05'),
       _episode('s0e1', parentIndex: 0, index: 1, originallyAvailableAt: '2022-10-27'),
@@ -119,12 +120,12 @@ void main() {
     ]);
 
     final withoutSpecials = <MediaItem>[];
-    await collectEpisodesForShow(client, 'show-1', unwatchedOnly: false, out: withoutSpecials, includeSpecials: false);
+    await collectEpisodes(client, 'show-1', unwatchedOnly: false, out: withoutSpecials, includeSpecials: false);
     expect(withoutSpecials.map((e) => e.id), ['s1e1', 's1e2']);
 
     // Default keeps Specials, interleaved into aired order.
     final withSpecials = <MediaItem>[];
-    await collectEpisodesForShow(client, 'show-1', unwatchedOnly: false, out: withSpecials);
+    await collectEpisodes(client, 'show-1', unwatchedOnly: false, out: withSpecials);
     expect(withSpecials.map((e) => e.id), ['s1e1', 's0e1', 's1e2']);
   });
 
@@ -317,7 +318,7 @@ void main() {
   });
 
   test('fetchSeasonEpisodePage normalizes show and season identity', () async {
-    final show = MediaItem(
+    final show = testMediaItem(
       id: 'show-1',
       backend: MediaBackend.plex,
       kind: MediaKind.show,
@@ -350,7 +351,7 @@ void main() {
   });
 
   test('fetchSeasonEpisodePage uses season episode paging when available', () async {
-    final show = MediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
+    final show = testMediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
     final season = _season('season-1');
     final row = _episode('episode-1');
     final client = _SeasonPagingRecordingClient(
@@ -367,7 +368,7 @@ void main() {
   });
 
   test('normalizeSeasonEpisodes ignores non-episode rows', () {
-    final show = MediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
+    final show = testMediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
     final season = _season('season-1');
 
     final normalized = normalizeSeasonEpisodes([_clip('extra-1'), _episode('episode-1')], show: show, season: season);
@@ -395,7 +396,7 @@ void main() {
 
   test('fetchRepresentativeVersions keeps full season lookup but pages selected season episodes', () async {
     final versions = [const MediaVersion(id: '1080', videoResolution: '1080')];
-    final show = MediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
+    final show = testMediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
     final special = _season('specials', index: 0);
     final firstRegularSeason = _season('season-1');
     final episodeRow = _episode('episode-1');

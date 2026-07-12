@@ -64,14 +64,11 @@ Future<void> navigateToLiveTv(
     appLogger.w('Live TV launch channel was not present in navigation list; prepending ${channel.key}');
   }
 
-  final route = PageRouteBuilder<bool>(
-    settings: const RouteSettings(name: kVideoPlayerRouteName),
-    pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
+  final route = buildVideoPlayerRoute(
+    builder: (_) => VideoPlayerScreen(
       metadata: placeholder,
       live: LiveTvSessionArgs(channel: channel, channels: normalizedChannels, currentChannelIndex: currentChannelIndex),
     ),
-    transitionDuration: Duration.zero,
-    reverseTransitionDuration: Duration.zero,
   );
 
   unawaited(navigator.push<bool>(route));

@@ -15,8 +15,9 @@ import 'package:plezy/widgets/music/mini_player.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/prefs.dart';
+import '../../test_helpers/media_items.dart';
 
-final _track = MediaItem(
+final _track = testMediaItem(
   id: 'track_1',
   backend: MediaBackend.plex,
   kind: MediaKind.track,

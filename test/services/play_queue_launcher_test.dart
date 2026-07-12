@@ -5,6 +5,7 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/play_queue_launcher.dart';
 import 'package:plezy/services/plex_client.dart';
+import '../test_helpers/media_items.dart';
 
 // NOTE on coverage scope:
 // `PlayQueueLauncher` is almost entirely network/UI glue:
@@ -82,7 +83,7 @@ void main() {
       final launcher = PlexPlayQueueLauncher(context: capturedContext, client: _StubPlexClient());
       final result = await launcher.launchShuffledShow(
         // movie is not show / season.
-        metadata: MediaItem(id: 'rk1', backend: MediaBackend.plex, kind: MediaKind.movie),
+        metadata: testMediaItem(id: 'rk1', backend: MediaBackend.plex, kind: MediaKind.movie),
         showLoadingIndicator: false,
       );
 

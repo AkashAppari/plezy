@@ -5,7 +5,11 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/services/api_cache.dart';
+import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/plex_api_cache.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   late AppDatabase db;
@@ -53,6 +57,47 @@ void main() {
 
     test('database getter exposes the underlying AppDatabase', () {
       expect(identical(cache.database, db), isTrue);
+    });
+
+    test('registered cleanup ignores backend initialization order and preserves pinned rows', () async {
+      await cache.put(ServerId('srv'), '/volatile', {'value': 1});
+      await cache.put(ServerId('srv'), '/pinned', {'value': 2});
+      await cache.pin(ServerId('srv'), '/pinned');
+
+      // Register the other backend last; cleanup must not depend on whichever
+      // concrete singleton happened to initialize most recently.
+      JellyfinApiCache.initialize(db);
+      await ApiCache.clearRegisteredVolatile();
+
+      expect(await cache.get(ServerId('srv'), '/volatile'), isNull);
+      expect(await cache.get(ServerId('srv'), '/pinned'), {'value': 2});
+    });
+
+    test('registering a new database drops stale backend dispatch entries', () async {
+      final newDb = AppDatabase.forTesting(NativeDatabase.memory());
+      JellyfinApiCache.initialize(newDb);
+
+      expect(() => ApiCache.forBackend(MediaBackend.plex), throwsStateError);
+      expect(identical(ApiCache.forBackend(MediaBackend.jellyfin).database, newDb), isTrue);
+
+      await newDb.close();
+    });
+  });
+
+  group('shared row decoding', () {
+    test('drops malformed rows without discarding valid siblings', () {
+      final decoded = decodeCachedMediaRows(
+        ['{"id":"first"}', 'not json', '[]', '{"id":"last"}'],
+        serializedData: (row) => row,
+        decode: (_, json) {
+          final id = json['id'] as String;
+          return MapEntry(id, testMediaItem(id: id));
+        },
+      );
+
+      expect(decoded.keys, ['first', 'last']);
+      expect(decoded['first']?.id, 'first');
+      expect(decoded['last']?.id, 'last');
     });
   });
 

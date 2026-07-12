@@ -2,9 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/models/download_models.dart';
 import 'package:plezy/utils/downloaded_version_match.dart';
+import '../test_helpers/media_items.dart';
 
 DownloadedMediaItem _row({int mediaIndex = 0, String? mediaSourceId}) {
-  return DownloadedMediaItem(
+  return DownloadedtestMediaItem(
     id: 1,
     serverId: 'srv',
     ratingKey: 'movie-1',

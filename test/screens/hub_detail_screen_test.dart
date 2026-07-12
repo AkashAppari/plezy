@@ -20,6 +20,7 @@ import 'package:provider/provider.dart';
 
 import '../test_helpers/paged_fakes.dart';
 import '../test_helpers/prefs.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -96,7 +97,7 @@ void main() {
   });
 }
 
-MediaItem _item(int index, {required MediaBackend backend, String? libraryId}) => MediaItem(
+MediaItem _item(int index, {required MediaBackend backend, String? libraryId}) => testMediaItem(
   id: 'item_$index',
   backend: backend,
   kind: MediaKind.movie,

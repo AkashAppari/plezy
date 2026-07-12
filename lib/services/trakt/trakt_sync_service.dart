@@ -183,17 +183,7 @@ class TraktSyncService {
       parentId: event.mediaType == 'season' && event.parentChain.isNotEmpty ? event.parentChain.first : null,
     );
     final episodes = <MediaItem>[];
-    if (fallback.kind == MediaKind.show) {
-      await collectEpisodesForShow(mediaClient, event.itemId, unwatchedOnly: false, out: episodes, fallback: fallback);
-    } else {
-      await collectEpisodesForSeason(
-        mediaClient,
-        event.itemId,
-        unwatchedOnly: false,
-        out: episodes,
-        fallback: fallback,
-      );
-    }
+    await collectEpisodes(mediaClient, event.itemId, unwatchedOnly: false, out: episodes, fallback: fallback);
 
     for (final episode in episodes) {
       if (episode.kind != MediaKind.episode) continue;

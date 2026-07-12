@@ -15,8 +15,9 @@ import 'package:plezy/widgets/music/track_row.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/prefs.dart';
+import '../../test_helpers/media_items.dart';
 
-MediaItem _track(String id, String title) => MediaItem(
+MediaItem _track(String id, String title) => testMediaItem(
   id: id,
   backend: MediaBackend.plex,
   kind: MediaKind.track,

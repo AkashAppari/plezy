@@ -18,6 +18,7 @@ import 'package:plezy/widgets/music/track_row.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/prefs.dart';
+import '../../test_helpers/media_items.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -79,7 +80,7 @@ const _album = MediaItem.plex(
 
 List<MediaItem> _multiDiscTracks() {
   MediaItem track({required String id, required String title, required int disc, required int number}) {
-    return MediaItem(
+    return testMediaItem(
       id: id,
       backend: MediaBackend.plex,
       kind: MediaKind.track,

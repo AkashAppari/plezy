@@ -29,6 +29,7 @@ import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -42,7 +43,7 @@ void main() {
   testWidgets('loads playlist continuation pages from an unmodifiable first page', (tester) async {
     final items = List.generate(
       playlistItemsPageSize + 5,
-      (index) => MediaItem(
+      (index) => testMediaItem(
         id: 'item_$index',
         backend: MediaBackend.plex,
         kind: MediaKind.movie,
@@ -178,7 +179,7 @@ const _playlist = MediaPlaylist(
 List<MediaItem> _mediaItems(int count) {
   return List.generate(
     count,
-    (index) => MediaItem(
+    (index) => testMediaItem(
       id: 'item_$index',
       backend: MediaBackend.plex,
       kind: MediaKind.movie,

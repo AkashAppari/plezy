@@ -3,20 +3,17 @@ import 'media_item.dart';
 import 'media_kind.dart';
 import 'media_server_client.dart';
 
-/// Collect every episode of a show into [out] using the backend's one-shot
-/// recursive-leaves call ([MediaServerClient.fetchPlayableDescendants] —
-/// Plex's `/library/metadata/{id}/allLeaves`, Jellyfin's
-/// `/Items?Recursive=true&IncludeItemTypes=Movie,Episode`). Avoids walking
-/// show → seasons → episodes client-side, so large series come back in one
-/// trip and aren't capped by any per-page Limit.
+/// Collect every episode below a show or season into [out] using the backend's
+/// one-shot recursive-leaves call ([MediaServerClient.fetchPlayableDescendants]
+/// — Plex's `/library/metadata/{id}/allLeaves`, Jellyfin's
+/// `/Items?Recursive=true&IncludeItemTypes=Movie,Episode`). This avoids walking
+/// show → seasons → episodes client-side and is not capped by a page size.
 ///
-/// A failure of the underlying call propagates to the caller — both
-/// `DownloadProvider.queueDownload` and the sync rule executor wrap their
-/// invocations so the user-facing error surfaces / the rule run is rolled
-/// back.
-Future<void> collectEpisodesForShow(
+/// A failure propagates to the caller so download and sync transactions can
+/// surface or roll back the operation.
+Future<void> collectEpisodes(
   MediaServerClient client,
-  String showRatingKey, {
+  String parentId, {
   required bool unwatchedOnly,
   required List<MediaItem> out,
   MediaItem? fallback,
@@ -24,28 +21,7 @@ Future<void> collectEpisodesForShow(
 }) {
   return _collectPlayable(
     client,
-    showRatingKey,
-    unwatchedOnly: unwatchedOnly,
-    out: out,
-    fallback: fallback,
-    includeSpecials: includeSpecials,
-  );
-}
-
-/// Collect every episode of a single season into [out] via the same
-/// one-shot endpoint. On a season the leaves *are* the episodes, so the
-/// shape matches the show case.
-Future<void> collectEpisodesForSeason(
-  MediaServerClient client,
-  String seasonRatingKey, {
-  required bool unwatchedOnly,
-  required List<MediaItem> out,
-  MediaItem? fallback,
-  bool includeSpecials = true,
-}) {
-  return _collectPlayable(
-    client,
-    seasonRatingKey,
+    parentId,
     unwatchedOnly: unwatchedOnly,
     out: out,
     fallback: fallback,
@@ -60,10 +36,7 @@ Future<MediaItem?> fetchFirstEpisodeForSeason(
   String seasonRatingKey, {
   String? seriesId,
 }) async {
-  final seasonPagingClient = client is SeasonEpisodePagingClient ? client as SeasonEpisodePagingClient : null;
-  final page = seriesId != null && seasonPagingClient != null
-      ? await seasonPagingClient.fetchSeasonEpisodesPage(seriesId, seasonRatingKey, start: 0, size: 1)
-      : await client.fetchChildrenPage(seasonRatingKey, start: 0, size: 1);
+  final page = await _fetchSeasonPage(client, seasonId: seasonRatingKey, seriesId: seriesId, start: 0, size: 1);
   for (final item in page.items) {
     if (item.kind == MediaKind.episode) return item;
   }
@@ -259,15 +232,26 @@ Future<LibraryPage<MediaItem>> fetchSeasonEpisodePage(
   required int start,
   required int size,
 }) async {
-  final seasonPagingClient = client is SeasonEpisodePagingClient ? client as SeasonEpisodePagingClient : null;
-  final page = seasonPagingClient != null
-      ? await seasonPagingClient.fetchSeasonEpisodesPage(show.id, season.id, start: start, size: size)
-      : await client.fetchChildrenPage(season.id, start: start, size: size);
+  final page = await _fetchSeasonPage(client, seriesId: show.id, seasonId: season.id, start: start, size: size);
   return LibraryPage<MediaItem>(
     items: normalizeSeasonEpisodes(page.items, show: show, season: season),
     totalCount: page.totalCount,
     offset: page.offset,
   );
+}
+
+Future<LibraryPage<MediaItem>> _fetchSeasonPage(
+  MediaServerClient client, {
+  required String seasonId,
+  required int start,
+  required int size,
+  String? seriesId,
+}) {
+  final pagingClient = client is SeasonEpisodePagingClient ? client as SeasonEpisodePagingClient : null;
+  if (seriesId != null && pagingClient != null) {
+    return pagingClient.fetchSeasonEpisodesPage(seriesId, seasonId, start: start, size: size);
+  }
+  return client.fetchChildrenPage(seasonId, start: start, size: size);
 }
 
 List<MediaItem> normalizeSeasonEpisodes(

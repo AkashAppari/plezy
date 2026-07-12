@@ -23,6 +23,7 @@ import 'package:plezy/services/settings_service.dart';
 
 import '../test_helpers/io_fakes.dart';
 import '../test_helpers/prefs.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -60,7 +61,7 @@ void main() {
     await PlexApiCache.instance.put(ServerId('srv-1'), '/library/metadata/movie-1', _plexMetadataEnvelope());
 
     final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      metadata: MediaItem(
+      metadata: testMediaItem(
         id: 'movie-1',
         backend: MediaBackend.plex,
         kind: MediaKind.movie,
@@ -89,7 +90,7 @@ void main() {
     final client = _FailingPlaybackClient(serverId: ServerId('srv-1'));
 
     final result = await PlaybackInitializationService(client: client, database: db).getPlaybackData(
-      metadata: MediaItem(
+      metadata: testMediaItem(
         id: 'track-1',
         backend: MediaBackend.plex,
         kind: MediaKind.track,
@@ -116,7 +117,7 @@ void main() {
     final client = _FailingPlaybackClient(serverId: ServerId('srv-1'));
 
     final result = await PlaybackInitializationService(client: client, database: db).getPlaybackData(
-      metadata: MediaItem(
+      metadata: testMediaItem(
         id: 'movie-1',
         backend: MediaBackend.plex,
         kind: MediaKind.movie,
@@ -148,7 +149,7 @@ void main() {
     );
 
     final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      metadata: MediaItem(
+      metadata: testMediaItem(
         id: 'movie-1',
         backend: MediaBackend.plex,
         kind: MediaKind.movie,
@@ -181,7 +182,7 @@ void main() {
     );
 
     final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      metadata: MediaItem(
+      metadata: testMediaItem(
         id: 'movie-1',
         backend: MediaBackend.plex,
         kind: MediaKind.movie,
@@ -208,7 +209,7 @@ void main() {
     );
 
     final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      metadata: MediaItem(
+      metadata: testMediaItem(
         id: 'movie-1',
         backend: MediaBackend.plex,
         kind: MediaKind.movie,
@@ -238,7 +239,7 @@ void main() {
     final client = _StreamingPlaybackClient(serverId: ServerId('srv-1'));
 
     final result = await PlaybackInitializationService(client: client, database: db).getPlaybackData(
-      metadata: MediaItem(
+      metadata: testMediaItem(
         id: 'movie-1',
         backend: MediaBackend.plex,
         kind: MediaKind.movie,
@@ -292,7 +293,7 @@ void main() {
         );
 
     final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      metadata: MediaItem(
+      metadata: testMediaItem(
         id: 'item-1',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.movie,
@@ -320,7 +321,7 @@ void main() {
     await subtitleFile.writeAsString('1\n00:00:00,000 --> 00:00:01,000\nHello');
 
     final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      metadata: MediaItem(
+      metadata: testMediaItem(
         id: 'movie-1',
         backend: MediaBackend.plex,
         kind: MediaKind.movie,

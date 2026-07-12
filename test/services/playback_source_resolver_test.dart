@@ -11,6 +11,7 @@ import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/playback_context.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/playback_source_resolver.dart';
+import '../test_helpers/media_items.dart';
 
 class _PlaybackClient implements MediaServerClient {
   _PlaybackClient({this.clientBackend = MediaBackend.plex, PlaybackInitializationResult? result})
@@ -56,7 +57,7 @@ void main() {
     manager.debugRegisterClientForTesting(client, online: false);
 
     final context = await PlaybackSourceResolver(serverManager: manager, database: db).resolve(
-      metadata: MediaItem(id: 'item-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv'),
+      metadata: testMediaItem(id: 'item-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv'),
       selectedMediaIndex: 0,
       offlineLibraryMode: false,
       qualityPreset: TranscodeQualityPreset.original,
@@ -79,7 +80,7 @@ void main() {
     manager.debugRegisterClientForTesting(client, online: true);
 
     final context = await PlaybackSourceResolver(serverManager: manager, database: db).resolve(
-      metadata: MediaItem(id: 'item-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv'),
+      metadata: testMediaItem(id: 'item-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv'),
       selectedMediaIndex: 0,
       offlineLibraryMode: false,
       qualityPreset: TranscodeQualityPreset.original,
@@ -103,7 +104,7 @@ void main() {
     manager.debugRegisterClientForTesting(client, online: true);
 
     final context = await PlaybackSourceResolver(serverManager: manager, database: db).resolve(
-      metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv'),
+      metadata: testMediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv'),
       selectedMediaIndex: 0,
       offlineLibraryMode: false,
       qualityPreset: TranscodeQualityPreset.original,
