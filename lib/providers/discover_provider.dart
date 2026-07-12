@@ -139,7 +139,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// Once a full pass has loaded, only the genuinely new servers are fetched
   /// and merged in; already-loaded servers are not refetched.
   Future<void> syncToOnlineServers(Set<String> onlineServerIds) {
-    if (onlineServerIds.isEmpty || isProfileBinding()) return Future<void>.value();
+    if (isDisposed || onlineServerIds.isEmpty || isProfileBinding()) return Future<void>.value();
     if (_onDeckState == DiscoverLoadState.loaded &&
         _hubsState == DiscoverLoadState.loaded &&
         _fullyLoadedServerIds.containsAll(onlineServerIds)) {
@@ -155,11 +155,17 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// the in-flight pass plus at most one trailing pass (so a request that
   /// arrives mid-load still observes its own fresh fetch).
   Future<void> load() {
+    if (isDisposed) return Future<void>.value();
     _hasPendingLoad = true;
     return _ensureLoadLoop();
   }
 
-  Future<void> _ensureLoadLoop() => _inFlightLoad ??= _runLoadLoop().whenComplete(() => _inFlightLoad = null);
+  Future<void> _ensureLoadLoop() {
+    if (isDisposed) return Future<void>.value();
+    return _inFlightLoad ??= _runLoadLoop().whenComplete(() {
+      if (!isDisposed) _inFlightLoad = null;
+    });
+  }
 
   Future<void> _runLoadLoop() async {
     while ((_hasPendingLoad || _pendingDeltaServerIds.isNotEmpty) && !isDisposed) {
@@ -180,6 +186,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // kicked off during build (the screen's initState) doesn't mark
     // listening widgets dirty mid-build.
     await null;
+    if (isDisposed) return;
     appLogger.d('DiscoverProvider: loading content from all servers');
     _onDeckState = DiscoverLoadState.loading;
     _hubsState = DiscoverLoadState.loading;
@@ -197,6 +204,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _lastSeenHiddenKeys = Set.of(_hiddenLibraries.hiddenLibraryKeys);
 
       final settings = await SettingsService.getInstance();
+      if (isDisposed) return;
       final useGlobalHubs = settings.read(SettingsService.useGlobalHubs);
       final aggregation = _multiServer.aggregationService;
 
@@ -266,8 +274,8 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _loadedHubServerIds = fetchedHubs.succeededServerIds;
       safeNotifyListeners();
     } catch (e) {
-      appLogger.e('Failed to load discover content', error: e);
       if (isDisposed) return;
+      appLogger.e('Failed to load discover content', error: e);
       _errorMessage = e.toString();
       _onDeckState = DiscoverLoadState.error;
       _hubsState = DiscoverLoadState.error;
@@ -292,6 +300,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       if (isDisposed) return;
 
       final settings = await SettingsService.getInstance();
+      if (isDisposed) return;
       final useGlobalHubs = settings.read(SettingsService.useGlobalHubs);
       final aggregation = _multiServer.aggregationService;
 
@@ -347,6 +356,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       safeNotifyListeners();
       unawaited(_syncSystemShelf(_onDeck));
     } catch (e) {
+      if (isDisposed) return;
       // Keep the loaded state — stale rows beat an error flash.
       appLogger.w('DiscoverProvider: delta load failed for $ids', error: e);
     }
@@ -592,6 +602,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// coalesce: a sync that arrives while one is in flight queues exactly one
   /// follow-up pass with the latest items.
   Future<void> _syncSystemShelf(List<MediaItem> onDeck) async {
+    if (isDisposed) return;
     _pendingSystemShelfItems = List<MediaItem>.unmodifiable(onDeck);
     if (_systemShelfSyncFuture != null) {
       await _systemShelfSyncFuture;
@@ -612,6 +623,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
         try {
           final settings = await SettingsService.getInstance();
+          if (isDisposed) return;
           final syncableOnDeck = onDeck
               .where((item) {
                 final serverId = item.serverId;
@@ -628,7 +640,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         }
       }
     } finally {
-      _systemShelfSyncFuture = null;
+      if (!isDisposed) _systemShelfSyncFuture = null;
     }
   }
 
@@ -647,6 +659,8 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _watchStateSubscription = null;
     _deletionSubscription?.cancel();
     _deletionSubscription = null;
+    _hasPendingLoad = false;
+    _pendingDeltaServerIds.clear();
     _pendingSystemShelfItems = null;
     super.dispose();
   }

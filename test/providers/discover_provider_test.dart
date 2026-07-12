@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -70,6 +72,10 @@ class _FakeAggregationService extends DataAggregationService {
   Set<String> hubCancelledServerIds = const {};
   List<MediaItem> Function() onDeckResult = () => const [];
   List<MediaHub> Function() hubsResult = () => const [];
+  Future<void>? onDeckGate;
+  Future<void>? hubGate;
+  Completer<void>? onDeckStarted;
+  Completer<void>? hubStarted;
 
   @override
   Future<OnDeckAggregationResult> getOnDeckFromAllServers({
@@ -79,6 +85,10 @@ class _FakeAggregationService extends DataAggregationService {
   }) async {
     onDeckCalls++;
     lastOnDeckServerIds = serverIds;
+    final started = onDeckStarted;
+    if (started != null && !started.isCompleted) started.complete();
+    final gate = onDeckGate;
+    if (gate != null) await gate;
     final items = onDeckResult();
     return (
       items: limit != null && items.length > limit ? items.sublist(0, limit) : items,
@@ -97,6 +107,10 @@ class _FakeAggregationService extends DataAggregationService {
   }) async {
     hubCalls++;
     lastHubsServerIds = serverIds;
+    final started = hubStarted;
+    if (started != null && !started.isCompleted) started.complete();
+    final gate = hubGate;
+    if (gate != null) await gate;
     return (
       hubs: hubsResult(),
       succeededServerIds: hubSucceededServerIds ?? serverIds ?? const {'server_1'},
@@ -175,6 +189,57 @@ void main() {
     expect(provider.errorMessage, isNull);
     expect(aggregation.onDeckCalls, 2);
     expect(aggregation.hubCalls, 2);
+  });
+
+  test('a failed in-flight pass still runs one coalesced trailing pass', () async {
+    final gate = Completer<void>();
+    aggregation.onDeckGate = gate.future;
+    aggregation.onDeckStarted = Completer<void>();
+    aggregation.onDeckResult = () {
+      if (aggregation.onDeckCalls == 1) throw Exception('first pass failed');
+      return [_item('recovered')];
+    };
+    aggregation.hubsResult = () => [_hub('hub-1')];
+
+    final first = provider.load();
+    await aggregation.onDeckStarted!.future;
+    final coalesced = provider.load();
+    gate.complete();
+    await Future.wait([first, coalesced]);
+
+    expect(aggregation.onDeckCalls, 2);
+    expect(aggregation.hubCalls, 2);
+    expect(provider.onDeck.map((item) => item.id), ['recovered']);
+    expect(provider.errorMessage, isNull);
+  });
+
+  test('dispose during an in-flight coalesced load prevents trailing work and commits', () async {
+    final scoped = DiscoverProvider(multiServer, hiddenLibraries, libraries, isProfileBinding: () => isBinding);
+    final gate = Completer<void>();
+    aggregation.onDeckGate = gate.future;
+    aggregation.hubGate = gate.future;
+    aggregation.onDeckStarted = Completer<void>();
+    aggregation.hubStarted = Completer<void>();
+    aggregation.onDeckResult = () => [_item('late')];
+    aggregation.hubsResult = () => [_hub('late-hub')];
+
+    final first = scoped.load();
+    await Future.wait([aggregation.onDeckStarted!.future, aggregation.hubStarted!.future]);
+    final coalesced = scoped.load();
+    scoped.dispose();
+    gate.complete();
+    await Future.wait([first, coalesced]);
+
+    expect(aggregation.onDeckCalls, 1);
+    expect(aggregation.hubCalls, 1);
+    expect(scoped.onDeck, isEmpty);
+    expect(scoped.hubs, isEmpty);
+    expect(scoped.loadGeneration, 0);
+
+    await scoped.load();
+    await scoped.syncToOnlineServers({'server_1'});
+    expect(aggregation.onDeckCalls, 1);
+    expect(aggregation.hubCalls, 1);
   });
 
   test('limits the preview row and probes for more', () async {

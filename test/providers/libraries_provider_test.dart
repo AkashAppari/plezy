@@ -31,7 +31,7 @@ MediaLibrary _serverLib(ServerId serverId, String id, String title) =>
 /// hold `fetchLibraries` open to exercise the mid-load race; setting [error]
 /// makes `fetchLibraries` throw, simulating a (possibly transient) failure.
 class _FakeClient implements MediaServerClient {
-  _FakeClient({required this.serverId, this.libraries = const [], this.gate});
+  _FakeClient({required this.serverId, this.libraries = const [], this.gate, this.errorForCall});
 
   @override
   final ServerId serverId;
@@ -40,6 +40,7 @@ class _FakeClient implements MediaServerClient {
 
   final List<MediaLibrary> libraries;
   final Future<void>? gate;
+  final Object? Function(int call)? errorForCall;
 
   /// When non-null, [fetchLibraries] throws this instead of returning. Mutable
   /// so a test can fail a fetch once and then let it recover.
@@ -52,7 +53,8 @@ class _FakeClient implements MediaServerClient {
     fetchLibrariesCalls++;
     final pending = gate;
     if (pending != null) await pending;
-    if (error != null) throw error!;
+    final fetchError = errorForCall?.call(fetchLibrariesCalls) ?? error;
+    if (fetchError != null) throw fetchError;
     return libraries;
   }
 
@@ -154,13 +156,15 @@ void main() {
       p.dispose();
     });
 
-    test('safeNotifyListeners after dispose is a no-op', () async {
+    test('mutating methods after dispose are no-ops', () async {
       final p = LibrariesProvider();
       p.dispose();
-      // Post-dispose clear / updateLibraryOrder must not throw — the provider
-      // uses `safeNotifyListeners` which swallows post-dispose firings.
       p.clear();
       await p.updateLibraryOrder([_lib('1', serverId: ServerId('srv'))]);
+
+      expect(p.libraries, isEmpty);
+      final storage = await StorageService.getInstance();
+      expect(storage.getLibraryOrder(), isNull);
     });
   });
 
@@ -343,6 +347,68 @@ void main() {
       expect(clientA.fetchLibrariesCalls, 2, reason: 'a second pass runs for the larger set');
 
       p.dispose();
+      manager.dispose();
+    });
+
+    test('a coalesced call gets its trailing pass after the in-flight pass fails', () async {
+      final manager = MultiServerManager();
+      final gate = Completer<void>();
+      final clientA = _FakeClient(
+        serverId: ServerId('A'),
+        libraries: [_serverLib(ServerId('A'), '1', 'Movies A')],
+        gate: gate.future,
+        errorForCall: (call) => call == 1
+            ? MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'first pass cancelled')
+            : null,
+      );
+      manager.debugRegisterClientForTesting(clientA);
+      final p = LibrariesProvider()..initialize(DataAggregationService(manager));
+
+      final first = p.loadLibraries();
+      final coalesced = p.loadLibraries();
+      expect(clientA.fetchLibrariesCalls, 1);
+
+      gate.complete();
+      await Future.wait([first, coalesced]);
+
+      expect(clientA.fetchLibrariesCalls, 2);
+      expect(p.hasLoaded, isTrue);
+      expect(p.libraries.map((library) => library.title), ['Movies A']);
+
+      p.dispose();
+      manager.dispose();
+    });
+
+    test('dispose during an in-flight coalesced load prevents trailing work and commits', () async {
+      final manager = MultiServerManager();
+      final gate = Completer<void>();
+      final clientA = _FakeClient(
+        serverId: ServerId('A'),
+        libraries: [_serverLib(ServerId('A'), '1', 'Movies A')],
+        gate: gate.future,
+      );
+      manager.debugRegisterClientForTesting(clientA);
+      final p = LibrariesProvider()..initialize(DataAggregationService(manager));
+      var notifications = 0;
+      p.addListener(() => notifications++);
+
+      final first = p.loadLibraries();
+      final coalesced = p.loadLibraries();
+      expect(clientA.fetchLibrariesCalls, 1);
+      expect(notifications, 1, reason: 'the initial loading state was published before disposal');
+
+      p.dispose();
+      gate.complete();
+      await Future.wait([first, coalesced]);
+
+      expect(clientA.fetchLibrariesCalls, 1, reason: 'the queued trailing pass was discarded');
+      expect(p.libraries, isEmpty, reason: 'the completed fetch was not committed after disposal');
+      expect(notifications, 1);
+
+      await p.loadLibraries();
+      await p.syncToOnlineServers({'A'});
+      expect(clientA.fetchLibrariesCalls, 1, reason: 'post-dispose entry points are no-ops');
+
       manager.dispose();
     });
 
