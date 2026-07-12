@@ -387,10 +387,12 @@ class MpvPlayerCoreBase: NSObject {
       return false
     }
 
-    // TEMP: always "v" (tvOS builds in release) so the avfoundation VO's
-    // osd-perf timing lines show up — restore the DEBUG/warn split after the
-    // subtitle-timing investigation.
-    checkError(mpv_request_log_messages(mpv, "v"))
+    #if DEBUG
+      let defaultLogLevel = "v"
+    #else
+      let defaultLogLevel = "warn"
+    #endif
+    checkError(mpv_request_log_messages(mpv, defaultLogLevel))
 
     configure()
 

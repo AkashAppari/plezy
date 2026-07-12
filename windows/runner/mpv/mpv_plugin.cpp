@@ -132,6 +132,14 @@ void MpvPlayerPlugin::HandleMethodCall(
   const auto& method = method_call.method_name();
 
   if (method == "initialize") {
+    // Method-channel calls are serialized on the platform thread. Keep an
+    // already-live core instead of replacing it (which would synchronously
+    // join its event thread before MpvPlayer::Initialize can see its guard).
+    if (player_ && player_->IsInitialized()) {
+      result->Success(flutter::EncodableValue(true));
+      return;
+    }
+
     if (proc_id_) {
       registrar_->UnregisterTopLevelWindowProcDelegate(proc_id_.value());
       proc_id_ = std::nullopt;
