@@ -73,6 +73,7 @@ class MpvPlayerCore(
 
   @Volatile private var player: MpvPlayer? = null
   private var scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+  private val endFileDiagnostics = MpvEndFileDiagnostics()
 
   // mpv writes must stay off the main thread but run in submission order:
   // setupMpvFallback sets vo/ao/hwdec immediately before the loadfile command,
@@ -184,6 +185,7 @@ class MpvPlayerCore(
 
     try {
       disposing = false
+      endFileDiagnostics.onStartFile()
       cachedPaused = true
       pausedForSurfaceLoss = false
       pendingSurface = null
@@ -361,9 +363,9 @@ class MpvPlayerCore(
       p.eventFlow.collect { event ->
         when (event) {
           is MpvEvent.EndFile -> {
-            val data = event.reason?.let { mapOf("reason" to it.id) }
-            delegate?.onEvent("end-file", data)
+            delegate?.onEvent("end-file", endFileDiagnostics.onEndFile(event))
           }
+          is MpvEvent.StartFile -> endFileDiagnostics.onStartFile()
           is MpvEvent.FileLoaded -> delegate?.onEvent("file-loaded", null)
           is MpvEvent.PlaybackRestart -> delegate?.onEvent("playback-restart", null)
           else -> {}
@@ -397,6 +399,7 @@ class MpvPlayerCore(
   private fun collectLogMessages(p: MpvPlayer) {
     scope.launch(start = CoroutineStart.UNDISPATCHED) {
       p.logFlow.collect { msg ->
+        endFileDiagnostics.onLogMessage(msg)
         emitLog(msg.level.name.lowercase(), msg.prefix, msg.text)
       }
     }

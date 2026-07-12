@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/mpv/models.dart';
 import 'package:plezy/mpv/player/player_native.dart';
 import 'package:plezy/services/settings_service.dart';
 
@@ -55,6 +56,54 @@ void main() {
           await expectLater(
             player.setLogLevel('warn'),
             throwsA(isA<PlatformException>().having((error) => error.code, 'code', 'UNSUPPORTED')),
+          );
+        } finally {
+          await player.dispose();
+        }
+      },
+    );
+  });
+
+  test('Android mpv end-file error preserves native diagnostic message', () async {
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      testBody: () async {
+        final player = PlayerNative();
+        final error = player.streams.error.first;
+        try {
+          player.handlePlayerEvent('end-file', {'reason': 4, 'message': 'Invalid data found when processing input'});
+
+          await expectLater(
+            error,
+            completion(
+              isA<PlayerError>().having(
+                (value) => value.message,
+                'message',
+                'Invalid data found when processing input',
+              ),
+            ),
+          );
+        } finally {
+          await player.dispose();
+        }
+      },
+    );
+  });
+
+  test('Android mpv legacy end-file error keeps playback error fallback', () async {
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      testBody: () async {
+        final player = PlayerNative();
+        final error = player.streams.error.first;
+        try {
+          player.handlePlayerEvent('end-file', {'reason': 4});
+
+          await expectLater(
+            error,
+            completion(isA<PlayerError>().having((value) => value.message, 'message', 'Playback error')),
           );
         } finally {
           await player.dispose();

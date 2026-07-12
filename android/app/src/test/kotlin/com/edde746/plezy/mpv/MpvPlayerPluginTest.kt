@@ -1,5 +1,10 @@
 package com.edde746.plezy.mpv
 
+import dev.jdtech.mpv.EndFileReason
+import dev.jdtech.mpv.LogLevel
+import dev.jdtech.mpv.LogMessage
+import dev.jdtech.mpv.MpvEvent
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import org.junit.Assert.assertEquals
@@ -37,6 +42,59 @@ class MpvPlayerPluginTest {
     assertNull(result.successValue)
   }
 
+  @Test
+  fun endFileDiagnosticsPreserveReasonIdAndExposeDependencyErrorLog() {
+    val diagnostics = MpvEndFileDiagnostics()
+    diagnostics.onStartFile()
+    diagnostics.onLogMessage(LogMessage("ffmpeg", LogLevel.Error, "Invalid data found when processing input"))
+
+    assertEquals(
+      mapOf(
+        "reason" to 4,
+        "message" to "Invalid data found when processing input"
+      ),
+      diagnostics.onEndFile(MpvEvent.EndFile(EndFileReason.Error))
+    )
+  }
+
+  @Test
+  fun endFileDiagnosticsDoNotAttachStaleOrInventedDetails() {
+    val diagnostics = MpvEndFileDiagnostics()
+    diagnostics.onLogMessage(LogMessage("ffmpeg", LogLevel.Error, "old failure"))
+    diagnostics.onStartFile()
+
+    assertEquals(mapOf("reason" to 0), diagnostics.onEndFile(MpvEvent.EndFile(EndFileReason.Eof)))
+    assertEquals(mapOf("reason" to 4), diagnostics.onEndFile(MpvEvent.EndFile(EndFileReason.Error)))
+    assertNull(diagnostics.onEndFile(MpvEvent.EndFile(null)))
+  }
+
+  @Test
+  fun endFileEventChannelPayloadKeepsExistingEnvelopeAndAddsMessage() {
+    val sink = RecordingEventSink()
+    val plugin = MpvPlayerPlugin()
+    plugin.onListen(null, sink)
+
+    plugin.onEvent(
+      "end-file",
+      mapOf(
+        "reason" to 4,
+        "message" to "Failed to open stream"
+      )
+    )
+
+    assertEquals(
+      mapOf(
+        "type" to "event",
+        "name" to "end-file",
+        "data" to mapOf(
+          "reason" to 4,
+          "message" to "Failed to open stream"
+        )
+      ),
+      sink.successValue
+    )
+  }
+
   private class RecordingResult : MethodChannel.Result {
     var successValue: Any? = null
     var errorCode: String? = null
@@ -50,5 +108,17 @@ class MpvPlayerPluginTest {
     }
 
     override fun notImplemented() = Unit
+  }
+
+  private class RecordingEventSink : EventChannel.EventSink {
+    var successValue: Any? = null
+
+    override fun success(event: Any?) {
+      successValue = event
+    }
+
+    override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) = Unit
+
+    override fun endOfStream() = Unit
   }
 }
