@@ -39,6 +39,22 @@ typedef _NativeTaskForId = Future<Task?> Function(String taskId);
 typedef _NativeResumeTask = Future<bool> Function(DownloadTask task);
 typedef _EpisodeStorageDeletion = ({String? seasonDirUri, String? showDirUri});
 
+typedef NativeTaskPartition = ({List<Task> current, List<Task> stale});
+
+@visibleForTesting
+NativeTaskPartition partitionNativeTasks(Iterable<Task> tasks, String? currentTaskId) {
+  final current = <Task>[];
+  final stale = <Task>[];
+  for (final task in tasks) {
+    if (currentTaskId != null && task.taskId == currentTaskId) {
+      current.add(task);
+    } else {
+      stale.add(task);
+    }
+  }
+  return (current: current, stale: stale);
+}
+
 const bool _tvosBuild = bool.fromEnvironment('TVOS_BUILD');
 
 class _DownloadContext {
@@ -593,22 +609,27 @@ class DownloadManagerService {
     }
   }
 
-  Future<void> _reconcileDownloadingNativeTasks(DownloadedMediaItem row, List<Task> tasks) async {
-    final currentTaskId = row.bgTaskId;
-    final matchingCurrentTasks = currentTaskId == null
-        ? const <Task>[]
-        : tasks.where((task) => task.taskId == currentTaskId).toList(growable: false);
-    if (matchingCurrentTasks.length == 1) {
-      await _cancelNativeTaskIds(
-        row.globalKey,
-        tasks.where((task) => task.taskId != currentTaskId).map((task) => task.taskId),
-        reason: 'duplicate downloading task during recovery',
-      );
-      return;
-    }
+  Future<int> _retainUniqueCurrentNativeTask(
+    DownloadedMediaItem row,
+    List<Task> tasks, {
+    required String statusLabel,
+  }) async {
+    final partition = partitionNativeTasks(tasks, row.bgTaskId);
+    if (partition.current.length != 1) return partition.current.length;
+    await _cancelNativeTaskIds(
+      row.globalKey,
+      partition.stale.map((task) => task.taskId),
+      reason: 'duplicate $statusLabel task during recovery',
+    );
+    return 1;
+  }
 
-    if (matchingCurrentTasks.length > 1) {
-      appLogger.w('Multiple native tasks share current task id $currentTaskId for ${row.globalKey}; re-queueing');
+  Future<void> _reconcileDownloadingNativeTasks(DownloadedMediaItem row, List<Task> tasks) async {
+    final currentMatchCount = await _retainUniqueCurrentNativeTask(row, tasks, statusLabel: 'downloading');
+    if (currentMatchCount == 1) return;
+
+    if (currentMatchCount > 1) {
+      appLogger.w('Multiple native tasks share current task id ${row.bgTaskId} for ${row.globalKey}; re-queueing');
       await _cancelNativeTaskIds(
         row.globalKey,
         tasks.map((task) => task.taskId),
@@ -640,22 +661,12 @@ class DownloadManagerService {
   }
 
   Future<void> _reconcilePausedNativeTasks(DownloadedMediaItem row, List<Task> tasks) async {
-    final currentTaskId = row.bgTaskId;
-    final matchingCurrentTasks = currentTaskId == null
-        ? const <Task>[]
-        : tasks.where((task) => task.taskId == currentTaskId).toList(growable: false);
-    if (matchingCurrentTasks.length == 1) {
-      await _cancelNativeTaskIds(
-        row.globalKey,
-        tasks.where((task) => task.taskId != currentTaskId).map((task) => task.taskId),
-        reason: 'duplicate paused task during recovery',
-      );
-      return;
-    }
+    final currentMatchCount = await _retainUniqueCurrentNativeTask(row, tasks, statusLabel: 'paused');
+    if (currentMatchCount == 1) return;
 
-    if (matchingCurrentTasks.length > 1) {
+    if (currentMatchCount > 1) {
       appLogger.w(
-        'Multiple paused native tasks share current task id $currentTaskId for ${row.globalKey}; clearing task',
+        'Multiple paused native tasks share current task id ${row.bgTaskId} for ${row.globalKey}; clearing task',
       );
     }
 
@@ -1090,6 +1101,13 @@ class DownloadManagerService {
     await _database.updateDownloadProgress(globalKey, 0, 0, 0);
   }
 
+  Future<void> _requeueDownload(String globalKey, {MediaServerClient? fallbackClient}) async {
+    await _transitionStatus(globalKey, DownloadStatus.queued);
+    await _database.addToQueue(mediaGlobalKey: globalKey);
+    final client = await _getClientForDownloadKey(globalKey) ?? fallbackClient;
+    if (client != null) unawaited(_processQueue(client));
+  }
+
   Future<void> _cancelNativeTask(String globalKey, String taskId, {required String reason}) async {
     if (!downloadsSupported || taskId.isEmpty) return;
     try {
@@ -1140,14 +1158,16 @@ class DownloadManagerService {
     String taskId, {
     required String event,
     bool cancelStale = false,
+    DownloadStatus? requiredStatus,
   }) async {
     final existing = await _database.getDownloadedMedia(globalKey);
     final currentTaskId = existing?.bgTaskId;
-    if (existing != null && currentTaskId == taskId) return existing;
+    final statusMatches = requiredStatus == null || existing?.status == requiredStatus.index;
+    if (existing != null && currentTaskId == taskId && statusMatches) return existing;
 
     appLogger.d(
       'Ignoring stale download $event for $globalKey from task $taskId '
-      '(current task: ${currentTaskId ?? 'none'})',
+      '(current task: ${currentTaskId ?? 'none'}, status: ${existing?.status ?? 'none'})',
     );
     if (cancelStale) {
       await _cancelNativeTask(globalKey, taskId, reason: 'stale $event');
@@ -1489,16 +1509,9 @@ class DownloadManagerService {
       update.task.taskId,
       event: 'status ${update.status}',
       cancelStale: _isNativeTaskActiveStatus(update.status),
+      requiredStatus: DownloadStatus.downloading,
     );
     if (existing == null) return;
-
-    if (existing.status != DownloadStatus.downloading.index) {
-      appLogger.d('Ignoring ${update.status} for inactive download $globalKey from task ${update.task.taskId}');
-      if (_isNativeTaskActiveStatus(update.status)) {
-        await _cancelNativeTask(globalKey, update.task.taskId, reason: 'status for inactive download');
-      }
-      return;
-    }
 
     try {
       switch (update.status) {
@@ -1535,24 +1548,20 @@ class DownloadManagerService {
   Future<void> _onDownloadCanceled(String globalKey, String taskId) async {
     if (_completingKeys.contains(globalKey)) return;
 
-    final existing = await _database.getDownloadedMedia(globalKey);
-    if (existing == null ||
-        existing.bgTaskId != taskId ||
-        existing.status != DownloadStatus.downloading.index ||
-        existing.status == DownloadStatus.completed.index ||
-        existing.status == DownloadStatus.cancelled.index) {
-      return;
-    }
+    final existing = await _downloadForCurrentTaskSession(
+      globalKey,
+      taskId,
+      event: 'system cancellation',
+      requiredStatus: DownloadStatus.downloading,
+    );
+    if (existing == null) return;
 
     _cancelDownloadTimers(globalKey);
     _pendingDownloadContext.remove(globalKey);
 
     appLogger.w('Download cancelled by system for $globalKey, re-queuing');
     await _database.updateBgTaskId(globalKey, null);
-    await _transitionStatus(globalKey, DownloadStatus.queued);
-    await _database.addToQueue(mediaGlobalKey: globalKey);
-    final client = await _getClientForDownloadKey(globalKey);
-    if (client != null) unawaited(_processQueue(client));
+    await _requeueDownload(globalKey);
   }
 
   /// Handle a failed download — auto-retry if retries remain, otherwise permanently fail.
@@ -1567,15 +1576,13 @@ class DownloadManagerService {
       return;
     }
 
-    final existing = await _database.getDownloadedMedia(globalKey);
-    if (existing == null ||
-        existing.bgTaskId != taskId ||
-        existing.status != DownloadStatus.downloading.index ||
-        existing.status == DownloadStatus.completed.index ||
-        existing.status == DownloadStatus.cancelled.index) {
-      appLogger.d('Ignoring stale failure for inactive download $globalKey');
-      return;
-    }
+    final existing = await _downloadForCurrentTaskSession(
+      globalKey,
+      taskId,
+      event: 'failure',
+      requiredStatus: DownloadStatus.downloading,
+    );
+    if (existing == null) return;
     _cancelDownloadTimers(globalKey);
     _pendingDownloadContext.remove(globalKey);
     final retryCount = existing.retryCount;
@@ -1629,15 +1636,13 @@ class DownloadManagerService {
       return;
     }
 
-    final existing = await _database.getDownloadedMedia(globalKey);
-    if (existing == null ||
-        existing.bgTaskId != taskId ||
-        existing.status != DownloadStatus.downloading.index ||
-        existing.status == DownloadStatus.completed.index ||
-        existing.status == DownloadStatus.cancelled.index) {
-      appLogger.d('Ignoring stale permanent failure for inactive download $globalKey');
-      return;
-    }
+    final existing = await _downloadForCurrentTaskSession(
+      globalKey,
+      taskId,
+      event: 'permanent failure',
+      requiredStatus: DownloadStatus.downloading,
+    );
+    if (existing == null) return;
 
     _cancelDownloadTimers(globalKey);
     _pendingDownloadContext.remove(globalKey);
@@ -1668,9 +1673,7 @@ class DownloadManagerService {
 
     appLogger.i('Auto-retrying download for $globalKey');
     await _cleanupStaleDownload(globalKey);
-    await _transitionStatus(globalKey, DownloadStatus.queued);
-    await _database.addToQueue(mediaGlobalKey: globalKey);
-    unawaited(_processQueue(client));
+    await _requeueDownload(globalKey, fallbackClient: client);
   }
 
   /// Handle a completed video download — store path, download supplementary content, mark done.
@@ -1684,16 +1687,14 @@ class DownloadManagerService {
     _completingKeys.add(globalKey);
     try {
       // Fresh DB check — bail if already completed (guards against race with orphan scan)
-      final existingCheck = await _database.getDownloadedMedia(globalKey);
+      final existingCheck = await _downloadForCurrentTaskSession(
+        globalKey,
+        task.taskId,
+        event: 'completion',
+        requiredStatus: DownloadStatus.downloading,
+      );
       if (_cancellingKeys.contains(globalKey) || existingCheck == null) {
         appLogger.d('Download no longer active for $globalKey, skipping completion');
-        return;
-      }
-      if (existingCheck.bgTaskId != task.taskId || existingCheck.status != DownloadStatus.downloading.index) {
-        appLogger.d(
-          'Ignoring stale completion for $globalKey from task ${task.taskId} '
-          '(current task: ${existingCheck.bgTaskId ?? 'none'}, status: ${existingCheck.status})',
-        );
         return;
       }
 
@@ -2071,10 +2072,7 @@ class DownloadManagerService {
 
     // Native resume failed or not supported (SAF mode) — re-enqueue from scratch
     await _cleanupStaleDownload(globalKey);
-    await _transitionStatus(globalKey, DownloadStatus.queued);
-    await _database.addToQueue(mediaGlobalKey: globalKey);
-    final resolvedClient = await _getClientForDownloadKey(globalKey) ?? client;
-    unawaited(_processQueue(resolvedClient));
+    await _requeueDownload(globalKey, fallbackClient: client);
   }
 
   Future<bool> _tryResumeNativeTask(
@@ -2121,10 +2119,7 @@ class DownloadManagerService {
     _autoRetryTimers.remove(globalKey)?.cancel();
     await _cleanupStaleDownload(globalKey);
     await _database.clearDownloadError(globalKey);
-    await _transitionStatus(globalKey, DownloadStatus.queued);
-    await _database.addToQueue(mediaGlobalKey: globalKey);
-    final resolvedClient = await _getClientForDownloadKey(globalKey) ?? client;
-    unawaited(_processQueue(resolvedClient));
+    await _requeueDownload(globalKey, fallbackClient: client);
   }
 
   /// Cancel a download

@@ -1452,7 +1452,11 @@ void main() {
 
       await expectLater(p.queueDownload(season, _ThrowingClient()), throwsA(isA<StateError>()));
 
-      expect(p.getMetadata('srv:7'), isNotNull, reason: 'pre-existing metadata must survive rollback');
+      expect(
+        p.getMetadata('srv:7')?.title,
+        'Original Title',
+        reason: 'queue rollback must restore the previous value, not leave the temporary stash',
+      );
 
       p.dispose();
     });

@@ -57,6 +57,8 @@ class _RelatedMetadataDownloadContext {
   final ensuredArtworkKeys = <String>{};
 }
 
+typedef _MetadataHydrationResult = ({MediaItem? metadata, bool networkFilled, bool stale});
+
 /// Provider for managing download state and operations.
 class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   final DownloadManagerService _downloadManager;
@@ -332,26 +334,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
         _artworkPaths[item.globalKey] = DownloadedArtwork(thumbPath: item.thumbPath);
 
-        // Look up metadata from the bulk-loaded map (O(1) instead of DB query per item)
-        // Falls back to individual query for any unpinned entries (e.g., legacy data).
-        // The fallback dispatches by backend.
-        final cached =
-            allMetadata[item.globalKey] ??
-            await _downloadManager.lookupMetadata(ServerId(item.serverId), item.ratingKey, preferActiveScope: true);
-        if (cached != null) {
-          _metadata[item.globalKey] = cached;
-
-          // For episodes (show/season) and tracks (artist/album), also load
-          // parent metadata from the same map.
-          if (cached.isEpisode || cached.kind == MediaKind.track) {
-            _loadParentMetadataFromMap(
-              cached,
-              allMetadata,
-              clientScopeId:
-                  _downloadManager.activeClientScopeIdForServer(ServerId(item.serverId)) ?? item.clientScopeId,
-            );
-          }
-        }
+        await _hydrateDownloadMetadata(item.globalKey, allMetadata, downloadRecord: item);
       }
 
       // Load sync rules from database
@@ -389,6 +372,47 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// initialization to avoid per-item DB queries.
   void _loadParentMetadataFromMap(MediaItem leaf, Map<String, MediaItem> allMetadata, {String? clientScopeId}) {
     _metadataStore.loadParentMetadataFromMap(leaf, allMetadata, clientScopeId: clientScopeId);
+  }
+
+  Future<_MetadataHydrationResult> _hydrateDownloadMetadata(
+    String globalKey,
+    Map<String, MediaItem> allMetadata, {
+    DownloadedMediaItem? downloadRecord,
+    bool fetchOnMiss = false,
+    bool Function()? isStale,
+  }) async {
+    final parsed = parseGlobalKey(globalKey);
+    if (parsed == null) return (metadata: null, networkFilled: false, stale: false);
+
+    var record = downloadRecord;
+    if (record == null) {
+      record = await _downloadManager.getDownloadedMedia(globalKey);
+      if (isStale?.call() ?? false) return (metadata: null, networkFilled: false, stale: true);
+    }
+
+    var cached =
+        allMetadata[globalKey] ??
+        await _downloadManager.lookupMetadata(parsed.serverId, parsed.ratingKey, preferActiveScope: true);
+    if (isStale?.call() ?? false) return (metadata: null, networkFilled: false, stale: true);
+
+    var networkFilled = false;
+    if (cached == null && fetchOnMiss && _downloads.containsKey(globalKey)) {
+      cached = await _downloadManager.fetchAndPinMetadata(parsed.serverId, parsed.ratingKey, preferActiveScope: true);
+      if (isStale?.call() ?? false) return (metadata: null, networkFilled: false, stale: true);
+      networkFilled = cached != null;
+    }
+
+    if (cached != null) {
+      _metadata[globalKey] = cached;
+      if (cached.isEpisode || cached.kind == MediaKind.track) {
+        _loadParentMetadataFromMap(
+          cached,
+          allMetadata,
+          clientScopeId: _downloadManager.activeClientScopeIdForServer(parsed.serverId) ?? record?.clientScopeId,
+        );
+      }
+    }
+    return (metadata: cached, networkFilled: networkFilled, stale: false);
   }
 
   void _onProgressUpdate(DownloadProgress progress) {
@@ -896,54 +920,42 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         final queued = await _queueSingleDownload(metadata, client, mediaIndex: config.mediaIndex);
         return queued ? 1 : 0;
       } else if (metadata.kind == MediaKind.album || metadata.kind == MediaKind.artist) {
-        final hadMetadata = _metadata.containsKey(globalKey);
-        _metadata[globalKey] = metadata;
-        try {
-          return await _queueMusicContainerDownload(metadata, client);
-        } catch (_) {
-          if (!hadMetadata) _metadata.remove(globalKey);
-          rethrow;
-        }
-      } else if (metadata.isShow) {
-        // Stash metadata pre-queue so the UI can render the queueing state;
-        // roll back if expansion throws so the orphan doesn't linger.
-        final hadMetadata = _metadata.containsKey(globalKey);
-        _metadata[globalKey] = metadata;
-        try {
-          return await _queueShowDownload(
-            metadata,
-            client,
+        return _withStashedMetadata(metadata, () => _queueMusicContainerDownload(metadata, client));
+      } else if (metadata.isShow || metadata.isSeason) {
+        return _withStashedMetadata(
+          metadata,
+          () => _expandAndQueue(
+            container: metadata,
+            client: client,
             versionConfig: config,
             filter: filter,
             maxCount: maxCount,
+            skipExisting: false,
             includeSpecials: includeSpecials,
-          );
-        } catch (_) {
-          if (!hadMetadata) _metadata.remove(globalKey);
-          rethrow;
-        }
-      } else if (metadata.isSeason) {
-        final hadMetadata = _metadata.containsKey(globalKey);
-        _metadata[globalKey] = metadata;
-        try {
-          return await _queueSeasonDownload(
-            metadata,
-            client,
-            versionConfig: config,
-            filter: filter,
-            maxCount: maxCount,
-            includeSpecials: includeSpecials,
-          );
-        } catch (_) {
-          if (!hadMetadata) _metadata.remove(globalKey);
-          rethrow;
-        }
+          ),
+        );
       } else {
         throw Exception('Cannot download ${metadata.kind.id}');
       }
     } finally {
       _queueing.remove(globalKey);
       safeNotifyListeners();
+    }
+  }
+
+  Future<T> _withStashedMetadata<T>(MediaItem metadata, Future<T> Function() operation) async {
+    final globalKey = metadata.globalKey;
+    final previous = _metadata[globalKey];
+    _metadata[globalKey] = metadata;
+    try {
+      return await operation();
+    } catch (_) {
+      if (previous == null) {
+        _metadata.remove(globalKey);
+      } else {
+        _metadata[globalKey] = previous;
+      }
+      rethrow;
     }
   }
 
@@ -1173,46 +1185,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       if (queued) count++;
     }
     return count;
-  }
-
-  /// Queue all episodes from a TV show for download
-  Future<int> _queueShowDownload(
-    MediaItem show,
-    MediaServerClient client, {
-    DownloadVersionConfig? versionConfig,
-    DownloadFilter filter = DownloadFilter.all,
-    int? maxCount,
-    bool includeSpecials = true,
-  }) async {
-    return _expandAndQueue(
-      container: show,
-      client: client,
-      versionConfig: versionConfig,
-      filter: filter,
-      maxCount: maxCount,
-      skipExisting: false,
-      includeSpecials: includeSpecials,
-    );
-  }
-
-  /// Queue all episodes from a season for download
-  Future<int> _queueSeasonDownload(
-    MediaItem season,
-    MediaServerClient client, {
-    DownloadVersionConfig? versionConfig,
-    DownloadFilter filter = DownloadFilter.all,
-    int? maxCount,
-    bool includeSpecials = true,
-  }) async {
-    return _expandAndQueue(
-      container: season,
-      client: client,
-      versionConfig: versionConfig,
-      filter: filter,
-      maxCount: maxCount,
-      skipExisting: false,
-      includeSpecials: includeSpecials,
-    );
   }
 
   /// Queue only the missing (not downloaded) episodes for a show/season.
@@ -1476,44 +1448,15 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     int misses = 0;
 
     for (final globalKey in keys) {
-      final parsed = parseGlobalKey(globalKey);
-      if (parsed == null) continue;
-
       try {
-        final downloadRecord = await _downloadManager.getDownloadedMedia(globalKey);
-        if (isStale()) return;
-        var cached =
-            allMetadata[globalKey] ??
-            await _downloadManager.lookupMetadata(parsed.serverId, parsed.ratingKey, preferActiveScope: true);
-        if (isStale()) return;
-        if (cached != null) {
-          cacheHits++;
-        } else if (_downloads.containsKey(globalKey)) {
-          // Cache miss for an item we know is downloaded — pull from the
-          // live server. Repairs profiles where the per-backend cache row
-          // was never written or got cleared, the case that produces
-          // empty-title sync rules and a missing-downloads list.
-          cached = await _downloadManager.fetchAndPinMetadata(
-            parsed.serverId,
-            parsed.ratingKey,
-            preferActiveScope: true,
-          );
-          if (isStale()) return;
-          if (cached != null) networkFills++;
-        }
-
-        if (cached != null) {
-          _metadata[globalKey] = cached;
-          if (cached.isEpisode || cached.kind == MediaKind.track) {
-            _loadParentMetadataFromMap(
-              cached,
-              allMetadata,
-              clientScopeId:
-                  _downloadManager.activeClientScopeIdForServer(parsed.serverId) ?? downloadRecord?.clientScopeId,
-            );
-          }
-        } else {
+        final result = await _hydrateDownloadMetadata(globalKey, allMetadata, fetchOnMiss: true, isStale: isStale);
+        if (result.stale) return;
+        if (result.metadata == null) {
           misses++;
+        } else if (result.networkFilled) {
+          networkFills++;
+        } else {
+          cacheHits++;
         }
       } catch (e) {
         appLogger.d('Failed to refresh metadata for $globalKey: $e');

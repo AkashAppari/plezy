@@ -47,6 +47,30 @@ void main() {
     });
   });
 
+  group('partitionNativeTasks', () {
+    test('separates the current task id from stale and duplicate tasks', () {
+      final tasks = [
+        _downloadTask('current', 'srv:item-1'),
+        _downloadTask('stale', 'srv:item-1'),
+        _downloadTask('current', 'srv:item-1'),
+      ];
+
+      final partition = partitionNativeTasks(tasks, 'current');
+
+      expect(partition.current.map((task) => task.taskId), ['current', 'current']);
+      expect(partition.stale.map((task) => task.taskId), ['stale']);
+    });
+
+    test('treats every native task as stale when the row has no task id', () {
+      final tasks = [_downloadTask('first', 'srv:item-1'), _downloadTask('second', 'srv:item-1')];
+
+      final partition = partitionNativeTasks(tasks, null);
+
+      expect(partition.current, isEmpty);
+      expect(partition.stale, tasks);
+    });
+  });
+
   group('artworkStorageKey', () {
     test('removes Jellyfin api_key from persisted artwork keys', () {
       final url = 'https://jf.example/Items/item-1/Images/Primary?tag=abc&api_key=secret-token';
@@ -441,6 +465,37 @@ void main() {
       expect(row?.status, DownloadStatus.downloading.index);
       expect(row?.errorMessage, isNull);
       expect(row?.bgTaskId, 'current-task');
+    });
+
+    test('ignores terminal status when the current row is no longer downloading', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      const globalKey = 'srv:item-1';
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'item-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+      );
+      await db.updateBgTaskId(globalKey, 'current-task');
+
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+
+      await manager.debugHandleTaskStatus(
+        TaskStatusUpdate(_downloadTask('current-task', globalKey), TaskStatus.canceled),
+      );
+
+      final row = await db.getDownloadedMedia(globalKey);
+      expect(row?.status, DownloadStatus.completed.index);
+      expect(row?.bgTaskId, 'current-task');
+      expect(await db.getNextQueueItem(), isNull);
     });
 
     test('requeues current system cancel without in-memory context', () async {
