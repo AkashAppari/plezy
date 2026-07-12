@@ -27,7 +27,15 @@ class DownloadStorageException implements Exception {
 class DownloadStorageService {
   static DownloadStorageService? _instance;
   static DownloadStorageService get instance => _instance ??= DownloadStorageService._();
-  DownloadStorageService._();
+  DownloadStorageService._() : _safAvailableOverride = false;
+
+  @visibleForTesting
+  DownloadStorageService.forTestingSaf(String baseUri) : _safAvailableOverride = true {
+    _customDownloadPath = baseUri;
+    _customPathType = 'saf';
+  }
+
+  final bool _safAvailableOverride;
 
   /// Drop the cached singleton so the next [instance] call returns a fresh
   /// service. Test-only.
@@ -43,7 +51,8 @@ class DownloadStorageService {
   String? _customDownloadPath;
   String _customPathType = 'file';
 
-  bool get isUsingSaf => Platform.isAndroid && _customPathType == 'saf' && _customDownloadPath != null;
+  bool get isUsingSaf =>
+      (Platform.isAndroid || _safAvailableOverride) && _customPathType == 'saf' && _customDownloadPath != null;
 
   String? get safBaseUri => isUsingSaf ? _customDownloadPath : null;
 

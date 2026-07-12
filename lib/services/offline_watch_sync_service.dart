@@ -13,6 +13,7 @@ import '../media/media_server_client.dart';
 import '../media/playback_report_metadata.dart';
 import '../media/watch_progress.dart';
 import '../utils/app_logger.dart';
+import '../utils/active_client_scope.dart';
 import '../utils/global_key_utils.dart';
 import 'offline_mode_source.dart';
 import '../utils/watch_state_notifier.dart';
@@ -432,19 +433,18 @@ class OfflineWatchSyncService extends ChangeNotifier {
     // currently active scoped Jellyfin client. Once queued, _clientForAction
     // replays that exact scope even if the active user changes later.
     final client = _serverManager.getClient(serverId);
-    if (client != null) {
-      final scopeId = client.cacheServerId;
-      if (scopeId != serverId) return scopeId;
-    }
+    final activeScopeId = resolveActiveClientScopeId(serverId: serverId, cacheServerId: client?.cacheServerId);
+    if (activeScopeId != null) return activeScopeId;
     final download = await _database.getDownloadedMedia(buildGlobalKey(ServerId(serverId), itemId));
-    final downloadedScopeId = download?.clientScopeId;
-    if (downloadedScopeId != null && downloadedScopeId.isNotEmpty) return downloadedScopeId;
-    return null;
+    return resolveActiveClientScopeId(serverId: serverId, cacheServerId: download?.clientScopeId);
   }
 
   Future<({MediaServerClient client, String? clientScopeId})?> _clientForAction(OfflineWatchProgressItem action) async {
-    final scopeId = action.clientScopeId;
-    if (scopeId != null && scopeId.isNotEmpty) {
+    final scopeId = resolveActiveClientScopeId(
+      serverId: ServerId(action.serverId),
+      cacheServerId: action.clientScopeId,
+    );
+    if (scopeId != null) {
       final scoped = _serverManager.getJellyfinClientByCompoundId(scopeId);
       if (scoped != null) return (client: scoped, clientScopeId: scopeId);
     }
@@ -496,9 +496,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
 
   String? _activeClientScopeIdForServer(ServerId serverId) {
     final client = _serverManager.getClient(serverId);
-    if (client == null) return null;
-    final scopeId = client.cacheServerId;
-    return scopeId == serverId ? null : scopeId;
+    return resolveActiveClientScopeId(serverId: serverId, cacheServerId: client?.cacheServerId);
   }
 
   Future<MediaServerClient?> _clientForDownloadScope(ServerId serverId, String? clientScopeId) async {

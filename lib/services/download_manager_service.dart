@@ -5,7 +5,6 @@ import '../media/ids.dart';
 import 'dart:io';
 import 'package:background_downloader/background_downloader.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path/path.dart' as path;
 import 'package:plezy/utils/media_server_http_client.dart';
@@ -21,6 +20,7 @@ import '../media/media_server_client.dart';
 import 'api_cache.dart';
 import 'download_artwork_helpers.dart';
 import 'download_artwork_service.dart';
+import 'jellyfin_cache_resolver.dart';
 import 'settings_service.dart';
 import 'saf_storage_service.dart';
 import 'package:saf_util/saf_util_platform_interface.dart' show SafDocumentFile;
@@ -29,6 +29,7 @@ import '../services/offline_mode_source.dart';
 import '../services/download_storage_service.dart';
 import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
+import '../utils/active_client_scope.dart';
 import '../utils/codec_utils.dart';
 import '../utils/global_key_utils.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -36,6 +37,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 typedef MediaClientResolver = MediaServerClient? Function(ServerId serverId, {String? clientScopeId});
 typedef _NativeTaskForId = Future<Task?> Function(String taskId);
 typedef _NativeResumeTask = Future<bool> Function(DownloadTask task);
+typedef _EpisodeStorageDeletion = ({String? seasonDirUri, String? showDirUri});
 
 const bool _tvosBuild = bool.fromEnvironment('TVOS_BUILD');
 
@@ -66,6 +68,7 @@ class DownloadManagerService {
   final DownloadStorageService _storageService;
   final MediaServerHttpClient _http;
   final DownloadArtworkService _artworkService;
+  final SafStorageOperations _safStorage;
   final bool? _downloadsSupportedOverride;
 
   final _progressController = StreamController<DownloadProgress>.broadcast();
@@ -162,11 +165,13 @@ class DownloadManagerService {
     required DownloadStorageService storageService,
     required MediaClientResolver clientResolver,
     MediaServerHttpClient? http,
+    @visibleForTesting SafStorageOperations? safStorage,
     @visibleForTesting this._downloadsSupportedOverride,
   }) : _database = database,
        _storageService = storageService,
        _clientResolver = clientResolver,
        _http = http ?? httpClient,
+       _safStorage = safStorage ?? SafStorageService.instance,
        _artworkService = DownloadArtworkService(storageService: storageService, http: http ?? httpClient);
 
   bool get downloadsSupported => _downloadsSupportedOverride ?? platformDownloadsSupported;
@@ -208,9 +213,7 @@ class DownloadManagerService {
 
   String? activeClientScopeIdForServer(ServerId serverId) {
     final client = _getClient(serverId);
-    final scopeId = client?.cacheServerId;
-    if (scopeId == null || scopeId == serverId || scopeId.isEmpty) return null;
-    return scopeId;
+    return resolveActiveClientScopeId(serverId: serverId, cacheServerId: client?.cacheServerId);
   }
 
   /// Bulk-load every backend's pinned metadata into one map keyed by
@@ -304,22 +307,14 @@ class DownloadManagerService {
   /// `Connections` table directly so the lookup works even when the server
   /// is currently offline (the connection persists across launches).
   ///
-  /// Jellyfin's connection row is keyed by `${serverMachineId}/$userId`
-  /// while clients/cache rows use the bare machineId — match by prefix so
-  /// the lookup resolves either form. Uses [substr]-based prefix matching
-  /// (mirrors [JellyfinApiCache._serverContext]) so any `_` / `%` chars in
-  /// [serverId] are treated literally; `LIKE '$serverId/%'` would interpret
-  /// them as wildcards.
+  /// [JellyfinCacheResolver] reconciles bare machine ids with compound
+  /// `${serverMachineId}/$userId` connection ids without treating `_` or `%`
+  /// as wildcards.
   Future<MediaBackend?> _backendForServer(ServerId serverId) async {
     // Prefer a live client — `MediaServerClient.backend` is in memory.
     final live = _getClient(serverId);
     if (live != null) return live.backend;
-    final prefix = '$serverId/';
-    final row =
-        await (_database.select(_database.connections)
-              ..where((t) => t.id.equals(serverId) | t.id.substr(1, prefix.length).equals(prefix))
-              ..limit(1))
-            .getSingleOrNull();
+    final row = await JellyfinCacheResolver(_database).findConnection(serverId);
     if (row == null) return null;
     return switch (row.kind) {
       'jellyfin' => MediaBackend.jellyfin,
@@ -895,7 +890,7 @@ class DownloadManagerService {
 
   /// Delete a SAF file or directory. Missing targets are a silent no-op.
   Future<void> _tryDeleteSaf(String uri, {required bool isDir, required String description}) async {
-    final ok = await SafStorageService.instance.delete(uri, isDir: isDir);
+    final ok = await _safStorage.delete(uri, isDir: isDir);
     if (ok) appLogger.i('Deleted $description: $uri');
   }
 
@@ -904,7 +899,7 @@ class DownloadManagerService {
   /// Manual recursion because DocumentsProvider-level recursion isn't guaranteed
   /// across providers.
   Future<void> _deleteSafDirRecursive(String dirUri, {required String description}) async {
-    final saf = SafStorageService.instance;
+    final saf = _safStorage;
     final children = await saf.list(dirUri);
     if (children != null && children.isNotEmpty) {
       await Future.wait(
@@ -921,7 +916,7 @@ class DownloadManagerService {
   /// Walk a chain of SAF directory URIs (deepest-first) and delete each that is empty.
   /// Stops at the first non-empty directory. Skips missing/null entries.
   Future<void> _deleteEmptySafDirsInOrder(List<String?> dirUris) async {
-    final saf = SafStorageService.instance;
+    final saf = _safStorage;
     for (final uri in dirUris) {
       if (uri == null) break;
       if (!await saf.exists(uri, isDir: true)) continue;
@@ -934,7 +929,7 @@ class DownloadManagerService {
 
   /// Find a SAF file in [dirUri] whose name (minus extension) matches [baseName].
   Future<SafDocumentFile?> _findSafFileByBaseName(String dirUri, String baseName) async {
-    final children = await SafStorageService.instance.list(dirUri);
+    final children = await _safStorage.list(dirUri);
     if (children == null) return null;
     for (final child in children) {
       if (!child.isDir && path.basenameWithoutExtension(child.name) == baseName) return child;
@@ -948,7 +943,7 @@ class DownloadManagerService {
   /// otherwise produce "name (1).ext" / "name.ext (1)" corrupt duplicates on
   /// every app-level retry.
   Future<void> _cleanupSafTargetFile(String safDirUri, String safFileName) async {
-    final children = await SafStorageService.instance.list(safDirUri);
+    final children = await _safStorage.list(safDirUri);
     if (children == null) return;
 
     // Match BOTH numbering schemes a DocumentsProvider may use:
@@ -2252,27 +2247,18 @@ class DownloadManagerService {
         return;
       }
 
-      final isSaf = _storageService.isUsingSaf;
       switch (metadata.kind) {
         case MediaKind.episode:
-          isSaf
-              ? await _deleteEpisodeFilesSaf(metadata, serverId, clientScopeId: scopeId)
-              : await _deleteEpisodeFiles(metadata, serverId, clientScopeId: scopeId);
+          await _deleteEpisodeFiles(metadata, serverId, clientScopeId: scopeId);
           break;
         case MediaKind.season:
-          isSaf
-              ? await _deleteSeasonFilesSaf(metadata, serverId, clientScopeId: scopeId)
-              : await _deleteSeasonFiles(metadata, serverId, clientScopeId: scopeId);
+          await _deleteSeasonFiles(metadata, serverId, clientScopeId: scopeId);
           break;
         case MediaKind.show:
-          isSaf
-              ? await _deleteShowFilesSaf(metadata, serverId, clientScopeId: scopeId)
-              : await _deleteShowFiles(metadata, serverId, clientScopeId: scopeId);
+          await _deleteShowFiles(metadata, serverId, clientScopeId: scopeId);
           break;
         case MediaKind.movie:
-          isSaf
-              ? await _deleteMovieFilesSaf(metadata, serverId, clientScopeId: scopeId)
-              : await _deleteMovieFiles(metadata, serverId, clientScopeId: scopeId);
+          await _deleteMovieFiles(metadata, serverId, clientScopeId: scopeId);
           break;
         // Tracks live in the generic downloads/{serverId}/{ratingKey}/ layout
         // (both file and SAF mode), so deletion is DB-record-driven rather
@@ -2387,21 +2373,23 @@ class DownloadManagerService {
     }
   }
 
-  Future<void> _deleteEpisodeFiles(MediaItem episode, ServerId serverId, {String? clientScopeId}) async {
+  Future<void> _deleteEpisodeFiles(
+    MediaItem episode,
+    ServerId serverId, {
+    String? clientScopeId,
+    bool skipStorageVideoAndParents = false,
+  }) async {
     try {
       final parentMetadata = episode.grandparentId != null
           ? await _lookupMetadata(serverId, episode.grandparentId!, clientScopeId: clientScopeId)
           : null;
       final showYear = parentMetadata?.year;
 
-      final videoPathTemplate = await _storageService.getEpisodeVideoPath(episode, 'tmp', showYear: showYear);
-      final videoPathWithoutExt = videoPathTemplate.substring(0, videoPathTemplate.lastIndexOf('.'));
-      final actualVideoFile = await _findFileWithAnyExtension(videoPathWithoutExt);
-      if (actualVideoFile != null) {
-        await _deleteFileIfExists(actualVideoFile, 'episode video');
-        // Also clean up any .part file from interrupted downloads
-        await _deleteFileIfExists(File('${actualVideoFile.path}.part'), 'partial download');
-      }
+      final storageDeletion = await _deleteEpisodeStorageVideo(
+        episode,
+        showYear: showYear,
+        skipVideo: skipStorageVideoAndParents,
+      );
 
       final thumbPath = await _storageService.getEpisodeThumbnailPath(episode, showYear: showYear);
       await _deleteFileIfExists(File(thumbPath), 'episode thumbnail');
@@ -2414,12 +2402,14 @@ class DownloadManagerService {
 
       await _deleteChapterThumbnails(serverId, episode.id, clientScopeId: clientScopeId);
 
-      await _cleanupEmptyDirectories(episode, showYear);
-
-      // Safety net: verify the actual DB-recorded file is gone
-      await _ensureDbFileDeleted(serverId, episode.id);
+      if (!skipStorageVideoAndParents) {
+        await _cleanupEpisodeStorageParents(episode, showYear, storageDeletion);
+        // Safety net: verify the actual DB-recorded file is gone.
+        await _ensureDbFileDeleted(serverId, episode.id);
+      }
     } catch (e, stack) {
-      appLogger.e('Error deleting episode files', error: e, stackTrace: stack);
+      final storageLabel = _storageService.isUsingSaf ? 'SAF ' : '';
+      appLogger.e('Error deleting ${storageLabel}episode files', error: e, stackTrace: stack);
     }
   }
 
@@ -2432,7 +2422,8 @@ class DownloadManagerService {
 
       final episodesInSeason = await _database.getEpisodesBySeason(season.id, serverId: serverId);
 
-      appLogger.d('Deleting ${episodesInSeason.length} episodes in season ${season.id}');
+      final storageLabel = _storageService.isUsingSaf ? ' (SAF)' : '';
+      appLogger.d('Deleting ${episodesInSeason.length} episodes in season ${season.id}$storageLabel');
       await _deleteEpisodesInCollection(
         episodes: episodesInSeason,
         serverId: serverId,
@@ -2441,15 +2432,10 @@ class DownloadManagerService {
         parentTitle: season.displayTitle,
       );
 
-      final seasonDir = await _storageService.getSeasonDirectory(season, showYear: showYear);
-      if (await seasonDir.exists()) {
-        await seasonDir.delete(recursive: true);
-        appLogger.i('Deleted season directory: ${seasonDir.path}');
-      }
-
-      await _cleanupShowDirectory(season, showYear);
+      await _deleteSeasonStorageDirectory(season, showYear);
     } catch (e, stack) {
-      appLogger.e('Error deleting season files', error: e, stackTrace: stack);
+      final storageLabel = _storageService.isUsingSaf ? 'SAF ' : '';
+      appLogger.e('Error deleting ${storageLabel}season files', error: e, stackTrace: stack);
     }
   }
 
@@ -2486,11 +2472,11 @@ class DownloadManagerService {
           clientScopeId: episodeScopeId,
         );
         if (episodeMetadata != null) {
-          await _deleteEpisodeFilesSaf(
+          await _deleteEpisodeFiles(
             episodeMetadata,
             serverId,
             clientScopeId: episodeScopeId,
-            skipSafVideoAndParents: true,
+            skipStorageVideoAndParents: true,
           );
         } else {
           await _deleteChapterThumbnails(ServerId(serverId), episode.ratingKey, clientScopeId: episodeScopeId);
@@ -2578,7 +2564,8 @@ class DownloadManagerService {
     try {
       final episodesInShow = await _database.getEpisodesByShow(show.id, serverId: serverId);
 
-      appLogger.d('Deleting ${episodesInShow.length} episodes in show ${show.id}');
+      final storageLabel = _storageService.isUsingSaf ? ' (SAF)' : '';
+      appLogger.d('Deleting ${episodesInShow.length} episodes in show ${show.id}$storageLabel');
       await _deleteEpisodesInCollection(
         episodes: episodesInShow,
         serverId: serverId,
@@ -2587,175 +2574,134 @@ class DownloadManagerService {
         parentTitle: show.displayTitle,
       );
 
-      final showDir = await _storageService.getShowDirectory(show);
-      if (await showDir.exists()) {
-        await showDir.delete(recursive: true);
-        appLogger.i('Deleted show directory: ${showDir.path}');
-      }
+      await _deleteShowStorageDirectory(show);
     } catch (e, stack) {
-      appLogger.e('Error deleting show files', error: e, stackTrace: stack);
+      final storageLabel = _storageService.isUsingSaf ? 'SAF ' : '';
+      appLogger.e('Error deleting ${storageLabel}show files', error: e, stackTrace: stack);
     }
   }
 
   Future<void> _deleteMovieFiles(MediaItem movie, ServerId serverId, {String? clientScopeId}) async {
     try {
-      final movieDir = await _storageService.getMovieDirectory(movie);
-      if (await movieDir.exists()) {
-        await movieDir.delete(recursive: true);
-        appLogger.i('Deleted movie directory: ${movieDir.path}');
-      }
+      await _deleteMovieStorageDirectory(movie);
 
       await _deleteChapterThumbnails(serverId, movie.id, clientScopeId: clientScopeId);
 
       // Safety net: verify the actual DB-recorded file is gone
       await _ensureDbFileDeleted(serverId, movie.id);
     } catch (e, stack) {
-      appLogger.e('Error deleting movie files', error: e, stackTrace: stack);
+      final storageLabel = _storageService.isUsingSaf ? 'SAF ' : '';
+      appLogger.e('Error deleting ${storageLabel}movie files', error: e, stackTrace: stack);
     }
   }
 
-  Future<void> _deleteMovieFilesSaf(MediaItem movie, ServerId serverId, {String? clientScopeId}) async {
-    try {
+  Future<void> _deleteMovieStorageDirectory(MediaItem movie) async {
+    if (_storageService.isUsingSaf) {
       final safBaseUri = _storageService.safBaseUri;
-      if (safBaseUri != null) {
-        final movieDir = await SafStorageService.instance.getChild(
-          safBaseUri,
-          _storageService.getMovieSafPathComponents(movie),
-        );
-        if (movieDir != null) {
-          await _deleteSafDirRecursive(movieDir.uri, description: 'movie directory');
-        }
+      if (safBaseUri == null) return;
+      final movieDir = await _safStorage.getChild(safBaseUri, _storageService.getMovieSafPathComponents(movie));
+      if (movieDir != null) {
+        await _deleteSafDirRecursive(movieDir.uri, description: 'movie directory');
       }
-      await _deleteChapterThumbnails(serverId, movie.id, clientScopeId: clientScopeId);
-      await _ensureDbFileDeleted(serverId, movie.id);
-    } catch (e, stack) {
-      appLogger.e('Error deleting SAF movie files', error: e, stackTrace: stack);
+      return;
+    }
+
+    final movieDir = await _storageService.getMovieDirectory(movie);
+    if (await movieDir.exists()) {
+      await movieDir.delete(recursive: true);
+      appLogger.i('Deleted movie directory: ${movieDir.path}');
     }
   }
 
-  /// When called inside a bulk season/show delete, the caller wipes the parent
-  /// dir — so we skip the SAF video delete and parent walk-up here.
-  Future<void> _deleteEpisodeFilesSaf(
-    MediaItem episode,
-    ServerId serverId, {
-    String? clientScopeId,
-    bool skipSafVideoAndParents = false,
+  Future<_EpisodeStorageDeletion> _deleteEpisodeStorageVideo(
+    MediaItem episode, {
+    required int? showYear,
+    required bool skipVideo,
   }) async {
-    try {
-      final parentMetadata = episode.grandparentId != null
-          ? await _lookupMetadata(ServerId(serverId), episode.grandparentId!, clientScopeId: clientScopeId)
-          : null;
-      final showYear = parentMetadata?.year;
-
+    if (_storageService.isUsingSaf) {
+      if (skipVideo) return (seasonDirUri: null, showDirUri: null);
       final safBaseUri = _storageService.safBaseUri;
-      String? seasonDirUri;
-      String? showDirUri;
+      if (safBaseUri == null) return (seasonDirUri: null, showDirUri: null);
 
-      if (safBaseUri != null && !skipSafVideoAndParents) {
-        final saf = SafStorageService.instance;
-        final resolved = await Future.wait([
-          saf.getChild(safBaseUri, _storageService.getEpisodeSafPathComponents(episode, showYear: showYear)),
-          saf.getChild(safBaseUri, _storageService.getShowSafPathComponents(episode, showYear: showYear)),
-        ]);
-        seasonDirUri = resolved.first?.uri;
-        showDirUri = resolved[1]?.uri;
-
-        if (seasonDirUri != null) {
-          final baseName = _storageService.getEpisodeSafBaseName(episode);
-          final file = await _findSafFileByBaseName(seasonDirUri, baseName);
-          if (file != null) {
-            await _tryDeleteSaf(file.uri, isDir: false, description: 'SAF episode video');
-          }
+      final resolved = await Future.wait([
+        _safStorage.getChild(safBaseUri, _storageService.getEpisodeSafPathComponents(episode, showYear: showYear)),
+        _safStorage.getChild(safBaseUri, _storageService.getShowSafPathComponents(episode, showYear: showYear)),
+      ]);
+      final seasonDirUri = resolved.first?.uri;
+      final showDirUri = resolved[1]?.uri;
+      if (seasonDirUri != null) {
+        final file = await _findSafFileByBaseName(seasonDirUri, _storageService.getEpisodeSafBaseName(episode));
+        if (file != null) {
+          await _tryDeleteSaf(file.uri, isDir: false, description: 'SAF episode video');
         }
       }
-
-      // Subtitles and the episode thumbnail are written into app-private storage
-      // even in SAF mode (getDownloadsDirectory() falls through to default when
-      // _customPathType == 'saf'). Deletion follows suit until writing is migrated.
-      final thumbPath = await _storageService.getEpisodeThumbnailPath(episode, showYear: showYear);
-      await _deleteFileIfExists(File(thumbPath), 'episode thumbnail');
-
-      final subsDir = await _storageService.getEpisodeSubtitlesDirectory(episode, showYear: showYear);
-      if (await subsDir.exists()) {
-        await subsDir.delete(recursive: true);
-        appLogger.i('Deleted episode subtitles: ${subsDir.path}');
-      }
-
-      await _deleteChapterThumbnails(ServerId(serverId), episode.id, clientScopeId: clientScopeId);
-
-      if (!skipSafVideoAndParents) {
-        await _deleteEmptySafDirsInOrder([seasonDirUri, showDirUri]);
-        await _ensureDbFileDeleted(ServerId(serverId), episode.id);
-      }
-    } catch (e, stack) {
-      appLogger.e('Error deleting SAF episode files', error: e, stackTrace: stack);
+      return (seasonDirUri: seasonDirUri, showDirUri: showDirUri);
     }
+
+    if (!skipVideo) {
+      final videoPathTemplate = await _storageService.getEpisodeVideoPath(episode, 'tmp', showYear: showYear);
+      final videoPathWithoutExt = videoPathTemplate.substring(0, videoPathTemplate.lastIndexOf('.'));
+      final actualVideoFile = await _findFileWithAnyExtension(videoPathWithoutExt);
+      if (actualVideoFile != null) {
+        await _deleteFileIfExists(actualVideoFile, 'episode video');
+        await _deleteFileIfExists(File('${actualVideoFile.path}.part'), 'partial download');
+      }
+    }
+    return (seasonDirUri: null, showDirUri: null);
   }
 
-  Future<void> _deleteSeasonFilesSaf(MediaItem season, ServerId serverId, {String? clientScopeId}) async {
-    try {
-      final parentMetadata = season.parentId != null
-          ? await _lookupMetadata(serverId, season.parentId!, clientScopeId: clientScopeId)
-          : null;
-      final showYear = parentMetadata?.year;
-
-      final episodesInSeason = await _database.getEpisodesBySeason(season.id, serverId: serverId);
-      appLogger.d('Deleting ${episodesInSeason.length} episodes in season ${season.id} (SAF)');
-      await _deleteEpisodesInCollection(
-        episodes: episodesInSeason,
-        serverId: serverId,
-        clientScopeId: clientScopeId,
-        parentKey: season.id,
-        parentTitle: season.displayTitle,
-      );
-
-      final safBaseUri = _storageService.safBaseUri;
-      if (safBaseUri != null) {
-        final saf = SafStorageService.instance;
-        final seasonDir = await saf.getChild(
-          safBaseUri,
-          _storageService.getSeasonSafPathComponents(season, showYear: showYear),
-        );
-        if (seasonDir != null) {
-          await _deleteSafDirRecursive(seasonDir.uri, description: 'season directory');
-        }
-        final showDir = await saf.getChild(
-          safBaseUri,
-          _storageService.getShowSafPathComponents(season, showYear: showYear),
-        );
-        if (showDir != null) {
-          await _deleteEmptySafDirsInOrder([showDir.uri]);
-        }
-      }
-    } catch (e, stack) {
-      appLogger.e('Error deleting SAF season files', error: e, stackTrace: stack);
+  Future<void> _cleanupEpisodeStorageParents(MediaItem episode, int? showYear, _EpisodeStorageDeletion deletion) async {
+    if (_storageService.isUsingSaf) {
+      await _deleteEmptySafDirsInOrder([deletion.seasonDirUri, deletion.showDirUri]);
+      return;
     }
+    await _cleanupEmptyDirectories(episode, showYear);
   }
 
-  Future<void> _deleteShowFilesSaf(MediaItem show, ServerId serverId, {String? clientScopeId}) async {
-    try {
-      final episodesInShow = await _database.getEpisodesByShow(show.id, serverId: serverId);
-      appLogger.d('Deleting ${episodesInShow.length} episodes in show ${show.id} (SAF)');
-      await _deleteEpisodesInCollection(
-        episodes: episodesInShow,
-        serverId: serverId,
-        clientScopeId: clientScopeId,
-        parentKey: show.id,
-        parentTitle: show.displayTitle,
-      );
-
+  Future<void> _deleteSeasonStorageDirectory(MediaItem season, int? showYear) async {
+    if (_storageService.isUsingSaf) {
       final safBaseUri = _storageService.safBaseUri;
-      if (safBaseUri != null) {
-        final showDir = await SafStorageService.instance.getChild(
-          safBaseUri,
-          _storageService.getShowSafPathComponents(show),
-        );
-        if (showDir != null) {
-          await _deleteSafDirRecursive(showDir.uri, description: 'show directory');
-        }
+      if (safBaseUri == null) return;
+      final seasonDir = await _safStorage.getChild(
+        safBaseUri,
+        _storageService.getSeasonSafPathComponents(season, showYear: showYear),
+      );
+      if (seasonDir != null) {
+        await _deleteSafDirRecursive(seasonDir.uri, description: 'season directory');
       }
-    } catch (e, stack) {
-      appLogger.e('Error deleting SAF show files', error: e, stackTrace: stack);
+      final showDir = await _safStorage.getChild(
+        safBaseUri,
+        _storageService.getShowSafPathComponents(season, showYear: showYear),
+      );
+      if (showDir != null) {
+        await _deleteEmptySafDirsInOrder([showDir.uri]);
+      }
+      return;
+    }
+
+    final seasonDir = await _storageService.getSeasonDirectory(season, showYear: showYear);
+    if (await seasonDir.exists()) {
+      await seasonDir.delete(recursive: true);
+      appLogger.i('Deleted season directory: ${seasonDir.path}');
+    }
+    await _cleanupShowDirectory(season, showYear);
+  }
+
+  Future<void> _deleteShowStorageDirectory(MediaItem show) async {
+    if (_storageService.isUsingSaf) {
+      final safBaseUri = _storageService.safBaseUri;
+      if (safBaseUri == null) return;
+      final showDir = await _safStorage.getChild(safBaseUri, _storageService.getShowSafPathComponents(show));
+      if (showDir != null) {
+        await _deleteSafDirRecursive(showDir.uri, description: 'show directory');
+      }
+      return;
+    }
+
+    final showDir = await _storageService.getShowDirectory(show);
+    if (await showDir.exists()) {
+      await showDir.delete(recursive: true);
+      appLogger.i('Deleted show directory: ${showDir.path}');
     }
   }
 
@@ -2771,9 +2717,9 @@ class DownloadManagerService {
       if (_storageService.isSafUri(storedPath)) {
         // SAF mode: parent cleanup is handled by the type-specific SAF helpers —
         // here we only verify the video URI itself is gone.
-        if (await SafStorageService.instance.exists(storedPath, isDir: false)) {
+        if (await _safStorage.exists(storedPath, isDir: false)) {
           appLogger.w('Safety net: SAF video still exists after metadata deletion, deleting: $storedPath');
-          await SafStorageService.instance.delete(storedPath, isDir: false);
+          await _safStorage.delete(storedPath, isDir: false);
         }
         return;
       }
@@ -2880,7 +2826,12 @@ class DownloadManagerService {
     try {
       final files = await dir
           .list()
-          .where((e) => e is File && path.basenameWithoutExtension(e.path) == baseName)
+          .where(
+            (e) =>
+                e is File &&
+                path.basenameWithoutExtension(e.path) == baseName &&
+                _videoExtensions.contains(path.extension(e.path).toLowerCase()),
+          )
           .toList();
 
       return files.isNotEmpty ? files.first as File : null;

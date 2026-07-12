@@ -137,6 +137,13 @@ class _RecordingMediaClient implements MediaServerClient {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _ScopedRecordingMediaClient extends _RecordingMediaClient implements ScopedMediaServerClient {
+  _ScopedRecordingMediaClient({required super.serverId, required super.backend, required this.scopedServerId});
+
+  @override
+  final String scopedServerId;
+}
+
 /// Build a service against an in-memory database and a bare-metal
 /// [MultiServerManager] (no servers added).
 ({OfflineWatchSyncService svc, AppDatabase db, MultiServerManager mgr}) _makeService() {
@@ -842,6 +849,37 @@ void main() {
   });
 
   group('Jellyfin scoped sync', () {
+    test('empty active scope falls back to the downloaded scope during client pre-bind', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+      addTearDown(() async {
+        svc.dispose();
+        mgr.dispose();
+        await db.close();
+      });
+
+      await db.insertDownload(
+        serverId: ServerId('jf-machine'),
+        clientScopeId: 'jf-machine/user-a',
+        ratingKey: 'item-1',
+        globalKey: 'jf-machine:item-1',
+        type: 'movie',
+        status: 3,
+      );
+      mgr.debugRegisterClientForTesting(
+        _ScopedRecordingMediaClient(
+          serverId: ServerId('jf-machine'),
+          backend: MediaBackend.jellyfin,
+          scopedServerId: '',
+        ),
+      );
+
+      final returnedScope = await svc.queueMarkWatched(serverId: ServerId('jf-machine'), itemId: 'item-1');
+
+      final queued = await db.getPendingWatchActions();
+      expect(returnedScope, 'jf-machine/user-a');
+      expect(queued.single.clientScopeId, 'jf-machine/user-a');
+    });
+
     test('queues with downloaded Jellyfin source scope when no active client is registered', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
       addTearDown(() async {
