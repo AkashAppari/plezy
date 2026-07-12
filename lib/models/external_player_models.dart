@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:url_launcher/url_launcher.dart';
@@ -65,11 +64,6 @@ class ExternalPlayer {
     if (customValue != null) 'customValue': customValue,
     if (customType != null) 'customType': customType == CustomPlayerType.urlScheme ? 'urlScheme' : 'command',
   };
-
-  String toJsonString() => json.encode(toJson());
-
-  static ExternalPlayer fromJsonString(String jsonString) =>
-      ExternalPlayer.fromJson(json.decode(jsonString) as Map<String, dynamic>);
 
   @override
   bool operator ==(Object other) =>

@@ -249,9 +249,6 @@ class MediaServerHttpClient {
     }
   }
 
-  /// Send a streamed request (for image cache etc).
-  Future<http.StreamedResponse> sendStreamed(http.BaseRequest request) => _client.send(request);
-
   void close() {
     _closing = true;
     _abortActiveRequests();

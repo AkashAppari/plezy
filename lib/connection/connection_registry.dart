@@ -118,25 +118,11 @@ class ConnectionRegistry {
     return all.whereType<PlexAccountConnection>().toList();
   }
 
-  /// All Jellyfin connections in insertion order. Symmetric helper to
-  /// [listPlexAccounts].
-  Future<List<JellyfinConnection>> listJellyfin() async {
-    final all = await list();
-    return all.whereType<JellyfinConnection>().toList();
-  }
-
   /// Lookup a [PlexAccountConnection] by id. Returns `null` if no row
   /// matches OR the row exists but isn't a Plex account.
   Future<PlexAccountConnection?> getPlexAccount(String id) async {
     final c = await get(id);
     return c is PlexAccountConnection ? c : null;
-  }
-
-  /// Lookup a [JellyfinConnection] by id. Returns `null` if no row matches
-  /// OR the row exists but isn't a Jellyfin connection.
-  Future<JellyfinConnection?> getJellyfin(String id) async {
-    final c = await get(id);
-    return c is JellyfinConnection ? c : null;
   }
 
   Future<Connection?> _rowToConnection(ConnectionRow row) async {

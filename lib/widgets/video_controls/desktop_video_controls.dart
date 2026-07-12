@@ -295,12 +295,6 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     _timelineFocusNode.requestFocus();
   }
 
-  /// Get focus node for volume control
-  FocusNode get volumeFocusNode => _volumeFocusNode;
-
-  /// Get focus nodes for track controls
-  List<FocusNode> get trackControlFocusNodes => _trackControlFocusNodes;
-
   /// Hide content strip (called by parent when controls hide)
   void hideContentStrip() {
     if (_contentStripVisible) {

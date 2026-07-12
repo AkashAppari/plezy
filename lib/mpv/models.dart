@@ -47,12 +47,6 @@ sealed class AudioTrack with _$AudioTrack {
   static const off = AudioTrack(id: 'no', title: 'Off');
 
   int? get channelsCount => channels;
-
-  String get displayName {
-    if (title != null && title!.isNotEmpty) return title!;
-    if (language != null && language!.isNotEmpty) return language!;
-    return 'Track $id';
-  }
 }
 
 @freezed
@@ -91,13 +85,6 @@ sealed class SubtitleTrack with _$SubtitleTrack {
   static const auto = SubtitleTrack(id: 'auto', title: 'Auto');
 
   static const off = SubtitleTrack(id: 'no', title: 'Off');
-
-  String get displayName {
-    if (title != null && title!.isNotEmpty) return title!;
-    if (language != null && language!.isNotEmpty) return language!;
-    if (isExternal) return 'External';
-    return 'Track $id';
-  }
 }
 
 @Freezed(toStringOverride: false)

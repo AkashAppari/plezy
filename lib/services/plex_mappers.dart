@@ -777,8 +777,6 @@ class PlexMetadataDto {
 
   String get globalKey => serverId != null ? buildGlobalKey(ServerId(serverId!), ratingKey) : ratingKey;
 
-  bool get isLibrarySection => key != null && key!.startsWith('/library/sections/');
-
   bool get isUnmatched => guid == null || guid!.isEmpty || guid!.contains(_unmatchedAgentMarker);
 
   /// Top-level scalar fields surface as a plain Plex JSON map. Used by the

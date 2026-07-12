@@ -275,15 +275,6 @@ class MediaImageHelper {
     return true;
   }
 
-  /// Optimized URL for hero/background art ([ImageType.art]).
-  static String heroArtUrl({
-    required MediaServerClient? client,
-    required String? thumbPath,
-    required BuildContext context,
-    required double containerWidth,
-    required double containerHeight,
-  }) => _typedUrl(client, thumbPath, context, containerWidth, containerHeight, ImageType.art);
-
   /// Optimized URL for clear-logo overlays ([ImageType.logo]).
   static String logoUrl({
     required MediaServerClient? client,

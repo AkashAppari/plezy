@@ -73,8 +73,6 @@ class JellyfinApiCache extends ApiCache {
   /// [ApiCache.isPinned]'s identical Dart signature.
   Future<bool> isPinnedItemId(ServerId serverId, String itemId) => hasPinnedMatching(_itemPattern(serverId, itemId));
 
-  Future<Set<String>> getPinnedItemIds(ServerId serverId) => extractPinnedIds(serverId, _itemKeyPattern);
-
   /// Fetch and parse a [MediaItem] from cache.
   ///
   /// Returns `null` when no matching row is cached, the row's JSON is

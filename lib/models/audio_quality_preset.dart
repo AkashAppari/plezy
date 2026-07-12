@@ -28,8 +28,4 @@ enum AudioQualityPreset {
     }
     return AudioQualityPreset.original;
   }
-
-  /// Order shared by every picker surface: [original] first, then capped
-  /// presets highest-bitrate first.
-  static final List<AudioQualityPreset> displayOrder = List.unmodifiable(values);
 }

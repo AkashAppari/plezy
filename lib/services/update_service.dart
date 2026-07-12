@@ -109,11 +109,6 @@ class UpdateService {
     return prefs.getString(_keySkippedVersion);
   }
 
-  static Future<void> clearSkippedVersion() async {
-    final prefs = await BaseSharedPreferencesService.sharedCache();
-    await prefs.remove(_keySkippedVersion);
-  }
-
   /// Check if cooldown period has passed since last check
   static Future<bool> shouldCheckForUpdates() async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
