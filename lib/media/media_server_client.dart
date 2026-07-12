@@ -723,11 +723,7 @@ mixin MediaServerCacheMixin implements MediaServerClient {
     try {
       final response = await networkCall();
       if (cacheResponse) {
-        try {
-          await _putCacheResponse(cacheKey, response.data);
-        } catch (e, st) {
-          appLogger.w('Cache write failed for $cacheKey', error: e, stackTrace: st);
-        }
+        await _putCacheResponse(cacheKey, response.data);
       }
       return parseResponse(response);
     } catch (e) {
@@ -754,20 +750,20 @@ mixin MediaServerCacheMixin implements MediaServerClient {
     if (isOfflineMode) return null;
     final response = await networkCall();
     if (cacheResponse) {
-      try {
-        await _putCacheResponse(cacheKey, response.data);
-      } catch (e, st) {
-        appLogger.w('Cache write failed for $cacheKey', error: e, stackTrace: st);
-      }
+      await _putCacheResponse(cacheKey, response.data);
     }
     return parseResponse(response);
   }
 
   Future<void> _putCacheResponse(String cacheKey, dynamic data) async {
-    if (data is Map<String, dynamic>) {
-      await cache.put(ServerId(cacheServerId), cacheKey, data);
-    } else if (data != null) {
-      appLogger.w('Unexpected response type for $cacheKey: ${data.runtimeType}');
+    try {
+      if (data is Map<String, dynamic>) {
+        await cache.put(ServerId(cacheServerId), cacheKey, data);
+      } else if (data != null) {
+        appLogger.w('Unexpected response type for $cacheKey: ${data.runtimeType}');
+      }
+    } catch (e, st) {
+      appLogger.w('Cache write failed for $cacheKey', error: e, stackTrace: st);
     }
   }
 }
