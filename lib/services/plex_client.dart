@@ -758,11 +758,6 @@ class PlexClient
     return null;
   }
 
-  int _fallbackPageTotal({required int offset, required int itemCount, int? requestedSize}) {
-    final fullPage = requestedSize != null && requestedSize > 0 && itemCount >= requestedSize;
-    return offset + itemCount + (fullPage ? 1 : 0);
-  }
-
   int _responseTotalSize(MediaServerResponse response, {required int itemCount, int? start, int? requestedSize}) {
     final headerTotal = _responseHeaderInt(response, 'X-Plex-Container-Total-Size');
     if (headerTotal != null) return headerTotal;
@@ -776,7 +771,7 @@ class PlexClient
       return flexibleInt(container?['size']) ?? itemCount;
     }
 
-    return _fallbackPageTotal(offset: offset, itemCount: itemCount, requestedSize: requestedSize);
+    return fallbackPageTotal(offset: offset, itemCount: itemCount, requestedSize: requestedSize);
   }
 
   ({List<PlexPlaylistDto> items, int totalSize}) _extractPlaylistListResult(

@@ -76,3 +76,11 @@ sealed class LibraryPage<T> with _$LibraryPage<T> {
   const factory LibraryPage({required List<T> items, required int totalCount, @Default(0) int offset}) =
       _LibraryPage<T>;
 }
+
+/// Conservative total for a page whose backend omitted an exact count. A full
+/// page adds one sentinel item so callers keep pagination enabled without
+/// claiming to know the real total.
+int fallbackPageTotal({required int offset, required int itemCount, int? requestedSize}) {
+  final fullPage = requestedSize != null && requestedSize > 0 && itemCount >= requestedSize;
+  return offset + itemCount + (fullPage ? 1 : 0);
+}

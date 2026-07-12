@@ -83,7 +83,7 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
 
     final fallbackTotal = rawFinished
         ? filteredSeen
-        : _fallbackPageTotal(offset: offset, itemCount: items.length, requestedSize: pageSize);
+        : fallbackPageTotal(offset: offset, itemCount: items.length, requestedSize: pageSize);
     return LibraryPage<MediaPlaylist>(items: items, totalCount: fallbackTotal, offset: offset);
   }
 
@@ -134,7 +134,7 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
     final rawTotal = response.data is Map<String, dynamic>
         ? (response.data as Map<String, dynamic>)['TotalRecordCount']
         : null;
-    final fallbackTotal = _fallbackPageTotal(offset: offset, itemCount: items.length, requestedSize: pageSize);
+    final fallbackTotal = fallbackPageTotal(offset: offset, itemCount: items.length, requestedSize: pageSize);
     return LibraryPage<MediaItem>(
       items: _mapItems(items),
       totalCount: rawTotal is int ? rawTotal : fallbackTotal,

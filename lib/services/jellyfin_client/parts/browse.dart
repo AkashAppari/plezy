@@ -107,13 +107,6 @@ String _jellyfinFolderSortName(Map<String, dynamic> item) {
   return raw.toLowerCase();
 }
 
-int _fallbackPageTotal({required int offset, required int itemCount, int? requestedSize}) {
-  if (requestedSize == null || requestedSize <= 0 || itemCount < requestedSize) {
-    return offset + itemCount;
-  }
-  return offset + itemCount + 1;
-}
-
 /// `/Items/Filters` is a legacy unpaged endpoint; keep failures isolated from
 /// the paged Browse tab so very large libraries can still open.
 const _filtersTimeout = Duration(seconds: 8);
@@ -209,7 +202,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     final totalUnreliable = isArtistQuery && rawTotal == 0 && items.isNotEmpty;
     final total = rawTotal is int && !totalUnreliable
         ? rawTotal
-        : _fallbackPageTotal(offset: query.offset, itemCount: items.length, requestedSize: query.limit);
+        : fallbackPageTotal(offset: query.offset, itemCount: items.length, requestedSize: query.limit);
     return LibraryPage<MediaItem>(items: _mapItems(items), totalCount: total, offset: query.offset);
   }
 
@@ -1588,7 +1581,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       final rawTotal = data is Map<String, dynamic> ? data['TotalRecordCount'] : null;
       final fallbackTotal = singlePage
           ? offset + rawItems.length
-          : _fallbackPageTotal(offset: offset, itemCount: rawItems.length, requestedSize: requestedSize);
+          : fallbackPageTotal(offset: offset, itemCount: rawItems.length, requestedSize: requestedSize);
       return LibraryPage<MediaItem>(
         items: _mapItems(rawItems),
         totalCount: rawTotal is int ? rawTotal : fallbackTotal,
@@ -1603,7 +1596,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   LibraryPage<MediaItem> _pagedMediaItems(Object? data, {required int offset, required int requestedSize}) {
     final rawItems = _itemsArray(data);
     final rawTotal = data is Map<String, dynamic> ? data['TotalRecordCount'] : null;
-    final fallbackTotal = _fallbackPageTotal(offset: offset, itemCount: rawItems.length, requestedSize: requestedSize);
+    final fallbackTotal = fallbackPageTotal(offset: offset, itemCount: rawItems.length, requestedSize: requestedSize);
     return LibraryPage<MediaItem>(
       items: _mapItems(rawItems),
       totalCount: rawTotal is int ? rawTotal : fallbackTotal,
