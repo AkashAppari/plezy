@@ -13,6 +13,7 @@ import '../media/media_sort.dart';
 import '../services/settings_service.dart';
 import '../widgets/settings_builder.dart';
 import '../utils/app_logger.dart';
+import '../utils/continuation_pagination_coordinator.dart';
 import '../utils/grid_size_calculator.dart';
 import '../utils/platform_detector.dart';
 import '../utils/plex_library_section_utils.dart';
@@ -64,12 +65,16 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   MediaSort? _selectedSort;
   bool _isSortDescending = false;
   bool _isLoading = false;
-  bool _isLoadingMore = false;
   String? _errorMessage;
-  String? _continuationErrorMessage;
-  int? _continuationOffset;
-  int? _continuationTotal;
-  int _loadGeneration = 0;
+  bool _replaceContinuationItems = false;
+
+  late final ContinuationPaginationCoordinator<MediaItem> _continuation = ContinuationPaginationCoordinator<MediaItem>(
+    loadPage: _fetchContinuationPage,
+    onPage: _applyContinuationPage,
+    onStateChanged: _handleContinuationStateChanged,
+    onError: (error, stackTrace) =>
+        appLogger.w('Failed to finish loading hub content', error: error, stackTrace: stackTrace),
+  );
 
   /// Key for getting a context below OverlaySheetHost
   final GlobalKey _overlayChildKey = GlobalKey();
@@ -116,6 +121,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
 
   @override
   void dispose() {
+    _continuation.dispose();
     disposeFocusResources();
     super.dispose();
   }
@@ -263,7 +269,6 @@ class _HubDetailScreenState extends State<HubDetailScreen>
 
   Future<void> _loadMoreItems() async {
     if (_isLoading) return;
-    final generation = ++_loadGeneration;
 
     final serverId = widget.hub.serverId;
     if (widget.loadItems == null && serverId == null) {
@@ -273,46 +278,49 @@ class _HubDetailScreenState extends State<HubDetailScreen>
 
     setState(() {
       _isLoading = true;
-      _isLoadingMore = false;
       _errorMessage = null;
-      _continuationErrorMessage = null;
-      _continuationOffset = null;
-      _continuationTotal = null;
     });
 
     try {
-      final loader = widget.loadItems;
-      final client = serverId == null ? null : context.tryGetMediaClientForServer(ServerId(serverId));
-      final List<MediaItem> items;
-      int totalCount;
-      int loadedCount;
-      if (loader == null) {
-        final page = client == null
-            ? const LibraryPage<MediaItem>(items: [], totalCount: 0)
-            : await client.fetchMoreHubItemsPage(widget.hub.id, start: 0, size: _pageSize);
-        items = _applySectionFilter(page.items);
-        totalCount = page.totalCount;
-        loadedCount = page.items.length;
-      } else {
-        items = _applySectionFilter(await loader());
-        totalCount = items.length;
-        loadedCount = items.length;
-      }
+      List<MediaItem> items = const [];
+      var totalCount = 0;
+      var loadedCount = 0;
+      var usesCustomLoader = false;
+      MediaServerClient? client;
+      final applied = await _continuation.runNewGeneration(() async {
+        final loader = widget.loadItems;
+        usesCustomLoader = loader != null;
+        client = serverId == null ? null : context.tryGetMediaClientForServer(ServerId(serverId));
+        if (loader == null) {
+          final page = client == null
+              ? const LibraryPage<MediaItem>(items: [], totalCount: 0)
+              : await client!.fetchMoreHubItemsPage(widget.hub.id, start: 0, size: _pageSize);
+          items = _applySectionFilter(page.items);
+          totalCount = page.totalCount;
+          loadedCount = page.items.length;
+        } else {
+          items = _applySectionFilter(await loader());
+          totalCount = items.length;
+          loadedCount = items.length;
+        }
+      });
 
-      if (!mounted || generation != _loadGeneration) return;
+      if (!mounted || !applied) return;
       setState(() {
-        _items = items;
-        _filteredItems = items;
+        _items = List.of(items);
+        _filteredItems = List.of(items);
         _isLoading = false;
       });
 
       _applySort();
-      if (loader == null && client != null && loadedCount < totalCount) {
-        if (client.backend == MediaBackend.plex) {
-          unawaited(_loadFullHubContent(client, generation));
+      if (!usesCustomLoader && client != null && loadedCount < totalCount) {
+        _replaceContinuationItems = client!.backend == MediaBackend.plex;
+        if (_replaceContinuationItems) {
+          _continuation.setContinuation(startIndex: 0, totalCount: 1);
         } else {
-          unawaited(_loadRemainingHubPages(client, generation, loadedCount, totalCount));
+          _continuation.setContinuation(startIndex: loadedCount, totalCount: totalCount);
         }
+        unawaited(_continuation.loadRemaining());
       }
 
       appLogger.d('Loaded ${items.length} items for hub: ${widget.hub.title}');
@@ -326,99 +334,47 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     }
   }
 
-  Future<void> _loadFullHubContent(MediaServerClient client, int generation) async {
-    if (mounted && generation == _loadGeneration) {
-      setState(() {
-        _isLoadingMore = true;
-        _continuationErrorMessage = null;
-      });
-    }
+  Future<ContinuationPage<MediaItem>> _fetchContinuationPage(int startIndex) async {
+    final serverId = widget.hub.serverId;
+    final client = serverId == null ? null : context.tryGetMediaClientForServer(ServerId(serverId));
+    if (client == null) throw StateError('No media client available for hub continuation');
 
-    try {
+    if (_replaceContinuationItems) {
       final items = _applySectionFilter(await client.fetchMoreHubItems(widget.hub.id));
-      if (!mounted || generation != _loadGeneration) return;
       if (items.isEmpty && _items.isNotEmpty) {
         throw StateError('Hub continuation returned no items');
       }
-      setState(() {
-        _items = items;
-        _filteredItems = items;
-        _isLoadingMore = false;
-        _continuationErrorMessage = null;
-        _continuationOffset = null;
-        _continuationTotal = null;
-      });
-      _applySort();
-    } catch (e, st) {
-      appLogger.w('Failed to finish loading hub content', error: e, stackTrace: st);
-      if (!mounted || generation != _loadGeneration) return;
-      setState(() {
-        _isLoadingMore = false;
-        _continuationErrorMessage = t.messages.errorLoading(error: e.toString());
-      });
+      return ContinuationPage(items: items, totalCount: 1, consumedCount: 1);
     }
+
+    final page = await client.fetchMoreHubItemsPage(widget.hub.id, start: startIndex, size: _pageSize);
+    return ContinuationPage(
+      items: _applySectionFilter(page.items),
+      totalCount: page.totalCount,
+      consumedCount: page.items.length,
+    );
   }
 
-  Future<void> _loadRemainingHubPages(MediaServerClient client, int generation, int startOffset, int totalCount) async {
-    var offset = startOffset;
-    var total = totalCount;
-    if (mounted && generation == _loadGeneration) {
-      setState(() {
-        _isLoadingMore = true;
-        _continuationErrorMessage = null;
-        _continuationOffset = offset;
-        _continuationTotal = total;
-      });
-    }
-    try {
-      while (offset < total) {
-        final page = await client.fetchMoreHubItemsPage(widget.hub.id, start: offset, size: _pageSize);
-        if (!mounted || generation != _loadGeneration) return;
-        if (page.items.isEmpty) break;
-        final items = _applySectionFilter(page.items);
-        setState(() {
-          _items.addAll(items);
-          _filteredItems = List.of(_items);
-        });
-        _applySort();
-        offset += page.items.length;
-        total = page.totalCount;
-        _continuationOffset = offset;
-        _continuationTotal = total;
+  void _applyContinuationPage(ContinuationPage<MediaItem> page) {
+    if (!mounted) return;
+    setState(() {
+      if (_replaceContinuationItems) {
+        _items = List.of(page.items);
+      } else {
+        _items = List.of(_items)..addAll(page.items);
       }
-      if (!mounted || generation != _loadGeneration) return;
-      setState(() {
-        _isLoadingMore = false;
-        _continuationErrorMessage = null;
-        _continuationOffset = null;
-        _continuationTotal = null;
-      });
-    } catch (e, st) {
-      appLogger.w('Failed to finish loading hub content', error: e, stackTrace: st);
-      if (!mounted || generation != _loadGeneration) return;
-      setState(() {
-        _isLoadingMore = false;
-        _continuationErrorMessage = t.messages.errorLoading(error: e.toString());
-        _continuationOffset = offset;
-        _continuationTotal = total;
-      });
+      _filteredItems = List.of(_items);
+    });
+    _applySort();
+  }
+
+  void _handleContinuationStateChanged() {
+    if (mounted) {
+      setState(() {});
     }
   }
 
-  void _retryHubContinuation() {
-    final serverId = widget.hub.serverId;
-    final client = serverId == null ? null : context.tryGetMediaClientForServer(ServerId(serverId));
-    if (client == null || _isLoadingMore) return;
-    final generation = _loadGeneration;
-    if (client.backend == MediaBackend.plex) {
-      unawaited(_loadFullHubContent(client, generation));
-      return;
-    }
-    final offset = _continuationOffset;
-    final total = _continuationTotal;
-    if (offset == null || total == null) return;
-    unawaited(_loadRemainingHubPages(client, generation, offset, total));
-  }
+  void _retryHubContinuation() => unawaited(_continuation.retry());
 
   List<MediaItem> _applySectionFilter(List<MediaItem> items) {
     final sectionFilter = int.tryParse(widget.hub.libraryId ?? '');
@@ -459,7 +415,8 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   }
 
   Widget _buildContinuationStatusSliver() {
-    final error = _continuationErrorMessage;
+    final exception = _continuation.error;
+    final error = exception == null ? null : t.messages.errorLoading(error: exception.toString());
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -631,7 +588,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                       );
                     },
                   ),
-                if (_filteredItems.isNotEmpty && (_isLoadingMore || _continuationErrorMessage != null))
+                if (_filteredItems.isNotEmpty && (_continuation.isLoading || _continuation.error != null))
                   _buildContinuationStatusSliver(),
               ],
             ),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/focusable_action_bar.dart';
+import '../../media/library_query.dart';
 import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
 import '../../media/media_playlist.dart';
@@ -12,6 +13,7 @@ import '../../services/media_list_playback_launcher.dart';
 import '../../services/music/music_playback_service.dart';
 import '../../services/playlist_items_loader.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/continuation_pagination_coordinator.dart';
 import '../../utils/music_navigation.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/desktop_app_bar.dart';
@@ -193,12 +195,16 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   int? _movingIndex;
   int? _originalIndex;
   List<MediaItem>? _originalOrder;
-  int? _playlistTotalSize;
-  int _playlistLoadGeneration = 0;
-  bool _isLoadingFullPlaylist = false;
-  String? _playlistContinuationErrorMessage;
 
-  bool get _isPlaylistFullyLoaded => _playlistTotalSize != null && items.length >= _playlistTotalSize!;
+  late final ContinuationPaginationCoordinator<MediaItem> _continuation = ContinuationPaginationCoordinator<MediaItem>(
+    loadPage: _fetchPlaylistContinuationPage,
+    onPage: _applyPlaylistContinuationPage,
+    onStateChanged: _handleContinuationStateChanged,
+    onError: (error, stackTrace) =>
+        appLogger.w('Failed to finish loading playlist items', error: error, stackTrace: stackTrace),
+  );
+
+  bool get _isPlaylistFullyLoaded => _continuation.totalCount != null && items.length >= _continuation.totalCount!;
 
   bool get _canEditPlaylist => !_isReadOnly && _isPlaylistFullyLoaded;
 
@@ -207,6 +213,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
   @override
   void dispose() {
+    _continuation.dispose();
     _listFocusNode.dispose();
     disposeFocusResources();
     super.dispose();
@@ -219,15 +226,11 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
   @override
   Future<void> loadItems() async {
-    final generation = ++_playlistLoadGeneration;
     if (mounted) {
       setState(() {
         isLoading = true;
         errorMessage = null;
         items = [];
-        _playlistTotalSize = null;
-        _isLoadingFullPlaylist = false;
-        _playlistContinuationErrorMessage = null;
         _focusedIndex = 0;
         _focusedColumn = 0;
         _movingIndex = null;
@@ -237,86 +240,56 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     }
 
     try {
-      final firstPage = await mediaClient.fetchPlaylistPage(widget.playlist.id, start: 0, size: _pageSize);
-      if (!mounted || generation != _playlistLoadGeneration) return;
+      LibraryPage<MediaItem>? firstPage;
+      final applied = await _continuation.runNewGeneration(() async {
+        firstPage = await mediaClient.fetchPlaylistPage(widget.playlist.id, start: 0, size: _pageSize);
+      });
+      if (!mounted || !applied) return;
+      final page = firstPage!;
+
+      _continuation.setContinuation(startIndex: page.items.length, totalCount: page.totalCount);
 
       setState(() {
-        items = List.of(firstPage.items);
-        _playlistTotalSize = firstPage.totalCount;
+        items = List.of(page.items);
         isLoading = false;
-        _isLoadingFullPlaylist = firstPage.items.length < firstPage.totalCount;
       });
 
-      appLogger.d(
-        'Loaded ${firstPage.items.length} of ${firstPage.totalCount} items for playlist: ${widget.playlist.title}',
-      );
+      appLogger.d('Loaded ${page.items.length} of ${page.totalCount} items for playlist: ${widget.playlist.title}');
       _autoFocusAfterLoad();
 
-      if (firstPage.items.length < firstPage.totalCount) {
-        unawaited(_loadRemainingPlaylistPages(generation, firstPage.items.length, firstPage.totalCount));
-      }
+      if (_continuation.hasMore) unawaited(_continuation.loadRemaining());
     } catch (e) {
       appLogger.e('Failed to load playlist items', error: e);
-      if (!mounted || generation != _playlistLoadGeneration) return;
+      if (!mounted) return;
       setState(() {
         errorMessage = getLoadErrorMessage(e);
         isLoading = false;
-        _isLoadingFullPlaylist = false;
       });
     }
   }
 
-  Future<void> _loadRemainingPlaylistPages(int generation, int startOffset, int totalCount) async {
-    var offset = startOffset;
-    var total = totalCount;
-    if (mounted && generation == _playlistLoadGeneration) {
-      setState(() {
-        _isLoadingFullPlaylist = true;
-        _playlistContinuationErrorMessage = null;
-      });
-    }
-    try {
-      while (offset < total) {
-        final page = await mediaClient.fetchPlaylistPage(widget.playlist.id, start: offset, size: _pageSize);
-        if (!mounted || generation != _playlistLoadGeneration) return;
-        if (page.items.isEmpty) break;
-        setState(() {
-          items = List.of(items)..addAll(page.items);
-          total = page.totalCount;
-          _playlistTotalSize = page.totalCount;
-        });
-        offset += page.items.length;
-      }
-      appLogger.d(
-        'Loaded ${items.length} of ${_playlistTotalSize ?? items.length} items for playlist: ${widget.playlist.title}',
-      );
-      if (mounted && generation == _playlistLoadGeneration) {
-        setState(() {
-          _playlistContinuationErrorMessage = null;
-        });
-      }
-    } catch (e, st) {
-      appLogger.w('Failed to finish loading playlist items', error: e, stackTrace: st);
-      if (mounted && generation == _playlistLoadGeneration) {
-        setState(() {
-          _playlistContinuationErrorMessage = t.messages.errorLoading(error: e.toString());
-        });
-      }
-    } finally {
-      if (mounted && generation == _playlistLoadGeneration) {
-        setState(() {
-          _isLoadingFullPlaylist = false;
-          if (_focusedColumn != 0 && !_canEditPlaylist) _focusedColumn = 0;
-        });
-      }
-    }
+  Future<ContinuationPage<MediaItem>> _fetchPlaylistContinuationPage(int startIndex) async {
+    final page = await mediaClient.fetchPlaylistPage(widget.playlist.id, start: startIndex, size: _pageSize);
+    return ContinuationPage(items: page.items, totalCount: page.totalCount, consumedCount: page.items.length);
   }
 
-  void _retryPlaylistContinuation() {
-    final total = _playlistTotalSize;
-    if (_isLoadingFullPlaylist || total == null || items.length >= total) return;
-    unawaited(_loadRemainingPlaylistPages(_playlistLoadGeneration, items.length, total));
+  void _applyPlaylistContinuationPage(ContinuationPage<MediaItem> page) {
+    if (!mounted) return;
+    setState(() {
+      items = List.of(items)..addAll(page.items);
+    });
   }
+
+  void _handleContinuationStateChanged() {
+    if (!mounted) return;
+    setState(() {
+      if (!_continuation.isLoading && _focusedColumn != 0 && !_canEditPlaylist) {
+        _focusedColumn = 0;
+      }
+    });
+  }
+
+  void _retryPlaylistContinuation() => unawaited(_continuation.retry());
 
   void _autoFocusAfterLoad() {
     if (mounted && items.isNotEmpty) {
@@ -785,8 +758,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
           else
             // Plex regular playlists: sliver reorderable list
             _buildReorderableList(isKeyboardMode),
-          if (_isLoadingFullPlaylist || _playlistContinuationErrorMessage != null)
-            _buildPlaylistContinuationStatusSliver(),
+          if (_continuation.isLoading || _continuation.error != null) _buildPlaylistContinuationStatusSliver(),
         ],
       ],
     );
@@ -866,7 +838,8 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   }
 
   Widget _buildPlaylistContinuationStatusSliver() {
-    final error = _playlistContinuationErrorMessage;
+    final exception = _continuation.error;
+    final error = exception == null ? null : t.messages.errorLoading(error: exception.toString());
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.all(24),
