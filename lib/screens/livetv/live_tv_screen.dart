@@ -72,6 +72,9 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   final Map<String, String> _favoriteStoreByChannel = {};
   final Map<String, String> _favoriteStoreBySource = {};
   final Map<String, FavoriteChannelPersistenceMode> _favoriteModeByStore = {};
+  Future<void>? _channelsLoadFuture;
+  int _favoritesLoadGeneration = 0;
+  int _favoritesMutationGeneration = 0;
 
   List<LiveTvChannel> get _filteredChannels => filterLiveTvChannelsForFavorites(
     channels: _channels,
@@ -268,7 +271,18 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     return trimmed == null || trimmed.isEmpty ? null : trimmed;
   }
 
-  Future<void> _loadChannels() async {
+  Future<void> _loadChannels() {
+    final inFlight = _channelsLoadFuture;
+    if (inFlight != null) return inFlight;
+    late final Future<void> load;
+    load = _loadChannelsOnce().whenComplete(() {
+      if (identical(_channelsLoadFuture, load)) _channelsLoadFuture = null;
+    });
+    _channelsLoadFuture = load;
+    return load;
+  }
+
+  Future<void> _loadChannelsOnce() async {
     if (!mounted) return;
     setState(() {
       _isLoading = true;
@@ -289,12 +303,12 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
       final allChannels = <LiveTvChannel>[];
       final seenChannels = <String>{};
-      _favoriteSourceByLiveServer.clear();
-      _favoriteSourceByChannel.clear();
-      _favoriteStoreByLiveServer.clear();
-      _favoriteStoreByChannel.clear();
-      _favoriteStoreBySource.clear();
-      _favoriteModeByStore.clear();
+      final favoriteSourceByLiveServer = <String, String>{};
+      final favoriteSourceByChannel = <String, String>{};
+      final favoriteStoreByLiveServer = <String, String>{};
+      final favoriteStoreByChannel = <String, String>{};
+      final favoriteStoreBySource = <String, String>{};
+      final favoriteModeByStore = <String, FavoriteChannelPersistenceMode>{};
 
       appLogger.d(
         'Live TV DVRs: ${liveTvServers.map((s) => '${s.serverId}/${s.dvrKey} lineup=${s.lineup}').join(', ')}',
@@ -319,10 +333,10 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           final sourceTitle = _sourceTitleForServerInfo(serverInfo);
           final storeKey = liveTv.favoriteStoreKey;
           final liveServerKey = _liveServerScopeKey(serverInfo);
-          _favoriteSourceByLiveServer[liveServerKey] = source;
-          _favoriteStoreByLiveServer[liveServerKey] = storeKey;
-          _favoriteStoreBySource[source] = storeKey;
-          _favoriteModeByStore[storeKey] = liveTv.favoritePersistenceMode;
+          favoriteSourceByLiveServer[liveServerKey] = source;
+          favoriteStoreByLiveServer[liveServerKey] = storeKey;
+          favoriteStoreBySource[source] = storeKey;
+          favoriteModeByStore[storeKey] = liveTv.favoritePersistenceMode;
 
           final channels = await genericClient.liveTv.fetchChannels(lineup: serverInfo.lineup);
           // Plex's DVR exposes a separate enabled-channel mapping; Jellyfin
@@ -342,8 +356,8 @@ class _LiveTvScreenState extends State<LiveTvScreen>
             final dedupKey = liveTvChannelScopeKey(scopedChannel);
             if (seenChannels.add(dedupKey)) {
               final scopeKey = liveTvChannelScopeKey(scopedChannel);
-              _favoriteSourceByChannel[scopeKey] = source;
-              _favoriteStoreByChannel[scopeKey] = storeKey;
+              favoriteSourceByChannel[scopeKey] = source;
+              favoriteStoreByChannel[scopeKey] = storeKey;
               allChannels.add(scopedChannel);
             }
           }
@@ -364,6 +378,24 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
       setState(() {
         _channels = allChannels;
+        _favoriteSourceByLiveServer
+          ..clear()
+          ..addAll(favoriteSourceByLiveServer);
+        _favoriteSourceByChannel
+          ..clear()
+          ..addAll(favoriteSourceByChannel);
+        _favoriteStoreByLiveServer
+          ..clear()
+          ..addAll(favoriteStoreByLiveServer);
+        _favoriteStoreByChannel
+          ..clear()
+          ..addAll(favoriteStoreByChannel);
+        _favoriteStoreBySource
+          ..clear()
+          ..addAll(favoriteStoreBySource);
+        _favoriteModeByStore
+          ..clear()
+          ..addAll(favoriteModeByStore);
         _isLoading = false;
       });
 
@@ -389,10 +421,13 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   }
 
   Future<void> _loadFavorites(MultiServerProvider multiServer) async {
+    final loadGeneration = ++_favoritesLoadGeneration;
+    final mutationGeneration = _favoritesMutationGeneration;
     try {
-      _favoriteSourceByLiveServer.clear();
-      _favoriteStoreBySource.clear();
-      _favoriteModeByStore.clear();
+      final sourceByLiveServer = Map<String, String>.of(_favoriteSourceByLiveServer);
+      final storeByLiveServer = Map<String, String>.of(_favoriteStoreByLiveServer);
+      final storeBySource = Map<String, String>.of(_favoriteStoreBySource);
+      final modeByStore = Map<String, FavoriteChannelPersistenceMode>.of(_favoriteModeByStore);
       final merged = <FavoriteChannel>[];
       final fetchedStores = <String>{};
       final seenFavorites = <String>{};
@@ -403,20 +438,36 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         final source = await liveTv.buildFavoriteChannelSource(lineup: serverInfo.lineup);
         final storeKey = liveTv.favoriteStoreKey;
         final liveServerKey = _liveServerScopeKey(serverInfo);
-        _favoriteSourceByLiveServer[liveServerKey] = source;
-        _favoriteStoreByLiveServer[liveServerKey] = storeKey;
-        _favoriteStoreBySource[source] = storeKey;
-        _favoriteModeByStore[storeKey] = liveTv.favoritePersistenceMode;
+        sourceByLiveServer[liveServerKey] = source;
+        storeByLiveServer[liveServerKey] = storeKey;
+        storeBySource[source] = storeKey;
+        modeByStore[storeKey] = liveTv.favoritePersistenceMode;
         if (!fetchedStores.add(storeKey)) continue;
         final serverFavorites = await liveTv.fetchFavoriteChannels();
         for (final favorite in serverFavorites) {
-          _favoriteStoreBySource[favorite.source] = storeKey;
+          storeBySource[favorite.source] = storeKey;
           if (seenFavorites.add(favorite.stableKey)) merged.add(favorite);
         }
       }
 
-      if (!mounted) return;
+      if (!mounted ||
+          loadGeneration != _favoritesLoadGeneration ||
+          mutationGeneration != _favoritesMutationGeneration) {
+        return;
+      }
       setState(() {
+        _favoriteSourceByLiveServer
+          ..clear()
+          ..addAll(sourceByLiveServer);
+        _favoriteStoreByLiveServer
+          ..clear()
+          ..addAll(storeByLiveServer);
+        _favoriteStoreBySource
+          ..clear()
+          ..addAll(storeBySource);
+        _favoriteModeByStore
+          ..clear()
+          ..addAll(modeByStore);
         _favoriteChannels = merged;
         _refreshFavoriteKeys();
       });
@@ -433,6 +484,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   }
 
   void _toggleFavorite(LiveTvChannel channel) {
+    ++_favoritesMutationGeneration;
     final source = _sourceForChannel(channel);
     final favoriteKey = favoriteChannelKey(source, channel.key);
     final scopeKey = liveTvChannelScopeKey(channel);
@@ -460,6 +512,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         favorites: List.from(_favoriteChannels),
         channelMap: channelMap,
         onReorder: (reordered) {
+          ++_favoritesMutationGeneration;
           setState(() {
             _favoriteChannels = reordered;
             _refreshFavoriteKeys();
@@ -467,6 +520,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           _persistFavorites();
         },
         onRemove: (removed) {
+          ++_favoritesMutationGeneration;
           setState(() {
             _favoriteChannels = _favoriteChannels.where((f) => f.stableKey != removed.stableKey).toList();
             _refreshFavoriteKeys();

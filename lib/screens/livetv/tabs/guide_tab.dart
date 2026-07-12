@@ -198,9 +198,9 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
     switch (state) {
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
-        _hiddenSince ??= DateTime.now();
+        pauseRefresh();
       case AppLifecycleState.resumed:
-        _catchUpIfStale();
+        if (_isGuideVisible) resumeRefresh();
       case AppLifecycleState.inactive:
       case AppLifecycleState.detached:
         break;
@@ -1103,6 +1103,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
         }),
       ],
     );
+    if (!mounted) return;
     if (value == null) {
       _guideFocusNode.requestFocus();
       return;

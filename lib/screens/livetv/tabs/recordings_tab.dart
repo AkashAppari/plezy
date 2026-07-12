@@ -58,26 +58,45 @@ class _RuleEntry {
 
 enum _RuleAction { edit, delete }
 
-class RecordingsTabState extends State<RecordingsTab> {
+class RecordingsTabState extends State<RecordingsTab> with WidgetsBindingObserver {
   List<_ServerRecordings> _serverRecordings = [];
   bool _isLoading = true;
   bool _adminBlocked = false;
   String? _error;
   Timer? _refreshTimer;
   bool _pendingFocus = false;
+  bool _refreshRequested = true;
+  bool _tickerEnabled = false;
+  bool _appResumed = true;
   final _firstTileFocusNode = FocusNode(debugLabel: 'recordings_tab_first_tile');
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _load();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted) _load();
-    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final enabled = TickerMode.valuesOf(context).enabled;
+    if (enabled == _tickerEnabled) return;
+    _tickerEnabled = enabled;
+    _syncRefreshTimer();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final resumed = state == AppLifecycleState.resumed;
+    if (resumed == _appResumed) return;
+    _appResumed = resumed;
+    _syncRefreshTimer();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _refreshTimer?.cancel();
     _firstTileFocusNode.dispose();
     super.dispose();
@@ -94,14 +113,22 @@ class RecordingsTabState extends State<RecordingsTab> {
     }
   }
 
-  void pauseRefresh() => _refreshTimer?.cancel();
+  void pauseRefresh() {
+    _refreshRequested = false;
+    _syncRefreshTimer();
+  }
 
   void resumeRefresh() {
+    _refreshRequested = true;
+    _syncRefreshTimer(reload: true);
+  }
+
+  void _syncRefreshTimer({bool reload = false}) {
     _refreshTimer?.cancel();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted) _load();
-    });
-    _load();
+    _refreshTimer = null;
+    if (!_refreshRequested || !_tickerEnabled || !_appResumed || !mounted) return;
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) => _load());
+    if (reload) unawaited(_load());
   }
 
   /// Public reload helper for the parent screen's refresh action.

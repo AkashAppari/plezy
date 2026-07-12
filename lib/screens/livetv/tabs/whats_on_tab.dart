@@ -28,6 +28,7 @@ import '../../../widgets/overlay_sheet.dart';
 import '../../../utils/scroll_utils.dart';
 import '../../../widgets/horizontal_scroll_with_arrows.dart';
 import '../../../widgets/optimized_media_image.dart';
+import '../../../widgets/sliver_child_memo.dart';
 import '../live_tv_actions_mixin.dart';
 import '../live_tv_show_schedule_screen.dart';
 
@@ -42,11 +43,16 @@ class WhatsOnTab extends StatefulWidget {
   State<WhatsOnTab> createState() => WhatsOnTabState();
 }
 
-class WhatsOnTabState extends State<WhatsOnTab> with LiveTvActionsMixin<WhatsOnTab>, MountedSetStateMixin {
+class WhatsOnTabState extends State<WhatsOnTab>
+    with LiveTvActionsMixin<WhatsOnTab>, MountedSetStateMixin, WidgetsBindingObserver {
   List<LiveTvHubResult> _hubs = [];
   bool _isLoading = true;
   Timer? _refreshTimer;
+  final Map<String, GlobalKey<_LiveTvHubSectionState>> _hubKeysById = {};
   List<GlobalKey<_LiveTvHubSectionState>> _hubKeys = [];
+  bool _refreshRequested = true;
+  bool _tickerEnabled = false;
+  bool _appResumed = true;
 
   @override
   List<LiveTvChannel> get liveTvChannels => widget.channels;
@@ -54,23 +60,47 @@ class WhatsOnTabState extends State<WhatsOnTab> with LiveTvActionsMixin<WhatsOnT
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadHubs();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 60), (_) {
-      if (mounted) _loadHubs();
-    });
   }
 
-  void pauseRefresh() => _refreshTimer?.cancel();
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final enabled = TickerMode.valuesOf(context).enabled;
+    if (enabled == _tickerEnabled) return;
+    _tickerEnabled = enabled;
+    _syncRefreshTimer();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final resumed = state == AppLifecycleState.resumed;
+    if (resumed == _appResumed) return;
+    _appResumed = resumed;
+    _syncRefreshTimer();
+  }
+
+  void pauseRefresh() {
+    _refreshRequested = false;
+    _syncRefreshTimer();
+  }
 
   void resumeRefresh() {
+    _refreshRequested = true;
+    _syncRefreshTimer();
+  }
+
+  void _syncRefreshTimer() {
     _refreshTimer?.cancel();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 60), (_) {
-      if (mounted) _loadHubs();
-    });
+    _refreshTimer = null;
+    if (!_refreshRequested || !_tickerEnabled || !_appResumed || !mounted) return;
+    _refreshTimer = Timer.periodic(const Duration(seconds: 60), (_) => _loadHubs());
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _refreshTimer?.cancel();
     super.dispose();
   }
@@ -83,6 +113,7 @@ class WhatsOnTabState extends State<WhatsOnTab> with LiveTvActionsMixin<WhatsOnT
       final multiServer = context.read<MultiServerProvider>();
       final liveTvServers = multiServer.liveTvServers;
       final allHubs = <LiveTvHubResult>[];
+      final allHubIds = <String>[];
       final queriedServers = <String>{};
 
       for (final serverInfo in liveTvServers) {
@@ -93,16 +124,23 @@ class WhatsOnTabState extends State<WhatsOnTab> with LiveTvActionsMixin<WhatsOnT
           if (client == null) continue;
 
           final hubs = await client.getLiveTvHubs();
-          allHubs.addAll(hubs);
+          for (final hub in hubs) {
+            allHubs.add(hub);
+            allHubIds.add('${serverInfo.serverId}\u0000${hub.hubKey}');
+          }
         } catch (e) {
           appLogger.e('Failed to load hubs from server ${serverInfo.serverId}', error: e);
         }
       }
 
       if (!mounted) return;
+      final hubIds = allHubIds.toSet();
+      _hubKeysById.removeWhere((id, _) => !hubIds.contains(id));
       setState(() {
         _hubs = allHubs;
-        _hubKeys = List.generate(allHubs.length, (_) => GlobalKey<_LiveTvHubSectionState>());
+        _hubKeys = [
+          for (final hubId in allHubIds) _hubKeysById.putIfAbsent(hubId, () => GlobalKey<_LiveTvHubSectionState>()),
+        ];
         _isLoading = false;
       });
     } catch (e) {
@@ -224,6 +262,7 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> with MountedSetSta
   static const double _leadingPadding = 12.0;
 
   final _selectLongPress = DpadSelectLongPressController();
+  final SliverChildMemo<LiveTvHubEntry> _childMemo = SliverChildMemo<LiveTvHubEntry>();
 
   @override
   void initState() {
@@ -442,22 +481,27 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> with MountedSetSta
                       itemBuilder: (context, index) {
                         final entry = widget.hub.entries[index];
                         final isItemFocused = hasFocus && index == _focusedIndex;
-
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 2),
-                          child: _LiveTvPosterCard(
-                            entry: entry,
-                            width: cardWidth,
-                            posterHeight: posterHeight,
-                            isFocused: isItemFocused,
-                            onTap: () {
-                              _onItemTapped(index);
-                              widget.onTap(entry);
-                            },
-                            onLongPress: () {
-                              _onItemTapped(index);
-                              widget.onLongPress(entry);
-                            },
+                        return _childMemo.widgetFor(
+                          index,
+                          entry,
+                          epoch: (cardWidth, posterHeight, widget.hub.entries.length),
+                          salt: isItemFocused,
+                          build: () => Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            child: _LiveTvPosterCard(
+                              entry: entry,
+                              width: cardWidth,
+                              posterHeight: posterHeight,
+                              isFocused: isItemFocused,
+                              onTap: () {
+                                _onItemTapped(index);
+                                widget.onTap(entry);
+                              },
+                              onLongPress: () {
+                                _onItemTapped(index);
+                                widget.onLongPress(entry);
+                              },
+                            ),
                           ),
                         );
                       },
