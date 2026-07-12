@@ -40,12 +40,16 @@ List<String> libraryBrowseGroupingOptions(MediaLibrary library, {required bool c
   };
 }
 
-String defaultLibraryBrowseGrouping(MediaLibrary library) {
+String defaultLibraryBrowseGrouping(MediaLibrary library, {required bool canGroupByFolders}) {
   if (library.isShared) return browseGroupingAll;
   return switch (library.kind) {
     MediaKind.show => browseGroupingShows,
     MediaKind.movie => browseGroupingMovies,
     MediaKind.artist => browseGroupingArtists,
+    // Home-video libraries are folder-organized on the server, so open them
+    // grouped by folders like the official clients do (#966). An explicitly
+    // saved grouping still wins — this is only the unset-preference fallback.
+    MediaKind.clip when canGroupByFolders => browseGroupingFolders,
     _ => browseGroupingAll,
   };
 }
@@ -54,6 +58,6 @@ String normalizeLibraryBrowseGrouping(MediaLibrary library, String? grouping, {r
   final options = libraryBrowseGroupingOptions(library, canGroupByFolders: canGroupByFolders);
   if (grouping != null && options.contains(grouping)) return grouping;
 
-  final fallback = defaultLibraryBrowseGrouping(library);
+  final fallback = defaultLibraryBrowseGrouping(library, canGroupByFolders: canGroupByFolders);
   return options.contains(fallback) ? fallback : options.first;
 }

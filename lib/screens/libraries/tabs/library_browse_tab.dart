@@ -758,7 +758,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   }
 
   String _getDefaultGrouping() {
-    return defaultLibraryBrowseGrouping(widget.library);
+    return defaultLibraryBrowseGrouping(widget.library, canGroupByFolders: widget.canGroupByFolders);
   }
 
   String _normalizeGrouping(String? grouping) {

@@ -110,5 +110,18 @@ void main() {
         browseGroupingAll,
       );
     });
+
+    test('clip libraries default to folders when available (#966)', () {
+      final library = _library(kind: MediaKind.clip);
+
+      expect(normalizeLibraryBrowseGrouping(library, null, canGroupByFolders: true), browseGroupingFolders);
+      expect(normalizeLibraryBrowseGrouping(library, null, canGroupByFolders: false), browseGroupingAll);
+    });
+
+    test('clip libraries keep an explicitly saved flat grouping', () {
+      final library = _library(kind: MediaKind.clip);
+
+      expect(normalizeLibraryBrowseGrouping(library, browseGroupingAll, canGroupByFolders: true), browseGroupingAll);
+    });
   });
 }
