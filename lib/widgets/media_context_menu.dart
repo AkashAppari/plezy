@@ -11,11 +11,11 @@ import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
+import '../media/library_query.dart';
 import '../media/media_playlist.dart';
 import '../media/media_server_client.dart';
 import '../metadata_edit/metadata_edit_adapters.dart';
 import '../media/media_version.dart';
-import '../mixins/controller_disposer_mixin.dart';
 import '../services/plex_client.dart';
 import '../services/media_list_playback_launcher.dart';
 import '../services/music/music_playback_service.dart';
@@ -45,6 +45,7 @@ import '../utils/dialogs.dart';
 import '../services/external_player_service.dart';
 import '../focus/focusable_button.dart';
 import '../focus/focusable_text_field.dart';
+import '../focus/key_event_utils.dart';
 import '../screens/plex_match_screen.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/metadata_edit_screen.dart';
@@ -1762,172 +1763,50 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }
 }
 
-/// Dialog to select a playlist or create a new one.
-class _PlaylistSelectionDialog extends StatefulWidget {
-  final MediaServerClient client;
+typedef _PickerPageLoader<T> = Future<LibraryPage<T>> Function(int start, int size, AbortController abort);
 
-  const _PlaylistSelectionDialog({required this.client});
+typedef _PickerItemBuilder<T> = Widget Function(BuildContext context, T item);
+
+/// Shared loading, filtering, and TV focus shell for collection-style pickers.
+class _PickerDialogScaffold<T> extends StatefulWidget {
+  final String title;
+  final String searchHint;
+  final String emptyMessage;
+  final _PickerPageLoader<T> loadPage;
+  final String Function(T item) itemTitle;
+  final _PickerItemBuilder<T> itemBuilder;
+
+  const _PickerDialogScaffold({
+    required this.title,
+    required this.searchHint,
+    required this.emptyMessage,
+    required this.loadPage,
+    required this.itemTitle,
+    required this.itemBuilder,
+  });
 
   @override
-  State<_PlaylistSelectionDialog> createState() => _PlaylistSelectionDialogState();
+  State<_PickerDialogScaffold<T>> createState() => _PickerDialogScaffoldState<T>();
 }
 
-class _PlaylistSelectionDialogState extends State<_PlaylistSelectionDialog> {
+class _PickerDialogScaffoldState<T> extends State<_PickerDialogScaffold<T>> {
   static const int _pageSize = 100;
+  static const int _filterThreshold = 10;
 
-  final AbortController _abortController = AbortController();
-  final ScrollController _scrollController = ScrollController();
-  final List<MediaPlaylist> _playlists = [];
-  bool _isLoading = false;
-  String? _errorMessage;
-  int? _totalCount;
-
-  bool get _hasMore => _totalCount == null || _playlists.length < _totalCount!;
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScroll);
-    unawaited(_loadNextPage());
-  }
-
-  @override
-  void dispose() {
-    _abortController.abort();
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (!_scrollController.hasClients || !_hasMore || _isLoading) return;
-    final position = _scrollController.position;
-    if (position.pixels >= position.maxScrollExtent - 240) {
-      unawaited(_loadNextPage());
-    }
-  }
-
-  Future<void> _loadNextPage() async {
-    if (_isLoading || !_hasMore) return;
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-    try {
-      final page = await widget.client.fetchPlaylistsPage(
-        playlistType: 'video',
-        smart: false,
-        start: _playlists.length,
-        size: _pageSize,
-        abort: _abortController,
-      );
-      if (!mounted) return;
-      setState(() {
-        _playlists.addAll(page.items);
-        _totalCount = page.totalCount;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(t.playlists.selectPlaylist),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: ListView.builder(
-          controller: _scrollController,
-          shrinkWrap: true,
-          itemCount: _playlists.length + 1 + (_hasMore || _isLoading || _errorMessage != null ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (index == 0) {
-              // Create new playlist option (always shown first)
-              return ListTile(
-                leading: const AppIcon(Symbols.add_rounded, fill: 1),
-                title: Text(t.common.createNew),
-                onTap: () => Navigator.pop(context, '_create_new'),
-              );
-            }
-
-            if (index > _playlists.length) {
-              if (_errorMessage != null) {
-                return ListTile(
-                  leading: const AppIcon(Symbols.error_rounded, fill: 1),
-                  title: Text(t.messages.errorLoading(error: _errorMessage!)),
-                  trailing: TextButton(onPressed: _loadNextPage, child: Text(t.common.retry)),
-                );
-              }
-              if (_hasMore && !_isLoading) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) unawaited(_loadNextPage());
-                });
-              }
-              return const Padding(
-                padding: .all(16),
-                child: Center(child: CircularProgressIndicator()),
-              );
-            }
-
-            final playlist = _playlists[index - 1];
-            final leafCount = playlist.leafCount;
-            final subtitleText = leafCount == 1 ? t.playlists.oneItem : t.playlists.itemCount(count: leafCount ?? 0);
-            return ListTile(
-              leading: playlist.smart
-                  ? const AppIcon(Symbols.auto_awesome_rounded, fill: 1)
-                  : const AppIcon(Symbols.playlist_play_rounded, fill: 1),
-              title: Text(playlist.title),
-              subtitle: playlist.leafCount != null ? Text(subtitleText) : null,
-              onTap: playlist.smart
-                  ? null // Disable smart playlists
-                  : () => Navigator.pop(context, playlist.id),
-              enabled: !playlist.smart,
-            );
-          },
-        ),
-      ),
-      actions: [
-        FocusableButton(
-          autofocus: true,
-          onPressed: () => Navigator.pop(context),
-          child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-        ),
-      ],
-    );
-  }
-}
-
-/// Dialog to select a collection or create a new one
-class _CollectionSelectionDialog extends StatefulWidget {
-  final MediaServerClient client;
-  final String libraryId;
-
-  const _CollectionSelectionDialog({required this.client, required this.libraryId});
-
-  @override
-  State<_CollectionSelectionDialog> createState() => _CollectionSelectionDialogState();
-}
-
-class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> with ControllerDisposerMixin {
-  static const int _pageSize = 100;
-
-  late final _filterController = createTextEditingController();
-  final _filterFocusNode = FocusNode(debugLabel: 'CollectionFilter');
-  final _firstCollectionFocusNode = FocusNode(debugLabel: 'CollectionFirstItem');
-  final AbortController _abortController = AbortController();
+  final _filterController = TextEditingController();
+  final _filterFocusNode = FocusNode(debugLabel: 'PickerFilter');
+  final _firstItemFocusNode = FocusNode(debugLabel: 'PickerFirstItem');
+  final _abortController = AbortController();
   final _scrollController = ScrollController();
-  final List<MediaItem> _collections = [];
-  List<MediaItem> _filteredCollections = [];
+  final List<T> _items = [];
+  List<T> _filteredItems = [];
   bool _isLoading = false;
+  bool _initialFocusRequested = false;
   String? _errorMessage;
   int? _totalCount;
 
-  bool get _hasMore => _totalCount == null || _collections.length < _totalCount!;
+  bool get _hasMore => _totalCount == null || _items.length < _totalCount!;
+  bool get _showFilter => _items.length >= _filterThreshold;
 
   @override
   void initState() {
@@ -1940,8 +1819,9 @@ class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> 
   void dispose() {
     _abortController.abort();
     _scrollController.dispose();
+    _filterController.dispose();
     _filterFocusNode.dispose();
-    _firstCollectionFocusNode.dispose();
+    _firstItemFocusNode.dispose();
     super.dispose();
   }
 
@@ -1961,24 +1841,17 @@ class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> 
     });
     try {
       while (mounted && _hasMore) {
-        final page = await widget.client.fetchCollectionsPage(
-          widget.libraryId,
-          start: _collections.length,
-          size: _pageSize,
-          abort: _abortController,
-        );
+        final page = await widget.loadPage(_items.length, _pageSize, _abortController);
         if (!mounted) return;
         setState(() {
-          _collections.addAll(page.items);
+          _items.addAll(page.items);
           _totalCount = page.totalCount;
           _applyFilter(_filterController.text);
         });
         if (_filterController.text.isEmpty || page.items.isEmpty) break;
       }
       if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -1986,12 +1859,20 @@ class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> 
         _isLoading = false;
       });
     }
+    _requestInitialFocus();
+  }
+
+  void _requestInitialFocus() {
+    if (_initialFocusRequested) return;
+    _initialFocusRequested = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      (_showFilter ? _filterFocusNode : _firstItemFocusNode).requestFocus();
+    });
   }
 
   void _onFilterChanged(String query) {
-    setState(() {
-      _applyFilter(query);
-    });
+    setState(() => _applyFilter(query));
     if (query.isNotEmpty && _hasMore) {
       unawaited(_loadNextPage());
     }
@@ -1999,52 +1880,57 @@ class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> 
 
   void _applyFilter(String query) {
     final lower = query.toLowerCase();
-    _filteredCollections = lower.isEmpty
-        ? List.of(_collections)
-        : _collections.where((c) => (c.title ?? '').toLowerCase().contains(lower)).toList();
+    _filteredItems = lower.isEmpty
+        ? List.of(_items)
+        : _items.where((item) => widget.itemTitle(item).toLowerCase().contains(lower)).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(t.collections.selectCollection),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: Column(
-          mainAxisSize: .min,
-          children: [
-            if (_collections.length >= 10) ...[
-              FocusableTextField(
-                controller: _filterController,
-                focusNode: _filterFocusNode,
-                autofocus: true,
-                onNavigateDown: _firstCollectionFocusNode.requestFocus,
-                decoration: pillInputDecoration(
-                  context,
-                  hintText: t.collections.searchCollections,
-                  prefixIcon: const Icon(Symbols.search_rounded, size: 20),
+    final showStatus = _hasMore || _isLoading || _errorMessage != null || _filteredItems.isEmpty;
+    return Focus(
+      onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
+      child: AlertDialog(
+        title: Text(widget.title),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: .min,
+            children: [
+              if (_showFilter) ...[
+                FocusableTextField(
+                  controller: _filterController,
+                  focusNode: _filterFocusNode,
+                  tvKeyboardAutoOpenBehavior: TvKeyboardAutoOpenBehavior.afterFirstFocus,
+                  onNavigateDown: _firstItemFocusNode.requestFocus,
+                  decoration: pillInputDecoration(
+                    context,
+                    hintText: widget.searchHint,
+                    prefixIcon: const Icon(Symbols.search_rounded, size: 20),
+                  ),
+                  onChanged: _onFilterChanged,
                 ),
-                onChanged: _onFilterChanged,
-              ),
-              const SizedBox(height: 8),
-            ],
-            Flexible(
-              child: ListView.builder(
-                controller: _scrollController,
-                shrinkWrap: true,
-                itemCount: _filteredCollections.length + 1 + (_hasMore || _isLoading || _errorMessage != null ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return FocusableListTile(
-                      focusNode: _firstCollectionFocusNode,
-                      autofocus: _collections.length < 10,
-                      leading: const AppIcon(Symbols.add_rounded, fill: 1),
-                      title: Text(t.common.createNew),
-                      onTap: () => Navigator.pop(context, '_create_new'),
-                    );
-                  }
+                const SizedBox(height: 8),
+              ],
+              Flexible(
+                child: ListView.builder(
+                  controller: _scrollController,
+                  shrinkWrap: true,
+                  itemCount: _filteredItems.length + 1 + (showStatus ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index == 0) {
+                      return FocusableListTile(
+                        focusNode: _firstItemFocusNode,
+                        leading: const AppIcon(Symbols.add_rounded, fill: 1),
+                        title: Text(t.common.createNew),
+                        onTap: () => Navigator.pop(context, '_create_new'),
+                      );
+                    }
 
-                  if (index > _filteredCollections.length) {
+                    if (index <= _filteredItems.length) {
+                      return widget.itemBuilder(context, _filteredItems[index - 1]);
+                    }
+
                     if (_errorMessage != null) {
                       return FocusableListTile(
                         leading: const AppIcon(Symbols.error_rounded, fill: 1),
@@ -2052,38 +1938,93 @@ class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> 
                         onTap: _loadNextPage,
                       );
                     }
-                    if (_hasMore && !_isLoading) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) unawaited(_loadNextPage());
-                      });
+                    if (_hasMore || _isLoading) {
+                      if (_hasMore && !_isLoading) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted) unawaited(_loadNextPage());
+                        });
+                      }
+                      return const Padding(
+                        padding: .all(16),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
                     }
-                    return const Padding(
-                      padding: .all(16),
-                      child: Center(child: CircularProgressIndicator()),
+                    return Padding(
+                      padding: const .all(16),
+                      child: Text(widget.emptyMessage, textAlign: TextAlign.center),
                     );
-                  }
-
-                  final collection = _filteredCollections[index - 1];
-                  return FocusableListTile(
-                    leading: const AppIcon(Symbols.collections_rounded, fill: 1),
-                    title: Text(collection.title ?? ''),
-                    subtitle: collection.childCount != null
-                        ? Text(t.playlists.itemCount(count: collection.childCount!))
-                        : null,
-                    onTap: () => Navigator.pop(context, collection.id),
-                  );
-                },
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+        actions: [
+          FocusableButton(
+            onPressed: () => Navigator.pop(context),
+            child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
+          ),
+        ],
       ),
-      actions: [
-        FocusableButton(
-          onPressed: () => Navigator.pop(context),
-          child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-        ),
-      ],
+    );
+  }
+}
+
+/// Dialog to select a playlist or create a new one.
+class _PlaylistSelectionDialog extends StatelessWidget {
+  final MediaServerClient client;
+
+  const _PlaylistSelectionDialog({required this.client});
+
+  @override
+  Widget build(BuildContext context) {
+    return _PickerDialogScaffold<MediaPlaylist>(
+      title: t.playlists.selectPlaylist,
+      searchHint: t.playlists.searchPlaylists,
+      emptyMessage: t.playlists.noPlaylists,
+      loadPage: (start, size, abort) =>
+          client.fetchPlaylistsPage(playlistType: 'video', smart: false, start: start, size: size, abort: abort),
+      itemTitle: (playlist) => playlist.title,
+      itemBuilder: (context, playlist) {
+        final leafCount = playlist.leafCount;
+        final subtitleText = leafCount == 1 ? t.playlists.oneItem : t.playlists.itemCount(count: leafCount ?? 0);
+        return FocusableListTile(
+          leading: playlist.smart
+              ? const AppIcon(Symbols.auto_awesome_rounded, fill: 1)
+              : const AppIcon(Symbols.playlist_play_rounded, fill: 1),
+          title: Text(playlist.title),
+          subtitle: playlist.leafCount != null ? Text(subtitleText) : null,
+          onTap: playlist.smart
+              ? null // Disable smart playlists
+              : () => Navigator.pop(context, playlist.id),
+          enabled: !playlist.smart,
+        );
+      },
+    );
+  }
+}
+
+/// Dialog to select a collection or create a new one
+class _CollectionSelectionDialog extends StatelessWidget {
+  final MediaServerClient client;
+  final String libraryId;
+
+  const _CollectionSelectionDialog({required this.client, required this.libraryId});
+
+  @override
+  Widget build(BuildContext context) {
+    return _PickerDialogScaffold<MediaItem>(
+      title: t.collections.selectCollection,
+      searchHint: t.collections.searchCollections,
+      emptyMessage: t.libraries.noCollections,
+      loadPage: (start, size, abort) => client.fetchCollectionsPage(libraryId, start: start, size: size, abort: abort),
+      itemTitle: (collection) => collection.title ?? '',
+      itemBuilder: (context, collection) => FocusableListTile(
+        leading: const AppIcon(Symbols.collections_rounded, fill: 1),
+        title: Text(collection.title ?? ''),
+        subtitle: collection.childCount != null ? Text(t.playlists.itemCount(count: collection.childCount!)) : null,
+        onTap: () => Navigator.pop(context, collection.id),
+      ),
     );
   }
 }

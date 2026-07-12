@@ -1014,6 +1014,7 @@
     "itemAdded": "Added to playlist",
     "itemRemoved": "Removed from playlist",
     "selectPlaylist": "Select Playlist",
+    "searchPlaylists": "Search playlists...",
     "errorCreating": "Failed to create playlist",
     "errorDeleting": "Failed to delete playlist",
     "errorLoading": "Failed to load playlists",

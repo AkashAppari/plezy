@@ -2928,6 +2928,9 @@ class TranslationsPlaylistsEn {
 	/// en: 'Select Playlist'
 	String get selectPlaylist => 'Select Playlist';
 
+	/// en: 'Search playlists...'
+	String get searchPlaylists => 'Search playlists...';
+
 	/// en: 'Failed to create playlist'
 	String get errorCreating => 'Failed to create playlist';
 
@@ -5897,6 +5900,7 @@ extension on Translations {
 			'playlists.itemAdded' => 'Added to playlist',
 			'playlists.itemRemoved' => 'Removed from playlist',
 			'playlists.selectPlaylist' => 'Select Playlist',
+			'playlists.searchPlaylists' => 'Search playlists...',
 			'playlists.errorCreating' => 'Failed to create playlist',
 			'playlists.errorDeleting' => 'Failed to delete playlist',
 			'playlists.errorLoading' => 'Failed to load playlists',
@@ -5991,9 +5995,9 @@ extension on Translations {
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Manage',
 			'downloads.tvShows' => 'TV Shows',
-			'downloads.movies' => 'Movies',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.movies' => 'Movies',
 			'downloads.music' => 'Music',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} tracks queued for download',
 			'downloads.noDownloads' => 'No downloads yet',

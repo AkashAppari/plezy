@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -17,6 +20,7 @@ import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/metadata_edit/metadata_edit_adapters.dart';
 import 'package:plezy/models/plex/plex_home_user.dart';
+import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/profiles/plex_home_service.dart';
@@ -27,6 +31,8 @@ import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
+import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -256,7 +262,155 @@ void main() {
       expect(find.byType(SnackBar), findsOneWidget);
       expect(find.text('target'), findsOneWidget);
     });
+
+    testWidgets('playlist picker filters playlists by title', (tester) async {
+      final playlists = [
+        for (var i = 0; i < 10; i++) (id: '$i', title: 'Alpha $i'),
+        (id: 'gamma', title: 'Gamma Nights'),
+      ];
+      final menuKey = await _pumpPlexMovieMenu(tester, playlists);
+
+      await _openPlaylistPicker(tester, menuKey);
+      final textField = tester.widget<TextField>(find.byType(TextField));
+      textField.controller!.text = 'gamma';
+      textField.onChanged!('gamma');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Gamma Nights'), findsOneWidget);
+      expect(find.text('Alpha 0'), findsNothing);
+      expect(find.text(t.common.createNew), findsOneWidget);
+    });
+
+    testWidgets('playlist picker wires TV focus, D-pad down, and back', (tester) async {
+      final playlists = [for (var i = 0; i < 10; i++) (id: '$i', title: 'Playlist $i')];
+      final menuKey = await _pumpPlexMovieMenu(tester, playlists);
+
+      await _openPlaylistPicker(tester, menuKey);
+
+      final textField = tester.widget<TextField>(find.byType(TextField));
+      expect(textField.focusNode!.hasFocus, isTrue);
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowDown);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      expect(Focus.of(tester.element(find.text(t.common.createNew))).hasFocus, isTrue);
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.playlists.selectPlaylist), findsNothing);
+      expect(find.text('picker target'), findsOneWidget);
+    });
   });
+}
+
+Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
+  WidgetTester tester,
+  List<({String id, String title})> playlists,
+) async {
+  LocaleSettings.setLocaleSync(AppLocale.en);
+  TvDetectionService.debugSetAppleTVOverride(true);
+  addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+
+  final db = AppDatabase.forTesting(NativeDatabase.memory());
+  PlexApiCache.initialize(db);
+  final client = PlexClient.forTesting(
+    config: PlexConfig(
+      baseUrl: 'https://plex.example.com',
+      token: 'token',
+      clientIdentifier: 'client-id',
+      product: 'Plezy',
+      version: '1',
+    ),
+    serverId: ServerId('plex-1'),
+    httpClient: MockClient((request) async {
+      if (request.url.path != '/playlists') return http.Response('not found', 404);
+      return http.Response(
+        jsonEncode({
+          'MediaContainer': {
+            'size': playlists.length,
+            'totalSize': playlists.length,
+            'Metadata': [
+              for (final playlist in playlists)
+                {
+                  'ratingKey': playlist.id,
+                  'key': '/playlists/${playlist.id}/items',
+                  'type': 'playlist',
+                  'playlistType': 'video',
+                  'title': playlist.title,
+                  'smart': false,
+                },
+            ],
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    }),
+  );
+  final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+  final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+  final connections = ConnectionRegistry(db);
+  final profileConnections = ProfileConnectionRegistry(db);
+  final plexHome = PlexHomeService(
+    connections: connections,
+    profileConnections: profileConnections,
+    plexHomeUserFetcher: (_) async => const [],
+  );
+  final activeProfileProvider = ActiveProfileProvider(
+    registry: ProfileRegistry(db),
+    plexHome: plexHome,
+    connections: connections,
+  );
+  addTearDown(() async {
+    activeProfileProvider.dispose();
+    await plexHome.dispose();
+    multiServerProvider.dispose();
+    manager.dispose();
+    await db.close();
+  });
+
+  final menuKey = GlobalKey<MediaContextMenuState>();
+  final item = MediaItem(
+    id: 'movie-1',
+    backend: MediaBackend.plex,
+    kind: MediaKind.movie,
+    title: 'Movie',
+    serverId: 'plex-1',
+  );
+  await tester.pumpWidget(
+    TranslationProvider(
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+          ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfileProvider),
+        ],
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: Scaffold(
+            body: Center(
+              child: MediaContextMenu(
+                key: menuKey,
+                item: item,
+                child: const SizedBox(width: 120, height: 80, child: Text('picker target')),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+  return menuKey;
+}
+
+Future<void> _openPlaylistPicker(WidgetTester tester, GlobalKey<MediaContextMenuState> menuKey) async {
+  menuKey.currentState!.showContextMenu(tester.element(find.text('picker target')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(t.common.addTo));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(t.playlists.playlist));
+  await tester.pumpAndSettle();
+  expect(find.text(t.playlists.selectPlaylist), findsOneWidget);
 }
 
 class _AudioPlaylistClient implements MediaServerClient {
