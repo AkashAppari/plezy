@@ -41,6 +41,15 @@ class _ProfileBindResult {
 /// surfacing as an unhandled async error.
 typedef _FetchOutcome = ({List<PlexServer>? servers, Object? error, StackTrace? stackTrace});
 
+enum _ServerFetchStatus { success, empty, authRejected, transientFailure, cancelled, failure }
+
+typedef _ClassifiedFetch = ({
+  _ServerFetchStatus status,
+  List<PlexServer> servers,
+  Object? error,
+  StackTrace? stackTrace,
+});
+
 @visibleForTesting
 bool shouldUsePlexHomeTokenCache({required bool preVerified, required bool hasBoundOnce}) {
   return preVerified || !hasBoundOnce;
@@ -88,6 +97,7 @@ class ActiveProfileBinder {
   // only loops when the active id has drifted — this flag covers same-id
   // re-runs, e.g. after a borrow upserts a new join row.
   bool _pendingSameIdRebind = false;
+  int _bindGeneration = 0;
 
   /// True after the binder has successfully bound at least one profile in
   /// this session. Once set, subsequent rebinds bypass the user-token
@@ -237,6 +247,7 @@ class ActiveProfileBinder {
 
   Future<bool> _runRebindOnce() async {
     _bindingProfileId = activeProfile.activeId;
+    final generation = ++_bindGeneration;
     final stopwatch = Stopwatch()..start();
     var success = false;
     String? attemptedProfileId;
@@ -270,6 +281,7 @@ class ActiveProfileBinder {
       // registry read pays per-row CredentialVault reveals).
       final joinRows = await profileConnections.listForProfile(profile.id);
       final connectionsById = {for (final c in await connections.list()) c.id: c};
+      if (!_isCurrentBind(profile.id, generation)) return false;
 
       // PIN prompts may only surface from a user-initiated bind or the
       // session's initial bind (cold-start resume). Passive rebinds — an
@@ -290,14 +302,27 @@ class ActiveProfileBinder {
       // on top of an otherwise reachable Jellyfin or borrowed-server bind.
       final results = await Future.wait([
         if (profile.isPlexHome)
-          _bindPlexHome(profile, joinRows: joinRows, connectionsById: connectionsById, allowPinPrompt: allowPinPrompt),
+          _bindPlexHome(
+            profile,
+            joinRows: joinRows,
+            connectionsById: connectionsById,
+            allowPinPrompt: allowPinPrompt,
+            generation: generation,
+          ),
         // Both kinds also bind borrowed/extra connections via the join table.
         // For plex_home this handles a Jellyfin server (or extra Plex account)
         // that was attached to the profile via the borrow flow — the parent
         // account is bound by `_bindPlexHome` above and isn't represented in
         // the join table.
-        _bindJoinRows(profile, joinRows: joinRows, connectionsById: connectionsById, allowPinPrompt: allowPinPrompt),
+        _bindJoinRows(
+          profile,
+          joinRows: joinRows,
+          connectionsById: connectionsById,
+          allowPinPrompt: allowPinPrompt,
+          generation: generation,
+        ),
       ]);
+      if (!_isCurrentBind(profile.id, generation)) return false;
       final visibleServerIds = <String>{};
       for (final result in results) {
         visibleServerIds.addAll(result.visibleServerIds);
@@ -374,6 +399,7 @@ class ActiveProfileBinder {
     required List<ProfileConnection> joinRows,
     required Map<String, Connection> connectionsById,
     required bool allowPinPrompt,
+    required int generation,
   }) async {
     final parentId = profile.parentConnectionId;
     final homeUuid = profile.plexHomeUserUuid;
@@ -390,6 +416,7 @@ class ActiveProfileBinder {
       return const _ProfileBindResult.empty();
     }
     final auth = await _ensureAuth();
+    if (!_isCurrentBind(profile.id, generation)) return const _ProfileBindResult.empty();
 
     // Fast path: reuse the previously-minted user-token from the
     // [ProfileConnection] row for this profile's parent connection.
@@ -415,101 +442,54 @@ class ActiveProfileBinder {
       'ActiveProfileBinder: cache lookup for ${profile.displayName} (account=${account.id}, '
       'uuid=$homeUuid, useCache=$useCache, preVerified=$preVerified): ${cachedToken == null ? (useCache ? "MISS" : "BYPASS") : "HIT"}',
     );
-    if (cachedToken != null) {
-      // Fire the resource refresh and the optimistic cached-metadata connect
-      // together: the plex.tv round-trip no longer gates server probing on
-      // cold start. The reconcile applies whatever the refresh learns
-      // (rotated tokens, changed URIs, membership) once it lands.
-      final fetchOutcome = _settleServerFetch(_fetchServersTimed(auth, cachedToken, profile.displayName));
-      final optimistic = await _bindOptimisticallyFromCache(
-        account: account,
-        userToken: cachedToken,
-        profileId: profile.id,
-        profileLabel: profile.displayName,
-        fetchOutcome: fetchOutcome,
-        onAuthRejected: () => profileConnections.recordToken(profile.id, parentId, ''),
-      );
-      if (optimistic != null && optimistic.visibleServerIds.isNotEmpty) {
-        return optimistic;
-      }
-      try {
-        final servers = await _unwrapServerFetch(fetchOutcome);
-        if (servers.isNotEmpty) {
-          appLogger.i('ActiveProfileBinder: using cached token for ${profile.displayName} (${servers.length} servers)');
-          unawaited(_persistRefreshedServers(account, servers));
-          return _connectFromServers(account, cachedToken, servers, profile.displayName);
-        }
-        appLogger.w(
-          'ActiveProfileBinder: cached token returned 0 servers for ${profile.displayName} — wiping and re-minting',
-        );
-        await profileConnections.recordToken(profile.id, parentId, '');
-      } on MediaServerHttpException catch (e) {
-        if (e.statusCode == 401 || e.statusCode == 403) {
-          appLogger.w(
-            'ActiveProfileBinder: cached token rejected (${e.statusCode}) for ${profile.displayName} — falling back to /switch',
-          );
-          await profileConnections.recordToken(profile.id, parentId, '');
-        } else {
-          appLogger.w(
-            'ActiveProfileBinder: fetchServers failed with cached token for ${profile.displayName}',
-            error: e,
-          );
-          if (e.isTransient) {
-            // The optimistic pass already probed the cached metadata —
-            // don't burn another race on the same endpoints.
-            if (optimistic != null) return optimistic;
-            return _connectFromCachedServers(account, cachedToken, profile.displayName, error: e);
-          }
-          return const _ProfileBindResult.empty();
-        }
-      } catch (e, st) {
-        appLogger.w(
-          'ActiveProfileBinder: fetchServers failed with cached token for ${profile.displayName}',
-          error: e,
-          stackTrace: st,
-        );
-        return const _ProfileBindResult.empty();
-      }
-    }
-
-    if (!allowPin && profile.plexProtected) {
-      appLogger.i('ActiveProfileBinder: suppressing PIN-gated /switch for passive rebind of ${profile.displayName}');
-      return const _ProfileBindResult.empty();
-    }
-    appLogger.i('ActiveProfileBinder: minting fresh user-token via /switch for ${profile.displayName}');
-    final result = await switchPlexHomeUserWithPin(
+    return _bindPlexWithTokenPolicy(
       auth: auth,
-      accountToken: account.accountToken,
-      homeUserUuid: homeUuid,
-      requiresPin: profile.plexProtected,
-      // Plex can demand a PIN (error 1041) even when we didn't expect one;
-      // a passive rebind answers that demand with a cancel, not a dialog.
-      promptForPin: allowPin
-          ? ({String? errorMessage}) => pinPrompt(profile, errorMessage: errorMessage)
-          : ({String? errorMessage}) async => null,
-      logLabel: profile.displayName,
+      account: account,
+      profileId: profile.id,
+      profileLabel: profile.displayName,
+      generation: generation,
+      cachedToken: cachedToken,
+      invalidateCachedToken: () => profileConnections.recordToken(profile.id, parentId, ''),
+      mintToken: () async {
+        if (!allowPin && profile.plexProtected) {
+          appLogger.i(
+            'ActiveProfileBinder: suppressing PIN-gated /switch for passive rebind of ${profile.displayName}',
+          );
+          return null;
+        }
+        appLogger.i('ActiveProfileBinder: minting fresh user-token via /switch for ${profile.displayName}');
+        final result = await switchPlexHomeUserWithPin(
+          auth: auth,
+          accountToken: account.accountToken,
+          homeUserUuid: homeUuid,
+          requiresPin: profile.plexProtected,
+          // Plex can demand a PIN (error 1041) even when we didn't expect one;
+          // a passive rebind answers that demand with a cancel, not a dialog.
+          promptForPin: allowPin
+              ? ({String? errorMessage}) => pinPrompt(profile, errorMessage: errorMessage)
+              : ({String? errorMessage}) async => null,
+          logLabel: profile.displayName,
+        );
+        return result.succeeded ? result.userToken : null;
+      },
+      persistMintedToken: (token) async {
+        // Plex Home parents normally have no join row, so create one as the
+        // stable home for the freshly minted profile token.
+        await profileConnections.upsert(
+          ProfileConnection(
+            profileId: profile.id,
+            connectionId: parentId,
+            userToken: token,
+            userIdentifier: homeUuid,
+            tokenAcquiredAt: DateTime.now(),
+          ),
+        );
+        appLogger.i(
+          'ActiveProfileBinder: persisted user-token for ${profile.displayName} '
+          '(account=${account.id}, uuid=$homeUuid, tokenLen=${token.length})',
+        );
+      },
     );
-    if (!result.succeeded) return const _ProfileBindResult.empty();
-    // Persist the minted user-token onto the parent ProfileConnection
-    // row. Plex Home profiles don't normally have a join row for the
-    // parent (the borrow flow is for *other* connections layered onto
-    // the profile), so creating one here gives the token a stable home
-    // alongside the rest of the profile's tokens — same shape as the
-    // local-profile path that `_bindLocalPlexConnection` already uses.
-    await profileConnections.upsert(
-      ProfileConnection(
-        profileId: profile.id,
-        connectionId: parentId,
-        userToken: result.userToken,
-        userIdentifier: homeUuid,
-        tokenAcquiredAt: DateTime.now(),
-      ),
-    );
-    appLogger.i(
-      'ActiveProfileBinder: persisted user-token for ${profile.displayName} '
-      '(account=${account.id}, uuid=$homeUuid, tokenLen=${result.userToken!.length})',
-    );
-    return _connectPlexServers(account, result.userToken!, profile.displayName);
   }
 
   /// Bind every [ProfileConnection] row for [profile]. Used by both kinds:
@@ -524,6 +504,7 @@ class ActiveProfileBinder {
     required List<ProfileConnection> joinRows,
     required Map<String, Connection> connectionsById,
     required bool allowPinPrompt,
+    required int generation,
   }) async {
     if (joinRows.isEmpty) {
       if (profile.isLocal) {
@@ -546,10 +527,18 @@ class ActiveProfileBinder {
       switch (conn) {
         case PlexAccountConnection():
           expected.addAll(conn.servers.map((server) => server.clientIdentifier));
-          futures.add(_bindLocalPlexConnection(profile: profile, conn: conn, pc: pc, allowPinPrompt: allowPinPrompt));
+          futures.add(
+            _bindLocalPlexConnection(
+              profile: profile,
+              conn: conn,
+              pc: pc,
+              allowPinPrompt: allowPinPrompt,
+              generation: generation,
+            ),
+          );
         case JellyfinConnection():
           expected.add(conn.serverMachineId);
-          futures.add(_bindJellyfin(conn));
+          futures.add(_bindJellyfin(conn, profileId: profile.id, generation: generation));
       }
     }
     final results = await Future.wait(futures);
@@ -565,102 +554,23 @@ class ActiveProfileBinder {
     required PlexAccountConnection conn,
     required ProfileConnection pc,
     required bool allowPinPrompt,
+    required int generation,
   }) async {
     final auth = await _ensureAuth();
-    String? userToken = pc.userToken;
-    List<PlexServer>? servers;
-
-    if (userToken != null && userToken.isNotEmpty) {
-      final cachedUserToken = userToken;
-      // Same optimistic shape as the plex_home cached path: probe cached
-      // metadata while the resource refresh runs alongside.
-      final fetchOutcome = _settleServerFetch(_fetchServersTimed(auth, cachedUserToken, profile.displayName));
-      final optimistic = await _bindOptimisticallyFromCache(
-        account: conn,
-        userToken: cachedUserToken,
-        profileId: profile.id,
-        profileLabel: profile.displayName,
-        fetchOutcome: fetchOutcome,
-        onAuthRejected: () => profileConnections.recordToken(profile.id, conn.id, ''),
-      );
-      if (optimistic != null && optimistic.visibleServerIds.isNotEmpty) {
-        await profileConnections.markUsed(profile.id, conn.id);
-        return optimistic;
-      }
-      try {
-        servers = await _unwrapServerFetch(fetchOutcome);
-        if (servers.isEmpty) {
-          appLogger.w(
-            'ActiveProfileBinder: cached local Plex token returned 0 servers for ${profile.displayName} — re-minting',
-          );
-          await profileConnections.recordToken(profile.id, conn.id, '');
-          userToken = null;
-        }
-      } on MediaServerHttpException catch (e) {
-        if (e.statusCode == 401 || e.statusCode == 403) {
-          appLogger.w(
-            'ActiveProfileBinder: cached local Plex token rejected (${e.statusCode}) for ${profile.displayName} — re-minting',
-          );
-          await profileConnections.recordToken(profile.id, conn.id, '');
-          userToken = null;
-        } else {
-          appLogger.w('ActiveProfileBinder: fetchServers failed for ${profile.displayName}', error: e);
-          if (e.isTransient) {
-            // The optimistic pass already probed the cached metadata.
-            if (optimistic != null) return optimistic;
-            final ids = await _connectFromCachedServers(conn, cachedUserToken, profile.displayName, error: e);
-            if (ids.visibleServerIds.isNotEmpty) await profileConnections.markUsed(profile.id, conn.id);
-            return ids;
-          }
-          return const _ProfileBindResult.empty();
-        }
-      } catch (e, st) {
-        appLogger.w('ActiveProfileBinder: fetchServers failed for ${profile.displayName}', error: e, stackTrace: st);
-        return const _ProfileBindResult.empty();
-      }
-    }
-
-    if (userToken == null || userToken.isEmpty) {
-      if (pc.userIdentifier.isEmpty) {
-        appLogger.w('ActiveProfileBinder: ${profile.displayName} has no Plex Home user identifier');
-        return const _ProfileBindResult.empty();
-      }
-      final minted = await _mintLocalPlexToken(
-        auth: auth,
-        profile: profile,
-        conn: conn,
-        pc: pc,
-        allowPinPrompt: allowPinPrompt,
-      );
-      if (minted == null) return const _ProfileBindResult.empty();
-      userToken = minted;
-      try {
-        servers = await _fetchServersTimed(auth, userToken, profile.displayName);
-      } on MediaServerHttpException catch (e) {
-        appLogger.w('ActiveProfileBinder: fetchServers failed for ${profile.displayName}', error: e);
-        if (e.statusCode == 401 || e.statusCode == 403) {
-          serverManager.markPlexConnectionAuthError(conn);
-          final ids = conn.servers.map((server) => server.clientIdentifier).toSet();
-          return _ProfileBindResult.visible(ids);
-        }
-        if (e.isTransient) {
-          final ids = await _connectFromCachedServers(conn, userToken, profile.displayName, error: e);
-          if (ids.visibleServerIds.isNotEmpty) await profileConnections.markUsed(profile.id, conn.id);
-          return ids;
-        }
-        return const _ProfileBindResult.empty();
-      } catch (e, st) {
-        appLogger.w('ActiveProfileBinder: fetchServers failed for ${profile.displayName}', error: e, stackTrace: st);
-        return const _ProfileBindResult.empty();
-      }
-    }
-
-    if (servers != null && servers.isNotEmpty) {
-      unawaited(_persistRefreshedServers(conn, servers));
-    }
-    final ids = await _connectFromServers(conn, userToken, servers ?? const <PlexServer>[], profile.displayName);
-    await profileConnections.markUsed(profile.id, conn.id);
-    return ids;
+    if (!_isCurrentBind(profile.id, generation)) return const _ProfileBindResult.empty();
+    return _bindPlexWithTokenPolicy(
+      auth: auth,
+      account: conn,
+      profileId: profile.id,
+      profileLabel: profile.displayName,
+      generation: generation,
+      cachedToken: pc.userToken,
+      invalidateCachedToken: () => profileConnections.recordToken(profile.id, conn.id, ''),
+      mintToken: () =>
+          _mintLocalPlexToken(auth: auth, profile: profile, conn: conn, pc: pc, allowPinPrompt: allowPinPrompt),
+      persistMintedToken: (token) => profileConnections.recordToken(profile.id, conn.id, token),
+      markUsed: () => profileConnections.markUsed(profile.id, conn.id),
+    );
   }
 
   Future<String?> _mintLocalPlexToken({
@@ -670,6 +580,10 @@ class ActiveProfileBinder {
     required ProfileConnection pc,
     required bool allowPinPrompt,
   }) async {
+    if (pc.userIdentifier.isEmpty) {
+      appLogger.w('ActiveProfileBinder: ${profile.displayName} has no Plex Home user identifier');
+      return null;
+    }
     final result = await switchPlexHomeUserWithPin(
       auth: auth,
       accountToken: conn.accountToken,
@@ -684,39 +598,137 @@ class ActiveProfileBinder {
       logLabel: profile.displayName,
     );
     if (!result.succeeded) return null;
-    final userToken = result.userToken!;
-    await profileConnections.recordToken(profile.id, conn.id, userToken);
-    return userToken;
+    return result.userToken;
   }
 
-  Future<_ProfileBindResult> _connectPlexServers(
-    PlexAccountConnection account,
-    String userToken,
-    String profileLabel,
-  ) async {
-    final auth = await _ensureAuth();
-    final List<PlexServer> servers;
-    try {
-      servers = await _fetchServersTimed(auth, userToken, profileLabel);
-    } on MediaServerHttpException catch (e, st) {
-      appLogger.w('ActiveProfileBinder: fetchServers failed for $profileLabel', error: e, stackTrace: st);
-      if (e.statusCode == 401 || e.statusCode == 403) {
-        serverManager.markPlexConnectionAuthError(account);
-        final ids = account.servers.map((server) => server.clientIdentifier).toSet();
-        return _ProfileBindResult.visible(ids);
+  /// Apply the common Plex token policy while callers retain ownership of
+  /// backend-specific minting, persistence, and post-bind bookkeeping.
+  Future<_ProfileBindResult> _bindPlexWithTokenPolicy({
+    required PlexAuthService auth,
+    required PlexAccountConnection account,
+    required String profileId,
+    required String profileLabel,
+    required int generation,
+    required String? cachedToken,
+    required Future<void> Function() invalidateCachedToken,
+    required Future<String?> Function() mintToken,
+    required Future<void> Function(String token) persistMintedToken,
+    Future<void> Function()? markUsed,
+  }) async {
+    var userToken = cachedToken;
+    var usingCachedToken = userToken != null && userToken.isNotEmpty;
+
+    while (true) {
+      if (!_isCurrentBind(profileId, generation)) return const _ProfileBindResult.empty();
+
+      if (!usingCachedToken) {
+        userToken = await mintToken();
+        if (userToken == null || userToken.isEmpty || !_isCurrentBind(profileId, generation)) {
+          return const _ProfileBindResult.empty();
+        }
+        await persistMintedToken(userToken);
+        if (!_isCurrentBind(profileId, generation)) return const _ProfileBindResult.empty();
       }
-      if (e.isTransient) {
-        return _connectFromCachedServers(account, userToken, profileLabel, error: e, stackTrace: st);
+
+      final token = userToken!;
+      final fetchOutcome = _settleServerFetch(_fetchServersTimed(auth, token, profileLabel));
+      _ProfileBindResult? optimistic;
+      if (usingCachedToken) {
+        // Probe cached metadata while plex.tv refreshes resources. A live
+        // cached bind settles immediately and reconciles the fetch later.
+        optimistic = await _bindOptimisticallyFromCache(
+          account: account,
+          userToken: token,
+          profileId: profileId,
+          profileLabel: profileLabel,
+          generation: generation,
+          fetchOutcome: fetchOutcome,
+          onAuthRejected: invalidateCachedToken,
+        );
+        if (!_isCurrentBind(profileId, generation)) return const _ProfileBindResult.empty();
+        if (optimistic != null && optimistic.visibleServerIds.isNotEmpty) {
+          await markUsed?.call();
+          return optimistic;
+        }
       }
-      return const _ProfileBindResult.empty();
-    } catch (e, st) {
-      appLogger.w('ActiveProfileBinder: fetchServers failed for $profileLabel', error: e, stackTrace: st);
-      return const _ProfileBindResult.empty();
+
+      final fetched = await _classifyServerFetch(fetchOutcome);
+      if (!_isCurrentBind(profileId, generation)) return const _ProfileBindResult.empty();
+
+      switch (fetched.status) {
+        case _ServerFetchStatus.success:
+          final servers = fetched.servers;
+          appLogger.i(
+            'ActiveProfileBinder: using ${usingCachedToken ? "cached" : "fresh"} token for '
+            '$profileLabel (${servers.length} servers)',
+          );
+          unawaited(_persistRefreshedServers(account, servers));
+          final result = await _connectFromServers(account, token, servers, profileLabel);
+          if (!_isCurrentBind(profileId, generation)) return const _ProfileBindResult.empty();
+          await markUsed?.call();
+          return result;
+        case _ServerFetchStatus.empty:
+          if (usingCachedToken) {
+            appLogger.w(
+              'ActiveProfileBinder: cached token returned 0 servers for $profileLabel — wiping and re-minting',
+            );
+            await invalidateCachedToken();
+            userToken = null;
+            usingCachedToken = false;
+            continue;
+          }
+          final result = await _connectFromServers(account, token, const <PlexServer>[], profileLabel);
+          if (!_isCurrentBind(profileId, generation)) return const _ProfileBindResult.empty();
+          await markUsed?.call();
+          return result;
+        case _ServerFetchStatus.authRejected:
+          if (usingCachedToken) {
+            final error = fetched.error as MediaServerHttpException;
+            appLogger.w(
+              'ActiveProfileBinder: cached token rejected (${error.statusCode}) for $profileLabel — re-minting',
+            );
+            await invalidateCachedToken();
+            userToken = null;
+            usingCachedToken = false;
+            continue;
+          }
+          appLogger.w(
+            'ActiveProfileBinder: freshly minted token rejected for $profileLabel',
+            error: fetched.error,
+            stackTrace: fetched.stackTrace,
+          );
+          serverManager.markPlexConnectionAuthError(account);
+          return _ProfileBindResult.visible(account.servers.map((server) => server.clientIdentifier).toSet());
+        case _ServerFetchStatus.transientFailure:
+          appLogger.w(
+            'ActiveProfileBinder: resource refresh failed for $profileLabel; using cached metadata',
+            error: fetched.error,
+            stackTrace: fetched.stackTrace,
+          );
+          // The optimistic pass already probed these endpoints.
+          if (optimistic != null) return optimistic;
+          final result = await _connectFromCachedServers(
+            account,
+            token,
+            profileLabel,
+            error: fetched.error,
+            stackTrace: fetched.stackTrace,
+          );
+          if (!_isCurrentBind(profileId, generation)) return const _ProfileBindResult.empty();
+          if (result.visibleServerIds.isNotEmpty) await markUsed?.call();
+          return result;
+        case _ServerFetchStatus.cancelled:
+          appLogger.d('ActiveProfileBinder: resource refresh cancelled for $profileLabel');
+          return const _ProfileBindResult.empty();
+        case _ServerFetchStatus.failure:
+          appLogger.w(
+            'ActiveProfileBinder: resource refresh failed for $profileLabel',
+            error: fetched.error,
+            stackTrace: fetched.stackTrace,
+          );
+          return const _ProfileBindResult.empty();
+      }
     }
-    if (servers.isNotEmpty) {
-      unawaited(_persistRefreshedServers(account, servers));
-    }
-    return _connectFromServers(account, userToken, servers, profileLabel);
   }
 
   Future<_ProfileBindResult> _connectFromCachedServers(
@@ -792,15 +804,25 @@ class ActiveProfileBinder {
     );
   }
 
-  /// Rethrow a settled fetch with its original error/stack so existing
-  /// `on MediaServerHttpException` handlers keep working unchanged.
-  Future<List<PlexServer>> _unwrapServerFetch(Future<_FetchOutcome> outcome) async {
+  Future<_ClassifiedFetch> _classifyServerFetch(Future<_FetchOutcome> outcome) async {
     final settled = await outcome;
-    final error = settled.error;
-    if (error != null) {
-      Error.throwWithStackTrace(error, settled.stackTrace ?? StackTrace.current);
+    final servers = settled.servers;
+    if (servers != null) {
+      return (
+        status: servers.isEmpty ? _ServerFetchStatus.empty : _ServerFetchStatus.success,
+        servers: servers,
+        error: null,
+        stackTrace: null,
+      );
     }
-    return settled.servers!;
+    final error = settled.error!;
+    final status = switch (error) {
+      MediaServerHttpException(isCancellation: true) => _ServerFetchStatus.cancelled,
+      MediaServerHttpException(statusCode: 401 || 403) => _ServerFetchStatus.authRejected,
+      MediaServerHttpException(isTransient: true) => _ServerFetchStatus.transientFailure,
+      _ => _ServerFetchStatus.failure,
+    };
+    return (status: status, servers: const <PlexServer>[], error: error, stackTrace: settled.stackTrace);
   }
 
   /// Persist a freshly fetched resource list onto the stored account row so
@@ -834,6 +856,7 @@ class ActiveProfileBinder {
     required String userToken,
     required String profileId,
     required String profileLabel,
+    required int generation,
     required Future<_FetchOutcome> fetchOutcome,
     required Future<void> Function() onAuthRejected,
   }) async {
@@ -850,6 +873,7 @@ class ActiveProfileBinder {
       account: account,
       profileId: profileId,
       profileLabel: profileLabel,
+      generation: generation,
       onAuthRejected: onAuthRejected,
     );
     return result;
@@ -868,6 +892,7 @@ class ActiveProfileBinder {
     required PlexAccountConnection account,
     required String profileId,
     required String profileLabel,
+    required int generation,
     required Future<void> Function() onAuthRejected,
   }) {
     unawaited(
@@ -884,7 +909,7 @@ class ActiveProfileBinder {
             // Wipe the bad token regardless of the active profile (DB hygiene),
             // but only surface the auth banner while this profile is active.
             await onAuthRejected();
-            if (activeProfile.activeId == profileId) {
+            if (_isCurrentBind(profileId, generation)) {
               serverManager.markPlexConnectionAuthError(account);
             }
           } else {
@@ -907,7 +932,7 @@ class ActiveProfileBinder {
           return;
         }
         await _persistRefreshedServers(account, fresh);
-        if (activeProfile.activeId != profileId) return;
+        if (!_isCurrentBind(profileId, generation)) return;
         final freshIds = fresh.map((server) => server.clientIdentifier).toSet();
         final cachedIds = account.servers.map((server) => server.clientIdentifier).toSet();
         if (!setEquals(freshIds, cachedIds)) {
@@ -936,8 +961,15 @@ class ActiveProfileBinder {
     );
   }
 
-  Future<_ProfileBindResult> _bindJellyfin(JellyfinConnection conn) async {
+  Future<_ProfileBindResult> _bindJellyfin(
+    JellyfinConnection conn, {
+    required String profileId,
+    required int generation,
+  }) async {
     final ok = await serverManager.addJellyfinConnection(conn);
+    if (!_isCurrentBind(profileId, generation)) {
+      return _ProfileBindResult(visibleServerIds: const {}, expectedServerIds: {conn.serverMachineId});
+    }
     // `addJellyfinConnection` registers the client even when the health probe
     // returns authError. Keep that server in the active profile's visibility
     // filter so the re-auth banner can surface it instead of hiding it as if
@@ -946,6 +978,10 @@ class ActiveProfileBinder {
       return _ProfileBindResult.visible({conn.serverMachineId});
     }
     return _ProfileBindResult(visibleServerIds: const {}, expectedServerIds: {conn.serverMachineId});
+  }
+
+  bool _isCurrentBind(String profileId, int generation) {
+    return _bindGeneration == generation && activeProfile.activeId == profileId;
   }
 
   Future<PlexAuthService> _ensureAuth() async {
@@ -972,6 +1008,7 @@ class ActiveProfileBinder {
   }
 
   void dispose() {
+    _bindGeneration++;
     if (!_started) return;
     activeProfile.removeListener(_onActiveProfileChanged);
     _plexHomePreVerified.clear();
