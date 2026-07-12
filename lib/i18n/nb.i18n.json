@@ -3,7 +3,6 @@
     "title": "Plezy"
   },
   "auth": {
-    "signIn": "Logg på",
     "signInWithPlex": "Logg inn med Plex",
     "showQRCode": "Vis QR-kode",
     "authenticate": "Autentiser",
@@ -56,10 +55,8 @@
     "episodeNumberTitle": "Episode ${number} - ${title}",
     "chapterNumber": "Kapittel ${number}",
     "reconnect": "Koble til på nytt",
-    "exit": "Avslutt",
     "viewAll": "Vis alle",
     "checkingNetwork": "Sjekker nettverk...",
-    "refreshingServers": "Oppdaterer servere...",
     "loadingServers": "Laster servere...",
     "connectingToServers": "Kobler til servere...",
     "startingOfflineMode": "Starter frakoblet modus...",
@@ -139,6 +136,12 @@
     "tvFullCardLayoutDescription": "Bruk bildebaserte TV-kort med skuespillernavn lagt over",
     "focusGlow": "Fokusglød",
     "focusGlowDescription": "Vis en myk glød rundt kortet i fokus",
+    "visualEffects": "Visuelle effekter",
+    "visualEffectsAuto": "Automatisk",
+    "visualEffectsAutoDescription": "Reduser effekter automatisk på enheter med lavt strømforbruk",
+    "visualEffectsFull": "Full",
+    "visualEffectsReduced": "Redusert",
+    "visualEffectsReducedDescription": "Færre animasjoner og grafikk med lavere oppløsning",
     "hideSpoilers": "Skjul spoilere for usette episoder",
     "hideSpoilersDescription": "Slør miniatyrbilder og beskrivelser for usette episoder",
     "playerBackend": "Spillermotor",
@@ -151,7 +154,7 @@
     "bufferSizeAuto": "Auto (Anbefalt)",
     "bufferSizeWarning": "${heap}MB minne tilgjengelig. En buffer på ${size}MB kan påvirke avspilling.",
     "defaultQualityTitle": "Standardkvalitet",
-    "defaultQualityDescription": "Brukes ved start av avspilling. Lavere verdier reduserer båndbredden.",
+    "musicQualityTitle": "Musikkvalitet",
     "subtitleStyling": "Undertekststil",
     "subtitleStylingDescription": "Tilpass utseendet på undertekster",
     "smallSkipDuration": "Kort hoppvarighet",
@@ -245,10 +248,9 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Vis hva du ser på Discord",
-    "trakt": "Trakt",
-    "traktDescription": "Synkroniser visningshistorikk med Trakt",
     "services": "Tjenester",
     "servicesDescription": "Koble til Trakt, MyAnimeList, Seerr og mer",
+    "manageLibrariesDescription": "Omorganiser og skjul biblioteker",
     "companionRemoteServer": "Companion Remote-server",
     "companionRemoteServerDescription": "Tillat mobilenheter på nettverket ditt å styre denne appen",
     "autoPip": "Auto bilde-i-bilde",
@@ -311,7 +313,6 @@
     "showNavBarLabels": "Vis navigasjonsfeltlabeler",
     "showNavBarLabelsDescription": "Vis tekstlabeler under navigasjonsfeltikoner",
     "startupSection": "Oppstartsseksjon",
-    "startupSectionDescription": "Velg hvilken seksjon Plezy åpner ved oppstart",
     "liveTvDefaultFavorites": "Standard til favorittkanaler",
     "liveTvDefaultFavoritesDescription": "Vis kun favorittkanaler når du åpner Live TV",
     "display": "Skjerm",
@@ -322,14 +323,7 @@
     "player": "Spiller",
     "subtitlesAndConfig": "Undertekster og konfigurasjon",
     "seekAndTiming": "Søk og tidtaking",
-    "behavior": "Atferd",
-    "manageLibrariesDescription": "Omorganiser og skjul biblioteker",
-    "visualEffects": "Visuelle effekter",
-    "visualEffectsAuto": "Automatisk",
-    "visualEffectsAutoDescription": "Reduser effekter automatisk på enheter med lavt strømforbruk",
-    "visualEffectsFull": "Full",
-    "visualEffectsReduced": "Redusert",
-    "visualEffectsReducedDescription": "Færre animasjoner og grafikk med lavere oppløsning"
+    "behavior": "Atferd"
   },
   "search": {
     "hint": "Søk i filmer, serier, musikk...",
@@ -418,14 +412,11 @@
   "rateSheet": {
     "title": "Vurder",
     "server": "Server",
-    "starValue": "${rating} / 5",
-    "scoreValue": "${score} / 10",
-    "setScore": "Sett en poengsum",
+    "favorite": "Favoritt",
+    "favorited": "Lagt til i favoritter",
     "saved": "Lagret",
     "notAvailable": "Ingen treff",
-    "noConnectedServices": "Koble til en tjeneste i Innstillinger for å vurdere her.",
-    "favorite": "Favoritt",
-    "favorited": "Lagt til i favoritter"
+    "noConnectedServices": "Koble til en tjeneste i Innstillinger for å vurdere her."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",
@@ -435,7 +426,15 @@
     "mediaCardWatched": "sett",
     "mediaCardPartiallyWatched": "${percent} prosent sett",
     "mediaCardUnwatched": "usett",
-    "tapToPlay": "Trykk for å spille"
+    "tapToPlay": "Trykk for å spille",
+    "decrease": "Reduser",
+    "increase": "Øk",
+    "decreaseValue": "Reduser ${label}",
+    "increaseValue": "Øk ${label}",
+    "hue": "Fargetone",
+    "saturation": "Metning",
+    "brightness": "Lysstyrke",
+    "hexColor": "Heksadesimal farge"
   },
   "tooltips": {
     "shufflePlay": "Tilfeldig avspilling",
@@ -481,13 +480,11 @@
     "settingsButton": "Avspillingsinnstillinger",
     "tracksButton": "Lyd og undertekster",
     "chaptersButton": "Kapitler",
-    "versionsButton": "Videoversjoner",
     "versionQualityButton": "Versjon og kvalitet",
     "versionColumnHeader": "Versjon",
     "qualityColumnHeader": "Kvalitet",
     "qualityOriginal": "Original",
     "qualityPresetLabel": "${resolution}p ${bitrate} Mbps",
-    "qualityBandwidthEstimate": "~${bitrate} Mbps",
     "transcodeUnavailableFallback": "Transkoding utilgjengelig — spiller av i original kvalitet",
     "pipButton": "Bilde-i-bilde-modus",
     "aspectRatioButton": "Sideforhold",
@@ -530,12 +527,7 @@
     "subtitleDownloadFailed": "Kunne ikke laste ned undertekst",
     "searchLanguages": "Søk etter språk..."
   },
-  "userStatus": {
-    "admin": "Administrator",
-    "restricted": "Begrenset",
-    "protected": "Beskyttet",
-    "current": "GJELDENDE"
-  },
+  "userStatus": {},
   "messages": {
     "markedAsWatched": "Merket som sett",
     "markedAsUnwatched": "Merket som usett",
@@ -676,8 +668,7 @@
     "pinProtectionOptional": "PIN-beskyttelse (valgfri)",
     "pinExplain": "4-sifret PIN kreves for å bytte profiler.",
     "continueButton": "Fortsett",
-    "pinsDontMatch": "PIN-ene samsvarer ikke",
-    "initializeServicesFailed": "Kunne ikke initialisere profiltjenester"
+    "pinsDontMatch": "PIN-ene samsvarer ikke"
   },
   "connections": {
     "sectionTitle": "Tilkoblinger",
@@ -692,7 +683,6 @@
   },
   "discover": {
     "title": "Oppdag",
-    "switchProfile": "Bytt profil",
     "noContentAvailable": "Ingen innhold tilgjengelig",
     "addMediaToLibraries": "Legg til medier i bibliotekene dine",
     "continueWatching": "Fortsett å se",
@@ -721,8 +711,6 @@
     "connectionFailed": "Kan ikke koble til medieserver",
     "failedToLoad": "Kunne ikke laste ${context}: ${error}",
     "noClientAvailable": "Ingen klient tilgjengelig",
-    "authenticationFailed": "Autentisering mislyktes: ${error}",
-    "couldNotLaunchUrl": "Kunne ikke åpne autentiserings-URL",
     "pleaseEnterToken": "Vennligst skriv inn et token",
     "invalidToken": "Ugyldig token",
     "failedToVerifyToken": "Kunne ikke verifisere token: ${error}",
@@ -749,6 +737,8 @@
     "allLibrariesHidden": "Alle biblioteker er skjult",
     "hiddenLibrariesCount": "Skjulte biblioteker (${count})",
     "thisLibraryIsEmpty": "Dette biblioteket er tomt",
+    "noItemsMatchFilters": "Ingen elementer samsvarer med de aktive filtrene",
+    "resetFilters": "Tilbakestill filtre",
     "all": "Alle",
     "clearAll": "Tøm alle",
     "scanLibraryConfirm": "Er du sikker på at du vil skanne \"${title}\"?",
@@ -804,7 +794,6 @@
       "communityRating": "Fellesskapsvurdering",
       "criticRating": "Kritikervurdering",
       "userRating": "Brukervurdering",
-      "lastPlayed": "Sist spilt",
       "datePlayed": "Avspillingsdato",
       "playCount": "Avspillinger",
       "productionYear": "Produksjonsår",
@@ -818,9 +807,7 @@
       "dateShared": "Delingsdato",
       "latestEpisodeAirDate": "Siste episodes sendedato",
       "lastEpisodeDateAdded": "Dato for sist lagt til episode"
-    },
-    "noItemsMatchFilters": "Ingen elementer samsvarer med de aktive filtrene",
-    "resetFilters": "Tilbakestill filtre"
+    }
   },
   "about": {
     "title": "Om",
@@ -830,7 +817,6 @@
     "viewLicensesDescription": "Vis lisenser for tredjepartsbiblioteker"
   },
   "serverSelection": {
-    "allServerConnectionsFailed": "Kunne ikke koble til noen servere. Sjekk nettverket ditt.",
     "noServersFoundForAccount": "Ingen servere funnet for ${username} (${email})",
     "failedToLoadServers": "Kunne ikke laste servere: ${error}"
   },
@@ -876,10 +862,6 @@
       "upcomingMovies": "Kommende filmer",
       "upcomingShows": "Kommende serier"
     },
-    "searchHint": "Søk i ${source}",
-    "searchEmpty": "Ingen treff for \"${query}\"",
-    "searchPrompt": "Søk etter filmer og serier på ${source}.",
-    "searchFailed": "Søk mislyktes. Sjekk tilkoblingen og prøv igjen.",
     "status": {
       "airing": "Sendes",
       "ended": "Avsluttet",
@@ -897,16 +879,21 @@
     "watchlistUpdateFailed": "Kunne ikke oppdatere ønskelisten",
     "notInLibrary": "Ikke i biblioteket ditt",
     "inTheseLibraries": "I disse bibliotekene",
-    "availableOn": "Tilgjengelig på ${server}",
     "checkingLibrary": "Sjekker biblioteket ditt...",
     "emptyTitle": "Ingenting her ennå",
-    "emptyMessage": "Rader fra ${source} vises her når de har innhold."
+    "emptyMessage": "Rader fra ${source} vises her når de har innhold.",
+    "searchHint": "Søk i ${source}",
+    "searchEmpty": "Ingen treff for \"${query}\"",
+    "searchPrompt": "Søk etter filmer og serier på ${source}.",
+    "searchFailed": "Søk mislyktes. Sjekk tilkoblingen og prøv igjen."
   },
   "liveTv": {
     "title": "Direkte-TV",
     "guide": "Programguide",
     "noChannels": "Ingen kanaler tilgjengelig",
     "noDvr": "Ingen DVR konfigurert på noen server",
+    "serverUnavailable": "Direkte-TV-serveren er ikke tilgjengelig.",
+    "serverNotConnected": "Direkte-TV-serveren er ikke tilkoblet.",
     "noPrograms": "Ingen programdata tilgjengelig",
     "liveStreamFailed": "Direktesending mislyktes",
     "unknownProgram": "Ukjent program",
@@ -942,7 +929,6 @@
     "scheduledRecordings": "Planlagt",
     "recordingRules": "Opptaksregler",
     "noScheduledRecordings": "Ingen planlagte opptak",
-    "noRecordingRules": "Ingen opptaksregler ennå",
     "manageRecording": "Administrer opptak",
     "cancelRecording": "Avbryt opptak",
     "cancelRecordingTitle": "Avbryte dette opptaket?",
@@ -959,7 +945,6 @@
     "recordingCancelled": "Opptak avbrutt",
     "recordingRuleDeleted": "Opptaksregel slettet",
     "processRecordingRules": "Vurder regler på nytt",
-    "loadingRecordings": "Laster opptak ...",
     "recordingInProgress": "Tar opp nå",
     "recordingsCount": "${count} planlagt",
     "editRule": "Rediger regel",
@@ -973,7 +958,6 @@
     "title": "Samlinger",
     "collection": "Samling",
     "empty": "Samlingen er tom",
-    "unknownLibrarySection": "Kan ikke slette: Ukjent bibliotekseksjon",
     "deleteCollection": "Slett samling",
     "deleteConfirm": "Slette \"${title}\"? Dette kan ikke angres.",
     "deleted": "Samling slettet",
@@ -1013,6 +997,7 @@
     "itemAdded": "Lagt til i spilleliste",
     "itemRemoved": "Fjernet fra spilleliste",
     "selectPlaylist": "Velg spilleliste",
+    "searchPlaylists": "Søk i spillelister...",
     "errorCreating": "Kunne ikke opprette spilleliste",
     "errorDeleting": "Kunne ikke slette spilleliste",
     "errorLoading": "Kunne ikke laste spillelister",
@@ -1102,15 +1087,15 @@
     "participantResumed": "${name} gjenopptok",
     "participantSeeked": "${name} spolet",
     "participantBuffering": "${name} buffrer",
+    "participantNeedsUpdate": "${name} bruker en eldre appversjon — synkronisering er ikke tilgjengelig",
+    "resumingWithout": "Fortsetter uten ${name}",
     "waitingForParticipants": "Venter på at andre laster inn...",
+    "waitingForName": "Venter på ${name}...",
     "recentRooms": "Nylige rom",
     "renameRoom": "Gi nytt navn til rom",
     "removeRoom": "Fjern",
     "guestSwitchUnavailable": "Kunne ikke bytte — server ikke tilgjengelig for synkronisering",
-    "guestSwitchFailed": "Kunne ikke bytte — innhold ble ikke funnet på denne serveren",
-    "participantNeedsUpdate": "${name} bruker en eldre appversjon — synkronisering er ikke tilgjengelig",
-    "resumingWithout": "Fortsetter uten ${name}",
-    "waitingForName": "Venter på ${name}..."
+    "guestSwitchFailed": "Kunne ikke bytte — innhold ble ikke funnet på denne serveren"
   },
   "downloads": {
     "title": "Nedlastinger",
@@ -1155,7 +1140,6 @@
     "customAmount": "Egendefinert antall...",
     "includeSpecials": "Inkluder spesialepisoder",
     "howManyEpisodes": "Hvor mange episoder?",
-    "itemsQueued": "${count} elementer i nedlastingskø",
     "keepSynced": "Hold synkronisert",
     "downloadOnce": "Last ned én gang",
     "keepNUnwatched": "Behold ${count} usette",
@@ -1204,7 +1188,6 @@
     "unknownDevice": "Ukjent enhet",
     "session": {
       "startingServer": "Starter fjernserver...",
-      "failedToCreate": "Kunne ikke starte fjernserver:",
       "hostAddress": "Vertsadresse",
       "connected": "Tilkoblet",
       "serverRunning": "Fjernserver aktiv",
@@ -1265,6 +1248,8 @@
     "errors": {
       "noNetworkInterface": "Fant ingen nettverksgrensesnitt",
       "authenticationFailed": "Autentisering mislyktes",
+      "serverStartFailed": "Kunne ikke starte fjernserveren: ${error}",
+      "commandFailed": "Kunne ikke sende fjernkommando: ${error}",
       "joinTimedOut": "Tidsavbrudd ved tilkobling til økt",
       "failedToConnectAnyAddress": "Kunne ikke koble til noen adresse",
       "connectionLostAfterAttempts": "Tilkobling mistet etter ${attempts} forsøk",
@@ -1538,7 +1523,6 @@
     "quickConnectFailed": "Quick Connect mislyktes: ${error}",
     "addPlexTitle": "Logg på med Plex",
     "pinExpired": "PIN-koden gikk ut før pålogging. Prøv igjen.",
-    "duplicatePlexAccount": "Allerede logget inn på Plex. Logg ut for å bytte konto.",
     "failedToRegisterAccount": "Kunne ikke registrere kontoen: ${error}",
     "enterJellyfinUrlError": "Oppgi URL-en til Jellyfin-serveren din",
     "addConnectionTitle": "Legg til tilkobling",

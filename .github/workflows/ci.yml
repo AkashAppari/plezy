@@ -42,6 +42,9 @@ jobs:
       - name: Verify generated files committed
         run: scripts/codegen.sh --check
 
+      - name: Verify translation hygiene
+        run: python3 scripts/clean_translations.py --check --strict
+
       - name: Verify formatting
         run: |
           paths=(lib)

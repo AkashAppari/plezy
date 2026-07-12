@@ -117,7 +117,10 @@ class CompanionRemotePeerService with KeepaliveMixin {
     List<RemoteAuthContext> authContexts,
   ) async {
     if (authContexts.isEmpty) {
-      throw const RemotePeerError(type: RemotePeerErrorType.authFailed, message: 'No auth contexts available');
+      throw RemotePeerError(
+        type: RemotePeerErrorType.authFailed,
+        message: t.companionRemote.errors.authenticationFailed,
+      );
     }
 
     if (_server != null) {
@@ -168,7 +171,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
       _errorController.add(
         RemotePeerError(
           type: RemotePeerErrorType.serverError,
-          message: 'Failed to create server: $e',
+          message: t.companionRemote.errors.serverStartFailed(error: e.toString()),
           originalError: e,
         ),
       );
@@ -369,7 +372,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
         _errorController.add(
           RemotePeerError(
             type: RemotePeerErrorType.dataChannelError,
-            message: 'WebSocket error: $error',
+            message: t.companionRemote.pairing.failedToConnect(error: error.toString()),
             originalError: error,
           ),
         );
@@ -396,7 +399,10 @@ class CompanionRemotePeerService with KeepaliveMixin {
     String expectedHostClientId = '',
   }) async {
     if (authContexts.isEmpty) {
-      throw const RemotePeerError(type: RemotePeerErrorType.authFailed, message: 'No auth contexts available');
+      throw RemotePeerError(
+        type: RemotePeerErrorType.authFailed,
+        message: t.companionRemote.errors.authenticationFailed,
+      );
     }
 
     if (_channel != null) {
@@ -506,7 +512,10 @@ class CompanionRemotePeerService with KeepaliveMixin {
                   appLogger.w('CompanionRemote: No shared auth context with host');
                   if (!completer.isCompleted) {
                     completer.completeError(
-                      const RemotePeerError(type: RemotePeerErrorType.authFailed, message: 'No shared identity'),
+                      RemotePeerError(
+                        type: RemotePeerErrorType.authFailed,
+                        message: t.companionRemote.errors.authenticationFailed,
+                      ),
                     );
                   }
                   unawaited(_channel?.sink.close(4003, 'Authentication failed'));
@@ -520,7 +529,10 @@ class CompanionRemotePeerService with KeepaliveMixin {
                   appLogger.w('CompanionRemote: Host client ID mismatch');
                   if (!completer.isCompleted) {
                     completer.completeError(
-                      const RemotePeerError(type: RemotePeerErrorType.authFailed, message: 'Host identity mismatch'),
+                      RemotePeerError(
+                        type: RemotePeerErrorType.authFailed,
+                        message: t.companionRemote.errors.authenticationFailed,
+                      ),
                     );
                   }
                   unawaited(_channel?.sink.close(4003, 'Authentication failed'));
@@ -599,7 +611,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
           _errorController.add(
             RemotePeerError(
               type: RemotePeerErrorType.connectionFailed,
-              message: 'Connection error: $error',
+              message: t.companionRemote.pairing.failedToConnect(error: error.toString()),
               originalError: error,
             ),
           );
@@ -614,7 +626,11 @@ class CompanionRemotePeerService with KeepaliveMixin {
       }
 
       _errorController.add(
-        RemotePeerError(type: RemotePeerErrorType.connectionFailed, message: 'Failed to connect: $e', originalError: e),
+        RemotePeerError(
+          type: RemotePeerErrorType.connectionFailed,
+          message: t.companionRemote.pairing.failedToConnect(error: e.toString()),
+          originalError: e,
+        ),
       );
     }
 
@@ -644,7 +660,10 @@ class CompanionRemotePeerService with KeepaliveMixin {
     String expectedHostClientId = '',
   }) async {
     if (authContexts.isEmpty) {
-      throw const RemotePeerError(type: RemotePeerErrorType.authFailed, message: 'No auth contexts available');
+      throw RemotePeerError(
+        type: RemotePeerErrorType.authFailed,
+        message: t.companionRemote.errors.authenticationFailed,
+      );
     }
 
     if (hostAddresses.length == 1) {
@@ -743,7 +762,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
       return winner;
     } on TimeoutException {
       cleanup();
-      throw const RemotePeerError(type: RemotePeerErrorType.timeout, message: 'Timed out connecting to all addresses');
+      throw RemotePeerError(type: RemotePeerErrorType.timeout, message: t.companionRemote.errors.joinTimedOut);
     }
   }
 
@@ -878,7 +897,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
         _errorController.add(
           RemotePeerError(
             type: RemotePeerErrorType.dataChannelError,
-            message: 'Failed to send command: $e',
+            message: t.companionRemote.errors.commandFailed(error: e.toString()),
             originalError: e,
           ),
         );

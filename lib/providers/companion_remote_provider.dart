@@ -26,6 +26,11 @@ export '../services/companion_remote/lan_discovery_service.dart' show Discovered
 typedef CommandReceivedCallback = void Function(RemoteCommand command);
 typedef PlexHomeResolver = Future<PlexHome?> Function(String connectionId);
 
+String _localizedRemoteError(Object error, String Function(String details) fallback) {
+  if (error is RemotePeerError) return error.message;
+  return fallback(error.toString().replaceFirst('Exception: ', ''));
+}
+
 class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin {
   RemoteSession? _session;
   CompanionRemotePeerService? _peerService;
@@ -486,7 +491,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
       _session = RemoteSession(
         role: RemoteSessionRole.host,
         status: RemoteSessionStatus.error,
-        errorMessage: e.toString(),
+        errorMessage: _localizedRemoteError(e, (details) => t.companionRemote.errors.serverStartFailed(error: details)),
         createdAt: DateTime.now(),
       );
       safeNotifyListeners();
@@ -530,11 +535,11 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   /// Connect to a discovered host as a remote client.
   Future<void> connectToDiscoveredHost(DiscoveredHost host) async {
     if (!isCryptoReady) {
-      throw StateError('Crypto not initialized');
+      throw RemotePeerError(type: RemotePeerErrorType.authFailed, message: t.companionRemote.pairing.cryptoInitFailed);
     }
     final authContext = _authContextForId(host.authContextId);
     if (authContext == null) {
-      throw StateError('Matching auth context is no longer available');
+      throw RemotePeerError(type: RemotePeerErrorType.authFailed, message: t.companionRemote.pairing.authFailed);
     }
 
     await leaveSession();
@@ -573,7 +578,10 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
       appLogger.d('CompanionRemote: Connected to ${host.name} via $winner');
     } catch (e) {
       appLogger.e('CompanionRemote: Failed to connect to host', error: e);
-      _session = _session?.copyWith(status: RemoteSessionStatus.error, errorMessage: e.toString());
+      _session = _session?.copyWith(
+        status: RemoteSessionStatus.error,
+        errorMessage: _localizedRemoteError(e, (details) => t.companionRemote.pairing.failedToConnect(error: details)),
+      );
       safeNotifyListeners();
       rethrow;
     }
@@ -582,7 +590,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   /// Connect to a host by manual IP:port entry.
   Future<void> connectToManualHost(String hostAddress) async {
     if (!isCryptoReady) {
-      throw StateError('Crypto not initialized');
+      throw RemotePeerError(type: RemotePeerErrorType.authFailed, message: t.companionRemote.pairing.cryptoInitFailed);
     }
 
     await leaveSession();
@@ -612,7 +620,10 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
       safeNotifyListeners();
     } catch (e) {
       appLogger.e('CompanionRemote: Failed to connect to manual host', error: e);
-      _session = _session?.copyWith(status: RemoteSessionStatus.error, errorMessage: e.toString());
+      _session = _session?.copyWith(
+        status: RemoteSessionStatus.error,
+        errorMessage: _localizedRemoteError(e, (details) => t.companionRemote.pairing.failedToConnect(error: details)),
+      );
       safeNotifyListeners();
       rethrow;
     }

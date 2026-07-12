@@ -3,7 +3,6 @@
     "title": "Plezy"
   },
   "auth": {
-    "signIn": "Вход",
     "signInWithPlex": "Вход с Plex",
     "showQRCode": "Покажи QR код",
     "authenticate": "Удостовери",
@@ -56,10 +55,8 @@
     "episodeNumberTitle": "Епизод ${number} - ${title}",
     "chapterNumber": "Глава ${number}",
     "reconnect": "Свържи отново",
-    "exit": "Изход",
     "viewAll": "Виж всички",
     "checkingNetwork": "Проверка на мрежата...",
-    "refreshingServers": "Опресняване на сървърите...",
     "loadingServers": "Зареждане на сървърите...",
     "connectingToServers": "Свързване със сървърите...",
     "startingOfflineMode": "Стартиране на офлайн режим...",
@@ -139,6 +136,12 @@
     "tvFullCardLayoutDescription": "Използвай TV карти само с изображения, с насложени имена на актьорите",
     "focusGlow": "Сияние при фокус",
     "focusGlowDescription": "Показвай меко сияние около фокусираната карта",
+    "visualEffects": "Визуални ефекти",
+    "visualEffectsAuto": "Автоматично",
+    "visualEffectsAutoDescription": "Автоматично намалявай ефектите на по-слаби устройства",
+    "visualEffectsFull": "Пълни",
+    "visualEffectsReduced": "Намалени",
+    "visualEffectsReducedDescription": "По-малко анимации и изображения с по-ниска резолюция",
     "hideSpoilers": "Скривай спойлери за негледани епизоди",
     "hideSpoilersDescription": "Замазвай миниатюри и описания за негледани епизоди",
     "playerBackend": "Енджин на плеъра",
@@ -151,7 +154,7 @@
     "bufferSizeAuto": "Автоматично (препоръчително)",
     "bufferSizeWarning": "Налична памет ${heap}MB. Буфер ${size}MB може да повлияе на възпроизвеждането.",
     "defaultQualityTitle": "Качество по подразбиране",
-    "defaultQualityDescription": "Използва се при стартиране на възпроизвеждане. По-ниските стойности намаляват трафика.",
+    "musicQualityTitle": "Качество на музиката",
     "subtitleStyling": "Стил на субтитрите",
     "subtitleStylingDescription": "Настройване на вида на субтитрите",
     "smallSkipDuration": "Малко прескачане",
@@ -245,10 +248,9 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Показвай какво гледате в Discord",
-    "trakt": "Trakt",
-    "traktDescription": "Синхронизирай историята на гледане с Trakt",
     "services": "Услуги",
     "servicesDescription": "Свържи Trakt, MyAnimeList, Seerr и още",
+    "manageLibrariesDescription": "Пренареждай и скривай библиотеки",
     "companionRemoteServer": "Сървър за дистанционно управление",
     "companionRemoteServerDescription": "Позволи на мобилни устройства във вашата мрежа да управляват това приложение",
     "autoPip": "Автоматичен режим картина в картината",
@@ -311,7 +313,6 @@
     "showNavBarLabels": "Показвай етикети в навигационната лента",
     "showNavBarLabelsDescription": "Показвай текстови етикети под иконите в навигационната лента",
     "startupSection": "Начален раздел",
-    "startupSectionDescription": "Изберете кой раздел да отваря Plezy при стартиране",
     "liveTvDefaultFavorites": "По подразбиране към любими канали",
     "liveTvDefaultFavoritesDescription": "Показвай само любими канали при отваряне на телевизия на живо",
     "display": "Дисплей",
@@ -322,14 +323,7 @@
     "player": "Плейър",
     "subtitlesAndConfig": "Субтитри и конфигурация",
     "seekAndTiming": "Търсене и време",
-    "behavior": "Поведение",
-    "manageLibrariesDescription": "Пренареждай и скривай библиотеки",
-    "visualEffects": "Визуални ефекти",
-    "visualEffectsAuto": "Автоматично",
-    "visualEffectsAutoDescription": "Автоматично намалявай ефектите на по-слаби устройства",
-    "visualEffectsFull": "Пълни",
-    "visualEffectsReduced": "Намалени",
-    "visualEffectsReducedDescription": "По-малко анимации и изображения с по-ниска резолюция"
+    "behavior": "Поведение"
   },
   "search": {
     "hint": "Търсене на филми, сериали, музика...",
@@ -418,14 +412,11 @@
   "rateSheet": {
     "title": "Оцени",
     "server": "Сървър",
-    "starValue": "${rating} / 5",
-    "scoreValue": "${score} / 10",
-    "setScore": "Задай оценка",
+    "favorite": "Добави в любими",
+    "favorited": "Добавено в любими",
     "saved": "Запазено",
     "notAvailable": "Няма намерено съвпадение",
-    "noConnectedServices": "Свържи услуга в Настройки, за да оценяваш там.",
-    "favorite": "Добави в любими",
-    "favorited": "Добавено в любими"
+    "noConnectedServices": "Свържи услуга в Настройки, за да оценяваш там."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, филм",
@@ -435,7 +426,15 @@
     "mediaCardWatched": "гледано",
     "mediaCardPartiallyWatched": "${percent} процента изгледано",
     "mediaCardUnwatched": "негледано",
-    "tapToPlay": "Докоснете за възпроизвеждане"
+    "tapToPlay": "Докоснете за възпроизвеждане",
+    "decrease": "Намали",
+    "increase": "Увеличи",
+    "decreaseValue": "Намали ${label}",
+    "increaseValue": "Увеличи ${label}",
+    "hue": "Нюанс",
+    "saturation": "Наситеност",
+    "brightness": "Яркост",
+    "hexColor": "Шестнадесетичен цвят"
   },
   "tooltips": {
     "shufflePlay": "Разбъркано възпроизвеждане",
@@ -481,13 +480,11 @@
     "settingsButton": "Настройки на възпроизвеждането",
     "tracksButton": "Аудио и субтитри",
     "chaptersButton": "Глави",
-    "versionsButton": "Видео версии",
     "versionQualityButton": "Версия и качество",
     "versionColumnHeader": "Версия",
     "qualityColumnHeader": "Качество",
     "qualityOriginal": "Оригинал",
     "qualityPresetLabel": "${resolution}p ${bitrate} Mbps",
-    "qualityBandwidthEstimate": "~${bitrate} Mbps",
     "transcodeUnavailableFallback": "Транскодирането не е налично — пуска се оригиналното качество",
     "pipButton": "Режим картина в картината",
     "aspectRatioButton": "Съотношение на страните",
@@ -530,12 +527,7 @@
     "subtitleDownloadFailed": "Неуспешно изтегляне на субтитър",
     "searchLanguages": "Търсене на езици..."
   },
-  "userStatus": {
-    "admin": "Администратор",
-    "restricted": "Ограничен",
-    "protected": "Защитен",
-    "current": "ТЕКУЩ"
-  },
+  "userStatus": {},
   "messages": {
     "markedAsWatched": "Маркирано като гледано",
     "markedAsUnwatched": "Маркирано като негледано",
@@ -676,8 +668,7 @@
     "pinProtectionOptional": "PIN защита (по желание)",
     "pinExplain": "Изисква се 4-цифрен PIN за смяна на профили.",
     "continueButton": "Продължи",
-    "pinsDontMatch": "PIN кодовете не съвпадат",
-    "initializeServicesFailed": "Неуспешно инициализиране на услугите за профили"
+    "pinsDontMatch": "PIN кодовете не съвпадат"
   },
   "connections": {
     "sectionTitle": "Връзки",
@@ -692,7 +683,6 @@
   },
   "discover": {
     "title": "Открий",
-    "switchProfile": "Смяна на профил",
     "noContentAvailable": "Няма налично съдържание",
     "addMediaToLibraries": "Добавете медия към библиотеките си",
     "continueWatching": "Продължи гледането",
@@ -721,8 +711,6 @@
     "connectionFailed": "Не може да се осъществи връзка с медиен сървър",
     "failedToLoad": "Неуспешно зареждане на ${context}: ${error}",
     "noClientAvailable": "Няма наличен клиент",
-    "authenticationFailed": "Удостоверяването е неуспешно: ${error}",
-    "couldNotLaunchUrl": "URL адресът за удостоверяване не може да бъде отворен",
     "pleaseEnterToken": "Моля, въведете токен",
     "invalidToken": "Невалиден токен",
     "failedToVerifyToken": "Неуспешна проверка на токена: ${error}",
@@ -749,6 +737,8 @@
     "allLibrariesHidden": "Всички библиотеки са скрити",
     "hiddenLibrariesCount": "Скрити библиотеки (${count})",
     "thisLibraryIsEmpty": "Тази библиотека е празна",
+    "noItemsMatchFilters": "Няма елементи, съответстващи на активните филтри",
+    "resetFilters": "Нулирай филтрите",
     "all": "Всички",
     "clearAll": "Изчисти всички",
     "scanLibraryConfirm": "Сигурни ли сте, че искате да сканирате \"${title}\"?",
@@ -804,7 +794,6 @@
       "communityRating": "Оценка от общността",
       "criticRating": "Оценка от критиците",
       "userRating": "Потребителска оценка",
-      "lastPlayed": "Последно възпроизведено",
       "datePlayed": "Дата на възпроизвеждане",
       "playCount": "Брой възпроизвеждания",
       "productionYear": "Година на производство",
@@ -818,9 +807,7 @@
       "dateShared": "Дата на споделяне",
       "latestEpisodeAirDate": "Дата на излъчване на последния епизод",
       "lastEpisodeDateAdded": "Дата на добавяне на последния епизод"
-    },
-    "noItemsMatchFilters": "Няма елементи, съответстващи на активните филтри",
-    "resetFilters": "Нулирай филтрите"
+    }
   },
   "about": {
     "title": "Относно",
@@ -830,7 +817,6 @@
     "viewLicensesDescription": "Виж лицензите на библиотеки на трети страни"
   },
   "serverSelection": {
-    "allServerConnectionsFailed": "Не може да се осъществи връзка с нито един сървър. Проверете мрежата.",
     "noServersFoundForAccount": "Не са намерени сървъри за ${username} (${email})",
     "failedToLoadServers": "Неуспешно зареждане на сървъри: ${error}"
   },
@@ -893,7 +879,6 @@
     "watchlistUpdateFailed": "Неуспешно обновяване на списъка за гледане",
     "notInLibrary": "Не е в твоята библиотека",
     "inTheseLibraries": "В тези библиотеки",
-    "availableOn": "Налично на ${server}",
     "checkingLibrary": "Проверка на твоята библиотека...",
     "emptyTitle": "Тук все още няма нищо",
     "emptyMessage": "Редовете от ${source} ще се появят тук, когато има съдържание.",
@@ -907,6 +892,8 @@
     "guide": "ТВ програма",
     "noChannels": "Няма налични канали",
     "noDvr": "Няма конфигуриран DVR на нито един сървър",
+    "serverUnavailable": "Сървърът за телевизия на живо не е наличен.",
+    "serverNotConnected": "Сървърът за телевизия на живо не е свързан.",
     "noPrograms": "Няма налични програмни данни",
     "liveStreamFailed": "Потокът на живо се провали",
     "unknownProgram": "Неизвестна програма",
@@ -942,7 +929,6 @@
     "scheduledRecordings": "Планирани",
     "recordingRules": "Правила за запис",
     "noScheduledRecordings": "Няма планирани записи",
-    "noRecordingRules": "Все още няма правила за запис",
     "manageRecording": "Управление на запис",
     "cancelRecording": "Отмени запис",
     "cancelRecordingTitle": "Да се отмени ли този запис?",
@@ -959,7 +945,6 @@
     "recordingCancelled": "Записът е отменен",
     "recordingRuleDeleted": "Правилото за запис е изтрито",
     "processRecordingRules": "Преоцени правилата",
-    "loadingRecordings": "Зареждане на записи...",
     "recordingInProgress": "Записва се сега",
     "recordingsCount": "${count} планирани",
     "editRule": "Редактирай правило",
@@ -973,7 +958,6 @@
     "title": "Колекции",
     "collection": "Колекция",
     "empty": "Колекцията е празна",
-    "unknownLibrarySection": "Не може да се изтрие: неизвестна секция на библиотеката",
     "deleteCollection": "Изтрий колекция",
     "deleteConfirm": "Да се изтрие ли \"${title}\"? Това не може да бъде отменено.",
     "deleted": "Колекцията е изтрита",
@@ -1013,6 +997,7 @@
     "itemAdded": "Добавено към плейлист",
     "itemRemoved": "Премахнато от плейлист",
     "selectPlaylist": "Избери плейлист",
+    "searchPlaylists": "Търсене в плейлисти...",
     "errorCreating": "Неуспешно създаване на плейлист",
     "errorDeleting": "Неуспешно изтриване на плейлист",
     "errorLoading": "Неуспешно зареждане на плейлисти",
@@ -1102,15 +1087,15 @@
     "participantResumed": "${name} продължи",
     "participantSeeked": "${name} превъртя",
     "participantBuffering": "${name} буферира",
+    "participantNeedsUpdate": "${name} е с по-стара версия на приложението — синхронизирането не е налично",
+    "resumingWithout": "Продължаване без ${name}",
     "waitingForParticipants": "Изчакване другите да заредят...",
+    "waitingForName": "Изчакване на ${name}...",
     "recentRooms": "Скорошни стаи",
     "renameRoom": "Преименувай стая",
     "removeRoom": "Премахни",
     "guestSwitchUnavailable": "Превключването не е възможно — сървърът е недостъпен за синхронизация",
-    "guestSwitchFailed": "Превключването не е възможно — съдържанието не е намерено на този сървър",
-    "participantNeedsUpdate": "${name} е с по-стара версия на приложението — синхронизирането не е налично",
-    "resumingWithout": "Продължаване без ${name}",
-    "waitingForName": "Изчакване на ${name}..."
+    "guestSwitchFailed": "Превключването не е възможно — съдържанието не е намерено на този сървър"
   },
   "downloads": {
     "title": "Изтегляния",
@@ -1155,7 +1140,6 @@
     "customAmount": "Персонален брой...",
     "includeSpecials": "Включи специалните",
     "howManyEpisodes": "Колко епизода?",
-    "itemsQueued": "${count} елемента са добавени в опашката за изтегляне",
     "keepSynced": "Поддържай синхронизирано",
     "downloadOnce": "Изтегли еднократно",
     "keepNUnwatched": "Пази ${count} негледани",
@@ -1204,7 +1188,6 @@
     "unknownDevice": "Непознато устройство",
     "session": {
       "startingServer": "Стартиране на сървър за дистанционно управление...",
-      "failedToCreate": "Неуспешно стартиране на сървър за дистанционно управление:",
       "hostAddress": "Адрес на хоста",
       "connected": "Свързан",
       "serverRunning": "Сървърът за дистанционно управление е активен",
@@ -1265,6 +1248,8 @@
     "errors": {
       "noNetworkInterface": "Не е намерен мрежов интерфейс",
       "authenticationFailed": "Неуспешно удостоверяване",
+      "serverStartFailed": "Неуспешно стартиране на отдалечения сървър: ${error}",
+      "commandFailed": "Неуспешно изпращане на отдалечена команда: ${error}",
       "joinTimedOut": "Времето за присъединяване към сесията изтече",
       "failedToConnectAnyAddress": "Неуспешно свързване към който и да е адрес",
       "connectionLostAfterAttempts": "Връзката е загубена след ${attempts} опита",
@@ -1538,7 +1523,6 @@
     "quickConnectFailed": "Quick Connect е неуспешен: ${error}",
     "addPlexTitle": "Вход с Plex",
     "pinExpired": "PIN-ът изтече преди вход. Моля, опитайте отново.",
-    "duplicatePlexAccount": "Вече сте влезли в Plex. Излезте, за да смените акаунта.",
     "failedToRegisterAccount": "Неуспешна регистрация на акаунт: ${error}",
     "enterJellyfinUrlError": "Въведете URL адреса на вашия Jellyfin сървър",
     "addConnectionTitle": "Добави връзка",

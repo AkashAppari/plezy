@@ -64,7 +64,7 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
     } catch (e) {
       setStateIfMounted(() {
         _isStarting = false;
-        _errorMessage = e.toString();
+        _errorMessage = t.companionRemote.errors.serverStartFailed(error: e.toString().replaceFirst('Exception: ', ''));
       });
     }
   }
@@ -113,15 +113,7 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
           if (_errorMessage != null) {
             return AlertDialog(
               title: Text(t.common.error),
-              content: Column(
-                mainAxisSize: .min,
-                crossAxisAlignment: .start,
-                children: [
-                  Text(t.companionRemote.session.failedToCreate),
-                  const SizedBox(height: 8),
-                  Text(_errorMessage!, style: const TextStyle(fontFamily: 'monospace')),
-                ],
-              ),
+              content: Text(_errorMessage!, style: const TextStyle(fontFamily: 'monospace')),
               actions: [
                 FocusableButton(
                   autofocus: true,

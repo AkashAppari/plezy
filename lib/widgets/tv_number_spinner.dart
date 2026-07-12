@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../i18n/strings.g.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/focus_theme.dart';
 import '../focus/input_mode_tracker.dart';
@@ -155,7 +156,7 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> with KeyRepeatHelper<
               onPressed: canDecrement ? _decrement : null,
               onLongPressStart: canDecrement ? () => startRepeat(_decrement) : null,
               onLongPressEnd: stopRepeat,
-              semanticLabel: 'Decrease',
+              semanticLabel: Translations.of(context).accessibility.decrease,
             ),
             const SizedBox(width: 16),
             Container(
@@ -172,7 +173,7 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> with KeyRepeatHelper<
               onPressed: canIncrement ? _increment : null,
               onLongPressStart: canIncrement ? () => startRepeat(_increment) : null,
               onLongPressEnd: stopRepeat,
-              semanticLabel: 'Increase',
+              semanticLabel: Translations.of(context).accessibility.increase,
             ),
           ],
         ),

@@ -3,7 +3,6 @@
     "title": "Plezy"
   },
   "auth": {
-    "signIn": "Anmelden",
     "signInWithPlex": "Mit Plex anmelden",
     "showQRCode": "QR-Code anzeigen",
     "authenticate": "Authentifizieren",
@@ -56,10 +55,8 @@
     "episodeNumberTitle": "Episode ${number} - ${title}",
     "chapterNumber": "Kapitel ${number}",
     "reconnect": "Erneut verbinden",
-    "exit": "Beenden",
     "viewAll": "Alle anzeigen",
     "checkingNetwork": "Netzwerk wird geprüft...",
-    "refreshingServers": "Server werden aktualisiert...",
     "loadingServers": "Server werden geladen...",
     "connectingToServers": "Verbindung zu Servern...",
     "startingOfflineMode": "Offlinemodus wird gestartet...",
@@ -139,6 +136,12 @@
     "tvFullCardLayoutDescription": "TV-Karten nur mit Bild verwenden und Darstellernamen einblenden",
     "focusGlow": "Fokus-Leuchten",
     "focusGlowDescription": "Sanftes Leuchten um die fokussierte Karte anzeigen",
+    "visualEffects": "Visuelle Effekte",
+    "visualEffectsAuto": "Automatisch",
+    "visualEffectsAutoDescription": "Effekte auf leistungsschwachen Geräten automatisch reduzieren",
+    "visualEffectsFull": "Vollständig",
+    "visualEffectsReduced": "Reduziert",
+    "visualEffectsReducedDescription": "Weniger Animationen und Grafiken mit niedrigerer Auflösung",
     "hideSpoilers": "Spoiler für nicht gesehene Episoden verbergen",
     "hideSpoilersDescription": "Vorschaubilder und Beschreibungen ungesehener Episoden verwischen",
     "playerBackend": "Player-Backend",
@@ -151,7 +154,7 @@
     "bufferSizeAuto": "Auto (Empfohlen)",
     "bufferSizeWarning": "${heap}MB Speicher verfügbar. Ein ${size}MB-Puffer kann die Wiedergabe beeinträchtigen.",
     "defaultQualityTitle": "Standardqualität",
-    "defaultQualityDescription": "Wird beim Starten der Wiedergabe verwendet. Niedrigere Werte reduzieren die Bandbreite.",
+    "musicQualityTitle": "Musikqualität",
     "subtitleStyling": "Untertitel-Stil",
     "subtitleStylingDescription": "Aussehen von Untertiteln anpassen",
     "smallSkipDuration": "Kleine Sprungdauer",
@@ -245,10 +248,9 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Zeige auf Discord, was du gerade schaust",
-    "trakt": "Trakt",
-    "traktDescription": "Wiedergabeverlauf mit Trakt synchronisieren",
     "services": "Dienste",
     "servicesDescription": "Trakt, MyAnimeList, Seerr und mehr verbinden",
+    "manageLibrariesDescription": "Mediatheken neu anordnen und ausblenden",
     "companionRemoteServer": "Companion Remote Server",
     "companionRemoteServerDescription": "Mobilgeräten in deinem Netzwerk erlauben, diese App zu steuern",
     "autoPip": "Automatisches Bild-in-Bild",
@@ -311,7 +313,6 @@
     "showNavBarLabels": "Navigationsleisten-Beschriftungen anzeigen",
     "showNavBarLabelsDescription": "Textbeschriftungen unter den Symbolen der Navigationsleiste anzeigen",
     "startupSection": "Startbereich",
-    "startupSectionDescription": "Legt fest, welchen Bereich Plezy beim Start öffnet",
     "liveTvDefaultFavorites": "Standardmäßig Favoritenkanäle",
     "liveTvDefaultFavoritesDescription": "Beim Öffnen von Live TV nur Favoritenkanäle anzeigen",
     "display": "Anzeige",
@@ -322,14 +323,7 @@
     "player": "Wiedergabe",
     "subtitlesAndConfig": "Untertitel & Konfiguration",
     "seekAndTiming": "Spulen & Timing",
-    "behavior": "Verhalten",
-    "manageLibrariesDescription": "Mediatheken neu anordnen und ausblenden",
-    "visualEffects": "Visuelle Effekte",
-    "visualEffectsAuto": "Automatisch",
-    "visualEffectsAutoDescription": "Effekte auf leistungsschwachen Geräten automatisch reduzieren",
-    "visualEffectsFull": "Vollständig",
-    "visualEffectsReduced": "Reduziert",
-    "visualEffectsReducedDescription": "Weniger Animationen und Grafiken mit niedrigerer Auflösung"
+    "behavior": "Verhalten"
   },
   "search": {
     "hint": "Filme, Serien, Musik suchen...",
@@ -418,14 +412,11 @@
   "rateSheet": {
     "title": "Bewerten",
     "server": "Server",
-    "starValue": "${rating} / 5",
-    "scoreValue": "${score} / 10",
-    "setScore": "Eine Wertung festlegen",
+    "favorite": "Favorit",
+    "favorited": "Favorisiert",
     "saved": "Gespeichert",
     "notAvailable": "Keine Übereinstimmung gefunden",
-    "noConnectedServices": "Verbinde einen Dienst in den Einstellungen, um dort zu bewerten.",
-    "favorite": "Favorit",
-    "favorited": "Favorisiert"
+    "noConnectedServices": "Verbinde einen Dienst in den Einstellungen, um dort zu bewerten."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, Film",
@@ -435,7 +426,15 @@
     "mediaCardWatched": "angesehen",
     "mediaCardPartiallyWatched": "${percent} Prozent angesehen",
     "mediaCardUnwatched": "ungeschaut",
-    "tapToPlay": "Zum Abspielen tippen"
+    "tapToPlay": "Zum Abspielen tippen",
+    "decrease": "Verringern",
+    "increase": "Erhöhen",
+    "decreaseValue": "${label} verringern",
+    "increaseValue": "${label} erhöhen",
+    "hue": "Farbton",
+    "saturation": "Sättigung",
+    "brightness": "Helligkeit",
+    "hexColor": "Hex-Farbe"
   },
   "tooltips": {
     "shufflePlay": "Zufallswiedergabe",
@@ -481,13 +480,11 @@
     "settingsButton": "Wiedergabeeinstellungen",
     "tracksButton": "Audio und Untertitel",
     "chaptersButton": "Kapitel",
-    "versionsButton": "Videoversionen",
     "versionQualityButton": "Version & Qualität",
     "versionColumnHeader": "Version",
     "qualityColumnHeader": "Qualität",
     "qualityOriginal": "Original",
     "qualityPresetLabel": "${resolution}p ${bitrate} Mbps",
-    "qualityBandwidthEstimate": "~${bitrate} Mbps",
     "transcodeUnavailableFallback": "Transkodierung nicht verfügbar — Wiedergabe in Originalqualität",
     "pipButton": "Bild-in-Bild Modus",
     "aspectRatioButton": "Seitenverhältnis",
@@ -530,12 +527,7 @@
     "subtitleDownloadFailed": "Untertitel konnte nicht heruntergeladen werden",
     "searchLanguages": "Sprachen suchen..."
   },
-  "userStatus": {
-    "admin": "Eigentümer",
-    "restricted": "Eingeschränkt",
-    "protected": "Geschützt",
-    "current": "AKTUELL"
-  },
+  "userStatus": {},
   "messages": {
     "markedAsWatched": "Als gesehen markiert",
     "markedAsUnwatched": "Als ungesehen markiert",
@@ -676,8 +668,7 @@
     "pinProtectionOptional": "PIN-Schutz (optional)",
     "pinExplain": "4-stellige PIN zum Profilwechsel erforderlich.",
     "continueButton": "Weiter",
-    "pinsDontMatch": "PINs stimmen nicht überein",
-    "initializeServicesFailed": "Profildienste konnten nicht initialisiert werden"
+    "pinsDontMatch": "PINs stimmen nicht überein"
   },
   "connections": {
     "sectionTitle": "Verbindungen",
@@ -692,7 +683,6 @@
   },
   "discover": {
     "title": "Entdecken",
-    "switchProfile": "Profil wechseln",
     "noContentAvailable": "Kein Inhalt verfügbar",
     "addMediaToLibraries": "Medien zur Mediathek hinzufügen",
     "continueWatching": "Weiterschauen",
@@ -721,8 +711,6 @@
     "connectionFailed": "Keine Verbindung zum Medienserver möglich",
     "failedToLoad": "Fehler beim Laden von ${context}: ${error}",
     "noClientAvailable": "Kein Client verfügbar",
-    "authenticationFailed": "Authentifizierung fehlgeschlagen: ${error}",
-    "couldNotLaunchUrl": "Auth-URL konnte nicht geöffnet werden",
     "pleaseEnterToken": "Bitte Token eingeben",
     "invalidToken": "Ungültiges Token",
     "failedToVerifyToken": "Token-Verifizierung fehlgeschlagen: ${error}",
@@ -749,6 +737,8 @@
     "allLibrariesHidden": "Alle Mediatheken sind ausgeblendet",
     "hiddenLibrariesCount": "Ausgeblendete Mediatheken (${count})",
     "thisLibraryIsEmpty": "Diese Mediathek ist leer",
+    "noItemsMatchFilters": "Keine Elemente entsprechen den aktiven Filtern",
+    "resetFilters": "Filter zurücksetzen",
     "all": "Alle",
     "clearAll": "Alle löschen",
     "scanLibraryConfirm": "„${title}“ wirklich scannen?",
@@ -804,7 +794,6 @@
       "communityRating": "Community-Bewertung",
       "criticRating": "Kritikerbewertung",
       "userRating": "Benutzerbewertung",
-      "lastPlayed": "Zuletzt abgespielt",
       "datePlayed": "Wiedergabedatum",
       "playCount": "Wiedergaben",
       "productionYear": "Produktionsjahr",
@@ -818,9 +807,7 @@
       "dateShared": "Datum geteilt",
       "latestEpisodeAirDate": "Letztes Folgenausstrahlungsdatum",
       "lastEpisodeDateAdded": "Datum der zuletzt hinzugefügten Folge"
-    },
-    "noItemsMatchFilters": "Keine Elemente entsprechen den aktiven Filtern",
-    "resetFilters": "Filter zurücksetzen"
+    }
   },
   "about": {
     "title": "Über",
@@ -830,7 +817,6 @@
     "viewLicensesDescription": "Lizenzen von Drittanbieter-Bibliotheken anzeigen"
   },
   "serverSelection": {
-    "allServerConnectionsFailed": "Keine Verbindung zu Servern möglich. Prüfe dein Netzwerk.",
     "noServersFoundForAccount": "Keine Server gefunden für ${username} (${email})",
     "failedToLoadServers": "Server konnten nicht geladen werden: ${error}"
   },
@@ -893,7 +879,6 @@
     "watchlistUpdateFailed": "Merkliste konnte nicht aktualisiert werden",
     "notInLibrary": "Nicht in deiner Mediathek",
     "inTheseLibraries": "In diesen Mediatheken",
-    "availableOn": "Verfügbar auf ${server}",
     "checkingLibrary": "Deine Mediathek wird überprüft...",
     "emptyTitle": "Hier ist noch nichts",
     "emptyMessage": "Zeilen aus ${source} erscheinen hier, sobald sie Inhalte enthalten.",
@@ -907,6 +892,8 @@
     "guide": "Programmführer",
     "noChannels": "Keine Kanäle verfügbar",
     "noDvr": "Kein DVR auf einem Server konfiguriert",
+    "serverUnavailable": "Der Live-TV-Server ist nicht verfügbar.",
+    "serverNotConnected": "Der Live-TV-Server ist nicht verbunden.",
     "noPrograms": "Keine Programmdaten verfügbar",
     "liveStreamFailed": "Livestream fehlgeschlagen",
     "unknownProgram": "Unbekannte Sendung",
@@ -942,7 +929,6 @@
     "scheduledRecordings": "Geplant",
     "recordingRules": "Aufnahmeregeln",
     "noScheduledRecordings": "Keine geplanten Aufnahmen",
-    "noRecordingRules": "Noch keine Aufnahmeregeln",
     "manageRecording": "Aufnahme verwalten",
     "cancelRecording": "Aufnahme abbrechen",
     "cancelRecordingTitle": "Diese Aufnahme abbrechen?",
@@ -959,7 +945,6 @@
     "recordingCancelled": "Aufnahme abgebrochen",
     "recordingRuleDeleted": "Aufnahmeregel gelöscht",
     "processRecordingRules": "Regeln neu bewerten",
-    "loadingRecordings": "Aufnahmen werden geladen ...",
     "recordingInProgress": "Wird jetzt aufgenommen",
     "recordingsCount": "${count} geplant",
     "editRule": "Regel bearbeiten",
@@ -973,7 +958,6 @@
     "title": "Sammlungen",
     "collection": "Sammlung",
     "empty": "Sammlung ist leer",
-    "unknownLibrarySection": "Löschen nicht möglich: Unbekannte Bibliothekssektion",
     "deleteCollection": "Sammlung löschen",
     "deleteConfirm": "\"${title}\" löschen? Dies kann nicht rückgängig gemacht werden.",
     "deleted": "Sammlung gelöscht",
@@ -1013,6 +997,7 @@
     "itemAdded": "Zur Wiedergabeliste hinzugefügt",
     "itemRemoved": "Aus Wiedergabeliste entfernt",
     "selectPlaylist": "Wiedergabeliste auswählen",
+    "searchPlaylists": "Wiedergabelisten durchsuchen...",
     "errorCreating": "Wiedergabeliste konnte nicht erstellt werden",
     "errorDeleting": "Wiedergabeliste konnte nicht gelöscht werden",
     "errorLoading": "Wiedergabelisten konnten nicht geladen werden",
@@ -1102,15 +1087,15 @@
     "participantResumed": "${name} hat fortgesetzt",
     "participantSeeked": "${name} hat gespult",
     "participantBuffering": "${name} puffert",
+    "participantNeedsUpdate": "${name} verwendet eine ältere Appversion — Synchronisierung nicht verfügbar",
+    "resumingWithout": "Fortfahren ohne ${name}",
     "waitingForParticipants": "Warte auf andere zum Laden...",
+    "waitingForName": "Warten auf ${name}...",
     "recentRooms": "Letzte Räume",
     "renameRoom": "Raum umbenennen",
     "removeRoom": "Entfernen",
     "guestSwitchUnavailable": "Wechsel fehlgeschlagen — Server nicht für Synchronisierung verfügbar",
-    "guestSwitchFailed": "Wechsel fehlgeschlagen — Inhalt auf diesem Server nicht gefunden",
-    "participantNeedsUpdate": "${name} verwendet eine ältere Appversion — Synchronisierung nicht verfügbar",
-    "resumingWithout": "Fortfahren ohne ${name}",
-    "waitingForName": "Warten auf ${name}..."
+    "guestSwitchFailed": "Wechsel fehlgeschlagen — Inhalt auf diesem Server nicht gefunden"
   },
   "downloads": {
     "title": "Downloads",
@@ -1155,7 +1140,6 @@
     "customAmount": "Eigene Anzahl...",
     "includeSpecials": "Specials einschließen",
     "howManyEpisodes": "Wie viele Episoden?",
-    "itemsQueued": "${count} Elemente zum Download eingereiht",
     "keepSynced": "Synchronisiert halten",
     "downloadOnce": "Einmal herunterladen",
     "keepNUnwatched": "${count} ungesehene behalten",
@@ -1204,7 +1188,6 @@
     "unknownDevice": "Unbekanntes Gerät",
     "session": {
       "startingServer": "Remote-Server wird gestartet...",
-      "failedToCreate": "Remote-Server konnte nicht gestartet werden:",
       "hostAddress": "Host-Adresse",
       "connected": "Verbunden",
       "serverRunning": "Remote-Server aktiv",
@@ -1265,6 +1248,8 @@
     "errors": {
       "noNetworkInterface": "Keine Netzwerkschnittstelle gefunden",
       "authenticationFailed": "Authentifizierung fehlgeschlagen",
+      "serverStartFailed": "Remote-Server konnte nicht gestartet werden: ${error}",
+      "commandFailed": "Remote-Befehl konnte nicht gesendet werden: ${error}",
       "joinTimedOut": "Zeitüberschreitung beim Beitreten zur Sitzung",
       "failedToConnectAnyAddress": "Keine Verbindung zu einer Adresse möglich",
       "connectionLostAfterAttempts": "Verbindung nach ${attempts} Versuchen verloren",
@@ -1538,7 +1523,6 @@
     "quickConnectFailed": "Quick Connect fehlgeschlagen: ${error}",
     "addPlexTitle": "Mit Plex anmelden",
     "pinExpired": "PIN ist vor der Anmeldung abgelaufen. Bitte erneut versuchen.",
-    "duplicatePlexAccount": "Bereits bei Plex angemeldet. Melde dich ab, um Konten zu wechseln.",
     "failedToRegisterAccount": "Konto konnte nicht registriert werden: ${error}",
     "enterJellyfinUrlError": "Gib die URL deines Jellyfin-Servers ein",
     "addConnectionTitle": "Verbindung hinzufügen",

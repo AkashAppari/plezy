@@ -71,6 +71,15 @@ else
 fi
 rm -f "$out"
 
+# 3. Translation hygiene
+section "translation hygiene"
+if python3 scripts/clean_translations.py --check --strict; then
+  ok "locale files normalized and no unused keys found"
+else
+  fail "translation files need cleanup or contain unused keys"
+  FAILED=1
+fi
+
 # 3. Native formatting
 section "native format"
 out="$(mktemp)"

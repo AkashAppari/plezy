@@ -3,7 +3,6 @@
     "title": "Plezy"
   },
   "auth": {
-    "signIn": "Inloggen",
     "signInWithPlex": "Inloggen met Plex",
     "showQRCode": "Toon QR-code",
     "authenticate": "Authenticeren",
@@ -56,10 +55,8 @@
     "episodeNumberTitle": "Aflevering ${number} - ${title}",
     "chapterNumber": "Hoofdstuk ${number}",
     "reconnect": "Opnieuw verbinden",
-    "exit": "Afsluiten",
     "viewAll": "Alles weergeven",
     "checkingNetwork": "Netwerk controleren...",
-    "refreshingServers": "Servers vernieuwen...",
     "loadingServers": "Servers laden...",
     "connectingToServers": "Verbinden met servers...",
     "startingOfflineMode": "Offlinemodus starten...",
@@ -139,6 +136,12 @@
     "tvFullCardLayoutDescription": "Gebruik tv-kaarten met alleen afbeeldingen en namen van acteurs als overlay",
     "focusGlow": "Focusgloed",
     "focusGlowDescription": "Toon een zachte gloed rond de kaart met focus",
+    "visualEffects": "Visuele effecten",
+    "visualEffectsAuto": "Automatisch",
+    "visualEffectsAutoDescription": "Effecten automatisch verminderen op apparaten met laag vermogen",
+    "visualEffectsFull": "Volledig",
+    "visualEffectsReduced": "Verminderd",
+    "visualEffectsReducedDescription": "Minder animaties en illustraties met lagere resolutie",
     "hideSpoilers": "Spoilers voor ongekeken afleveringen verbergen",
     "hideSpoilersDescription": "Vervaag miniaturen en beschrijvingen voor niet-bekeken afleveringen",
     "playerBackend": "Speler backend",
@@ -151,7 +154,7 @@
     "bufferSizeAuto": "Auto (Aanbevolen)",
     "bufferSizeWarning": "${heap}MB geheugen beschikbaar. Een buffer van ${size}MB kan afspelen beïnvloeden.",
     "defaultQualityTitle": "Standaardkwaliteit",
-    "defaultQualityDescription": "Wordt gebruikt bij het starten van de weergave. Lagere waarden verminderen de bandbreedte.",
+    "musicQualityTitle": "Muziekkwaliteit",
     "subtitleStyling": "Ondertitel opmaak",
     "subtitleStylingDescription": "Pas ondertitel uiterlijk aan",
     "smallSkipDuration": "Korte skip duur",
@@ -245,10 +248,9 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Toon op Discord wat je aan het kijken bent",
-    "trakt": "Trakt",
-    "traktDescription": "Kijkgeschiedenis synchroniseren met Trakt",
     "services": "Services",
     "servicesDescription": "Verbind Trakt, MyAnimeList, Seerr en meer",
+    "manageLibrariesDescription": "Bibliotheken herordenen en verbergen",
     "companionRemoteServer": "Companion Remote-server",
     "companionRemoteServerDescription": "Sta mobiele apparaten op je netwerk toe om deze app te bedienen",
     "autoPip": "Automatische beeld-in-beeld",
@@ -311,7 +313,6 @@
     "showNavBarLabels": "Navigatiebalk labels tonen",
     "showNavBarLabelsDescription": "Tekstlabels onder de pictogrammen van de navigatiebalk weergeven",
     "startupSection": "Opstartsectie",
-    "startupSectionDescription": "Kies welke sectie Plezy opent bij het opstarten",
     "liveTvDefaultFavorites": "Standaard favoriete zenders",
     "liveTvDefaultFavoritesDescription": "Toon alleen favoriete zenders bij het openen van Live TV",
     "display": "Weergave",
@@ -322,14 +323,7 @@
     "player": "Speler",
     "subtitlesAndConfig": "Ondertitels en configuratie",
     "seekAndTiming": "Zoeken en timing",
-    "behavior": "Gedrag",
-    "manageLibrariesDescription": "Bibliotheken herordenen en verbergen",
-    "visualEffects": "Visuele effecten",
-    "visualEffectsAuto": "Automatisch",
-    "visualEffectsAutoDescription": "Effecten automatisch verminderen op apparaten met laag vermogen",
-    "visualEffectsFull": "Volledig",
-    "visualEffectsReduced": "Verminderd",
-    "visualEffectsReducedDescription": "Minder animaties en illustraties met lagere resolutie"
+    "behavior": "Gedrag"
   },
   "search": {
     "hint": "Zoek films, series, muziek...",
@@ -418,14 +412,11 @@
   "rateSheet": {
     "title": "Beoordelen",
     "server": "Server",
-    "starValue": "${rating} / 5",
-    "scoreValue": "${score} / 10",
-    "setScore": "Score instellen",
+    "favorite": "Favoriet",
+    "favorited": "Toegevoegd aan favorieten",
     "saved": "Opgeslagen",
     "notAvailable": "Geen match gevonden",
-    "noConnectedServices": "Verbind een service in Instellingen om daar te beoordelen.",
-    "favorite": "Favoriet",
-    "favorited": "Toegevoegd aan favorieten"
+    "noConnectedServices": "Verbind een service in Instellingen om daar te beoordelen."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",
@@ -435,7 +426,15 @@
     "mediaCardWatched": "bekeken",
     "mediaCardPartiallyWatched": "${percent} procent bekeken",
     "mediaCardUnwatched": "niet bekeken",
-    "tapToPlay": "Tik om af te spelen"
+    "tapToPlay": "Tik om af te spelen",
+    "decrease": "Verlagen",
+    "increase": "Verhogen",
+    "decreaseValue": "${label} verlagen",
+    "increaseValue": "${label} verhogen",
+    "hue": "Tint",
+    "saturation": "Verzadiging",
+    "brightness": "Helderheid",
+    "hexColor": "Hexkleur"
   },
   "tooltips": {
     "shufflePlay": "Willekeurig afspelen",
@@ -481,13 +480,11 @@
     "settingsButton": "Afspeelinstellingen",
     "tracksButton": "Audio en ondertitels",
     "chaptersButton": "Hoofdstukken",
-    "versionsButton": "Videoversies",
     "versionQualityButton": "Versie en kwaliteit",
     "versionColumnHeader": "Versie",
     "qualityColumnHeader": "Kwaliteit",
     "qualityOriginal": "Origineel",
     "qualityPresetLabel": "${resolution}p ${bitrate} Mbps",
-    "qualityBandwidthEstimate": "~${bitrate} Mbps",
     "transcodeUnavailableFallback": "Transcoderen niet beschikbaar — originele kwaliteit wordt afgespeeld",
     "pipButton": "Beeld-in-beeld modus",
     "aspectRatioButton": "Beeldverhouding",
@@ -530,12 +527,7 @@
     "subtitleDownloadFailed": "Ondertitel downloaden mislukt",
     "searchLanguages": "Talen zoeken..."
   },
-  "userStatus": {
-    "admin": "Beheerder",
-    "restricted": "Beperkt",
-    "protected": "Beschermd",
-    "current": "HUIDIG"
-  },
+  "userStatus": {},
   "messages": {
     "markedAsWatched": "Gemarkeerd als gekeken",
     "markedAsUnwatched": "Gemarkeerd als ongekeken",
@@ -676,8 +668,7 @@
     "pinProtectionOptional": "PIN-beveiliging (optioneel)",
     "pinExplain": "4-cijferige PIN vereist om profielen te wisselen.",
     "continueButton": "Doorgaan",
-    "pinsDontMatch": "PIN-codes komen niet overeen",
-    "initializeServicesFailed": "Kan profielservices niet initialiseren"
+    "pinsDontMatch": "PIN-codes komen niet overeen"
   },
   "connections": {
     "sectionTitle": "Verbindingen",
@@ -692,7 +683,6 @@
   },
   "discover": {
     "title": "Ontdekken",
-    "switchProfile": "Wissel van profiel",
     "noContentAvailable": "Geen inhoud beschikbaar",
     "addMediaToLibraries": "Voeg wat media toe aan je bibliotheken",
     "continueWatching": "Verder kijken",
@@ -721,8 +711,6 @@
     "connectionFailed": "Kan geen verbinding maken met mediaserver",
     "failedToLoad": "Kon ${context} niet laden: ${error}",
     "noClientAvailable": "Geen client beschikbaar",
-    "authenticationFailed": "Authenticatie mislukt: ${error}",
-    "couldNotLaunchUrl": "Kon auth URL niet openen",
     "pleaseEnterToken": "Voer een token in",
     "invalidToken": "Ongeldig token",
     "failedToVerifyToken": "Kon token niet verifiëren: ${error}",
@@ -749,6 +737,8 @@
     "allLibrariesHidden": "Alle bibliotheken zijn verborgen",
     "hiddenLibrariesCount": "Verborgen bibliotheken (${count})",
     "thisLibraryIsEmpty": "Deze bibliotheek is leeg",
+    "noItemsMatchFilters": "Geen items komen overeen met de actieve filters",
+    "resetFilters": "Filters opnieuw instellen",
     "all": "Alles",
     "clearAll": "Alles wissen",
     "scanLibraryConfirm": "Weet je zeker dat je \"${title}\" wilt scannen?",
@@ -804,7 +794,6 @@
       "communityRating": "Communitybeoordeling",
       "criticRating": "Criticusbeoordeling",
       "userRating": "Gebruikersbeoordeling",
-      "lastPlayed": "Laatst afgespeeld",
       "datePlayed": "Afspeeldatum",
       "playCount": "Aantal afspelingen",
       "productionYear": "Productiejaar",
@@ -818,9 +807,7 @@
       "dateShared": "Gedeeld op",
       "latestEpisodeAirDate": "Laatste afleveringsuitzending",
       "lastEpisodeDateAdded": "Datum laatst toegevoegde aflevering"
-    },
-    "noItemsMatchFilters": "Geen items komen overeen met de actieve filters",
-    "resetFilters": "Filters opnieuw instellen"
+    }
   },
   "about": {
     "title": "Over",
@@ -830,7 +817,6 @@
     "viewLicensesDescription": "Bekijk licenties van third-party bibliotheken"
   },
   "serverSelection": {
-    "allServerConnectionsFailed": "Kon met geen enkele server verbinden. Controleer je netwerk.",
     "noServersFoundForAccount": "Geen servers gevonden voor ${username} (${email})",
     "failedToLoadServers": "Kon servers niet laden: ${error}"
   },
@@ -876,10 +862,6 @@
       "upcomingMovies": "Aankomende films",
       "upcomingShows": "Aankomende series"
     },
-    "searchHint": "Zoeken in ${source}",
-    "searchEmpty": "Geen resultaten voor \"${query}\"",
-    "searchPrompt": "Zoek naar films en series op ${source}.",
-    "searchFailed": "Zoeken mislukt. Controleer je verbinding en probeer opnieuw.",
     "status": {
       "airing": "Lopend",
       "ended": "Afgelopen",
@@ -897,16 +879,21 @@
     "watchlistUpdateFailed": "Kon kijklijst niet bijwerken",
     "notInLibrary": "Niet in je bibliotheek",
     "inTheseLibraries": "In deze bibliotheken",
-    "availableOn": "Beschikbaar op ${server}",
     "checkingLibrary": "Je bibliotheek controleren...",
     "emptyTitle": "Hier is nog niets",
-    "emptyMessage": "Rijen van ${source} verschijnen hier zodra ze inhoud hebben."
+    "emptyMessage": "Rijen van ${source} verschijnen hier zodra ze inhoud hebben.",
+    "searchHint": "Zoeken in ${source}",
+    "searchEmpty": "Geen resultaten voor \"${query}\"",
+    "searchPrompt": "Zoek naar films en series op ${source}.",
+    "searchFailed": "Zoeken mislukt. Controleer je verbinding en probeer opnieuw."
   },
   "liveTv": {
     "title": "Live TV",
     "guide": "Gids",
     "noChannels": "Geen zenders beschikbaar",
     "noDvr": "Geen DVR geconfigureerd op een server",
+    "serverUnavailable": "De live-tv-server is niet beschikbaar.",
+    "serverNotConnected": "De live-tv-server is niet verbonden.",
     "noPrograms": "Geen programmagegevens beschikbaar",
     "liveStreamFailed": "Livestream mislukt",
     "unknownProgram": "Onbekend programma",
@@ -942,7 +929,6 @@
     "scheduledRecordings": "Gepland",
     "recordingRules": "Opnameregels",
     "noScheduledRecordings": "Geen geplande opnames",
-    "noRecordingRules": "Nog geen opnameregels",
     "manageRecording": "Opname beheren",
     "cancelRecording": "Opname annuleren",
     "cancelRecordingTitle": "Deze opname annuleren?",
@@ -959,7 +945,6 @@
     "recordingCancelled": "Opname geannuleerd",
     "recordingRuleDeleted": "Opnameregel verwijderd",
     "processRecordingRules": "Regels opnieuw evalueren",
-    "loadingRecordings": "Opnames laden...",
     "recordingInProgress": "Nu aan het opnemen",
     "recordingsCount": "${count} gepland",
     "editRule": "Regel bewerken",
@@ -973,7 +958,6 @@
     "title": "Collecties",
     "collection": "Collectie",
     "empty": "Collectie is leeg",
-    "unknownLibrarySection": "Kan niet verwijderen: onbekende bibliotheeksectie",
     "deleteCollection": "Collectie verwijderen",
     "deleteConfirm": "\"${title}\" verwijderen? Dit kan niet ongedaan worden gemaakt.",
     "deleted": "Collectie verwijderd",
@@ -1013,6 +997,7 @@
     "itemAdded": "Toegevoegd aan afspeellijst",
     "itemRemoved": "Verwijderd uit afspeellijst",
     "selectPlaylist": "Selecteer afspeellijst",
+    "searchPlaylists": "Afspeellijsten zoeken...",
     "errorCreating": "Fout bij maken afspeellijst",
     "errorDeleting": "Fout bij verwijderen afspeellijst",
     "errorLoading": "Fout bij laden afspeellijsten",
@@ -1102,15 +1087,15 @@
     "participantResumed": "${name} heeft hervat",
     "participantSeeked": "${name} heeft gespoeld",
     "participantBuffering": "${name} is aan het bufferen",
+    "participantNeedsUpdate": "${name} gebruikt een oudere appversie — synchronisatie niet beschikbaar",
+    "resumingWithout": "Hervatten zonder ${name}",
     "waitingForParticipants": "Wachten tot anderen geladen zijn...",
+    "waitingForName": "Wachten op ${name}...",
     "recentRooms": "Recente kamers",
     "renameRoom": "Kamer hernoemen",
     "removeRoom": "Verwijderen",
     "guestSwitchUnavailable": "Kon niet schakelen — server niet beschikbaar voor synchronisatie",
-    "guestSwitchFailed": "Kon niet schakelen — inhoud niet gevonden op deze server",
-    "participantNeedsUpdate": "${name} gebruikt een oudere appversie — synchronisatie niet beschikbaar",
-    "resumingWithout": "Hervatten zonder ${name}",
-    "waitingForName": "Wachten op ${name}..."
+    "guestSwitchFailed": "Kon niet schakelen — inhoud niet gevonden op deze server"
   },
   "downloads": {
     "title": "Downloads",
@@ -1155,7 +1140,6 @@
     "customAmount": "Aangepast aantal...",
     "includeSpecials": "Specials opnemen",
     "howManyEpisodes": "Hoeveel afleveringen?",
-    "itemsQueued": "${count} items in downloadwachtrij",
     "keepSynced": "Gesynchroniseerd houden",
     "downloadOnce": "Eenmalig downloaden",
     "keepNUnwatched": "${count} onbekeken behouden",
@@ -1204,7 +1188,6 @@
     "unknownDevice": "Onbekend apparaat",
     "session": {
       "startingServer": "Externe server starten...",
-      "failedToCreate": "Kan externe server niet starten:",
       "hostAddress": "Hostadres",
       "connected": "Verbonden",
       "serverRunning": "Externe server actief",
@@ -1265,6 +1248,8 @@
     "errors": {
       "noNetworkInterface": "Geen netwerkinterface gevonden",
       "authenticationFailed": "Authenticatie mislukt",
+      "serverStartFailed": "Kan de externe server niet starten: ${error}",
+      "commandFailed": "Kan de externe opdracht niet verzenden: ${error}",
       "joinTimedOut": "Time-out bij deelnemen aan sessie",
       "failedToConnectAnyAddress": "Kan met geen enkel adres verbinden",
       "connectionLostAfterAttempts": "Verbinding verloren na ${attempts} pogingen",
@@ -1538,7 +1523,6 @@
     "quickConnectFailed": "Quick Connect mislukt: ${error}",
     "addPlexTitle": "Inloggen met Plex",
     "pinExpired": "PIN verlopen vóór inloggen. Probeer opnieuw.",
-    "duplicatePlexAccount": "Al aangemeld bij Plex. Meld je af om van account te wisselen.",
     "failedToRegisterAccount": "Account registreren mislukt: ${error}",
     "enterJellyfinUrlError": "Voer de URL van je Jellyfin-server in",
     "addConnectionTitle": "Verbinding toevoegen",

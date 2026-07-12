@@ -3,7 +3,6 @@
     "title": "Plezy"
   },
   "auth": {
-    "signIn": "登录",
     "signInWithPlex": "使用 Plex 登录",
     "showQRCode": "显示二维码",
     "authenticate": "验证",
@@ -56,10 +55,8 @@
     "episodeNumberTitle": "第${number}集 - ${title}",
     "chapterNumber": "章节 ${number}",
     "reconnect": "重新连接",
-    "exit": "退出",
     "viewAll": "查看全部",
     "checkingNetwork": "正在检查网络...",
-    "refreshingServers": "正在刷新服务器...",
     "loadingServers": "正在加载服务器...",
     "connectingToServers": "正在连接服务器...",
     "startingOfflineMode": "正在启动离线模式...",
@@ -139,6 +136,12 @@
     "tvFullCardLayoutDescription": "使用仅显示图片的 TV 卡片，并叠加演员姓名",
     "focusGlow": "焦点光晕",
     "focusGlowDescription": "在获得焦点的卡片周围显示柔和的光晕",
+    "visualEffects": "视觉效果",
+    "visualEffectsAuto": "自动",
+    "visualEffectsAutoDescription": "在性能较低的设备上自动减少效果",
+    "visualEffectsFull": "完整",
+    "visualEffectsReduced": "简化",
+    "visualEffectsReducedDescription": "减少动画并使用较低分辨率的封面图片",
     "hideSpoilers": "隐藏未看剧集的剧透内容",
     "hideSpoilersDescription": "模糊未观看剧集的缩略图和描述",
     "playerBackend": "播放器引擎",
@@ -151,7 +154,7 @@
     "bufferSizeAuto": "自动（推荐）",
     "bufferSizeWarning": "可用内存 ${heap}MB。${size}MB 缓冲可能影响播放。",
     "defaultQualityTitle": "默认画质",
-    "defaultQualityDescription": "开始播放时使用。较低的值可减少带宽。",
+    "musicQualityTitle": "音乐质量",
     "subtitleStyling": "字幕样式",
     "subtitleStylingDescription": "调整字幕外观",
     "smallSkipDuration": "短跳过时长",
@@ -245,10 +248,9 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord 动态状态",
     "discordRichPresenceDescription": "在 Discord 上显示您正在观看的内容",
-    "trakt": "Trakt",
-    "traktDescription": "将观看历史与 Trakt 同步",
     "services": "服务",
     "servicesDescription": "连接 Trakt、MyAnimeList、Seerr 等",
+    "manageLibrariesDescription": "重新排序和隐藏媒体库",
     "companionRemoteServer": "配套遥控服务器",
     "companionRemoteServerDescription": "允许网络上的移动设备控制此应用",
     "autoPip": "自动画中画",
@@ -311,7 +313,6 @@
     "showNavBarLabels": "显示导航栏标签",
     "showNavBarLabelsDescription": "在导航栏图标下方显示文字标签",
     "startupSection": "启动页面",
-    "startupSectionDescription": "选择 Plezy 启动时打开的页面",
     "liveTvDefaultFavorites": "默认显示收藏频道",
     "liveTvDefaultFavoritesDescription": "打开直播电视时仅显示收藏频道",
     "display": "显示",
@@ -322,14 +323,7 @@
     "player": "播放器",
     "subtitlesAndConfig": "字幕与配置",
     "seekAndTiming": "跳转与计时",
-    "behavior": "行为",
-    "manageLibrariesDescription": "重新排序和隐藏媒体库",
-    "visualEffects": "视觉效果",
-    "visualEffectsAuto": "自动",
-    "visualEffectsAutoDescription": "在性能较低的设备上自动减少效果",
-    "visualEffectsFull": "完整",
-    "visualEffectsReduced": "简化",
-    "visualEffectsReducedDescription": "减少动画并使用较低分辨率的封面图片"
+    "behavior": "行为"
   },
   "search": {
     "hint": "搜索电影、系列、音乐...",
@@ -418,14 +412,11 @@
   "rateSheet": {
     "title": "评分",
     "server": "服务器",
-    "starValue": "${rating} / 5",
-    "scoreValue": "${score} / 10",
-    "setScore": "设置分数",
+    "favorite": "收藏",
+    "favorited": "已收藏",
     "saved": "已保存",
     "notAvailable": "未找到匹配项",
-    "noConnectedServices": "在设置中连接服务，即可在此评分。",
-    "favorite": "收藏",
-    "favorited": "已收藏"
+    "noConnectedServices": "在设置中连接服务，即可在此评分。"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, 电影",
@@ -435,7 +426,15 @@
     "mediaCardWatched": "已观看",
     "mediaCardPartiallyWatched": "已观看 ${percent} 百分比",
     "mediaCardUnwatched": "未观看",
-    "tapToPlay": "点击播放"
+    "tapToPlay": "点击播放",
+    "decrease": "减小",
+    "increase": "增大",
+    "decreaseValue": "减小${label}",
+    "increaseValue": "增大${label}",
+    "hue": "色相",
+    "saturation": "饱和度",
+    "brightness": "亮度",
+    "hexColor": "十六进制颜色"
   },
   "tooltips": {
     "shufflePlay": "随机播放",
@@ -481,13 +480,11 @@
     "settingsButton": "播放设置",
     "tracksButton": "音频和字幕",
     "chaptersButton": "章节",
-    "versionsButton": "视频版本",
     "versionQualityButton": "版本与画质",
     "versionColumnHeader": "版本",
     "qualityColumnHeader": "画质",
     "qualityOriginal": "原始",
     "qualityPresetLabel": "${resolution}p ${bitrate} Mbps",
-    "qualityBandwidthEstimate": "~${bitrate} Mbps",
     "transcodeUnavailableFallback": "转码不可用 — 以原始画质播放",
     "pipButton": "画中画模式",
     "aspectRatioButton": "宽高比",
@@ -530,12 +527,7 @@
     "subtitleDownloadFailed": "字幕下载失败",
     "searchLanguages": "搜索语言..."
   },
-  "userStatus": {
-    "admin": "管理员",
-    "restricted": "受限",
-    "protected": "受保护",
-    "current": "当前"
-  },
+  "userStatus": {},
   "messages": {
     "markedAsWatched": "已标记为已观看",
     "markedAsUnwatched": "已标记为未观看",
@@ -676,8 +668,7 @@
     "pinProtectionOptional": "PIN 保护（可选）",
     "pinExplain": "切换个人资料需要 4 位 PIN。",
     "continueButton": "继续",
-    "pinsDontMatch": "PIN 不匹配",
-    "initializeServicesFailed": "无法初始化个人资料服务"
+    "pinsDontMatch": "PIN 不匹配"
   },
   "connections": {
     "sectionTitle": "连接",
@@ -692,7 +683,6 @@
   },
   "discover": {
     "title": "发现",
-    "switchProfile": "切换用户",
     "noContentAvailable": "没有可用内容",
     "addMediaToLibraries": "请向你的媒体库添加一些媒体",
     "continueWatching": "继续观看",
@@ -721,8 +711,6 @@
     "connectionFailed": "无法连接到媒体服务器",
     "failedToLoad": "无法加载 ${context}: ${error}",
     "noClientAvailable": "没有可用客户端",
-    "authenticationFailed": "验证失败: ${error}",
-    "couldNotLaunchUrl": "无法打开授权 URL",
     "pleaseEnterToken": "请输入一个令牌",
     "invalidToken": "令牌无效",
     "failedToVerifyToken": "无法验证令牌: ${error}",
@@ -749,6 +737,8 @@
     "allLibrariesHidden": "所有媒体库已隐藏",
     "hiddenLibrariesCount": "已隐藏的媒体库 (${count})",
     "thisLibraryIsEmpty": "此媒体库为空",
+    "noItemsMatchFilters": "没有项目符合当前筛选条件",
+    "resetFilters": "重置筛选条件",
     "all": "全部",
     "clearAll": "全部清除",
     "scanLibraryConfirm": "确定要扫描 “${title}” 吗？",
@@ -804,7 +794,6 @@
       "communityRating": "社区评分",
       "criticRating": "影评人评分",
       "userRating": "用户评分",
-      "lastPlayed": "最近播放",
       "datePlayed": "播放日期",
       "playCount": "播放次数",
       "productionYear": "制作年份",
@@ -818,9 +807,7 @@
       "dateShared": "共享日期",
       "latestEpisodeAirDate": "最新一集播出日期",
       "lastEpisodeDateAdded": "最新一集添加日期"
-    },
-    "noItemsMatchFilters": "没有项目符合当前筛选条件",
-    "resetFilters": "重置筛选条件"
+    }
   },
   "about": {
     "title": "关于",
@@ -830,7 +817,6 @@
     "viewLicensesDescription": "查看第三方库的许可证"
   },
   "serverSelection": {
-    "allServerConnectionsFailed": "无法连接到任何服务器。请检查网络。",
     "noServersFoundForAccount": "未找到 ${username} (${email}) 的服务器",
     "failedToLoadServers": "无法加载服务器: ${error}"
   },
@@ -892,7 +878,6 @@
     "watchlistUpdateFailed": "无法更新想看列表",
     "notInLibrary": "不在你的媒体库中",
     "inTheseLibraries": "在这些媒体库中",
-    "availableOn": "在 ${server} 上可用",
     "checkingLibrary": "正在检查你的媒体库...",
     "emptyTitle": "这里还什么都没有",
     "emptyMessage": "当 ${source} 有内容时，相关内容将显示在这里。",
@@ -906,6 +891,8 @@
     "guide": "节目指南",
     "noChannels": "没有可用的频道",
     "noDvr": "没有服务器配置了DVR",
+    "serverUnavailable": "直播电视服务器不可用。",
+    "serverNotConnected": "直播电视服务器未连接。",
     "noPrograms": "没有可用的节目数据",
     "liveStreamFailed": "直播流失败",
     "unknownProgram": "未知节目",
@@ -941,7 +928,6 @@
     "scheduledRecordings": "已安排",
     "recordingRules": "录制规则",
     "noScheduledRecordings": "没有安排的录制",
-    "noRecordingRules": "还没有录制规则",
     "manageRecording": "管理录制",
     "cancelRecording": "取消录制",
     "cancelRecordingTitle": "取消此次录制？",
@@ -958,7 +944,6 @@
     "recordingCancelled": "录制已取消",
     "recordingRuleDeleted": "录制规则已删除",
     "processRecordingRules": "重新评估规则",
-    "loadingRecordings": "正在加载录制内容...",
     "recordingInProgress": "正在录制",
     "recordingsCount": "已安排 ${count} 个",
     "editRule": "编辑规则",
@@ -972,7 +957,6 @@
     "title": "合集",
     "collection": "合集",
     "empty": "合集为空",
-    "unknownLibrarySection": "无法删除：未知的媒体库分区",
     "deleteCollection": "删除合集",
     "deleteConfirm": "要删除“${title}”吗？此操作无法撤销。",
     "deleted": "已删除合集",
@@ -1012,6 +996,7 @@
     "itemAdded": "已添加到播放列表",
     "itemRemoved": "已从播放列表中移除",
     "selectPlaylist": "选择播放列表",
+    "searchPlaylists": "搜索播放列表...",
     "errorCreating": "创建播放列表失败",
     "errorDeleting": "删除播放列表失败",
     "errorLoading": "加载播放列表失败",
@@ -1100,15 +1085,15 @@
     "participantResumed": "${name} 继续播放了",
     "participantSeeked": "${name} 跳转了",
     "participantBuffering": "${name} 正在缓冲",
+    "participantNeedsUpdate": "${name} 正在使用较旧版本的应用，无法同步",
+    "resumingWithout": "不等待 ${name}，继续播放",
     "waitingForParticipants": "等待其他人加载...",
+    "waitingForName": "正在等待 ${name}...",
     "recentRooms": "最近的房间",
     "renameRoom": "重命名房间",
     "removeRoom": "移除",
     "guestSwitchUnavailable": "无法切换 — 服务器无法同步",
-    "guestSwitchFailed": "无法切换 — 在此服务器上未找到内容",
-    "participantNeedsUpdate": "${name} 正在使用较旧版本的应用，无法同步",
-    "resumingWithout": "不等待 ${name}，继续播放",
-    "waitingForName": "正在等待 ${name}..."
+    "guestSwitchFailed": "无法切换 — 在此服务器上未找到内容"
   },
   "downloads": {
     "title": "下载",
@@ -1153,7 +1138,6 @@
     "customAmount": "自定义数量...",
     "includeSpecials": "包含特别篇",
     "howManyEpisodes": "下载几集？",
-    "itemsQueued": "${count} 个项目已加入下载队列",
     "keepSynced": "保持同步",
     "downloadOnce": "下载一次",
     "keepNUnwatched": "保留${count}个未观看",
@@ -1202,7 +1186,6 @@
     "unknownDevice": "未知设备",
     "session": {
       "startingServer": "正在启动远程服务器...",
-      "failedToCreate": "启动远程服务器失败：",
       "hostAddress": "主机地址",
       "connected": "已连接",
       "serverRunning": "远程服务器已启动",
@@ -1263,6 +1246,8 @@
     "errors": {
       "noNetworkInterface": "未找到网络接口",
       "authenticationFailed": "身份验证失败",
+      "serverStartFailed": "无法启动远程服务器：${error}",
+      "commandFailed": "无法发送远程命令：${error}",
       "joinTimedOut": "加入会话超时",
       "failedToConnectAnyAddress": "无法连接到任何地址",
       "connectionLostAfterAttempts": "${attempts} 次尝试后连接丢失",
@@ -1536,7 +1521,6 @@
     "quickConnectFailed": "Quick Connect 失败: ${error}",
     "addPlexTitle": "使用 Plex 登录",
     "pinExpired": "PIN 在登录前已过期。请重试。",
-    "duplicatePlexAccount": "已登录 Plex。请退出登录以切换账号。",
     "failedToRegisterAccount": "注册帐户失败: ${error}",
     "enterJellyfinUrlError": "输入你的 Jellyfin 服务器 URL",
     "addConnectionTitle": "添加连接",

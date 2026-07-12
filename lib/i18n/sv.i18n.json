@@ -3,7 +3,6 @@
     "title": "Plezy"
   },
   "auth": {
-    "signIn": "Logga in",
     "signInWithPlex": "Logga in med Plex",
     "showQRCode": "Visa QR-kod",
     "authenticate": "Autentisera",
@@ -56,10 +55,8 @@
     "episodeNumberTitle": "Avsnitt ${number} - ${title}",
     "chapterNumber": "Kapitel ${number}",
     "reconnect": "Återanslut",
-    "exit": "Avsluta",
     "viewAll": "Visa alla",
     "checkingNetwork": "Kontrollerar nätverk...",
-    "refreshingServers": "Uppdaterar servrar...",
     "loadingServers": "Laddar servrar...",
     "connectingToServers": "Ansluter till servrar...",
     "startingOfflineMode": "Startar offlineläge...",
@@ -139,6 +136,12 @@
     "tvFullCardLayoutDescription": "Använd TV-kort med enbart bild och skådespelarnamn ovanpå",
     "focusGlow": "Fokusglöd",
     "focusGlowDescription": "Visa en mjuk glöd runt kortet i fokus",
+    "visualEffects": "Visuella effekter",
+    "visualEffectsAuto": "Automatiskt",
+    "visualEffectsAutoDescription": "Minska effekter automatiskt på enheter med låg effekt",
+    "visualEffectsFull": "Fullständiga",
+    "visualEffectsReduced": "Minskade",
+    "visualEffectsReducedDescription": "Färre animationer och grafik med lägre upplösning",
     "hideSpoilers": "Dölj spoilers för osedda avsnitt",
     "hideSpoilersDescription": "Sudda miniatyrbilder och beskrivningar för osedda avsnitt",
     "playerBackend": "Spelarmotor",
@@ -151,7 +154,7 @@
     "bufferSizeAuto": "Auto (Rekommenderat)",
     "bufferSizeWarning": "${heap}MB minne tillgängligt. En buffert på ${size}MB kan påverka uppspelningen.",
     "defaultQualityTitle": "Standardkvalitet",
-    "defaultQualityDescription": "Används vid start av uppspelning. Lägre värden minskar bandbredden.",
+    "musicQualityTitle": "Musikkvalitet",
     "subtitleStyling": "Undertext-styling",
     "subtitleStylingDescription": "Anpassa undertextutseende",
     "smallSkipDuration": "Kort hoppvaraktighet",
@@ -245,10 +248,9 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Visa vad du tittar på i Discord",
-    "trakt": "Trakt",
-    "traktDescription": "Synkronisera visningshistorik med Trakt",
     "services": "Tjänster",
     "servicesDescription": "Anslut Trakt, MyAnimeList, Seerr med mera",
+    "manageLibrariesDescription": "Ordna om och dölj bibliotek",
     "companionRemoteServer": "Companion Remote-server",
     "companionRemoteServerDescription": "Tillåt mobila enheter i ditt nätverk att styra denna app",
     "autoPip": "Automatisk bild-i-bild",
@@ -311,7 +313,6 @@
     "showNavBarLabels": "Visa navigeringsfältets etiketter",
     "showNavBarLabelsDescription": "Visa textetiketter under navigeringsfältets ikoner",
     "startupSection": "Startsektion",
-    "startupSectionDescription": "Välj vilken sektion Plezy öppnar vid start",
     "liveTvDefaultFavorites": "Standard till favoritkanaler",
     "liveTvDefaultFavoritesDescription": "Visa bara favoritkanaler när du öppnar Live TV",
     "display": "Skärm",
@@ -322,14 +323,7 @@
     "player": "Spelare",
     "subtitlesAndConfig": "Undertexter och konfiguration",
     "seekAndTiming": "Sök och timing",
-    "behavior": "Beteende",
-    "manageLibrariesDescription": "Ordna om och dölj bibliotek",
-    "visualEffects": "Visuella effekter",
-    "visualEffectsAuto": "Automatiskt",
-    "visualEffectsAutoDescription": "Minska effekter automatiskt på enheter med låg effekt",
-    "visualEffectsFull": "Fullständiga",
-    "visualEffectsReduced": "Minskade",
-    "visualEffectsReducedDescription": "Färre animationer och grafik med lägre upplösning"
+    "behavior": "Beteende"
   },
   "search": {
     "hint": "Sök filmer, serier, musik...",
@@ -418,14 +412,11 @@
   "rateSheet": {
     "title": "Betygsätt",
     "server": "Server",
-    "starValue": "${rating} / 5",
-    "scoreValue": "${score} / 10",
-    "setScore": "Ange betyg",
+    "favorite": "Favorit",
+    "favorited": "Tillagd i favoriter",
     "saved": "Sparat",
     "notAvailable": "Ingen matchning hittades",
-    "noConnectedServices": "Anslut en tjänst i Inställningar för att betygsätta där.",
-    "favorite": "Favorit",
-    "favorited": "Tillagd i favoriter"
+    "noConnectedServices": "Anslut en tjänst i Inställningar för att betygsätta där."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",
@@ -435,7 +426,15 @@
     "mediaCardWatched": "sedd",
     "mediaCardPartiallyWatched": "${percent} procent sedd",
     "mediaCardUnwatched": "osedd",
-    "tapToPlay": "Tryck för att spela"
+    "tapToPlay": "Tryck för att spela",
+    "decrease": "Minska",
+    "increase": "Öka",
+    "decreaseValue": "Minska ${label}",
+    "increaseValue": "Öka ${label}",
+    "hue": "Nyans",
+    "saturation": "Mättnad",
+    "brightness": "Ljusstyrka",
+    "hexColor": "Hexfärg"
   },
   "tooltips": {
     "shufflePlay": "Blanda uppspelning",
@@ -481,13 +480,11 @@
     "settingsButton": "Uppspelningsinställningar",
     "tracksButton": "Ljud och undertexter",
     "chaptersButton": "Kapitel",
-    "versionsButton": "Videoversioner",
     "versionQualityButton": "Version och kvalitet",
     "versionColumnHeader": "Version",
     "qualityColumnHeader": "Kvalitet",
     "qualityOriginal": "Original",
     "qualityPresetLabel": "${resolution}p ${bitrate} Mbps",
-    "qualityBandwidthEstimate": "~${bitrate} Mbps",
     "transcodeUnavailableFallback": "Transkodning otillgänglig — spelar upp i originalkvalitet",
     "pipButton": "Bild-i-bild läge",
     "aspectRatioButton": "Bildförhållande",
@@ -530,12 +527,7 @@
     "subtitleDownloadFailed": "Kunde inte ladda ner undertext",
     "searchLanguages": "Sök språk..."
   },
-  "userStatus": {
-    "admin": "Admin",
-    "restricted": "Begränsad",
-    "protected": "Skyddad",
-    "current": "NUVARANDE"
-  },
+  "userStatus": {},
   "messages": {
     "markedAsWatched": "Markerad som sedd",
     "markedAsUnwatched": "Markerad som osedd",
@@ -676,8 +668,7 @@
     "pinProtectionOptional": "PIN-skydd (valfritt)",
     "pinExplain": "4-siffrig PIN krävs för att byta profiler.",
     "continueButton": "Fortsätt",
-    "pinsDontMatch": "PIN-koderna stämmer inte överens",
-    "initializeServicesFailed": "Kunde inte initiera profiltjänster"
+    "pinsDontMatch": "PIN-koderna stämmer inte överens"
   },
   "connections": {
     "sectionTitle": "Anslutningar",
@@ -692,7 +683,6 @@
   },
   "discover": {
     "title": "Upptäck",
-    "switchProfile": "Byt profil",
     "noContentAvailable": "Inget innehåll tillgängligt",
     "addMediaToLibraries": "Lägg till media till dina bibliotek",
     "continueWatching": "Fortsätt titta",
@@ -721,8 +711,6 @@
     "connectionFailed": "Kan inte ansluta till mediaserver",
     "failedToLoad": "Misslyckades att ladda ${context}: ${error}",
     "noClientAvailable": "Ingen klient tillgänglig",
-    "authenticationFailed": "Autentisering misslyckades: ${error}",
-    "couldNotLaunchUrl": "Kunde inte öppna autentiserings-URL",
     "pleaseEnterToken": "Vänligen ange en token",
     "invalidToken": "Ogiltig token",
     "failedToVerifyToken": "Misslyckades att verifiera token: ${error}",
@@ -749,6 +737,8 @@
     "allLibrariesHidden": "Alla bibliotek är dolda",
     "hiddenLibrariesCount": "Dolda bibliotek (${count})",
     "thisLibraryIsEmpty": "Detta bibliotek är tomt",
+    "noItemsMatchFilters": "Inga objekt matchar de aktiva filtren",
+    "resetFilters": "Återställ filter",
     "all": "Alla",
     "clearAll": "Rensa alla",
     "scanLibraryConfirm": "Är du säker på att du vill skanna \"${title}\"?",
@@ -804,7 +794,6 @@
       "communityRating": "Användarbetyg",
       "criticRating": "Kritikerbetyg",
       "userRating": "Användarbetyg",
-      "lastPlayed": "Senast spelad",
       "datePlayed": "Speldatum",
       "playCount": "Antal spelningar",
       "productionYear": "Produktionsår",
@@ -818,9 +807,7 @@
       "dateShared": "Delningsdatum",
       "latestEpisodeAirDate": "Senaste avsnittets sändningsdatum",
       "lastEpisodeDateAdded": "Datum då senaste avsnittet lades till"
-    },
-    "noItemsMatchFilters": "Inga objekt matchar de aktiva filtren",
-    "resetFilters": "Återställ filter"
+    }
   },
   "about": {
     "title": "Om",
@@ -830,7 +817,6 @@
     "viewLicensesDescription": "Visa licenser för tredjepartsbibliotek"
   },
   "serverSelection": {
-    "allServerConnectionsFailed": "Kunde inte ansluta till några servrar. Kontrollera nätverket.",
     "noServersFoundForAccount": "Inga servrar hittades för ${username} (${email})",
     "failedToLoadServers": "Misslyckades att ladda servrar: ${error}"
   },
@@ -893,7 +879,6 @@
     "watchlistUpdateFailed": "Det gick inte att uppdatera bevakningslistan",
     "notInLibrary": "Finns inte i ditt bibliotek",
     "inTheseLibraries": "I dessa bibliotek",
-    "availableOn": "Tillgänglig på ${server}",
     "checkingLibrary": "Kontrollerar ditt bibliotek...",
     "emptyTitle": "Inget här ännu",
     "emptyMessage": "Rader från ${source} visas här när de har innehåll.",
@@ -907,6 +892,8 @@
     "guide": "Programguide",
     "noChannels": "Inga kanaler tillgängliga",
     "noDvr": "Ingen DVR konfigurerad på någon server",
+    "serverUnavailable": "Live-tv-servern är inte tillgänglig.",
+    "serverNotConnected": "Live-tv-servern är inte ansluten.",
     "noPrograms": "Ingen programdata tillgänglig",
     "liveStreamFailed": "Liveström misslyckades",
     "unknownProgram": "Okänt program",
@@ -942,7 +929,6 @@
     "scheduledRecordings": "Schemalagda",
     "recordingRules": "Inspelningsregler",
     "noScheduledRecordings": "Inga schemalagda inspelningar",
-    "noRecordingRules": "Inga inspelningsregler än",
     "manageRecording": "Hantera inspelning",
     "cancelRecording": "Avbryt inspelning",
     "cancelRecordingTitle": "Avbryt denna inspelning?",
@@ -959,7 +945,6 @@
     "recordingCancelled": "Inspelning avbruten",
     "recordingRuleDeleted": "Inspelningsregel borttagen",
     "processRecordingRules": "Utvärdera regler igen",
-    "loadingRecordings": "Laddar inspelningar ...",
     "recordingInProgress": "Spelar in nu",
     "recordingsCount": "${count} schemalagda",
     "editRule": "Redigera regel",
@@ -973,7 +958,6 @@
     "title": "Samlingar",
     "collection": "Samling",
     "empty": "Samlingen är tom",
-    "unknownLibrarySection": "Kan inte ta bort: okänd bibliotekssektion",
     "deleteCollection": "Ta bort samling",
     "deleteConfirm": "Ta bort \"${title}\"? Detta kan inte ångras.",
     "deleted": "Samling borttagen",
@@ -1013,6 +997,7 @@
     "itemAdded": "Tillagd i spellista",
     "itemRemoved": "Borttagen från spellista",
     "selectPlaylist": "Välj spellista",
+    "searchPlaylists": "Sök i spellistor...",
     "errorCreating": "Det gick inte att skapa spellista",
     "errorDeleting": "Det gick inte att ta bort spellista",
     "errorLoading": "Det gick inte att ladda spellistor",
@@ -1102,15 +1087,15 @@
     "participantResumed": "${name} återupptog",
     "participantSeeked": "${name} spolade",
     "participantBuffering": "${name} buffrar",
+    "participantNeedsUpdate": "${name} använder en äldre appversion — synkronisering är inte tillgänglig",
+    "resumingWithout": "Återupptar utan ${name}",
     "waitingForParticipants": "Väntar på att andra laddar...",
+    "waitingForName": "Väntar på ${name}...",
     "recentRooms": "Senaste rum",
     "renameRoom": "Byt namn på rum",
     "removeRoom": "Ta bort",
     "guestSwitchUnavailable": "Kunde inte byta — server inte tillgänglig för synkronisering",
-    "guestSwitchFailed": "Kunde inte byta — innehåll hittades inte på denna server",
-    "participantNeedsUpdate": "${name} använder en äldre appversion — synkronisering är inte tillgänglig",
-    "resumingWithout": "Återupptar utan ${name}",
-    "waitingForName": "Väntar på ${name}..."
+    "guestSwitchFailed": "Kunde inte byta — innehåll hittades inte på denna server"
   },
   "downloads": {
     "title": "Nedladdningar",
@@ -1155,7 +1140,6 @@
     "customAmount": "Ange antal...",
     "includeSpecials": "Inkludera specialavsnitt",
     "howManyEpisodes": "Hur många avsnitt?",
-    "itemsQueued": "${count} objekt köade för nedladdning",
     "keepSynced": "Håll synkroniserad",
     "downloadOnce": "Ladda ner en gång",
     "keepNUnwatched": "Behåll ${count} osedda",
@@ -1204,7 +1188,6 @@
     "unknownDevice": "Okänd enhet",
     "session": {
       "startingServer": "Startar fjärrserver...",
-      "failedToCreate": "Kunde inte starta fjärrserver:",
       "hostAddress": "Värdadress",
       "connected": "Ansluten",
       "serverRunning": "Fjärrserver aktiv",
@@ -1265,6 +1248,8 @@
     "errors": {
       "noNetworkInterface": "Inget nätverksgränssnitt hittades",
       "authenticationFailed": "Autentisering misslyckades",
+      "serverStartFailed": "Det gick inte att starta fjärrservern: ${error}",
+      "commandFailed": "Det gick inte att skicka fjärrkommandot: ${error}",
       "joinTimedOut": "Tidsgräns vid anslutning till session",
       "failedToConnectAnyAddress": "Kunde inte ansluta till någon adress",
       "connectionLostAfterAttempts": "Anslutning förlorad efter ${attempts} försök",
@@ -1538,7 +1523,6 @@
     "quickConnectFailed": "Quick Connect misslyckades: ${error}",
     "addPlexTitle": "Logga in med Plex",
     "pinExpired": "PIN-koden gick ut innan inloggning. Försök igen.",
-    "duplicatePlexAccount": "Redan inloggad på Plex. Logga ut för att byta konto.",
     "failedToRegisterAccount": "Kunde inte registrera kontot: ${error}",
     "enterJellyfinUrlError": "Ange URL till din Jellyfin-server",
     "addConnectionTitle": "Lägg till anslutning",

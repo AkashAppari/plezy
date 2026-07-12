@@ -3,7 +3,6 @@
     "title": "Plezy"
   },
   "auth": {
-    "signIn": "로그인",
     "signInWithPlex": "Plex 계정으로 로그인",
     "showQRCode": "QR 코드",
     "authenticate": "인증",
@@ -56,10 +55,8 @@
     "episodeNumberTitle": "${number}화 - ${title}",
     "chapterNumber": "챕터 ${number}",
     "reconnect": "다시 연결",
-    "exit": "종료",
     "viewAll": "모두 보기",
     "checkingNetwork": "네트워크 확인 중...",
-    "refreshingServers": "서버 새로고침 중...",
     "loadingServers": "서버 로딩 중...",
     "connectingToServers": "서버 연결 중...",
     "startingOfflineMode": "오프라인 모드 시작 중...",
@@ -157,7 +154,7 @@
     "bufferSizeAuto": "자동 (권장)",
     "bufferSizeWarning": "${heap}MB 메모리를 사용할 수 있습니다. ${size}MB 버퍼는 재생에 영향을 줄 수 있습니다.",
     "defaultQualityTitle": "기본 화질",
-    "defaultQualityDescription": "재생 시작 시 사용됩니다. 낮은 값은 대역폭을 줄입니다.",
+    "musicQualityTitle": "음악 음질",
     "subtitleStyling": "자막 스타일",
     "subtitleStylingDescription": "자막의 외형을 사용자 설정",
     "smallSkipDuration": "짧은 건너뛰기 시간",
@@ -251,8 +248,6 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Discord에서 시청 중인 콘텐츠 표시",
-    "trakt": "Trakt",
-    "traktDescription": "Trakt와 시청 기록 동기화",
     "services": "서비스",
     "servicesDescription": "Trakt, MyAnimeList, Seerr 등 연결",
     "manageLibrariesDescription": "라이브러리 순서를 변경하거나 숨깁니다",
@@ -318,7 +313,6 @@
     "showNavBarLabels": "내비게이션 바 라벨 표시",
     "showNavBarLabelsDescription": "내비게이션 바 아이콘 아래에 텍스트 라벨을 표시합니다",
     "startupSection": "시작 섹션",
-    "startupSectionDescription": "Plezy 실행 시 열릴 섹션을 선택합니다",
     "liveTvDefaultFavorites": "즐겨찾기 채널 기본 설정",
     "liveTvDefaultFavoritesDescription": "라이브 TV를 열 때 즐겨찾기 채널만 표시",
     "display": "디스플레이",
@@ -418,9 +412,6 @@
   "rateSheet": {
     "title": "평가",
     "server": "서버",
-    "starValue": "${rating} / 5",
-    "scoreValue": "${score} / 10",
-    "setScore": "점수 설정",
     "favorite": "즐겨찾기",
     "favorited": "즐겨찾기됨",
     "saved": "저장됨",
@@ -435,7 +426,15 @@
     "mediaCardWatched": "시청 완료",
     "mediaCardPartiallyWatched": "${percent} 퍼센트 시청 완료",
     "mediaCardUnwatched": "미시청",
-    "tapToPlay": "터치 하여 재생"
+    "tapToPlay": "터치 하여 재생",
+    "decrease": "낮추기",
+    "increase": "높이기",
+    "decreaseValue": "${label} 낮추기",
+    "increaseValue": "${label} 높이기",
+    "hue": "색조",
+    "saturation": "채도",
+    "brightness": "밝기",
+    "hexColor": "16진수 색상"
   },
   "tooltips": {
     "shufflePlay": "무작위 재생",
@@ -481,13 +480,11 @@
     "settingsButton": "재생 설정",
     "tracksButton": "오디오 및 자막",
     "chaptersButton": "챕터",
-    "versionsButton": "동영상 버전",
     "versionQualityButton": "버전 및 화질",
     "versionColumnHeader": "버전",
     "qualityColumnHeader": "화질",
     "qualityOriginal": "원본",
     "qualityPresetLabel": "${resolution}p ${bitrate} Mbps",
-    "qualityBandwidthEstimate": "~${bitrate} Mbps",
     "transcodeUnavailableFallback": "트랜스코딩을 사용할 수 없음 — 원본 화질로 재생",
     "pipButton": "픽처 인 픽처 모드",
     "aspectRatioButton": "화면비율",
@@ -530,12 +527,7 @@
     "subtitleDownloadFailed": "자막 다운로드에 실패했습니다",
     "searchLanguages": "언어 검색..."
   },
-  "userStatus": {
-    "admin": "관리자",
-    "restricted": "제한됨",
-    "protected": "보호됨",
-    "current": "현재"
-  },
+  "userStatus": {},
   "messages": {
     "markedAsWatched": "시청 완료로 표시됨",
     "markedAsUnwatched": "시청 안 함으로 표시됨",
@@ -676,8 +668,7 @@
     "pinProtectionOptional": "PIN 보호 (선택 사항)",
     "pinExplain": "프로필 전환에는 4자리 PIN이 필요합니다.",
     "continueButton": "계속",
-    "pinsDontMatch": "PIN이 일치하지 않습니다",
-    "initializeServicesFailed": "프로필 서비스를 초기화하지 못했습니다"
+    "pinsDontMatch": "PIN이 일치하지 않습니다"
   },
   "connections": {
     "sectionTitle": "연결",
@@ -692,7 +683,6 @@
   },
   "discover": {
     "title": "발견",
-    "switchProfile": "사용자 전환",
     "noContentAvailable": "사용 가능한 콘텐츠가 없습니다",
     "addMediaToLibraries": "미디어 라이브러리에 미디어를 추가해 주세요",
     "continueWatching": "계속 시청",
@@ -721,8 +711,6 @@
     "connectionFailed": "미디어 서버에 연결할 수 없습니다",
     "failedToLoad": "${context} 로드 실패: ${error}",
     "noClientAvailable": "사용 가능한 클라이언트가 없습니다",
-    "authenticationFailed": "인증 실패: ${error}",
-    "couldNotLaunchUrl": "인증 URL을 열 수 없습니다",
     "pleaseEnterToken": "토큰을 입력해 주세요",
     "invalidToken": "토큰이 유효하지 않습니다",
     "failedToVerifyToken": "토큰을 확인할 수 없습니다: ${error}",
@@ -806,7 +794,6 @@
       "communityRating": "커뮤니티 평점",
       "criticRating": "평론가 평점",
       "userRating": "사용자 평점",
-      "lastPlayed": "마지막 재생",
       "datePlayed": "재생일",
       "playCount": "재생 횟수",
       "productionYear": "제작 연도",
@@ -830,7 +817,6 @@
     "viewLicensesDescription": "타사 라이브러리 라이선스 보기"
   },
   "serverSelection": {
-    "allServerConnectionsFailed": "서버에 연결할 수 없습니다. 네트워크를 확인하세요.",
     "noServersFoundForAccount": "${username} (${email})의 서버를 찾을 수 없습니다.",
     "failedToLoadServers": "서버를 로드할 수 없습니다: ${error}"
   },
@@ -876,10 +862,6 @@
       "upcomingMovies": "개봉 예정 영화",
       "upcomingShows": "방영 예정 TV 프로그램"
     },
-    "searchHint": "${source}에서 검색",
-    "searchEmpty": "「${query}」에 대한 결과가 없습니다",
-    "searchPrompt": "${source}에서 영화와 TV 프로그램을 검색하세요.",
-    "searchFailed": "검색에 실패했습니다. 연결을 확인하고 다시 시도하세요.",
     "status": {
       "airing": "방영 중",
       "ended": "종영",
@@ -896,16 +878,21 @@
     "watchlistUpdateFailed": "관심 목록을 업데이트하지 못했습니다",
     "notInLibrary": "라이브러리에 없음",
     "inTheseLibraries": "이 라이브러리에 있음",
-    "availableOn": "${server}에서 이용 가능",
     "checkingLibrary": "라이브러리 확인 중...",
     "emptyTitle": "아직 아무것도 없습니다",
-    "emptyMessage": "${source}에 콘텐츠가 추가되면 여기에 표시됩니다."
+    "emptyMessage": "${source}에 콘텐츠가 추가되면 여기에 표시됩니다.",
+    "searchHint": "${source}에서 검색",
+    "searchEmpty": "「${query}」에 대한 결과가 없습니다",
+    "searchPrompt": "${source}에서 영화와 TV 프로그램을 검색하세요.",
+    "searchFailed": "검색에 실패했습니다. 연결을 확인하고 다시 시도하세요."
   },
   "liveTv": {
     "title": "실시간 TV",
     "guide": "편성표",
     "noChannels": "사용 가능한 채널이 없습니다",
     "noDvr": "서버에 DVR이 구성되어 있지 않습니다",
+    "serverUnavailable": "라이브 TV 서버를 사용할 수 없습니다.",
+    "serverNotConnected": "라이브 TV 서버에 연결되어 있지 않습니다.",
     "noPrograms": "프로그램 데이터가 없습니다",
     "liveStreamFailed": "라이브 스트림 실패",
     "unknownProgram": "알 수 없는 프로그램",
@@ -941,7 +928,6 @@
     "scheduledRecordings": "예약됨",
     "recordingRules": "녹화 규칙",
     "noScheduledRecordings": "예약된 녹화 없음",
-    "noRecordingRules": "녹화 규칙 없음",
     "manageRecording": "녹화 관리",
     "cancelRecording": "녹화 취소",
     "cancelRecordingTitle": "이 녹화를 취소할까요?",
@@ -958,7 +944,6 @@
     "recordingCancelled": "녹화 취소됨",
     "recordingRuleDeleted": "녹화 규칙 삭제됨",
     "processRecordingRules": "규칙 재평가",
-    "loadingRecordings": "녹화 불러오는 중...",
     "recordingInProgress": "녹화 중",
     "recordingsCount": "${count}개 예약됨",
     "editRule": "규칙 편집",
@@ -972,7 +957,6 @@
     "title": "컬렉션",
     "collection": "컬렉션",
     "empty": "컬렉션이 비어 있습니다",
-    "unknownLibrarySection": "삭제할 수 없습니다: 알 수 없는 미디어 라이브러리 섹션입니다",
     "deleteCollection": "컬렉션 삭제",
     "deleteConfirm": "\"${title}\"을(를) 삭제할까요? 되돌릴 수 없습니다.",
     "deleted": "컬렉션 삭제됨",
@@ -1012,6 +996,7 @@
     "itemAdded": "재생 목록에 추가 되었습니다",
     "itemRemoved": "재생 목록에서 제거됨",
     "selectPlaylist": "재생 목록 선택",
+    "searchPlaylists": "재생 목록 검색...",
     "errorCreating": "재생 목록 생성 실패",
     "errorDeleting": "재생 목록 삭제 실패",
     "errorLoading": "재생 목록 로드 실패",
@@ -1153,7 +1138,6 @@
     "customAmount": "직접 입력...",
     "includeSpecials": "스페셜 포함",
     "howManyEpisodes": "몇 개의 에피소드?",
-    "itemsQueued": "${count}개 항목이 다운로드 대기열에 추가됨",
     "keepSynced": "동기화 유지",
     "downloadOnce": "한 번만 다운로드",
     "keepNUnwatched": "미시청 ${count}개 유지",
@@ -1202,7 +1186,6 @@
     "unknownDevice": "알 수 없는 기기",
     "session": {
       "startingServer": "원격 서버 시작 중...",
-      "failedToCreate": "원격 서버를 시작하지 못했습니다:",
       "hostAddress": "호스트 주소",
       "connected": "연결됨",
       "serverRunning": "원격 서버 활성",
@@ -1263,6 +1246,8 @@
     "errors": {
       "noNetworkInterface": "네트워크 인터페이스를 찾을 수 없습니다",
       "authenticationFailed": "인증 실패",
+      "serverStartFailed": "원격 서버를 시작하지 못했습니다: ${error}",
+      "commandFailed": "원격 명령을 보내지 못했습니다: ${error}",
       "joinTimedOut": "세션 참가 시간이 초과되었습니다",
       "failedToConnectAnyAddress": "어떤 주소에도 연결하지 못했습니다",
       "connectionLostAfterAttempts": "${attempts}회 시도 후 연결이 끊어졌습니다",
@@ -1536,7 +1521,6 @@
     "quickConnectFailed": "Quick Connect 실패: ${error}",
     "addPlexTitle": "Plex로 로그인",
     "pinExpired": "로그인 전에 PIN이 만료되었습니다. 다시 시도하세요.",
-    "duplicatePlexAccount": "이미 Plex에 로그인되어 있습니다. 계정을 전환하려면 로그아웃하세요.",
     "failedToRegisterAccount": "계정 등록 실패: ${error}",
     "enterJellyfinUrlError": "Jellyfin 서버 URL을 입력하세요",
     "addConnectionTitle": "연결 추가",

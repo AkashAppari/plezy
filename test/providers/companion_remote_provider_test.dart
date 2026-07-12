@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/models/plex/plex_home.dart';
 import 'package:plezy/models/plex/plex_home_user.dart';
 import 'package:plezy/models/companion_remote/remote_command.dart';
@@ -14,6 +15,7 @@ import 'package:plezy/profiles/profile_connection.dart';
 import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/providers/companion_remote_provider.dart';
+import 'package:plezy/services/base_peer_service.dart';
 import 'package:plezy/services/companion_remote/remote_auth_service.dart';
 import 'package:plezy/services/storage_service.dart';
 
@@ -125,19 +127,25 @@ void main() {
   });
 
   group('CompanionRemoteProvider — public API safety', () {
-    test('connectToDiscoveredHost throws StateError when crypto not ready', () async {
+    test('connectToDiscoveredHost reports localized auth failure when crypto is not ready', () async {
       final p = CompanionRemoteProvider();
-      // Constructing a DiscoveredHost-like object would require importing
-      // the lan_discovery_service; skip the constructed-instance variant
-      // and instead exercise connectToManualHost which has the same guard.
-      await expectLater(() => p.connectToManualHost('192.0.2.1:9999'), throwsA(isA<StateError>()));
+      await expectLater(
+        () => p.connectToManualHost('192.0.2.1:9999'),
+        throwsA(
+          isA<PeerError>().having((error) => error.message, 'message', t.companionRemote.pairing.cryptoInitFailed),
+        ),
+      );
       p.dispose();
     });
 
-    test('connectToManualHost rejects empty host strings via crypto guard', () async {
+    test('connectToManualHost rejects empty host strings via localized crypto guard', () async {
       final p = CompanionRemoteProvider();
-      // Crypto isn't ready → guard fires before any network logic.
-      await expectLater(() => p.connectToManualHost(''), throwsA(isA<StateError>()));
+      await expectLater(
+        () => p.connectToManualHost(''),
+        throwsA(
+          isA<PeerError>().having((error) => error.message, 'message', t.companionRemote.pairing.cryptoInitFailed),
+        ),
+      );
       p.dispose();
     });
   });

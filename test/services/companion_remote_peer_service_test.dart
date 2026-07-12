@@ -1,9 +1,22 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/models/companion_remote/remote_command.dart';
 import 'package:plezy/services/companion_remote/companion_remote_peer_service.dart';
 import 'package:plezy/services/companion_remote/remote_auth_context.dart';
 
 void main() {
+  test('auth precondition error uses the active locale', () async {
+    await LocaleSettings.setLocale(AppLocale.bg);
+    addTearDown(() => LocaleSettings.setLocaleSync(AppLocale.en));
+    final peer = CompanionRemotePeerService();
+    addTearDown(peer.dispose);
+
+    await expectLater(
+      () => peer.createSessionForContexts('Test Host', 'macos', const []),
+      throwsA(isA<PeerError>().having((error) => error.message, 'message', 'Неуспешно удостоверяване')),
+    );
+  });
+
   test('host and remote dispatch encrypted commands through the same contract', () async {
     final host = CompanionRemotePeerService();
     final remote = CompanionRemotePeerService();

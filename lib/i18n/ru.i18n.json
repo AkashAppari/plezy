@@ -3,7 +3,6 @@
     "title": "Plezy"
   },
   "auth": {
-    "signIn": "Войти",
     "signInWithPlex": "Войти через Plex",
     "showQRCode": "Показать QR-код",
     "authenticate": "Аутентификация",
@@ -56,10 +55,8 @@
     "episodeNumberTitle": "Эпизод ${number} - ${title}",
     "chapterNumber": "Глава ${number}",
     "reconnect": "Переподключить",
-    "exit": "Выход",
     "viewAll": "Показать все",
     "checkingNetwork": "Проверка сети...",
-    "refreshingServers": "Обновление серверов...",
     "loadingServers": "Загрузка серверов...",
     "connectingToServers": "Подключение к серверам...",
     "startingOfflineMode": "Запуск автономного режима...",
@@ -139,6 +136,12 @@
     "tvFullCardLayoutDescription": "Использовать TV-карточки только с изображением и именами актёров поверх него",
     "focusGlow": "Свечение при фокусе",
     "focusGlowDescription": "Показывать мягкое свечение вокруг карточки в фокусе",
+    "visualEffects": "Визуальные эффекты",
+    "visualEffectsAuto": "Автоматически",
+    "visualEffectsAutoDescription": "Автоматически уменьшать эффекты на маломощных устройствах",
+    "visualEffectsFull": "Полные",
+    "visualEffectsReduced": "Уменьшенные",
+    "visualEffectsReducedDescription": "Меньше анимаций и графика с более низким разрешением",
     "hideSpoilers": "Скрыть спойлеры непросмотренных эпизодов",
     "hideSpoilersDescription": "Размывать миниатюры и описания непросмотренных серий",
     "playerBackend": "Бэкенд плеера",
@@ -151,7 +154,7 @@
     "bufferSizeAuto": "Авто (Рекомендуется)",
     "bufferSizeWarning": "Доступно памяти: ${heap}MB. Буфер ${size}MB может повлиять на воспроизведение.",
     "defaultQualityTitle": "Качество по умолчанию",
-    "defaultQualityDescription": "Используется при запуске воспроизведения. Более низкие значения снижают пропускную способность.",
+    "musicQualityTitle": "Качество музыки",
     "subtitleStyling": "Стиль субтитров",
     "subtitleStylingDescription": "Настроить внешний вид субтитров",
     "smallSkipDuration": "Малая перемотка",
@@ -245,10 +248,9 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Показывать, что вы смотрите, в Discord",
-    "trakt": "Trakt",
-    "traktDescription": "Синхронизировать историю просмотров с Trakt",
     "services": "Сервисы",
     "servicesDescription": "Подключите Trakt, MyAnimeList, Seerr и другие",
+    "manageLibrariesDescription": "Изменять порядок и скрывать библиотеки",
     "companionRemoteServer": "Сервер удалённого управления",
     "companionRemoteServerDescription": "Разрешить мобильным устройствам в сети управлять этим приложением",
     "autoPip": "Автоматический «картинка в картинке»",
@@ -311,7 +313,6 @@
     "showNavBarLabels": "Показывать подписи панели навигации",
     "showNavBarLabelsDescription": "Отображать текстовые подписи под иконками панели навигации",
     "startupSection": "Начальный раздел",
-    "startupSectionDescription": "Выберите, какой раздел Plezy открывает при запуске",
     "liveTvDefaultFavorites": "Избранные каналы по умолчанию",
     "liveTvDefaultFavoritesDescription": "Показывать только избранные каналы при открытии ТВ",
     "display": "Экран",
@@ -322,14 +323,7 @@
     "player": "Плеер",
     "subtitlesAndConfig": "Субтитры и конфигурация",
     "seekAndTiming": "Перемотка и время",
-    "behavior": "Поведение",
-    "manageLibrariesDescription": "Изменять порядок и скрывать библиотеки",
-    "visualEffects": "Визуальные эффекты",
-    "visualEffectsAuto": "Автоматически",
-    "visualEffectsAutoDescription": "Автоматически уменьшать эффекты на маломощных устройствах",
-    "visualEffectsFull": "Полные",
-    "visualEffectsReduced": "Уменьшенные",
-    "visualEffectsReducedDescription": "Меньше анимаций и графика с более низким разрешением"
+    "behavior": "Поведение"
   },
   "search": {
     "hint": "Поиск фильмов, сериалов, музыки...",
@@ -418,14 +412,11 @@
   "rateSheet": {
     "title": "Оценить",
     "server": "Сервер",
-    "starValue": "${rating} / 5",
-    "scoreValue": "${score} / 10",
-    "setScore": "Установить оценку",
+    "favorite": "Добавить в избранное",
+    "favorited": "Добавлено в избранное",
     "saved": "Сохранено",
     "notAvailable": "Совпадений не найдено",
-    "noConnectedServices": "Подключите сервис в настройках, чтобы оценивать здесь.",
-    "favorite": "Добавить в избранное",
-    "favorited": "Добавлено в избранное"
+    "noConnectedServices": "Подключите сервис в настройках, чтобы оценивать здесь."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, фильм",
@@ -435,7 +426,15 @@
     "mediaCardWatched": "просмотрено",
     "mediaCardPartiallyWatched": "просмотрено ${percent} процентов",
     "mediaCardUnwatched": "не просмотрено",
-    "tapToPlay": "Нажмите для воспроизведения"
+    "tapToPlay": "Нажмите для воспроизведения",
+    "decrease": "Уменьшить",
+    "increase": "Увеличить",
+    "decreaseValue": "Уменьшить ${label}",
+    "increaseValue": "Увеличить ${label}",
+    "hue": "Цветовой тон",
+    "saturation": "Насыщенность",
+    "brightness": "Яркость",
+    "hexColor": "Шестнадцатеричный цвет"
   },
   "tooltips": {
     "shufflePlay": "Случайное воспроизведение",
@@ -481,13 +480,11 @@
     "settingsButton": "Настройки воспроизведения",
     "tracksButton": "Аудио и субтитры",
     "chaptersButton": "Главы",
-    "versionsButton": "Версии видео",
     "versionQualityButton": "Версия и качество",
     "versionColumnHeader": "Версия",
     "qualityColumnHeader": "Качество",
     "qualityOriginal": "Оригинал",
     "qualityPresetLabel": "${resolution}p ${bitrate} Mbps",
-    "qualityBandwidthEstimate": "~${bitrate} Mbps",
     "transcodeUnavailableFallback": "Транскодирование недоступно — воспроизведение в оригинальном качестве",
     "pipButton": "Режим «картинка в картинке»",
     "aspectRatioButton": "Соотношение сторон",
@@ -530,12 +527,7 @@
     "subtitleDownloadFailed": "Не удалось загрузить субтитры",
     "searchLanguages": "Поиск языков..."
   },
-  "userStatus": {
-    "admin": "Администратор",
-    "restricted": "Ограниченный",
-    "protected": "Защищённый",
-    "current": "ТЕКУЩИЙ"
-  },
+  "userStatus": {},
   "messages": {
     "markedAsWatched": "Отмечено как просмотренное",
     "markedAsUnwatched": "Отмечено как непросмотренное",
@@ -676,8 +668,7 @@
     "pinProtectionOptional": "Защита PIN-кодом (необязательно)",
     "pinExplain": "Для переключения профилей нужен 4-значный PIN.",
     "continueButton": "Продолжить",
-    "pinsDontMatch": "PIN-коды не совпадают",
-    "initializeServicesFailed": "Не удалось инициализировать службы профиля"
+    "pinsDontMatch": "PIN-коды не совпадают"
   },
   "connections": {
     "sectionTitle": "Подключения",
@@ -692,7 +683,6 @@
   },
   "discover": {
     "title": "Обзор",
-    "switchProfile": "Сменить профиль",
     "noContentAvailable": "Контент недоступен",
     "addMediaToLibraries": "Добавьте медиафайлы в ваши библиотеки",
     "continueWatching": "Продолжить просмотр",
@@ -721,8 +711,6 @@
     "connectionFailed": "Не удалось подключиться к медиасерверу",
     "failedToLoad": "Не удалось загрузить ${context}: ${error}",
     "noClientAvailable": "Клиент недоступен",
-    "authenticationFailed": "Ошибка аутентификации: ${error}",
-    "couldNotLaunchUrl": "Не удалось открыть URL аутентификации",
     "pleaseEnterToken": "Введите токен",
     "invalidToken": "Недействительный токен",
     "failedToVerifyToken": "Не удалось проверить токен: ${error}",
@@ -749,6 +737,8 @@
     "allLibrariesHidden": "Все библиотеки скрыты",
     "hiddenLibrariesCount": "Скрытые библиотеки (${count})",
     "thisLibraryIsEmpty": "Эта библиотека пуста",
+    "noItemsMatchFilters": "Нет элементов, соответствующих активным фильтрам",
+    "resetFilters": "Сбросить фильтры",
     "all": "Все",
     "clearAll": "Очистить все",
     "scanLibraryConfirm": "Вы уверены, что хотите сканировать \"${title}\"?",
@@ -804,7 +794,6 @@
       "communityRating": "Оценка сообщества",
       "criticRating": "Оценка критиков",
       "userRating": "Пользовательская оценка",
-      "lastPlayed": "Последний просмотр",
       "datePlayed": "Дата просмотра",
       "playCount": "Количество просмотров",
       "productionYear": "Год производства",
@@ -818,9 +807,7 @@
       "dateShared": "Дата открытия доступа",
       "latestEpisodeAirDate": "Дата выхода последнего эпизода",
       "lastEpisodeDateAdded": "Дата добавления последнего эпизода"
-    },
-    "noItemsMatchFilters": "Нет элементов, соответствующих активным фильтрам",
-    "resetFilters": "Сбросить фильтры"
+    }
   },
   "about": {
     "title": "О приложении",
@@ -830,7 +817,6 @@
     "viewLicensesDescription": "Просмотр лицензий сторонних библиотек"
   },
   "serverSelection": {
-    "allServerConnectionsFailed": "Не удалось подключиться ни к одному серверу. Проверьте сеть.",
     "noServersFoundForAccount": "Серверы не найдены для ${username} (${email})",
     "failedToLoadServers": "Не удалось загрузить серверы: ${error}"
   },
@@ -895,7 +881,6 @@
     "watchlistUpdateFailed": "Не удалось обновить список для просмотра",
     "notInLibrary": "Нет в вашей библиотеке",
     "inTheseLibraries": "В этих библиотеках",
-    "availableOn": "Доступно на ${server}",
     "checkingLibrary": "Проверка вашей библиотеки...",
     "emptyTitle": "Здесь пока ничего нет",
     "emptyMessage": "Строки из ${source} появятся здесь, когда в них будет контент.",
@@ -909,6 +894,8 @@
     "guide": "Программа",
     "noChannels": "Нет доступных каналов",
     "noDvr": "DVR не настроен ни на одном сервере",
+    "serverUnavailable": "Сервер прямого эфира недоступен.",
+    "serverNotConnected": "Сервер прямого эфира не подключён.",
     "noPrograms": "Нет данных о программах",
     "liveStreamFailed": "Не удалось запустить прямой эфир",
     "unknownProgram": "Неизвестная программа",
@@ -944,7 +931,6 @@
     "scheduledRecordings": "Запланировано",
     "recordingRules": "Правила записи",
     "noScheduledRecordings": "Нет запланированных записей",
-    "noRecordingRules": "Правил записи пока нет",
     "manageRecording": "Управление записью",
     "cancelRecording": "Отменить запись",
     "cancelRecordingTitle": "Отменить эту запись?",
@@ -961,7 +947,6 @@
     "recordingCancelled": "Запись отменена",
     "recordingRuleDeleted": "Правило записи удалено",
     "processRecordingRules": "Пересчитать правила",
-    "loadingRecordings": "Загрузка записей...",
     "recordingInProgress": "Идёт запись",
     "recordingsCount": "Запланировано: ${count}",
     "editRule": "Изменить правило",
@@ -975,7 +960,6 @@
     "title": "Коллекции",
     "collection": "Коллекция",
     "empty": "Коллекция пуста",
-    "unknownLibrarySection": "Невозможно удалить: неизвестный раздел библиотеки",
     "deleteCollection": "Удалить коллекцию",
     "deleteConfirm": "Удалить \"${title}\"? Это нельзя отменить.",
     "deleted": "Коллекция удалена",
@@ -1015,6 +999,7 @@
     "itemAdded": "Добавлено в плейлист",
     "itemRemoved": "Удалено из плейлиста",
     "selectPlaylist": "Выбрать плейлист",
+    "searchPlaylists": "Поиск плейлистов...",
     "errorCreating": "Не удалось создать плейлист",
     "errorDeleting": "Не удалось удалить плейлист",
     "errorLoading": "Не удалось загрузить плейлисты",
@@ -1106,15 +1091,15 @@
     "participantResumed": "${name} возобновил",
     "participantSeeked": "${name} перемотал",
     "participantBuffering": "${name} буферизует",
+    "participantNeedsUpdate": "${name} использует старую версию приложения — синхронизация недоступна",
+    "resumingWithout": "Возобновление без ${name}",
     "waitingForParticipants": "Ожидание загрузки у других...",
+    "waitingForName": "Ожидание ${name}...",
     "recentRooms": "Недавние комнаты",
     "renameRoom": "Переименовать комнату",
     "removeRoom": "Удалить",
     "guestSwitchUnavailable": "Не удалось переключиться — сервер недоступен для синхронизации",
-    "guestSwitchFailed": "Не удалось переключиться — содержимое не найдено на этом сервере",
-    "participantNeedsUpdate": "${name} использует старую версию приложения — синхронизация недоступна",
-    "resumingWithout": "Возобновление без ${name}",
-    "waitingForName": "Ожидание ${name}..."
+    "guestSwitchFailed": "Не удалось переключиться — содержимое не найдено на этом сервере"
   },
   "downloads": {
     "title": "Загрузки",
@@ -1159,7 +1144,6 @@
     "customAmount": "Указать количество...",
     "includeSpecials": "Включить спецвыпуски",
     "howManyEpisodes": "Сколько эпизодов?",
-    "itemsQueued": "${count} элементов добавлено в очередь загрузки",
     "keepSynced": "Синхронизировать",
     "downloadOnce": "Скачать один раз",
     "keepNUnwatched": "Хранить ${count} непросмотренных",
@@ -1208,7 +1192,6 @@
     "unknownDevice": "Неизвестное устройство",
     "session": {
       "startingServer": "Запуск удалённого сервера...",
-      "failedToCreate": "Не удалось запустить удалённый сервер:",
       "hostAddress": "Адрес хоста",
       "connected": "Подключено",
       "serverRunning": "Удалённый сервер активен",
@@ -1269,6 +1252,8 @@
     "errors": {
       "noNetworkInterface": "Сетевой интерфейс не найден",
       "authenticationFailed": "Ошибка аутентификации",
+      "serverStartFailed": "Не удалось запустить удалённый сервер: ${error}",
+      "commandFailed": "Не удалось отправить удалённую команду: ${error}",
       "joinTimedOut": "Время подключения к сеансу истекло",
       "failedToConnectAnyAddress": "Не удалось подключиться ни к одному адресу",
       "connectionLostAfterAttempts": "Соединение потеряно после ${attempts} попыток",
@@ -1542,7 +1527,6 @@
     "quickConnectFailed": "Quick Connect не удался: ${error}",
     "addPlexTitle": "Войти через Plex",
     "pinExpired": "Срок действия PIN истёк до входа. Попробуйте снова.",
-    "duplicatePlexAccount": "В Plex уже выполнен вход. Выйдите, чтобы сменить аккаунт.",
     "failedToRegisterAccount": "Не удалось зарегистрировать учётную запись: ${error}",
     "enterJellyfinUrlError": "Введите URL вашего сервера Jellyfin",
     "addConnectionTitle": "Добавить подключение",

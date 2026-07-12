@@ -3,7 +3,6 @@
     "title": "Plezy"
   },
   "auth": {
-    "signIn": "Log ind",
     "signInWithPlex": "Log ind med Plex",
     "showQRCode": "Vis QR-kode",
     "authenticate": "Godkend",
@@ -56,10 +55,8 @@
     "episodeNumberTitle": "Episode ${number} - ${title}",
     "chapterNumber": "Kapitel ${number}",
     "reconnect": "Genopret forbindelse",
-    "exit": "Afslut",
     "viewAll": "Vis alle",
     "checkingNetwork": "Tjekker netværk...",
-    "refreshingServers": "Opdaterer servere...",
     "loadingServers": "Indlæser servere...",
     "connectingToServers": "Forbinder til servere...",
     "startingOfflineMode": "Starter offlinetilstand...",
@@ -139,6 +136,12 @@
     "tvFullCardLayoutDescription": "Brug TV-kort kun med billeder og skuespillernavne ovenpå",
     "focusGlow": "Fokusglød",
     "focusGlowDescription": "Vis en blød glød omkring det fokuserede kort",
+    "visualEffects": "Visuelle effekter",
+    "visualEffectsAuto": "Automatisk",
+    "visualEffectsAutoDescription": "Reducer automatisk effekter på enheder med lav ydeevne",
+    "visualEffectsFull": "Fuld",
+    "visualEffectsReduced": "Reduceret",
+    "visualEffectsReducedDescription": "Færre animationer og illustrationer i lavere opløsning",
     "hideSpoilers": "Skjul spoilere for usete episoder",
     "hideSpoilersDescription": "Slør miniaturebilleder og beskrivelser for usete episoder",
     "playerBackend": "Afspillerbackend",
@@ -151,7 +154,7 @@
     "bufferSizeAuto": "Auto (Anbefalet)",
     "bufferSizeWarning": "${heap}MB hukommelse tilgængelig. En buffer på ${size}MB kan påvirke afspilning.",
     "defaultQualityTitle": "Standardkvalitet",
-    "defaultQualityDescription": "Bruges ved start af afspilning. Lavere værdier reducerer båndbredden.",
+    "musicQualityTitle": "Musikkvalitet",
     "subtitleStyling": "Undertekststil",
     "subtitleStylingDescription": "Tilpas underteksters udseende",
     "smallSkipDuration": "Kort spring-varighed",
@@ -245,10 +248,9 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Vis hvad du ser på Discord",
-    "trakt": "Trakt",
-    "traktDescription": "Synkroniser visningshistorik med Trakt",
     "services": "Tjenester",
     "servicesDescription": "Forbind Trakt, MyAnimeList, Seerr og mere",
+    "manageLibrariesDescription": "Omarranger og skjul biblioteker",
     "companionRemoteServer": "Companion Remote Server",
     "companionRemoteServerDescription": "Tillad mobilenheder på dit netværk at styre denne app",
     "autoPip": "Auto billede-i-billede",
@@ -311,7 +313,6 @@
     "showNavBarLabels": "Vis navigationsbarlabels",
     "showNavBarLabelsDescription": "Vis tekstlabels under navigationsbarikoner",
     "startupSection": "Startsektion",
-    "startupSectionDescription": "Vælg hvilken sektion Plezy åbner ved start",
     "liveTvDefaultFavorites": "Standard til favoritkanaler",
     "liveTvDefaultFavoritesDescription": "Vis kun favoritkanaler ved åbning af Live TV",
     "display": "Skærm",
@@ -322,14 +323,7 @@
     "player": "Afspiller",
     "subtitlesAndConfig": "Undertekster og konfiguration",
     "seekAndTiming": "Søgning og timing",
-    "behavior": "Adfærd",
-    "manageLibrariesDescription": "Omarranger og skjul biblioteker",
-    "visualEffects": "Visuelle effekter",
-    "visualEffectsAuto": "Automatisk",
-    "visualEffectsAutoDescription": "Reducer automatisk effekter på enheder med lav ydeevne",
-    "visualEffectsFull": "Fuld",
-    "visualEffectsReduced": "Reduceret",
-    "visualEffectsReducedDescription": "Færre animationer og illustrationer i lavere opløsning"
+    "behavior": "Adfærd"
   },
   "search": {
     "hint": "Søg film, serier, musik...",
@@ -418,14 +412,11 @@
   "rateSheet": {
     "title": "Bedøm",
     "server": "Server",
-    "starValue": "${rating} / 5",
-    "scoreValue": "${score} / 10",
-    "setScore": "Angiv en score",
+    "favorite": "Favorit",
+    "favorited": "Føjet til favoritter",
     "saved": "Gemt",
     "notAvailable": "Intet match fundet",
-    "noConnectedServices": "Forbind en tjeneste i Indstillinger for at bedømme der.",
-    "favorite": "Favorit",
-    "favorited": "Føjet til favoritter"
+    "noConnectedServices": "Forbind en tjeneste i Indstillinger for at bedømme der."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",
@@ -435,7 +426,15 @@
     "mediaCardWatched": "set",
     "mediaCardPartiallyWatched": "${percent} procent set",
     "mediaCardUnwatched": "uset",
-    "tapToPlay": "Tryk for at afspille"
+    "tapToPlay": "Tryk for at afspille",
+    "decrease": "Formindsk",
+    "increase": "Forøg",
+    "decreaseValue": "Formindsk ${label}",
+    "increaseValue": "Forøg ${label}",
+    "hue": "Farvetone",
+    "saturation": "Mætning",
+    "brightness": "Lysstyrke",
+    "hexColor": "Hexfarve"
   },
   "tooltips": {
     "shufflePlay": "Afspil tilfældigt",
@@ -481,13 +480,11 @@
     "settingsButton": "Afspilningsindstillinger",
     "tracksButton": "Lyd og undertekster",
     "chaptersButton": "Kapitler",
-    "versionsButton": "Videoversioner",
     "versionQualityButton": "Version og kvalitet",
     "versionColumnHeader": "Version",
     "qualityColumnHeader": "Kvalitet",
     "qualityOriginal": "Original",
     "qualityPresetLabel": "${resolution}p ${bitrate} Mbps",
-    "qualityBandwidthEstimate": "~${bitrate} Mbps",
     "transcodeUnavailableFallback": "Transkodning utilgængelig — afspiller original kvalitet",
     "pipButton": "Billede-i-billede-tilstand",
     "aspectRatioButton": "Billedformat",
@@ -530,12 +527,7 @@
     "subtitleDownloadFailed": "Kunne ikke downloade undertekst",
     "searchLanguages": "Søg sprog..."
   },
-  "userStatus": {
-    "admin": "Administrator",
-    "restricted": "Begrænset",
-    "protected": "Beskyttet",
-    "current": "NUVÆRENDE"
-  },
+  "userStatus": {},
   "messages": {
     "markedAsWatched": "Markeret som set",
     "markedAsUnwatched": "Markeret som uset",
@@ -676,8 +668,7 @@
     "pinProtectionOptional": "PIN-beskyttelse (valgfri)",
     "pinExplain": "4-cifret PIN kræves for at skifte profiler.",
     "continueButton": "Fortsæt",
-    "pinsDontMatch": "PIN-koder matcher ikke",
-    "initializeServicesFailed": "Kunne ikke initialisere profiltjenester"
+    "pinsDontMatch": "PIN-koder matcher ikke"
   },
   "connections": {
     "sectionTitle": "Forbindelser",
@@ -692,7 +683,6 @@
   },
   "discover": {
     "title": "Opdag",
-    "switchProfile": "Skift profil",
     "noContentAvailable": "Intet indhold tilgængeligt",
     "addMediaToLibraries": "Tilføj medier til dine biblioteker",
     "continueWatching": "Fortsæt med at se",
@@ -721,8 +711,6 @@
     "connectionFailed": "Kan ikke oprette forbindelse til medieserver",
     "failedToLoad": "Kunne ikke indlæse ${context}: ${error}",
     "noClientAvailable": "Ingen klient tilgængelig",
-    "authenticationFailed": "Godkendelse mislykkedes: ${error}",
-    "couldNotLaunchUrl": "Kunne ikke åbne godkendelses-URL",
     "pleaseEnterToken": "Indtast et token",
     "invalidToken": "Ugyldigt token",
     "failedToVerifyToken": "Kunne ikke verificere token: ${error}",
@@ -749,6 +737,8 @@
     "allLibrariesHidden": "Alle biblioteker er skjult",
     "hiddenLibrariesCount": "Skjulte biblioteker (${count})",
     "thisLibraryIsEmpty": "Dette bibliotek er tomt",
+    "noItemsMatchFilters": "Ingen elementer matcher de aktive filtre",
+    "resetFilters": "Nulstil filtre",
     "all": "Alle",
     "clearAll": "Ryd alle",
     "scanLibraryConfirm": "Er du sikker på, at du vil scanne \"${title}\"?",
@@ -804,7 +794,6 @@
       "communityRating": "Fællesskabsvurdering",
       "criticRating": "Kritikerbedømmelse",
       "userRating": "Brugerbedømmelse",
-      "lastPlayed": "Sidst afspillet",
       "datePlayed": "Afspilningsdato",
       "playCount": "Antal afspilninger",
       "productionYear": "Produktionsår",
@@ -818,9 +807,7 @@
       "dateShared": "Delt dato",
       "latestEpisodeAirDate": "Seneste episodes premieredato",
       "lastEpisodeDateAdded": "Dato for senest tilføjede episode"
-    },
-    "noItemsMatchFilters": "Ingen elementer matcher de aktive filtre",
-    "resetFilters": "Nulstil filtre"
+    }
   },
   "about": {
     "title": "Om",
@@ -830,7 +817,6 @@
     "viewLicensesDescription": "Se licenser for tredjepartsbiblioteker"
   },
   "serverSelection": {
-    "allServerConnectionsFailed": "Kunne ikke oprette forbindelse til nogen servere. Tjek dit netværk.",
     "noServersFoundForAccount": "Ingen servere fundet for ${username} (${email})",
     "failedToLoadServers": "Kunne ikke indlæse servere: ${error}"
   },
@@ -893,7 +879,6 @@
     "watchlistUpdateFailed": "Kunne ikke opdatere ønskelisten",
     "notInLibrary": "Ikke i dit bibliotek",
     "inTheseLibraries": "I disse biblioteker",
-    "availableOn": "Tilgængelig på ${server}",
     "checkingLibrary": "Tjekker dit bibliotek...",
     "emptyTitle": "Der er ikke noget her endnu",
     "emptyMessage": "Rækker fra ${source} vises her, når de har indhold.",
@@ -907,6 +892,8 @@
     "guide": "Guide",
     "noChannels": "Ingen kanaler tilgængelige",
     "noDvr": "Ingen DVR konfigureret på nogen server",
+    "serverUnavailable": "Live-tv-serveren er ikke tilgængelig.",
+    "serverNotConnected": "Live-tv-serveren er ikke forbundet.",
     "noPrograms": "Ingen programdata tilgængelig",
     "liveStreamFailed": "Livestream mislykkedes",
     "unknownProgram": "Ukendt program",
@@ -942,7 +929,6 @@
     "scheduledRecordings": "Planlagt",
     "recordingRules": "Optagelsesregler",
     "noScheduledRecordings": "Ingen optagelser planlagt",
-    "noRecordingRules": "Ingen optagelsesregler endnu",
     "manageRecording": "Administrer optagelse",
     "cancelRecording": "Annullér optagelse",
     "cancelRecordingTitle": "Annullér denne optagelse?",
@@ -959,7 +945,6 @@
     "recordingCancelled": "Optagelse annulleret",
     "recordingRuleDeleted": "Optagelsesregel slettet",
     "processRecordingRules": "Genberegn regler",
-    "loadingRecordings": "Indlæser optagelser ...",
     "recordingInProgress": "Optager nu",
     "recordingsCount": "${count} planlagt",
     "editRule": "Rediger regel",
@@ -973,7 +958,6 @@
     "title": "Samlinger",
     "collection": "Samling",
     "empty": "Samlingen er tom",
-    "unknownLibrarySection": "Kan ikke slette: Ukendt bibliotekssektion",
     "deleteCollection": "Slet samling",
     "deleteConfirm": "Slet \"${title}\"? Dette kan ikke fortrydes.",
     "deleted": "Samling slettet",
@@ -1013,6 +997,7 @@
     "itemAdded": "Tilføjet til playliste",
     "itemRemoved": "Fjernet fra playliste",
     "selectPlaylist": "Vælg playliste",
+    "searchPlaylists": "Søg i playlister...",
     "errorCreating": "Kunne ikke oprette playliste",
     "errorDeleting": "Kunne ikke slette playliste",
     "errorLoading": "Kunne ikke indlæse playlister",
@@ -1102,15 +1087,15 @@
     "participantResumed": "${name} genoptog",
     "participantSeeked": "${name} spoled",
     "participantBuffering": "${name} bufferer",
+    "participantNeedsUpdate": "${name} bruger en ældre appversion — synkronisering er ikke tilgængelig",
+    "resumingWithout": "Fortsætter uden ${name}",
     "waitingForParticipants": "Venter på at andre indlæser...",
+    "waitingForName": "Venter på ${name}...",
     "recentRooms": "Seneste rum",
     "renameRoom": "Omdøb rum",
     "removeRoom": "Fjern",
     "guestSwitchUnavailable": "Kunne ikke skifte — server ikke tilgængelig for synkronisering",
-    "guestSwitchFailed": "Kunne ikke skifte — indhold blev ikke fundet på denne server",
-    "participantNeedsUpdate": "${name} bruger en ældre appversion — synkronisering er ikke tilgængelig",
-    "resumingWithout": "Fortsætter uden ${name}",
-    "waitingForName": "Venter på ${name}..."
+    "guestSwitchFailed": "Kunne ikke skifte — indhold blev ikke fundet på denne server"
   },
   "downloads": {
     "title": "Downloads",
@@ -1155,7 +1140,6 @@
     "customAmount": "Angiv antal...",
     "includeSpecials": "Inkludér specials",
     "howManyEpisodes": "Hvor mange episoder?",
-    "itemsQueued": "${count} elementer sat i kø til download",
     "keepSynced": "Hold synkroniseret",
     "downloadOnce": "Download én gang",
     "keepNUnwatched": "Behold ${count} usete",
@@ -1204,7 +1188,6 @@
     "unknownDevice": "Ukendt enhed",
     "session": {
       "startingServer": "Starter fjernserver...",
-      "failedToCreate": "Kunne ikke starte fjernserver:",
       "hostAddress": "Værtsadresse",
       "connected": "Forbundet",
       "serverRunning": "Fjernserver aktiv",
@@ -1265,6 +1248,8 @@
     "errors": {
       "noNetworkInterface": "Ingen netværksgrænseflade fundet",
       "authenticationFailed": "Godkendelse mislykkedes",
+      "serverStartFailed": "Kunne ikke starte fjernserveren: ${error}",
+      "commandFailed": "Kunne ikke sende fjernkommando: ${error}",
       "joinTimedOut": "Tidsgrænse for deltagelse i session overskredet",
       "failedToConnectAnyAddress": "Kunne ikke oprette forbindelse til nogen adresse",
       "connectionLostAfterAttempts": "Forbindelse mistet efter ${attempts} forsøg",
@@ -1538,7 +1523,6 @@
     "quickConnectFailed": "Quick Connect mislykkedes: ${error}",
     "addPlexTitle": "Log ind med Plex",
     "pinExpired": "PIN udløb før login. Prøv igen.",
-    "duplicatePlexAccount": "Allerede logget ind på Plex. Log ud for at skifte konto.",
     "failedToRegisterAccount": "Kunne ikke registrere kontoen: ${error}",
     "enterJellyfinUrlError": "Angiv URL'en til din Jellyfin-server",
     "addConnectionTitle": "Tilføj forbindelse",
