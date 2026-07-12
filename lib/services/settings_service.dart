@@ -263,32 +263,6 @@ List<MpvPreset> _decodeMpvPresets(dynamic raw) {
   }).toList();
 }
 
-Map<String, String> _defaultKeyboardShortcuts() => {
-  'play_pause': 'Space',
-  'volume_up': 'Arrow Up',
-  'volume_down': 'Arrow Down',
-  'seek_forward': 'Arrow Right',
-  'seek_backward': 'Arrow Left',
-  'seek_forward_large': 'Shift+Arrow Right',
-  'seek_backward_large': 'Shift+Arrow Left',
-  'fullscreen_toggle': 'F',
-  'mute_toggle': 'M',
-  'subtitle_toggle': 'S',
-  'audio_track_next': 'A',
-  'subtitle_track_next': 'Shift+S',
-  'chapter_next': 'N',
-  'chapter_previous': 'P',
-  'speed_increase': 'Plus',
-  'speed_decrease': 'Minus',
-  'speed_reset': 'R',
-  'zoom_in': 'Alt+Plus',
-  'zoom_out': 'Alt+Minus',
-  'zoom_reset': 'Alt+Backspace',
-  'sub_seek_next': 'Ctrl+Right',
-  'sub_seek_prev': 'Ctrl+Left',
-  'screenshot': 'Ctrl+S',
-};
-
 Map<String, HotKey> _defaultKeyboardHotkeys() => {
   'play_pause': const HotKey(key: PhysicalKeyboardKey.space),
   'volume_up': const HotKey(key: PhysicalKeyboardKey.arrowUp),
@@ -318,12 +292,6 @@ Map<String, HotKey> _defaultKeyboardHotkeys() => {
   'skip_marker': const HotKey(key: PhysicalKeyboardKey.enter),
   'screenshot': const HotKey(key: PhysicalKeyboardKey.keyS, modifiers: [HotKeyModifier.control]),
 };
-
-Map<String, String> _decodeKeyboardShortcuts(dynamic raw) {
-  final stored = (raw as Map<String, dynamic>).map((k, v) => MapEntry(k, v.toString()));
-  // Merge with defaults so newly-added defaults appear without resetting customizations.
-  return {..._defaultKeyboardShortcuts(), ...stored};
-}
 
 Map<String, HotKey> _decodeKeyboardHotkeys(dynamic raw) {
   final result = <String, HotKey>{};
@@ -513,12 +481,6 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static const mpvConfigText = _MpvConfigTextPref();
 
-  static final keyboardShortcuts = JsonPref<Map<String, String>>(
-    'keyboard_shortcuts',
-    defaultValue: _defaultKeyboardShortcuts(),
-    encode: json.encode,
-    decode: _decodeKeyboardShortcuts,
-  );
   static final keyboardHotkeys = JsonPref<Map<String, HotKey>>(
     'keyboard_hotkeys',
     defaultValue: _defaultKeyboardHotkeys(),
@@ -628,7 +590,6 @@ class SettingsService extends BaseSharedPreferencesService {
     return (playerVolume: restoredVolume, persistedVolume: restoredVolume);
   }
 
-  static Map<String, String> defaultKeyboardShortcuts() => _defaultKeyboardShortcuts();
   static Map<String, HotKey> defaultKeyboardHotkeys() => _defaultKeyboardHotkeys();
 
   /// Unknown libraries are allowed only when no filter is configured.
@@ -896,7 +857,6 @@ class SettingsService extends BaseSharedPreferencesService {
     audioDownmixNormalize,
     downmixCenterBoost,
     themeMode,
-    keyboardShortcuts,
     keyboardHotkeys,
     libraryDensity,
     episodePosterMode,

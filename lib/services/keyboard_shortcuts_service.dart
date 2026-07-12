@@ -1,7 +1,6 @@
 import 'dart:async' show unawaited;
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/hotkey_model.dart';
@@ -17,8 +16,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
   static KeyboardShortcutsService? _instance;
   late SettingsService _settingsService;
   final List<VoidCallback> _settingsDisposers = [];
-  Map<String, String> _shortcuts = {}; // Legacy string shortcuts for backward compatibility
-  Map<String, HotKey> _hotkeys = {}; // New HotKey objects
+  Map<String, HotKey> _hotkeys = {};
   int _seekTimeSmall = 10; // Default, loaded from settings
   int _seekTimeLarge = 30; // Default, loaded from settings
   int _maxVolume = 100; // Default, loaded from settings (100-300%)
@@ -52,7 +50,6 @@ class KeyboardShortcutsService extends ChangeNotifier {
       _settingsDisposers.add(() => notifier.removeListener(_onSettingsChanged));
     }
 
-    bind(SettingsService.keyboardShortcuts);
     bind(SettingsService.keyboardHotkeys);
     bind(SettingsService.seekTimeSmall);
     bind(SettingsService.seekTimeLarge);
@@ -62,20 +59,17 @@ class KeyboardShortcutsService extends ChangeNotifier {
   void _onSettingsChanged() => _syncFromSettings();
 
   void _syncFromSettings({bool notify = true}) {
-    final shortcuts = _settingsService.read(SettingsService.keyboardShortcuts);
     final hotkeys = _settingsService.read(SettingsService.keyboardHotkeys);
     final seekTimeSmall = _settingsService.read(SettingsService.seekTimeSmall);
     final seekTimeLarge = _settingsService.read(SettingsService.seekTimeLarge);
     final maxVolume = _settingsService.read(SettingsService.maxVolume);
 
     final changed =
-        !mapEquals(_shortcuts, shortcuts) ||
         !_hotkeyMapsEqual(_hotkeys, hotkeys) ||
         _seekTimeSmall != seekTimeSmall ||
         _seekTimeLarge != seekTimeLarge ||
         _maxVolume != maxVolume;
 
-    _shortcuts = Map<String, String>.from(shortcuts);
     _hotkeys = Map<String, HotKey>.from(hotkeys);
     _seekTimeSmall = seekTimeSmall;
     _seekTimeLarge = seekTimeLarge;
@@ -93,20 +87,11 @@ class KeyboardShortcutsService extends ChangeNotifier {
     return true;
   }
 
-  Map<String, String> get shortcuts => Map.from(_shortcuts);
   Map<String, HotKey> get hotkeys => Map.from(_hotkeys);
   int get maxVolume => _maxVolume;
 
-  String getShortcut(String action) {
-    return _shortcuts[action] ?? '';
-  }
-
   HotKey? getHotkey(String action) {
     return _hotkeys[action];
-  }
-
-  Future<void> setShortcut(String action, String key) async {
-    await _settingsService.write(SettingsService.keyboardShortcuts, {..._shortcuts, action: key});
   }
 
   Future<void> setHotkey(String action, HotKey hotkey) async {
@@ -118,9 +103,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
   }
 
   Future<void> resetToDefaults() async {
-    final shortcuts = SettingsService.defaultKeyboardShortcuts();
     final hotkeys = SettingsService.defaultKeyboardHotkeys();
-    await _settingsService.write(SettingsService.keyboardShortcuts, shortcuts);
     await _settingsService.write(SettingsService.keyboardHotkeys, hotkeys);
   }
 

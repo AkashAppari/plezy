@@ -70,10 +70,8 @@ void main() {
     });
   });
 
-  group('SettingsService keyboard shortcut defaults', () {
+  group('SettingsService keyboard hotkey defaults', () {
     test('includes Ctrl+S screenshot shortcut', () {
-      expect(SettingsService.defaultKeyboardShortcuts()['screenshot'], 'Ctrl+S');
-
       final hotkey = SettingsService.defaultKeyboardHotkeys()['screenshot'];
       expect(hotkey, isNotNull);
       expect(hotkey!.key, PhysicalKeyboardKey.keyS);
