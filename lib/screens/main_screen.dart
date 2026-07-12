@@ -681,6 +681,7 @@ class _MainScreenState extends State<MainScreen>
       appLogger.d('System shelf tap: $contentId');
       _handleShelfContentId(contentId);
     };
+    _systemShelfTapCallback = systemShelf.onShelfItemTap;
 
     // Check for pending deep link from cold start
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -738,6 +739,7 @@ class _MainScreenState extends State<MainScreen>
   }
 
   bool _companionRemoteSetup = false;
+  ValueChanged<String>? _systemShelfTapCallback;
 
   @override
   void didChangeDependencies() {
@@ -803,7 +805,7 @@ class _MainScreenState extends State<MainScreen>
     };
 
     final receiver = CompanionRemoteReceiver.instance;
-
+    receiver.navigationOwner = this;
     receiver.onTabNext = () {
       final tabs = _getVisibleTabs(_isOffline);
       final idx = tabs.indexWhere((t) => t.id == _currentTab);
@@ -877,18 +879,27 @@ class _MainScreenState extends State<MainScreen>
     _contentFocusScope.dispose();
     _setTvosMenuPassthrough(false);
 
-    // Clean up companion remote callbacks
+    // Clean up only callbacks still owned by this screen. A replacement
+    // MainScreen may already have installed its callbacks this frame.
     if (_companionRemoteSetup) {
       final receiver = CompanionRemoteReceiver.instance;
-      receiver.onTabNext = null;
-      receiver.onTabPrevious = null;
-      receiver.onTabDiscover = null;
-      receiver.onTabLibraries = null;
-      receiver.onTabSearch = null;
-      receiver.onTabDownloads = null;
-      receiver.onTabSettings = null;
-      receiver.onHome = null;
-      receiver.onSearchAction = null;
+      if (identical(receiver.navigationOwner, this)) {
+        receiver.onTabNext = null;
+        receiver.onTabPrevious = null;
+        receiver.onTabDiscover = null;
+        receiver.onTabLibraries = null;
+        receiver.onTabSearch = null;
+        receiver.onTabDownloads = null;
+        receiver.onTabSettings = null;
+        receiver.onHome = null;
+        receiver.onSearchAction = null;
+        receiver.navigationOwner = null;
+      }
+    }
+    final shelfCallback = _systemShelfTapCallback;
+    final systemShelf = SystemShelfService();
+    if (shelfCallback != null && identical(systemShelf.onShelfItemTap, shelfCallback)) {
+      systemShelf.onShelfItemTap = null;
     }
 
     super.dispose();

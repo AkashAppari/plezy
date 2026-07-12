@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:universal_gamepad/universal_gamepad.dart';
@@ -146,13 +145,41 @@ class GamepadService with WindowListener {
   /// Set by InputModeTracker when it initializes.
   static VoidCallback? onGamepadInput;
 
-  /// Callback for L1 bumper press (previous tab).
-  /// Screens with tabs can listen to this.
-  static VoidCallback? onL1Pressed;
+  static final Map<Object, ({VoidCallback previous, VoidCallback next, bool Function() isActive})>
+  _tabNavigationHandlers = {};
 
-  /// Callback for R1 bumper press (next tab).
-  /// Screens with tabs can listen to this.
-  static VoidCallback? onR1Pressed;
+  /// Registers owner-scoped bumper navigation. Multiple tab screens can stay
+  /// mounted; only the handler whose screen is currently visible runs.
+  static void registerTabNavigation(
+    Object owner, {
+    required VoidCallback previous,
+    required VoidCallback next,
+    required bool Function() isActive,
+  }) {
+    _tabNavigationHandlers[owner] = (previous: previous, next: next, isActive: isActive);
+  }
+
+  static void unregisterTabNavigation(Object owner) {
+    _tabNavigationHandlers.remove(owner);
+  }
+
+  static void _dispatchTabNavigation({required bool previous}) {
+    for (final handler in _tabNavigationHandlers.values) {
+      if (!handler.isActive()) continue;
+      previous ? handler.previous() : handler.next();
+      return;
+    }
+  }
+
+  @visibleForTesting
+  static void debugDispatchTabNavigation({required bool previous}) {
+    _dispatchTabNavigation(previous: previous);
+  }
+
+  @visibleForTesting
+  static void debugClearTabNavigationHandlers() {
+    _tabNavigationHandlers.clear();
+  }
 
   // Deadzone for analog sticks (0.0 to 1.0)
   static const double _stickDeadzone = 0.5;
@@ -408,9 +435,9 @@ class GamepadService with WindowListener {
           _logGamepadDiag('button simulates key press back ${_describeGamepadButton(event)}');
           _simulateKeyPress(LogicalKeyboardKey.gameButtonB);
         case GamepadButton.leftShoulder:
-          onL1Pressed?.call();
+          _dispatchTabNavigation(previous: true);
         case GamepadButton.rightShoulder:
-          onR1Pressed?.call();
+          _dispatchTabNavigation(previous: false);
         default:
           break;
       }
@@ -458,11 +485,11 @@ class GamepadService with WindowListener {
       return;
     }
 
-    // Switch to keyboard mode on significant axis input
+    // Switch to keyboard mode on significant axis input. Navigation itself
+    // schedules frames only when the stick crosses the real deadzone.
     if (event.value.abs() > 0.3) {
       onGamepadInput?.call();
       _setTraditionalFocusHighlight();
-      SchedulerBinding.instance.ensureVisualUpdate();
     }
 
     switch (event.axis) {

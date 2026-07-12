@@ -458,6 +458,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   VideoPIPManager? _videoPIPManager;
   ShaderService? _shaderService;
   AmbientLightingService? _ambientLightingService;
+  bool _fullscreenListenerAttached = false;
   Size? _lastVideoLayoutSize;
   Size? _pendingVideoLayoutSize;
   Player? _lastVideoLayoutPlayer;
@@ -760,7 +761,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _displayModeService = DisplayModeService(settingsService, FullscreenStateManager());
         await _displayModeService!.syncWithNative();
         if (!mounted) return;
-        FullscreenStateManager().addListener(_onFullscreenChanged);
+        if (!_fullscreenListenerAttached) {
+          FullscreenStateManager().addListener(_onFullscreenChanged);
+          _fullscreenListenerAttached = true;
+        }
       }
 
       // One-native-instance rule: a live music session owns the only audio
@@ -1297,8 +1301,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     TraktScrobbleService.instance.stopPlayback();
     TrackerCoordinator.instance.stopPlayback();
 
-    if (Platform.isWindows && _displayModeService != null) {
+    if (_fullscreenListenerAttached) {
       FullscreenStateManager().removeListener(_onFullscreenChanged);
+      _fullscreenListenerAttached = false;
     }
     if (!isReplacingWithVideo &&
         Platform.isWindows &&

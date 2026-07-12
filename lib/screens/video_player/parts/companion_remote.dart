@@ -3,6 +3,8 @@ part of '../../video_player_screen.dart';
 extension _VideoPlayerCompanionRemoteMethods on VideoPlayerScreenState {
   void _setupCompanionRemoteCallbacks() {
     final receiver = CompanionRemoteReceiver.instance;
+    receiver.playerHomeFallback ??= receiver.onHome;
+    receiver.playerOwner = this;
     receiver.onStop = () {
       if (mounted) _handleBackButton();
     };
@@ -47,8 +49,9 @@ extension _VideoPlayerCompanionRemoteMethods on VideoPlayerScreenState {
     receiver.onAudioTracks = _cycleAudioTrack;
     receiver.onFullscreen = _toggleFullscreen;
 
-    // Override home to exit the player first (main screen handler runs after pop)
-    _savedOnHome = receiver.onHome;
+    // Override home to exit the player first. Replacements inherit the base
+    // MainScreen callback rather than chaining through the outgoing player.
+    _savedOnHome = receiver.playerHomeFallback;
     receiver.onHome = () {
       if (mounted) _handleHomeButton();
     };
@@ -64,6 +67,10 @@ extension _VideoPlayerCompanionRemoteMethods on VideoPlayerScreenState {
 
   void _cleanupCompanionRemoteCallbacks() {
     final receiver = CompanionRemoteReceiver.instance;
+    if (!identical(receiver.playerOwner, this)) {
+      _companionRemoteProvider = null;
+      return;
+    }
     receiver.onStop = null;
     receiver.onNextTrack = null;
     receiver.onPreviousTrack = null;
@@ -75,10 +82,12 @@ extension _VideoPlayerCompanionRemoteMethods on VideoPlayerScreenState {
     receiver.onSubtitles = null;
     receiver.onAudioTracks = null;
     receiver.onFullscreen = null;
-    receiver.onHome = _savedOnHome;
+    receiver.onHome = receiver.playerHomeFallback;
+    receiver.playerHomeFallback = null;
+    receiver.playerOwner = null;
     _savedOnHome = null;
 
-    // Notify remote that player is no longer active
+    // Notify only when the active player owner exits.
     _companionRemoteProvider?.sendCommand(RemoteCommandType.syncState, data: {'playerActive': false});
     _companionRemoteProvider = null;
   }
