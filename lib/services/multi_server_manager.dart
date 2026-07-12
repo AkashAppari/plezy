@@ -90,6 +90,7 @@ class MultiServerManager {
 
   /// Coalescing guard for reconnectOfflineServers — prevents concurrent reconnect sweeps
   Future<void>? _activeReconnect;
+  int _profileRefreshGeneration = 0;
 
   /// Debounce timer for connectivity events — collapses rapid network flapping
   Timer? _connectivityDebounce;
@@ -326,16 +327,26 @@ class MultiServerManager {
     return client;
   }
 
-  /// Persists a new endpoint, rebuilds the failover list, and switches the client.
-  Future<void> _promoteEndpoint({
+  /// Persists a new endpoint, rebuilds the failover list, and switches the
+  /// client only while it is still the registered client for this server.
+  Future<bool> _promoteEndpoint({
     required PlexClient client,
     required PlexServer server,
     required StorageService storage,
     required String newUrl,
   }) async {
-    await storage.saveServerEndpoint(ServerId(server.clientIdentifier), newUrl);
+    final serverId = ServerId(server.clientIdentifier);
+    bool isCurrent() {
+      final registered = _clients[serverId];
+      return identical(_plexServers[serverId], server) && (registered == null || identical(registered, client));
+    }
+
+    if (!isCurrent()) return false;
+    await storage.saveServerEndpoint(serverId, newUrl);
+    if (!isCurrent()) return false;
     final newEndpoints = server.prioritizedEndpointUrls(preferredFirst: newUrl);
     await client.updateEndpointPreferences(newEndpoints, switchToFirst: true);
+    return isCurrent();
   }
 
   /// Continues draining the connection optimization stream in the background,
@@ -349,6 +360,12 @@ class MultiServerManager {
     () async {
       try {
         while (await streamIterator.moveNext()) {
+          final serverId = ServerId(server.clientIdentifier);
+          final registered = _clients[serverId];
+          if (!identical(_plexServers[serverId], server) || (registered != null && !identical(registered, client))) {
+            appLogger.d('Stopping stale endpoint optimization for ${server.name}');
+            break;
+          }
           final connection = streamIterator.current;
           final newUrl = connection.uri;
 
@@ -483,6 +500,7 @@ class MultiServerManager {
     PlexAccountConnection connection, {
     Duration timeout = MediaServerTimeouts.perServerConnect,
   }) async {
+    final generation = ++_profileRefreshGeneration;
     if (connection.servers.isEmpty) return const {};
     final bound = <String>{};
     final futures = connection.servers.map((server) async {
@@ -491,11 +509,12 @@ class MultiServerManager {
       _plexServers[serverId] = server;
       final existing = _clients[serverId];
       if (existing is PlexClient && ((_serverStatus[serverId] ?? false) || _authErrorServers.contains(serverId))) {
-        // Rotate the X-Plex-Token in-place so the server treats requests
-        // as the new user. `applyTokenUpdate` updates both config and
-        // _http.defaultHeaders — leaving headers stale would silently
-        // keep authenticating as the previous user.
         await existing.applyTokenUpdate(server.accessToken);
+        if (generation != _profileRefreshGeneration ||
+            !identical(_plexServers[serverId], server) ||
+            !identical(_clients[serverId], existing)) {
+          return;
+        }
         _authErrorServers.remove(serverId);
         _serverStatus[serverId] = true;
         bound.add(serverId);
@@ -507,6 +526,10 @@ class MultiServerManager {
           server: server,
           clientIdentifier: connection.clientIdentifier,
         ).namedTimeout(timeout, operation: 'connect to ${server.name}');
+        if (generation != _profileRefreshGeneration || !identical(_plexServers[serverId], server)) {
+          _closeClient(client);
+          return;
+        }
         final oldClient = _clients[serverId];
         if (oldClient != null) _closeClient(oldClient);
         _clients[serverId] = client;
@@ -515,12 +538,14 @@ class MultiServerManager {
         bound.add(serverId);
         _connectProgressController.add((serverId: serverId, online: true));
       } catch (e, stackTrace) {
+        if (generation != _profileRefreshGeneration || !identical(_plexServers[serverId], server)) return;
         appLogger.e('refreshTokensForProfile: failed to connect ${server.name}', error: e, stackTrace: stackTrace);
         _serverStatus[serverId] = false;
         _connectProgressController.add((serverId: serverId, online: false));
       }
     });
     await Future.wait(futures);
+    if (generation != _profileRefreshGeneration) return const {};
     _statusController.add(Map.from(_serverStatus));
     if (bound.isNotEmpty && _connectivitySubscription == null) {
       _startNetworkMonitoring();
@@ -937,10 +962,13 @@ class MultiServerManager {
         }
 
         if (client != null) {
-          await _promoteEndpoint(client: client, server: server, storage: storage, newUrl: newUrl);
+          final promoted = await _promoteEndpoint(client: client, server: server, storage: storage, newUrl: newUrl);
+          if (!promoted) return;
           appLogger.i('Switched ${server.name} to better endpoint: $newUrl', error: {'type': connection.displayType});
         } else {
+          if (_plexServers[serverId] != server) return;
           await storage.saveServerEndpoint(serverId, newUrl);
+          if (_plexServers[serverId] != server) return;
           appLogger.i('Updated optimal endpoint for ${server.name}: $newUrl', error: {'type': connection.displayType});
         }
       }
@@ -960,6 +988,11 @@ class MultiServerManager {
     try {
       appLogger.d('Attempting reconnection for ${server.name}');
       final client = await _createClientForServer(server: server, clientIdentifier: clientId);
+      if (!identical(_plexServers[serverId], server) || _resolveClientIdentifier(serverId) != clientId) {
+        _closeClient(client);
+        appLogger.d('Ignoring stale reconnection result for ${server.name}');
+        return;
+      }
 
       final oldClient = _clients[serverId];
       if (oldClient != null) _closeClient(oldClient);
@@ -1138,6 +1171,7 @@ class MultiServerManager {
   }
 
   Set<MediaServerClient> _detachAllClients() {
+    ++_profileRefreshGeneration;
     _stopNetworkMonitoring();
     for (final timer in _reconnectDebounce.values) {
       timer.cancel();

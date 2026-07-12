@@ -248,4 +248,43 @@ void main() {
       },
     );
   });
+
+  test('overlapping playback-rate changes are serialized in call order', () async {
+    final releaseFirstSpeed = Completer<void>();
+    final firstSpeedStarted = Completer<void>();
+    final speedValues = <String>[];
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (call) async {
+        if (call.method == 'initialize') return true;
+        if (call.method == 'setProperty') {
+          final arguments = call.arguments as Map;
+          if (arguments['name'] == 'speed') {
+            speedValues.add(arguments['value'] as String);
+            if (!firstSpeedStarted.isCompleted) firstSpeedStarted.complete();
+            if (speedValues.length == 1) await releaseFirstSpeed.future;
+          }
+        }
+        return null;
+      },
+      testBody: () async {
+        final player = PlayerNative();
+        try {
+          final first = player.setRate(1.25);
+          final second = player.setRate(1.5);
+          await firstSpeedStarted.future;
+
+          expect(speedValues, ['1.25']);
+
+          releaseFirstSpeed.complete();
+          await Future.wait([first, second]);
+          expect(speedValues, ['1.25', '1.5']);
+        } finally {
+          if (!releaseFirstSpeed.isCompleted) releaseFirstSpeed.complete();
+          await player.dispose();
+        }
+      },
+    );
+  });
 }

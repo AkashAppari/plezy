@@ -210,6 +210,13 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
   /// Mirrors the "one item deleted on the server" invariant: decrements
   /// [totalSize] even if [index] wasn't in the sparse map (evicted).
   void removeLoadedItemAndShift(int index) {
+    _requestId++;
+    _cancelToken?.abort();
+    _cancelToken = AbortController();
+    _retryTimer?.cancel();
+    _retryTimer = null;
+    _loadingRanges.clear();
+    _scheduledRetry = null;
     loadedItems.remove(index);
     final shifted = <int, T>{};
     for (final entry in loadedItems.entries) {

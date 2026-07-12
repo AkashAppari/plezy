@@ -174,6 +174,7 @@ class PlayerNative extends PlayerBase {
   // Two concurrent invokes on Android caused MpvPlayerPlugin.handleInitialize
   // to dispose-and-recreate the in-flight core, hanging playback (#930).
   Future<void>? _initFuture;
+  Future<void> _rateChangeTail = Future<void>.value();
 
   Future<void> _ensureInitialized() async {
     if (initialized) return;
@@ -554,10 +555,16 @@ class PlayerNative extends PlayerBase {
   }
 
   @override
-  Future<void> setRate(double rate) async {
-    // mpv cannot scaletempo compressed (spdif) audio and silently keeps
-    // playing at 1x, so suspend passthrough while the rate is not 1.0.
+  Future<void> setRate(double rate) {
     _currentRate = rate;
+    final operation = _rateChangeTail.then((_) => _applyRateChange(rate));
+    _rateChangeTail = operation.catchError((Object _, StackTrace _) {});
+    return operation;
+  }
+
+  Future<void> _applyRateChange(double rate) async {
+    // mpv cannot scaletempo compressed (spdif) audio and silently keeps
+    // playing at 1x, so serialize passthrough and speed transitions.
     if (_passthroughActive && rate != 1.0) {
       await _applyPassthrough(false);
     }

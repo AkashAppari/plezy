@@ -90,6 +90,9 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   DiscoverLoadState _hubsState = DiscoverLoadState.initial;
   String? _errorMessage;
   int _loadGeneration = 0;
+  int _contentRevision = 0;
+  Future<void>? _continueWatchingRefreshFuture;
+  bool _continueWatchingRefreshQueued = false;
 
   Set<String> _lastSeenHiddenKeys = {};
   List<String> _lastSeenLibraryOrderKeys = const [];
@@ -161,6 +164,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // listening widgets dirty mid-build.
     await null;
     if (isDisposed) return;
+    ++_contentRevision;
     appLogger.d('DiscoverProvider: loading content from all servers');
     _onDeckState = DiscoverLoadState.loading;
     _hubsState = DiscoverLoadState.loading;
@@ -262,6 +266,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// Failures keep the loaded state and leave the ids un-loaded, so the next
   /// status emission retries them.
   Future<void> _loadDeltaOnce(Set<String> serverIds) async {
+    ++_contentRevision;
     // A full pass may have covered these ids while they sat in the queue.
     final ids = serverIds.difference(_fullyLoadedServerIds);
     final onDeckIds = ids.difference(_loadedOnDeckServerIds);
@@ -350,17 +355,45 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     }).toList();
   }
 
-  /// Background refresh of Continue Watching only — never flips load states
-  /// or surfaces errors (a stale row beats an error flash), never refetches
-  /// hubs.
-  Future<void> refreshContinueWatching() async {
+  /// Background refresh of Continue Watching only. Concurrent events coalesce
+  /// into the active request plus at most one trailing fresh request.
+  Future<void> refreshContinueWatching() {
+    final active = _continueWatchingRefreshFuture;
+    if (active != null) {
+      _continueWatchingRefreshQueued = true;
+      return active;
+    }
+    late final Future<void> refresh;
+    refresh = _runContinueWatchingRefreshes().whenComplete(() {
+      if (identical(_continueWatchingRefreshFuture, refresh)) {
+        _continueWatchingRefreshFuture = null;
+      }
+    });
+    _continueWatchingRefreshFuture = refresh;
+    return refresh;
+  }
+
+  Future<void> _runContinueWatchingRefreshes() async {
+    do {
+      _continueWatchingRefreshQueued = false;
+      await _refreshContinueWatchingOnce();
+    } while (_continueWatchingRefreshQueued && !isDisposed);
+  }
+
+  Future<void> _refreshContinueWatchingOnce() async {
     try {
       if (!_multiServer.hasConnectedServers) return;
+      final revision = _contentRevision;
+      final hiddenKeys = Set<String>.of(_hiddenLibraries.hiddenLibraryKeys);
       final fetched = await _multiServer.aggregationService.getOnDeckFromAllServers(
         limit: _continueWatchingProbeLimit,
-        hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys,
+        hiddenLibraryKeys: hiddenKeys,
       );
       if (isDisposed) return;
+      if (revision != _contentRevision) {
+        _continueWatchingRefreshQueued = true;
+        return;
+      }
       _applyOnDeck(fetched.items);
       _loadedOnDeckServerIds = fetched.succeededServerIds;
       safeNotifyListeners();

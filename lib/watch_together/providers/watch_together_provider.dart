@@ -389,8 +389,7 @@ class WatchTogetherProvider with ChangeNotifier {
       appLogger.d('WatchTogether: Joined session successfully');
     } catch (e) {
       appLogger.e('WatchTogether: Failed to join session', error: e);
-      _session = _session?.copyWith(state: SessionState.error, errorMessage: e.toString());
-      notifyListeners();
+      await leaveSession();
       rethrow;
     }
   }

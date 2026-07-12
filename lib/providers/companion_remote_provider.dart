@@ -43,6 +43,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
 
   Timer? _reconnectTimer;
   int _reconnectAttempts = 0;
+  Future<void>? _activeReconnect;
   bool _intentionalDisconnect = false;
 
   // Reconnection context (only hostAddresses and hostClientId are connection-specific)
@@ -759,7 +760,18 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     _reconnectTimer = Timer(delay, _attemptReconnect);
   }
 
-  Future<void> _attemptReconnect() async {
+  Future<void> _attemptReconnect() {
+    final active = _activeReconnect;
+    if (active != null) return active;
+    late final Future<void> attempt;
+    attempt = _runReconnectAttempt().whenComplete(() {
+      if (identical(_activeReconnect, attempt)) _activeReconnect = null;
+    });
+    _activeReconnect = attempt;
+    return attempt;
+  }
+
+  Future<void> _runReconnectAttempt() async {
     if (_lastHostAddresses == null || !isCryptoReady) {
       appLogger.w('CompanionRemote: No stored context for reconnect');
       _session = _session?.copyWith(

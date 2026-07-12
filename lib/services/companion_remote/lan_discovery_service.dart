@@ -48,6 +48,7 @@ class LanDiscoveryService {
   RawDatagramSocket? _listenSocket;
   StreamSubscription<RawSocketEvent>? _listenSubscription;
   Timer? _staleCleanupTimer;
+  int _listenGeneration = 0;
   final Map<String, DiscoveredHost> _discoveredHosts = {};
   final _hostsController = StreamController<List<DiscoveredHost>>.broadcast();
 
@@ -143,9 +144,9 @@ class LanDiscoveryService {
   Stream<List<DiscoveredHost>> startListeningForContexts(List<RemoteAuthContext> contexts) {
     _stopListeningInternal();
     _discoveredHosts.clear();
+    final generation = _listenGeneration;
 
-    _bindListener(contexts);
-
+    unawaited(_bindListener(contexts, generation));
     // Periodically remove stale hosts
     _staleCleanupTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       final now = DateTime.now();
@@ -166,23 +167,29 @@ class LanDiscoveryService {
     return _hostsController.stream;
   }
 
-  Future<void> _bindListener(List<RemoteAuthContext> contexts) async {
+  Future<void> _bindListener(List<RemoteAuthContext> contexts, int generation) async {
     try {
-      _listenSocket = await RawDatagramSocket.bind(
+      final socket = await RawDatagramSocket.bind(
         InternetAddress.anyIPv4,
         discoveryPort,
         reuseAddress: true,
         reusePort: true,
       );
-
+      if (generation != _listenGeneration) {
+        socket.close();
+        return;
+      }
+      _listenSocket = socket;
       appLogger.d('LanDiscovery: Listening on port $discoveryPort');
 
-      _listenSubscription = _listenSocket!.listenDatagrams(
+      _listenSubscription = socket.listenDatagrams(
         (datagram) => _handleDatagram(datagram, contexts),
         debugLabel: 'LanDiscovery listener',
       );
     } catch (e) {
-      appLogger.e('LanDiscovery: Failed to bind listener', error: e);
+      if (generation == _listenGeneration) {
+        appLogger.e('LanDiscovery: Failed to bind listener', error: e);
+      }
     }
   }
 
@@ -274,6 +281,7 @@ class LanDiscoveryService {
   }
 
   void _stopListeningInternal() {
+    ++_listenGeneration;
     _staleCleanupTimer?.cancel();
     _staleCleanupTimer = null;
     _listenSubscription?.cancel();

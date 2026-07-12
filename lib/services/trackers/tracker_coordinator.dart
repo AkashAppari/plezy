@@ -49,15 +49,23 @@ class TrackerCoordinator {
   /// tracker crossing semantics stay aligned with playback progress reporting.
   final PlaybackTimeline _timeline = PlaybackTimeline(watchedThreshold: _fallbackWatchedThreshold);
   bool _thresholdCrossed = false;
+  int _playbackRevision = 0;
 
   Future<void> initialize() async {
     await Future.wait(_trackers.map((t) => t.initialize()));
   }
 
   Future<void> startPlayback(MediaItem metadata, MediaServerClient client, {bool isLive = false}) async {
-    if (isLive) return;
+    final revision = ++_playbackRevision;
+    if (isLive) {
+      _reset();
+      return;
+    }
     final mediaType = metadata.kind;
-    if (mediaType != MediaKind.movie && mediaType != MediaKind.episode) return;
+    if (mediaType != MediaKind.movie && mediaType != MediaKind.episode) {
+      _reset();
+      return;
+    }
     final libraryGlobalKey = metadata.libraryGlobalKey;
     if (!_hasActiveTrackerForLibrary(libraryGlobalKey)) {
       _reset();
@@ -72,6 +80,7 @@ class TrackerCoordinator {
       _resolverClientKey = clientKey;
     }
     final ctx = await _buildContext(metadata, _resolver!);
+    if (revision != _playbackRevision) return;
     if (ctx == null) {
       appLogger.d('Trackers: no external IDs for ${metadata.id}');
       _reset();
@@ -287,16 +296,13 @@ class TrackerCoordinator {
   }
 
   Future<void> stopPlayback() async {
+    ++_playbackRevision;
     final ctx = _ctx;
-    if (ctx == null) {
-      _reset();
-      return;
-    }
-    // Safety net: fire if we passed the threshold but missed the tick.
-    if (!_thresholdCrossed && _timeline.watchedThresholdReached) {
+    final shouldMarkWatched = ctx != null && !_thresholdCrossed && _timeline.watchedThresholdReached;
+    _reset();
+    if (ctx != null && shouldMarkWatched) {
       await _dispatchMarkWatched(ctx);
     }
-    _reset();
   }
 
   void updatePosition(Duration position) {
@@ -315,6 +321,7 @@ class TrackerCoordinator {
   /// Called on Plex profile switch — drops in-flight state across all
   /// trackers and invalidates the resolver so a fresh Plex client is used.
   void cancelInFlight() {
+    ++_playbackRevision;
     _reset();
     _resolver?.clearCache();
     _resolver = null;

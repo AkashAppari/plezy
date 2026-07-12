@@ -215,4 +215,22 @@ void main() {
     expect(peerEvents, ['guest-1']);
     expect(relay.messages.single.where((message) => message['type'] == 'create'), hasLength(1));
   });
+
+  test('disconnect cancels an in-flight room announcement without timeout delay', () async {
+    final announcementSeen = Completer<void>();
+    final relay = await relayWith((_, _, message) {
+      if (message['type'] == 'create' && !announcementSeen.isCompleted) {
+        announcementSeen.complete();
+      }
+    });
+    final service = serviceFor(relay);
+
+    final pending = service.createSession(sessionId: 'cancel1');
+    await announcementSeen.future.timeout(const Duration(seconds: 1));
+    await service.disconnect();
+
+    await expectLater(pending, throwsStateError);
+    expect(service.sessionId, isNull);
+    expect(service.connectedPeers, isEmpty);
+  });
 }

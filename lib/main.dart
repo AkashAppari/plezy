@@ -664,7 +664,10 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     List<String>? targetKeys,
     bool force = false,
   }) async {
-    if (_isAutoDeleteRunning) return;
+    if (_isAutoDeleteRunning) {
+      if (targetKeys != null) _pendingSyncKeys.addAll(targetKeys);
+      return;
+    }
     _isAutoDeleteRunning = true;
     try {
       await downloadProvider.refreshMetadataFromCache();
@@ -697,6 +700,11 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
       }
     } finally {
       _isAutoDeleteRunning = false;
+      if (_pendingSyncKeys.isNotEmpty) {
+        final queuedKeys = _pendingSyncKeys.toList();
+        _pendingSyncKeys.clear();
+        unawaited(_autoDeleteAndSync(downloadProvider, targetKeys: queuedKeys));
+      }
     }
   }
 

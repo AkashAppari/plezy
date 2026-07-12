@@ -53,6 +53,7 @@ class TraktScrobbleService implements TrackerRatingSource {
   TraktScrobbleState? _lastSentState;
   DateTime? _lastSentAt;
   DateTime? _lastSeekCheckpointAt;
+  int _playbackRevision = 0;
 
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -124,9 +125,15 @@ class TraktScrobbleService implements TrackerRatingSource {
   /// Drop the current scrobble state without sending a stop. Called on profile
   /// switch and when the service is disabled mid-playback.
   void cancelInFlight() {
+    ++_playbackRevision;
+    _clearPlaybackState();
+  }
+
+  void _clearPlaybackState() {
     _currentBody = null;
     _lastSentState = null;
     _lastSentAt = null;
+    _lastSeekCheckpointAt = null;
     _resolver?.clearCache();
     _resolver = null;
     _timeline.reset();
@@ -209,8 +216,9 @@ class TraktScrobbleService implements TrackerRatingSource {
   }
 
   Future<void> startPlayback(MediaItem metadata, MediaServerClient client, {bool isLive = false}) async {
-    if (!_canScrobble) return;
-    if (isLive) return;
+    final revision = ++_playbackRevision;
+    _clearPlaybackState();
+    if (!_canScrobble || isLive) return;
 
     final type = metadata.kind;
     if (type != MediaKind.movie && type != MediaKind.episode) return;
@@ -227,13 +235,13 @@ class TraktScrobbleService implements TrackerRatingSource {
       position: metadata.viewOffsetMs != null ? Duration(milliseconds: metadata.viewOffsetMs!) : Duration.zero,
       duration: metadata.durationMs != null ? Duration(milliseconds: metadata.durationMs!) : null,
     );
-    _lastSeekCheckpointAt = null;
     _resolver = TrackerIdResolver(client, needsFribb: () => false);
 
     final body = await _buildBody(metadata);
+    if (revision != _playbackRevision) return;
     if (body == null) {
       appLogger.d('Trakt: skipping scrobble — no usable IDs for ${metadata.id}');
-      cancelInFlight();
+      _clearPlaybackState();
       return;
     }
     _currentBody = body;
@@ -274,9 +282,13 @@ class TraktScrobbleService implements TrackerRatingSource {
   }
 
   Future<void> stopPlayback() async {
-    if (_currentBody == null) return;
+    final revision = ++_playbackRevision;
+    if (_currentBody == null) {
+      _clearPlaybackState();
+      return;
+    }
     await _send(TraktScrobbleState.stop, progress: _progressPercent());
-    cancelInFlight();
+    if (revision == _playbackRevision) _clearPlaybackState();
   }
 
   Future<TraktScrobbleRequest?> _buildBody(MediaItem metadata) async {

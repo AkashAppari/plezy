@@ -40,6 +40,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
 
   /// Previously-seen set of online server IDs, used to detect new servers
   Set<String> _previousOnlineServerIds = {};
+  int _liveTvCheckGeneration = 0;
 
   /// Invoked with the current visibility-filtered online server ids whenever
   /// the manager's status stream fires (a server connects, reconnects, drops,
@@ -286,8 +287,8 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// uniformly).
   Future<void> checkLiveTvAvailability() async {
     if (isDisposed) return;
+    final generation = ++_liveTvCheckGeneration;
     final newLiveTvServers = <LiveTvServerInfo>[];
-
     for (final serverId in onlineServerIds) {
       final genericClient = _serverManager.getClient(ServerId(serverId));
       if (genericClient == null) continue;
@@ -319,7 +320,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
     final hadLiveTv = _hasLiveTv;
     final oldServerIds = _liveTvServers.map((s) => '${s.serverId}\u0000${s.dvrKey}').toSet();
     final newServerIds = visibleLiveTvServers.map((s) => '${s.serverId}\u0000${s.dvrKey}').toSet();
-    if (isDisposed) return;
+    if (isDisposed || generation != _liveTvCheckGeneration) return;
     _liveTvServers
       ..clear()
       ..addAll(visibleLiveTvServers);
@@ -333,6 +334,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
 
   @override
   void dispose() {
+    ++_liveTvCheckGeneration;
     _statusSubscription?.cancel();
     super.dispose();
   }

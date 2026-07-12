@@ -60,6 +60,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
   bool _isSearching = false;
   String? _error;
   String? _downloadingKey;
+  int _searchGeneration = 0;
 
   bool _showLanguagePicker = false;
 
@@ -83,6 +84,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
 
   @override
   void dispose() {
+    ++_searchGeneration;
     _debounceTimer?.cancel();
     _languageFocusNode.dispose();
     _titleFocusNode.dispose();
@@ -92,37 +94,34 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
 
   Future<void> _search() async {
     if (!mounted) return;
+    final generation = ++_searchGeneration;
     setState(() {
       _isSearching = true;
       _error = null;
     });
 
     try {
-      // Defense-in-depth: searchSubtitles is Plex-only. The UI gates this
-      // sheet on `subtitleSearchSupported` upstream, but if a future caller
-      // reaches us with a Jellyfin server, fail soft instead of throwing.
       final neutral = context.tryGetMediaClientForServer(ServerId(widget.serverId));
       final client = neutral is PlexClient ? neutral : null;
       if (client == null) {
-        if (!mounted) return;
-        setState(() {
-          _isSearching = false;
-        });
+        if (!mounted || generation != _searchGeneration) return;
+        setState(() => _isSearching = false);
         return;
       }
       final title = _titleController.text.trim();
+      final language = _languageCode;
       final results = await client.searchSubtitles(
         widget.ratingKey,
-        language: _languageCode,
+        language: language,
         title: title.isEmpty ? null : title,
       );
-      if (!mounted) return;
+      if (!mounted || generation != _searchGeneration) return;
       setState(() {
         _results = results;
         _isSearching = false;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || generation != _searchGeneration) return;
       setState(() {
         _error = e.toString();
         _isSearching = false;
@@ -149,7 +148,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
   Future<void> _submitSearchAndFocusFirstResult() async {
     _debounceTimer?.cancel();
     await _search();
-    if (!mounted || !InputModeTracker.isKeyboardMode(context)) return;
+    if (!mounted || !InputModeTracker.isKeyboardMode(context, listen: false)) return;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -158,6 +157,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
   }
 
   void _onLanguageSelected(String code, String name) {
+    _debounceTimer?.cancel();
     setState(() {
       _languageCode = code;
       _languageName = name;

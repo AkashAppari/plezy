@@ -103,6 +103,7 @@ class GuestPlaybackReconciler {
   bool _nudgeDisabled = false;
   bool _nudgeConfirmed = false;
   Timer? _nudgeConfirmTimer;
+  double? _nudgeTargetRate;
   int _lastHardSeekMs = -hardSeekCooldownMs;
   final List<int> _driftSamples = [];
 
@@ -212,6 +213,9 @@ class GuestPlaybackReconciler {
     _settleTimer = null;
     _settling = false;
     _nudging = false;
+    _nudgeDisabled = false;
+    _nudgeConfirmed = false;
+    _nudgeTargetRate = null;
     _nudgeConfirmTimer?.cancel();
     _nudgeConfirmTimer = null;
     _scheduledStartTimer?.cancel();
@@ -499,6 +503,7 @@ class GuestPlaybackReconciler {
     if (_nudging && (player.rate - targetRate).abs() < 0.001) return;
 
     _nudging = true;
+    _nudgeTargetRate = targetRate;
     unawaited(player.setRate(targetRate));
 
     // Arm the capability check once per (un-confirmed) nudge episode — a
@@ -507,11 +512,13 @@ class GuestPlaybackReconciler {
       _nudgeConfirmTimer = Timer(const Duration(milliseconds: nudgeConfirmMs), () {
         _nudgeConfirmTimer = null;
         final currentPlayer = _player;
-        if (currentPlayer == null || !_nudging) return;
-        if ((currentPlayer.rate - targetRate).abs() > 0.005) {
-          appLogger.w('WatchTogether: Rate nudges not taking effect — disabling for this session');
+        final expectedRate = _nudgeTargetRate;
+        if (currentPlayer == null || !_nudging || expectedRate == null) return;
+        if ((currentPlayer.rate - expectedRate).abs() > 0.005) {
+          appLogger.w('WatchTogether: Rate nudges not taking effect — disabling for this attachment');
           _nudgeDisabled = true;
           _nudging = false;
+          _nudgeTargetRate = null;
           unawaited(currentPlayer.setRate(_latestState?.rate ?? 1.0));
         } else {
           _nudgeConfirmed = true;
@@ -523,6 +530,7 @@ class GuestPlaybackReconciler {
   void _exitNudgeIfNeeded(PlaybackState state) {
     if (!_nudging) return;
     _nudging = false;
+    _nudgeTargetRate = null;
     final player = _player;
     if (player != null) {
       unawaited(player.setRate(state.rate));
