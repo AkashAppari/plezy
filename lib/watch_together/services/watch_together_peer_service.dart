@@ -44,6 +44,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
 
   WebSocketChannel? _channel;
   StreamSubscription? _channelSubscription;
+  Completer<void>? _setupCompleter;
   final Set<String> _connectedPeers = {};
   String? _sessionId;
   String? _myPeerId;
@@ -123,31 +124,54 @@ class WatchTogetherPeerService with KeepaliveMixin {
     return channel;
   }
 
+  /// Connect, listen, and send a room setup announcement.
+  Future<Completer<void>> _connectAndAnnounce(String type) async {
+    final channel = await _connectToRelay();
+    _channel = channel;
+
+    _listenToChannel(channel);
+    startKeepalive();
+
+    return _announce(type);
+  }
+
+  Completer<void> _announce(String type) {
+    final completer = Completer<void>();
+    _setupCompleter = completer;
+    _sendRaw({'type': type, 'sessionId': _sessionId, 'peerId': _myPeerId});
+    return completer;
+  }
+
   /// Listen on the channel stream and route incoming server messages.
-  void _listenToChannel(WebSocketChannel channel, {Completer<void>? setupCompleter}) {
+  void _listenToChannel(WebSocketChannel channel) {
     _channelSubscription?.cancel();
     _channelSubscription = channel.stream.listen(
       (data) {
+        if (!identical(_channel, channel)) return;
         resetPongTimer();
-        _handleServerMessage(data as String, setupCompleter: setupCompleter);
+        _handleServerMessage(data as String);
       },
       onError: (error) {
+        if (!identical(_channel, channel)) return;
         appLogger.e('WatchTogether: WebSocket error', error: error);
         _safeAdd(
           _errorController,
           PeerError(type: PeerErrorType.serverError, message: 'WebSocket error: $error', originalError: error),
         );
-        if (setupCompleter != null && !setupCompleter.isCompleted) {
-          setupCompleter.completeError(error);
+        if (_setupCompleter case final completer? when !completer.isCompleted) {
+          completer.completeError(error);
+          _setupCompleter = null;
         }
         _handleWebSocketClosed();
       },
       onDone: () {
+        if (!identical(_channel, channel)) return;
         appLogger.w('WatchTogether: WebSocket closed');
-        if (setupCompleter != null && !setupCompleter.isCompleted) {
-          setupCompleter.completeError(
+        if (_setupCompleter case final completer? when !completer.isCompleted) {
+          completer.completeError(
             const PeerError(type: PeerErrorType.connectionFailed, message: 'WebSocket closed before setup completed'),
           );
+          _setupCompleter = null;
         }
         _handleWebSocketClosed();
       },
@@ -155,7 +179,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
   }
 
   /// Handle an incoming server message (JSON string).
-  void _handleServerMessage(String raw, {Completer<void>? setupCompleter}) {
+  void _handleServerMessage(String raw) {
     try {
       final msg = jsonDecode(raw) as Map<String, dynamic>;
       final type = msg['type'] as String?;
@@ -164,8 +188,9 @@ class WatchTogetherPeerService with KeepaliveMixin {
         case 'created':
           appLogger.d('WatchTogether: Room created: ${msg['sessionId']}');
           _safeAdd(_connectionStateController, true);
-          if (setupCompleter != null && !setupCompleter.isCompleted) {
-            setupCompleter.complete();
+          if (_setupCompleter case final completer? when !completer.isCompleted) {
+            completer.complete();
+            _setupCompleter = null;
           }
 
         case 'joined':
@@ -176,8 +201,9 @@ class WatchTogetherPeerService with KeepaliveMixin {
             _safeAdd(_peerConnectedController, peerId);
           }
           _safeAdd(_connectionStateController, true);
-          if (setupCompleter != null && !setupCompleter.isCompleted) {
-            setupCompleter.complete();
+          if (_setupCompleter case final completer? when !completer.isCompleted) {
+            completer.complete();
+            _setupCompleter = null;
           }
 
         case 'peerJoined':
@@ -220,8 +246,9 @@ class WatchTogetherPeerService with KeepaliveMixin {
           appLogger.e('WatchTogether: Server error: $code - $message');
           final error = PeerError(type: PeerErrorType.serverError, message: '$code: $message', serverCode: code);
           _safeAdd(_errorController, error);
-          if (setupCompleter != null && !setupCompleter.isCompleted) {
-            setupCompleter.completeError(error);
+          if (_setupCompleter case final completer? when !completer.isCompleted) {
+            completer.completeError(error);
+            _setupCompleter = null;
           }
 
         case 'pong':
@@ -299,26 +326,17 @@ class WatchTogetherPeerService with KeepaliveMixin {
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(delay, () async {
       try {
-        final channel = await _connectToRelay();
-        _channel = channel;
-
-        final completer = Completer<void>();
-        _listenToChannel(channel, setupCompleter: completer);
-        startKeepalive();
-
         // Always try join first — the room may still have peers (e.g. host
         // reconnecting while guests remain). Fall back to create only if
         // the room no longer exists and we were the host.
-        _sendRaw({'type': 'join', 'sessionId': _sessionId, 'peerId': _myPeerId});
+        final completer = await _connectAndAnnounce('join');
 
         try {
           await completer.future.namedTimeout(const Duration(seconds: 10), operation: 'WatchTogether reconnect');
         } on PeerError catch (e) {
           if (_isHost && e.serverCode == 'room_not_found') {
             appLogger.d('WatchTogether: Room gone, re-creating as host');
-            final createCompleter = Completer<void>();
-            _listenToChannel(channel, setupCompleter: createCompleter);
-            _sendRaw({'type': 'create', 'sessionId': _sessionId, 'peerId': _myPeerId});
+            final createCompleter = _announce('create');
             await createCompleter.future.namedTimeout(
               const Duration(seconds: 10),
               operation: 'WatchTogether reconnect create',
@@ -357,14 +375,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
     _reconnectAttempts = 0;
 
     try {
-      final channel = await _connectToRelay();
-      _channel = channel;
-
-      final completer = Completer<void>();
-      _listenToChannel(channel, setupCompleter: completer);
-      startKeepalive();
-
-      _sendRaw({'type': 'create', 'sessionId': _sessionId, 'peerId': _myPeerId});
+      final completer = await _connectAndAnnounce('create');
 
       await completer.future.timeout(
         const Duration(seconds: 10),
@@ -394,14 +405,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
     _reconnectAttempts = 0;
 
     try {
-      final channel = await _connectToRelay();
-      _channel = channel;
-
-      final completer = Completer<void>();
-      _listenToChannel(channel, setupCompleter: completer);
-      startKeepalive();
-
-      _sendRaw({'type': 'join', 'sessionId': _sessionId, 'peerId': _myPeerId});
+      final completer = await _connectAndAnnounce('join');
 
       await completer.future.timeout(
         const Duration(seconds: 10),
@@ -447,6 +451,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
       appLogger.d('WatchTogether: channel close ignored', error: e);
     }
     _channel = null;
+    _setupCompleter = null;
 
     _connectedPeers.clear();
     _sessionId = null;
