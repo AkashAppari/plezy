@@ -368,11 +368,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   late final FocusNode _overviewFocusNode;
   final _overviewSectionKey = GlobalKey();
 
-  // Locked focus pattern for cast
-  int _focusedCastIndex = 0;
-  final ValueNotifier<int> _focusedCastIndexNotifier = ValueNotifier<int>(0);
-  late final FocusNode _castFocusNode;
-  final ScrollController _castScrollController = ScrollController();
+  final _castStripKey = GlobalKey<CastMemberStripState>();
   final _castSectionKey = GlobalKey();
   final _seasonsSectionKey = GlobalKey();
 
@@ -678,7 +674,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _playButtonFocusNode = FocusNode(debugLabel: 'play_button');
     _ratingChipFocusNode = FocusNode(debugLabel: 'rating_chip');
     _overviewFocusNode = FocusNode(debugLabel: 'overview');
-    _castFocusNode = FocusNode(debugLabel: 'cast_row');
     _infoRowsFocusNode = FocusNode(debugLabel: 'info_rows');
     _loadFullMetadata();
     _initWatchlistState();
@@ -860,10 +855,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _playButtonFocusNode.dispose();
     _ratingChipFocusNode.dispose();
     _overviewFocusNode.dispose();
-    _castFocusNode.dispose();
-    _focusedCastIndexNotifier.dispose();
     _infoRowsFocusNode.dispose();
-    _castScrollController.dispose();
     _extrasSelectLongPress.dispose();
     for (final node in _seasonTabFocusNodes) {
       node.dispose();
@@ -2024,7 +2016,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   void _focusSectionAboveExtras() {
     final metadata = _fullMetadata ?? _metadata;
     if (metadata.roles != null && metadata.roles!.isNotEmpty) {
-      _castFocusNode.requestFocus();
+      _castStripKey.currentState?.requestFocus();
       _scrollSectionIntoView(_castSectionKey);
     } else {
       _focusSectionAboveCast();
@@ -2182,7 +2174,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
 
     if (metadata.roles != null && metadata.roles!.isNotEmpty) {
-      _castFocusNode.requestFocus();
+      _castStripKey.currentState?.requestFocus();
       _scrollSectionIntoView(_castSectionKey);
       return;
     }
@@ -2227,7 +2219,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         _firstEpisodeFocusNode.requestFocus();
         _scrollSectionIntoView(_seasonsSectionKey);
       } else if (metadata.roles != null && metadata.roles!.isNotEmpty) {
-        _castFocusNode.requestFocus();
+        _castStripKey.currentState?.requestFocus();
         _scrollSectionIntoView(_castSectionKey);
       } else if (_extras != null && _extras!.isNotEmpty) {
         _extrasFocusNode.requestFocus();
@@ -2499,81 +2491,27 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _extrasSelectLongPress.reset();
   }
 
-  /// Handle key events for the cast row (locked focus pattern)
-  KeyEventResult _handleCastKeyEvent(FocusNode _, KeyEvent event) {
-    final key = event.logicalKey;
-    if (key.isBackKey) return KeyEventResult.ignored;
-    if (!event.isActionable) return KeyEventResult.ignored;
-
-    final metadata = _fullMetadata ?? _metadata;
-    final roleCount = metadata.roles?.length ?? 0;
-
-    // LEFT: previous cast member
-    if (key.isLeftKey) {
-      if (_focusedCastIndex > 0) {
-        _focusedCastIndex--;
-        _focusedCastIndexNotifier.value = _focusedCastIndex;
-        scrollListToIndex(
-          _castScrollController,
-          _focusedCastIndex,
-          itemExtent: CastMemberStrip.itemExtentForCardWidth(_getResponsiveCardWidth()),
-          leadingPadding: 0,
-        );
-      }
-      return KeyEventResult.handled;
+  void _focusSectionDirectlyAboveCast() {
+    if (_episodes.isNotEmpty) {
+      final useLastEpisode = _episodes.length > 1;
+      if (useLastEpisode) _suppressNextLastEpisodeFocusLoad = true;
+      final target = useLastEpisode ? _lastEpisodeFocusNode : _firstEpisodeFocusNode;
+      target.requestFocus();
+    } else {
+      _focusSectionAboveCast();
     }
+  }
 
-    // RIGHT: next cast member
-    if (key.isRightKey) {
-      if (_focusedCastIndex < roleCount - 1) {
-        _focusedCastIndex++;
-        _focusedCastIndexNotifier.value = _focusedCastIndex;
-        scrollListToIndex(
-          _castScrollController,
-          _focusedCastIndex,
-          itemExtent: CastMemberStrip.itemExtentForCardWidth(_getResponsiveCardWidth()),
-          leadingPadding: 0,
-        );
-      }
-      return KeyEventResult.handled;
+  /// Focus the first visible section below cast.
+  void _focusSectionBelowCast() {
+    if (_extras != null && _extras!.isNotEmpty) {
+      _extrasFocusNode.requestFocus();
+      _scrollSectionIntoView(_extrasSectionKey);
+    } else if (_relatedHubs.isNotEmpty) {
+      _relatedHubKeys.first.currentState?.requestFocusFromMemory();
+    } else if (_hasInfoRows) {
+      _focusInfoRows();
     }
-
-    if (key.isUpKey) {
-      // If episodes are visible, focus the last episode (cast is right below episodes)
-      if (_episodes.isNotEmpty) {
-        final useLastEpisode = _episodes.length > 1;
-        if (useLastEpisode) _suppressNextLastEpisodeFocusLoad = true;
-        final target = useLastEpisode ? _lastEpisodeFocusNode : _firstEpisodeFocusNode;
-        target.requestFocus();
-      } else {
-        _focusSectionAboveCast();
-      }
-      return KeyEventResult.handled;
-    }
-
-    // DOWN: extras → related hubs → info rows → consume
-    if (key.isDownKey) {
-      if (_extras != null && _extras!.isNotEmpty) {
-        _extrasFocusNode.requestFocus();
-        _scrollSectionIntoView(_extrasSectionKey);
-      } else if (_relatedHubs.isNotEmpty) {
-        _relatedHubKeys.first.currentState?.requestFocusFromMemory();
-      } else if (_hasInfoRows) {
-        _focusInfoRows();
-      }
-      return KeyEventResult.handled;
-    }
-
-    // SELECT: navigate to actor media
-    if (key.isSelectKey) {
-      final metadata = _fullMetadata ?? _metadata;
-      if (_focusedCastIndex < (metadata.roles?.length ?? 0)) {
-        _navigateToActorMedia(metadata.roles![_focusedCastIndex]);
-      }
-      return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
   }
 
   /// Handle vertical navigation between related hub sections
@@ -4499,19 +4437,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   Widget _buildCastSectionContent(MediaItem metadata) {
     final roles = metadata.roles!;
-    return Focus(
-      focusNode: _castFocusNode,
-      onKeyEvent: _handleCastKeyEvent,
-      child: ListenableBuilder(
-        listenable: Listenable.merge([_castFocusNode, _focusedCastIndexNotifier]),
-        builder: (context, _) => CastMemberStrip(
-          members: [for (final actor in roles) (name: actor.tag, secondary: actor.role, imagePath: actor.thumbPath)],
-          imageClient: getServerBoundMediaClient(context),
-          controller: _castScrollController,
-          focusedIndex: _castFocusNode.hasFocus ? _focusedCastIndex : null,
-          onMemberTap: (index) => _navigateToActorMedia(roles[index]),
-        ),
-      ),
+    return CastMemberStrip(
+      key: _castStripKey,
+      members: [for (final actor in roles) (name: actor.tag, secondary: actor.role, imagePath: actor.thumbPath)],
+      imageClient: getServerBoundMediaClient(context),
+      onNavigateUp: _focusSectionDirectlyAboveCast,
+      onNavigateDown: _focusSectionBelowCast,
+      onMemberTap: (index) => _navigateToActorMedia(roles[index]),
     );
   }
 

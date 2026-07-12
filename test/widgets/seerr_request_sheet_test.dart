@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -162,6 +163,15 @@ void main() {
     await tester.tap(find.text('Season 2'));
     await tester.pump();
     expect(tester.widget<FilledButton>(submitFinder).onPressed, isNotNull);
+
+    final season2 = tester.widget<CheckboxListTile>(
+      find.ancestor(of: find.text('Season 2'), matching: find.byType(CheckboxListTile)),
+    );
+    season2.focusNode!.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'seerr_request_submit');
 
     await tester.tap(submitFinder);
     await tester.pumpAndSettle();

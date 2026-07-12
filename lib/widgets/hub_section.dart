@@ -28,6 +28,14 @@ import '../utils/scroll_utils.dart';
 import 'horizontal_scroll_with_arrows.dart';
 import '../i18n/strings.g.dart';
 
+enum HubCardSizing {
+  /// Larger cards optimized for top-level TV shelves.
+  shelf,
+
+  /// Grid-equivalent cards for shelves embedded in dense detail content.
+  grid,
+}
+
 /// Shared hub section widget used in both discover and library screens
 /// Displays a hub title with icon and a horizontal scrollable list of items
 ///
@@ -68,6 +76,9 @@ class HubSection extends StatefulWidget {
   /// Use when the parent already provides edge spacing (e.g. inside Padding(16)).
   final bool inset;
 
+  /// Controls whether cards follow top-level shelf or grid geometry.
+  final HubCardSizing cardSizing;
+
   /// Vertical viewport alignment when this hub is focused.
   final double focusScrollAlignment;
 
@@ -87,6 +98,7 @@ class HubSection extends StatefulWidget {
     this.onNavigateUp,
     this.onNavigateToSidebar,
     this.inset = false,
+    this.cardSizing = HubCardSizing.shelf,
     this.focusScrollAlignment = 0.3,
   }) : usesContinueWatchingAction = usesContinueWatchingAction ?? isInContinueWatching;
 
@@ -449,7 +461,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                     final svc = SettingsService.instanceOrNull;
                     if (svc == null) return const SizedBox.shrink();
                     final density = svc.read(SettingsService.libraryDensity);
-                    final baseCardWidth = isTv
+                    final baseCardWidth = isTv && widget.cardSizing == HubCardSizing.shelf
                         ? _getTvCardWidth(constraints.maxWidth, density, leadingPadding)
                         : GridSizeCalculator.getCellWidth(constraints.maxWidth, context, density);
 

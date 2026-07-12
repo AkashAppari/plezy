@@ -4,6 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../focus/dpad_navigator.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_kind.dart';
 import '../models/seerr/seerr_details.dart';
@@ -71,6 +72,8 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
   /// TV only: requestable seasons (specials and empty seasons dropped).
   List<SeerrSeason> _seasons = const [];
   final Set<int> _selectedSeasons = {};
+  List<FocusNode> _seasonFocusNodes = const [];
+  late final FocusNode _requestButtonFocusNode;
 
   bool _is4k = false;
 
@@ -111,7 +114,30 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
   @override
   void initState() {
     super.initState();
+    _requestButtonFocusNode = FocusNode(debugLabel: 'seerr_request_submit');
     unawaited(_load());
+  }
+
+  @override
+  void dispose() {
+    for (final node in _seasonFocusNodes) {
+      node.dispose();
+    }
+    _requestButtonFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _replaceSeasonFocusNodes(List<SeerrSeason> seasons) {
+    for (final node in _seasonFocusNodes) {
+      node.dispose();
+    }
+    _seasonFocusNodes = [
+      for (final season in seasons)
+        FocusNode(
+          debugLabel: 'seerr_season_${season.seasonNumber}',
+          onKeyEvent: (node, event) => _handleSeasonKey(season.seasonNumber, event),
+        ),
+    ];
   }
 
   Future<void> _load() async {
@@ -141,6 +167,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
         ];
       }
       if (!mounted) return;
+      _replaceSeasonFocusNodes(seasons);
       setState(() {
         _settings = settings;
         _mediaInfo = mediaInfo;
@@ -301,6 +328,40 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
     }
   }
 
+  bool get _hasVisibleAdvancedControls {
+    if (!_advancedAllowed || _serversForVariant.isEmpty) return false;
+    final detail = _serverDetail;
+    return _serversForVariant.length > 1 ||
+        (detail?.profiles?.isNotEmpty ?? false) ||
+        (detail?.rootFolders?.isNotEmpty ?? false) ||
+        (detail?.languageProfiles?.isNotEmpty ?? false);
+  }
+
+  void _focusRequestButton() {
+    _requestButtonFocusNode.requestFocus();
+    final buttonContext = _requestButtonFocusNode.context;
+    if (buttonContext == null) return;
+    unawaited(
+      Scrollable.ensureVisible(
+        buttonContext,
+        alignment: 0.9,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      ),
+    );
+  }
+
+  KeyEventResult _handleSeasonKey(int seasonNumber, KeyEvent event) {
+    if (!event.isActionable || !event.logicalKey.isDownKey) {
+      return KeyEventResult.ignored;
+    }
+    if (_requestableSeasons.lastOrNull != seasonNumber || _can4k || _hasVisibleAdvancedControls || !_canSubmit) {
+      return KeyEventResult.ignored;
+    }
+    _focusRequestButton();
+    return KeyEventResult.handled;
+  }
+
   // ---------- UI ----------
 
   @override
@@ -348,6 +409,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
               ],
               const SizedBox(height: 16),
               FilledButton.icon(
+                focusNode: _requestButtonFocusNode,
                 onPressed: _canSubmit ? _submit : null,
                 icon: _submitting ? const LoadingIndicatorBox() : const AppIcon(Symbols.download_rounded, fill: 1),
                 label: Text(t.seerr.request),
@@ -404,16 +466,17 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
         contentPadding: EdgeInsets.zero,
         controlAffinity: ListTileControlAffinity.leading,
       ),
-      for (final season in _seasons) _buildSeasonTile(theme, season),
+      for (var index = 0; index < _seasons.length; index++) _buildSeasonTile(theme, _seasons[index], index),
       const SizedBox(height: 8),
     ];
   }
 
-  Widget _buildSeasonTile(ThemeData theme, SeerrSeason season) {
+  Widget _buildSeasonTile(ThemeData theme, SeerrSeason season, int index) {
     final number = season.seasonNumber;
     final blockedLabel = _seasonBlockedLabel(number);
     final episodeCount = season.episodeCount;
     return CheckboxListTile(
+      focusNode: _seasonFocusNodes[index],
       value: blockedLabel != null || _selectedSeasons.contains(number),
       onChanged: blockedLabel != null || _submitting
           ? null

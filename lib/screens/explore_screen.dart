@@ -26,6 +26,7 @@ import '../widgets/catalog_source_logo.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/settings_builder.dart';
+import '../widgets/rasterized_gradient.dart';
 import '../widgets/tv_browse_rail.dart';
 import '../widgets/tv_spotlight_scaffold.dart';
 import 'catalog_search_screen.dart';
@@ -49,6 +50,7 @@ class ExploreScreenState extends State<ExploreScreen>
   final Map<String, GlobalKey<HubSectionState>> _hubKeysById = {};
   List<GlobalKey<HubSectionState>> _orderedHubKeys = const [];
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
+  final _sourceMenuKey = GlobalKey<AppMenuButtonState<CatalogSourceId>>();
 
   final _tvBrowseRailKey = GlobalKey<TvBrowseRailState>();
   final TvSpotlightController _spotlight = TvSpotlightController();
@@ -87,7 +89,11 @@ class ExploreScreenState extends State<ExploreScreen>
   @override
   void focusActiveTabIfReady() {
     if (PlatformDetector.isTV()) {
-      _tvBrowseRailKey.currentState?.requestFocus();
+      if (_explore.rowHubs.isNotEmpty) {
+        _tvBrowseRailKey.currentState?.requestFocus();
+      } else {
+        _actionBarKey.currentState?.requestFocusOnFirst();
+      }
       return;
     }
     _orderedHubKeys.firstOrNull?.currentState?.requestFocusFromMemory();
@@ -133,26 +139,28 @@ class ExploreScreenState extends State<ExploreScreen>
     CatalogRowId.upcomingMovies || CatalogRowId.upcomingShows => Symbols.event_upcoming_rounded,
   };
 
-  /// App-bar title: the active source name, as a switcher dropdown when more
-  /// than one source is connected (mirrors the libraries dropdown).
-  Widget _buildTitle(CatalogSourcesProvider sources) {
-    final active = sources.activeSource;
-    if (active == null) return Text(t.explore.title);
-    if (sources.connectedSources.length < 2) {
-      return Text(active.displayName);
-    }
+  List<AppMenuEntry<CatalogSourceId>> _sourceMenuEntries(CatalogSourcesProvider sources, CatalogSource active) => [
+    for (final source in sources.connectedSources)
+      AppMenuItem<CatalogSourceId>(
+        value: source.id,
+        leading: CatalogSourceLogo(source.id),
+        label: source.displayName,
+        selected: source.id == active.id,
+      ),
+  ];
+
+  Widget _buildSourceSwitcher(
+    CatalogSourcesProvider sources,
+    CatalogSource active, {
+    TextStyle? textStyle,
+    AppMenuAnchorAlignment anchorAlignment = AppMenuAnchorAlignment.start,
+  }) {
     return AppMenuButton<CatalogSourceId>(
+      key: _sourceMenuKey,
       tooltip: t.explore.selectSource,
+      anchorAlignment: anchorAlignment,
       onSelected: (id) => unawaited(sources.setActiveSource(id)),
-      entriesBuilder: (context) => [
-        for (final source in sources.connectedSources)
-          AppMenuItem<CatalogSourceId>(
-            value: source.id,
-            leading: CatalogSourceLogo(source.id),
-            label: source.displayName,
-            selected: source.id == active.id,
-          ),
-      ],
+      entriesBuilder: (context) => _sourceMenuEntries(sources, active),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Row(
@@ -160,7 +168,7 @@ class ExploreScreenState extends State<ExploreScreen>
           children: [
             CatalogSourceLogo(active.id, size: 22),
             const SizedBox(width: 8),
-            Text(active.displayName, style: Theme.of(context).textTheme.titleLarge),
+            Text(active.displayName, style: textStyle ?? Theme.of(context).textTheme.titleLarge),
             const SizedBox(width: 4),
             const AppIcon(Symbols.arrow_drop_down_rounded, fill: 1, size: 24),
           ],
@@ -169,12 +177,32 @@ class ExploreScreenState extends State<ExploreScreen>
     );
   }
 
+  /// App-bar title: the active source name, as a switcher dropdown when more
+  /// than one source is connected (mirrors the libraries dropdown).
+  Widget _buildTitle(CatalogSourcesProvider sources) {
+    final active = sources.activeSource;
+    if (active == null) return Text(t.explore.title);
+    if (sources.connectedSources.length < 2) {
+      return Text(active.displayName);
+    }
+    return _buildSourceSwitcher(sources, active);
+  }
+
   @override
   Widget build(BuildContext context) {
     final explore = context.watch<ExploreProvider>();
     final sources = context.watch<CatalogSourcesProvider>();
     final rowHubs = explore.rowHubs;
     _updateHubKeys(rowHubs);
+
+    // The TV toolbar must remain mounted for loading, error, and empty
+    // sources so users can always switch away from a source with no rows.
+    if (PlatformDetector.isTV()) {
+      return SettingsBuilder(
+        prefs: const [SettingsService.hideSpoilers, SettingsService.libraryDensity, SettingsService.episodePosterMode],
+        builder: (context) => _buildTvContent(rowHubs, sources),
+      );
+    }
 
     // One header mode for every state. Flipping floating/pinned between the
     // loading/empty scroll view and the content scroll view swaps the
@@ -248,11 +276,6 @@ class ExploreScreenState extends State<ExploreScreen>
           icon: Symbols.explore_rounded,
         ),
       );
-    } else if (PlatformDetector.isTV()) {
-      return SettingsBuilder(
-        prefs: const [SettingsService.hideSpoilers, SettingsService.libraryDensity, SettingsService.episodePosterMode],
-        builder: (context) => _buildTvContent(rowHubs),
-      );
     } else {
       content = CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -287,30 +310,131 @@ class ExploreScreenState extends State<ExploreScreen>
     return null;
   }
 
-  Widget _buildTvContent(List<ExploreRowHub> rowHubs) {
+  Widget _buildTvToolbar(CatalogSourcesProvider sources) {
+    final active = sources.activeSource;
+    final statusBarHeight = MediaQuery.paddingOf(context).top;
+    final colorScheme = Theme.of(context).colorScheme;
+    final overlayColor = colorScheme.brightness == Brightness.dark ? Colors.black : colorScheme.surface;
+    final foregroundColor = colorScheme.onSurface;
+
+    return RasterizedGradient(
+      gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          overlayColor.withValues(alpha: 0.7),
+          overlayColor.withValues(alpha: 0.5),
+          overlayColor.withValues(alpha: 0.3),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.3, 0.6, 1.0],
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(top: statusBarHeight + 8, left: 16, right: 16, bottom: 16),
+        child: Row(
+          children: [
+            const Spacer(),
+            FocusableActionBar(
+              key: _actionBarKey,
+              onNavigateLeft: _navigateToSidebar,
+              onNavigateDown: _tvBrowseRailKey.currentState?.requestFocus,
+              onBack: _navigateToSidebar,
+              spacing: 4,
+              actions: [
+                if (active != null && sources.connectedSources.length > 1)
+                  FocusableAction(
+                    debugLabel: 'ExploreSourceSwitcher',
+                    onPressed: () => _sourceMenuKey.currentState?.showButtonMenu(focusFirstItem: true),
+                    child: _buildSourceSwitcher(
+                      sources,
+                      active,
+                      textStyle: Theme.of(
+                        context,
+                      ).textTheme.titleMedium?.copyWith(color: foregroundColor, fontWeight: .w600),
+                      anchorAlignment: AppMenuAnchorAlignment.end,
+                    ),
+                  ),
+                if (active != null)
+                  FocusableAction(
+                    icon: Symbols.search_rounded,
+                    iconColor: foregroundColor,
+                    tooltip: t.common.search,
+                    onPressed: () => Navigator.of(
+                      context,
+                    ).push(MaterialPageRoute<void>(builder: (_) => CatalogSearchScreen(source: active))),
+                  ),
+                FocusableAction(
+                  icon: Symbols.refresh_rounded,
+                  iconColor: foregroundColor,
+                  tooltip: t.common.refresh,
+                  onPressed: () => unawaited(_explore.load()),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTvContent(List<ExploreRowHub> rowHubs, CatalogSourcesProvider sources) {
     final tvHubs = [for (final rowHub in rowHubs) rowHub.hub];
+    final fullBleedWidth = MainScreenFocusScope.fullBleedWidthOf(context);
     return TvSpotlightScaffold(
       hubs: tvHubs,
       spotlightListenable: _spotlight,
       resolveSpotlight: () => _spotlight.resolve(tvHubs),
       resolveClient: (spotlight) => context.tryGetMediaClientForServer(serverIdOrNull(spotlight?.serverId)),
-      foreground: Positioned(
-        left: 0,
-        right: 0,
-        bottom: 0,
-        child: TvBrowseRail(
-          key: _tvBrowseRailKey,
-          hubs: tvHubs,
-          iconForHub: (hub, _) => _rowIcon(_rowForHub(hub) ?? CatalogRowId.watchlist),
-          onFocusedItemChanged: _setSpotlightItem,
-          loadMoreItems: (hub) {
-            final row = _rowForHub(hub);
-            return row == null ? Future.value(hub.items) : _explore.loadAllForRow(row);
-          },
-          onNavigateToSidebar: _navigateToSidebar,
-          onBack: _navigateToSidebar,
-          tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
-        ),
+      foreground: Stack(
+        fit: StackFit.expand,
+        clipBehavior: Clip.none,
+        children: [
+          if (tvHubs.isEmpty && _explore.isLoading)
+            const Center(child: CircularProgressIndicator())
+          else if (tvHubs.isEmpty && _explore.state == ExploreLoadState.error)
+            Center(
+              child: ErrorStateWidget(
+                message: _explore.errorMessage ?? t.explore.emptyTitle,
+                icon: Symbols.error_outline_rounded,
+                onRetry: () => unawaited(_explore.load()),
+              ),
+            )
+          else if (tvHubs.isEmpty)
+            Center(
+              child: EmptyStateWidget(
+                message: t.explore.emptyMessage(source: _explore.activeSource?.displayName ?? ''),
+                icon: Symbols.explore_rounded,
+              ),
+            ),
+          if (tvHubs.isNotEmpty)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: TvBrowseRail(
+                key: _tvBrowseRailKey,
+                hubs: tvHubs,
+                iconForHub: (hub, _) => _rowIcon(_rowForHub(hub) ?? CatalogRowId.watchlist),
+                onFocusedItemChanged: _setSpotlightItem,
+                loadMoreItems: (hub) {
+                  final row = _rowForHub(hub);
+                  return row == null ? Future.value(hub.items) : _explore.loadAllForRow(row);
+                },
+                onNavigateUp: _actionBarKey.currentState?.requestFocusOnFirst,
+                onNavigateToSidebar: _navigateToSidebar,
+                onBack: _navigateToSidebar,
+                tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
+              ),
+            ),
+          Builder(
+            builder: (context) => SideNavigationBleedBuilder(
+              targetBleed: MainScreenFocusScope.sideNavigationBleedOf(context),
+              child: ExcludeFocusTraversal(child: _buildTvToolbar(sources)),
+              builder: (context, animatedBleed, child) =>
+                  Positioned(top: 0, left: -animatedBleed, width: fullBleedWidth, child: child!),
+            ),
+          ),
+        ],
       ),
     );
   }
