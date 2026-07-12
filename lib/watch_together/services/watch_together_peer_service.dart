@@ -10,6 +10,7 @@ import '../../i18n/strings.g.dart';
 import '../../services/base_peer_service.dart';
 import '../../utils/app_logger.dart';
 import '../models/sync_message.dart';
+import '../primitives.dart';
 
 // Re-export so existing callers that import from here keep working.
 export '../../services/base_peer_service.dart' show PeerError, PeerErrorType;
@@ -352,7 +353,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
 
     _isHost = true;
     _sessionId = sessionId?.toUpperCase() ?? _generateSessionId();
-    _myPeerId = 'wt-$_sessionId';
+    _myPeerId = watchTogetherHostPeerId(_sessionId!);
     _reconnectAttempts = 0;
 
     try {

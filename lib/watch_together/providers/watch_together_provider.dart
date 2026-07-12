@@ -10,6 +10,7 @@ import '../../utils/app_logger.dart';
 import '../models/playback_state.dart';
 import '../models/sync_message.dart';
 import '../models/watch_session.dart';
+import '../primitives.dart';
 import '../services/current_playback_dispatcher.dart';
 import '../services/watch_together_controller.dart';
 import '../services/watch_together_peer_service.dart';
@@ -368,7 +369,7 @@ class WatchTogetherProvider with ChangeNotifier {
       await _peerService!.joinSession(sessionId);
 
       // Session will be fully configured when we receive sessionConfig from host
-      _session = _session!.copyWith(state: SessionState.connected, hostPeerId: 'wt-${sessionId.toUpperCase()}');
+      _session = _session!.copyWith(state: SessionState.connected, hostPeerId: watchTogetherHostPeerId(sessionId));
 
       _displayName = displayName ?? _generateDisplayName();
 
