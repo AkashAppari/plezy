@@ -105,6 +105,11 @@ class ContentStripState extends State<ContentStrip> {
   }
 
   void _bindChapterIndexStream() {
+    if (!_hasChapters) {
+      _chapterIndexStream = const Stream<int?>.empty();
+      return;
+    }
+
     _chapterIndexStream = widget.player.streams.position
         .map((position) => MediaChapter.indexAtPosition(position, widget.chapters))
         .distinct();

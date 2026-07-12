@@ -39,6 +39,10 @@ jobs:
 
           flutter pub get
 
+      - name: Install saf_util development dependencies
+        working-directory: packages/saf_util
+        run: flutter pub get
+
       - name: Verify generated files committed
         run: scripts/codegen.sh --check
 
