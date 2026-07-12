@@ -1,11 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
-import 'package:flutter/services.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../focus/dpad_navigator.dart';
+import '../focus/dpad_select_long_press_controller.dart';
 import '../focus/focus_theme.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
@@ -97,8 +95,6 @@ class HubSection extends StatefulWidget {
 }
 
 class HubSectionState extends State<HubSection> with MountedSetStateMixin, SkeletonUpgradeScheduler {
-  static const _longPressDuration = Duration(milliseconds: 500);
-
   late FocusNode _hubFocusNode;
   final ScrollController _scrollController = ScrollController();
 
@@ -117,9 +113,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
       : 12.0;
   double get _leadingPadding => _leadingPaddingFor(PlatformDetector.isTV());
 
-  Timer? _longPressTimer;
-  bool _isSelectKeyDown = false;
-  bool _longPressTriggered = false;
+  final _selectLongPress = DpadSelectLongPressController();
 
   @override
   void initState() {
@@ -152,7 +146,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
 
   @override
   void dispose() {
-    _longPressTimer?.cancel();
+    _selectLongPress.dispose();
     _hubFocusNode.removeListener(_onFocusChange);
     _hubFocusNode.dispose();
     _scrollController.dispose();
@@ -162,9 +156,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
   void _onFocusChange() {
     // Reset long press state when focus is lost
     if (!_hubFocusNode.hasFocus) {
-      _longPressTimer?.cancel();
-      _isSelectKeyDown = false;
-      _longPressTriggered = false;
+      _selectLongPress.reset();
     } else {
       _notifyFocusedItemChanged();
     }
@@ -237,35 +229,13 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
   KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
 
-    if (key.isSelectKey) {
-      if (event is KeyDownEvent) {
-        if (!_isSelectKeyDown) {
-          _isSelectKeyDown = true;
-          _longPressTriggered = false;
-          _longPressTimer?.cancel();
-          _longPressTimer = Timer(_longPressDuration, () {
-            if (!mounted) return;
-            if (_isSelectKeyDown) {
-              _longPressTriggered = true;
-              SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
-              _showContextMenuForCurrentItem();
-            }
-          });
-        }
-        return KeyEventResult.handled;
-      } else if (event is KeyRepeatEvent) {
-        return KeyEventResult.handled;
-      } else if (event is KeyUpEvent) {
-        final timerWasActive = _longPressTimer?.isActive ?? false;
-        _longPressTimer?.cancel();
-        if (!_longPressTriggered && timerWasActive && _isSelectKeyDown) {
-          _activateCurrentItem();
-        }
-        _isSelectKeyDown = false;
-        _longPressTriggered = false;
-        return KeyEventResult.handled;
-      }
-    }
+    final selectResult = _selectLongPress.handleKeyEvent(
+      event,
+      isOwnerActive: () => mounted,
+      onShortPress: _activateCurrentItem,
+      onLongPress: _showContextMenuForCurrentItem,
+    );
+    if (selectResult != KeyEventResult.ignored) return selectResult;
 
     if (widget.onBack != null) {
       final backResult = handleBackKeyAction(event, widget.onBack!);

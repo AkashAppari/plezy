@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -7,6 +5,7 @@ import '../widgets/clickable_cursor.dart';
 import '../utils/text_input_diagnostics.dart';
 import 'card_focus_scope.dart';
 import 'dpad_navigator.dart';
+import 'dpad_select_long_press_controller.dart';
 import 'focus_glow_overlay.dart';
 import 'focus_theme.dart';
 import 'input_mode_tracker.dart';
@@ -174,9 +173,7 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
   AnimationController? _animationController;
   Animation<double>? _scaleAnimation;
 
-  // Long-press detection for SELECT key
-  Timer? _longPressTimer;
-  bool _isSelectKeyDown = false;
+  final _selectLongPress = DpadSelectLongPressController();
 
   @override
   void initState() {
@@ -240,7 +237,7 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
 
   @override
   void dispose() {
-    _longPressTimer?.cancel();
+    _selectLongPress.dispose();
     _animationController?.dispose();
     if (_ownsNode) {
       _focusNode.dispose();
@@ -256,8 +253,7 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
 
       // Reset long press state when focus is lost
       if (!hasFocus) {
-        _longPressTimer?.cancel();
-        _isSelectKeyDown = false;
+        _selectLongPress.reset();
       }
 
       // Animate scale
@@ -377,8 +373,7 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
 
     if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
       if (event is KeyUpEvent && key.isSelectKey) {
-        _longPressTimer?.cancel();
-        _isSelectKeyDown = false;
+        _selectLongPress.reset();
       }
       return finish(KeyEventResult.handled, 'select-key-up-suppressed');
     }
@@ -401,33 +396,15 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
     // Handle SELECT key with optional long-press detection
     if (key.isSelectKey) {
       if (widget.enableLongPress) {
-        if (event is KeyDownEvent) {
-          // Only start timer on initial press, not repeats
-          if (!_isSelectKeyDown) {
-            _isSelectKeyDown = true;
-            _longPressTimer?.cancel();
-            _longPressTimer = Timer(widget.longPressDuration, () {
-              // Long press detected
-              if (mounted && _isSelectKeyDown) {
-                SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
-                widget.onLongPress?.call();
-              }
-            });
-          }
-          return finish(KeyEventResult.handled, 'select-long-press-down');
-        } else if (event is KeyRepeatEvent) {
-          // Consume repeat events to prevent system sounds
-          return finish(KeyEventResult.handled, 'select-long-press-repeat');
-        } else if (event is KeyUpEvent) {
-          final timerWasActive = _longPressTimer?.isActive ?? false;
-          _longPressTimer?.cancel();
-          if (timerWasActive && _isSelectKeyDown) {
-            // Timer still active - short press
-            widget.onSelect?.call();
-          }
-          // If timer already fired, long press was triggered - do nothing on key up
-          _isSelectKeyDown = false;
-          return finish(KeyEventResult.handled, 'select-long-press-up');
+        final result = _selectLongPress.handleKeyEvent(
+          event,
+          duration: widget.longPressDuration,
+          isOwnerActive: () => mounted,
+          onShortPress: () => widget.onSelect?.call(),
+          onLongPress: () => widget.onLongPress?.call(),
+        );
+        if (result != KeyEventResult.ignored) {
+          return finish(result, 'select-long-press');
         }
       } else if (widget.onSelect != null) {
         return finish(handleOneShotSelect(event, widget.onSelect!), 'one-shot-select');
@@ -441,8 +418,7 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
 
     // Context menu key
     if (key.isContextMenuKey) {
-      _longPressTimer?.cancel();
-      _isSelectKeyDown = false;
+      _selectLongPress.reset();
       widget.onLongPress?.call();
       return finish(KeyEventResult.handled, 'context-menu');
     }

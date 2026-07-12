@@ -9,6 +9,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../focus/card_focus_scope.dart';
 import '../focus/dpad_navigator.dart';
+import '../focus/dpad_select_long_press_controller.dart';
 import '../focus/focus_theme.dart';
 import '../focus/key_event_utils.dart';
 import '../focus/locked_hub_controller.dart';
@@ -385,7 +386,6 @@ class TvBrowseRail extends StatefulWidget {
 }
 
 class TvBrowseRailState extends State<TvBrowseRail> {
-  static const _longPressDuration = Duration(milliseconds: 500);
   // No-touch fallback only: clear suppression even if no select key-up is seen
   // (e.g. a held-key carry-over on a non-touch remote). Touch-driven clicks use
   // the gesture path instead, which is bounded by the physical touch.
@@ -421,12 +421,10 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   final _RailFocusModel _focusModel = _RailFocusModel();
   List<double> _sectionOffsets = const [];
   double _sectionMaxScrollExtent = 0;
-  Timer? _longPressTimer;
+  final _selectLongPress = DpadSelectLongPressController();
   Timer? _selectSuppressionTimer;
   Timer? _selectSuppressionMaxTimer;
   VoidCallback? _gestureSignalListener;
-  bool _isSelectKeyDown = false;
-  bool _longPressTriggered = false;
   bool _suppressSelectUntilKeyUp = false;
   bool _hasUserChangedHub = false;
   bool _hasUserChangedItem = false;
@@ -599,7 +597,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
 
   @override
   void dispose() {
-    _longPressTimer?.cancel();
+    _selectLongPress.dispose();
     _selectSuppressionTimer?.cancel();
     _selectSuppressionMaxTimer?.cancel();
     _detachGestureSignalListener();
@@ -623,9 +621,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   }
 
   void _resetLongPressState() {
-    _longPressTimer?.cancel();
-    _isSelectKeyDown = false;
-    _longPressTriggered = false;
+    _selectLongPress.reset();
   }
 
   void _clearSelectSuppression() {
@@ -698,29 +694,12 @@ class TvBrowseRailState extends State<TvBrowseRail> {
         return KeyEventResult.handled;
       }
 
-      if (event is KeyDownEvent) {
-        if (!_isSelectKeyDown) {
-          _isSelectKeyDown = true;
-          _longPressTriggered = false;
-          _longPressTimer?.cancel();
-          _longPressTimer = Timer(_longPressDuration, () {
-            if (!mounted || !_isSelectKeyDown) return;
-            _longPressTriggered = true;
-            SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
-            _showContextMenuForCurrentItem();
-          });
-        }
-        return KeyEventResult.handled;
-      }
-      if (event is KeyRepeatEvent) return KeyEventResult.handled;
-      if (event is KeyUpEvent) {
-        final timerWasActive = _longPressTimer?.isActive ?? false;
-        _longPressTimer?.cancel();
-        if (!_longPressTriggered && timerWasActive && _isSelectKeyDown) _activateCurrentItem();
-        _isSelectKeyDown = false;
-        _longPressTriggered = false;
-        return KeyEventResult.handled;
-      }
+      return _selectLongPress.handleKeyEvent(
+        event,
+        isOwnerActive: () => mounted,
+        onShortPress: _activateCurrentItem,
+        onLongPress: _showContextMenuForCurrentItem,
+      );
     }
 
     if (widget.onBack != null) {

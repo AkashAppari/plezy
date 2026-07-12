@@ -17,6 +17,7 @@ import '../widgets/collapsible_text.dart';
 import '../widgets/rating_bottom_sheet.dart';
 
 import '../focus/dpad_navigator.dart';
+import '../focus/dpad_select_long_press_controller.dart';
 import '../focus/focusable_action_bar.dart';
 import '../focus/focusable_wrapper.dart';
 import '../focus/key_event_utils.dart';
@@ -349,10 +350,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   late final FocusNode _playButtonFocusNode;
   late final FocusNode _ratingChipFocusNode;
-  Timer? _selectKeyTimer;
-  bool _isSelectKeyDown = false;
-  bool _longPressTriggered = false;
-  static const _longPressDuration = Duration(milliseconds: 500);
+  final _extrasSelectLongPress = DpadSelectLongPressController();
 
   // Context menu key for the three-dots button
   final _contextMenuKey = GlobalKey<MediaContextMenuState>();
@@ -860,7 +858,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _castFocusNode.dispose();
     _infoRowsFocusNode.dispose();
     _castScrollController.dispose();
-    _selectKeyTimer?.cancel();
+    _extrasSelectLongPress.dispose();
     for (final node in _seasonTabFocusNodes) {
       node.dispose();
     }
@@ -2410,48 +2408,34 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
       if (event is KeyUpEvent && key.isSelectKey) {
-        _selectKeyTimer?.cancel();
-        _isSelectKeyDown = false;
-        _longPressTriggered = false;
+        _extrasSelectLongPress.reset();
       }
       return KeyEventResult.handled;
     }
 
-    // Handle SELECT with long-press detection
-    if (key.isSelectKey) {
-      if (event is KeyDownEvent) {
-        if (!_isSelectKeyDown) {
-          _selectKeyTimer?.cancel();
-          _isSelectKeyDown = true;
-          _longPressTriggered = false;
-          _selectKeyTimer = Timer(_longPressDuration, () {
-            if (!mounted) return;
-            if (_isSelectKeyDown) {
-              _longPressTriggered = true;
-              SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
-              _extraCardKeys[_focusedExtraIndex]?.currentState?.showContextMenu();
-            }
-          });
-        }
-        return KeyEventResult.handled;
-      } else if (event is KeyRepeatEvent) {
-        return KeyEventResult.handled;
-      } else if (event is KeyUpEvent) {
-        final timerWasActive = _selectKeyTimer?.isActive ?? false;
-        _selectKeyTimer?.cancel();
-        if (!_longPressTriggered && timerWasActive && _isSelectKeyDown) {
-          if (_focusedExtraIndex < _extras!.length) {
-            navigateToVideoPlayer(context, metadata: _extras![_focusedExtraIndex]);
-          }
-        }
-        _isSelectKeyDown = false;
-        _longPressTriggered = false;
-        return KeyEventResult.handled;
-      }
+    final extras = _extras;
+    if (extras == null || extras.isEmpty) {
+      _extrasSelectLongPress.reset();
+      return KeyEventResult.ignored;
     }
 
+    final selectResult = _extrasSelectLongPress.handleKeyEvent(
+      event,
+      isOwnerActive: () => mounted,
+      onShortPress: () {
+        if (_focusedExtraIndex < extras.length) {
+          navigateToVideoPlayer(context, metadata: extras[_focusedExtraIndex]);
+        }
+      },
+      onLongPress: () {
+        if (_focusedExtraIndex < _extraCardKeys.length) {
+          _extraCardKeys[_focusedExtraIndex]?.currentState?.showContextMenu();
+        }
+      },
+    );
+    if (selectResult != KeyEventResult.ignored) return selectResult;
+
     if (!event.isActionable) return KeyEventResult.ignored;
-    if (_extras == null || _extras!.isEmpty) return KeyEventResult.ignored;
 
     // LEFT: previous extra
     if (key.isLeftKey) {
@@ -2504,9 +2488,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   void _resetExtrasLongPressState() {
-    _selectKeyTimer?.cancel();
-    _isSelectKeyDown = false;
-    _longPressTriggered = false;
+    _extrasSelectLongPress.reset();
   }
 
   /// Handle key events for the cast row (locked focus pattern)

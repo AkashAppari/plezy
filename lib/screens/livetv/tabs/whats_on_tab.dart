@@ -2,11 +2,11 @@ import 'dart:async';
 import '../../../media/ids.dart';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../../focus/dpad_navigator.dart';
+import '../../../focus/dpad_select_long_press_controller.dart';
 import '../../../focus/key_event_utils.dart';
 import '../../../focus/locked_hub_controller.dart';
 import '../../../i18n/strings.g.dart';
@@ -226,8 +226,6 @@ class _LiveTvHubSection extends StatefulWidget {
 }
 
 class _LiveTvHubSectionState extends State<_LiveTvHubSection> with MountedSetStateMixin {
-  static const _longPressDuration = Duration(milliseconds: 500);
-
   late FocusNode _hubFocusNode;
   final ScrollController _scrollController = ScrollController();
 
@@ -235,9 +233,7 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> with MountedSetSta
   double _itemExtent = 0;
   static const double _leadingPadding = 12.0;
 
-  Timer? _longPressTimer;
-  bool _isSelectKeyDown = false;
-  bool _longPressTriggered = false;
+  final _selectLongPress = DpadSelectLongPressController();
 
   @override
   void initState() {
@@ -259,7 +255,7 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> with MountedSetSta
 
   @override
   void dispose() {
-    _longPressTimer?.cancel();
+    _selectLongPress.dispose();
     _hubFocusNode.removeListener(_onFocusChange);
     _hubFocusNode.dispose();
     _scrollController.dispose();
@@ -268,9 +264,7 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> with MountedSetSta
 
   void _onFocusChange() {
     if (!_hubFocusNode.hasFocus) {
-      _longPressTimer?.cancel();
-      _isSelectKeyDown = false;
-      _longPressTriggered = false;
+      _selectLongPress.reset();
     }
     // ignore: no-empty-block - setState triggers rebuild to update focus styling
     setStateIfMounted(() {});
@@ -319,35 +313,13 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> with MountedSetSta
   KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
 
-    if (key.isSelectKey) {
-      if (event is KeyDownEvent) {
-        if (!_isSelectKeyDown) {
-          _isSelectKeyDown = true;
-          _longPressTriggered = false;
-          _longPressTimer?.cancel();
-          _longPressTimer = Timer(_longPressDuration, () {
-            if (!mounted) return;
-            if (_isSelectKeyDown) {
-              _longPressTriggered = true;
-              SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
-              _activateLongPress();
-            }
-          });
-        }
-        return KeyEventResult.handled;
-      } else if (event is KeyRepeatEvent) {
-        return KeyEventResult.handled;
-      } else if (event is KeyUpEvent) {
-        final timerWasActive = _longPressTimer?.isActive ?? false;
-        _longPressTimer?.cancel();
-        if (!_longPressTriggered && timerWasActive && _isSelectKeyDown) {
-          _activateCurrentItem();
-        }
-        _isSelectKeyDown = false;
-        _longPressTriggered = false;
-        return KeyEventResult.handled;
-      }
-    }
+    final selectResult = _selectLongPress.handleKeyEvent(
+      event,
+      isOwnerActive: () => mounted,
+      onShortPress: _activateCurrentItem,
+      onLongPress: _activateLongPress,
+    );
+    if (selectResult != KeyEventResult.ignored) return selectResult;
 
     if (widget.onBack != null) {
       final backResult = handleBackKeyAction(event, widget.onBack!);
