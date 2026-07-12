@@ -159,7 +159,7 @@ open class MpvPlayerPlugin(
       "openContentFd" -> handleOpenContentFd(call, result)
       "closeContentFd" -> handleCloseContentFd(call, result)
       "isInitialized" -> result.success(playerCore?.isInitialized ?: false)
-      "setLogLevel" -> result.success(null)
+      "setLogLevel" -> handleSetLogLevel(call, result)
       else -> result.notImplemented()
     }
   }
@@ -358,12 +358,28 @@ open class MpvPlayerPlugin(
 
     val core = playerCore
     if (core == null) {
-      result.success(null)
+      result.error("NOT_INITIALIZED", "Player not initialized", null)
       return
     }
-    core.command(args.toTypedArray()) {
-      result.success(null)
+    core.command(args.toTypedArray()) { success ->
+      if (success) {
+        result.success(null)
+      } else {
+        result.error("COMMAND_FAILED", "mpv command failed", args)
+      }
     }
+  }
+
+  private fun handleSetLogLevel(call: MethodCall, result: MethodChannel.Result) {
+    if (call.argument<String>("level") == null) {
+      result.error("INVALID_ARGS", "Missing 'level'", null)
+      return
+    }
+    result.error(
+      "UNSUPPORTED",
+      "Runtime mpv log level changes are not supported on Android",
+      null
+    )
   }
 
   private fun handleSetVisible(call: MethodCall, result: MethodChannel.Result) {
