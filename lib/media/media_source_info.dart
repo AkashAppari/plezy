@@ -238,6 +238,30 @@ class MediaChapter {
     }
     return null;
   }
+
+  /// Find the chapter targeted by next/previous traversal. Previous traversal
+  /// restarts the current chapter only after [previousRestartThreshold]; before
+  /// that it selects an earlier chapter.
+  static int? seekTargetIndex(
+    Duration position,
+    List<MediaChapter> chapters, {
+    required bool forward,
+    Duration previousRestartThreshold = const Duration(seconds: 3),
+  }) {
+    final positionMs = position.inMilliseconds;
+    if (forward) {
+      for (int i = 0; i < chapters.length; i++) {
+        if ((chapters[i].startTimeOffset ?? 0) > positionMs) return i;
+      }
+      return null;
+    }
+
+    final thresholdMs = previousRestartThreshold.inMilliseconds;
+    for (int i = chapters.length - 1; i >= 0; i--) {
+      if (positionMs > (chapters[i].startTimeOffset ?? 0) + thresholdMs) return i;
+    }
+    return null;
+  }
 }
 
 class MediaMarker {

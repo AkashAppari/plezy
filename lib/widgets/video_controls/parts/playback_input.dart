@@ -31,25 +31,10 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
       return;
     }
 
-    final currentPositionMs = widget.player.state.position.inMilliseconds;
-
-    if (forward) {
-      for (final chapter in _chapters) {
-        final chapterStart = chapter.startTimeOffset ?? 0;
-        if (chapterStart > currentPositionMs) {
-          await _seekToPosition(Duration(milliseconds: chapterStart));
-          return;
-        }
-      }
-    } else {
-      for (int i = _chapters.length - 1; i >= 0; i--) {
-        final chapterStart = _chapters[i].startTimeOffset ?? 0;
-        if (currentPositionMs > chapterStart + 3000) {
-          // If more than 3 seconds into chapter, go to start of current chapter
-          await _seekToPosition(Duration(milliseconds: chapterStart));
-          return;
-        }
-      }
+    final targetIndex = MediaChapter.seekTargetIndex(widget.player.state.position, _chapters, forward: forward);
+    if (targetIndex != null) {
+      await _seekToPosition(_chapters[targetIndex].startTime);
+    } else if (!forward) {
       await _seekToPosition(Duration.zero);
     }
   }

@@ -110,7 +110,7 @@ class ContentStripState extends State<ContentStrip> {
   /// Request focus on the current chapter or queue item (called by parent when strip appears).
   void requestInitialFocus() {
     if (_activeTab == _StripTab.chapters && _chapterFocusNodes.isNotEmpty) {
-      final currentIndex = _getCurrentChapterIndex();
+      final currentIndex = MediaChapter.indexAtPosition(widget.player.state.position, widget.chapters);
       final idx = (currentIndex ?? 0).clamp(0, _chapterFocusNodes.length - 1);
       _chapterFocusNodes[idx].requestFocus();
       _scrollToFocusedNode(_chapterFocusNodes[idx]);
@@ -120,21 +120,6 @@ class ContentStripState extends State<ContentStrip> {
       _queueFocusNodes[idx].requestFocus();
       _scrollToFocusedNode(_queueFocusNodes[idx]);
     }
-  }
-
-  int? _getCurrentChapterIndex() {
-    final currentPositionMs = widget.player.state.position.inMilliseconds;
-    for (int i = 0; i < widget.chapters.length; i++) {
-      final chapter = widget.chapters[i];
-      final startMs = chapter.startTimeOffset ?? 0;
-      final endMs =
-          chapter.endTimeOffset ??
-          (i < widget.chapters.length - 1 ? widget.chapters[i + 1].startTimeOffset ?? 0 : double.maxFinite.toInt());
-      if (currentPositionMs >= startMs && currentPositionMs < endMs) {
-        return i;
-      }
-    }
-    return null;
   }
 
   Future<void> _handleChapterTap(Duration position) async {
@@ -226,7 +211,8 @@ class ContentStripState extends State<ContentStrip> {
         });
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && _chapterFocusNodes.isNotEmpty) {
-            final idx = (_getCurrentChapterIndex() ?? 0).clamp(0, _chapterFocusNodes.length - 1);
+            final currentIndex = MediaChapter.indexAtPosition(widget.player.state.position, widget.chapters);
+            final idx = (currentIndex ?? 0).clamp(0, _chapterFocusNodes.length - 1);
             _chapterFocusNodes[idx].requestFocus();
             _scrollToFocusedNode(_chapterFocusNodes[idx]);
           }

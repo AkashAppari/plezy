@@ -1054,28 +1054,14 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
 
   /// Returns the label of the next chapter the user would seek to, or null.
   String? _getNextChapterLabel(Duration position) {
-    if (widget.chapters.isEmpty) return null;
-    final currentPositionMs = position.inMilliseconds;
-    for (final chapter in widget.chapters) {
-      final chapterStart = chapter.startTimeOffset ?? 0;
-      if (chapterStart > currentPositionMs) {
-        return chapter.label;
-      }
-    }
-    return null;
+    final index = MediaChapter.seekTargetIndex(position, widget.chapters, forward: true);
+    return index == null ? null : widget.chapters[index].label;
   }
 
   /// Returns the label of the previous chapter the user would seek to, or null.
   String? _getPreviousChapterLabel(Duration position) {
-    if (widget.chapters.isEmpty) return null;
-    final currentPositionMs = position.inMilliseconds;
-    for (int i = widget.chapters.length - 1; i >= 0; i--) {
-      final chapterStart = widget.chapters[i].startTimeOffset ?? 0;
-      if (currentPositionMs > chapterStart + 3000) {
-        return widget.chapters[i].label;
-      }
-    }
-    return null;
+    final index = MediaChapter.seekTargetIndex(position, widget.chapters, forward: false);
+    return index == null ? null : widget.chapters[index].label;
   }
 
   Widget _buildFocusableButton({
