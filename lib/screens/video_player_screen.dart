@@ -79,6 +79,7 @@ import '../utils/stream_buffer_sizing.dart';
 import '../utils/video_player_navigation.dart';
 import 'video_player/completion_latch.dart';
 import 'video_player/frame_rate_matcher.dart';
+import 'video_player/live_stream_retry.dart';
 import 'video_player/live_tv_session_args.dart';
 import 'video_player/live_tv_session_state.dart';
 import 'video_player/tv_background_suspend_policy.dart';
@@ -545,6 +546,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   Future<void> _playWithPlaybackIntent(Player currentPlayer) {
     _playbackIntentShouldPlay = true;
+    if (widget.isLive && _live.retryFailed) {
+      if (_live.retrying) return Future.value();
+      _live.retrying = true;
+      return _retryLiveStream();
+    }
     if (_spuriousEofRecoveryParked && _playbackTransition == _PlaybackTransition.idle) {
       // Parked on a dead stream: play/pause on a drained cache is a no-op
       // (mpv doesn't even flip `pause` on EOF), so any press means "get my
@@ -560,6 +566,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   Future<void> _playOrPauseWithPlaybackIntent(Player currentPlayer) {
+    if (widget.isLive && _live.retryFailed) {
+      return _playWithPlaybackIntent(currentPlayer);
+    }
     if (_spuriousEofRecoveryParked && _playbackTransition == _PlaybackTransition.idle) {
       _playbackIntentShouldPlay = true;
       return _retrySpuriousEofRecovery(reason: 'play/pause pressed');

@@ -43,6 +43,7 @@ class LiveTvSessionState {
   /// 2 = no DS + no DS audio.
   int fallbackLevel = 0;
   bool retrying = false;
+  bool retryFailed = false;
 
   /// Whether the timeline heartbeat should restart when the app resumes
   /// from the background (it is suspended on hide).

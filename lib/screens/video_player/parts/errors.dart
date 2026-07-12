@@ -22,12 +22,21 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
 
     // Live TV: retry with progressively degraded stream settings
     // (mirrors Plex web client fallback chain).
-    if (widget.isLive && _live.fallbackLevel < 2 && !_live.retrying) {
-      _live.fallbackLevel++;
-      _live.retrying = true;
-      appLogger.w('Live stream failed, retrying with fallback level $_live.fallbackLevel');
-      _retryLiveStream().whenComplete(() => _live.retrying = false);
-      return;
+    if (widget.isLive) {
+      // The bounded retry operation owns errors raised while applying/opening
+      // its replacement stream. Do not let the same error close the route.
+      if (_live.retrying) return;
+      if (_live.fallbackLevel < 2) {
+        _live.fallbackLevel++;
+        _live.retrying = true;
+        appLogger.w('Live stream failed, retrying with fallback level $_live.fallbackLevel');
+        unawaited(_retryLiveStream());
+        return;
+      }
+      if (_live.retryFailed) {
+        showGlobalErrorSnackBar(t.messages.streamInterrupted);
+        return;
+      }
     }
 
     showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? err.message));

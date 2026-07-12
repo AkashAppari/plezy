@@ -139,6 +139,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       _lastLogError = null;
       _sawServer500 = false;
       _live.fallbackLevel = 0;
+      _live.retryFailed = false;
       final markFirstFrameReady = _markFirstFrameReady(currentPlayer, settingsService);
       _trackManager?.onPlaybackRestart();
       await markFirstFrameReady;

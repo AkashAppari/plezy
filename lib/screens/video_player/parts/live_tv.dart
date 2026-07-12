@@ -97,8 +97,11 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     _liveSeek.cancel();
     final currentPlayer = player;
     if (!mounted || currentPlayer == null) return;
+    final generation = _playbackGeneration;
+    bool isCurrent() => _isCurrentPlaybackGeneration(generation, currentPlayer);
     final session = _live.session;
     if (session == null) {
+      _live.retrying = false;
       appLogger.w('Cannot retry live stream — no session');
       showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? t.liveTv.liveStreamFailed));
       unawaited(_handleBackButton());
@@ -109,21 +112,29 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     final dsa = _live.fallbackLevel < 2;
     appLogger.i('Retrying live stream: directStream=$ds directStreamAudio=$dsa');
 
-    final recovered = await session.recover(directStream: ds, directStreamAudio: dsa);
-    if (!mounted || player != currentPlayer) return;
-    final streamUrl = recovered == null ? null : await recovered.streamUrlAt();
-    if (!mounted || player != currentPlayer) return;
-    if (recovered == null || streamUrl == null) {
-      showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? t.liveTv.liveStreamFailed));
-      unawaited(_handleBackButton());
-      return;
+    final result = await runLiveStreamRetry<LiveTvPlaybackSession>(
+      recover: () => session.recover(directStream: ds, directStreamAudio: dsa),
+      lookupStreamUrl: (recovered) => recovered.streamUrlAt(),
+      applyPlayerOptions: () => _setLiveStreamOptions(currentPlayer),
+      open: (streamUrl) =>
+          currentPlayer.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true, isLive: true),
+      isCurrent: isCurrent,
+      adoptSession: (recovered) {
+        _live.adoptSession(recovered);
+        _live.markStreamRestartedAtLiveEdge();
+      },
+      reportFailure: (error, stackTrace) {
+        appLogger.e('Failed to recover live stream', error: error, stackTrace: stackTrace);
+        _live.retryFailed = true;
+        showGlobalErrorSnackBar(t.messages.streamInterrupted);
+      },
+      onFinished: () {
+        if (isCurrent()) _live.retrying = false;
+      },
+    );
+    if (result == LiveStreamRetryResult.succeeded && isCurrent()) {
+      _live.retryFailed = false;
     }
-
-    _live.adoptSession(recovered);
-    _live.markStreamRestartedAtLiveEdge();
-
-    await _setLiveStreamOptions(currentPlayer);
-    await currentPlayer.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true, isLive: true);
   }
 
   /// Configure MPV options for live streaming.
