@@ -5,6 +5,7 @@ import '../../utils/app_logger.dart';
 import '../models/playback_state.dart';
 import '../models/sync_message.dart';
 import '../models/watch_session.dart';
+import '../primitives.dart';
 import 'attached_player.dart';
 import 'clock_sync.dart';
 import 'guest_playback_reconciler.dart';
@@ -28,7 +29,7 @@ class WatchTogetherController {
     int Function()? nowMs,
   }) : _peerService = peerService,
        _session = session,
-       _nowMs = nowMs ?? _systemNowMs {
+       _nowMs = nowMs ?? watchTogetherSystemNowMs {
     if (session.isHost) {
       _coordinator = HostPlaybackCoordinator(
         myPeerId: peerService.myPeerId ?? '',
@@ -64,8 +65,6 @@ class WatchTogetherController {
     _subscriptions.add(peerService.onMessageReceived.listen(_enqueueMessage));
     _subscriptions.add(peerService.onPeerDisconnected.listen(_handlePeerDisconnected));
   }
-
-  static int _systemNowMs() => DateTime.now().millisecondsSinceEpoch;
 
   final WatchTogetherPeerService _peerService;
   final int Function() _nowMs;

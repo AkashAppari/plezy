@@ -4,6 +4,7 @@ import '../../utils/app_logger.dart';
 import '../models/playback_state.dart';
 import '../models/sync_message.dart';
 import '../models/watch_session.dart';
+import '../primitives.dart';
 import 'attached_player.dart';
 import 'clock_sync.dart';
 
@@ -52,9 +53,7 @@ class GuestPlaybackReconciler {
     this._callbacks = const GuestReconcilerCallbacks(),
     int Function()? nowMs,
   }) : _clock = clockSync,
-       _nowMs = nowMs ?? _systemNowMs;
-
-  static int _systemNowMs() => DateTime.now().millisecondsSinceEpoch;
+       _nowMs = nowMs ?? watchTogetherSystemNowMs;
 
   // Tuning constants.
   static const int tickMs = 500;
@@ -238,7 +237,7 @@ class GuestPlaybackReconciler {
       _reportedPhase = state.phase;
       _callbacks.onPhaseChanged?.call(state.phase);
     }
-    if (!_listEquals(state.waitingOn, _reportedWaitingOn)) {
+    if (!orderedStringListsEqual(state.waitingOn, _reportedWaitingOn)) {
       _reportedWaitingOn = state.waitingOn;
       _callbacks.onWaitingOnChanged?.call(state.waitingOn);
     }
@@ -584,13 +583,5 @@ class GuestPlaybackReconciler {
     }
     _lastSentStatus = status;
     _sendToHost(SyncMessage.status(status, peerId: myPeerId));
-  }
-
-  static bool _listEquals(List<String> a, List<String> b) {
-    if (a.length != b.length) return false;
-    for (var i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
   }
 }

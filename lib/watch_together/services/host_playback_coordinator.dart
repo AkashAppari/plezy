@@ -4,6 +4,7 @@ import 'dart:math';
 import '../../utils/app_logger.dart';
 import '../models/playback_state.dart';
 import '../models/watch_session.dart';
+import '../primitives.dart';
 import 'attached_player.dart';
 
 /// Callbacks the coordinator surfaces to the provider/UI layer.
@@ -45,9 +46,7 @@ class HostPlaybackCoordinator {
     required this._sendState,
     this._callbacks = const HostCoordinatorCallbacks(),
     int Function()? nowMs,
-  }) : _nowMs = nowMs ?? _systemNowMs;
-
-  static int _systemNowMs() => DateTime.now().millisecondsSinceEpoch;
+  }) : _nowMs = nowMs ?? watchTogetherSystemNowMs;
 
   // Tuning constants.
   static const int stallGraceMs = 500;
@@ -785,18 +784,10 @@ class HostPlaybackCoordinator {
     if (toPeerId == null) {
       final previousWaiting = _lastBroadcast?.waitingOn ?? const [];
       _lastBroadcast = state;
-      if (!_listEquals(previousWaiting, waitingOn)) {
+      if (!orderedStringListsEqual(previousWaiting, waitingOn)) {
         _callbacks.onWaitingOnChanged?.call(waitingOn);
       }
     }
     _sendState(state, toPeerId: toPeerId);
-  }
-
-  static bool _listEquals(List<String> a, List<String> b) {
-    if (a.length != b.length) return false;
-    for (var i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
   }
 }
