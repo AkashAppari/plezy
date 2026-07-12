@@ -25,6 +25,46 @@ constexpr std::chrono::milliseconds kNullFirstDelay{500};
 constexpr std::chrono::milliseconds kNullBackoffCap{8000};
 constexpr std::chrono::milliseconds kDeviceListDebounce{250};
 
+flutter::EncodableValue NodeToEncodableValue(const mpv_node* node) {
+  if (!node) return flutter::EncodableValue();
+
+  switch (node->format) {
+    case MPV_FORMAT_STRING:
+      return flutter::EncodableValue(SanitizeUtf8(node->u.string));
+    case MPV_FORMAT_FLAG:
+      return flutter::EncodableValue(node->u.flag != 0);
+    case MPV_FORMAT_INT64:
+      return flutter::EncodableValue(node->u.int64);
+    case MPV_FORMAT_DOUBLE:
+      return flutter::EncodableValue(node->u.double_);
+    case MPV_FORMAT_NODE_ARRAY: {
+      const mpv_node_list* node_list = node->u.list;
+      if (!node_list || node_list->num < 0 || (node_list->num > 0 && !node_list->values)) {
+        return flutter::EncodableValue();
+      }
+      flutter::EncodableList list;
+      list.reserve(static_cast<size_t>(node_list->num));
+      for (int i = 0; i < node_list->num; ++i) {
+        list.push_back(NodeToEncodableValue(&node_list->values[i]));
+      }
+      return flutter::EncodableValue(list);
+    }
+    case MPV_FORMAT_NODE_MAP: {
+      const mpv_node_list* node_list = node->u.list;
+      if (!node_list || node_list->num < 0 || (node_list->num > 0 && (!node_list->values || !node_list->keys))) {
+        return flutter::EncodableValue();
+      }
+      flutter::EncodableMap map;
+      for (int i = 0; i < node_list->num; ++i) {
+        map[flutter::EncodableValue(SanitizeUtf8(node_list->keys[i]))] = NodeToEncodableValue(&node_list->values[i]);
+      }
+      return flutter::EncodableValue(map);
+    }
+    default:
+      return flutter::EncodableValue();
+  }
+}
+
 // DComp-mode input forwarding. mpv's inner window lives on mpv's own thread
 // and consumes the mouse input over the video (WS_EX_TRANSPARENT hit-test
 // skipping is same-thread-only, and disabling the subtree makes the system
@@ -528,7 +568,7 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
     }
     case MPV_EVENT_PROPERTY_CHANGE: {
       auto* prop = static_cast<mpv_event_property*>(event->data);
-      mpv_node node;
+      mpv_node node{};
       node.format = prop->format;
 
       switch (prop->format) {
@@ -636,30 +676,11 @@ void MpvPlayer::SendPropertyChange(const char* name, mpv_node* data) {
   auto it = name_to_id_.find(name);
   if (it == name_to_id_.end()) return;
 
-  flutter::EncodableValue value;
-  if (data) {
-    switch (data->format) {
-      case MPV_FORMAT_STRING:
-        value = flutter::EncodableValue(SanitizeUtf8(data->u.string));
-        break;
-      case MPV_FORMAT_FLAG:
-        value = flutter::EncodableValue(data->u.flag != 0);
-        break;
-      case MPV_FORMAT_INT64:
-        value = flutter::EncodableValue(data->u.int64);
-        break;
-      case MPV_FORMAT_DOUBLE:
-        value = flutter::EncodableValue(data->u.double_);
-        break;
-      default:
-        value = flutter::EncodableValue();
-        break;
-    }
-  }
-
+  // mpv owns event node storage; copy the full tree before the callback can
+  // queue it beyond the current mpv_wait_event result's lifetime.
   flutter::EncodableList list;
   list.push_back(flutter::EncodableValue(it->second));
-  list.push_back(value);
+  list.push_back(NodeToEncodableValue(data));
 
   std::lock_guard<std::mutex> lock(callback_mutex_);
   if (event_callback_) {

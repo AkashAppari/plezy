@@ -53,6 +53,72 @@ void main() {
     );
   });
 
+  test('MPV accepts nested node observations and null unsupported values', () async {
+    final observations = <String, int>{};
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (call) async {
+        if (call.method == 'initialize') return true;
+        if (call.method == 'observeProperty') {
+          final arguments = call.arguments as Map;
+          observations[arguments['name'] as String] = arguments['id'] as int;
+        }
+        return null;
+      },
+      testBody: () async {
+        final player = PlayerNative();
+        try {
+          await player.setLogLevel('warn');
+          final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+          const codec = StandardMethodCodec();
+
+          Future<void> sendObservation(String name, Object? value) async {
+            final done = Completer<void>();
+            await messenger.handlePlatformMessage(
+              'com.plezy/mpv_player/events',
+              codec.encodeSuccessEnvelope([observations[name], value]),
+              (_) => done.complete(),
+            );
+            await done.future;
+            await Future<void>.delayed(Duration.zero);
+          }
+
+          await sendObservation('track-list', const [
+            {
+              'type': 'audio',
+              'id': 7,
+              'title': 'Main',
+              'selected': true,
+              'metadata': {
+                'nested': [true, 2, 3.5, null],
+              },
+            },
+          ]);
+          await sendObservation('demuxer-cache-state', const {
+            'cache-end': 12.5,
+            'seekable-ranges': [
+              {'start': 1, 'end': 9.25},
+            ],
+          });
+
+          expect(player.state.tracks.audio.single.id, '7');
+          expect(player.state.tracks.audio.single.title, 'Main');
+          expect(player.state.buffer, const Duration(milliseconds: 12500));
+          expect(player.state.bufferRanges.single.start, const Duration(seconds: 1));
+          expect(player.state.bufferRanges.single.end, const Duration(milliseconds: 9250));
+
+          // Unsupported mpv_node formats cross the native bridge as null and
+          // must not erase the last valid structured observation.
+          await sendObservation('track-list', null);
+          expect(player.state.tracks.audio.single.id, '7');
+        } finally {
+          await player.dispose();
+        }
+      },
+    );
+  });
+
   test('Android command failure reaches seek recovery', () async {
     await withMockPlayerChannels(
       methodChannelName: 'com.plezy/mpv_player',

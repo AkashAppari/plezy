@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/mpv/player/platform/player_android.dart';
@@ -94,5 +96,12 @@ void main() {
     final registered = names(observations);
     expect(registered, containsAll(coreNames));
     expect(registered, containsAll({'secondary-sid', 'demuxer-cache-state', 'audio-device-list', 'audio-device'}));
+    final structuredFormat = Platform.isAndroid ? 'string' : 'node';
+    for (final call in observations.where((call) {
+      final name = (call.arguments as Map)['name'];
+      return name == 'track-list' || name == 'demuxer-cache-state' || name == 'audio-device-list';
+    })) {
+      expect((call.arguments as Map)['format'], structuredFormat);
+    }
   });
 }

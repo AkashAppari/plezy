@@ -73,9 +73,9 @@ class PlayerNative extends PlayerBase {
   @override
   bool get attachesExternalSubtitlesAtOpen => true;
 
-  /// Node properties are returned as structured maps on macOS/iOS/Linux,
-  /// but as JSON strings on Android/Windows.
-  static final String _nodeFormat = (Platform.isAndroid || Platform.isWindows) ? 'string' : 'node';
+  /// Node properties are returned as structured maps on desktop and Apple
+  /// platforms, but as JSON strings on Android.
+  static final String _nodeFormat = Platform.isAndroid ? 'string' : 'node';
 
   static String _normalizeDvConversionMode(String value) {
     return switch (value.toLowerCase()) {
