@@ -29,6 +29,7 @@ class _AtmosDiagnosticsScreenState extends State<AtmosDiagnosticsScreen> {
   Timer? _poll;
   Map<Object?, Object?> _status = const {};
   String? _activeMode;
+  bool _stopping = false;
 
   @override
   void initState() {
@@ -40,7 +41,7 @@ class _AtmosDiagnosticsScreenState extends State<AtmosDiagnosticsScreen> {
   @override
   void dispose() {
     _poll?.cancel();
-    _channel.invokeMethod('stop').ignore();
+    if (!_stopping) _channel.invokeMethod('stop').ignore();
     super.dispose();
   }
 
@@ -70,9 +71,18 @@ class _AtmosDiagnosticsScreenState extends State<AtmosDiagnosticsScreen> {
   }
 
   Future<void> _stop() async {
-    await _channel.invokeMethod('stop');
-    setState(() => _activeMode = null);
-    await _refreshStatus();
+    if (_stopping) return;
+    _stopping = true;
+    try {
+      await _channel.invokeMethod('stop');
+      if (!mounted) return;
+      setState(() => _activeMode = null);
+      await _refreshStatus();
+    } on PlatformException catch (e) {
+      if (mounted) showErrorSnackBar(context, e.message ?? e.code);
+    } finally {
+      _stopping = false;
+    }
   }
 
   Widget _testTile({required String mode, required IconData icon, required String title, required String subtitle}) {
