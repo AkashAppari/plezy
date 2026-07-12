@@ -10,6 +10,7 @@ import '../../../focus/dpad_navigator.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../media/media_item.dart';
+import '../../../media/media_item_labels.dart';
 import '../../../media/media_item_types.dart';
 import '../../../media/media_server_client.dart';
 import '../../../mpv/mpv.dart';
@@ -542,7 +543,7 @@ class ContentStripState extends State<ContentStrip> {
                     : null,
                 blurThumbnail: hideSpoilers && item.shouldHideSpoiler,
                 title: item.title ?? '',
-                subtitle: _buildQueueSubtitle(item),
+                subtitle: formatQueueItemSubtitle(item),
                 onTap: onTap,
               );
 
@@ -570,18 +571,6 @@ class ContentStripState extends State<ContentStrip> {
         },
       ),
     );
-  }
-
-  String _buildQueueSubtitle(MediaItem item) {
-    if (item.grandparentTitle != null && item.parentIndex != null && item.index != null) {
-      return '${item.grandparentTitle} \u00b7 S${item.parentIndex}E${item.index}';
-    }
-    if (item.grandparentTitle != null) return item.grandparentTitle!;
-    if (item.year != null) {
-      final edition = item.editionTitle;
-      return edition != null ? '${item.year} · $edition' : '${item.year}';
-    }
-    return item.kind.name;
   }
 
   Widget _buildStripItem({
