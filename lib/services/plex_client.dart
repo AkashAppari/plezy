@@ -826,7 +826,17 @@ class PlexClient
       if (container == null) return [];
       final activityList = container['Activity'] as List?;
       if (activityList == null) return [];
-      return activityList.map((json) => PlexActivity.fromJson(json as Map<String, dynamic>)).toList();
+      final activities = <PlexActivity>[];
+      for (final json in activityList) {
+        if (json is! Map<String, dynamic>) continue;
+        try {
+          final activity = PlexActivity.fromJson(json);
+          if (activity.uuid.isNotEmpty) activities.add(activity);
+        } catch (e) {
+          appLogger.d('Skipping malformed Plex activity', error: e);
+        }
+      }
+      return activities;
     } catch (e) {
       appLogger.e('Failed to get activities', error: e);
       return [];

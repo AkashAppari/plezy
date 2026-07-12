@@ -85,4 +85,44 @@ void main() {
     expect(queue?.playQueueVersion, 5);
     expect(queue?.size, 3);
   });
+
+  test('activities tolerate scalar drift and skip only malformed rows', () async {
+    final client = makeClient(
+      (_) async => http.Response(
+        jsonEncode({
+          'MediaContainer': {
+            'Activity': [
+              {
+                'uuid': 'activity-1',
+                'type': 'library.update',
+                'title': 'Scanning',
+                'subtitle': 'Movies',
+                'progress': 25,
+                'cancellable': false,
+              },
+              'not-an-activity',
+              {'type': 'library.update', 'title': 'Missing identity'},
+              {'uuid': 42, 'type': 7, 'title': true, 'subtitle': 99, 'progress': '75', 'cancellable': '1'},
+            ],
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      ),
+    );
+    addTearDown(client.close);
+
+    final activities = await client.getActivities();
+
+    expect(activities, hasLength(2));
+    expect(activities.first.uuid, 'activity-1');
+    expect(activities.first.progress, 25);
+    expect(activities.first.cancellable, isFalse);
+    expect(activities.last.uuid, '42');
+    expect(activities.last.type, '7');
+    expect(activities.last.title, 'true');
+    expect(activities.last.subtitle, '99');
+    expect(activities.last.progress, 75);
+    expect(activities.last.cancellable, isTrue);
+  });
 }
