@@ -5,6 +5,7 @@ import '../mixins/disposable_change_notifier_mixin.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
+import '../utils/coalesced_load_coordinator.dart';
 import 'multi_server_provider.dart';
 
 /// Load state for the libraries provider
@@ -16,6 +17,12 @@ enum LibrariesLoadState { initial, loading, loaded, error }
 class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   LibrariesProvider({this._storageService, this._multiServer, bool Function()? isProfileBinding})
     : _isProfileBinding = isProfileBinding ?? _neverBinding {
+    _loadCoordinator = CoalescedLoadCoordinator<String>(
+      onFull: () async {
+        await _loadLibrariesInternal();
+      },
+      onDelta: _loadDelta,
+    );
     // Reload libraries when a new server comes online. Servers bind in waves
     // on sign-in / profile switch and slow ones reconnect after the initial
     // load; without this they stay missing from the sidebar until a re-switch
@@ -40,9 +47,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
   LibrariesLoadState _loadState = LibrariesLoadState.initial;
   String? _errorMessage;
 
-  /// Coalesces concurrent `loadLibraries()` calls so two simultaneous callers
-  /// see the same in-flight result instead of racing two separate fetches.
-  Future<void>? _inFlightLoad;
+  late final CoalescedLoadCoordinator<String> _loadCoordinator;
 
   /// Server ids whose library fetch *succeeded* in the current [_libraries], as
   /// reported by [DataAggregationService.getMediaLibrariesFromAllServers].
@@ -52,15 +57,6 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
   /// status emission instead of being cached as "loaded" forever. Drives
   /// [syncToOnlineServers].
   Set<String> _loadedServerIds = {};
-
-  /// Set when a (re)load is requested while one is already in flight, so the
-  /// loop runs another pass: a server that comes online *during* a load would
-  /// otherwise be lost to the coalesced [_inFlightLoad].
-  bool _hasPendingLoad = false;
-
-  /// Newly-online servers queued for a delta pass — fetched and merged
-  /// without refetching the already-loaded servers.
-  final Set<String> _pendingDeltaServerIds = {};
 
   /// Unmodifiable list of all libraries (ordered)
   List<MediaLibrary> get libraries => List.unmodifiable(_libraries);
@@ -108,8 +104,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
     }
     // Nothing (or a failed pass) to merge into yet — run the full load.
     if (_loadState != LibrariesLoadState.loaded) return _load();
-    _pendingDeltaServerIds.addAll(onlineServerIds.difference(_loadedServerIds));
-    return _ensureLoadLoop();
+    return _loadCoordinator.requestDelta(onlineServerIds.difference(_loadedServerIds));
   }
 
   /// Load libraries from all connected servers, unconditionally. Used by
@@ -117,38 +112,11 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
   /// Applies saved ordering.
   Future<void> loadLibraries() => _load();
 
-  /// Single entry point for every full (re)load. Concurrent callers coalesce
-  /// onto one in-flight pass; a request that arrives mid-pass is replayed by
-  /// [_runLoadLoop] so it isn't masked by that coalescing. Each pass fetches
-  /// whatever is online at fetch time, so no caller needs to specify a target.
+  /// Single entry point for every full (re)load. Each pass fetches whatever is
+  /// online at fetch time, so no caller needs to specify a target.
   Future<void> _load() {
     if (isDisposed) return Future<void>.value();
-    _hasPendingLoad = true;
-    return _ensureLoadLoop();
-  }
-
-  Future<void> _ensureLoadLoop() {
-    if (isDisposed) return Future<void>.value();
-    return _inFlightLoad ??= _runLoadLoop().whenComplete(() {
-      if (!isDisposed) _inFlightLoad = null;
-    });
-  }
-
-  Future<void> _runLoadLoop() async {
-    while ((_hasPendingLoad || _pendingDeltaServerIds.isNotEmpty) && !isDisposed) {
-      if (_hasPendingLoad) {
-        _hasPendingLoad = false;
-        _pendingDeltaServerIds.clear(); // a full pass covers every server
-        final succeeded = await _loadLibrariesInternal();
-        // A failure does not enqueue itself, but a caller that arrived during
-        // the failed pass still owns one coalesced trailing attempt.
-        if (!succeeded && !_hasPendingLoad && _pendingDeltaServerIds.isEmpty) return;
-      } else {
-        final ids = Set<String>.of(_pendingDeltaServerIds);
-        _pendingDeltaServerIds.clear();
-        await _loadDelta(ids);
-      }
-    }
+    return _loadCoordinator.requestFull();
   }
 
   /// Fetch libraries from [serverIds] only (servers that came online after
@@ -315,8 +283,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
     _loadState = LibrariesLoadState.initial;
     _errorMessage = null;
     _loadedServerIds = {};
-    _hasPendingLoad = false;
-    _pendingDeltaServerIds.clear();
+    _loadCoordinator.clearPending();
     safeNotifyListeners();
     appLogger.d('LibrariesProvider: Cleared library data');
   }
@@ -324,8 +291,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
   @override
   void dispose() {
     _multiServer?.removeOnlineServersListener(syncToOnlineServers);
-    _hasPendingLoad = false;
-    _pendingDeltaServerIds.clear();
+    _loadCoordinator.dispose();
     super.dispose();
   }
 

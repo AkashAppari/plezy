@@ -350,6 +350,39 @@ void main() {
       manager.dispose();
     });
 
+    test('online-server deltas arriving mid-pass are unioned into one trailing pass', () async {
+      final manager = MultiServerManager();
+      final clientA = _FakeClient(serverId: ServerId('A'), libraries: [_serverLib(ServerId('A'), '1', 'Movies A')]);
+      manager.debugRegisterClientForTesting(clientA);
+      final p = LibrariesProvider()..initialize(DataAggregationService(manager));
+      await p.syncToOnlineServers({'A'});
+
+      final gate = Completer<void>();
+      final clientB = _FakeClient(
+        serverId: ServerId('B'),
+        libraries: [_serverLib(ServerId('B'), '1', 'Shows B')],
+        gate: gate.future,
+      );
+      manager.debugRegisterClientForTesting(clientB);
+      final firstDelta = p.syncToOnlineServers({'A', 'B'});
+      expect(clientB.fetchLibrariesCalls, 1);
+
+      final clientC = _FakeClient(serverId: ServerId('C'), libraries: [_serverLib(ServerId('C'), '1', 'Movies C')]);
+      manager.debugRegisterClientForTesting(clientC);
+      final trailingDelta = p.syncToOnlineServers({'A', 'B', 'C'});
+
+      gate.complete();
+      await Future.wait([firstDelta, trailingDelta]);
+
+      expect(clientA.fetchLibrariesCalls, 1);
+      expect(clientB.fetchLibrariesCalls, 1, reason: 'the trailing delta drops ids committed by the active pass');
+      expect(clientC.fetchLibrariesCalls, 1);
+      expect(p.libraries.map((library) => library.title), containsAll(['Movies A', 'Shows B', 'Movies C']));
+
+      p.dispose();
+      manager.dispose();
+    });
+
     test('a coalesced call gets its trailing pass after the in-flight pass fails', () async {
       final manager = MultiServerManager();
       final gate = Completer<void>();

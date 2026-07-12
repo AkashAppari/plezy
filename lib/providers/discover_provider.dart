@@ -12,6 +12,7 @@ import '../services/settings_service.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/system_shelf_service.dart';
 import '../utils/app_logger.dart';
+import '../utils/coalesced_load_coordinator.dart';
 import '../utils/deletion_notifier.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/media_hub_ordering.dart';
@@ -42,6 +43,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   static const int _continueWatchingProbeLimit = continueWatchingPreviewLimit + 1;
 
   DiscoverProvider(this._multiServer, this._hiddenLibraries, this._libraries, {required this.isProfileBinding}) {
+    _loadCoordinator = CoalescedLoadCoordinator<String>(onFull: _loadOnce, onDelta: _loadDeltaOnce);
     // Late server connects (reconnect after outage, slow wave) refresh
     // discover the same way they refresh libraries. Removed in [dispose] so a
     // profile switch can't leave a stale listener on the app-global provider.
@@ -103,12 +105,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   Set<String> get _fullyLoadedServerIds => _loadedOnDeckServerIds.intersection(_loadedHubServerIds);
 
-  Future<void>? _inFlightLoad;
-  bool _hasPendingLoad = false;
-
-  /// Newly-online servers queued for a delta pass — fetched and merged
-  /// without repeating the full multi-server fan-out.
-  final Set<String> _pendingDeltaServerIds = {};
+  late final CoalescedLoadCoordinator<String> _loadCoordinator;
 
   Future<void>? _systemShelfSyncFuture;
   List<MediaItem>? _pendingSystemShelfItems;
@@ -147,8 +144,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     }
     // Nothing (or a failed pass) to merge into yet — run the full load.
     if (_onDeckState != DiscoverLoadState.loaded || _hubsState != DiscoverLoadState.loaded) return load();
-    _pendingDeltaServerIds.addAll(onlineServerIds.difference(_fullyLoadedServerIds));
-    return _ensureLoadLoop();
+    return _loadCoordinator.requestDelta(onlineServerIds.difference(_fullyLoadedServerIds));
   }
 
   /// Full load of Continue Watching + hubs. Concurrent calls coalesce into
@@ -156,29 +152,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// arrives mid-load still observes its own fresh fetch).
   Future<void> load() {
     if (isDisposed) return Future<void>.value();
-    _hasPendingLoad = true;
-    return _ensureLoadLoop();
-  }
-
-  Future<void> _ensureLoadLoop() {
-    if (isDisposed) return Future<void>.value();
-    return _inFlightLoad ??= _runLoadLoop().whenComplete(() {
-      if (!isDisposed) _inFlightLoad = null;
-    });
-  }
-
-  Future<void> _runLoadLoop() async {
-    while ((_hasPendingLoad || _pendingDeltaServerIds.isNotEmpty) && !isDisposed) {
-      if (_hasPendingLoad) {
-        _hasPendingLoad = false;
-        _pendingDeltaServerIds.clear(); // a full pass covers every server
-        await _loadOnce();
-      } else {
-        final ids = Set<String>.of(_pendingDeltaServerIds);
-        _pendingDeltaServerIds.clear();
-        await _loadDeltaOnce(ids);
-      }
-    }
+    return _loadCoordinator.requestFull();
   }
 
   Future<void> _loadOnce() async {
@@ -659,8 +633,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _watchStateSubscription = null;
     _deletionSubscription?.cancel();
     _deletionSubscription = null;
-    _hasPendingLoad = false;
-    _pendingDeltaServerIds.clear();
+    _loadCoordinator.dispose();
     _pendingSystemShelfItems = null;
     super.dispose();
   }

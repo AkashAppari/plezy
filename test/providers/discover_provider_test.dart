@@ -634,6 +634,34 @@ void main() {
     expect(aggregation.onDeckCalls, callsAfterDelta);
   });
 
+  test('online-server deltas arriving mid-pass are unioned into one trailing pass', () async {
+    aggregation.onDeckResult = () => [_item('a')];
+    aggregation.hubsResult = () => [_hub('hub-1')];
+    await provider.load();
+    final onDeckCallsBefore = aggregation.onDeckCalls;
+    final hubCallsBefore = aggregation.hubCalls;
+
+    final gate = Completer<void>();
+    aggregation.onDeckGate = gate.future;
+    aggregation.hubGate = gate.future;
+    aggregation.onDeckStarted = Completer<void>();
+    aggregation.hubStarted = Completer<void>();
+    aggregation.onDeckResult = () => [_item('new', serverId: 'server_2')];
+    aggregation.hubsResult = () => [_hub('new-hub', serverId: 'server_2')];
+
+    final firstDelta = provider.syncToOnlineServers({'server_1', 'server_2'});
+    await Future.wait([aggregation.onDeckStarted!.future, aggregation.hubStarted!.future]);
+    final trailingDelta = provider.syncToOnlineServers({'server_1', 'server_2', 'server_3'});
+
+    gate.complete();
+    await Future.wait([firstDelta, trailingDelta]);
+
+    expect(aggregation.onDeckCalls, onDeckCallsBefore + 2);
+    expect(aggregation.hubCalls, hubCallsBefore + 2);
+    expect(aggregation.lastOnDeckServerIds, {'server_3'});
+    expect(aggregation.lastHubsServerIds, {'server_3'});
+  });
+
   test('full load partial hub failure retries hubs without refetching continue watching', () async {
     aggregation.onDeckResult = () => [_item('a')];
     aggregation.hubsResult = () => const [];
