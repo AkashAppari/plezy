@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:plezy/focus/focusable_button.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/seerr/seerr_session.dart';
@@ -159,6 +160,10 @@ void main() {
     // Nothing selected yet: submit disabled.
     final submitFinder = find.widgetWithText(FilledButton, 'Request');
     expect(tester.widget<FilledButton>(submitFinder).onPressed, isNull);
+    final focusableSubmit = tester.widget<FocusableButton>(
+      find.ancestor(of: submitFinder, matching: find.byType(FocusableButton)),
+    );
+    expect(focusableSubmit.useBackgroundFocus, isTrue);
 
     await tester.tap(find.text('Season 2'));
     await tester.pump();

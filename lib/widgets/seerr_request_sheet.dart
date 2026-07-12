@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../focus/dpad_navigator.dart';
+import '../focus/focusable_button.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_kind.dart';
 import '../models/seerr/seerr_details.dart';
@@ -408,11 +409,15 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
                 Text(error, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error)),
               ],
               const SizedBox(height: 16),
-              FilledButton.icon(
+              FocusableButton(
                 focusNode: _requestButtonFocusNode,
+                useBackgroundFocus: true,
                 onPressed: _canSubmit ? _submit : null,
-                icon: _submitting ? const LoadingIndicatorBox() : const AppIcon(Symbols.download_rounded, fill: 1),
-                label: Text(t.seerr.request),
+                child: FilledButton.icon(
+                  onPressed: _canSubmit ? _submit : null,
+                  icon: _submitting ? const LoadingIndicatorBox() : const AppIcon(Symbols.download_rounded, fill: 1),
+                  label: Text(t.seerr.request),
+                ),
               ),
             ],
           ],
