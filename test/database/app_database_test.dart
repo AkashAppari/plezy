@@ -451,6 +451,30 @@ class _AppDatabaseTestSuite {
     // ============================================================
 
     group('OfflineWatchProgress', () {
+      Future<int> insertAction({
+        String serverId = 's',
+        required String ratingKey,
+        String? profileId,
+        String? clientScopeId,
+        required String actionType,
+        required int updatedAt,
+      }) {
+        return db
+            .into(db.offlineWatchProgress)
+            .insert(
+              OfflineWatchProgressCompanion.insert(
+                serverId: serverId,
+                profileId: Value(profileId),
+                clientScopeId: Value(clientScopeId),
+                ratingKey: ratingKey,
+                globalKey: '$serverId:$ratingKey',
+                actionType: actionType,
+                createdAt: updatedAt,
+                updatedAt: updatedAt,
+              ),
+            );
+      }
+
       test('upsertProgressAction inserts a new progress row', () async {
         await db.upsertProgressAction(
           serverId: ServerId('srv'),
@@ -669,6 +693,194 @@ class _AppDatabaseTestSuite {
 
       test('getLatestWatchAction returns null when no rows', () async {
         expect(await db.getLatestWatchAction('nope:nope'), isNull);
+      });
+
+      test('single and batched watch-action reads preserve newest-first ordering', () async {
+        final oldestId = await insertAction(
+          ratingKey: 'ordered',
+          actionType: OfflineActionType.progress.id,
+          updatedAt: 100,
+        );
+        final olderTieId = await insertAction(
+          ratingKey: 'ordered',
+          actionType: OfflineActionType.watched.id,
+          updatedAt: 200,
+        );
+        final newerTieId = await insertAction(
+          ratingKey: 'ordered',
+          actionType: OfflineActionType.unwatched.id,
+          updatedAt: 200,
+        );
+        final expectedIds = [newerTieId, olderTieId, oldestId];
+
+        final single = await db.getWatchActionsForKey('s:ordered');
+        final batched = await db.getWatchActionsForKeys({'s:ordered'});
+
+        expect(single.map((action) => action.id), expectedIds);
+        expect(batched['s:ordered']!.map((action) => action.id), expectedIds);
+        expect((await db.getLatestWatchAction('s:ordered'))!.id, newerTieId);
+        expect((await db.getLatestWatchActionsForKeys({'s:ordered'}))['s:ordered']!.id, newerTieId);
+      });
+
+      test('single and batched watch-action reads distinguish null and compound scopes', () async {
+        final nullScopeId = await insertAction(
+          ratingKey: 'scoped',
+          actionType: OfflineActionType.unwatched.id,
+          updatedAt: 100,
+        );
+        final compoundScopeId = await insertAction(
+          ratingKey: 'scoped',
+          clientScopeId: 's/user-a',
+          actionType: OfflineActionType.watched.id,
+          updatedAt: 200,
+        );
+
+        final singleNull = await db.getWatchActionsForKey('s:scoped', filterClientScope: true);
+        final singleCompound = await db.getWatchActionsForKey(
+          's:scoped',
+          clientScopeId: 's/user-a',
+          filterClientScope: true,
+        );
+        final batchedNull = await db.getWatchActionsForKeys(
+          {'s:scoped'},
+          clientScopeIdsByGlobalKey: {'s:scoped': null},
+        );
+        final batchedCompound = await db.getWatchActionsForKeys(
+          {'s:scoped'},
+          clientScopeIdsByGlobalKey: {'s:scoped': 's/user-a'},
+        );
+
+        expect(singleNull.map((action) => action.id), [nullScopeId]);
+        expect(singleCompound.map((action) => action.id), [compoundScopeId]);
+        expect(batchedNull['s:scoped']!.map((action) => action.id), [nullScopeId]);
+        expect(batchedCompound['s:scoped']!.map((action) => action.id), [compoundScopeId]);
+        expect((await db.getLatestWatchAction('s:scoped', filterClientScope: true))!.id, nullScopeId);
+        expect(
+          (await db.getLatestWatchAction('s:scoped', clientScopeId: 's/user-a', filterClientScope: true))!.id,
+          compoundScopeId,
+        );
+        expect(
+          (await db.getLatestWatchActionsForKeys(
+            {'s:scoped'},
+            clientScopeIdsByGlobalKey: {'s:scoped': null},
+          ))['s:scoped']!.id,
+          nullScopeId,
+        );
+        expect(
+          (await db.getLatestWatchActionsForKeys(
+            {'s:scoped'},
+            clientScopeIdsByGlobalKey: {'s:scoped': 's/user-a'},
+          ))['s:scoped']!.id,
+          compoundScopeId,
+        );
+      });
+
+      test('single and batched watch-action reads isolate profiles', () async {
+        final profileAId = await insertAction(
+          ratingKey: 'profiled',
+          profileId: 'profile-a',
+          actionType: OfflineActionType.unwatched.id,
+          updatedAt: 100,
+        );
+        await insertAction(
+          ratingKey: 'profiled',
+          profileId: 'profile-b',
+          actionType: OfflineActionType.watched.id,
+          updatedAt: 200,
+        );
+
+        final single = await db.getWatchActionsForKey('s:profiled', profileId: 'profile-a', filterProfile: true);
+        final batched = await db.getWatchActionsForKeys({'s:profiled'}, profileId: 'profile-a', filterProfile: true);
+
+        expect(single.map((action) => action.id), [profileAId]);
+        expect(batched['s:profiled']!.map((action) => action.id), [profileAId]);
+        expect(
+          (await db.getLatestWatchAction('s:profiled', profileId: 'profile-a', filterProfile: true))!.id,
+          profileAId,
+        );
+        expect(
+          (await db.getLatestWatchActionsForKeys(
+            {'s:profiled'},
+            profileId: 'profile-a',
+            filterProfile: true,
+          ))['s:profiled']!.id,
+          profileAId,
+        );
+      });
+
+      test('watch-action query values treat wildcard characters literally', () async {
+        final exactId = await insertAction(
+          serverId: 'server_%',
+          ratingKey: 'item%_',
+          profileId: 'profile_%',
+          clientScopeId: 'server_%/user_1',
+          actionType: OfflineActionType.watched.id,
+          updatedAt: 100,
+        );
+        await insertAction(
+          serverId: 'server_%',
+          ratingKey: 'item%_',
+          profileId: 'profile_abc',
+          clientScopeId: 'server_%/user_1',
+          actionType: OfflineActionType.unwatched.id,
+          updatedAt: 400,
+        );
+        await insertAction(
+          serverId: 'server_%',
+          ratingKey: 'item%_',
+          profileId: 'profile_%',
+          clientScopeId: 'server_abc/user_a',
+          actionType: OfflineActionType.unwatched.id,
+          updatedAt: 300,
+        );
+        await insertAction(
+          serverId: 'server_abc',
+          ratingKey: 'itemZZZx',
+          profileId: 'profile_%',
+          clientScopeId: 'server_%/user_1',
+          actionType: OfflineActionType.unwatched.id,
+          updatedAt: 200,
+        );
+        const globalKey = 'server_%:item%_';
+        const scopes = {globalKey: 'server_%/user_1'};
+
+        final single = await db.getWatchActionsForKey(
+          globalKey,
+          profileId: 'profile_%',
+          filterProfile: true,
+          clientScopeId: 'server_%/user_1',
+          filterClientScope: true,
+        );
+        final batched = await db.getWatchActionsForKeys(
+          {globalKey},
+          profileId: 'profile_%',
+          filterProfile: true,
+          clientScopeIdsByGlobalKey: scopes,
+        );
+
+        expect(single.map((action) => action.id), [exactId]);
+        expect(single.single.serverId, 'server_%');
+        expect(single.single.ratingKey, 'item%_');
+        expect(batched[globalKey]!.map((action) => action.id), [exactId]);
+        expect(
+          (await db.getLatestWatchAction(
+            globalKey,
+            profileId: 'profile_%',
+            filterProfile: true,
+            clientScopeId: 'server_%/user_1',
+            filterClientScope: true,
+          ))!.id,
+          exactId,
+        );
+        expect(
+          (await db.getLatestWatchActionsForKeys(
+            {globalKey},
+            profileId: 'profile_%',
+            filterProfile: true,
+            clientScopeIdsByGlobalKey: scopes,
+          ))[globalKey]!.id,
+          exactId,
+        );
       });
 
       test('getLatestWatchActionsForKeys batches lookups, latest per key', () async {

@@ -277,6 +277,23 @@ class AppDatabase extends _$AppDatabase {
         .get();
   }
 
+  SimpleSelectStatement<$OfflineWatchProgressTable, OfflineWatchProgressItem> _watchActionsQuery(
+    Expression<bool> Function($OfflineWatchProgressTable table) matchesKey, {
+    String? profileId,
+    bool filterProfile = false,
+    String? clientScopeId,
+    bool filterClientScope = false,
+  }) {
+    return select(offlineWatchProgress)
+      ..where(
+        (t) =>
+            matchesKey(t) &
+            (filterProfile ? _nullableTextPredicate(t.profileId, profileId) : const Constant(true)) &
+            (filterClientScope ? _clientScopePredicate(t.clientScopeId, clientScopeId) : const Constant(true)),
+      )
+      ..orderBy([(t) => OrderingTerm.desc(t.updatedAt), (t) => OrderingTerm.desc(t.id)]);
+  }
+
   /// Get the latest action for a specific item
   Future<OfflineWatchProgressItem?> getLatestWatchAction(
     String globalKey, {
@@ -285,16 +302,13 @@ class AppDatabase extends _$AppDatabase {
     String? clientScopeId,
     bool filterClientScope = false,
   }) {
-    return (select(offlineWatchProgress)
-          ..where(
-            (t) =>
-                t.globalKey.equals(globalKey) &
-                (filterProfile ? _nullableTextPredicate(t.profileId, profileId) : const Constant(true)) &
-                (filterClientScope ? _clientScopePredicate(t.clientScopeId, clientScopeId) : const Constant(true)),
-          )
-          ..orderBy([(t) => OrderingTerm.desc(t.updatedAt), (t) => OrderingTerm.desc(t.id)])
-          ..limit(1))
-        .getSingleOrNull();
+    return (_watchActionsQuery(
+      (t) => t.globalKey.equals(globalKey),
+      profileId: profileId,
+      filterProfile: filterProfile,
+      clientScopeId: clientScopeId,
+      filterClientScope: filterClientScope,
+    )..limit(1)).getSingleOrNull();
   }
 
   Future<List<OfflineWatchProgressItem>> getWatchActionsForKey(
@@ -304,15 +318,13 @@ class AppDatabase extends _$AppDatabase {
     String? clientScopeId,
     bool filterClientScope = false,
   }) {
-    return (select(offlineWatchProgress)
-          ..where(
-            (t) =>
-                t.globalKey.equals(globalKey) &
-                (filterProfile ? _nullableTextPredicate(t.profileId, profileId) : const Constant(true)) &
-                (filterClientScope ? _clientScopePredicate(t.clientScopeId, clientScopeId) : const Constant(true)),
-          )
-          ..orderBy([(t) => OrderingTerm.desc(t.updatedAt), (t) => OrderingTerm.desc(t.id)]))
-        .get();
+    return _watchActionsQuery(
+      (t) => t.globalKey.equals(globalKey),
+      profileId: profileId,
+      filterProfile: filterProfile,
+      clientScopeId: clientScopeId,
+      filterClientScope: filterClientScope,
+    ).get();
   }
 
   Future<Map<String, List<OfflineWatchProgressItem>>> getWatchActionsForKeys(
@@ -322,15 +334,11 @@ class AppDatabase extends _$AppDatabase {
     Map<String, String?>? clientScopeIdsByGlobalKey,
   }) async {
     if (globalKeys.isEmpty) return const {};
-    final rows =
-        await (select(offlineWatchProgress)
-              ..where(
-                (t) =>
-                    t.globalKey.isIn(globalKeys) &
-                    (filterProfile ? _nullableTextPredicate(t.profileId, profileId) : const Constant(true)),
-              )
-              ..orderBy([(t) => OrderingTerm.desc(t.updatedAt), (t) => OrderingTerm.desc(t.id)]))
-            .get();
+    final rows = await _watchActionsQuery(
+      (t) => t.globalKey.isIn(globalKeys),
+      profileId: profileId,
+      filterProfile: filterProfile,
+    ).get();
 
     final result = <String, List<OfflineWatchProgressItem>>{};
     for (final action in rows) {
@@ -353,31 +361,13 @@ class AppDatabase extends _$AppDatabase {
     bool filterProfile = false,
     Map<String, String?>? clientScopeIdsByGlobalKey,
   }) async {
-    if (globalKeys.isEmpty) return {};
-
-    // Query all actions for the given keys
-    final allActions =
-        await (select(offlineWatchProgress)
-              ..where(
-                (t) =>
-                    t.globalKey.isIn(globalKeys) &
-                    (filterProfile ? _nullableTextPredicate(t.profileId, profileId) : const Constant(true)),
-              )
-              ..orderBy([(t) => OrderingTerm.desc(t.updatedAt), (t) => OrderingTerm.desc(t.id)]))
-            .get();
-
-    // Group by globalKey and take the latest (first due to ordering)
-    final result = <String, OfflineWatchProgressItem>{};
-    for (final action in allActions) {
-      if (clientScopeIdsByGlobalKey != null && clientScopeIdsByGlobalKey.containsKey(action.globalKey)) {
-        final expectedScope = clientScopeIdsByGlobalKey[action.globalKey];
-        if (!_clientScopeValuesMatch(action.clientScopeId, expectedScope)) continue;
-      }
-      // Only keep the first (latest) action for each key
-      result.putIfAbsent(action.globalKey, () => action);
-    }
-
-    return result;
+    final actionsByKey = await getWatchActionsForKeys(
+      globalKeys,
+      profileId: profileId,
+      filterProfile: filterProfile,
+      clientScopeIdsByGlobalKey: clientScopeIdsByGlobalKey,
+    );
+    return {for (final entry in actionsByKey.entries) entry.key: entry.value.first};
   }
 
   bool _clientScopeValuesMatch(String? actual, String? expected) {
