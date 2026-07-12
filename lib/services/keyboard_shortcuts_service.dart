@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../models/hotkey_model.dart';
 import '../i18n/strings.g.dart';
 import '../mpv/mpv.dart';
+import 'settings_binding_owner.dart';
 import 'settings_service.dart';
 import '../utils/platform_detector.dart';
 import '../utils/player_utils.dart';
@@ -14,14 +15,26 @@ class KeyboardShortcutsService extends ChangeNotifier {
   static const Set<String> _repeatableVideoActions = {'zoom_in', 'zoom_out'};
 
   static KeyboardShortcutsService? _instance;
-  late SettingsService _settingsService;
-  final List<VoidCallback> _settingsDisposers = [];
+  late final SettingsBindingOwner _settingsBinding;
   Map<String, HotKey> _hotkeys = {};
   int _seekTimeSmall = 10; // Default, loaded from settings
   int _seekTimeLarge = 30; // Default, loaded from settings
   int _maxVolume = 100; // Default, loaded from settings (100-300%)
+  bool _settingsInitialized = false;
 
-  KeyboardShortcutsService._();
+  KeyboardShortcutsService._() {
+    _settingsBinding = SettingsBindingOwner(
+      prefs: [
+        SettingsService.keyboardHotkeys,
+        SettingsService.seekTimeSmall,
+        SettingsService.seekTimeLarge,
+        SettingsService.maxVolume,
+      ],
+      onRefresh: _syncFromSettings,
+    );
+  }
+
+  SettingsService get _settingsService => _settingsBinding.settings!;
 
   static Future<KeyboardShortcutsService> getInstance() async {
     if (_instance == null) {
@@ -37,32 +50,14 @@ class KeyboardShortcutsService extends ChangeNotifier {
   }
 
   Future<void> _init() async {
-    _settingsService = await SettingsService.getInstance();
-    _bindSettings();
-    _syncFromSettings(notify: false);
+    await _settingsBinding.bind();
   }
 
-  void _bindSettings() {
-    if (_settingsDisposers.isNotEmpty) return;
-    void bind<T>(Pref<T> pref) {
-      final notifier = _settingsService.listenable(pref);
-      notifier.addListener(_onSettingsChanged);
-      _settingsDisposers.add(() => notifier.removeListener(_onSettingsChanged));
-    }
-
-    bind(SettingsService.keyboardHotkeys);
-    bind(SettingsService.seekTimeSmall);
-    bind(SettingsService.seekTimeLarge);
-    bind(SettingsService.maxVolume);
-  }
-
-  void _onSettingsChanged() => _syncFromSettings();
-
-  void _syncFromSettings({bool notify = true}) {
-    final hotkeys = _settingsService.read(SettingsService.keyboardHotkeys);
-    final seekTimeSmall = _settingsService.read(SettingsService.seekTimeSmall);
-    final seekTimeLarge = _settingsService.read(SettingsService.seekTimeLarge);
-    final maxVolume = _settingsService.read(SettingsService.maxVolume);
+  void _syncFromSettings(SettingsService service) {
+    final hotkeys = service.read(SettingsService.keyboardHotkeys);
+    final seekTimeSmall = service.read(SettingsService.seekTimeSmall);
+    final seekTimeLarge = service.read(SettingsService.seekTimeLarge);
+    final maxVolume = service.read(SettingsService.maxVolume);
 
     final changed =
         !_hotkeyMapsEqual(_hotkeys, hotkeys) ||
@@ -75,6 +70,8 @@ class KeyboardShortcutsService extends ChangeNotifier {
     _seekTimeLarge = seekTimeLarge;
     _maxVolume = maxVolume;
 
+    final notify = _settingsInitialized;
+    _settingsInitialized = true;
     if (notify && changed) notifyListeners();
   }
 
@@ -99,7 +96,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
   }
 
   Future<void> refreshFromStorage() async {
-    _syncFromSettings();
+    _settingsBinding.refresh();
   }
 
   Future<void> resetToDefaults() async {
@@ -109,10 +106,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
 
   @override
   void dispose() {
-    for (final dispose in _settingsDisposers) {
-      dispose();
-    }
-    _settingsDisposers.clear();
+    _settingsBinding.dispose();
     if (identical(_instance, this)) _instance = null;
     super.dispose();
   }
