@@ -83,22 +83,14 @@ else
 fi
 rm -f "$out"
 
-# 3. flutter analyze (mirrors ci.yml "Analyze code")
-section "flutter analyze"
-out="$(mktemp)"
-flutter analyze >"$out" 2>&1 || true
-if grep -q "error •" "$out"; then
-  fail "errors"
-  grep -E "error •|warning •" "$out" | sed 's/^/    /'
-  FAILED=1
-elif grep -q "warning •" "$out"; then
-  fail "warnings (treated as failure, matching CI)"
-  grep "warning •" "$out" | sed 's/^/    /'
-  FAILED=1
+# 3. Dart analyzer (mirrors ci.yml "Analyze code")
+section "Dart analyzer"
+if dart run scripts/check_analyzer.dart; then
+  ok "no unapproved diagnostics"
 else
-  ok "no errors or warnings"
+  fail "analyzer errors, warnings, unexpected infos, or tool failure"
+  FAILED=1
 fi
-rm -f "$out"
 
 # 4. Unused code (mirrors ci.yml "Check for unused code")
 section "dart_code_linter: unused code"

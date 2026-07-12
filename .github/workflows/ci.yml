@@ -49,28 +49,7 @@ jobs:
           find "${paths[@]}" -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" -type f -print0 |
             xargs -0 -r dart format --output=none --set-exit-if-changed
       - name: Analyze code
-        run: |
-          # Run flutter analyze
-          # Fails on errors or warnings only (info messages are allowed)
-          set +e
-          flutter analyze 2>&1 | tee analyze_output.txt
-          analyze_status=${PIPESTATUS[0]}
-          set -e
-
-          # Check output for errors or warnings
-          if grep -q "error •" analyze_output.txt; then
-            echo "❌ Analysis failed with errors"
-            exit 1
-          elif grep -q "warning •" analyze_output.txt; then
-            echo "⚠️  Analysis completed with warnings"
-            exit 1
-          elif [ "$analyze_status" -ne 0 ] && ! grep -q "info •" analyze_output.txt; then
-            echo "❌ Analyzer failed before producing diagnostics (exit $analyze_status)"
-            exit "$analyze_status"
-          else
-            echo "✅ Analysis passed!"
-            exit 0
-          fi
+        run: dart run scripts/check_analyzer.dart
 
       - name: Check for unused code
         run: |
