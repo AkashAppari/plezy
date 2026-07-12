@@ -114,4 +114,32 @@ void main() {
     expect(activities.last.progress, 75);
     expect(activities.last.cancellable, isTrue);
   });
+
+  test('metadata edit preserves locked fields and removed tag wire format', () async {
+    http.Request? captured;
+    final client = makeClient((request) async {
+      captured = request;
+      return http.Response('', 200);
+    });
+    addTearDown(client.close);
+
+    final updated = await client.updateMetadata(
+      sectionId: 1,
+      ratingKey: 'item-id',
+      typeNumber: 1,
+      title: 'Renamed',
+      tagChanges: {
+        'genre': (current: ['Drama'], original: ['Drama', 'Science Fiction']),
+      },
+    );
+
+    expect(updated, isTrue);
+    expect(captured?.method, 'PUT');
+    expect(captured?.url.path, '/library/sections/1/all');
+    expect(captured?.url.queryParameters, containsPair('title.value', 'Renamed'));
+    expect(captured?.url.queryParameters, containsPair('title.locked', '1'));
+    expect(captured?.url.queryParameters, containsPair('genre[0].tag.tag', 'Drama'));
+    expect(captured?.url.queryParameters, containsPair('genre[].tag.tag-', 'Science%20Fiction'));
+    expect(captured?.url.queryParameters, containsPair('genre.locked', '1'));
+  });
 }

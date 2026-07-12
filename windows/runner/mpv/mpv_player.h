@@ -8,12 +8,13 @@
 #include <atomic>
 #include <chrono>
 #include <functional>
-#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
+
+#include "../../../native/mpv/mpv_player_common.h"
 
 namespace mpv {
 
@@ -45,9 +46,9 @@ class MpvPlayer {
   void Command(const std::vector<std::string>& args);
 
   // Callback types for async mpv requests.
-  using StatusCallback = std::function<void(int error)>;
+  using StatusCallback = plezy::mpv_common::StatusCallback;
   using CommandCallback = StatusCallback;
-  using GetPropertyCallback = std::function<void(int error, const std::string& value)>;
+  using GetPropertyCallback = plezy::mpv_common::GetPropertyCallback;
 
   // Executes an mpv command asynchronously to prevent UI blocking.
   void CommandAsync(const std::vector<std::string>& args, CommandCallback callback);
@@ -95,10 +96,6 @@ class MpvPlayer {
   void MaybeRunAudioRecovery();
   void TryAudioReload(const char* reason, int attempt);
   void LogRecovery(const std::string& text);
-  uint64_t RegisterStatusRequest(StatusCallback callback);
-  StatusCallback TakeStatusRequest(uint64_t request_id);
-  uint64_t RegisterGetPropertyRequest(GetPropertyCallback callback);
-  GetPropertyCallback TakeGetPropertyRequest(uint64_t request_id);
 
   const bool audio_only_;
   mpv_handle* mpv_ = nullptr;
@@ -108,35 +105,15 @@ class MpvPlayer {
   std::atomic<bool> running_{false};
   EventCallback event_callback_;
   std::mutex callback_mutex_;
-  bool current_ao_is_null_ = false;
-  bool audio_reload_pending_ = false;
+  plezy::mpv_common::AudioRecoveryState audio_recovery_;
 
-  // Audio recovery state. Event thread only, except |resume_reload_requested_|
-  // which the platform thread sets on WM_POWERBROADCAST resume.
-  std::atomic<bool> resume_reload_requested_{false};
-  bool file_loaded_ = false;
-  int resume_attempts_left_ = 0;
-  std::chrono::steady_clock::time_point resume_next_attempt_{};
-  int null_attempts_left_ = 0;
-  std::chrono::steady_clock::time_point null_next_attempt_{};
-  std::chrono::milliseconds null_backoff_{};
-
-  uint64_t next_reply_userdata_ = 1;
-  std::map<std::string, uint64_t> observed_properties_;
-  std::map<std::string, int> name_to_id_;
-
-  // Pending async requests: request_id -> callback
-  std::map<uint64_t, StatusCallback> pending_status_requests_;
-  std::map<uint64_t, GetPropertyCallback> pending_get_property_requests_;
-  std::mutex pending_requests_mutex_;
+  plezy::mpv_common::AsyncRequestRegistry pending_requests_;
+  plezy::mpv_common::PropertyObservationRegistry observed_properties_;
 
   // HDR state
-  bool hdr_enabled_ = true;     // User preference
-  double last_sig_peak_ = 0.0;  // Last known sig-peak for HDR content detection
+  bool hdr_enabled_ = true;
 
-  // HDR methods
   void SetHDREnabled(bool enabled, StatusCallback callback = nullptr);
-  void UpdateHDRMode(double sigPeak);
 };
 
 }  // namespace mpv

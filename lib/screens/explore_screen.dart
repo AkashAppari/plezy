@@ -28,7 +28,7 @@ import '../widgets/desktop_app_bar.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/settings_builder.dart';
 import '../widgets/tv_browse_rail.dart';
-import '../widgets/tv_spotlight_background.dart';
+import '../widgets/tv_spotlight_scaffold.dart';
 import 'catalog_search_screen.dart';
 import 'libraries/state_messages.dart';
 
@@ -51,9 +51,8 @@ class ExploreScreenState extends State<ExploreScreen>
   List<GlobalKey<HubSectionState>> _orderedHubKeys = const [];
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
 
-  // TV spotlight layout (mirrors LibraryRecommendedTab's rail + backdrop).
   final _tvBrowseRailKey = GlobalKey<TvBrowseRailState>();
-  final ValueNotifier<MediaItem?> _spotlightItem = ValueNotifier(null);
+  final TvSpotlightController _spotlight = TvSpotlightController();
 
   @override
   void initState() {
@@ -82,7 +81,7 @@ class ExploreScreenState extends State<ExploreScreen>
 
   @override
   void dispose() {
-    _spotlightItem.dispose();
+    _spotlight.dispose();
     super.dispose();
   }
 
@@ -95,19 +94,7 @@ class ExploreScreenState extends State<ExploreScreen>
     _orderedHubKeys.firstOrNull?.currentState?.requestFocusFromMemory();
   }
 
-  void _setSpotlightItem(MediaItem item) {
-    _spotlightItem.value = item;
-  }
-
-  MediaItem? _effectiveSpotlightItem(List<ExploreRowHub> rowHubs) {
-    final current = _spotlightItem.value;
-    if (current != null) {
-      for (final rowHub in rowHubs) {
-        if (rowHub.hub.items.any((item) => item.id == current.id)) return current;
-      }
-    }
-    return rowHubs.firstOrNull?.hub.items.firstOrNull;
-  }
+  void _setSpotlightItem(MediaItem item) => _spotlight.select(item);
 
   void _updateHubKeys(List<ExploreRowHub> rowHubs) {
     final liveIds = <String>{for (final rowHub in rowHubs) rowHub.hub.id};
@@ -303,82 +290,27 @@ class ExploreScreenState extends State<ExploreScreen>
 
   Widget _buildTvContent(List<ExploreRowHub> rowHubs) {
     final tvHubs = [for (final rowHub in rowHubs) rowHub.hub];
-    final size = MediaQuery.sizeOf(context);
-    final theme = Theme.of(context);
-    final svc = SettingsService.instance;
-    final scale = TvLayoutConstants.scaleForSize(size);
-    final railSize = MainScreenFocusScope.foregroundSizeOf(context);
-    final fullBleedWidth = MainScreenFocusScope.fullBleedWidthOf(context);
-    final railHeight = TvBrowseRailLayout.estimateHeight(
-      size: railSize,
+    return TvSpotlightScaffold(
       hubs: tvHubs,
-      density: svc.read(SettingsService.libraryDensity),
-      episodePosterMode: svc.read(SettingsService.episodePosterMode),
-      fullCardLayout: svc.read(SettingsService.tvFullCardLayout),
-      tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
-    );
-    final spotlightTop = (size.height * 0.075).clamp(64.0 * scale, 120.0 * scale).toDouble();
-    final minimumSpotlightBottom = railHeight + (8 * scale);
-    final baseSpotlightBottom = (size.height * 0.48).clamp(160.0, 820.0).toDouble();
-    final desiredSpotlightBottom = minimumSpotlightBottom > baseSpotlightBottom
-        ? minimumSpotlightBottom
-        : baseSpotlightBottom;
-    final maxSpotlightBottom = (size.height - spotlightTop - (96 * scale)).clamp(0.0, double.infinity).toDouble();
-    final spotlightBottom = desiredSpotlightBottom > maxSpotlightBottom ? maxSpotlightBottom : desiredSpotlightBottom;
-    final spotlightLeft = (24 * scale).clamp(18.0, 40.0).toDouble();
-
-    return Material(
-      color: theme.scaffoldBackgroundColor,
-      child: SizedBox.expand(
-        child: Stack(
-          fit: StackFit.expand,
-          clipBehavior: Clip.none,
-          children: [
-            Builder(
-              builder: (context) {
-                final foregroundLeft = MainScreenFocusScope.foregroundLeftOf(context);
-                return SideNavigationBleedBuilder(
-                  targetBleed: foregroundLeft,
-                  child: ValueListenableBuilder<MediaItem?>(
-                    valueListenable: _spotlightItem,
-                    builder: (context, _, _) {
-                      final spotlight = _effectiveSpotlightItem(rowHubs);
-                      return TvSpotlightBackground(
-                        item: spotlight,
-                        client: context.tryGetMediaClientForServer(serverIdOrNull(spotlight?.serverId)),
-                        hideSpoilers: svc.read(SettingsService.hideSpoilers),
-                        contentTop: spotlightTop,
-                        contentBottom: spotlightBottom,
-                        contentLeft: spotlightLeft + foregroundLeft,
-                        compact: true,
-                        showPrimaryAction: false,
-                      );
-                    },
-                  ),
-                  builder: (context, animatedBleed, child) =>
-                      Positioned(top: 0, bottom: 0, left: -animatedBleed, width: fullBleedWidth, child: child!),
-                );
-              },
-            ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: TvBrowseRail(
-                key: _tvBrowseRailKey,
-                hubs: tvHubs,
-                iconForHub: (hub, _) => _rowIcon(_rowForHub(hub) ?? CatalogRowId.watchlist),
-                onFocusedItemChanged: _setSpotlightItem,
-                loadMoreItems: (hub) {
-                  final row = _rowForHub(hub);
-                  return row == null ? Future.value(hub.items) : _explore.loadAllForRow(row);
-                },
-                onNavigateToSidebar: _navigateToSidebar,
-                onBack: _navigateToSidebar,
-                tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
-              ),
-            ),
-          ],
+      spotlightListenable: _spotlight,
+      resolveSpotlight: () => _spotlight.resolve(tvHubs),
+      resolveClient: (spotlight) => context.tryGetMediaClientForServer(serverIdOrNull(spotlight?.serverId)),
+      foreground: Positioned(
+        left: 0,
+        right: 0,
+        bottom: 0,
+        child: TvBrowseRail(
+          key: _tvBrowseRailKey,
+          hubs: tvHubs,
+          iconForHub: (hub, _) => _rowIcon(_rowForHub(hub) ?? CatalogRowId.watchlist),
+          onFocusedItemChanged: _setSpotlightItem,
+          loadMoreItems: (hub) {
+            final row = _rowForHub(hub);
+            return row == null ? Future.value(hub.items) : _explore.loadAllForRow(row);
+          },
+          onNavigateToSidebar: _navigateToSidebar,
+          onBack: _navigateToSidebar,
+          tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
         ),
       ),
     );

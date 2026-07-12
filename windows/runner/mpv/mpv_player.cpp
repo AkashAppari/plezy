@@ -2,28 +2,11 @@
 
 #include <windowsx.h>
 
-#include <algorithm>
-
 #include "sanitize_utf8.h"
 
 namespace mpv {
 
 namespace {
-
-// Audio recovery schedule (issue #783: silent WASAPI after wake from sleep).
-// Resume reloads fire unconditionally — a post-wake WASAPI session can stay
-// "healthy" from mpv's point of view while producing no sound, so there is no
-// property to gate on; the second shot covers a first reload that lands while
-// the audio stack is still restoring and creates another silent session.
-// Null-fallback retries are clock-driven because a failed ao-reload falls
-// back to null again without emitting a current-ao change event.
-constexpr int kResumeReloadAttempts = 2;
-constexpr std::chrono::milliseconds kResumeFirstDelay{1500};
-constexpr std::chrono::milliseconds kResumeRetryDelay{4500};
-constexpr int kNullRetryBudget = 5;
-constexpr std::chrono::milliseconds kNullFirstDelay{500};
-constexpr std::chrono::milliseconds kNullBackoffCap{8000};
-constexpr std::chrono::milliseconds kDeviceListDebounce{250};
 
 flutter::EncodableValue NodeToEncodableValue(const mpv_node* node) {
   if (!node) return flutter::EncodableValue();
@@ -176,7 +159,7 @@ bool MpvPlayer::Initialize(HWND view) {
 
   if (!audio_only_) {
     // Let mpv use display/context detection instead of forcing HDR signaling.
-    mpv_set_option_string(mpv_, "target-colorspace-hint", "auto");
+    mpv_set_option_string(mpv_, "target-colorspace-hint", plezy::mpv_common::TargetColorspaceHint(hdr_enabled_));
 
     // Fallback tone mapping when display doesn't support HDR
     mpv_set_option_string(mpv_, "tone-mapping", "auto");
@@ -203,10 +186,6 @@ bool MpvPlayer::Initialize(HWND view) {
     return false;
   }
 
-  // Observe video-params/sig-peak for HDR detection (video core only).
-  if (!audio_only_) {
-    mpv_observe_property(mpv_, 0, "video-params/sig-peak", MPV_FORMAT_DOUBLE);
-  }
   mpv_observe_property(mpv_, 0, "current-ao", MPV_FORMAT_STRING);
   // Native observation so audio recovery doesn't depend on the Dart side
   // choosing to observe the device list.
@@ -221,24 +200,11 @@ bool MpvPlayer::Initialize(HWND view) {
 void MpvPlayer::Dispose() {
   StopEventLoop();
 
-  // Cancel pending async requests
-  std::vector<StatusCallback> status_callbacks;
-  std::vector<GetPropertyCallback> get_callbacks;
-  {
-    std::lock_guard<std::mutex> lock(pending_requests_mutex_);
-    for (auto& pair : pending_status_requests_) {
-      if (pair.second) status_callbacks.push_back(std::move(pair.second));
-    }
-    for (auto& pair : pending_get_property_requests_) {
-      if (pair.second) get_callbacks.push_back(std::move(pair.second));
-    }
-    pending_status_requests_.clear();
-    pending_get_property_requests_.clear();
-  }
-  for (auto& callback : status_callbacks) {
+  auto cancelled = pending_requests_.CancelAll();
+  for (auto& callback : cancelled.status) {
     callback(-1);
   }
-  for (auto& callback : get_callbacks) {
+  for (auto& callback : cancelled.properties) {
     callback(-1, "");
   }
 
@@ -265,7 +231,7 @@ void MpvPlayer::Dispose() {
     std::thread([handle]() { mpv_terminate_destroy(handle); }).detach();
   }
 
-  observed_properties_.clear();
+  observed_properties_.Clear();
 }
 
 void MpvPlayer::Command(const std::vector<std::string>& args) { CommandAsync(args, nullptr); }
@@ -283,12 +249,12 @@ void MpvPlayer::CommandAsync(const std::vector<std::string>& args, CommandCallba
   }
   c_args.push_back(nullptr);
 
-  uint64_t request_id = callback ? RegisterStatusRequest(std::move(callback)) : 0;
+  uint64_t request_id = callback ? pending_requests_.RegisterStatus(std::move(callback)) : 0;
 
   // mpv_command_async returns immediately
   int result = mpv_command_async(mpv_, request_id, c_args.data());
   if (result < 0) {
-    auto cb = TakeStatusRequest(request_id);
+    auto cb = pending_requests_.TakeStatus(request_id);
     if (cb) cb(result);
   }
 }
@@ -305,17 +271,16 @@ void MpvPlayer::SetPropertyAsync(const std::string& name, const std::string& val
 
   // Handle custom HDR toggle property (same pattern as iOS/macOS)
   if (name == "hdr-enabled") {
-    bool enabled = (value == "yes" || value == "true" || value == "1");
-    SetHDREnabled(enabled, std::move(callback));
+    SetHDREnabled(plezy::mpv_common::ParseEnabledFlag(value), std::move(callback));
     return;
   }
 
-  uint64_t request_id = callback ? RegisterStatusRequest(std::move(callback)) : 0;
+  uint64_t request_id = callback ? pending_requests_.RegisterStatus(std::move(callback)) : 0;
 
   char* property_value = const_cast<char*>(value.c_str());
   int result = mpv_set_property_async(mpv_, request_id, name.c_str(), MPV_FORMAT_STRING, &property_value);
   if (result < 0) {
-    auto cb = TakeStatusRequest(request_id);
+    auto cb = pending_requests_.TakeStatus(request_id);
     if (cb) cb(result);
   }
 }
@@ -326,73 +291,21 @@ void MpvPlayer::GetPropertyAsync(const std::string& name, GetPropertyCallback ca
     return;
   }
 
-  uint64_t request_id = RegisterGetPropertyRequest(std::move(callback));
+  uint64_t request_id = pending_requests_.RegisterProperty(std::move(callback));
 
   int result = mpv_get_property_async(mpv_, request_id, name.c_str(), MPV_FORMAT_STRING);
   if (result < 0) {
-    auto cb = TakeGetPropertyRequest(request_id);
+    auto cb = pending_requests_.TakeProperty(request_id);
     if (cb) cb(result, "");
   }
-}
-
-uint64_t MpvPlayer::RegisterStatusRequest(StatusCallback callback) {
-  std::lock_guard<std::mutex> lock(pending_requests_mutex_);
-  uint64_t request_id = next_reply_userdata_++;
-  pending_status_requests_[request_id] = std::move(callback);
-  return request_id;
-}
-
-MpvPlayer::StatusCallback MpvPlayer::TakeStatusRequest(uint64_t request_id) {
-  std::lock_guard<std::mutex> lock(pending_requests_mutex_);
-  auto it = pending_status_requests_.find(request_id);
-  if (it == pending_status_requests_.end()) return nullptr;
-  auto callback = std::move(it->second);
-  pending_status_requests_.erase(it);
-  return callback;
-}
-
-uint64_t MpvPlayer::RegisterGetPropertyRequest(GetPropertyCallback callback) {
-  std::lock_guard<std::mutex> lock(pending_requests_mutex_);
-  uint64_t request_id = next_reply_userdata_++;
-  pending_get_property_requests_[request_id] = std::move(callback);
-  return request_id;
-}
-
-MpvPlayer::GetPropertyCallback MpvPlayer::TakeGetPropertyRequest(uint64_t request_id) {
-  std::lock_guard<std::mutex> lock(pending_requests_mutex_);
-  auto it = pending_get_property_requests_.find(request_id);
-  if (it == pending_get_property_requests_.end()) return nullptr;
-  auto callback = std::move(it->second);
-  pending_get_property_requests_.erase(it);
-  return callback;
 }
 
 void MpvPlayer::ObserveProperty(const std::string& name, const std::string& format, int id) {
   if (!mpv_) return;
 
-  // Check if already observing.
-  if (observed_properties_.find(name) != observed_properties_.end()) {
-    return;
-  }
-
-  name_to_id_[name] = id;
-
-  mpv_format mpv_fmt = MPV_FORMAT_NONE;
-  if (format == "string") {
-    mpv_fmt = MPV_FORMAT_STRING;
-  } else if (format == "flag" || format == "bool") {
-    mpv_fmt = MPV_FORMAT_FLAG;
-  } else if (format == "int64") {
-    mpv_fmt = MPV_FORMAT_INT64;
-  } else if (format == "double") {
-    mpv_fmt = MPV_FORMAT_DOUBLE;
-  } else if (format == "node") {
-    mpv_fmt = MPV_FORMAT_NODE;
-  }
-
-  uint64_t userdata = next_reply_userdata_++;
-  observed_properties_[name] = userdata;
-  mpv_observe_property(mpv_, userdata, name.c_str(), mpv_fmt);
+  const auto request = observed_properties_.Register(name, format, id);
+  if (!request.added) return;
+  mpv_observe_property(mpv_, request.userdata, name.c_str(), request.format);
 }
 
 void MpvPlayer::SetRect(RECT rect, double device_pixel_ratio) {
@@ -429,7 +342,7 @@ void MpvPlayer::SetEventCallback(EventCallback callback) {
 
 void MpvPlayer::NotifyPowerSuspend() { LogRecovery("system suspending"); }
 
-void MpvPlayer::NotifyPowerResume() { resume_reload_requested_.store(true); }
+void MpvPlayer::NotifyPowerResume() { audio_recovery_.RequestResume(); }
 
 void MpvPlayer::LogRecovery(const std::string& text) {
   char log_msg[512];
@@ -446,52 +359,25 @@ void MpvPlayer::LogRecovery(const std::string& text) {
 }
 
 void MpvPlayer::TryAudioReload(const char* reason, int attempt) {
-  if (audio_reload_pending_) return;
-  audio_reload_pending_ = true;
   LogRecovery("issuing ao-reload (reason=" + std::string(reason) + ", attempt " + std::to_string(attempt) + ")");
-  std::string reason_str = reason;
-  CommandAsync({"ao-reload"}, [this, reason_str, attempt](int error) {
-    audio_reload_pending_ = false;
+  const std::string reason_copy = reason;
+  CommandAsync({"ao-reload"}, [this, reason_copy, attempt](int error) {
+    audio_recovery_.CompleteReload();
     LogRecovery(
-        "ao-reload completed (reason=" + reason_str + ", attempt " + std::to_string(attempt) +
+        "ao-reload completed (reason=" + reason_copy + ", attempt " + std::to_string(attempt) +
         ", error=" + std::to_string(error) + ")");
   });
 }
 
 void MpvPlayer::MaybeRunAudioRecovery() {
-  const auto now = std::chrono::steady_clock::now();
-
-  if (resume_reload_requested_.exchange(false)) {
-    if (file_loaded_) {
-      resume_attempts_left_ = kResumeReloadAttempts;
-      resume_next_attempt_ = now + kResumeFirstDelay;
-      LogRecovery("power resume detected; scheduling ao-reload in " + std::to_string(kResumeFirstDelay.count()) + "ms");
-    } else {
-      LogRecovery("power resume detected; no file loaded, nothing to recover");
-    }
+  const auto action = audio_recovery_.NextReload(plezy::mpv_common::AudioRecoveryState::Clock::now());
+  if (action.reason == plezy::mpv_common::AudioReloadReason::kNone) {
+    return;
   }
-
-  if (resume_attempts_left_ > 0 && now >= resume_next_attempt_) {
-    int attempt = kResumeReloadAttempts - resume_attempts_left_ + 1;
-    resume_attempts_left_--;
-    resume_next_attempt_ = now + kResumeRetryDelay;
-    TryAudioReload("resume", attempt);
-  }
-
-  if (null_attempts_left_ > 0 && now >= null_next_attempt_) {
-    if (!current_ao_is_null_) {
-      null_attempts_left_ = 0;
-      LogRecovery("audio recovered (current-ao no longer null)");
-    } else {
-      int attempt = kNullRetryBudget - null_attempts_left_ + 1;
-      null_attempts_left_--;
-      null_next_attempt_ = now + null_backoff_;
-      null_backoff_ = std::min(null_backoff_ * 2, kNullBackoffCap);
-      TryAudioReload("null-fallback", attempt);
-      if (null_attempts_left_ == 0) {
-        LogRecovery("audio recovery budget exhausted; waiting for device list change or power resume");
-      }
-    }
+  const char* reason = action.reason == plezy::mpv_common::AudioReloadReason::kResume ? "resume" : "null-fallback";
+  TryAudioReload(reason, action.attempt);
+  if (action.exhausted) {
+    LogRecovery("audio recovery budget exhausted; waiting for device list change");
   }
 }
 
@@ -531,7 +417,7 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
     case MPV_EVENT_COMMAND_REPLY:
     case MPV_EVENT_SET_PROPERTY_REPLY: {
       uint64_t request_id = event->reply_userdata;
-      StatusCallback callback = TakeStatusRequest(request_id);
+      StatusCallback callback = pending_requests_.TakeStatus(request_id);
       if (callback) {
         callback(event->error);
       }
@@ -539,7 +425,7 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
     }
     case MPV_EVENT_GET_PROPERTY_REPLY: {
       uint64_t request_id = event->reply_userdata;
-      GetPropertyCallback callback = TakeGetPropertyRequest(request_id);
+      GetPropertyCallback callback = pending_requests_.TakeProperty(request_id);
       if (callback) {
         std::string value;
         if (event->error >= 0) {
@@ -594,44 +480,22 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
           break;
       }
 
-      // Handle sig-peak for HDR detection
-      if (strcmp(prop->name, "video-params/sig-peak") == 0 && prop->format == MPV_FORMAT_DOUBLE && prop->data) {
-        double sigPeak = *static_cast<double*>(prop->data);
-        last_sig_peak_ = sigPeak;
-        UpdateHDRMode(sigPeak);
-      }
-
       if (strcmp(prop->name, "current-ao") == 0) {
         const char* current_ao = nullptr;
         if (prop->format == MPV_FORMAT_STRING && prop->data) {
           current_ao = *static_cast<char**>(prop->data);
         }
-        bool is_null = current_ao && strcmp(current_ao, "null") == 0;
-        if (is_null && !current_ao_is_null_) {
-          // AO fell back to null (audio-fallback-to-null); start recovery.
-          null_attempts_left_ = kNullRetryBudget;
-          null_backoff_ = kNullFirstDelay;
-          null_next_attempt_ = std::chrono::steady_clock::now() + kNullFirstDelay;
-          LogRecovery(
-              "current-ao fell back to null; starting recovery (budget " + std::to_string(kNullRetryBudget) + ")");
-        } else if (!is_null && current_ao_is_null_) {
-          null_attempts_left_ = 0;
-          LogRecovery(std::string("current-ao is now '") + (current_ao ? current_ao : "") + "'");
+        const bool is_null = current_ao && strcmp(current_ao, "null") == 0;
+        const auto transition =
+            audio_recovery_.SetCurrentAudioOutputNull(is_null, plezy::mpv_common::AudioRecoveryState::Clock::now());
+        if (transition == plezy::mpv_common::AudioOutputTransition::kFellBackToNull) {
+          LogRecovery("current-ao fell back to null; starting recovery");
+        } else if (transition == plezy::mpv_common::AudioOutputTransition::kRecovered) {
+          LogRecovery("audio recovered (current-ao no longer null)");
         }
-        current_ao_is_null_ = is_null;
       }
-
-      // A device (re)appearing while the AO sits on the null fallback is a
-      // fresh recovery opportunity: refresh the retry budget and pull the next
-      // attempt close. Gated on the native observation (userdata 0) so the
-      // Dart-side observation of the same property doesn't double-trigger.
-      if (strcmp(prop->name, "audio-device-list") == 0 && event->reply_userdata == 0 && current_ao_is_null_) {
-        auto candidate = std::chrono::steady_clock::now() + kDeviceListDebounce;
-        if (null_attempts_left_ <= 0 || candidate < null_next_attempt_) {
-          null_next_attempt_ = candidate;
-        }
-        null_attempts_left_ = kNullRetryBudget;
-        null_backoff_ = kNullFirstDelay;
+      if (strcmp(prop->name, "audio-device-list") == 0 && event->reply_userdata == 0 &&
+          audio_recovery_.OnAudioDeviceListChanged(plezy::mpv_common::AudioRecoveryState::Clock::now())) {
         LogRecovery("audio-device-list changed while ao=null; rescheduling ao-reload");
       }
 
@@ -639,9 +503,7 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       break;
     }
     case MPV_EVENT_END_FILE: {
-      file_loaded_ = false;
-      resume_attempts_left_ = 0;
-      null_attempts_left_ = 0;
+      audio_recovery_.SetFileLoaded(false);
       auto* end = static_cast<mpv_event_end_file*>(event->data);
       flutter::EncodableMap data;
       data[flutter::EncodableValue("reason")] = flutter::EncodableValue(static_cast<int>(end->reason));
@@ -653,7 +515,7 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       break;
     }
     case MPV_EVENT_FILE_LOADED: {
-      file_loaded_ = true;
+      audio_recovery_.SetFileLoaded(true);
       SendEvent("file-loaded");
       break;
     }
@@ -673,13 +535,13 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
 void MpvPlayer::SendPropertyChange(const char* name, mpv_node* data) {
   if (!name) return;
 
-  auto it = name_to_id_.find(name);
-  if (it == name_to_id_.end()) return;
+  int id = 0;
+  if (!observed_properties_.LookupId(name, &id)) return;
 
   // mpv owns event node storage; copy the full tree before the callback can
   // queue it beyond the current mpv_wait_event result's lifetime.
   flutter::EncodableList list;
-  list.push_back(flutter::EncodableValue(it->second));
+  list.push_back(flutter::EncodableValue(id));
   list.push_back(NodeToEncodableValue(data));
 
   std::lock_guard<std::mutex> lock(callback_mutex_);
@@ -704,22 +566,11 @@ void MpvPlayer::SendEvent(const std::string& name, const flutter::EncodableMap& 
 
 void MpvPlayer::SetHDREnabled(bool enabled, StatusCallback callback) {
   hdr_enabled_ = enabled;
-
-  if (mpv_) {
-    SetPropertyAsync("target-colorspace-hint", enabled ? "auto" : "no", std::move(callback));
-  } else if (callback) {
-    callback(0);
+  if (!mpv_) {
+    if (callback) callback(0);
+    return;
   }
-
-  UpdateHDRMode(last_sig_peak_);
-}
-
-void MpvPlayer::UpdateHDRMode(double sigPeak) {
-  // On Windows, mpv handles HDR passthrough automatically when:
-  // - target-colorspace-hint=auto
-  // - Windows HDR is enabled in Display Settings
-  // - Display supports HDR
-  // No explicit DXGI calls needed - mpv's gpu-next/vulkan handles it
+  SetPropertyAsync("target-colorspace-hint", plezy::mpv_common::TargetColorspaceHint(enabled), std::move(callback));
 }
 
 }  // namespace mpv

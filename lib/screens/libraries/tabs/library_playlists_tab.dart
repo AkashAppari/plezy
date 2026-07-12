@@ -8,18 +8,16 @@ import '../../../mixins/library_tab_focus_mixin.dart';
 import '../../../mixins/paginated_item_loader.dart';
 import '../../../services/settings_service.dart';
 import '../../../utils/app_logger.dart';
-import '../../../utils/grid_size_calculator.dart';
 import '../../../utils/layout_constants.dart';
 import '../../../utils/library_refresh_notifier.dart';
 import '../../../utils/media_server_http_client.dart';
 import '../../../utils/platform_detector.dart';
 import '../../../widgets/card_inflation_budget.dart';
 import '../../../widgets/focusable_media_card.dart';
-import '../../../widgets/media_grid_delegate.dart';
+import '../../../widgets/media_card_sliver_layout.dart';
 import '../../../widgets/settings_builder.dart';
 import '../../../widgets/skeleton_media_card.dart';
 import '../../../widgets/sliver_child_memo.dart';
-import '../../../widgets/sliver_cross_axis_layout_builder.dart';
 import '../../../i18n/strings.g.dart';
 import '../../main_screen.dart';
 import 'base_library_tab.dart';
@@ -129,10 +127,7 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
           clipBehavior: Clip.none,
           slivers: [
             SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
-            if (viewMode == ViewMode.list)
-              _buildListSliver(density)
-            else
-              _buildGridSliver(density, fullCardLayout: fullCardLayout),
+            _buildItemsSliver(viewMode, density, fullCardLayout: fullCardLayout),
           ],
         );
       },
@@ -146,83 +141,52 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
     return base.copyWith(top: base.top + _focusDecorationPadding);
   }
 
-  Widget _buildListSliver(int density) {
-    return SliverPadding(
+  Widget _buildItemsSliver(ViewMode viewMode, int density, {required bool fullCardLayout}) {
+    return MediaCardSliverLayout(
+      viewMode: viewMode,
+      itemCount: totalSize,
+      density: density,
       padding: _effectivePadding,
-      sliver: SliverList.builder(
-        // Inert on media lists (no keep-alive clients): dropping the
-        // per-child wrappers shrinks build + semantics work per item.
-        addAutomaticKeepAlives: false,
-        addSemanticIndexes: false,
-        itemCount: totalSize,
-        itemBuilder: (context, index) {
-          final playlist = loadedItems[index];
-          if (playlist == null) {
-            ensureIndexLoaded(index, pageSize: _pageSize);
-            return const SkeletonMediaCard();
-          }
+      fullBleedImage: fullCardLayout,
+      listEpoch: (ViewMode.list, totalSize, density),
+      gridEpochBuilder: (geometry) => (ViewMode.grid, geometry.columnCount, totalSize, fullCardLayout, density),
+      itemBuilder: (context, position) {
+        final index = position.index;
+        final playlist = loadedItems[index];
+        if (playlist == null) {
+          ensureIndexLoaded(index, pageSize: _pageSize);
+          return const SkeletonMediaCard();
+        }
+        if (!position.isGrid) {
           return _cardMemo.widgetFor(
             index,
             playlist,
-            epoch: (ViewMode.list, totalSize, density),
-            build: () => _buildPlaylistCard(index, isFirstRow: index == 0, isFirstColumn: true, disableScale: true),
+            epoch: position.layoutEpoch!,
+            build: () =>
+                _buildPlaylistCard(index, isFirstRow: position.isFirstRow, isFirstColumn: true, disableScale: true),
           );
-        },
-      ),
-    );
-  }
+        }
 
-  Widget _buildGridSliver(int density, {required bool fullCardLayout}) {
-    return SliverPadding(
-      padding: _effectivePadding,
-      sliver: SliverCrossAxisLayoutBuilder(
-        builder: (context, crossAxisExtent) {
-          final geometry = MediaGridGeometry.resolve(
-            context: context,
-            crossAxisExtent: crossAxisExtent,
-            density: density,
+        final cached = _cardMemo.tryGet(index, playlist, epoch: position.layoutEpoch!);
+        if (cached != null) return cached;
+        if (CardInflationBudget.isScrollingContext(context) &&
+            !InputModeTracker.isKeyboardMode(context) &&
+            !CardInflationBudget.tryTake()) {
+          scheduleSkeletonUpgrade();
+          return const SkeletonMediaCard();
+        }
+        return _cardMemo.widgetFor(
+          index,
+          playlist,
+          epoch: position.layoutEpoch!,
+          build: () => _buildPlaylistCard(
+            index,
+            isFirstRow: position.isFirstRow,
+            isFirstColumn: position.isFirstColumn,
             fullBleedImage: fullCardLayout,
-          );
-          // Everything the card closures capture; a change flushes the memo.
-          final cardEpoch = (ViewMode.grid, geometry.columnCount, totalSize, fullCardLayout, density);
-          return SliverGrid.builder(
-            // Inert on media lists (no keep-alive clients): dropping the
-            // per-child wrappers shrinks build + semantics work per item.
-            addAutomaticKeepAlives: false,
-            addSemanticIndexes: false,
-            gridDelegate: geometry.delegate,
-            itemCount: totalSize,
-            itemBuilder: (context, index) {
-              final playlist = loadedItems[index];
-              if (playlist == null) {
-                ensureIndexLoaded(index, pageSize: _pageSize);
-                return const SkeletonMediaCard();
-              }
-              final cached = _cardMemo.tryGet(index, playlist, epoch: cardEpoch);
-              if (cached != null) return cached;
-              // Budget fresh inflations while scrolling in pointer/touch mode
-              // (see CardInflationBudget); skeletons upgrade a frame later.
-              if (CardInflationBudget.isScrollingContext(context) &&
-                  !InputModeTracker.isKeyboardMode(context) &&
-                  !CardInflationBudget.tryTake()) {
-                scheduleSkeletonUpgrade();
-                return const SkeletonMediaCard();
-              }
-              return _cardMemo.widgetFor(
-                index,
-                playlist,
-                epoch: cardEpoch,
-                build: () => _buildPlaylistCard(
-                  index,
-                  isFirstRow: GridSizeCalculator.isFirstRow(index, geometry.columnCount),
-                  isFirstColumn: GridSizeCalculator.isFirstColumn(index, geometry.columnCount),
-                  fullBleedImage: fullCardLayout,
-                ),
-              );
-            },
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 

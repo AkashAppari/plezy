@@ -10,13 +10,14 @@
 
 #include <atomic>
 #include <functional>
-#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
 #include <tuple>
 #include <vector>
+
+#include "../../../native/mpv/mpv_player_common.h"
 
 // Forward declaration for Flutter types
 struct _FlValue;
@@ -78,9 +79,9 @@ class MpvPlayer {
   void Command(const std::vector<std::string>& args);
 
   /// Callback types for async mpv requests.
-  using StatusCallback = std::function<void(int error)>;
+  using StatusCallback = plezy::mpv_common::StatusCallback;
   using CommandCallback = StatusCallback;
-  using GetPropertyCallback = std::function<void(int error, const std::string& value)>;
+  using GetPropertyCallback = plezy::mpv_common::GetPropertyCallback;
 
   /// Executes an mpv command asynchronously to prevent UI blocking.
   void CommandAsync(const std::vector<std::string>& args, CommandCallback callback);
@@ -136,11 +137,11 @@ class MpvPlayer {
 
   /// Sends an event notification.
   void SendEvent(const std::string& name, ::_FlValue* data = nullptr);
-
-  uint64_t RegisterStatusRequest(StatusCallback callback);
-  StatusCallback TakeStatusRequest(uint64_t request_id);
-  uint64_t RegisterGetPropertyRequest(GetPropertyCallback callback);
-  GetPropertyCallback TakeGetPropertyRequest(uint64_t request_id);
+  void MaybeRunAudioRecovery();
+  void TryAudioReload(const char* reason, int attempt);
+  void EnsureAudioRecoveryTimer();
+  void LogRecovery(const std::string& text);
+  void SetHDREnabled(bool enabled, StatusCallback callback = nullptr);
 
   /// Helper to convert mpv_node to FlValue.
   ::_FlValue* NodeToFlValue(mpv_node* node);
@@ -158,18 +159,14 @@ class MpvPlayer {
   EventCallback event_callback_;
   RedrawCallback redraw_callback_;
   std::mutex callback_mutex_;
+  plezy::mpv_common::AudioRecoveryState audio_recovery_;
+  plezy::mpv_common::AsyncRequestRegistry pending_requests_;
+  plezy::mpv_common::PropertyObservationRegistry observed_properties_;
+  bool hdr_enabled_ = true;
 
-  uint64_t next_reply_userdata_ = 1;
-  std::map<std::string, uint64_t> observed_properties_;
-  std::map<std::string, int> name_to_id_;
-
-  // Pending async requests: request_id -> callback
-  std::map<uint64_t, StatusCallback> pending_status_requests_;
-  std::map<uint64_t, GetPropertyCallback> pending_get_property_requests_;
-  std::mutex pending_requests_mutex_;
-
-  // GSource for processing events on main thread
+  // GLib sources for event delivery and scheduled audio recovery.
   guint event_source_id_ = 0;
+  guint recovery_source_id_ = 0;
 };
 
 }  // namespace mpv

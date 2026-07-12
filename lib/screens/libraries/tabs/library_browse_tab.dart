@@ -38,8 +38,7 @@ import '../../../widgets/focusable_media_card.dart';
 import '../../../widgets/focusable_filter_chip.dart';
 import '../../../widgets/listenable_selector.dart';
 import '../../../widgets/loading_indicator_box.dart';
-import '../../../widgets/media_grid_delegate.dart';
-import '../../../widgets/sliver_cross_axis_layout_builder.dart';
+import '../../../widgets/media_card_sliver_layout.dart';
 import '../../../widgets/media_card_list_layout.dart';
 import '../../../widgets/bottom_sheet_page_scaffold.dart';
 import '../../../widgets/overlay_sheet.dart';
@@ -1873,128 +1872,91 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     final browseShape = isMusicGrouping ? CardShape.square : null;
 
     if (viewMode == ViewMode.list) {
-      // In list view, all items are in a single column (first column)
       _setListScrollMetrics(density: libraryDensity, usesWideAspectRatio: useWideRatio, shape: browseShape);
-      return SliverPadding(
-        padding: .fromLTRB(8, topPadding, rightPadding, 8),
-        sliver: SliverList.builder(
-          // Inert on media lists (no keep-alive clients): dropping the
-          // per-child wrappers shrinks build + semantics work per item.
-          addAutomaticKeepAlives: false,
-          addSemanticIndexes: false,
-          itemCount: itemCount,
-          itemBuilder: (context, index) {
-            final item = loadedItems[index];
-            if (item == null) {
-              _scheduleRangeLoad();
-              return const SkeletonMediaCard();
-            }
-            final child = _cardMemo.widgetFor(
-              index,
-              item,
-              epoch: (ViewMode.list, itemCount, libraryDensity, useWideRatio, _shouldShowAlphaJumpBar, isPhone),
-              build: () => _buildMediaCardItem(
-                index,
-                isFirstRow: index == 0,
-                isFirstColumn: true, // List view = single column
-                isLastColumn: true,
-                disableScale: true,
-                columnCount: 1,
-                itemCount: itemCount,
-              ),
-            );
-            return index == 0 ? _buildMeasuredFirstListItem(child) : child;
-          },
-        ),
-      );
-    } else {
-      // In grid view, calculate columns and pass to item builder
-      // Use 16:9 aspect ratio when browsing episodes with episode thumbnail mode
-      final hasAlphaBarReservation = rightPadding > 8.0;
-      return SliverPadding(
-        padding: .fromLTRB(8, topPadding, rightPadding, 8),
-        sliver: SliverCrossAxisLayoutBuilder(
-          builder: (context, crossAxisExtent) {
-            final geometry = MediaGridGeometry.resolve(
-              context: context,
-              crossAxisExtent: crossAxisExtent,
-              // Compute column count from the width the grid would have without
-              // the alpha bar's reservation, so toggling the bar doesn't repack
-              // the grid into one fewer column and blow up poster size.
-              crossAxisExtentForColumnCount: hasAlphaBarReservation ? crossAxisExtent + (rightPadding - 8.0) : null,
-              density: libraryDensity,
-              useWideAspectRatio: useWideRatio,
-              shape: browseShape,
-              fullBleedImage: fullCardLayout,
-            );
-            final columnCount = geometry.columnCount;
-            // Cache grid metrics for alpha jump bar scroll calculations
-            _scrollMetrics = LibraryAlphaScrollMetrics(
-              columnCount: columnCount,
-              rowHeight: geometry.itemHeight + geometry.spacing,
-              itemWidth: geometry.itemWidth,
-              itemHeight: geometry.itemHeight,
-            );
-            // Everything the card closures capture; a change flushes the memo
-            // so stale nav closures can't misroute d-pad focus.
-            final cardEpoch = (
-              ViewMode.grid,
-              columnCount,
-              itemCount,
-              fullCardLayout,
-              useWideRatio,
-              browseShape,
-              libraryDensity,
-              _shouldShowAlphaJumpBar,
-              isPhone,
-            );
-            return SliverGrid.builder(
-              // Inert on media lists (no keep-alive clients): dropping the
-              // per-child wrappers shrinks build + semantics work per item.
-              addAutomaticKeepAlives: false,
-              addSemanticIndexes: false,
-              gridDelegate: geometry.delegate,
-              itemCount: itemCount,
-              itemBuilder: (context, index) {
-                final item = loadedItems[index];
-                if (item == null) {
-                  _scheduleRangeLoad();
-                  return const SkeletonMediaCard();
-                }
-                final cached = _cardMemo.tryGet(index, item, epoch: cardEpoch);
-                if (cached != null) return cached;
-                // Fresh inflation. While the grid is actually scrolling in
-                // pointer/touch mode, respect the global per-frame budget:
-                // over-budget cards render as skeletons and upgrade a frame
-                // later, so a row entering the viewport can't drop a frame.
-                // Keyboard/d-pad mode is exempt — skeletons aren't focusable
-                // and would break traversal; idle fills stay instant.
-                if (CardInflationBudget.isScrollingContext(context) &&
-                    !InputModeTracker.isKeyboardMode(context) &&
-                    !CardInflationBudget.tryTake()) {
-                  scheduleSkeletonUpgrade();
-                  return const SkeletonMediaCard();
-                }
-                return _cardMemo.widgetFor(
-                  index,
-                  item,
-                  epoch: cardEpoch,
-                  build: () => _buildMediaCardItem(
-                    index,
-                    isFirstRow: GridSizeCalculator.isFirstRow(index, columnCount),
-                    isFirstColumn: GridSizeCalculator.isFirstColumn(index, columnCount),
-                    isLastColumn: (index % columnCount) == (columnCount - 1),
-                    columnCount: columnCount,
-                    itemCount: itemCount,
-                    fullBleedImage: fullCardLayout,
-                  ),
-                );
-              },
-            );
-          },
-        ),
-      );
     }
+
+    final hasAlphaBarReservation = rightPadding > 8.0;
+    return MediaCardSliverLayout(
+      viewMode: viewMode,
+      itemCount: itemCount,
+      density: libraryDensity,
+      padding: EdgeInsets.fromLTRB(8, topPadding, rightPadding, 8),
+      useWideAspectRatio: useWideRatio,
+      shape: browseShape,
+      fullBleedImage: fullCardLayout,
+      crossAxisExtentForColumnCount: hasAlphaBarReservation
+          ? (crossAxisExtent) => crossAxisExtent + (rightPadding - 8.0)
+          : null,
+      onGridGeometry: (geometry) {
+        _scrollMetrics = LibraryAlphaScrollMetrics(
+          columnCount: geometry.columnCount,
+          rowHeight: geometry.itemHeight + geometry.spacing,
+          itemWidth: geometry.itemWidth,
+          itemHeight: geometry.itemHeight,
+        );
+      },
+      listEpoch: (ViewMode.list, itemCount, libraryDensity, useWideRatio, _shouldShowAlphaJumpBar, isPhone),
+      gridEpochBuilder: (geometry) => (
+        ViewMode.grid,
+        geometry.columnCount,
+        itemCount,
+        fullCardLayout,
+        useWideRatio,
+        browseShape,
+        libraryDensity,
+        _shouldShowAlphaJumpBar,
+        isPhone,
+      ),
+      itemBuilder: (context, position) {
+        final index = position.index;
+        final item = loadedItems[index];
+        if (item == null) {
+          _scheduleRangeLoad();
+          return const SkeletonMediaCard();
+        }
+
+        if (!position.isGrid) {
+          final child = _cardMemo.widgetFor(
+            index,
+            item,
+            epoch: position.layoutEpoch!,
+            build: () => _buildMediaCardItem(
+              index,
+              isFirstRow: position.isFirstRow,
+              isFirstColumn: true,
+              isLastColumn: true,
+              disableScale: true,
+              columnCount: 1,
+              itemCount: itemCount,
+            ),
+          );
+          return index == 0 ? _buildMeasuredFirstListItem(child) : child;
+        }
+
+        final cached = _cardMemo.tryGet(index, item, epoch: position.layoutEpoch!);
+        if (cached != null) return cached;
+        if (CardInflationBudget.isScrollingContext(context) &&
+            !InputModeTracker.isKeyboardMode(context) &&
+            !CardInflationBudget.tryTake()) {
+          scheduleSkeletonUpgrade();
+          return const SkeletonMediaCard();
+        }
+        return _cardMemo.widgetFor(
+          index,
+          item,
+          epoch: position.layoutEpoch!,
+          build: () => _buildMediaCardItem(
+            index,
+            isFirstRow: position.isFirstRow,
+            isFirstColumn: position.isFirstColumn,
+            isLastColumn: position.isLastColumn,
+            columnCount: position.columnCount,
+            itemCount: itemCount,
+            fullBleedImage: fullCardLayout,
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildMediaCardItem(

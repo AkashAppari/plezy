@@ -14,14 +14,12 @@ import '../services/settings_service.dart';
 import '../widgets/settings_builder.dart';
 import '../utils/app_logger.dart';
 import '../utils/continuation_pagination_coordinator.dart';
-import '../utils/grid_size_calculator.dart';
 import '../utils/platform_detector.dart';
 import '../utils/plex_library_section_utils.dart';
 import '../utils/provider_extensions.dart';
 import '../widgets/focusable_media_card.dart';
+import '../widgets/media_card_sliver_layout.dart';
 import '../widgets/ios_status_bar_tap_scroll_to_top.dart';
-import '../widgets/media_grid_delegate.dart';
-import '../widgets/sliver_cross_axis_layout_builder.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/overlay_sheet.dart';
@@ -479,7 +477,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                     ],
                     builder: (context) {
                       final svc = SettingsService.instance;
-                      final isListMode = svc.read(SettingsService.viewMode) == ViewMode.list;
+                      final viewMode = svc.read(SettingsService.viewMode);
                       final episodePosterMode = svc.read(SettingsService.episodePosterMode);
                       final libraryDensity = svc.read(SettingsService.libraryDensity);
                       final fullCardLayout = PlatformDetector.isTV() && svc.read(SettingsService.tvFullCardLayout);
@@ -503,88 +501,39 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                           _filteredItems.isNotEmpty &&
                           _filteredItems.every((item) => item.cardShape(episodePosterMode) == CardShape.square);
 
-                      if (isListMode) {
-                        return SliverPadding(
-                          padding: const EdgeInsets.all(8),
-                          sliver: SliverList.builder(
-                            // Inert on media lists (no keep-alive clients): dropping the
-                            // per-child wrappers shrinks build + semantics work per item.
-                            addAutomaticKeepAlives: false,
-                            addSemanticIndexes: false,
-                            itemCount: _filteredItems.length,
-                            itemBuilder: (context, index) {
-                              final item = _filteredItems[index];
-                              final focusNode = _focusNodeForIndex(index);
-
-                              return FocusableMediaCard(
-                                focusNode: focusNode,
-                                item: item,
-                                disableScale: true,
-                                onRefresh: _handleItemRefresh,
-                                onRemoveFromContinueWatching: widget.isInContinueWatching
-                                    ? _handleRemoveFromContinueWatching
-                                    : null,
-                                isInContinueWatching: widget.isInContinueWatching,
-                                usesContinueWatchingAction: widget.usesContinueWatchingAction,
-                                onNavigateUp: index == 0 ? navigateToAppBar : null,
-                                onBack: handleBackFromContent,
-                                onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
-                                mixedHubContext: isMixedHub,
-                              );
-                            },
-                          ),
-                        );
-                      }
-
-                      return SliverPadding(
+                      return MediaCardSliverLayout(
+                        viewMode: viewMode,
+                        itemCount: _filteredItems.length,
+                        density: libraryDensity,
                         padding: const EdgeInsets.all(8),
-                        sliver: SliverCrossAxisLayoutBuilder(
-                          builder: (context, crossAxisExtent) {
-                            final geometry = MediaGridGeometry.resolve(
-                              context: context,
-                              crossAxisExtent: crossAxisExtent,
-                              density: libraryDensity,
-                              usePaddingAware: true,
-                              horizontalPadding: 16,
-                              useWideAspectRatio: useWideLayout,
-                              fullBleedImage: fullCardLayout,
-                              shape: isSquareHub ? CardShape.square : null,
-                            );
-                            final columnCount = geometry.columnCount;
+                        usePaddingAware: true,
+                        horizontalPadding: 16,
+                        useWideAspectRatio: useWideLayout,
+                        fullBleedImage: fullCardLayout,
+                        shape: isSquareHub ? CardShape.square : null,
+                        itemBuilder: (context, position) {
+                          final index = position.index;
+                          final item = _filteredItems[index];
+                          final focusNode = _focusNodeForIndex(index);
 
-                            return SliverGrid(
-                              gridDelegate: geometry.delegate,
-                              delegate: SliverChildBuilderDelegate(
-                                (context, index) {
-                                  final item = _filteredItems[index];
-                                  final focusNode = _focusNodeForIndex(index);
-                                  final isFirstRow = GridSizeCalculator.isFirstRow(index, columnCount);
-                                  final isFirstColumn = GridSizeCalculator.isFirstColumn(index, columnCount);
-
-                                  return FocusableMediaCard(
-                                    focusNode: focusNode,
-                                    item: item,
-                                    onRefresh: _handleItemRefresh,
-                                    onRemoveFromContinueWatching: widget.isInContinueWatching
-                                        ? _handleRemoveFromContinueWatching
-                                        : null,
-                                    isInContinueWatching: widget.isInContinueWatching,
-                                    usesContinueWatchingAction: widget.usesContinueWatchingAction,
-                                    onNavigateUp: isFirstRow ? navigateToAppBar : null,
-                                    onNavigateLeft: isFirstColumn ? () {} : null,
-                                    onBack: handleBackFromContent,
-                                    onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
-                                    mixedHubContext: isMixedHub,
-                                    fullBleedImage: fullCardLayout,
-                                  );
-                                },
-                                childCount: _filteredItems.length,
-                                addAutomaticKeepAlives: false,
-                                addSemanticIndexes: false,
-                              ),
-                            );
-                          },
-                        ),
+                          return FocusableMediaCard(
+                            focusNode: focusNode,
+                            item: item,
+                            disableScale: position.disableScale,
+                            onRefresh: _handleItemRefresh,
+                            onRemoveFromContinueWatching: widget.isInContinueWatching
+                                ? _handleRemoveFromContinueWatching
+                                : null,
+                            isInContinueWatching: widget.isInContinueWatching,
+                            usesContinueWatchingAction: widget.usesContinueWatchingAction,
+                            onNavigateUp: position.isFirstRow ? navigateToAppBar : null,
+                            onNavigateLeft: position.isGrid && position.isFirstColumn ? () {} : null,
+                            onBack: handleBackFromContent,
+                            onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
+                            mixedHubContext: isMixedHub,
+                            fullBleedImage: fullCardLayout && position.isGrid,
+                          );
+                        },
                       );
                     },
                   ),

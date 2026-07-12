@@ -42,12 +42,11 @@ import '../services/settings_service.dart';
 import '../widgets/settings_builder.dart';
 import '../widgets/fitting_title_text.dart';
 import '../widgets/tv_browse_rail.dart';
-import '../widgets/tv_spotlight_background.dart';
+import '../widgets/tv_spotlight_scaffold.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/tab_visibility_aware.dart';
 import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
-import '../utils/debouncer.dart';
 import '../utils/dialogs.dart';
 import '../utils/formatters.dart';
 import '../utils/media_navigation_helper.dart';
@@ -101,12 +100,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   final ValueNotifier<double> _indicatorProgress = ValueNotifier(0.0);
   bool _isAutoScrollPaused = false;
   bool _heroFocusPausedAutoScroll = false;
-  // ValueNotifier (not setState) so a spotlight swap rebuilds only the
-  // TvSpotlightBackground subtree, never the rail/rows.
-  final ValueNotifier<MediaItem?> _spotlightItem = ValueNotifier(null);
-  // Settle delay so d-pad scrubbing across a row doesn't fetch/decode a
-  // full-screen backdrop for every intermediate item.
-  final Debouncer _spotlightDebouncer = Debouncer(const Duration(milliseconds: 150));
+  final TvSpotlightController _spotlight = TvSpotlightController();
   bool _isTabVisible = true;
 
   // Track initial load so we can focus hero when content first appears
@@ -172,14 +166,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   bool get _isHeroSectionVisible => _onDeck.isNotEmpty && context.settingsRead(SettingsService.showHeroSection);
 
-  MediaItem? get _defaultSpotlightItem {
-    if (_onDeck.isNotEmpty) return _onDeck.first;
-    for (final hub in _hubs) {
-      if (hub.items.isNotEmpty) return hub.items.first;
-    }
-    return null;
-  }
-
   // Memoized on provider list identity (the provider always replaces _onDeck/
   // _hubs with fresh instances on change, never mutates in place) so unrelated
   // rebuilds hand TvBrowseRail the same hubs list and its didUpdateWidget
@@ -210,25 +196,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return hubs;
   }
 
-  MediaItem? get _effectiveSpotlightItem {
-    final current = _spotlightItem.value;
-    if (current == null) return _defaultSpotlightItem;
-    if (_onDeck.any((item) => item.globalKey == current.globalKey)) return current;
-    for (final hub in _hubs) {
-      if (hub.items.any((item) => item.globalKey == current.globalKey)) return current;
-    }
-    return _defaultSpotlightItem;
-  }
-
-  void _setSpotlightItem(MediaItem item) {
-    // Same-key check lives inside the callback: an A→B→A scrub must cancel
-    // the pending B, not early-return and let it fire.
-    _spotlightDebouncer.run(() {
-      if (!mounted) return;
-      if (_spotlightItem.value?.globalKey == item.globalKey) return;
-      _spotlightItem.value = item;
-    });
-  }
+  void _setSpotlightItem(MediaItem item) => _spotlight.select(item);
 
   void _scrollToTop() {
     if (!_scrollController.hasClients) return;
@@ -473,8 +441,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     WidgetsBinding.instance.removeObserver(this);
     _autoScrollTimer?.cancel();
     _indicatorTimer?.cancel();
-    _spotlightDebouncer.dispose();
-    _spotlightItem.dispose();
+    _spotlight.dispose();
     _indicatorProgress.dispose();
     _heroController.dispose();
     _scrollController.dispose();
@@ -1204,75 +1171,23 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   Widget _buildTvContent(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    final theme = Theme.of(context);
     final svc = SettingsService.instance;
     final hideSpoilers = svc.read(SettingsService.hideSpoilers);
     final showServerNameOnHubs = svc.read(SettingsService.showServerNameOnHubs);
     final hubsSpanMultipleServers = _hubsSpanMultipleServers();
     final browseHubs = _tvBrowseHubs;
-    final scale = TvLayoutConstants.scaleForSize(size);
-    // Only layout-aspect (flip-stable) scope values may be read here: an
-    // offset-aspect read at this level would rebuild the whole screen on
-    // every sidebar focus flip. Offset values are read in small Builders
-    // around the widgets that position against them.
-    final railSize = MainScreenFocusScope.foregroundSizeOf(context);
     final fullBleedWidth = MainScreenFocusScope.fullBleedWidthOf(context);
-    final railHeight = browseHubs.isEmpty
-        ? 0.0
-        : TvBrowseRailLayout.estimateHeight(
-            size: railSize,
-            hubs: browseHubs,
-            density: svc.read(SettingsService.libraryDensity),
-            episodePosterMode: svc.read(SettingsService.episodePosterMode),
-            fullCardLayout: svc.read(SettingsService.tvFullCardLayout),
-            tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
-          );
-    final spotlightTop = (size.height * 0.075).clamp(64.0 * scale, 120.0 * scale).toDouble();
-    final minimumSpotlightBottom = railHeight + (8 * scale);
-    final baseSpotlightBottom = (size.height * 0.48).clamp(160.0, 820.0).toDouble();
-    final desiredSpotlightBottom = minimumSpotlightBottom > baseSpotlightBottom
-        ? minimumSpotlightBottom
-        : baseSpotlightBottom;
-    final maxSpotlightBottom = (size.height - spotlightTop - (96 * scale)).clamp(0.0, double.infinity).toDouble();
-    final spotlightBottom = desiredSpotlightBottom > maxSpotlightBottom ? maxSpotlightBottom : desiredSpotlightBottom;
-    final spotlightLeft = (24 * scale).clamp(18.0, 40.0).toDouble();
 
-    return Material(
-      color: theme.scaffoldBackgroundColor,
-      child: Stack(
+    return TvSpotlightScaffold(
+      hubs: browseHubs,
+      spotlightListenable: _spotlight,
+      resolveSpotlight: () => _spotlight.resolve(browseHubs),
+      resolveClient: _getMediaClientForItem,
+      hideSpoilers: hideSpoilers,
+      foreground: Stack(
+        fit: StackFit.expand,
         clipBehavior: Clip.none,
         children: [
-          // The animated -bleed mirrors the content-slide tween in MainScreen,
-          // keeping the full-bleed background viewport-pinned while the
-          // content box slides during sidebar expansion. The Builder scopes
-          // the offset-aspect dependency to just this subtree.
-          Builder(
-            builder: (context) {
-              final foregroundLeft = MainScreenFocusScope.foregroundLeftOf(context);
-              return SideNavigationBleedBuilder(
-                targetBleed: foregroundLeft,
-                child: ValueListenableBuilder<MediaItem?>(
-                  valueListenable: _spotlightItem,
-                  builder: (context, _, _) {
-                    final spotlight = _effectiveSpotlightItem;
-                    return TvSpotlightBackground(
-                      item: spotlight,
-                      client: _getMediaClientForItem(spotlight),
-                      hideSpoilers: hideSpoilers,
-                      contentTop: spotlightTop,
-                      contentBottom: spotlightBottom,
-                      contentLeft: spotlightLeft + foregroundLeft,
-                      compact: true,
-                      showPrimaryAction: false,
-                    );
-                  },
-                ),
-                builder: (context, animatedBleed, child) =>
-                    Positioned(top: 0, bottom: 0, left: -animatedBleed, width: fullBleedWidth, child: child!),
-              );
-            },
-          ),
           if (_isLoading || (_areHubsLoading && browseHubs.isEmpty)) const Center(child: CircularProgressIndicator()),
           if (_errorMessage != null)
             Center(
