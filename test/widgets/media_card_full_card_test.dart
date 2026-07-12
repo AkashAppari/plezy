@@ -208,6 +208,65 @@ void main() {
 
     expect(find.byType(CompositedTransformFollower), findsNothing);
   });
+  testWidgets('custom tap owns pointer and programmatic activation', (tester) async {
+    final item = testMediaItem(
+      id: 'custom_tap',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Custom Tap Movie',
+    );
+    final cardKey = GlobalKey<MediaCardState>();
+    var tapCount = 0;
+
+    await tester.pumpWidget(
+      _TestApp(
+        child: SizedBox(
+          width: 200,
+          height: 330,
+          child: MediaCard(key: cardKey, item: item, forceGridMode: true, isOffline: true, onTap: () => tapCount++),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Custom Tap Movie'));
+    expect(tapCount, 1);
+
+    cardKey.currentState!.handleTap();
+    expect(tapCount, 2);
+  });
+
+  testWidgets('custom long press owns pointer and programmatic activation', (tester) async {
+    final item = testMediaItem(
+      id: 'custom_long_press',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Custom Long Press Movie',
+    );
+    final cardKey = GlobalKey<MediaCardState>();
+    var longPressCount = 0;
+
+    await tester.pumpWidget(
+      _TestApp(
+        child: SizedBox(
+          width: 200,
+          height: 330,
+          child: MediaCard(
+            key: cardKey,
+            item: item,
+            forceGridMode: true,
+            isOffline: true,
+            onLongPress: () => longPressCount++,
+          ),
+        ),
+      ),
+    );
+
+    await tester.longPress(find.text('Custom Long Press Movie'));
+    expect(longPressCount, 1);
+
+    cardKey.currentState!.showContextMenu();
+    expect(longPressCount, 2);
+  });
 }
 
 Widget _fullCardHarness({required FocusNode focusNode, required bool fullBleed}) {

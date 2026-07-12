@@ -124,6 +124,11 @@ class MediaCard extends StatefulWidget {
   final void Function(String itemId)? onRefresh;
   final VoidCallback? onRemoveFromContinueWatching;
   final VoidCallback? onListRefresh; // Callback to refresh the entire parent list
+  /// Overrides the card's default media navigation for specialized surfaces.
+  final VoidCallback? onTap;
+
+  /// Overrides the standard media context menu for every long-press path.
+  final VoidCallback? onLongPress;
   final bool forceGridMode;
   final bool forceListMode;
   final bool isInContinueWatching;
@@ -143,6 +148,8 @@ class MediaCard extends StatefulWidget {
     this.onRefresh,
     this.onRemoveFromContinueWatching,
     this.onListRefresh,
+    this.onTap,
+    this.onLongPress,
     this.forceGridMode = false,
     this.forceListMode = false,
     this.isInContinueWatching = false,
@@ -175,6 +182,10 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
   // MediaContextMenu, which is not in their tree.
   @override
   void showContextMenuFromTap() {
+    if (widget.onLongPress case final onLongPress?) {
+      onLongPress();
+      return;
+    }
     final catalogItem = _catalogItem;
     if (catalogItem != null) {
       unawaited(showCatalogItemMenu(context, catalogItem, position: lastTapPosition));
@@ -185,6 +196,10 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
 
   @override
   void showContextMenu() {
+    if (widget.onLongPress case final onLongPress?) {
+      onLongPress();
+      return;
+    }
     final catalogItem = _catalogItem;
     if (catalogItem != null) {
       unawaited(showCatalogItemMenu(context, catalogItem));
@@ -206,6 +221,10 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
   void _handleTap(BuildContext context, Object item) async {
     // Ignore taps while context menu is open to avoid double-activating
     if (contextMenuKey.currentState?.isContextMenuOpen == true) {
+      return;
+    }
+    if (widget.onTap case final onTap?) {
+      onTap();
       return;
     }
 
@@ -290,13 +309,14 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
             localPosterPath: localPosterPath,
             showServerName: widget.showServerName,
             episodePosterModeOverride: widget.episodePosterModeOverride,
+            enableDetailLinks: widget.onTap == null,
           );
 
     // Catalog stand-ins (Explore tab) have no server-backed actions — every
     // entry in the context menu would break on serverId == null. Long-press
     // no-ops on them; taps route through the catalog branch in
     // navigateToMediaItem.
-    if (item is MediaItem && item.isCatalogItem) return cardWidget;
+    if ((item is MediaItem && item.isCatalogItem) || widget.onLongPress != null) return cardWidget;
 
     // MediaContextMenu as a non-widget helper — only wrap with its key for
     // programmatic context menu access; gesture callbacks are on InkWell directly.
@@ -435,7 +455,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
                 Expanded(child: poster),
               const SizedBox(height: 2),
               // Title (flattened — no inner Column)
-              if (item is MediaItem && _hasClickableTitle(item))
+              if (widget.onTap == null && item is MediaItem && _hasClickableTitle(item))
                 _ClickableText(
                   text: item.displayTitle,
                   style: const TextStyle(fontWeight: .w600, fontSize: 13, height: 1.1),
@@ -452,7 +472,12 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
               if (item is MediaPlaylist)
                 _MediaCardHelpers.buildPlaylistMeta(context, item)
               else if (item is MediaItem)
-                _MediaCardHelpers.buildMetadataSubtitle(context, item, isOffline: widget.isOffline),
+                _MediaCardHelpers.buildMetadataSubtitle(
+                  context,
+                  item,
+                  isOffline: widget.isOffline,
+                  enableDetailLinks: widget.onTap == null,
+                ),
             ],
           ),
         ),
@@ -475,6 +500,7 @@ class _MediaCardList extends StatelessWidget {
   final String? localPosterPath;
   final bool showServerName;
   final EpisodePosterMode? episodePosterModeOverride;
+  final bool enableDetailLinks;
 
   const _MediaCardList({
     required this.item,
@@ -489,6 +515,7 @@ class _MediaCardList extends StatelessWidget {
     this.localPosterPath,
     this.showServerName = false,
     this.episodePosterModeOverride,
+    required this.enableDetailLinks,
   });
 
   CardShape _cardShape() {
@@ -622,11 +649,14 @@ class _MediaCardList extends StatelessWidget {
     final episodeNum = (showEp && mi.index != null) ? ' E${mi.index}' : '';
     return Row(
       children: [
-        _ClickableText(
-          text: 'S${mi.parentIndex}',
-          style: style,
-          onTap: () => _navigateToFocusedDetail(context, mi, isOffline: isOffline),
-        ),
+        if (enableDetailLinks)
+          _ClickableText(
+            text: 'S${mi.parentIndex}',
+            style: style,
+            onTap: () => _navigateToFocusedDetail(context, mi, isOffline: isOffline),
+          )
+        else
+          Text('S${mi.parentIndex}', style: style),
         Text('$episodeNum · ', style: style),
         Expanded(
           child: Text(episodeTitle, maxLines: 1, overflow: .ellipsis, style: style),
@@ -684,7 +714,7 @@ class _MediaCardList extends StatelessWidget {
                   crossAxisAlignment: .start,
                   mainAxisAlignment: .start,
                   children: [
-                    if (item is MediaItem && _hasClickableTitle(item as MediaItem))
+                    if (enableDetailLinks && item is MediaItem && _hasClickableTitle(item as MediaItem))
                       _ClickableText(
                         text: (item as MediaItem).displayTitle,
                         style: TextStyle(fontWeight: .w600, fontSize: _titleFontSize, height: 1.2),
@@ -935,7 +965,12 @@ class _MediaCardHelpers {
   }
 
   /// Builds metadata subtitle (for collections, episodes, movies, shows)
-  static Widget buildMetadataSubtitle(BuildContext context, MediaItem mi, {bool isOffline = false}) {
+  static Widget buildMetadataSubtitle(
+    BuildContext context,
+    MediaItem mi, {
+    bool isOffline = false,
+    bool enableDetailLinks = true,
+  }) {
     final subtitleStyle = Theme.of(
       context,
     ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 11, height: 1.1);
@@ -971,7 +1006,7 @@ class _MediaCardHelpers {
       final episodeTitle = mi.displaySubtitle ?? mi.displayTitle;
       final showEp = SettingsService.instance.read(SettingsService.showEpisodeNumberOnCards);
       final episodeSuffix = (showEp && mi.index != null) ? ' E${mi.index}' : '';
-      if (mi.parentId != null) {
+      if (enableDetailLinks && mi.parentId != null) {
         return Row(
           children: [
             _ClickableText(
