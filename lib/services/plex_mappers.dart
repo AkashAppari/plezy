@@ -283,9 +283,6 @@ String? _stringOrNull(Object? value) {
   return string == null || string.isEmpty ? null : string;
 }
 
-String _normalizedDisplayColorTags(String? transfer, String? primaries, String? matrix) =>
-    [transfer, primaries, matrix].whereType<String>().join(' ').toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
-
 @JsonSerializable(createToJson: false)
 class PlexRoleDto {
   @JsonKey(fromJson: flexibleInt)
@@ -1090,13 +1087,14 @@ class PlexMappers {
     final transfer = _stringOrNull(videoStream['colorTrc']);
     final primaries = _stringOrNull(videoStream['colorPrimaries']);
     final matrix = _stringOrNull(videoStream['colorSpace']);
-    final defaults = _defaultDisplayColorTags(
+    final defaults = classifyMediaDisplayColor(
       isDolbyVision: hasDolbyVision,
       doviCompatibilityId: doviCompatibilityId,
       transfer: transfer,
       primaries: primaries,
       matrix: matrix,
-    );
+      assumeSdr: !hasDolbyVision,
+    ).defaultTags;
     final criteria = MediaDisplayCriteria.fromRaw(
       fps: videoStream['frameRate'],
       width: videoStream['width'] ?? media?['width'],
@@ -1109,31 +1107,6 @@ class PlexMappers {
       matrix: matrix ?? defaults.matrix,
     );
     return criteria.isUsable ? criteria : null;
-  }
-
-  static ({String? transfer, String? primaries, String? matrix}) _defaultDisplayColorTags({
-    required bool isDolbyVision,
-    int? doviCompatibilityId,
-    String? transfer,
-    String? primaries,
-    String? matrix,
-  }) {
-    final colorTags = _normalizedDisplayColorTags(transfer, primaries, matrix);
-    if (doviCompatibilityId == 4 || colorTags.contains('hlg') || colorTags.contains('arib')) {
-      return (transfer: 'arib-std-b67', primaries: 'bt2020', matrix: 'bt2020nc');
-    }
-    if (doviCompatibilityId == 1 ||
-        doviCompatibilityId == 6 ||
-        colorTags.contains('smpte2084') ||
-        colorTags.contains('st2084') ||
-        colorTags.contains('pq') ||
-        colorTags.contains('bt2020')) {
-      return (transfer: 'smpte2084', primaries: 'bt2020', matrix: 'bt2020nc');
-    }
-    if (doviCompatibilityId == 2 || !isDolbyVision) {
-      return (transfer: 'bt709', primaries: 'bt709', matrix: 'bt709');
-    }
-    return (transfer: null, primaries: null, matrix: null);
   }
 
   /// Map a parsed [PlexLibraryDto] into a [MediaLibrary].

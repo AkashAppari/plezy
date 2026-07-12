@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_display_criteria.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_stream.dart';
 import 'package:plezy/services/plex_mappers.dart';
@@ -20,6 +21,43 @@ void main() {
     expect(dto.rating, 8.8);
     expect(dto.audienceRating, 9.1);
     expect(dto.userRating, 9.5);
+  });
+
+  test('display criteria maps each Plex color metadata class', () {
+    final cases = <({Map<String, dynamic> stream, MediaDisplayColorType type, MediaDisplayColorTags tags})>[
+      (
+        stream: {'DOVIProfile': 5, 'DOVIPresent': 1},
+        type: MediaDisplayColorType.dolbyVision,
+        tags: (transfer: null, primaries: null, matrix: null),
+      ),
+      (
+        stream: {'DOVIProfile': 8, 'DOVIBLCompatID': 4},
+        type: MediaDisplayColorType.hlg,
+        tags: (transfer: 'arib-std-b67', primaries: 'bt2020', matrix: 'bt2020nc'),
+      ),
+      (
+        stream: {'colorTrc': 'smpte2084'},
+        type: MediaDisplayColorType.pq,
+        tags: (transfer: 'smpte2084', primaries: 'bt2020', matrix: 'bt2020nc'),
+      ),
+      (
+        stream: <String, dynamic>{},
+        type: MediaDisplayColorType.sdr,
+        tags: (transfer: 'bt709', primaries: 'bt709', matrix: 'bt709'),
+      ),
+    ];
+
+    for (final testCase in cases) {
+      final criteria = PlexMappers.displayCriteriaFromJson({'width': 1920, 'height': 1080}, testCase.stream);
+
+      expect(criteria, isNotNull);
+      expect(criteria!.colorType, testCase.type);
+      expect(
+        (transfer: criteria.transfer, primaries: criteria.primaries, matrix: criteria.matrix),
+        testCase.tags,
+        reason: testCase.type.name,
+      );
+    }
   });
 
   group('PlexMappers.mediaItem (movie)', () {
