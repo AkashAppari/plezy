@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:plezy/media/ids.dart';
 
 import 'package:drift/native.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -43,12 +44,15 @@ JellyfinClient _jellyfinClient(String userId) => testJellyfinClient(connection: 
 //   - `disconnectAll` / `dispose` lifecycle (no connectivity sub started, so
 //     this verifies the no-op path for the subscription cancel)
 //
+// The Jellyfin exhaustion path IS covered ('endpoint exhaustion verification'
+// group): the health-probe confirmation, offline flip + reconnection, and the
+// debounce-driven retry loop, via the registered fake Jellyfin client.
+//
 // What is NOT covered here (would need a fake PlexClient factory):
 //   - `addServer` success path
 //   - `connectToAllServers` outcome map
 //   - `checkServerHealth` health-probe sweep
 //   - `_reoptimizeServer` endpoint promotion
-//   - `_onServerEndpointsExhausted` debounce → reconnect
 //   - `startNetworkMonitoring` connectivity-listener path
 
 void main() {
@@ -192,6 +196,80 @@ void main() {
       expect(emitted, [
         {'jf-machine': false},
       ]);
+    });
+
+    test('confirmed-offline probe publishes offline once and schedules reconnection', () async {
+      final manager = MultiServerManager();
+      addTearDown(manager.dispose);
+      var probes = 0;
+      final client = testJellyfinClient(
+        connection: _jellyfinConnection('user-a'),
+        handler: (req) async {
+          if (req.url.path == '/Users/Me') probes++;
+          return http.Response('', 500);
+        },
+      );
+      manager.debugRegisterJellyfinClientForTesting(client);
+
+      final emitted = <Map<String, bool>>[];
+      final sub = manager.statusStream.listen(emitted.add);
+      addTearDown(sub.cancel);
+
+      await manager.debugVerifyServerEndpointsExhaustedForTesting(ServerId('jf-machine'));
+      // The scheduled reconnection runs unawaited — let it finish.
+      await pumpEventQueue();
+
+      expect(manager.isServerOnline(ServerId('jf-machine')), isFalse);
+      expect(probes, 2, reason: 'confirmed exhaustion schedules the backend reconnection probe');
+      expect(emitted, [
+        {'jf-machine': false},
+      ], reason: 'the reconnection probe repeating the offline verdict must not re-publish it');
+    });
+
+    test('probe-raised exhaustion re-arms the retry loop and recovers when the server returns', () {
+      fakeAsync((async) {
+        final manager = MultiServerManager();
+        var healthy = false;
+        final client = testJellyfinClient(
+          connection: _jellyfinConnection('user-a'),
+          handler: (_) async => healthy
+              ? http.Response(
+                  '{"Policy":{"IsAdministrator":false}}',
+                  200,
+                  headers: {'content-type': 'application/json'},
+                )
+              : http.Response('', 500),
+          // Production wiring: the probe's own failed GET re-raises exhaustion.
+          onAllEndpointsExhausted: () => manager.debugTriggerEndpointsExhaustedForTesting(ServerId('jf-machine')),
+        );
+        manager.debugRegisterJellyfinClientForTesting(client);
+
+        final emitted = <Map<String, bool>>[];
+        final sub = manager.statusStream.listen(emitted.add);
+
+        // A failed content GET raises exhaustion → debounce → probe confirms
+        // offline. Exhaustion raised DURING the verification is swallowed by
+        // the in-flight guard; the reconnection probe's failure fires after
+        // the guard clears and re-arms the debounce.
+        manager.debugTriggerEndpointsExhaustedForTesting(ServerId('jf-machine'));
+        async.elapse(const Duration(seconds: 5));
+        async.flushMicrotasks();
+        expect(manager.isServerOnline(ServerId('jf-machine')), isFalse);
+
+        // Server recovers: the self-re-armed loop flips it back online with
+        // no external trigger — offline retry must survive the guard.
+        healthy = true;
+        async.elapse(const Duration(seconds: 6));
+        async.flushMicrotasks();
+        expect(manager.isServerOnline(ServerId('jf-machine')), isTrue);
+        expect(emitted, [
+          {'jf-machine': false},
+          {'jf-machine': true},
+        ]);
+
+        sub.cancel();
+        manager.dispose();
+      });
     });
   });
 

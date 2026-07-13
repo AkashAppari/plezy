@@ -1139,6 +1139,9 @@ class MultiServerManager {
     });
   }
 
+  /// Fire-and-forget safe: both backends' `checkHealth` catch every failure
+  /// and fold it into a [HealthStatus], and the scheduled reconnection guards
+  /// its own errors — this future must never complete with one.
   Future<void> _verifyServerEndpointsExhausted(ServerId serverId) async {
     final client = _clients[serverId];
     if (client == null || !_endpointHealthChecks.add(serverId)) return;
@@ -1192,6 +1195,11 @@ class MultiServerManager {
   @visibleForTesting
   Future<void> debugVerifyServerEndpointsExhaustedForTesting(ServerId serverId) =>
       _verifyServerEndpointsExhausted(serverId);
+
+  /// Entry point matching production exhaustion wiring (debounce + the
+  /// in-flight-verification guard), for tests driving the full retry loop.
+  @visibleForTesting
+  void debugTriggerEndpointsExhaustedForTesting(ServerId serverId) => _onServerEndpointsExhausted(serverId);
 
   /// Disconnect all servers
   void disconnectAll() {
