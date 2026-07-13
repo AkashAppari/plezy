@@ -23,7 +23,8 @@ mixin _JellyfinMusicMethods on MediaServerCacheMixin {
         'Recursive': 'true',
         'SortBy': 'PremiereDate,ProductionYear,SortName',
         'SortOrder': 'Descending',
-        'Fields': _browseFields,
+        'Fields': _musicAlbumRowFields,
+        'EnableUserData': 'false',
         ...jellyfinImageQueryParameters,
       },
     );
@@ -45,7 +46,7 @@ mixin _JellyfinMusicMethods on MediaServerCacheMixin {
         'Recursive': 'true',
         'SortBy': 'ParentIndexNumber,IndexNumber,SortName',
         'SortOrder': 'Ascending',
-        'Fields': _browseFields,
+        'Fields': _musicTrackRowFields,
         ...jellyfinImageQueryParameters,
       },
     );

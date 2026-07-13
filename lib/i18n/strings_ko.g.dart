@@ -1865,6 +1865,7 @@ class _TranslationsLibrariesFilterCategoriesKo extends TranslationsLibrariesFilt
 	@override String get contentRating => '시청 등급';
 	@override String get tag => '태그';
 	@override String get unwatched => '미시청';
+	@override String get unplayed => '재생하지 않음';
 	@override String get favorites => '즐겨찾기';
 }
 
@@ -2831,6 +2832,7 @@ extension on TranslationsKo {
 			'libraries.filterCategories.contentRating' => '시청 등급',
 			'libraries.filterCategories.tag' => '태그',
 			'libraries.filterCategories.unwatched' => '미시청',
+			'libraries.filterCategories.unplayed' => '재생하지 않음',
 			'libraries.filterCategories.favorites' => '즐겨찾기',
 			'libraries.sortLabels.title' => '제목',
 			'libraries.sortLabels.dateAdded' => '추가된 날짜',
@@ -3123,9 +3125,9 @@ extension on TranslationsKo {
 			'downloads.serverErrorBitrate' => '서버 오류: 파일이 원격 비트레이트 제한을 초과할 수 있습니다',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} 에피소드가 다운로드 대기열에 추가 되었습니다',
 			'downloads.downloadDeleted' => '다운로드 삭제됨',
-			'downloads.deleteConfirm' => ({required Object title}) => '이 기기에서 "${title}"을(를) 삭제할까요?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.deleteConfirm' => ({required Object title}) => '이 기기에서 "${title}"을(를) 삭제할까요?',
 			'downloads.cancelledDownloadTitle' => '취소된 다운로드',
 			'downloads.cancelledDownloadMessage' => '이 다운로드가 취소되었습니다. 어떻게 하시겠습니까?',
 			'downloads.allEpisodesAlreadyDownloaded' => '모든 에피소드가 이미 다운로드되었습니다',

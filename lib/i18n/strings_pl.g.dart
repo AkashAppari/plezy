@@ -1871,6 +1871,7 @@ class _TranslationsLibrariesFilterCategoriesPl extends TranslationsLibrariesFilt
 	@override String get contentRating => 'Klasyfikacja wiekowa';
 	@override String get tag => 'Tag';
 	@override String get unwatched => 'Nieobejrzane';
+	@override String get unplayed => 'Nieodtworzone';
 	@override String get favorites => 'Ulubione';
 }
 
@@ -2837,6 +2838,7 @@ extension on TranslationsPl {
 			'libraries.filterCategories.contentRating' => 'Klasyfikacja wiekowa',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Nieobejrzane',
+			'libraries.filterCategories.unplayed' => 'Nieodtworzone',
 			'libraries.filterCategories.favorites' => 'Ulubione',
 			'libraries.sortLabels.title' => 'Tytuł',
 			'libraries.sortLabels.dateAdded' => 'Data dodania',
@@ -3129,9 +3131,9 @@ extension on TranslationsPl {
 			'downloads.serverErrorBitrate' => 'Błąd serwera: plik może przekraczać zdalny limit bitrate',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} odcinków w kolejce pobierania',
 			'downloads.downloadDeleted' => 'Pobranie usunięte',
-			'downloads.deleteConfirm' => ({required Object title}) => 'Usunąć "${title}" z tego urządzenia?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.deleteConfirm' => ({required Object title}) => 'Usunąć "${title}" z tego urządzenia?',
 			'downloads.cancelledDownloadTitle' => 'Anulowane pobieranie',
 			'downloads.cancelledDownloadMessage' => 'To pobieranie zostało anulowane. Co chcesz zrobić?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Wszystkie odcinki są już pobrane',

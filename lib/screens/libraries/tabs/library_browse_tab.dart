@@ -426,6 +426,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   @override
   Widget buildContent(List<MediaItem> items) => const SizedBox.shrink();
 
+  bool get _hasFocusableStateAction =>
+      (errorMessage != null && loadedItems.isEmpty) || (totalSize == 0 && !isLoading && _selectedFilters.isNotEmpty);
+
   /// Focus the first item in the grid/list/folder tree (for tab activation)
   @override
   void focusFirstItem() {
@@ -442,11 +445,11 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       return;
     }
 
-    if (loadedItems.isNotEmpty) {
+    if (loadedItems.isNotEmpty || _hasFocusableStateAction) {
       // Request immediately, then once more on the next frame to handle cases
       // where the grid/list attaches after the initial focus attempt.
       void request() {
-        if (mounted && loadedItems.isNotEmpty && !firstItemFocusNode.hasFocus) {
+        if (mounted && (loadedItems.isNotEmpty || _hasFocusableStateAction) && !firstItemFocusNode.hasFocus) {
           firstItemFocusNode.requestFocus();
         }
       }
@@ -457,7 +460,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   }
 
   @override
-  bool get hasFocusableContent => _selectedGrouping == 'folders' || loadedItems.isNotEmpty;
+  bool get hasFocusableContent => _selectedGrouping == 'folders' || loadedItems.isNotEmpty || _hasFocusableStateAction;
 
   @override
   void focusContentOrChrome() {
@@ -610,7 +613,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     final client = context.getMediaClientForLibrary(widget.library);
     unawaited(
       client
-          .fetchLibraryFiltersWithValues(widget.library.id)
+          .fetchLibraryFiltersWithValues(widget.library.id, libraryKind: widget.library.kind)
           .then((result) {
             if (generation != _contentRequestId || !mounted) return;
             setState(() {
@@ -1113,10 +1116,11 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       return;
     }
 
-    if (totalSize == 0) return;
+    if (totalSize == 0 && !_hasFocusableStateAction) return;
 
-    final targetIndex =
-        shouldRestoreGridFocus && lastFocusedGridIndex! < totalSize && loadedItems.containsKey(lastFocusedGridIndex!)
+    final targetIndex = totalSize == 0
+        ? 0
+        : shouldRestoreGridFocus && lastFocusedGridIndex! < totalSize && loadedItems.containsKey(lastFocusedGridIndex!)
         ? lastFocusedGridIndex!
         : 0;
 
@@ -1748,6 +1752,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
           firstItemFocusNode: firstItemFocusNode,
           onNavigateUp: _navigateToChips,
           onNavigateLeft: _navigateToSidebar,
+          onBack: widget.onBack,
         ),
       ];
     }
@@ -1757,7 +1762,16 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     }
 
     if (errorMessage != null && loadedItems.isEmpty) {
-      return [SliverErrorState(message: errorMessage!, onRetry: _loadContent)];
+      return [
+        SliverErrorState(
+          message: errorMessage!,
+          onRetry: _loadContent,
+          actionFocusNode: firstItemFocusNode,
+          onActionNavigateUp: _navigateToChips,
+          onActionNavigateLeft: _navigateToSidebar,
+          onActionBack: widget.onBack,
+        ),
+      ];
     }
 
     if (totalSize == 0 && !isLoading) {
@@ -1769,6 +1783,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
             onAction: _resetFilters,
             actionLabel: t.libraries.resetFilters,
             actionIcon: Symbols.clear_all_rounded,
+            actionFocusNode: firstItemFocusNode,
+            onActionNavigateUp: _navigateToChips,
+            onActionNavigateLeft: _navigateToSidebar,
+            onActionBack: widget.onBack,
           ),
         ];
       }
@@ -1869,6 +1887,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         _selectedGrouping == browseGroupingAlbums ||
         _selectedGrouping == browseGroupingTracks;
     final browseShape = isMusicGrouping ? CardShape.square : null;
+    // Full-bleed TV cards intentionally hide captions. Music artwork alone
+    // is not a reliable identity, so artist/album/track grids always keep the
+    // standard captioned card while preserving their circular/square artwork.
+    final useFullCardLayout = fullCardLayout && !isMusicGrouping;
 
     if (viewMode == ViewMode.list) {
       _setListScrollMetrics(density: libraryDensity, usesWideAspectRatio: useWideRatio, shape: browseShape);
@@ -1882,7 +1904,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       padding: EdgeInsets.fromLTRB(8, topPadding, rightPadding, 8),
       useWideAspectRatio: useWideRatio,
       shape: browseShape,
-      fullBleedImage: fullCardLayout,
+      fullBleedImage: useFullCardLayout,
       crossAxisExtentForColumnCount: hasAlphaBarReservation
           ? (crossAxisExtent) => crossAxisExtent + (rightPadding - 8.0)
           : null,
@@ -1899,7 +1921,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         ViewMode.grid,
         geometry.columnCount,
         itemCount,
-        fullCardLayout,
+        useFullCardLayout,
         useWideRatio,
         browseShape,
         libraryDensity,
@@ -1951,7 +1973,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
             isLastColumn: position.isLastColumn,
             columnCount: position.columnCount,
             itemCount: itemCount,
-            fullBleedImage: fullCardLayout,
+            fullBleedImage: useFullCardLayout,
           ),
         );
       },

@@ -785,6 +785,7 @@
       "contentRating": "視聴年齢区分",
       "tag": "タグ",
       "unwatched": "未視聴",
+      "unplayed": "未再生",
       "favorites": "お気に入り"
     },
     "sortLabels": {

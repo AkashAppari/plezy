@@ -156,6 +156,7 @@ class JellyfinMappers {
     // Folder/CollectionFolder rows resolve via fromString) classify as
     // folders so folder browsing never falls back to raw-map sniffing.
     final kind = type == null && item['IsFolder'] == true ? MediaKind.folder : MediaKind.fromString(type);
+    final albumPrimaryImage = kind == MediaKind.track ? _albumPrimaryImage(item) : null;
 
     final mapped = JellyfinMediaItem(
       id: id,
@@ -188,7 +189,7 @@ class JellyfinMappers {
           item['SeasonName'] as String? ??
           item['Album'] as String? ??
           (kind == MediaKind.album ? item['AlbumArtist'] as String? : null),
-      parentThumbPath: _imagePath(item, 'SeasonId', 'SeasonPrimaryImageTag', 'Primary'),
+      parentThumbPath: _imagePath(item, 'SeasonId', 'SeasonPrimaryImageTag', 'Primary') ?? albumPrimaryImage,
       parentIndex: item['ParentIndexNumber'] as int?,
       index: item['IndexNumber'] as int?,
       grandparentId: item['SeriesId'] as String? ?? (kind == MediaKind.track ? _firstAlbumArtistId(item) : null),
@@ -196,7 +197,7 @@ class JellyfinMappers {
           item['SeriesName'] as String? ?? (kind == MediaKind.track ? item['AlbumArtist'] as String? : null),
       grandparentThumbPath: _seriesPrimaryImage(item),
       grandparentArtPath: _parentBackdropImage(item) ?? _seriesBackdropImage(item),
-      thumbPath: _selfImagePath(id, item, 'Primary') ?? _albumPrimaryImage(item),
+      thumbPath: _selfImagePath(id, item, 'Primary') ?? albumPrimaryImage,
       artPath: _selfImagePath(id, item, 'Backdrop'),
       // Episodes/seasons don't carry their own logo — Jellyfin exposes the
       // parent's logo via ParentLogoItemId/ParentLogoImageTag, which is
@@ -511,15 +512,14 @@ class JellyfinMappers {
     return joined == item['AlbumArtist'] as String? ? null : joined;
   }
 
-  /// Album cover fallback for tracks without embedded art. Requires the
-  /// `AlbumPrimaryImageTag` — its presence is Jellyfin's signal that the
-  /// album actually has a primary image, so we never emit a 404-ing URL as
-  /// an item's main thumb.
+  /// Album-cover fallback for Audio rows. Jellyfin normally supplies
+  /// `AlbumPrimaryImageTag`, but the image endpoint does not require it and
+  /// older/incompletely scanned libraries can still serve a primary image by
+  /// `AlbumId`. Keep the tag when present for cache invalidation.
   static String? _albumPrimaryImage(Map<String, dynamic> item) {
     final albumId = item['AlbumId'] as String?;
-    final tag = item['AlbumPrimaryImageTag'] as String?;
-    if (albumId == null || tag == null) return null;
-    return _itemImagePath(albumId, 'Primary', tag: tag);
+    if (albumId == null || albumId.isEmpty) return null;
+    return _itemImagePath(albumId, 'Primary', tag: item['AlbumPrimaryImageTag'] as String?);
   }
 
   static String? _seriesPrimaryImage(Map<String, dynamic> item) {

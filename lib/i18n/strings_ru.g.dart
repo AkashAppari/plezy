@@ -1871,6 +1871,7 @@ class _TranslationsLibrariesFilterCategoriesRu extends TranslationsLibrariesFilt
 	@override String get contentRating => 'Возрастной рейтинг';
 	@override String get tag => 'Тег';
 	@override String get unwatched => 'Непросмотренные';
+	@override String get unplayed => 'Не прослушано';
 	@override String get favorites => 'Избранное';
 }
 
@@ -2837,6 +2838,7 @@ extension on TranslationsRu {
 			'libraries.filterCategories.contentRating' => 'Возрастной рейтинг',
 			'libraries.filterCategories.tag' => 'Тег',
 			'libraries.filterCategories.unwatched' => 'Непросмотренные',
+			'libraries.filterCategories.unplayed' => 'Не прослушано',
 			'libraries.filterCategories.favorites' => 'Избранное',
 			'libraries.sortLabels.title' => 'Название',
 			'libraries.sortLabels.dateAdded' => 'Дата добавления',
@@ -3129,9 +3131,9 @@ extension on TranslationsRu {
 			'downloads.serverErrorBitrate' => 'Ошибка сервера: файл может превышать удаленный лимит bitrate',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} эпизодов поставлено в очередь загрузки',
 			'downloads.downloadDeleted' => 'Загрузка удалена',
-			'downloads.deleteConfirm' => ({required Object title}) => 'Удалить "${title}" с этого устройства?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.deleteConfirm' => ({required Object title}) => 'Удалить "${title}" с этого устройства?',
 			'downloads.cancelledDownloadTitle' => 'Загрузка отменена',
 			'downloads.cancelledDownloadMessage' => 'Эта загрузка была отменена. Что вы хотите сделать?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Все эпизоды уже загружены',

@@ -785,6 +785,7 @@
       "contentRating": "Возрастной рейтинг",
       "tag": "Тег",
       "unwatched": "Непросмотренные",
+      "unplayed": "Не прослушано",
       "favorites": "Избранное"
     },
     "sortLabels": {

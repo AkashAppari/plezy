@@ -4461,6 +4461,9 @@ class TranslationsLibrariesFilterCategoriesEn {
 	/// en: 'Unwatched'
 	String get unwatched => 'Unwatched';
 
+	/// en: 'Unplayed'
+	String get unplayed => 'Unplayed';
+
 	/// en: 'Favorites'
 	String get favorites => 'Favorites';
 }
@@ -5684,6 +5687,7 @@ extension on Translations {
 			'libraries.filterCategories.contentRating' => 'Content Rating',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Unwatched',
+			'libraries.filterCategories.unplayed' => 'Unplayed',
 			'libraries.filterCategories.favorites' => 'Favorites',
 			'libraries.sortLabels.title' => 'Title',
 			'libraries.sortLabels.dateAdded' => 'Date Added',
@@ -5972,9 +5976,9 @@ extension on Translations {
 			'downloads.noDownloadsDescription' => 'Downloaded content will appear here for offline viewing',
 			'downloads.downloadNow' => 'Download',
 			'downloads.deleteDownload' => 'Delete download',
-			'downloads.retryDownload' => 'Retry download',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.retryDownload' => 'Retry download',
 			'downloads.downloadQueued' => 'Download queued',
 			'downloads.downloadResumed' => 'Download resumed',
 			'downloads.serverErrorBitrate' => 'Server error: file may exceed the remote bitrate limit',

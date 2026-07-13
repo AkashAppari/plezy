@@ -1867,6 +1867,7 @@ class _TranslationsLibrariesFilterCategoriesDa extends TranslationsLibrariesFilt
 	@override String get contentRating => 'Aldersvurdering';
 	@override String get tag => 'Tag';
 	@override String get unwatched => 'Usete';
+	@override String get unplayed => 'Ikke afspillet';
 	@override String get favorites => 'Favoritter';
 }
 
@@ -2833,6 +2834,7 @@ extension on TranslationsDa {
 			'libraries.filterCategories.contentRating' => 'Aldersvurdering',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Usete',
+			'libraries.filterCategories.unplayed' => 'Ikke afspillet',
 			'libraries.filterCategories.favorites' => 'Favoritter',
 			'libraries.sortLabels.title' => 'Titel',
 			'libraries.sortLabels.dateAdded' => 'Tilføjet dato',
@@ -3125,9 +3127,9 @@ extension on TranslationsDa {
 			'downloads.serverErrorBitrate' => 'Serverfejl: filen overskrider muligvis grænsen for ekstern bitrate',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episoder i downloadkø',
 			'downloads.downloadDeleted' => 'Download slettet',
-			'downloads.deleteConfirm' => ({required Object title}) => 'Slet "${title}" fra denne enhed?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.deleteConfirm' => ({required Object title}) => 'Slet "${title}" fra denne enhed?',
 			'downloads.cancelledDownloadTitle' => 'Annulleret download',
 			'downloads.cancelledDownloadMessage' => 'Denne download blev annulleret. Hvad vil du gøre?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alle episoder er allerede downloadet',

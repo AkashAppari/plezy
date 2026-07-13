@@ -785,6 +785,7 @@
       "contentRating": "Altersfreigabe",
       "tag": "Tag",
       "unwatched": "Ungesehene",
+      "unplayed": "Nicht abgespielt",
       "favorites": "Favoriten"
     },
     "sortLabels": {

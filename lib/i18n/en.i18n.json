@@ -789,6 +789,7 @@
       "contentRating": "Content Rating",
       "tag": "Tag",
       "unwatched": "Unwatched",
+      "unplayed": "Unplayed",
       "favorites": "Favorites"
     },
     "sortLabels": {

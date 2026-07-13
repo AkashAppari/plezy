@@ -1754,6 +1754,40 @@ void main() {
       expect(captured!.queryParameters['ImageTypeLimit'], '1');
     });
 
+    test('music browse and detail requests use leaf-appropriate fields', () async {
+      final captured = <Uri>[];
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          captured.add(req.url);
+          return http.Response(
+            jsonEncode({'Items': const [], 'TotalRecordCount': 0}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(scoped.close);
+
+      await scoped.fetchLibraryContent('lib-1', const LibraryQuery(kind: MediaKind.album, offset: 0, limit: 20));
+      await scoped.fetchLibraryContent('lib-1', const LibraryQuery(kind: MediaKind.track, offset: 0, limit: 20));
+      await scoped.fetchArtistAlbums('artist-1');
+      await scoped.fetchAlbumTracks('album-1');
+
+      final albumBrowse = captured[0].queryParameters;
+      final trackBrowse = captured[1].queryParameters;
+      final artistAlbums = captured[2].queryParameters;
+      final albumTracks = captured[3].queryParameters;
+
+      expect(albumBrowse['Fields'], 'PremiereDate,OriginalTitle,SortName');
+      expect(albumBrowse['EnableUserData'], 'false');
+      expect(trackBrowse['Fields'], 'UserData,PremiereDate,OriginalTitle,SortName');
+      expect(trackBrowse.containsKey('EnableUserData'), isFalse);
+      expect(artistAlbums['Fields'], 'PremiereDate,OriginalTitle,SortName');
+      expect(artistAlbums['EnableUserData'], 'false');
+      expect(albumTracks['Fields'], 'UserData,PremiereDate,OriginalTitle,SortName');
+    });
+
     test('fetchLibraryFiltersWithValues adds unwatched boolean filter', () async {
       Uri? captured;
       final scoped = JellyfinClient.forTesting(
@@ -1775,6 +1809,7 @@ void main() {
       addTearDown(scoped.close);
 
       final result = await scoped.fetchLibraryFiltersWithValues('lib-1');
+      final musicResult = await scoped.fetchLibraryFiltersWithValues('lib-1', libraryKind: MediaKind.artist);
 
       expect(captured, isNotNull);
       expect(captured!.path, '/Items/Filters');
@@ -1791,6 +1826,7 @@ void main() {
       expect(result.filters.first.filterType, 'boolean');
       expect(result.filters.first.key, 'jellyfin:unwatched');
       expect(result.filters.first.title, 'Unwatched');
+      expect(musicResult.filters.first.title, 'Unplayed');
       expect(result.filters[1].filterType, 'boolean');
       expect(result.filters[1].key, 'jellyfin:favorite');
       expect(result.filters[1].title, 'Favorites');

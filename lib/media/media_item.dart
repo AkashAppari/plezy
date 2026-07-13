@@ -567,8 +567,14 @@ sealed class MediaItem with _$MediaItem {
   /// Secondary poster path to try when [posterThumb] returns an image URL that
   /// exists syntactically but the server cannot serve it.
   String? posterThumbFallback({EpisodePosterMode mode = EpisodePosterMode.seriesPoster, bool mixedHubContext = false}) {
-    if (kind != MediaKind.episode || mode != EpisodePosterMode.seasonPoster) return null;
-    final fallback = grandparentThumbPath ?? thumbPath;
+    final String? fallback;
+    if (kind == MediaKind.track) {
+      fallback = parentThumbPath;
+    } else if (kind == MediaKind.episode && mode == EpisodePosterMode.seasonPoster) {
+      fallback = grandparentThumbPath ?? thumbPath;
+    } else {
+      return null;
+    }
     return fallback != null && fallback != posterThumb(mode: mode, mixedHubContext: mixedHubContext) ? fallback : null;
   }
 

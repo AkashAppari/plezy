@@ -1867,6 +1867,7 @@ class _TranslationsLibrariesFilterCategoriesNb extends TranslationsLibrariesFilt
 	@override String get contentRating => 'Aldersgrense';
 	@override String get tag => 'Tag';
 	@override String get unwatched => 'Usette';
+	@override String get unplayed => 'Ikke avspilt';
 	@override String get favorites => 'Favoritter';
 }
 
@@ -2833,6 +2834,7 @@ extension on TranslationsNb {
 			'libraries.filterCategories.contentRating' => 'Aldersgrense',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Usette',
+			'libraries.filterCategories.unplayed' => 'Ikke avspilt',
 			'libraries.filterCategories.favorites' => 'Favoritter',
 			'libraries.sortLabels.title' => 'Tittel',
 			'libraries.sortLabels.dateAdded' => 'Lagt til-dato',
@@ -3125,9 +3127,9 @@ extension on TranslationsNb {
 			'downloads.serverErrorBitrate' => 'Serverfeil: filen kan overskride grensen for ekstern bitrate',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episoder i nedlastingskø',
 			'downloads.downloadDeleted' => 'Nedlasting slettet',
-			'downloads.deleteConfirm' => ({required Object title}) => 'Slette "${title}" fra denne enheten?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.deleteConfirm' => ({required Object title}) => 'Slette "${title}" fra denne enheten?',
 			'downloads.cancelledDownloadTitle' => 'Avbrutt nedlasting',
 			'downloads.cancelledDownloadMessage' => 'Denne nedlastingen ble avbrutt. Hva vil du gjøre?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alle episoder er allerede lastet ned',

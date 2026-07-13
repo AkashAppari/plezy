@@ -785,6 +785,7 @@
       "contentRating": "Classificação",
       "tag": "Tag",
       "unwatched": "Não assistidos",
+      "unplayed": "Não reproduzido",
       "favorites": "Favoritos"
     },
     "sortLabels": {

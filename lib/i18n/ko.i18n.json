@@ -785,6 +785,7 @@
       "contentRating": "시청 등급",
       "tag": "태그",
       "unwatched": "미시청",
+      "unplayed": "재생하지 않음",
       "favorites": "즐겨찾기"
     },
     "sortLabels": {

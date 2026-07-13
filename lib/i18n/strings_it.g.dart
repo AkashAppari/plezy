@@ -1867,6 +1867,7 @@ class _TranslationsLibrariesFilterCategoriesIt extends TranslationsLibrariesFilt
 	@override String get contentRating => 'Classificazione';
 	@override String get tag => 'Tag';
 	@override String get unwatched => 'Non visti';
+	@override String get unplayed => 'Non riprodotto';
 	@override String get favorites => 'Preferiti';
 }
 
@@ -2833,6 +2834,7 @@ extension on TranslationsIt {
 			'libraries.filterCategories.contentRating' => 'Classificazione',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Non visti',
+			'libraries.filterCategories.unplayed' => 'Non riprodotto',
 			'libraries.filterCategories.favorites' => 'Preferiti',
 			'libraries.sortLabels.title' => 'Titolo',
 			'libraries.sortLabels.dateAdded' => 'Data di aggiunta',
@@ -3125,9 +3127,9 @@ extension on TranslationsIt {
 			'downloads.serverErrorBitrate' => 'Errore server: il file può superare il limite di bitrate remoto',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodi in coda per il download',
 			'downloads.downloadDeleted' => 'Download eliminato',
-			'downloads.deleteConfirm' => ({required Object title}) => 'Eliminare "${title}" da questo dispositivo?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.deleteConfirm' => ({required Object title}) => 'Eliminare "${title}" da questo dispositivo?',
 			'downloads.cancelledDownloadTitle' => 'Download annullato',
 			'downloads.cancelledDownloadMessage' => 'Questo download è stato annullato. Cosa vuoi fare?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Tutti gli episodi sono già stati scaricati',

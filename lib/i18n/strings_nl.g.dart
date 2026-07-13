@@ -1867,6 +1867,7 @@ class _TranslationsLibrariesFilterCategoriesNl extends TranslationsLibrariesFilt
 	@override String get contentRating => 'Leeftijdsclassificatie';
 	@override String get tag => 'Tag';
 	@override String get unwatched => 'Onbekeken';
+	@override String get unplayed => 'Niet afgespeeld';
 	@override String get favorites => 'Favorieten';
 }
 
@@ -2833,6 +2834,7 @@ extension on TranslationsNl {
 			'libraries.filterCategories.contentRating' => 'Leeftijdsclassificatie',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Onbekeken',
+			'libraries.filterCategories.unplayed' => 'Niet afgespeeld',
 			'libraries.filterCategories.favorites' => 'Favorieten',
 			'libraries.sortLabels.title' => 'Titel',
 			'libraries.sortLabels.dateAdded' => 'Toegevoegd op',
@@ -3125,9 +3127,9 @@ extension on TranslationsNl {
 			'downloads.serverErrorBitrate' => 'Serverfout: bestand overschrijdt mogelijk de externe bitrate-limiet',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} afleveringen in wachtrij voor download',
 			'downloads.downloadDeleted' => 'Download verwijderd',
-			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" van dit apparaat verwijderen?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" van dit apparaat verwijderen?',
 			'downloads.cancelledDownloadTitle' => 'Geannuleerde download',
 			'downloads.cancelledDownloadMessage' => 'Deze download is geannuleerd. Wat wil je doen?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alle afleveringen zijn al gedownload',

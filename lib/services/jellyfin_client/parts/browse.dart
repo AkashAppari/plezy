@@ -183,12 +183,20 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     LibraryQuery query, {
     AbortController? abort,
   }) async {
-    final translator = JellyfinLibraryQueryTranslator(
-      userId: connection.userId,
-      parentId: libraryId,
-      fields: _browseFields,
-    );
+    final fields = switch (query.kind) {
+      MediaKind.album => _musicAlbumRowFields,
+      MediaKind.track => _musicTrackRowFields,
+      _ => _browseFields,
+    };
+    final translator = JellyfinLibraryQueryTranslator(userId: connection.userId, parentId: libraryId, fields: fields);
     final params = translator.toQueryParameters(query);
+    // MusicAlbum is a folder-like DTO. Asking for UserData makes Jellyfin
+    // compute recursive play state for every album, which is prohibitively
+    // expensive on large music libraries. The IsUnplayed query filter still
+    // works server-side when result DTO user data is disabled.
+    if (query.kind == MediaKind.album) {
+      params['EnableUserData'] = 'false';
+    }
 
     // Artist browsing routes to `/Artists/AlbumArtists` instead of
     // `/Items?IncludeItemTypes=MusicArtist`: the /Items query only returns
@@ -225,21 +233,23 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   }
 
   /// Jellyfin's `/Items/Filters` returns Genres / OfficialRatings / Tags /
-  /// Categories + values from `/Items/Filters` in a single call. The unwatched
-  /// boolean is synthetic because Jellyfin exposes it as an `/Items` query
-  /// filter, not a filter-listing category. Keys are translated to Plex's
-  /// filter naming so the existing filter-param map round-trips through
-  /// `_buildFilterParams` unchanged; the synthesised `MediaFilter.key` is
-  /// prefixed `jellyfin:` so FiltersBottomSheet can recognise it as cached and
-  /// skip the per-category value fetch.
+  /// Categories + values from `/Items/Filters` in a single call. The
+  /// unwatched/unplayed boolean is synthetic because Jellyfin exposes it as
+  /// an `/Items` query filter, not a filter-listing category. Keys are
+  /// translated to Plex's filter naming so the existing filter-param map
+  /// round-trips through `_buildFilterParams` unchanged; the synthesised
+  /// `MediaFilter.key` is prefixed `jellyfin:` so FiltersBottomSheet can
+  /// recognise it as cached and skip the per-category value fetch.
   @override
-  Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId) async {
+  Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId, {MediaKind? libraryKind}) async {
     final filters = <MediaFilter>[
       MediaFilter(
         filter: 'unwatched',
         filterType: 'boolean',
         key: 'jellyfin:unwatched',
-        title: t.libraries.filterCategories.unwatched,
+        title: libraryKind?.isMusic == true
+            ? t.libraries.filterCategories.unplayed
+            : t.libraries.filterCategories.unwatched,
         type: 'filter',
       ),
       MediaFilter(

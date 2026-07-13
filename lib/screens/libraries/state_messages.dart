@@ -36,6 +36,12 @@ class StateMessageWidget extends StatelessWidget {
 
   /// Optional icon for the action button
   final IconData? actionIcon;
+  final FocusNode? actionFocusNode;
+  final VoidCallback? onActionNavigateUp;
+  final VoidCallback? onActionNavigateDown;
+  final VoidCallback? onActionNavigateLeft;
+  final VoidCallback? onActionNavigateRight;
+  final VoidCallback? onActionBack;
 
   const StateMessageWidget({
     super.key,
@@ -48,6 +54,12 @@ class StateMessageWidget extends StatelessWidget {
     this.subtitleColor,
     this.onAction,
     this.actionLabel,
+    this.actionFocusNode,
+    this.onActionNavigateUp,
+    this.onActionNavigateDown,
+    this.onActionNavigateLeft,
+    this.onActionNavigateRight,
+    this.onActionBack,
     this.actionIcon,
   });
 
@@ -87,6 +99,12 @@ class StateMessageWidget extends StatelessWidget {
             if (onAction != null && actionLabel != null) ...[
               const SizedBox(height: 24),
               FocusableButton(
+                focusNode: actionFocusNode,
+                onNavigateUp: onActionNavigateUp,
+                onNavigateDown: onActionNavigateDown,
+                onNavigateLeft: onActionNavigateLeft,
+                onNavigateRight: onActionNavigateRight,
+                onBack: onActionBack,
                 onPressed: onAction,
                 child: FilledButton.icon(
                   onPressed: onAction,
@@ -124,6 +142,12 @@ class EmptyStateWidget extends StatelessWidget {
 
   /// Optional icon for the action button (defaults to a generic add icon)
   final IconData? actionIcon;
+  final FocusNode? actionFocusNode;
+  final VoidCallback? onActionNavigateUp;
+  final VoidCallback? onActionNavigateDown;
+  final VoidCallback? onActionNavigateLeft;
+  final VoidCallback? onActionNavigateRight;
+  final VoidCallback? onActionBack;
 
   const EmptyStateWidget({
     super.key,
@@ -134,6 +158,12 @@ class EmptyStateWidget extends StatelessWidget {
     this.onAction,
     this.actionLabel,
     this.actionIcon,
+    this.actionFocusNode,
+    this.onActionNavigateUp,
+    this.onActionNavigateDown,
+    this.onActionNavigateLeft,
+    this.onActionNavigateRight,
+    this.onActionBack,
   });
 
   @override
@@ -146,6 +176,12 @@ class EmptyStateWidget extends StatelessWidget {
       onAction: onAction,
       actionLabel: actionLabel,
       actionIcon: actionIcon ?? Symbols.add_rounded,
+      actionFocusNode: actionFocusNode,
+      onActionNavigateUp: onActionNavigateUp,
+      onActionNavigateDown: onActionNavigateDown,
+      onActionNavigateLeft: onActionNavigateLeft,
+      onActionNavigateRight: onActionNavigateRight,
+      onActionBack: onActionBack,
     );
   }
 }
@@ -163,8 +199,26 @@ class ErrorStateWidget extends StatelessWidget {
 
   /// Optional label for the retry button
   final String? retryLabel;
+  final FocusNode? actionFocusNode;
+  final VoidCallback? onActionNavigateUp;
+  final VoidCallback? onActionNavigateDown;
+  final VoidCallback? onActionNavigateLeft;
+  final VoidCallback? onActionNavigateRight;
+  final VoidCallback? onActionBack;
 
-  const ErrorStateWidget({super.key, required this.message, this.icon, this.onRetry, this.retryLabel});
+  const ErrorStateWidget({
+    super.key,
+    required this.message,
+    this.icon,
+    this.onRetry,
+    this.retryLabel,
+    this.actionFocusNode,
+    this.onActionNavigateUp,
+    this.onActionNavigateDown,
+    this.onActionNavigateLeft,
+    this.onActionNavigateRight,
+    this.onActionBack,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -176,6 +230,12 @@ class ErrorStateWidget extends StatelessWidget {
       onAction: onRetry,
       actionLabel: retryLabel ?? 'Retry',
       actionIcon: Symbols.refresh_rounded,
+      actionFocusNode: actionFocusNode,
+      onActionNavigateUp: onActionNavigateUp,
+      onActionNavigateDown: onActionNavigateDown,
+      onActionNavigateLeft: onActionNavigateLeft,
+      onActionNavigateRight: onActionNavigateRight,
+      onActionBack: onActionBack,
     );
   }
 }

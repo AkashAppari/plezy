@@ -1865,6 +1865,7 @@ class _TranslationsLibrariesFilterCategoriesZh extends TranslationsLibrariesFilt
 	@override String get contentRating => '内容分级';
 	@override String get tag => '标签';
 	@override String get unwatched => '未观看';
+	@override String get unplayed => '未播放';
 	@override String get favorites => '收藏夹';
 }
 
@@ -2831,6 +2832,7 @@ extension on TranslationsZh {
 			'libraries.filterCategories.contentRating' => '内容分级',
 			'libraries.filterCategories.tag' => '标签',
 			'libraries.filterCategories.unwatched' => '未观看',
+			'libraries.filterCategories.unplayed' => '未播放',
 			'libraries.filterCategories.favorites' => '收藏夹',
 			'libraries.sortLabels.title' => '标题',
 			'libraries.sortLabels.dateAdded' => '添加日期',
@@ -3123,9 +3125,9 @@ extension on TranslationsZh {
 			'downloads.serverErrorBitrate' => '服务器错误：文件可能超过远程比特率限制',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} 集已加入下载队列',
 			'downloads.downloadDeleted' => '下载已删除',
-			'downloads.deleteConfirm' => ({required Object title}) => '要从此设备删除“${title}”吗？',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.deleteConfirm' => ({required Object title}) => '要从此设备删除“${title}”吗？',
 			'downloads.cancelledDownloadTitle' => '已取消的下载',
 			'downloads.cancelledDownloadMessage' => '此下载已取消。你想怎么做？',
 			'downloads.allEpisodesAlreadyDownloaded' => '所有剧集均已下载',

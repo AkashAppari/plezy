@@ -894,6 +894,21 @@ Widget _buildPosterImage(
         fit: BoxFit.cover,
         placeholder: _buildPosterLoadingPlaceholder,
         fallbackIcon: fallbackIcon,
+        errorWidget: posterFallbackUrl == null || useRememberedFallback
+            ? null
+            : (_, _, _) {
+                _rememberFailedPosterUrl(primaryPosterUrl);
+                return OptimizedMediaImage(
+                  client: mediaClient,
+                  imagePath: posterFallbackUrl,
+                  width: knownWidth ?? double.infinity,
+                  height: knownHeight ?? double.infinity,
+                  fit: BoxFit.cover,
+                  placeholder: _buildPosterLoadingPlaceholder,
+                  fallbackIcon: fallbackIcon,
+                  imageType: ImageType.square,
+                );
+              },
         imageType: ImageType.square,
         localFilePath: localPosterPath,
       );

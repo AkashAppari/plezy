@@ -26,6 +26,7 @@ class FolderTreeView extends StatefulWidget {
   final FocusNode? firstItemFocusNode;
   final VoidCallback? onNavigateUp;
   final VoidCallback? onNavigateLeft;
+  final VoidCallback? onBack;
 
   const FolderTreeView({
     super.key,
@@ -36,6 +37,7 @@ class FolderTreeView extends StatefulWidget {
     this.firstItemFocusNode,
     this.onNavigateUp,
     this.onNavigateLeft,
+    this.onBack,
   });
 
   @override
@@ -65,7 +67,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
   /// Stable expand/cache key for an expandable row: the backend folder key
   /// where one exists (Plex `/folder` rows), the item id otherwise.
   String? _folderIdentity(MediaItem item) {
-    if (!_isFolder(item)) return null;
+    if (!_isExpandable(item)) return null;
     return item.backendFolderKey ?? item.id;
   }
 
@@ -278,14 +280,18 @@ class FolderTreeViewState extends State<FolderTreeView> {
     );
   }
 
-  /// Expandable rows: directory rows (classified as [MediaKind.folder] by the
-  /// backend's folder fetchers) plus Jellyfin shows/seasons, which surface as
-  /// expandable media containers in folder browsing.
-  bool _isFolder(MediaItem item) {
+  /// Expandable rows: directory rows plus Jellyfin media containers whose
+  /// direct children form the folder tree. Music libraries expose folder-
+  /// backed artists and albums as MusicArtist/MusicAlbum rather than generic
+  /// Folder DTOs, so those rows must expand instead of opening empty details.
+  bool _isExpandable(MediaItem item) {
     return item.kind == MediaKind.folder || (item.backend == MediaBackend.jellyfin && _isJellyfinMediaContainer(item));
   }
 
-  bool _isJellyfinMediaContainer(MediaItem item) => item.kind == MediaKind.show || item.kind == MediaKind.season;
+  bool _isJellyfinMediaContainer(MediaItem item) {
+    if (item.kind == MediaKind.show || item.kind == MediaKind.season) return true;
+    return widget.libraryKind?.isMusic == true && (item.kind == MediaKind.artist || item.kind == MediaKind.album);
+  }
 
   bool _canPlayFolder(MediaItem item) {
     if (item.backend == MediaBackend.plex) return true;
@@ -324,7 +330,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
       out.add((item: item, depth: depth, path: itemPath, parent: parent));
 
       final folderKey = _folderIdentity(item);
-      if (_isFolder(item) &&
+      if (_isExpandable(item) &&
           folderKey != null &&
           _expandedFolders.contains(folderKey) &&
           _childrenCache.containsKey(folderKey)) {
@@ -347,6 +353,10 @@ class FolderTreeViewState extends State<FolderTreeView> {
           icon: Symbols.error_outline_rounded,
           onRetry: _loadRootFolders,
           retryLabel: t.common.retry,
+          actionFocusNode: widget.firstItemFocusNode,
+          onActionNavigateUp: widget.onNavigateUp,
+          onActionNavigateLeft: widget.onNavigateLeft,
+          onActionBack: widget.onBack,
         ),
       );
     }
@@ -368,12 +378,13 @@ class FolderTreeViewState extends State<FolderTreeView> {
         itemBuilder: (context, index) {
           final entry = flattened[index];
           final item = entry.item;
-          final isFolder = _isFolder(item);
+          final isExpandable = _isExpandable(item);
+          final isPlainFolder = item.kind == MediaKind.folder;
           final folderKey = _folderIdentity(item);
           final isExpanded = folderKey != null && _expandedFolders.contains(folderKey);
           final isLoading = folderKey != null && _loadingFolders.contains(folderKey);
           final isFirstRootItem = index == 0;
-          final canPlayFolder = isFolder && _canPlayFolder(item);
+          final canPlayFolder = isPlainFolder && _canPlayFolder(item);
 
           return FolderTreeItem(
             // Path alone isn't unique enough as identity (the same Plex item
@@ -381,12 +392,13 @@ class FolderTreeViewState extends State<FolderTreeView> {
             key: ValueKey('${entry.path}:${item.id}'),
             item: item,
             depth: entry.depth,
-            isFolder: isFolder,
+            isFolder: isPlainFolder,
+            isExpandable: isExpandable,
             isExpanded: isExpanded,
             isLoading: isLoading,
             serverId: widget.serverId,
-            onExpand: isFolder ? () => _toggleFolder(item) : null,
-            onTap: !isFolder ? () => _handleItemTap(item) : null,
+            onExpand: isExpandable ? () => _toggleFolder(item) : null,
+            onTap: !isExpandable ? () => _handleItemTap(item) : null,
             onPlayAll: canPlayFolder ? () => _handleFolderPlay(item) : null,
             onShuffle: canPlayFolder ? () => _handleFolderShuffle(item) : null,
             focusNode: isFirstRootItem ? widget.firstItemFocusNode : null,

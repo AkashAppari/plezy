@@ -785,6 +785,7 @@
       "contentRating": "Aldersgrense",
       "tag": "Tag",
       "unwatched": "Usette",
+      "unplayed": "Ikke avspilt",
       "favorites": "Favoritter"
     },
     "sortLabels": {

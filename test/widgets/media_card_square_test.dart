@@ -138,6 +138,33 @@ void main() {
     final imageBox = find.descendant(of: find.byType(MediaCard), matching: find.byType(ClipRRect)).first;
     expect(tester.getSize(imageBox), Size(base, base));
   });
+
+  testWidgets('track artwork failure falls back to album artwork', (tester) async {
+    const trackArtwork = 'https://media.example/track.jpg';
+    const albumArtwork = 'https://media.example/album.jpg';
+    final item = testMediaItem(
+      id: 'track-with-fallback',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.track,
+      title: 'Track',
+      thumbPath: trackArtwork,
+      parentThumbPath: albumArtwork,
+    );
+
+    await tester.pumpWidget(
+      _TestApp(child: MediaCard(item: item, width: 200, height: 194, forceGridMode: true, isOffline: true)),
+    );
+
+    final primaryFinder = find.descendant(of: find.byType(MediaCard), matching: find.byType(OptimizedMediaImage)).first;
+    final primary = tester.widget<OptimizedMediaImage>(primaryFinder);
+    expect(primary.imagePath, trackArtwork);
+    expect(primary.errorWidget, isNotNull);
+
+    final fallback = primary.errorWidget!(tester.element(primaryFinder), trackArtwork, StateError('decode failed'));
+    expect(fallback, isA<OptimizedMediaImage>());
+    expect((fallback as OptimizedMediaImage).imagePath, albumArtwork);
+    expect(fallback.imageType, ImageType.square);
+  });
 }
 
 class _TestApp extends StatelessWidget {

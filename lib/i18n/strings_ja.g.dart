@@ -1865,6 +1865,7 @@ class _TranslationsLibrariesFilterCategoriesJa extends TranslationsLibrariesFilt
 	@override String get contentRating => '視聴年齢区分';
 	@override String get tag => 'タグ';
 	@override String get unwatched => '未視聴';
+	@override String get unplayed => '未再生';
 	@override String get favorites => 'お気に入り';
 }
 
@@ -2831,6 +2832,7 @@ extension on TranslationsJa {
 			'libraries.filterCategories.contentRating' => '視聴年齢区分',
 			'libraries.filterCategories.tag' => 'タグ',
 			'libraries.filterCategories.unwatched' => '未視聴',
+			'libraries.filterCategories.unplayed' => '未再生',
 			'libraries.filterCategories.favorites' => 'お気に入り',
 			'libraries.sortLabels.title' => 'タイトル',
 			'libraries.sortLabels.dateAdded' => '追加日',
@@ -3123,9 +3125,9 @@ extension on TranslationsJa {
 			'downloads.serverErrorBitrate' => 'サーバーエラー: ファイルがリモートビットレート制限を超えている可能性があります',
 			'downloads.episodesQueued' => ({required Object count}) => '${count}エピソードをダウンロードキューに追加しました',
 			'downloads.downloadDeleted' => 'ダウンロードを削除しました',
-			'downloads.deleteConfirm' => ({required Object title}) => 'このデバイスから「${title}」を削除しますか？',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.deleteConfirm' => ({required Object title}) => 'このデバイスから「${title}」を削除しますか？',
 			'downloads.cancelledDownloadTitle' => 'キャンセルされたダウンロード',
 			'downloads.cancelledDownloadMessage' => 'このダウンロードはキャンセルされました。どうしますか？',
 			'downloads.allEpisodesAlreadyDownloaded' => 'すべてのエピソードはすでにダウンロード済みです',

@@ -785,6 +785,7 @@
       "contentRating": "Leeftijdsclassificatie",
       "tag": "Tag",
       "unwatched": "Onbekeken",
+      "unplayed": "Niet afgespeeld",
       "favorites": "Favorieten"
     },
     "sortLabels": {

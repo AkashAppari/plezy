@@ -785,6 +785,7 @@
       "contentRating": "Classification",
       "tag": "Tag",
       "unwatched": "Non vus",
+      "unplayed": "Non lu",
       "favorites": "Favoris"
     },
     "sortLabels": {

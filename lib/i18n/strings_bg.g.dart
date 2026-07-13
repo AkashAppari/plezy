@@ -1867,6 +1867,7 @@ class _TranslationsLibrariesFilterCategoriesBg extends TranslationsLibrariesFilt
 	@override String get contentRating => 'Възрастов рейтинг';
 	@override String get tag => 'Таг';
 	@override String get unwatched => 'Негледани';
+	@override String get unplayed => 'Непускани';
 	@override String get favorites => 'Любими';
 }
 
@@ -2833,6 +2834,7 @@ extension on TranslationsBg {
 			'libraries.filterCategories.contentRating' => 'Възрастов рейтинг',
 			'libraries.filterCategories.tag' => 'Таг',
 			'libraries.filterCategories.unwatched' => 'Негледани',
+			'libraries.filterCategories.unplayed' => 'Непускани',
 			'libraries.filterCategories.favorites' => 'Любими',
 			'libraries.sortLabels.title' => 'Заглавие',
 			'libraries.sortLabels.dateAdded' => 'Дата на добавяне',
@@ -3125,9 +3127,9 @@ extension on TranslationsBg {
 			'downloads.serverErrorBitrate' => 'Грешка на сървъра: файлът може да надвишава лимита за отдалечен битрейт',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} епизода са добавени в опашката за изтегляне',
 			'downloads.downloadDeleted' => 'Изтеглянето е изтрито',
-			'downloads.deleteConfirm' => ({required Object title}) => 'Да се изтрие ли "${title}" от това устройство?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.deleteConfirm' => ({required Object title}) => 'Да се изтрие ли "${title}" от това устройство?',
 			'downloads.cancelledDownloadTitle' => 'Отменено изтегляне',
 			'downloads.cancelledDownloadMessage' => 'Това изтегляне беше отменено. Какво искате да направите?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Всички епизоди вече са изтеглени',

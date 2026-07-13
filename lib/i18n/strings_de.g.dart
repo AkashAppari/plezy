@@ -1867,6 +1867,7 @@ class _TranslationsLibrariesFilterCategoriesDe extends TranslationsLibrariesFilt
 	@override String get contentRating => 'Altersfreigabe';
 	@override String get tag => 'Tag';
 	@override String get unwatched => 'Ungesehene';
+	@override String get unplayed => 'Nicht abgespielt';
 	@override String get favorites => 'Favoriten';
 }
 
@@ -2833,6 +2834,7 @@ extension on TranslationsDe {
 			'libraries.filterCategories.contentRating' => 'Altersfreigabe',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Ungesehene',
+			'libraries.filterCategories.unplayed' => 'Nicht abgespielt',
 			'libraries.filterCategories.favorites' => 'Favoriten',
 			'libraries.sortLabels.title' => 'Titel',
 			'libraries.sortLabels.dateAdded' => 'Hinzugefügt am',
@@ -3125,9 +3127,9 @@ extension on TranslationsDe {
 			'downloads.serverErrorBitrate' => 'Serverfehler: Datei überschreitet möglicherweise das Remote-Bitrate-Limit',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} Episoden zum Download hinzugefügt',
 			'downloads.downloadDeleted' => 'Download gelöscht',
-			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" von diesem Gerät löschen?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" von diesem Gerät löschen?',
 			'downloads.cancelledDownloadTitle' => 'Abgebrochener Download',
 			'downloads.cancelledDownloadMessage' => 'Dieser Download wurde abgebrochen. Was möchtest du tun?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alle Episoden sind bereits heruntergeladen',

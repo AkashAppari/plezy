@@ -785,6 +785,7 @@
       "contentRating": "内容分级",
       "tag": "标签",
       "unwatched": "未观看",
+      "unplayed": "未播放",
       "favorites": "收藏夹"
     },
     "sortLabels": {
