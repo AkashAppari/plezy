@@ -2686,6 +2686,37 @@ void main() {
       client.close();
     });
 
+    test('library-scoped "library.{id}.latestalbums" hits Latest with slim music album fields', () async {
+      final client = buildClient();
+      await client.fetchMoreHubItems('library.lib-99.latestalbums', limit: 30);
+
+      expect(captured, isNotNull);
+      expect(captured!.path, '/Users/user-1/Items/Latest');
+      expect(captured!.queryParameters['ParentId'], 'lib-99');
+      expect(captured!.queryParameters['Limit'], '30');
+      // Album FOLDER dtos: count/user-data fields would each cost the server
+      // a recursive per-album COUNT query (#1552).
+      expect(captured!.queryParameters['Fields'], 'PremiereDate,OriginalTitle,SortName');
+      expect(captured!.queryParameters['EnableUserData'], 'false');
+      client.close();
+    });
+
+    test('library-scoped "library.{id}.recentlyplayed" queries played audio with slim track fields', () async {
+      final client = buildClient();
+      await client.fetchMoreHubItems('library.lib-99.recentlyplayed');
+
+      expect(captured, isNotNull);
+      expect(captured!.path, '/Items');
+      expect(captured!.queryParameters['ParentId'], 'lib-99');
+      expect(captured!.queryParameters['userId'], 'user-1');
+      expect(captured!.queryParameters['IncludeItemTypes'], 'Audio');
+      expect(captured!.queryParameters['Recursive'], 'true');
+      expect(captured!.queryParameters['Filters'], 'IsPlayed');
+      expect(captured!.queryParameters['SortBy'], 'DatePlayed');
+      expect(captured!.queryParameters['Fields'], 'UserData,PremiereDate,OriginalTitle,SortName');
+      client.close();
+    });
+
     test('unknown identifier returns empty without hitting the network', () async {
       final client = buildClient();
       final items = await client.fetchMoreHubItems('totally.unknown');

@@ -785,7 +785,7 @@ void main() {
         'library.movies.recent',
         'library.mv.recent',
         'library.home-vids.recent',
-        'library.music.recent',
+        'library.music.latestalbums',
       ]);
       expect(hubs[1].items.single.kind, MediaKind.clip);
       expect(hubs[3].items.single.kind, MediaKind.album);
@@ -798,6 +798,19 @@ void main() {
         isEmpty,
         reason: 'the home screen excludes playback-derived music rows',
       );
+      // Music Latest returns album FOLDER dtos — count/user-data fields would
+      // each cost a recursive per-album COUNT query (#1552); video libraries
+      // keep the full browse fields (series leaf counts).
+      final musicLatest = captured.singleWhere(
+        (uri) => uri.path == '/Users/user-1/Items/Latest' && uri.queryParameters['ParentId'] == 'music',
+      );
+      expect(musicLatest.queryParameters['Fields'], 'PremiereDate,OriginalTitle,SortName');
+      expect(musicLatest.queryParameters['EnableUserData'], 'false');
+      final movieLatest = captured.singleWhere(
+        (uri) => uri.path == '/Users/user-1/Items/Latest' && uri.queryParameters['ParentId'] == 'movies',
+      );
+      expect(movieLatest.queryParameters['Fields'], contains('RecursiveItemCount'));
+      expect(movieLatest.queryParameters.containsKey('EnableUserData'), isFalse);
     });
 
     test('music library recommendations retain recently and most-played rows', () async {
@@ -837,16 +850,19 @@ void main() {
       );
 
       expect(hubs.map((hub) => hub.identifier), [
-        'library.music.recent',
+        'library.music.latestalbums',
         'library.music.recentlyplayed',
         'library.music.mostplayed',
       ]);
-      expect(
-        captured
-            .where((uri) => uri.path == '/Items' && uri.queryParameters['Filters'] == 'IsPlayed')
-            .map((uri) => uri.queryParameters['SortBy']),
-        ['DatePlayed', 'PlayCount'],
-      );
+      final playedQueries = captured
+          .where((uri) => uri.path == '/Items' && uri.queryParameters['Filters'] == 'IsPlayed')
+          .toList();
+      expect(playedQueries.map((uri) => uri.queryParameters['SortBy']), ['DatePlayed', 'PlayCount']);
+      // Audio LEAF dtos: UserData stays (cheap, drives play state); the
+      // folder count fields and Overview are dropped.
+      expect(playedQueries.map((uri) => uri.queryParameters['Fields']).toSet(), {
+        'UserData,PremiereDate,OriginalTitle,SortName',
+      });
     });
 
     test('Plex home layout keeps promoted hubs instead of splitting by preview libraries', () async {

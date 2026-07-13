@@ -68,6 +68,24 @@ const _folderBrowseFields = 'UserData,PremiereDate,OriginalTitle,SortName';
 /// dominant cost of folder browsing (see [_fetchFolderChildren]).
 const _folderRowFields = 'SortName';
 
+/// Latest Albums hub row. `/Users/{id}/Items/Latest` on a music library
+/// returns MusicAlbum FOLDER dtos, so [_browseFields] would trigger the same
+/// per-folder recursive COUNT queries described on [_folderBrowseFields] —
+/// with music libraries in the home fan-out that load helped peg small remote
+/// servers (#1552). The album card renders artwork + title + album artist
+/// (`AlbumArtist`/`AlbumArtists` are unconditional dto properties), so no
+/// count fields are needed; queried with `EnableUserData=false` like the
+/// filesystem folder rows. Trade-off: fully played albums lose the watched
+/// checkmark on this row (Jellyfin web's latest-albums row shows no play
+/// state either).
+const _musicAlbumRowFields = 'PremiereDate,OriginalTitle,SortName';
+
+/// Played-track hub rows (Recently Played / Most Played): Audio LEAF dtos.
+/// Keeps `UserData` — a cheap direct lookup on leaves that drives the
+/// play-state overlay — and drops the folder count fields (meaningless on
+/// Audio) and `Overview` (never rendered on track cards).
+const _musicTrackRowFields = 'UserData,PremiereDate,OriginalTitle,SortName';
+
 /// Even slimmer set used by [fetchClientSideEpisodeQueue]. Queue rows
 /// only need title, thumbnail (`ImageTags['Primary']`), season/episode
 /// index, watched state, and the air date that drives the watch order.
@@ -1287,6 +1305,21 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     bool includePlaybackHubs = true,
     MediaKind? libraryKind,
   }) async {
+    // Music libraries get their own hub set. Home passes
+    // includePlaybackHubs=false because it already renders the app-level
+    // playback shelf; in that mode only fetch Latest Albums. Recently Played
+    // and Most Played remain available on the library's Recommended tab.
+    // Branched before the Latest request below fires (futures are eager):
+    // music needs the slim [_musicAlbumRowFields], not [_browseFields].
+    if (libraryKind == MediaKind.artist) {
+      return _fetchMusicLibraryHubs(
+        libraryId,
+        libraryName: libraryName,
+        limit: limit,
+        includePlaybackHubs: includePlaybackHubs,
+      );
+    }
+
     // Mirror the Jellyfin web client's per-library "Suggestions" tab:
     // Continue Watching + Next Up (TV libraries) + Recently Added.
     //
@@ -1299,20 +1332,6 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       'Fields': _browseFields,
       ...jellyfinImageQueryParameters,
     }, retry: _libraryHubRetry);
-
-    // Music libraries get their own hub set. Home passes
-    // includePlaybackHubs=false because it already renders the app-level
-    // playback shelf; in that mode only fetch Latest Albums. Recently Played
-    // and Most Played remain available on the library's Recommended tab.
-    if (libraryKind == MediaKind.artist) {
-      return _fetchMusicLibraryHubs(
-        libraryId,
-        libraryName: libraryName,
-        limit: limit,
-        latestFuture: latestFuture,
-        includePlaybackHubs: includePlaybackHubs,
-      );
-    }
 
     if (!includePlaybackHubs) {
       final latest = await latestFuture;
@@ -1391,32 +1410,38 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   }
 
   /// Music-library hub set, mirroring the Jellyfin web client's music
-  /// "Suggestions" tab. `Latest Albums` reuses the `.recent` identifier —
-  /// `/Users/{userId}/Items/Latest` natively groups a music library's new
-  /// items into albums, so the existing `recent` paging path in
-  /// [fetchMoreHubItemsPage] is already the correct expansion. The played
-  /// rows filter `IsPlayed` so unplayed tracks (PlayCount 0) never pad them.
+  /// "Suggestions" tab. `/Users/{userId}/Items/Latest` natively groups a
+  /// music library's new items into albums; the row carries the
+  /// `latestalbums` identifier so [fetchMoreHubItemsPage] expands it with
+  /// the same slim album fields. The played rows filter `IsPlayed` so
+  /// unplayed tracks (PlayCount 0) never pad them.
   Future<List<MediaHub>> _fetchMusicLibraryHubs(
     String libraryId, {
     required String libraryName,
     required int limit,
-    required Future<List<Map<String, dynamic>>> latestFuture,
     required bool includePlaybackHubs,
   }) async {
+    final latestFuture = _safeFetchItemsArray('/Users/${_segment(connection.userId)}/Items/Latest', {
+      'Limit': limit.toString(),
+      'ParentId': libraryId,
+      'Fields': _musicAlbumRowFields,
+      'EnableUserData': 'false',
+      ...jellyfinImageQueryParameters,
+    }, retry: _libraryHubRetry);
+
+    MediaHub latestAlbumsHub(List<Map<String, dynamic>> items) => JellyfinMappers.syntheticHub(
+      mapItem: _mapItem,
+      identifier: 'library.$libraryId.latestalbums',
+      title: t.discover.latestAlbumsIn(library: libraryName),
+      type: 'album',
+      items: items,
+      previewLimit: limit,
+      serverId: serverId,
+      serverName: serverName,
+    );
+
     if (!includePlaybackHubs) {
-      final latest = await latestFuture;
-      return [
-        JellyfinMappers.syntheticHub(
-          mapItem: _mapItem,
-          identifier: 'library.$libraryId.recent',
-          title: t.discover.latestAlbumsIn(library: libraryName),
-          type: 'album',
-          items: latest,
-          previewLimit: limit,
-          serverId: serverId,
-          serverName: serverName,
-        ),
-      ].where((hub) => hub.items.isNotEmpty).toList();
+      return [latestAlbumsHub(await latestFuture)].where((hub) => hub.items.isNotEmpty).toList();
     }
     final playedParams = <String, String>{
       'userId': connection.userId,
@@ -1426,7 +1451,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       'Filters': 'IsPlayed',
       'SortOrder': 'Descending',
       'Limit': limit.toString(),
-      'Fields': _browseFields,
+      'Fields': _musicTrackRowFields,
       'EnableTotalRecordCount': 'false',
       ...jellyfinImageQueryParameters,
     };
@@ -1437,16 +1462,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     ]);
 
     return [
-      JellyfinMappers.syntheticHub(
-        mapItem: _mapItem,
-        identifier: 'library.$libraryId.recent',
-        title: t.discover.latestAlbumsIn(library: libraryName),
-        type: 'album',
-        items: results.first,
-        previewLimit: limit,
-        serverId: serverId,
-        serverName: serverName,
-      ),
+      latestAlbumsHub(results.first),
       JellyfinMappers.syntheticHub(
         mapItem: _mapItem,
         identifier: 'library.$libraryId.recentlyplayed',
@@ -1473,7 +1489,8 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   /// Re-run the synthetic hub query without the preview limit so the
   /// hub-detail screen can render the full list. Branches on the
   /// identifier emitted by [fetchGlobalHubs] / [fetchLibraryHubs]:
-  /// `home.recent` / `library.{id}.recent` → Latest, `*.continue` → Resume,
+  /// `home.recent` / `library.{id}.recent` → Latest, `*.latestalbums` →
+  /// Latest with the slim music album fields, `*.continue` → Resume,
   /// `*.nextup` → NextUp, `*.recentlyplayed` / `*.mostplayed` → the music
   /// played-track queries. Unknown ids return an empty list.
   @override
@@ -1509,14 +1526,18 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     final tail = hubId.split('.').last;
     switch (tail) {
       case 'recent':
+      case 'latestalbums':
         // Jellyfin's Latest endpoint has a Limit but no StartIndex. Expose it
         // as one bounded page so callers don't infer endless fake pages.
+        // Music album rows keep the slim fields their preview row used
+        // (see [_musicAlbumRowFields]).
         if (offset > 0) return LibraryPage<MediaItem>(items: const [], totalCount: offset, offset: offset);
         return _safeFetchMediaPage(
           '/Users/${_segment(connection.userId)}/Items/Latest',
           {
             'Limit': effectiveLimit,
-            'Fields': _browseFields,
+            'Fields': tail == 'latestalbums' ? _musicAlbumRowFields : _browseFields,
+            if (tail == 'latestalbums') 'EnableUserData': 'false',
             if (parentId != null) 'ParentId': parentId else 'IncludeItemTypes': 'Movie,Series,Episode',
             ...jellyfinImageQueryParameters,
           },
@@ -1573,7 +1594,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
             'SortOrder': 'Descending',
             'StartIndex': offset.toString(),
             'Limit': effectiveLimit,
-            'Fields': _browseFields,
+            'Fields': _musicTrackRowFields,
             'EnableTotalRecordCount': 'true',
             ...jellyfinImageQueryParameters,
           },
