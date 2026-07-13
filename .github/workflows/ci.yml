@@ -55,6 +55,7 @@ jobs:
           python3 scripts/check_update_packages_workflow.py
           python3 scripts/test_pubspec_version.py
           python3 scripts/test_clean_translations.py
+          python3 scripts/test_check_icon_consistency.py
 
       - name: Verify formatting
         run: |
@@ -62,6 +63,10 @@ jobs:
           [ ! -d test ] || paths+=(test)
           find "${paths[@]}" -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" -type f -print0 |
             xargs -0 -r dart format --output=none --set-exit-if-changed
+
+      - name: Verify icon consistency
+        run: dart run scripts/check_icon_consistency.dart
+
       - name: Analyze code
         run: dart run scripts/check_analyzer.dart
 

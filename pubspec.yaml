@@ -97,6 +97,7 @@ dev_dependencies:
   path_provider_platform_interface: ^2.1.0
   plugin_platform_interface: ^2.1.0
   freezed: ^3.2.5
+  analyzer: 10.0.1
 
 dependency_overrides:
   auto_updater_platform_interface:
