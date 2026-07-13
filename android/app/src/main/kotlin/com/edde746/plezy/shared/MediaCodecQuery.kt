@@ -23,7 +23,18 @@ internal object MediaCodecQuery {
     return null
   }
 
-  fun isHardwareAccelerated(info: MediaCodecInfo): Boolean = isHardwareAccelerated(Build.VERSION.SDK_INT, info.isHardwareAccelerated, info.name)
+  fun isHardwareAccelerated(info: MediaCodecInfo): Boolean {
+    val sdkInt = Build.VERSION.SDK_INT
+    val name = info.name
+    return if (sdkInt >= Build.VERSION_CODES.Q) {
+      isHardwareAccelerated(sdkInt, info.isHardwareAccelerated, name)
+    } else {
+      // MediaCodecInfo.isHardwareAccelerated() does not exist before API 29.
+      // Keep the call inside the version gate so older Fire OS releases do not
+      // fail with NoSuchMethodError while initializing playback.
+      isHardwareAccelerated(sdkInt, false, name)
+    }
+  }
 
   internal fun isHardwareAccelerated(
     sdkInt: Int,

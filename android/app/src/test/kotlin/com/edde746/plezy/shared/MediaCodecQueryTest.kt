@@ -3,8 +3,24 @@ package com.edde746.plezy.shared
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.shadows.MediaCodecInfoBuilder
 
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [25, 28])
 class MediaCodecQueryTest {
+
+  @Test
+  fun preApi29CodecQueryDoesNotInvokeApi29HardwareFlag() {
+    val codecInfo = MediaCodecInfoBuilder.newBuilder()
+      .setName("OMX.qcom.video.decoder.avc")
+      .setIsHardwareAccelerated(false)
+      .build()
+
+    assertTrue(MediaCodecQuery.isHardwareAccelerated(codecInfo))
+  }
 
   @Test
   fun recognizesKnownPlatformAndFfmpegSoftwareCodecNames() {
