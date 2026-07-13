@@ -410,20 +410,6 @@ class PlexServer {
     };
   }
 
-  PlexServer withAccessToken(String token) {
-    return PlexServer(
-      name: name,
-      clientIdentifier: clientIdentifier,
-      accessToken: token,
-      connections: connections,
-      owned: owned,
-      product: product,
-      platform: platform,
-      lastSeenAt: lastSeenAt,
-      presence: presence,
-    );
-  }
-
   /// Check if server is online using the presence field
   bool get isOnline => presence;
 

@@ -641,19 +641,22 @@ class ActiveProfileBinder {
       final fetchOutcome = _settleServerFetch(_fetchServersTimed(auth, token, profileLabel));
       _ProfileBindResult? optimistic;
       if (usingCachedToken) {
-        // Probe cached metadata while plex.tv refreshes resources. A live
-        // cached bind settles immediately and reconciles the fetch later.
-        optimistic = await _bindOptimisticallyFromCache(
-          account: account,
-          userToken: token,
-          profileId: profileId,
-          profileLabel: profileLabel,
-          generation: generation,
-          fetchOutcome: fetchOutcome,
-          onAuthRejected: invalidateCachedToken,
-        );
+        // Probe only cache entries whose PMS token is already the active
+        // profile token. A partial pass stays on the splash and awaits the
+        // per-server tokens from plex.tv instead of reporting shared servers
+        // offline with a token that cannot authenticate to them.
+        optimistic = await _bindOptimisticallyFromCache(account: account, userToken: token, profileLabel: profileLabel);
         if (!_isCurrentBind(profileId, generation)) return const _ProfileBindResult.empty();
-        if (optimistic != null && optimistic.visibleServerIds.isNotEmpty) {
+        final cachedServerIds = account.servers.map((server) => server.clientIdentifier).toSet();
+        if (optimistic != null && setEquals(optimistic.visibleServerIds, cachedServerIds)) {
+          _reconcileWhenFetchLands(
+            fetchOutcome: fetchOutcome,
+            account: account,
+            profileId: profileId,
+            profileLabel: profileLabel,
+            generation: generation,
+            onAuthRejected: invalidateCachedToken,
+          );
           await markUsed?.call();
           return optimistic;
         }
@@ -712,8 +715,13 @@ class ActiveProfileBinder {
             error: fetched.error,
             stackTrace: fetched.stackTrace,
           );
-          // The optimistic pass already probed these endpoints.
-          if (optimistic != null) return optimistic;
+          // The optimistic pass already probed every cache entry that was
+          // safe for this profile. Preserve any compatible servers that
+          // connected when plex.tv itself is temporarily unavailable.
+          if (optimistic != null) {
+            if (optimistic.visibleServerIds.isNotEmpty) await markUsed?.call();
+            return optimistic;
+          }
           final result = await _connectFromCachedServers(
             account,
             token,
@@ -738,6 +746,28 @@ class ActiveProfileBinder {
     }
   }
 
+  /// Account-level server metadata can outlive the Plex Home profile that
+  /// fetched it, but the PMS access tokens returned by `/resources` are
+  /// user-scoped. Reuse a cached server only when its persisted PMS token is
+  /// exactly the active profile token. Replacing a distinct PMS token with
+  /// [userToken] produces HTTP 401 on shared servers; reusing that distinct
+  /// token could instead expose the prior profile's access.
+  List<PlexServer> _cachedServersCompatibleWithUserToken(
+    PlexAccountConnection account,
+    String userToken,
+    String profileLabel,
+  ) {
+    final compatible = account.servers.where((server) => server.accessToken == userToken).toList(growable: false);
+    final deferred = account.servers.length - compatible.length;
+    if (deferred > 0) {
+      appLogger.i(
+        'ActiveProfileBinder: deferring $deferred cached Plex server${deferred == 1 ? '' : 's'} '
+        'for $profileLabel until resource tokens refresh',
+      );
+    }
+    return compatible;
+  }
+
   Future<_ProfileBindResult> _connectFromCachedServers(
     PlexAccountConnection account,
     String userToken,
@@ -751,7 +781,8 @@ class ActiveProfileBinder {
       error: error,
       stackTrace: stackTrace,
     );
-    final servers = account.servers.map((server) => server.withAccessToken(userToken)).toList(growable: false);
+    final servers = _cachedServersCompatibleWithUserToken(account, userToken, profileLabel);
+    if (servers.isEmpty) return const _ProfileBindResult.empty();
     return _connectFromServers(account, userToken, servers, profileLabel);
   }
 
@@ -847,43 +878,27 @@ class ActiveProfileBinder {
     }
   }
 
-  /// Cold-start fast path for cached-token binds: connect from the cached
-  /// server metadata immediately while the plex.tv resource refresh
-  /// ([fetchOutcome]) runs alongside, then reconcile in the background once
-  /// it lands. Returns `null` when there is no cached metadata to connect
-  /// from, and a 0-bound result when every cached endpoint was unreachable —
-  /// callers fall back to awaiting the fetch in both cases.
+  /// Cold-start fast path for cached-token binds: connect from cached server
+  /// metadata while the plex.tv resource refresh runs alongside. Only servers
+  /// whose cached PMS token equals the active profile token are safe to probe;
+  /// shared-server resource tokens normally differ and must await the refresh.
   ///
-  /// Trade-off: when the cached metadata is entirely stale (every URI
-  /// changed since last launch), the failed optimistic pass delays the
-  /// fresh connect by up to the race budget. The reconcile persists fresh
-  /// metadata so the next launch recovers.
+  /// The caller settles optimistically only when every cached server binds.
+  /// A partial pass remains on the splash until fresh per-server tokens arrive.
   Future<_ProfileBindResult?> _bindOptimisticallyFromCache({
     required PlexAccountConnection account,
     required String userToken,
-    required String profileId,
     required String profileLabel,
-    required int generation,
-    required Future<_FetchOutcome> fetchOutcome,
-    required Future<void> Function() onAuthRejected,
   }) async {
     if (account.servers.isEmpty) return null;
+    final cachedServers = _cachedServersCompatibleWithUserToken(account, userToken, profileLabel);
+    if (cachedServers.isEmpty) return const _ProfileBindResult.empty();
     appLogger.i(
-      'ActiveProfileBinder: connecting $profileLabel from cached server metadata while resources refresh',
-      error: {'servers': account.servers.length},
+      'ActiveProfileBinder: connecting $profileLabel from compatible cached server metadata '
+      'while resources refresh',
+      error: {'servers': cachedServers.length, 'totalServers': account.servers.length},
     );
-    final cachedServers = account.servers.map((server) => server.withAccessToken(userToken)).toList(growable: false);
-    final result = await _connectFromServers(account, userToken, cachedServers, profileLabel);
-    if (result.visibleServerIds.isEmpty) return result;
-    _reconcileWhenFetchLands(
-      fetchOutcome: fetchOutcome,
-      account: account,
-      profileId: profileId,
-      profileLabel: profileLabel,
-      generation: generation,
-      onAuthRejected: onAuthRejected,
-    );
-    return result;
+    return _connectFromServers(account, userToken, cachedServers, profileLabel);
   }
 
   /// Apply the background resource refresh after an optimistic cached bind:

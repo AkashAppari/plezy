@@ -234,9 +234,9 @@ void main() {
     await binder.rebindActive();
 
     expect(activeProfile.lastBindingSucceeded, isFalse);
-    // Two connect passes: the optimistic cached-metadata pass binds nothing,
-    // so the bind falls back to the freshly fetched resource list.
-    expect(failingManager.refreshCalls, 2);
+    // The account-scoped cached PMS token differs from this profile token,
+    // so only the freshly fetched resource list reaches the manager.
+    expect(failingManager.refreshCalls, 1);
     expect(multiServerProvider.serverIds, isEmpty);
     expect(multiServerProvider.expectedServerIds, ['srv-1']);
   });
@@ -342,6 +342,7 @@ void main() {
     Future<({String profileId, _CapturingMultiServerManager manager})> preparePlexHomeBind({
       required bool protected,
       required http.Client httpClient,
+      List<PlexServer>? cachedServers,
     }) async {
       binder.dispose();
       multiServerProvider.dispose();
@@ -365,7 +366,7 @@ void main() {
         accountToken: 'account-token',
         clientIdentifier: 'client-id',
         accountLabel: 'Owner',
-        servers: [_server(accessToken: 'account-server-token')],
+        servers: cachedServers ?? [_server(accessToken: 'home-user-token')],
         createdAt: DateTime(2026, 1, 1),
       );
       await connections.upsert(account);
@@ -475,6 +476,55 @@ void main() {
       expect(account?.servers.single.accessToken, 'server-token');
     });
 
+    test('defers distinct PMS resource tokens until plex.tv refreshes them', () async {
+      final fetchStarted = Completer<void>();
+      final fetchGate = Completer<void>();
+      final prepared = await preparePlexHomeBind(
+        protected: false,
+        cachedServers: [
+          _server(clientIdentifier: 'srv-direct', accessToken: 'home-user-token'),
+          _server(clientIdentifier: 'srv-shared', accessToken: 'cached-shared-pms-token', owned: false, local: false),
+        ],
+        httpClient: MockClient((request) async {
+          if (!fetchStarted.isCompleted) fetchStarted.complete();
+          await fetchGate.future;
+          return http.Response(
+            jsonEncode([
+              _serverJson(clientIdentifier: 'srv-direct', accessToken: 'fresh-direct-pms-token'),
+              _serverJson(
+                clientIdentifier: 'srv-shared',
+                accessToken: 'fresh-shared-pms-token',
+                owned: false,
+                local: false,
+              ),
+            ]),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+
+      final bind = binder.rebindActive();
+      await fetchStarted.future.timeout(const Duration(seconds: 2));
+      await pumpUntil(() async => prepared.manager.refreshCalls == 1);
+
+      // The account-scoped cached token for the shared PMS may belong to a
+      // different Plex Home profile. Do not replace it with the active
+      // plex.tv token and probe the PMS: shared servers reject that as 401.
+      expect(prepared.manager.lastConnection?.servers.map((server) => server.clientIdentifier), ['srv-direct']);
+      expect(activeProfile.isBinding, isTrue);
+
+      fetchGate.complete();
+      await bind.timeout(const Duration(seconds: 2));
+
+      expect(prepared.manager.refreshCalls, 2);
+      final refreshedServers = {
+        for (final server in prepared.manager.lastConnection!.servers) server.clientIdentifier: server.accessToken,
+      };
+      expect(refreshedServers, {'srv-direct': 'fresh-direct-pms-token', 'srv-shared': 'fresh-shared-pms-token'});
+      expect(activeProfile.lastBindingSucceeded, isTrue);
+    });
+
     test('membership change in the background refresh triggers a full rebind', () async {
       final fetchGate = Completer<void>();
       final prepared = await preparePlexHomeBind(
@@ -504,11 +554,12 @@ void main() {
       expect(account?.servers.single.clientIdentifier, 'srv-2');
       expect(binder.debugLastBoundProfileId, prepared.profileId);
 
-      // The rebind's own reconcile sees identical membership and converges
-      // with one final in-place token pass — no rebind loop.
-      await pumpUntil(() async => prepared.manager.refreshCalls >= 3);
+      // The rebind sees that the account-level PMS token differs from the
+      // active profile token, so it waits for `/resources` and binds once
+      // with the refreshed token instead of doing another optimistic pass.
+      await pumpUntil(() async => prepared.manager.refreshCalls >= 2);
       await Future<void>.delayed(const Duration(milliseconds: 50));
-      expect(prepared.manager.refreshCalls, 3);
+      expect(prepared.manager.refreshCalls, 2);
     });
   });
 
@@ -535,7 +586,7 @@ void main() {
       fail('Unexpected request: ${request.method} ${request.url}');
     });
 
-    final recoveringManager = _FailThenSucceedPlexManager();
+    final recoveringManager = _RecordingPlexManager();
     manager = recoveringManager;
     multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
     binder = ActiveProfileBinder(
@@ -574,7 +625,7 @@ void main() {
     expect(resourceCalls, 2);
     expect(switchCalls, 1);
     expect(row?.userToken, 'fresh-user-token');
-    expect(recoveringManager.calls, 2);
+    expect(recoveringManager.calls, 1);
     expect(activeProfile.lastBindingSucceeded, isTrue);
     expect(multiServerProvider.onlineServerIds, ['srv-1']);
   });
@@ -939,10 +990,15 @@ void main() {
   });
 }
 
-PlexServer _server({required String accessToken}) {
+PlexServer _server({
+  required String accessToken,
+  String clientIdentifier = 'srv-1',
+  bool owned = true,
+  bool local = true,
+}) {
   return PlexServer(
     name: 'Home Server',
-    clientIdentifier: 'srv-1',
+    clientIdentifier: clientIdentifier,
     accessToken: accessToken,
     connections: [
       PlexConnection(
@@ -950,21 +1006,26 @@ PlexServer _server({required String accessToken}) {
         address: '192.168.1.3',
         port: 32400,
         uri: 'https://192-168-1-3.machine.plex.direct:32400',
-        local: true,
+        local: local,
         relay: false,
         ipv6: false,
       ),
     ],
-    owned: true,
+    owned: owned,
     presence: true,
   );
 }
 
-Map<String, dynamic> _serverJson({String clientIdentifier = 'srv-1'}) => {
+Map<String, dynamic> _serverJson({
+  String clientIdentifier = 'srv-1',
+  String accessToken = 'server-token',
+  bool owned = true,
+  bool local = true,
+}) => {
   'name': 'Home Server',
   'clientIdentifier': clientIdentifier,
-  'accessToken': 'server-token',
-  'owned': true,
+  'accessToken': accessToken,
+  'owned': owned,
   'provides': 'server',
   'connections': [
     {
@@ -972,7 +1033,7 @@ Map<String, dynamic> _serverJson({String clientIdentifier = 'srv-1'}) => {
       'address': '192.168.1.3',
       'port': 32400,
       'uri': 'https://192-168-1-3.machine.plex.direct:32400',
-      'local': true,
+      'local': local,
       'relay': false,
       'IPv6': false,
     },
@@ -1062,7 +1123,7 @@ class _FailingPlexMultiServerManager extends MultiServerManager {
   }
 }
 
-class _FailThenSucceedPlexManager extends MultiServerManager {
+class _RecordingPlexManager extends MultiServerManager {
   int calls = 0;
 
   @override
@@ -1071,7 +1132,6 @@ class _FailThenSucceedPlexManager extends MultiServerManager {
     Duration timeout = MediaServerTimeouts.perServerConnect,
   }) async {
     calls++;
-    if (calls == 1) return const {};
     final ids = connection.servers.map((server) => server.clientIdentifier).toSet();
     for (final id in ids) {
       updateServerStatus(ServerId(id), true);
