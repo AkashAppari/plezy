@@ -1,7 +1,18 @@
 import 'package:flutter/material.dart';
 import '../theme/mono_tokens.dart';
+import '../utils/platform_detector.dart';
 import 'app_icon.dart';
 import 'expressive_button_group.dart';
+
+/// Standard settings-option title style.
+///
+/// Mobile matches Flutter's dense ListTile title size so custom controls and
+/// ordinary settings rows keep the same hierarchy. Desktop and TV retain the
+/// larger body style used for D-pad readability.
+TextStyle? settingsOptionTitleStyle(BuildContext context) {
+  final style = Theme.of(context).textTheme.bodyLarge;
+  return PlatformDetector.isMobile(context) ? style?.copyWith(fontSize: 13) : style;
+}
 
 class SettingsSectionHeader extends StatelessWidget {
   final String title;
@@ -109,7 +120,7 @@ class SegmentedSetting<T> extends StatelessWidget {
             children: [
               AppIcon(icon, fill: 1),
               const SizedBox(width: 16),
-              Text(title, style: Theme.of(context).textTheme.bodyLarge),
+              Text(title, style: settingsOptionTitleStyle(context)),
             ],
           ),
           const SizedBox(height: 12),

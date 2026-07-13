@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../screens/settings/settings_utils.dart';
 import '../services/settings_service.dart';
+import '../utils/platform_detector.dart';
 import 'app_icon.dart';
 import 'focusable_list_tile.dart';
 import 'settings_section.dart';
@@ -40,17 +41,18 @@ class SettingSwitchTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = PlatformDetector.isMobile(context);
     final svc = _TileBase._svc;
     return ValueListenableBuilder<bool>(
       valueListenable: svc.listenable(pref),
       builder: (_, value, _) => FocusableSwitchListTile(
         focusNode: focusNode,
         secondary: AppIcon(icon, fill: 1),
-        title: Text(title),
+        title: Text(title, style: settingsOptionTitleStyle(context)),
         subtitle: subtitle != null ? Text(subtitle!) : null,
         value: value,
-        dense: false,
-        visualDensity: VisualDensity.standard,
+        dense: isMobile,
+        visualDensity: isMobile ? const VisualDensity(vertical: -3) : VisualDensity.standard,
         onChanged: enabled
             ? (v) async {
                 await svc.write(pref, v);
@@ -86,15 +88,16 @@ class SettingNavigationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = PlatformDetector.isMobile(context);
     return FocusableListTile(
       focusNode: focusNode,
       leading: AppIcon(icon, fill: 1),
-      title: Text(title),
+      title: Text(title, style: settingsOptionTitleStyle(context)),
       subtitle: subtitle != null ? Text(subtitle!) : null,
       trailing: AppIcon(trailingIcon, fill: 1),
       onTap: onTap ?? () => Navigator.push(context, MaterialPageRoute(builder: destinationBuilder!)),
-      dense: false,
-      visualDensity: VisualDensity.standard,
+      dense: isMobile,
+      visualDensity: isMobile ? const VisualDensity(vertical: -3) : VisualDensity.standard,
     );
   }
 }
@@ -126,16 +129,17 @@ class SettingNumberTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = PlatformDetector.isMobile(context);
     final svc = _TileBase._svc;
     return ValueListenableBuilder<int>(
       valueListenable: svc.listenable(pref),
       builder: (_, value, _) => FocusableListTile(
         leading: AppIcon(icon, fill: 1),
-        title: Text(title),
+        title: Text(title, style: settingsOptionTitleStyle(context)),
         subtitle: Text(subtitleBuilder(value)),
         trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-        dense: false,
-        visualDensity: VisualDensity.standard,
+        dense: isMobile,
+        visualDensity: isMobile ? const VisualDensity(vertical: -3) : VisualDensity.standard,
         onTap: () => showNumericInputDialog(
           context: context,
           title: title,
@@ -182,6 +186,7 @@ class SettingSelectionTile<T, S> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = PlatformDetector.isMobile(context);
     final svc = _TileBase._svc;
     return ValueListenableBuilder<S>(
       valueListenable: svc.listenable(pref),
@@ -189,11 +194,11 @@ class SettingSelectionTile<T, S> extends StatelessWidget {
         final value = decode(raw);
         return FocusableListTile(
           leading: AppIcon(icon, fill: 1),
-          title: Text(title),
+          title: Text(title, style: settingsOptionTitleStyle(context)),
           subtitle: Text(subtitleBuilder(value)),
           trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-          dense: false,
-          visualDensity: VisualDensity.standard,
+          dense: isMobile,
+          visualDensity: isMobile ? const VisualDensity(vertical: -3) : VisualDensity.standard,
           onTap: () async {
             final picked = await showSelectionDialog<T>(
               context: context,
@@ -233,16 +238,17 @@ class SettingRegexTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = PlatformDetector.isMobile(context);
     final svc = _TileBase._svc;
     return ValueListenableBuilder<String>(
       valueListenable: svc.listenable(pref),
       builder: (_, value, _) => FocusableListTile(
         leading: AppIcon(icon, fill: 1),
-        title: Text(title),
+        title: Text(title, style: settingsOptionTitleStyle(context)),
         subtitle: Text(subtitle),
         trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-        dense: false,
-        visualDensity: VisualDensity.standard,
+        dense: isMobile,
+        visualDensity: isMobile ? const VisualDensity(vertical: -3) : VisualDensity.standard,
         onTap: () => showRegexInputDialog(
           context: context,
           title: title,
@@ -325,12 +331,13 @@ class SettingColorTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = PlatformDetector.isMobile(context);
     final svc = _TileBase._svc;
     return ValueListenableBuilder<String>(
       valueListenable: svc.listenable(pref),
       builder: (_, hex, _) => FocusableListTile(
         leading: AppIcon(icon, fill: 1),
-        title: Text(title),
+        title: Text(title, style: settingsOptionTitleStyle(context)),
         subtitle: subtitle != null ? Text(subtitle!) : null,
         trailing: Container(
           width: 28,
@@ -341,8 +348,8 @@ class SettingColorTile extends StatelessWidget {
             border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
           ),
         ),
-        dense: false,
-        visualDensity: VisualDensity.standard,
+        dense: isMobile,
+        visualDensity: isMobile ? const VisualDensity(vertical: -3) : VisualDensity.standard,
         onTap: () => showColorInputDialog(
           context: context,
           title: title,
