@@ -192,29 +192,15 @@ for build_input in (
         f"release publication must require {build_input}",
     )
 
-guard_name = "Refuse to overwrite a published release"
-require(guard_name in release, "release job must reject published tag reuse")
+require("draft: true" in release, "build output must remain a draft release")
+require("tag_name:" not in release, "build output must not bind a release tag")
 require(
-    'gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSION"' in release,
-    "published release guard must query the exact version tag",
+    "generate_release_notes:" not in release,
+    "untagged draft releases must not request generated release notes",
 )
 require(
-    '"$RELEASE_DRAFT" != "true"' in release,
-    "published release guard must allow only draft releases",
-)
-require(
-    "HTTP 404" in release and "Failed to check whether release" in release,
-    "published release guard must distinguish missing releases and fail closed",
-)
-guard_position = release.find(guard_name)
-download_position = release.find("Download Android artifacts")
-require(
-    guard_position >= 0 and download_position >= 0 and guard_position < download_position,
-    "published release guard must run before artifact downloads",
-)
-require(
-    "tag_name: ${{ steps.version.outputs.version }}" in release,
-    "release must explicitly use the pubspec version as its tag",
+    "Refuse to overwrite a published release" not in release,
+    "untagged draft creation must not inspect or block on published releases",
 )
 
 if errors:

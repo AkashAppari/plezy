@@ -740,21 +740,6 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
 
-      - name: Refuse to overwrite a published release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          if RELEASE_DRAFT=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSION" --jq '.draft' 2>&1); then
-            if [ "$RELEASE_DRAFT" != "true" ]; then
-              echo "::error::Release $VERSION is already published. Publish a new version instead of replacing immutable assets."
-              exit 1
-            fi
-          elif [[ "$RELEASE_DRAFT" != *"HTTP 404"* ]]; then
-            echo "::error::Failed to check whether release $VERSION is already published: $RELEASE_DRAFT"
-            exit 1
-          fi
-
       - name: Download Android artifacts
         if: ${{ inputs.build_android }}
         uses: actions/download-artifact@v4
@@ -916,10 +901,8 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.version.outputs.version }}
           files: ${{ steps.release-files.outputs.files }}
           draft: true
           prerelease: false
-          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
