@@ -176,6 +176,42 @@ for artifact in (
     "linux-arm64",
 ):
     require(f"name: {artifact}" in release, f"release download lost {artifact}")
+
+release_if = re.search(r"(?m)^    if: (.+)$", release)
+require(release_if is not None, "release job must have an explicit condition")
+release_condition = release_if.group(1) if release_if else ""
+for build_input in (
+    "build_android",
+    "build_ios",
+    "build_macos",
+    "build_windows",
+    "build_linux",
+):
+    require(
+        f"&& inputs.{build_input}" in release_condition,
+        f"release publication must require {build_input}",
+    )
+
+guard_name = "Refuse to overwrite a published release"
+require(guard_name in release, "release job must reject published tag reuse")
+require(
+    'gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSION"' in release,
+    "published release guard must query the exact version tag",
+)
+require(
+    '"$RELEASE_DRAFT" != "true"' in release,
+    "published release guard must allow only draft releases",
+)
+require(
+    "HTTP 404" in release and "Failed to check whether release" in release,
+    "published release guard must distinguish missing releases and fail closed",
+)
+guard_position = release.find(guard_name)
+download_position = release.find("Download Android artifacts")
+require(
+    guard_position >= 0 and download_position >= 0 and guard_position < download_position,
+    "published release guard must run before artifact downloads",
+)
 require(
     "tag_name: ${{ steps.version.outputs.version }}" in release,
     "release must explicitly use the pubspec version as its tag",

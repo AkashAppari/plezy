@@ -722,7 +722,7 @@ jobs:
 
   create-release:
     needs: [build-android, build-ios, build-macos, build-windows, package-windows, build-linux]
-    if: ${{ always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && (inputs.build_android || inputs.build_ios || inputs.build_macos || inputs.build_windows || inputs.build_linux) }}
+    if: ${{ always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && inputs.build_android && inputs.build_ios && inputs.build_macos && inputs.build_windows && inputs.build_linux }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -731,6 +731,29 @@ jobs:
         with:
           sparse-checkout: pubspec.yaml
           sparse-checkout-cone-mode: false
+
+      - name: Read version from pubspec.yaml
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
+          BUILD_NUMBER=$(grep '^version:' pubspec.yaml | sed 's/.*+//')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+
+      - name: Refuse to overwrite a published release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if RELEASE_DRAFT=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSION" --jq '.draft' 2>&1); then
+            if [ "$RELEASE_DRAFT" != "true" ]; then
+              echo "::error::Release $VERSION is already published. Publish a new version instead of replacing immutable assets."
+              exit 1
+            fi
+          elif [[ "$RELEASE_DRAFT" != *"HTTP 404"* ]]; then
+            echo "::error::Failed to check whether release $VERSION is already published: $RELEASE_DRAFT"
+            exit 1
+          fi
 
       - name: Download Android artifacts
         if: ${{ inputs.build_android }}
@@ -790,14 +813,6 @@ jobs:
 
       - name: Display structure of downloaded files
         run: ls -R artifacts
-
-      - name: Read version from pubspec.yaml
-        id: version
-        run: |
-          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
-          BUILD_NUMBER=$(grep '^version:' pubspec.yaml | sed 's/.*+//')
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
 
       - name: Generate appcast.xml
         run: |
