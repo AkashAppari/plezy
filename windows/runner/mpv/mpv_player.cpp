@@ -49,18 +49,47 @@ flutter::EncodableValue NodeToEncodableValue(const mpv_node* node) {
 }
 
 // DComp-mode input forwarding. mpv's inner window lives on mpv's own thread
-// and consumes the mouse input over the video (WS_EX_TRANSPARENT hit-test
-// skipping is same-thread-only, and disabling the subtree makes the system
-// drop the input entirely instead of routing it to a sibling). Subclass the
-// inner window (legal within one process, even across threads) and forward
-// mouse input to the Flutter view with coordinates translated into view
-// space. The subclass proc runs on mpv's thread and only uses thread-safe
-// calls (PostMessage / MapWindowPoints / CallWindowProc).
+// and consumes input over the video (WS_EX_TRANSPARENT hit-test skipping is
+// same-thread-only, and disabling the subtree makes the system drop the input
+// entirely instead of routing it to a sibling). Subclass the inner window
+// (legal within one process, even across threads) and forward mouse and pointer
+// input to the Flutter view. Pointer messages must be sent synchronously:
+// Flutter calls GetPointerInfo while handling them, and Windows only retains
+// that data for the current or forwarded message.
+constexpr bool IsFlutterPointerMessage(UINT message) {
+  switch (message) {
+    case WM_POINTERDOWN:
+    case WM_POINTERUPDATE:
+    case WM_POINTERUP:
+    case WM_POINTERLEAVE:
+      return true;
+    default:
+      return false;
+  }
+}
+
+static_assert(IsFlutterPointerMessage(WM_POINTERDOWN));
+static_assert(IsFlutterPointerMessage(WM_POINTERUPDATE));
+static_assert(IsFlutterPointerMessage(WM_POINTERUP));
+static_assert(IsFlutterPointerMessage(WM_POINTERLEAVE));
+static_assert(!IsFlutterPointerMessage(WM_MOUSEMOVE));
+
 WNDPROC g_mpv_inner_original_proc = nullptr;
 HWND g_mpv_inner_hwnd = nullptr;
 HWND g_forward_target_view = nullptr;
 
 LRESULT CALLBACK MpvInnerSubclassProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
+  if (IsFlutterPointerMessage(message)) {
+    HWND view = g_forward_target_view;
+    if (view) {
+      // WM_POINTER coordinates are already in screen space. SendMessage also
+      // preserves the message association required by GetPointerInfo in the
+      // Flutter view's window procedure.
+      ::SendMessageW(view, message, wparam, lparam);
+    }
+    return 0;
+  }
+
   if (message >= WM_MOUSEFIRST && message <= WM_MOUSELAST) {
     HWND view = g_forward_target_view;
     if (view) {
@@ -125,9 +154,10 @@ bool MpvPlayer::Initialize(HWND view) {
     // |view|. The video child then sits in the view's own per-window layer
     // stack, above the view's (never-painted) layer-1 content and below the
     // engine's topmost DComp visual carrying the UI. WS_CLIPSIBLINGS keeps it
-    // from painting over neighboring view children. Mouse input over the video
-    // is delivered to mpv's own inner window (on mpv's thread); the subclass
-    // installed in EnsureMpvInnerSubclassed forwards it back to the view.
+    // from painting over neighboring view children. Mouse, touch, and stylus
+    // input over the video is delivered to mpv's own inner window (on mpv's
+    // thread); the subclass installed in EnsureMpvInnerSubclassed forwards it
+    // back to the Flutter view.
     hwnd_ = ::CreateWindowExW(
         WS_EX_NOPARENTNOTIFY, L"STATIC", L"", WS_CHILD | WS_CLIPSIBLINGS, 0, 0, 100, 100, view, nullptr,
         GetModuleHandle(nullptr), nullptr);
@@ -319,8 +349,8 @@ void MpvPlayer::SetRect(RECT rect, double device_pixel_ratio) {
   ::SetWindowPos(hwnd_, HWND_TOP, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, SWP_NOACTIVATE);
 
   // mpv creates its inner window lazily on its own thread; subclass it (and
-  // re-subclass if mpv ever recreates it) so mouse input over the video is
-  // forwarded to the Flutter view.
+  // re-subclass if mpv ever recreates it) so mouse and pointer input over the
+  // video is forwarded to the Flutter view.
   EnsureMpvInnerSubclassed(hwnd_);
 }
 
