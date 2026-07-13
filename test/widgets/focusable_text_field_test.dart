@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/focus/focusable_text_field.dart';
 import 'package:plezy/services/gamepad_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -713,7 +714,7 @@ void main() {
     rebuild(() => onNavigateDown = () => navigateDownCalls++);
     await tester.pump();
 
-    await tester.tap(_tvKeyboardDoneKey(Icons.search_rounded));
+    await tester.tap(_tvKeyboardDoneKey(Symbols.search_rounded));
     await tester.pumpAndSettle();
 
     expect(navigateDownCalls, 1);
@@ -765,7 +766,7 @@ void main() {
     });
     await tester.pump();
 
-    await tester.tap(_tvKeyboardDoneKey(Icons.search_rounded));
+    await tester.tap(_tvKeyboardDoneKey(Symbols.search_rounded));
     await tester.pumpAndSettle();
 
     expect(submitted, 'query');
@@ -799,7 +800,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
 
-    await tester.tap(_tvKeyboardDoneKey(Icons.search_rounded));
+    await tester.tap(_tvKeyboardDoneKey(Symbols.search_rounded));
     await tester.pumpAndSettle();
     await tester.pump();
 

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:ui';
 import '../../media/ids.dart';
 
@@ -19,7 +18,6 @@ import '../../utils/provider_extensions.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/media_context_menu.dart';
 import '../../widgets/optimized_media_image.dart';
-import '../../widgets/overlay_sheet.dart';
 import '../../widgets/watched_indicator.dart';
 import '../../theme/mono_tokens.dart';
 import '../../i18n/strings.g.dart';
@@ -42,7 +40,7 @@ class FolderTreeItem extends StatefulWidget {
   final FocusNode? focusNode;
   final VoidCallback? onNavigateUp;
   final VoidCallback? onNavigateLeft;
-  final void Function(String itemId)? onRefresh;
+  final void Function(MediaItem source)? onRefresh;
   final VoidCallback? onListRefresh;
   final String? serverId;
 
@@ -150,23 +148,13 @@ class _FolderTreeItemState extends State<FolderTreeItem> with ContextMenuTapMixi
     final previousFocus = FocusManager.instance.primaryFocus;
     final position = lastTapPosition;
     final fromKeyboard = position == null;
-    final useBottomSheet = Platform.isIOS || Platform.isAndroid;
-
-    String? selected;
-    if (useBottomSheet) {
-      selected = await OverlaySheetController.showAdaptive<String>(
-        context,
-        showDragHandle: true,
-        builder: (context) => AppMenuSheet<String>(title: _rowTitle(), entries: entries, focusFirstItem: fromKeyboard),
-      );
-    } else {
-      selected = await showAppMenu<String>(
-        context,
-        entries: entries,
-        position: position ?? _rowCenter(),
-        focusFirstItem: fromKeyboard,
-      );
-    }
+    final selected = await showAdaptiveAppMenu<String>(
+      context,
+      title: _rowTitle(),
+      entries: entries,
+      position: position ?? _rowCenter(),
+      focusFirstItem: fromKeyboard,
+    );
 
     if (!mounted) return;
 

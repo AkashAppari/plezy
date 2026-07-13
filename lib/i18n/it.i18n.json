@@ -227,6 +227,7 @@
     "creditsPattern": "Pattern marcatore titoli di coda",
     "creditsPatternDescription": "Espressione regolare per riconoscere i marcatori dei titoli di coda nei capitoli",
     "invalidRegex": "Espressione regolare non valida",
+    "regex": "Espressione regolare",
     "downloads": "Download",
     "downloadLocationDescription": "Scegli dove salvare i contenuti scaricati",
     "downloadLocationDefault": "Predefinita (Archiviazione App)",
@@ -336,6 +337,8 @@
     "clearShortcut": "Elimina scorciatoia",
     "noShortcutSet": "Nessuna scorciatoia impostata",
     "currentShortcut": "Scorciatoia attuale:",
+    "pressToRecord": "Seleziona per registrare una scorciatoia",
+    "recordingShortcut": "Premi ora la scorciatoia",
     "actions": {
       "playPause": "Riproduci/Pausa",
       "volumeUp": "Alza volume",
@@ -434,7 +437,9 @@
     "hue": "Tonalità",
     "saturation": "Saturazione",
     "brightness": "Luminosità",
-    "hexColor": "Colore esadecimale"
+    "hexColor": "Colore esadecimale",
+    "expandText": "Espandi il testo",
+    "collapseText": "Comprimi il testo"
   },
   "tooltips": {
     "shufflePlay": "Riproduzione casuale",
@@ -534,6 +539,10 @@
     "markedAsWatchedOffline": "Segnato come visto (sincronizzato online)",
     "markedAsUnwatchedOffline": "Segnato come non visto (sincronizzato online)",
     "autoRemovedWatchedDownload": "Rimosso automaticamente: ${title}",
+    "autoRemovedWatchedDownloads": {
+      "one": "Rimosso automaticamente ${n} download già visto",
+      "other": "Rimossi automaticamente ${n} download già visti"
+    },
     "removedFromContinueWatching": "Rimosso da Continua a guardare",
     "errorLoading": "Errore: ${error}",
     "streamInterrupted": "La riproduzione si è interrotta. Premi Riproduci o scorri per riprovare.",
@@ -585,6 +594,11 @@
     "backgroundColor": "Colore sfondo",
     "position": "Posizione",
     "assOverride": "Sovrascrittura ASS",
+    "overrideScale": "Ridimensiona",
+    "overrideForce": "Forza",
+    "overrideStrip": "Rimuovi stile",
+    "positionTop": "In alto",
+    "positionBottom": "In basso",
     "bold": "Grassetto",
     "italic": "Corsivo",
     "renderResolution": "Risoluzione di rendering",
@@ -710,7 +724,7 @@
     "searchFailed": "Ricerca fallita: ${error}",
     "connectionTimeout": "Timeout connessione durante caricamento di ${context}",
     "connectionFailed": "Impossibile connettersi al server multimediale",
-    "failedToLoad": "Impossibile caricare ${context}: ${error}",
+    "unableToLoad": "Impossibile caricare ${context}. Riprova.",
     "noClientAvailable": "Nessun client disponibile",
     "pleaseEnterToken": "Inserisci token",
     "invalidToken": "Token non valido",
@@ -966,7 +980,6 @@
     "deleted": "Raccolta eliminata",
     "deleteFailed": "Impossibile eliminare la raccolta",
     "deleteFailedWithError": "Impossibile eliminare la raccolta: ${error}",
-    "failedToLoadItems": "Impossibile caricare gli elementi della raccolta: ${error}",
     "selectCollection": "Seleziona raccolta",
     "collectionName": "Nome raccolta",
     "enterCollectionName": "Inserisci nome raccolta",
@@ -1049,6 +1062,8 @@
     "hostingSession": "Hosting Sessione",
     "inSession": "In Sessione",
     "sessionCode": "Codice Sessione",
+    "openSessionControls": "Apri i controlli della sessione di Guarda Insieme",
+    "copySessionCode": "Copia il codice della sessione",
     "hostControlsPlayback": "L'host controlla la riproduzione",
     "anyoneCanControl": "Tutti possono controllare la riproduzione",
     "hostControls": "Controllo host",
@@ -1262,6 +1277,8 @@
   },
   "videoSettings": {
     "playbackSpeed": "Velocità di riproduzione",
+    "normalSpeed": "Normale",
+    "sleepTimerActive": "Attivo (${duration})",
     "zoom": "Zoom",
     "sleepTimer": "Timer di spegnimento",
     "audioSync": "Sincronizzazione audio",
@@ -1359,6 +1376,8 @@
     "artworkUpdated": "Artwork aggiornato",
     "artworkUpdateFailed": "Aggiornamento artwork non riuscito",
     "noArtworkAvailable": "Nessun artwork disponibile",
+    "artworkOption": "Opzione artwork ${index}",
+    "selectedArtworkOption": "Opzione artwork ${index}, selezionata",
     "notSet": "Non impostato",
     "libraryDefault": "Predefinito libreria",
     "accountDefault": "Predefinito account",
@@ -1486,6 +1505,7 @@
       "title": "Attiva Plezy su ${service}",
       "body": "Visita ${url} e inserisci questo codice:",
       "openToActivate": "Apri ${service} per attivare",
+      "copyCode": "Copia il codice di attivazione",
       "waitingForAuthorization": "In attesa di autorizzazione…",
       "codeCopied": "Codice copiato"
     },
@@ -1493,6 +1513,7 @@
       "title": "Accedi a ${service}",
       "body": "Scansiona questo codice QR o apri l'URL su qualsiasi dispositivo.",
       "openToSignIn": "Apri ${service} per accedere",
+      "copyUrl": "Copia l'URL di accesso",
       "urlCopied": "URL copiato"
     },
     "libraryFilter": {

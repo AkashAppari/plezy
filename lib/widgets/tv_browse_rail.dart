@@ -314,7 +314,7 @@ class TvBrowseRail extends StatefulWidget {
   final bool showServerName;
   final ValueChanged<MediaItem>? onFocusedItemChanged;
   final void Function(MediaHub hub, MediaItem item)? onFocusedHubItemChanged;
-  final void Function(String)? onRefresh;
+  final void Function(MediaItem source)? onRefresh;
   final VoidCallback? onRemoveFromContinueWatching;
   final bool Function(MediaHub hub)? isContinueWatchingHub;
   final bool Function(MediaHub hub)? usesContinueWatchingAction;

@@ -230,7 +230,7 @@ class ServerActivitiesButtonState extends State<ServerActivitiesButton> {
         child: Column(
           mainAxisSize: .min,
           children: [
-            Icon(Icons.error_outline, color: theme.colorScheme.error),
+            AppIcon(Symbols.error_outline_rounded, color: theme.colorScheme.error),
             const SizedBox(height: 8),
             Text(t.serverTasks.failedToLoad, style: theme.textTheme.bodyMedium),
           ],

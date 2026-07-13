@@ -18,6 +18,7 @@ import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/dialog_action_button.dart';
+import '../../widgets/app_icon.dart';
 import '../../utils/video_player_navigation.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/app_menu.dart';
@@ -135,7 +136,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
           child: Column(
             mainAxisSize: .min,
             children: [
-              Icon(Symbols.group_rounded, size: 80, color: theme.colorScheme.primary),
+              AppIcon(Symbols.group_rounded, size: 80, color: theme.colorScheme.primary),
               const SizedBox(height: 24),
               Text(t.watchTogether.title, style: theme.textTheme.headlineMedium, textAlign: TextAlign.center),
               const SizedBox(height: 8),
@@ -152,7 +153,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
                     padding: const EdgeInsets.all(12),
                     child: Row(
                       children: [
-                        Icon(Symbols.warning_rounded, color: theme.colorScheme.onErrorContainer),
+                        AppIcon(Symbols.warning_rounded, color: theme.colorScheme.onErrorContainer),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -174,7 +175,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
                   useBackgroundFocus: true,
                   child: FilledButton.icon(
                     onPressed: _isBusy ? null : _createSession,
-                    icon: _isCreating ? const LoadingIndicatorBox(size: 20) : const Icon(Symbols.add_rounded),
+                    icon: _isCreating ? const LoadingIndicatorBox(size: 20) : const AppIcon(Symbols.add_rounded),
                     label: Text(_isCreating ? t.watchTogether.creating : t.watchTogether.createSession),
                   ),
                 ),
@@ -186,7 +187,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
                   onPressed: _isBusy ? null : _joinSession,
                   child: OutlinedButton.icon(
                     onPressed: _isBusy ? null : _joinSession,
-                    icon: _isJoining ? const LoadingIndicatorBox(size: 20) : const Icon(Symbols.group_add_rounded),
+                    icon: _isJoining ? const LoadingIndicatorBox(size: 20) : const AppIcon(Symbols.group_add_rounded),
                     label: Text(_isJoining ? t.watchTogether.joining : t.watchTogether.joinSession),
                   ),
                 ),
@@ -422,7 +423,7 @@ class _RecentRoomTile extends StatelessWidget {
           type: MaterialType.transparency,
           child: ListTile(
             shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-            leading: isEntering ? const LoadingIndicatorBox(size: 24) : const Icon(Symbols.meeting_room_rounded),
+            leading: isEntering ? const LoadingIndicatorBox(size: 24) : const AppIcon(Symbols.meeting_room_rounded),
             title: Text(title, maxLines: 1, overflow: .ellipsis),
             subtitle: room.name != null
                 ? Text(
@@ -430,7 +431,10 @@ class _RecentRoomTile extends StatelessWidget {
                     style: TextStyle(fontFamily: 'monospace', color: theme.colorScheme.onSurfaceVariant),
                   )
                 : null,
-            trailing: IconButton(icon: const Icon(Symbols.more_vert_rounded), onPressed: () => _showActions(context)),
+            trailing: IconButton(
+              icon: const AppIcon(Symbols.more_vert_rounded),
+              onPressed: () => _showActions(context),
+            ),
             onTap: isBusy ? null : onTap,
             onLongPress: () => _showActions(context),
           ),
@@ -485,7 +489,7 @@ class _ActiveSessionContent extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(
+                    AppIcon(
                       watchTogether.isHost ? Symbols.star_rounded : Symbols.group_rounded,
                       color: theme.colorScheme.primary,
                     ),
@@ -509,7 +513,7 @@ class _ActiveSessionContent extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(
+                    AppIcon(
                       session.controlMode == ControlMode.anyone
                           ? Symbols.groups_rounded
                           : Symbols.admin_panel_settings_rounded,
@@ -540,7 +544,7 @@ class _ActiveSessionContent extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Symbols.people_rounded, color: theme.colorScheme.primary),
+                    AppIcon(Symbols.people_rounded, color: theme.colorScheme.primary),
                     const SizedBox(width: 12),
                     Text(
                       '${t.watchTogether.participants} (${watchTogether.participantCount})',
@@ -554,7 +558,7 @@ class _ActiveSessionContent extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(
                       children: [
-                        Icon(
+                        AppIcon(
                           participant.isHost ? Symbols.star_rounded : Symbols.person_rounded,
                           size: 20,
                           color: participant.isHost ? Colors.amber : theme.colorScheme.onSurfaceVariant,
@@ -611,7 +615,7 @@ class _ActiveSessionContent extends StatelessWidget {
                 foregroundColor: theme.colorScheme.error,
                 side: BorderSide(color: theme.colorScheme.error),
               ),
-              icon: Icon(watchTogether.isHost ? Symbols.close_rounded : Symbols.logout_rounded),
+              icon: AppIcon(watchTogether.isHost ? Symbols.close_rounded : Symbols.logout_rounded),
               label: Text(watchTogether.isHost ? t.watchTogether.endSession : t.watchTogether.leaveSession),
             ),
           ),
@@ -691,7 +695,7 @@ class _JoinCurrentPlaybackCardState extends State<_JoinCurrentPlaybackCard> {
           children: [
             Row(
               children: [
-                Icon(Symbols.play_circle_rounded, color: theme.colorScheme.primary),
+                AppIcon(Symbols.play_circle_rounded, color: theme.colorScheme.primary),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -719,7 +723,7 @@ class _JoinCurrentPlaybackCardState extends State<_JoinCurrentPlaybackCard> {
                 useBackgroundFocus: true,
                 child: FilledButton.icon(
                   onPressed: _isJoining ? null : _joinCurrentPlayback,
-                  icon: _isJoining ? const LoadingIndicatorBox() : const Icon(Symbols.play_arrow_rounded),
+                  icon: _isJoining ? const LoadingIndicatorBox() : const AppIcon(Symbols.play_arrow_rounded),
                   label: Text(_isJoining ? t.watchTogether.joining : t.watchTogether.joinCurrentPlayback),
                 ),
               ),
@@ -762,7 +766,7 @@ class _SessionCodeRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 4),
-              Icon(Symbols.content_copy_rounded, size: 14, color: theme.colorScheme.onSurfaceVariant),
+              AppIcon(Symbols.content_copy_rounded, size: 14, color: theme.colorScheme.onSurfaceVariant),
             ],
           ),
         ),

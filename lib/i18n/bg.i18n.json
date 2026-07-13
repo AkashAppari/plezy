@@ -227,6 +227,7 @@
     "creditsPattern": "Шаблон за маркер на финални надписи",
     "creditsPatternDescription": "Шаблон с регулярен израз за намиране на маркери за финални надписи в заглавия на глави",
     "invalidRegex": "Невалиден регулярен израз",
+    "regex": "Регулярен израз",
     "downloads": "Изтегляния",
     "downloadLocationDescription": "Изберете къде да се съхранява изтегленото съдържание",
     "downloadLocationDefault": "По подразбиране (хранилище на приложението)",
@@ -336,6 +337,8 @@
     "clearShortcut": "Изчисти клавишната комбинация",
     "noShortcutSet": "Няма зададена клавишна комбинация",
     "currentShortcut": "Текуща комбинация:",
+    "pressToRecord": "Избери, за да запишеш клавишна комбинация",
+    "recordingShortcut": "Натисни клавишната комбинация сега",
     "actions": {
       "playPause": "Пускане/пауза",
       "volumeUp": "Увеличи звука",
@@ -434,7 +437,9 @@
     "hue": "Нюанс",
     "saturation": "Наситеност",
     "brightness": "Яркост",
-    "hexColor": "Шестнадесетичен цвят"
+    "hexColor": "Шестнадесетичен цвят",
+    "expandText": "Разгъни текста",
+    "collapseText": "Свий текста"
   },
   "tooltips": {
     "shufflePlay": "Разбъркано възпроизвеждане",
@@ -534,6 +539,10 @@
     "markedAsWatchedOffline": "Маркирано като гледано (ще се синхронизира, когато сте онлайн)",
     "markedAsUnwatchedOffline": "Маркирано като негледано (ще се синхронизира, когато сте онлайн)",
     "autoRemovedWatchedDownload": "Автоматично премахнато: ${title}",
+    "autoRemovedWatchedDownloads": {
+      "one": "Автоматично премахнато ${n} гледано изтегляне",
+      "other": "Автоматично премахнати ${n} гледани изтегляния"
+    },
     "removedFromContinueWatching": "Премахнато от продължаване на гледането",
     "errorLoading": "Грешка: ${error}",
     "streamInterrupted": "Потокът прекъсна. Натиснете „Пусни“ или превъртете, за да опитате отново.",
@@ -585,6 +594,11 @@
     "backgroundColor": "Цвят на фона",
     "position": "Позиция",
     "assOverride": "ASS презаписване",
+    "overrideScale": "Мащабиране",
+    "overrideForce": "Принудително",
+    "overrideStrip": "Премахване на стиловете",
+    "positionTop": "Горе",
+    "positionBottom": "Долу",
     "bold": "Получер",
     "italic": "Курсив",
     "renderResolution": "Резолюция на изобразяване",
@@ -710,7 +724,7 @@
     "searchFailed": "Търсенето е неуспешно: ${error}",
     "connectionTimeout": "Изтече времето за връзка при зареждане на ${context}",
     "connectionFailed": "Не може да се осъществи връзка с медиен сървър",
-    "failedToLoad": "Неуспешно зареждане на ${context}: ${error}",
+    "unableToLoad": "Не може да се зареди ${context}. Опитайте отново.",
     "noClientAvailable": "Няма наличен клиент",
     "pleaseEnterToken": "Моля, въведете токен",
     "invalidToken": "Невалиден токен",
@@ -966,7 +980,6 @@
     "deleted": "Колекцията е изтрита",
     "deleteFailed": "Неуспешно изтриване на колекция",
     "deleteFailedWithError": "Неуспешно изтриване на колекция: ${error}",
-    "failedToLoadItems": "Неуспешно зареждане на елементите в колекцията: ${error}",
     "selectCollection": "Избери колекция",
     "collectionName": "Име на колекция",
     "enterCollectionName": "Въведете име на колекция",
@@ -1049,6 +1062,8 @@
     "hostingSession": "Сесия с домакин",
     "inSession": "В сесия",
     "sessionCode": "Код на сесията",
+    "openSessionControls": "Отвори контролите за сесията „Гледане заедно“",
+    "copySessionCode": "Копирай кода на сесията",
     "hostControlsPlayback": "Домакинът управлява възпроизвеждането",
     "anyoneCanControl": "Всеки може да управлява възпроизвеждането",
     "hostControls": "Контроли на домакина",
@@ -1262,6 +1277,8 @@
   },
   "videoSettings": {
     "playbackSpeed": "Скорост на възпроизвеждане",
+    "normalSpeed": "Нормална",
+    "sleepTimerActive": "Активен (${duration})",
     "zoom": "Мащаб",
     "sleepTimer": "Таймер за заспиване",
     "audioSync": "Синхронизация на аудио",
@@ -1359,6 +1376,8 @@
     "artworkUpdated": "Обложката е обновена",
     "artworkUpdateFailed": "Неуспешно обновяване на обложката",
     "noArtworkAvailable": "Няма налична обложка",
+    "artworkOption": "Вариант за обложка ${index}",
+    "selectedArtworkOption": "Вариант за обложка ${index}, избран",
     "notSet": "Не е зададено",
     "libraryDefault": "По подразбиране за библиотеката",
     "accountDefault": "По подразбиране за акаунта",
@@ -1486,6 +1505,7 @@
       "title": "Активиране на Plezy в ${service}",
       "body": "Посетете ${url} и въведете този код:",
       "openToActivate": "Отворете ${service}, за да активирате",
+      "copyCode": "Копирай кода за активиране",
       "waitingForAuthorization": "Изчакване на оторизация…",
       "codeCopied": "Кодът е копиран"
     },
@@ -1493,6 +1513,7 @@
       "title": "Вход в ${service}",
       "body": "Сканирайте този QR код или отворете URL-а на което и да е устройство.",
       "openToSignIn": "Отворете ${service}, за да влезете",
+      "copyUrl": "Копирай URL адреса за вход",
       "urlCopied": "URL адресът е копиран"
     },
     "libraryFilter": {

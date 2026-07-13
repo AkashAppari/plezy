@@ -227,6 +227,7 @@
     "creditsPattern": "Aftitelingmarkeringspatroon",
     "creditsPatternDescription": "Reguliere expressie om aftitelingmarkeringen in hoofdstuktitels te herkennen",
     "invalidRegex": "Ongeldige reguliere expressie",
+    "regex": "Reguliere expressie",
     "downloads": "Downloads",
     "downloadLocationDescription": "Kies waar gedownloade content wordt opgeslagen",
     "downloadLocationDefault": "Standaard (App-opslag)",
@@ -336,6 +337,8 @@
     "clearShortcut": "Wis sneltoets",
     "noShortcutSet": "Geen sneltoets ingesteld",
     "currentShortcut": "Huidige sneltoets:",
+    "pressToRecord": "Selecteer om een sneltoets op te nemen",
+    "recordingShortcut": "Druk nu op de sneltoets",
     "actions": {
       "playPause": "Afspelen/Pauzeren",
       "volumeUp": "Volume omhoog",
@@ -434,7 +437,9 @@
     "hue": "Tint",
     "saturation": "Verzadiging",
     "brightness": "Helderheid",
-    "hexColor": "Hexkleur"
+    "hexColor": "Hexkleur",
+    "expandText": "Tekst uitvouwen",
+    "collapseText": "Tekst samenvouwen"
   },
   "tooltips": {
     "shufflePlay": "Willekeurig afspelen",
@@ -534,6 +539,10 @@
     "markedAsWatchedOffline": "Gemarkeerd als gekeken (sync wanneer online)",
     "markedAsUnwatchedOffline": "Gemarkeerd als ongekeken (sync wanneer online)",
     "autoRemovedWatchedDownload": "Automatisch verwijderd: ${title}",
+    "autoRemovedWatchedDownloads": {
+      "one": "Automatisch ${n} bekeken download verwijderd",
+      "other": "Automatisch ${n} bekeken downloads verwijderd"
+    },
     "removedFromContinueWatching": "Verwijderd uit Doorgaan met kijken",
     "errorLoading": "Fout: ${error}",
     "streamInterrupted": "De stream is onderbroken. Druk op afspelen of spoel om het opnieuw te proberen.",
@@ -585,6 +594,11 @@
     "backgroundColor": "Achtergrondkleur",
     "position": "Positie",
     "assOverride": "ASS-overschrijving",
+    "overrideScale": "Schalen",
+    "overrideForce": "Forceren",
+    "overrideStrip": "Opmaak verwijderen",
+    "positionTop": "Bovenaan",
+    "positionBottom": "Onderaan",
     "bold": "Vet",
     "italic": "Cursief",
     "renderResolution": "Renderresolutie",
@@ -710,7 +724,7 @@
     "searchFailed": "Zoeken mislukt: ${error}",
     "connectionTimeout": "Verbinding time-out tijdens laden ${context}",
     "connectionFailed": "Kan geen verbinding maken met mediaserver",
-    "failedToLoad": "Kon ${context} niet laden: ${error}",
+    "unableToLoad": "Kan ${context} niet laden. Probeer het opnieuw.",
     "noClientAvailable": "Geen client beschikbaar",
     "pleaseEnterToken": "Voer een token in",
     "invalidToken": "Ongeldig token",
@@ -966,7 +980,6 @@
     "deleted": "Collectie verwijderd",
     "deleteFailed": "Collectie verwijderen mislukt",
     "deleteFailedWithError": "Collectie verwijderen mislukt: ${error}",
-    "failedToLoadItems": "Collectie-items laden mislukt: ${error}",
     "selectCollection": "Selecteer collectie",
     "collectionName": "Collectienaam",
     "enterCollectionName": "Voer collectienaam in",
@@ -1049,6 +1062,8 @@
     "hostingSession": "Sessie Hosten",
     "inSession": "In Sessie",
     "sessionCode": "Sessiecode",
+    "openSessionControls": "Sessiebesturing voor Samen Kijken openen",
+    "copySessionCode": "Sessiecode kopiëren",
     "hostControlsPlayback": "Host bedient het afspelen",
     "anyoneCanControl": "Iedereen kan het afspelen bedienen",
     "hostControls": "Host bedient",
@@ -1262,6 +1277,8 @@
   },
   "videoSettings": {
     "playbackSpeed": "Afspeelsnelheid",
+    "normalSpeed": "Normaal",
+    "sleepTimerActive": "Actief (${duration})",
     "zoom": "Zoom",
     "sleepTimer": "Slaaptimer",
     "audioSync": "Audio synchronisatie",
@@ -1359,6 +1376,8 @@
     "artworkUpdated": "Artwork bijgewerkt",
     "artworkUpdateFailed": "Artwork bijwerken mislukt",
     "noArtworkAvailable": "Geen artwork beschikbaar",
+    "artworkOption": "Artworkoptie ${index}",
+    "selectedArtworkOption": "Artworkoptie ${index}, geselecteerd",
     "notSet": "Niet ingesteld",
     "libraryDefault": "Bibliotheekstandaard",
     "accountDefault": "Accountstandaard",
@@ -1486,6 +1505,7 @@
       "title": "Plezy activeren op ${service}",
       "body": "Ga naar ${url} en voer deze code in:",
       "openToActivate": "Open ${service} om te activeren",
+      "copyCode": "Activeringscode kopiëren",
       "waitingForAuthorization": "Wachten op autorisatie…",
       "codeCopied": "Code gekopieerd"
     },
@@ -1493,6 +1513,7 @@
       "title": "Aanmelden bij ${service}",
       "body": "Scan deze QR-code of open de URL op een apparaat.",
       "openToSignIn": "${service} openen om aan te melden",
+      "copyUrl": "Aanmeldings-URL kopiëren",
       "urlCopied": "URL gekopieerd"
     },
     "libraryFilter": {

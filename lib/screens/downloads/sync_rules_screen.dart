@@ -14,6 +14,7 @@ import '../../services/sync_rule_executor.dart';
 import '../../utils/content_utils.dart';
 import '../../utils/download_utils.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/app_icon.dart';
 import '../libraries/state_messages.dart';
 import '../../i18n/strings.g.dart';
 
@@ -247,7 +248,7 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
               dense: true,
               visualDensity: const VisualDensity(vertical: -3),
               shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-              leading: Icon(_leadingIcon(), color: rule.enabled ? Colors.teal : null, size: 20),
+              leading: AppIcon(_leadingIcon(), color: rule.enabled ? Colors.teal : null, size: 20),
               title: Text(title, maxLines: 1, overflow: .ellipsis),
               subtitle: Column(
                 crossAxisAlignment: .start,
@@ -334,7 +335,7 @@ class _SwipeRevealDeleteActionState extends State<_SwipeRevealDeleteAction> {
                             child: Column(
                               mainAxisAlignment: .center,
                               children: [
-                                Icon(Symbols.delete_rounded, color: colorScheme.onError, size: 20),
+                                AppIcon(Symbols.delete_rounded, color: colorScheme.onError, size: 20),
                                 const SizedBox(height: 2),
                                 Text(
                                   t.common.delete,

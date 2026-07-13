@@ -562,7 +562,7 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, shape: BoxShape.circle),
-                      child: Icon(Symbols.check_rounded, size: 16, color: Theme.of(context).colorScheme.onPrimary),
+                      child: AppIcon(Symbols.check_rounded, size: 16, color: Theme.of(context).colorScheme.onPrimary),
                     ),
                   ),
               ],

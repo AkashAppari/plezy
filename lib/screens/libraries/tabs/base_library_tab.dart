@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../focus/input_mode_tracker.dart';
 import '../../../media/media_library.dart';
-import '../../../utils/app_logger.dart';
+import '../../../utils/error_message_utils.dart';
 import '../../../mixins/library_tab_state.dart';
 import '../../../mixins/refreshable.dart';
 import '../content_state_builder.dart';
@@ -246,12 +246,12 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
           widget.onDataLoaded!();
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      final message = localizedLoadErrorMessage(e, stackTrace, context: errorContext);
       if (!mounted) return;
 
-      appLogger.e('Error loading $errorContext', error: e);
       setState(() {
-        _errorMessage = 'Failed to load $errorContext: ${e.toString()}';
+        _errorMessage = message;
         _isLoading = false;
       });
     }

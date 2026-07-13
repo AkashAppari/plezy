@@ -1,14 +1,24 @@
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../focus/focusable_text_field.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
+import '../../services/settings_service.dart' as settings;
 import '../../utils/dialogs.dart';
+import '../../widgets/app_icon.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/tv_color_picker.dart';
 import '../../widgets/tv_number_spinner.dart';
+
+String themeModeLabel(settings.ThemeMode mode) => switch (mode) {
+  settings.ThemeMode.system => t.settings.systemTheme,
+  settings.ThemeMode.light => t.settings.lightTheme,
+  settings.ThemeMode.dark => t.settings.darkTheme,
+  settings.ThemeMode.oled => t.settings.oledTheme,
+};
 
 /// Model for option selection dialogs.
 class DialogOption<T> {
@@ -118,8 +128,8 @@ Future<T?> showSelectionDialog<T>({
             final selected = option.value == currentValue;
             return FocusableListTile(
               key: ValueKey(option.value),
-              leading: Icon(
-                selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+              leading: AppIcon(
+                selected ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
                 color: selected ? Theme.of(dialogContext).colorScheme.primary : null,
               ),
               title: Text(option.title),
@@ -380,7 +390,7 @@ void showRegexInputDialog({
     contentBuilder: (_, _, setDialogState, saveFocusNode) {
       return FocusableTextField(
         controller: controller,
-        decoration: InputDecoration(labelText: 'Regex', errorText: errorText),
+        decoration: InputDecoration(labelText: t.settings.regex, errorText: errorText),
         autofocus: true,
         textInputAction: TextInputAction.done,
         onEditingComplete: () => saveFocusNode.requestFocus(),

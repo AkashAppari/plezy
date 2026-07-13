@@ -7,7 +7,6 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../focus/focusable_action_bar.dart';
-import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/live_tv_support.dart';
 import '../../media/media_server_client.dart';
@@ -19,13 +18,14 @@ import '../../providers/multi_server_provider.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/settings_builder.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/error_message_utils.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/serial_future_queue.dart';
 import '../../utils/snackbar_helper.dart';
-import '../../widgets/app_icon.dart';
 import '../../widgets/focusable_tab_chip.dart';
 import '../../widgets/overlay_sheet.dart';
+import '../libraries/state_messages.dart';
 import 'reorder_favorites_sheet.dart';
 import 'tabs/guide_tab.dart';
 import 'tabs/recordings_tab.dart';
@@ -420,12 +420,12 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           if (mounted) _focusCurrentTab();
         });
       }
-    } catch (e) {
-      appLogger.e('Failed to load Live TV channels', error: e);
+    } catch (e, stackTrace) {
+      final message = localizedLoadErrorMessage(e, stackTrace, context: t.liveTv.title);
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = e.toString();
+          _error = message;
         });
       }
     }
@@ -633,7 +633,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
 
     final isRecordings = _currentTab == LiveTvTab.recordings;
@@ -674,7 +673,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           ),
         ]),
       ),
-      body: _buildLiveTvBody(theme, useSideNav),
+      body: _buildLiveTvBody(useSideNav),
     );
   }
 
@@ -698,31 +697,17 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     };
   }
 
-  Widget _buildLiveTvBody(ThemeData theme, bool useSideNav) {
+  Widget _buildLiveTvBody(bool useSideNav) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: .min,
-          children: [
-            AppIcon(Symbols.error_rounded, size: 48, color: theme.colorScheme.error),
-            const SizedBox(height: 16),
-            Text(_error!, style: theme.textTheme.bodyLarge),
-            const SizedBox(height: 16),
-            FocusableButton(
-              autofocus: true,
-              onPressed: _loadChannels,
-              useBackgroundFocus: true,
-              child: FilledButton.icon(
-                onPressed: _loadChannels,
-                icon: const AppIcon(Symbols.refresh_rounded),
-                label: Text(t.common.retry),
-              ),
-            ),
-          ],
-        ),
+      return ErrorStateWidget(
+        message: _error!,
+        icon: Symbols.error_rounded,
+        onRetry: _loadChannels,
+        actionAutofocus: true,
+        actionUseBackgroundFocus: true,
       );
     }
     if (_channels.isEmpty && !_visibleTabs.contains(LiveTvTab.recordings)) {

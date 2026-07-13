@@ -47,7 +47,7 @@ enum HubCardSizing {
 class HubSection extends StatefulWidget {
   final MediaHub hub;
   final IconData icon;
-  final void Function(String)? onRefresh;
+  final void Function(MediaItem source)? onRefresh;
   final VoidCallback? onRemoveFromContinueWatching;
   final bool isInContinueWatching;
   final bool usesContinueWatchingAction;
@@ -585,7 +585,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                                       child: Column(
                                         mainAxisSize: .min,
                                         children: [
-                                          Icon(
+                                          AppIcon(
                                             Symbols.arrow_forward_rounded,
                                             size: isTv ? 42 : 32,
                                             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
@@ -695,10 +695,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
               padding: widget.inset
                   ? const EdgeInsets.symmetric(vertical: 8)
                   : const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(
-                t.messages.noItemsAvailable,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
-              ),
+              child: Text(t.messages.noItemsAvailable, style: Theme.of(context).textTheme.bodySmall),
             ),
         ],
       ),

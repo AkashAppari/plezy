@@ -61,9 +61,6 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
   );
 
   @override
-  String? get itemServerId => widget.serverId;
-
-  @override
   String get title => widget.actorName;
 
   @override
@@ -87,9 +84,9 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
   }
 
   @override
-  void updateItemInLists(String itemId, MediaItem updatedItem) {
+  void updateItemInLists(String sourceGlobalKey, MediaItem updatedItem) {
     for (final entry in loadedItems.entries) {
-      if (entry.value.id == itemId) {
+      if (entry.value.globalKey == sourceGlobalKey) {
         loadedItems[entry.key] = updatedItem;
         return;
       }

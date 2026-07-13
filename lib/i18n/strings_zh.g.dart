@@ -358,6 +358,7 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get creditsPattern => '片尾标记模式';
 	@override String get creditsPatternDescription => '用于匹配章节标题中片尾标记的正则表达式';
 	@override String get invalidRegex => '无效的正则表达式';
+	@override String get regex => '正则表达式';
 	@override String get downloads => '下载';
 	@override String get downloadLocationDescription => '选择下载内容的存储位置';
 	@override String get downloadLocationDefault => '默认（应用存储）';
@@ -481,6 +482,8 @@ class _TranslationsHotkeysZh extends TranslationsHotkeysEn {
 	@override String get clearShortcut => '清除快捷键';
 	@override String get noShortcutSet => '未设置快捷键';
 	@override String get currentShortcut => '当前快捷键:';
+	@override String get pressToRecord => '选择以录制快捷键';
+	@override String get recordingShortcut => '现在请按下快捷键';
 	@override late final _TranslationsHotkeysActionsZh actions = _TranslationsHotkeysActionsZh._(_root);
 }
 
@@ -582,6 +585,8 @@ class _TranslationsAccessibilityZh extends TranslationsAccessibilityEn {
 	@override String get saturation => '饱和度';
 	@override String get brightness => '亮度';
 	@override String get hexColor => '十六进制颜色';
+	@override String get expandText => '展开文本';
+	@override String get collapseText => '折叠文本';
 }
 
 // Path: tooltips
@@ -693,6 +698,9 @@ class _TranslationsMessagesZh extends TranslationsMessagesEn {
 	@override String get markedAsWatchedOffline => '已标记为已观看 (将在联网时同步)';
 	@override String get markedAsUnwatchedOffline => '已标记为未观看 (将在联网时同步)';
 	@override String autoRemovedWatchedDownload({required Object title}) => '已自动移除: ${title}';
+	@override String autoRemovedWatchedDownloads({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n,
+		other: '已自动移除 ${n} 个看过的下载',
+	);
 	@override String get removedFromContinueWatching => '已从继续观看中移除';
 	@override String errorLoading({required Object error}) => '错误: ${error}';
 	@override String get streamInterrupted => '视频流已中断。按播放键或拖动进度条重试。';
@@ -751,6 +759,11 @@ class _TranslationsSubtitlingStylingZh extends TranslationsSubtitlingStylingEn {
 	@override String get backgroundColor => '背景颜色';
 	@override String get position => '位置';
 	@override String get assOverride => 'ASS 样式覆盖';
+	@override String get overrideScale => '缩放';
+	@override String get overrideForce => '强制';
+	@override String get overrideStrip => '移除样式';
+	@override String get positionTop => '顶部';
+	@override String get positionBottom => '底部';
 	@override String get bold => '粗体';
 	@override String get italic => '斜体';
 	@override String get renderResolution => '渲染分辨率';
@@ -918,7 +931,7 @@ class _TranslationsErrorsZh extends TranslationsErrorsEn {
 	@override String searchFailed({required Object error}) => '搜索失败: ${error}';
 	@override String connectionTimeout({required Object context}) => '加载 ${context} 时连接超时';
 	@override String get connectionFailed => '无法连接到媒体服务器';
-	@override String failedToLoad({required Object context, required Object error}) => '无法加载 ${context}: ${error}';
+	@override String unableToLoad({required Object context}) => '无法加载${context}。请重试。';
 	@override String get noClientAvailable => '没有可用客户端';
 	@override String get pleaseEnterToken => '请输入一个令牌';
 	@override String get invalidToken => '令牌无效';
@@ -1179,7 +1192,6 @@ class _TranslationsCollectionsZh extends TranslationsCollectionsEn {
 	@override String get deleted => '已删除合集';
 	@override String get deleteFailed => '删除合集失败';
 	@override String deleteFailedWithError({required Object error}) => '删除合集失败：${error}';
-	@override String failedToLoadItems({required Object error}) => '加载合集项目失败：${error}';
 	@override String get selectCollection => '选择合集';
 	@override String get collectionName => '合集名称';
 	@override String get enterCollectionName => '输入合集名称';
@@ -1282,6 +1294,8 @@ class _TranslationsWatchTogetherZh extends TranslationsWatchTogetherEn {
 	@override String get hostingSession => '主持会话';
 	@override String get inSession => '在会话中';
 	@override String get sessionCode => '会话代码';
+	@override String get openSessionControls => '打开“一起看”会话控制';
+	@override String get copySessionCode => '复制会话代码';
 	@override String get hostControlsPlayback => '主持人控制播放';
 	@override String get anyoneCanControl => '任何人都可以控制播放';
 	@override String get hostControls => '主持人控制';
@@ -1458,6 +1472,8 @@ class _TranslationsVideoSettingsZh extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => '播放速度';
+	@override String get normalSpeed => '正常';
+	@override String sleepTimerActive({required Object duration}) => '运行中（${duration}）';
 	@override String get zoom => '缩放';
 	@override String get sleepTimer => '睡眠定时器';
 	@override String get audioSync => '音频同步';
@@ -1576,6 +1592,8 @@ class _TranslationsMetadataEditZh extends TranslationsMetadataEditEn {
 	@override String get artworkUpdated => '封面图片已更新';
 	@override String get artworkUpdateFailed => '封面图片更新失败';
 	@override String get noArtworkAvailable => '没有可用的封面图片';
+	@override String artworkOption({required Object index}) => '封面图片选项 ${index}';
+	@override String selectedArtworkOption({required Object index}) => '封面图片选项 ${index}，已选择';
 	@override String get notSet => '未设置';
 	@override String get libraryDefault => '媒体库默认';
 	@override String get accountDefault => '账户默认';
@@ -2053,6 +2071,7 @@ class _TranslationsServicesDeviceCodeZh extends TranslationsServicesDeviceCodeEn
 	@override String title({required Object service}) => '在 ${service} 上激活 Plezy';
 	@override String body({required Object url}) => '访问 ${url} 并输入此代码：';
 	@override String openToActivate({required Object service}) => '打开 ${service} 以激活';
+	@override String get copyCode => '复制激活代码';
 	@override String get waitingForAuthorization => '等待授权…';
 	@override String get codeCopied => '代码已复制';
 }
@@ -2067,6 +2086,7 @@ class _TranslationsServicesOauthProxyZh extends TranslationsServicesOauthProxyEn
 	@override String title({required Object service}) => '登录 ${service}';
 	@override String get body => '扫描此二维码，或在任意设备上打开 URL。';
 	@override String openToSignIn({required Object service}) => '打开 ${service} 以登录';
+	@override String get copyUrl => '复制登录 URL';
 	@override String get urlCopied => 'URL 已复制';
 }
 
@@ -2316,6 +2336,7 @@ extension on TranslationsZh {
 			'settings.creditsPattern' => '片尾标记模式',
 			'settings.creditsPatternDescription' => '用于匹配章节标题中片尾标记的正则表达式',
 			'settings.invalidRegex' => '无效的正则表达式',
+			'settings.regex' => '正则表达式',
 			'settings.downloads' => '下载',
 			'settings.downloadLocationDescription' => '选择下载内容的存储位置',
 			'settings.downloadLocationDefault' => '默认（应用存储）',
@@ -2421,6 +2442,8 @@ extension on TranslationsZh {
 			'hotkeys.clearShortcut' => '清除快捷键',
 			'hotkeys.noShortcutSet' => '未设置快捷键',
 			'hotkeys.currentShortcut' => '当前快捷键:',
+			'hotkeys.pressToRecord' => '选择以录制快捷键',
+			'hotkeys.recordingShortcut' => '现在请按下快捷键',
 			'hotkeys.actions.playPause' => '播放/暂停',
 			'hotkeys.actions.volumeUp' => '增大音量',
 			'hotkeys.actions.volumeDown' => '减小音量',
@@ -2510,6 +2533,8 @@ extension on TranslationsZh {
 			'accessibility.saturation' => '饱和度',
 			'accessibility.brightness' => '亮度',
 			'accessibility.hexColor' => '十六进制颜色',
+			'accessibility.expandText' => '展开文本',
+			'accessibility.collapseText' => '折叠文本',
 			'tooltips.shufflePlay' => '随机播放',
 			'tooltips.playTrailer' => '播放预告片',
 			'tooltips.markAsWatched' => '标记为已观看',
@@ -2600,19 +2625,20 @@ extension on TranslationsZh {
 			'messages.markedAsWatchedOffline' => '已标记为已观看 (将在联网时同步)',
 			'messages.markedAsUnwatchedOffline' => '已标记为未观看 (将在联网时同步)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '已自动移除: ${title}',
+			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, other: '已自动移除 ${n} 个看过的下载', ), 
 			'messages.removedFromContinueWatching' => '已从继续观看中移除',
 			'messages.errorLoading' => ({required Object error}) => '错误: ${error}',
 			'messages.streamInterrupted' => '视频流已中断。按播放键或拖动进度条重试。',
 			'messages.liveStreamInterrupted' => '直播流已中断。按播放键重试。',
 			'messages.fileInfoNotAvailable' => '文件信息不可用',
+			_ => null,
+		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => '加载文件信息时出错: ${error}',
 			'messages.errorLoadingSeries' => '加载系列时出错',
 			'messages.musicNotSupported' => '尚不支持播放音乐',
 			'messages.noDescriptionAvailable' => '暂无描述',
 			'messages.noProfilesAvailable' => '没有可用的用户',
 			'messages.contactAdminForProfiles' => '请联系服务器管理员添加用户配置',
-			_ => null,
-		} ?? switch (path) {
 			'messages.unableToDetermineLibrarySection' => '无法确定此项目的库分区',
 			'messages.logsCleared' => '日志已清除',
 			'messages.logsCopied' => '日志已复制到剪贴板',
@@ -2651,6 +2677,11 @@ extension on TranslationsZh {
 			'subtitlingStyling.backgroundColor' => '背景颜色',
 			'subtitlingStyling.position' => '位置',
 			'subtitlingStyling.assOverride' => 'ASS 样式覆盖',
+			'subtitlingStyling.overrideScale' => '缩放',
+			'subtitlingStyling.overrideForce' => '强制',
+			'subtitlingStyling.overrideStrip' => '移除样式',
+			'subtitlingStyling.positionTop' => '顶部',
+			'subtitlingStyling.positionBottom' => '底部',
 			'subtitlingStyling.bold' => '粗体',
 			'subtitlingStyling.italic' => '斜体',
 			'subtitlingStyling.renderResolution' => '渲染分辨率',
@@ -2764,7 +2795,7 @@ extension on TranslationsZh {
 			'errors.searchFailed' => ({required Object error}) => '搜索失败: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => '加载 ${context} 时连接超时',
 			'errors.connectionFailed' => '无法连接到媒体服务器',
-			'errors.failedToLoad' => ({required Object context, required Object error}) => '无法加载 ${context}: ${error}',
+			'errors.unableToLoad' => ({required Object context}) => '无法加载${context}。请重试。',
 			'errors.noClientAvailable' => '没有可用客户端',
 			'errors.pleaseEnterToken' => '请输入一个令牌',
 			'errors.invalidToken' => '令牌无效',
@@ -2985,7 +3016,6 @@ extension on TranslationsZh {
 			'collections.deleted' => '已删除合集',
 			'collections.deleteFailed' => '删除合集失败',
 			'collections.deleteFailedWithError' => ({required Object error}) => '删除合集失败：${error}',
-			'collections.failedToLoadItems' => ({required Object error}) => '加载合集项目失败：${error}',
 			'collections.selectCollection' => '选择合集',
 			'collections.collectionName' => '合集名称',
 			'collections.enterCollectionName' => '输入合集名称',
@@ -3059,6 +3089,8 @@ extension on TranslationsZh {
 			'watchTogether.hostingSession' => '主持会话',
 			'watchTogether.inSession' => '在会话中',
 			'watchTogether.sessionCode' => '会话代码',
+			'watchTogether.openSessionControls' => '打开“一起看”会话控制',
+			'watchTogether.copySessionCode' => '复制会话代码',
 			'watchTogether.hostControlsPlayback' => '主持人控制播放',
 			'watchTogether.anyoneCanControl' => '任何人都可以控制播放',
 			'watchTogether.hostControls' => '主持人控制',
@@ -3113,6 +3145,8 @@ extension on TranslationsZh {
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => '电视剧',
 			'downloads.movies' => '电影',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.music' => '音乐',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} 首曲目已加入下载队列',
 			'downloads.noDownloads' => '暂无下载',
@@ -3125,8 +3159,6 @@ extension on TranslationsZh {
 			'downloads.serverErrorBitrate' => '服务器错误：文件可能超过远程比特率限制',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} 集已加入下载队列',
 			'downloads.downloadDeleted' => '下载已删除',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.deleteConfirm' => ({required Object title}) => '要从此设备删除“${title}”吗？',
 			'downloads.cancelledDownloadTitle' => '已取消的下载',
 			'downloads.cancelledDownloadMessage' => '此下载已取消。你想怎么做？',
@@ -3258,6 +3290,8 @@ extension on TranslationsZh {
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => '${attempts} 次尝试后连接丢失',
 			'companionRemote.errors.connectionLost' => '连接丢失',
 			'videoSettings.playbackSpeed' => '播放速度',
+			'videoSettings.normalSpeed' => '正常',
+			'videoSettings.sleepTimerActive' => ({required Object duration}) => '运行中（${duration}）',
 			'videoSettings.zoom' => '缩放',
 			'videoSettings.sleepTimer' => '睡眠定时器',
 			'videoSettings.audioSync' => '音频同步',
@@ -3349,6 +3383,8 @@ extension on TranslationsZh {
 			'metadataEdit.artworkUpdated' => '封面图片已更新',
 			'metadataEdit.artworkUpdateFailed' => '封面图片更新失败',
 			'metadataEdit.noArtworkAvailable' => '没有可用的封面图片',
+			'metadataEdit.artworkOption' => ({required Object index}) => '封面图片选项 ${index}',
+			'metadataEdit.selectedArtworkOption' => ({required Object index}) => '封面图片选项 ${index}，已选择',
 			'metadataEdit.notSet' => '未设置',
 			'metadataEdit.libraryDefault' => '媒体库默认',
 			'metadataEdit.accountDefault' => '账户默认',
@@ -3463,11 +3499,13 @@ extension on TranslationsZh {
 			'services.deviceCode.title' => ({required Object service}) => '在 ${service} 上激活 Plezy',
 			'services.deviceCode.body' => ({required Object url}) => '访问 ${url} 并输入此代码：',
 			'services.deviceCode.openToActivate' => ({required Object service}) => '打开 ${service} 以激活',
+			'services.deviceCode.copyCode' => '复制激活代码',
 			'services.deviceCode.waitingForAuthorization' => '等待授权…',
 			'services.deviceCode.codeCopied' => '代码已复制',
 			'services.oauthProxy.title' => ({required Object service}) => '登录 ${service}',
 			'services.oauthProxy.body' => '扫描此二维码，或在任意设备上打开 URL。',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => '打开 ${service} 以登录',
+			'services.oauthProxy.copyUrl' => '复制登录 URL',
 			'services.oauthProxy.urlCopied' => 'URL 已复制',
 			'services.libraryFilter.title' => '媒体库筛选',
 			'services.libraryFilter.subtitleAllSyncing' => '同步所有媒体库',

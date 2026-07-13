@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../connection/connection_registry.dart';
@@ -18,9 +19,11 @@ import '../../profiles/profile_connection_registry.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../services/base_peer_service.dart';
 import '../../services/settings_service.dart';
+import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
 
 import '../loading_indicator_box.dart';
+import '../app_icon.dart';
 
 @visibleForTesting
 String companionRemotePairingErrorMessage(Object error) {
@@ -211,13 +214,13 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
   IconData _platformIcon(String platform) {
     switch (platform.toLowerCase()) {
       case 'macos':
-        return Icons.desktop_mac;
+        return Symbols.desktop_mac_rounded;
       case 'windows':
-        return Icons.desktop_windows;
+        return Symbols.desktop_windows_rounded;
       case 'linux':
-        return Icons.computer;
+        return Symbols.computer_rounded;
       default:
-        return Icons.devices;
+        return Symbols.devices_rounded;
     }
   }
 
@@ -242,7 +245,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
                   children: [
-                    Icon(Icons.error_outline, color: Theme.of(context).colorScheme.onErrorContainer),
+                    AppIcon(Symbols.error_outline_rounded, color: Theme.of(context).colorScheme.onErrorContainer),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -291,7 +294,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
-              const Icon(Icons.warning_amber, size: 48, color: Colors.orange),
+              const AppIcon(Symbols.warning_amber_rounded, size: 48, color: Colors.orange),
               const SizedBox(height: 12),
               Text(t.companionRemote.pairing.cryptoInitFailed, textAlign: TextAlign.center),
             ],
@@ -321,7 +324,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
-              const Icon(Icons.devices_other, size: 48, color: Colors.grey),
+              AppIcon(Symbols.devices_other_rounded, size: 48, color: tokens(context).textMuted),
               const SizedBox(height: 12),
               Text(
                 t.companionRemote.pairing.noDevicesFound,
@@ -331,7 +334,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
               const SizedBox(height: 8),
               Text(
                 t.companionRemote.pairing.noDevicesHint,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                style: Theme.of(context).textTheme.bodySmall,
                 textAlign: TextAlign.center,
               ),
             ],
@@ -348,10 +351,12 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
         ..._hosts.map(
           (host) => Card(
             child: ListTile(
-              leading: Icon(_platformIcon(host.platform), size: 32),
+              leading: AppIcon(_platformIcon(host.platform), size: 32),
               title: Text(host.name),
               subtitle: Text(host.platform),
-              trailing: _isConnecting ? const LoadingIndicatorBox(size: 24) : const Icon(Icons.arrow_forward),
+              trailing: _isConnecting
+                  ? const LoadingIndicatorBox(size: 24)
+                  : const AppIcon(Symbols.arrow_forward_rounded),
               onTap: _isConnecting ? null : () => _connect(() => _provider.connectToDiscoveredHost(host)),
             ),
           ),
@@ -378,8 +383,8 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
                 children: [
-                  Icon(
-                    _showManualEntry ? Icons.expand_less : Icons.expand_more,
+                  AppIcon(
+                    _showManualEntry ? Symbols.expand_less_rounded : Symbols.expand_more_rounded,
                     color: Theme.of(context).colorScheme.primary,
                   ),
                   const SizedBox(width: 8),
@@ -408,7 +413,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
                     labelText: t.companionRemote.session.hostAddress,
                     hintText: t.companionRemote.pairing.hostAddressHint,
                     border: const OutlineInputBorder(),
-                    prefixIcon: const Icon(Icons.computer),
+                    prefixIcon: const AppIcon(Symbols.computer_rounded),
                   ),
                   validator: (value) {
                     final hostAddress = value?.trim() ?? '';
@@ -428,7 +433,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
                   onPressed: _isConnecting ? null : _submitManualHost,
                   child: FilledButton.icon(
                     onPressed: _isConnecting ? null : _submitManualHost,
-                    icon: _isConnecting ? const LoadingIndicatorBox(size: 16) : const Icon(Icons.link),
+                    icon: _isConnecting ? const LoadingIndicatorBox(size: 16) : const AppIcon(Symbols.link_rounded),
                     label: Text(_isConnecting ? t.companionRemote.pairing.connecting : t.common.connect),
                   ),
                 ),

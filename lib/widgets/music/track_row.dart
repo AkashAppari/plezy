@@ -34,7 +34,7 @@ class TrackRow extends StatefulWidget {
 
   final MediaItem item;
   final VoidCallback? onTap;
-  final void Function(String itemId)? onRefresh;
+  final void Function(MediaItem source)? onRefresh;
 
   /// Grouped-card corner shaping (see class doc).
   final bool isFirst;

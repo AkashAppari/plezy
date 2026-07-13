@@ -227,6 +227,7 @@
     "creditsPattern": "Eftertextmarkörsmönster",
     "creditsPatternDescription": "Reguljärt uttryck för att matcha eftertextmarkörer i kapiteltitlar",
     "invalidRegex": "Ogiltigt reguljärt uttryck",
+    "regex": "Reguljärt uttryck",
     "downloads": "Nedladdningar",
     "downloadLocationDescription": "Välj var nedladdat innehåll ska lagras",
     "downloadLocationDefault": "Standard (App-lagring)",
@@ -336,6 +337,8 @@
     "clearShortcut": "Rensa genväg",
     "noShortcutSet": "Ingen genväg angiven",
     "currentShortcut": "Aktuell genväg:",
+    "pressToRecord": "Välj för att registrera en genväg",
+    "recordingShortcut": "Tryck på genvägen nu",
     "actions": {
       "playPause": "Spela/Pausa",
       "volumeUp": "Höj volym",
@@ -434,7 +437,9 @@
     "hue": "Nyans",
     "saturation": "Mättnad",
     "brightness": "Ljusstyrka",
-    "hexColor": "Hexfärg"
+    "hexColor": "Hexfärg",
+    "expandText": "Expandera text",
+    "collapseText": "Fäll ihop text"
   },
   "tooltips": {
     "shufflePlay": "Blanda uppspelning",
@@ -534,6 +539,10 @@
     "markedAsWatchedOffline": "Markerad som sedd (synkroniseras när online)",
     "markedAsUnwatchedOffline": "Markerad som osedd (synkroniseras när online)",
     "autoRemovedWatchedDownload": "Automatiskt borttagen: ${title}",
+    "autoRemovedWatchedDownloads": {
+      "one": "Tog automatiskt bort ${n} sedd nedladdning",
+      "other": "Tog automatiskt bort ${n} sedda nedladdningar"
+    },
     "removedFromContinueWatching": "Borttagen från Fortsätt titta",
     "errorLoading": "Fel: ${error}",
     "streamInterrupted": "Uppspelningen avbröts. Tryck på play eller spola för att försöka igen.",
@@ -585,6 +594,11 @@
     "backgroundColor": "Bakgrundsfärg",
     "position": "Position",
     "assOverride": "ASS-åsidosättning",
+    "overrideScale": "Skala",
+    "overrideForce": "Tvinga",
+    "overrideStrip": "Ta bort formatering",
+    "positionTop": "Överst",
+    "positionBottom": "Nederst",
     "bold": "Fet",
     "italic": "Kursiv",
     "renderResolution": "Renderingsupplösning",
@@ -710,7 +724,7 @@
     "searchFailed": "Sökning misslyckades: ${error}",
     "connectionTimeout": "Anslutnings-timeout vid laddning ${context}",
     "connectionFailed": "Kan inte ansluta till mediaserver",
-    "failedToLoad": "Misslyckades att ladda ${context}: ${error}",
+    "unableToLoad": "Det gick inte att läsa in ${context}. Försök igen.",
     "noClientAvailable": "Ingen klient tillgänglig",
     "pleaseEnterToken": "Vänligen ange en token",
     "invalidToken": "Ogiltig token",
@@ -966,7 +980,6 @@
     "deleted": "Samling borttagen",
     "deleteFailed": "Det gick inte att ta bort samlingen",
     "deleteFailedWithError": "Det gick inte att ta bort samlingen: ${error}",
-    "failedToLoadItems": "Det gick inte att läsa in samlingsobjekt: ${error}",
     "selectCollection": "Välj samling",
     "collectionName": "Samlingsnamn",
     "enterCollectionName": "Ange samlingsnamn",
@@ -1049,6 +1062,8 @@
     "hostingSession": "Värd för Session",
     "inSession": "I Session",
     "sessionCode": "Sessionskod",
+    "openSessionControls": "Öppna sessionskontroller för Titta Tillsammans",
+    "copySessionCode": "Kopiera sessionskod",
     "hostControlsPlayback": "Värden styr uppspelningen",
     "anyoneCanControl": "Alla kan styra uppspelningen",
     "hostControls": "Värd styr",
@@ -1262,6 +1277,8 @@
   },
   "videoSettings": {
     "playbackSpeed": "Uppspelningshastighet",
+    "normalSpeed": "Normal",
+    "sleepTimerActive": "Aktiv (${duration})",
     "zoom": "Zoom",
     "sleepTimer": "Sovtimer",
     "audioSync": "Ljudsynkronisering",
@@ -1359,6 +1376,8 @@
     "artworkUpdated": "Artwork uppdaterad",
     "artworkUpdateFailed": "Kunde inte uppdatera artwork",
     "noArtworkAvailable": "Ingen artwork tillgänglig",
+    "artworkOption": "Bildalternativ ${index}",
+    "selectedArtworkOption": "Bildalternativ ${index}, valt",
     "notSet": "Inte angiven",
     "libraryDefault": "Biblioteksstandard",
     "accountDefault": "Kontostandard",
@@ -1486,6 +1505,7 @@
       "title": "Aktivera Plezy på ${service}",
       "body": "Besök ${url} och ange den här koden:",
       "openToActivate": "Öppna ${service} för att aktivera",
+      "copyCode": "Kopiera aktiveringskod",
       "waitingForAuthorization": "Väntar på auktorisering…",
       "codeCopied": "Kod kopierad"
     },
@@ -1493,6 +1513,7 @@
       "title": "Logga in på ${service}",
       "body": "Skanna den här QR-koden eller öppna URL:en på valfri enhet.",
       "openToSignIn": "Öppna ${service} för att logga in",
+      "copyUrl": "Kopiera inloggnings-URL",
       "urlCopied": "URL kopierad"
     },
     "libraryFilter": {

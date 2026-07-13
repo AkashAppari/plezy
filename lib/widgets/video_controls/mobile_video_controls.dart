@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../widgets/app_icon.dart';
 import '../../media/media_item.dart';
 import '../../mpv/mpv.dart';
 import '../../models/livetv_capture_buffer.dart';
@@ -273,7 +274,7 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
                                 left: 0,
                                 right: 0,
                                 bottom: 12,
-                                child: Icon(Symbols.keyboard_arrow_up_rounded, color: Colors.white24, size: 24),
+                                child: AppIcon(Symbols.keyboard_arrow_up_rounded, color: Colors.white24, size: 24),
                               ),
                             ],
                           ),
@@ -306,7 +307,7 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
                               child: Column(
                                 mainAxisSize: .min,
                                 children: [
-                                  const Icon(Symbols.keyboard_arrow_down_rounded, color: Colors.white38, size: 20),
+                                  const AppIcon(Symbols.keyboard_arrow_down_rounded, color: Colors.white38, size: 20),
                                   const SizedBox(height: 4),
                                   ContentStrip(
                                     player: widget.player,

@@ -1,16 +1,12 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 
-import 'package:cached_network_image_ce/cached_network_image.dart';
-import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/widgets/app_icon.dart';
 
 import '../media/media_server_client.dart';
 import '../services/device_performance.dart';
-import '../services/image_cache_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/obfuscation_utils.dart';
@@ -305,16 +301,12 @@ class OptimizedMediaImage extends StatelessWidget {
       imageType: imageType,
     );
 
-    final effectiveCacheKey = cacheKey ?? _generateCacheKey(imageUrl);
-
-    final provider = CachedNetworkImageProvider(
-      imageUrl,
-      cacheKey: effectiveCacheKey,
-      cacheManager: PlexImageCacheManager.instance,
-      headers: const {'User-Agent': 'Plezy'},
+    final resizedProvider = MediaImageHelper.serverArtworkProvider(
+      imageUrl: imageUrl,
+      memWidth: memWidth,
+      memHeight: memHeight,
+      cacheKey: cacheKey,
     );
-
-    final resizedProvider = MediaImageHelper.boundedDecode(provider, memWidth: memWidth, memHeight: memHeight);
 
     // Reduced tier: swap in directly, no fade machinery at all.
     if (DevicePerformance.isReduced) {
@@ -389,30 +381,6 @@ class OptimizedMediaImage extends StatelessWidget {
 
   Widget _buildFallback(BuildContext context) =>
       _surfacePlaceholder(context, icon: fallbackIcon ?? Symbols.image_not_supported_rounded);
-
-  /// url → disk-cache key. The SHA-1 is not free on the UI thread and this
-  /// runs per image per build, so memoize it (bounded LRU, same eviction
-  /// style as MediaCard's failed-poster set).
-  static final _cacheKeyByUrl = <String, String>{};
-  static const _cacheKeyCap = 512;
-
-  String _generateCacheKey(String imageUrl) {
-    final cached = _cacheKeyByUrl.remove(imageUrl);
-    if (cached != null) {
-      _cacheKeyByUrl[imageUrl] = cached; // re-insert as most recently used
-      return cached;
-    }
-    // URL already encodes bucketed transcode dimensions via roundDimensions,
-    // so the URL hash alone uniquely identifies the bytes on disk. Including
-    // mem-cache dimensions here would re-introduce churn on every pixel of
-    // window resize and defeat getMemCacheDimensions' bucketing.
-    final key = 'plex_optimized_${sha1.convert(utf8.encode(imageUrl))}';
-    if (_cacheKeyByUrl.length >= _cacheKeyCap) {
-      _cacheKeyByUrl.remove(_cacheKeyByUrl.keys.first);
-    }
-    _cacheKeyByUrl[imageUrl] = key;
-    return key;
-  }
 }
 
 /// Fades a network image in by animating the image paint's alpha

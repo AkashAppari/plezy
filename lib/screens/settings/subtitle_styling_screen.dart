@@ -15,17 +15,17 @@ class SubtitleStylingScreen extends StatelessWidget {
 
   String _assOverrideLabel(SubAssOverride value) {
     return switch (value) {
-      SubAssOverride.no => 'No',
-      SubAssOverride.yes => 'Yes',
-      SubAssOverride.scale => 'Scale',
-      SubAssOverride.force => 'Force',
-      SubAssOverride.strip => 'Strip',
+      SubAssOverride.no => t.common.no,
+      SubAssOverride.yes => t.common.yes,
+      SubAssOverride.scale => t.subtitlingStyling.overrideScale,
+      SubAssOverride.force => t.subtitlingStyling.overrideForce,
+      SubAssOverride.strip => t.subtitlingStyling.overrideStrip,
     };
   }
 
   String _formatPosition(int value) {
-    if (value == 0) return 'Top';
-    if (value == 100) return 'Bottom';
+    if (value == 0) return t.subtitlingStyling.positionTop;
+    if (value == 100) return t.subtitlingStyling.positionBottom;
     return '$value%';
   }
 

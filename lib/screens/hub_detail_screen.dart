@@ -14,6 +14,7 @@ import '../services/settings_service.dart';
 import '../widgets/settings_builder.dart';
 import '../utils/app_logger.dart';
 import '../utils/continuation_pagination_coordinator.dart';
+import '../utils/error_message_utils.dart';
 import '../utils/platform_detector.dart';
 import '../utils/plex_library_section_utils.dart';
 import '../utils/provider_extensions.dart';
@@ -325,11 +326,11 @@ class _HubDetailScreenState extends State<HubDetailScreen>
       }
 
       appLogger.d('Loaded ${items.length} items for hub: ${widget.hub.title}');
-    } catch (e) {
-      appLogger.e('Failed to load hub content', error: e);
+    } catch (e, stackTrace) {
+      final message = localizedLoadErrorMessage(e, stackTrace, context: widget.hub.title);
       if (!mounted) return;
       setState(() {
-        _errorMessage = t.messages.errorLoading(error: e.toString());
+        _errorMessage = message;
         _isLoading = false;
       });
     }
@@ -383,30 +384,22 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     return items.where((item) => int.tryParse(item.libraryId ?? '') == sectionFilter).toList();
   }
 
-  Future<void> _handleItemRefresh(String ratingKey) async {
-    final itemIndex = _items.indexWhere((item) => item.id == ratingKey);
-    final filteredIndex = _filteredItems.indexWhere((item) => item.id == ratingKey);
-    final existing = itemIndex != -1
-        ? _items[itemIndex]
-        : filteredIndex != -1
-        ? _filteredItems[filteredIndex]
-        : null;
-    if (existing == null) return;
-    final serverId = existing.serverId ?? widget.hub.serverId;
+  Future<void> _handleItemRefresh(MediaItem source) async {
+    final serverId = source.serverId;
     if (serverId == null) return;
 
     try {
-      final updated = await context.tryGetMediaClientForServer(ServerId(serverId))?.fetchItem(ratingKey);
+      final updated = await context.tryGetMediaClientForServer(ServerId(serverId))?.fetchItem(source.id);
       if (updated == null || !mounted) return;
       setState(() {
-        final currentItemIndex = _items.indexWhere((item) => item.id == ratingKey);
+        final currentItemIndex = _items.indexWhere((item) => item.globalKey == source.globalKey);
         if (currentItemIndex != -1) _items[currentItemIndex] = updated;
-        final currentFilteredIndex = _filteredItems.indexWhere((item) => item.id == ratingKey);
+        final currentFilteredIndex = _filteredItems.indexWhere((item) => item.globalKey == source.globalKey);
         if (currentFilteredIndex != -1) _filteredItems[currentFilteredIndex] = updated;
       });
       if (_selectedSort != null) _applySort();
     } catch (e) {
-      appLogger.d('Item refresh skipped for: $ratingKey', error: e);
+      appLogger.d('Item refresh skipped for: ${source.globalKey}', error: e);
     }
   }
 

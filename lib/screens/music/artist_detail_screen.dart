@@ -13,6 +13,7 @@ import '../../mixins/grid_focus_node_mixin.dart';
 import '../../services/music/music_playback_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/formatters.dart';
+import '../../utils/error_message_utils.dart';
 import '../../utils/media_image_helper.dart';
 import '../../utils/music_navigation.dart';
 import '../../utils/platform_detector.dart';
@@ -64,9 +65,6 @@ class _ArtistDetailScreenState extends BaseMediaListDetailScreen<ArtistDetailScr
   Future<List<MediaItem>> fetchItems() => mediaClient.fetchArtistAlbums(widget.artist.id);
 
   @override
-  String getLoadErrorMessage(Object error) => t.messages.errorLoading(error: error.toString());
-
-  @override
   Future<void> loadItems() async {
     await super.loadItems();
     autoFocusFirstItemAfterLoad();
@@ -87,8 +85,9 @@ class _ArtistDetailScreenState extends BaseMediaListDetailScreen<ArtistDetailScr
     List<MediaItem> tracks;
     try {
       tracks = await mediaClient.fetchPlayableDescendants(widget.artist.id);
-    } catch (e) {
-      if (mounted) showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+    } catch (e, stackTrace) {
+      final message = localizedLoadErrorMessage(e, stackTrace, context: widget.artist.displayTitle);
+      if (mounted) showErrorSnackBar(context, message);
       return;
     }
     if (!mounted) return;

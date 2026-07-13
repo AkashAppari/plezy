@@ -14,6 +14,7 @@ import '../../services/media_list_playback_launcher.dart';
 import '../../services/music/music_playback_service.dart';
 import '../../services/playlist_items_loader.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/error_message_utils.dart';
 import '../../utils/continuation_pagination_coordinator.dart';
 import '../../utils/music_navigation.dart';
 import '../../widgets/app_icon.dart';
@@ -34,6 +35,7 @@ import '../../widgets/listenable_selector.dart';
 import '../base_media_list_detail_screen.dart';
 import '../focusable_detail_screen_mixin.dart';
 import '../../mixins/grid_focus_node_mixin.dart';
+import '../../widgets/overlay_sheet.dart';
 
 /// Screen to display the contents of a playlist
 class PlaylistDetailScreen extends StatefulWidget {
@@ -54,9 +56,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
   @override
   Object get mediaItem => widget.playlist;
-
-  @override
-  String? get itemServerId => widget.playlist.serverId;
 
   @override
   String get title => widget.playlist.title;
@@ -103,9 +102,9 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     } else {
       try {
         tracks = await fetchAllPlaylistItems(mediaClient, widget.playlist.id);
-      } catch (e) {
-        appLogger.w('Failed to fetch full audio playlist ${widget.playlist.id}', error: e);
-        if (mounted) showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+      } catch (e, stackTrace) {
+        final message = localizedLoadErrorMessage(e, stackTrace, context: widget.playlist.title);
+        if (mounted) showErrorSnackBar(context, message);
         return;
       }
       if (!mounted) return;
@@ -266,11 +265,11 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       _autoFocusAfterLoad();
 
       if (_continuation.hasMore) unawaited(_continuation.loadRemaining());
-    } catch (e) {
-      appLogger.e('Failed to load playlist items', error: e);
+    } catch (e, stackTrace) {
+      final message = localizedLoadErrorMessage(e, stackTrace, context: widget.playlist.title);
       if (!mounted) return;
       setState(() {
-        errorMessage = getLoadErrorMessage(e);
+        errorMessage = message;
         isLoading = false;
       });
     }
@@ -385,7 +384,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     if (!mounted) return;
     if (success) {
       showSuccessSnackBar(context, t.playlists.deleted);
-      Navigator.pop(context); // Return to playlists screen
+      Navigator.pop(context, true); // Signal the parent list to refresh.
     } else {
       showErrorSnackBar(context, t.playlists.errorDeleting);
     }
@@ -574,11 +573,11 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
     final backResult = handleBackKeyAction(event, () {
       if (_movingIndex != null) {
-        // Cancel move mode, set flag to prevent PopScope exit
+        // Cancel move mode and suppress route-level back handling.
         backHandledByKeyEvent = true;
         _cancelMoveMode();
       } else {
-        // Navigate to app bar on BACK, set flag to prevent PopScope exit
+        // Navigate to the app bar and suppress route-level back handling.
         handleBackFromContent();
       }
     });
@@ -720,7 +719,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     return false;
   }
 
-  /// Handle back navigation for PopScope - extends mixin with move mode support
+  /// Handle route back from [OverlaySheetHost], extending the mixin with move mode support.
   bool _handleBackNavigation() {
     // If BACK was already handled by a key event, don't pop
     if (backHandledByKeyEvent) {
@@ -805,11 +804,10 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       );
     }
 
-    return PopScope(
+    return OverlaySheetHost(
       canPop: allowsNativeBackGesture && _movingIndex == null,
-      onPopInvokedWithResult: (didPop, result) {
+      onSystemBack: () {
         if (BackKeyCoordinator.consumeIfHandled()) return;
-        if (didPop) return;
         final shouldPop = _handleBackNavigation();
         if (shouldPop && mounted) {
           Navigator.pop(context);

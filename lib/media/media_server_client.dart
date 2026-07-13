@@ -3,7 +3,7 @@ import '../media/media_sort.dart';
 import '../services/api_cache.dart';
 import '../services/playback_initialization_types.dart';
 import '../utils/app_logger.dart';
-import '../utils/media_server_http_client.dart' show AbortController, MediaServerResponse;
+import '../utils/media_server_http_client.dart' show AbortController, MediaServerResponse, throwIfHttpError;
 import '../utils/external_ids.dart';
 import '../utils/watch_state_notifier.dart';
 import 'download_resolution.dart';
@@ -732,6 +732,7 @@ mixin MediaServerCacheMixin implements MediaServerClient {
     }
     try {
       final response = await networkCall();
+      throwIfHttpError(response);
       if (cacheResponse) {
         await _putCacheResponse(cacheKey, response.data);
       }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../widgets/app_icon.dart';
 import '../widgets/clickable_cursor.dart';
@@ -41,7 +42,7 @@ class FocusableAction {
   final FocusableActionBuilder? builder;
 
   const FocusableAction({
-    this.icon = Icons.circle,
+    this.icon = Symbols.circle_rounded,
     this.iconColor,
     this.iconFill = 1.0,
     this.iconSize = 24,

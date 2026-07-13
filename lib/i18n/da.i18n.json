@@ -227,6 +227,7 @@
     "creditsPattern": "Rulletekstmarkørmønster",
     "creditsPatternDescription": "Regulært udtryk til at genkende rulletekstmarkører i kapiteltitler",
     "invalidRegex": "Ugyldigt regulært udtryk",
+    "regex": "Regulært udtryk",
     "downloads": "Downloads",
     "downloadLocationDescription": "Vælg hvor downloadet indhold skal gemmes",
     "downloadLocationDefault": "Standard (App-lagring)",
@@ -336,6 +337,8 @@
     "clearShortcut": "Ryd genvej",
     "noShortcutSet": "Ingen genvej angivet",
     "currentShortcut": "Nuværende genvej:",
+    "pressToRecord": "Vælg for at registrere en genvej",
+    "recordingShortcut": "Tryk på genvejen nu",
     "actions": {
       "playPause": "Afspil/Pause",
       "volumeUp": "Lydstyrke op",
@@ -434,7 +437,9 @@
     "hue": "Farvetone",
     "saturation": "Mætning",
     "brightness": "Lysstyrke",
-    "hexColor": "Hexfarve"
+    "hexColor": "Hexfarve",
+    "expandText": "Udvid tekst",
+    "collapseText": "Fold tekst sammen"
   },
   "tooltips": {
     "shufflePlay": "Afspil tilfældigt",
@@ -534,6 +539,10 @@
     "markedAsWatchedOffline": "Markeret som set (synkroniseres online)",
     "markedAsUnwatchedOffline": "Markeret som uset (synkroniseres online)",
     "autoRemovedWatchedDownload": "Automatisk fjernet: ${title}",
+    "autoRemovedWatchedDownloads": {
+      "one": "Fjernede automatisk ${n} set download",
+      "other": "Fjernede automatisk ${n} sete downloads"
+    },
     "removedFromContinueWatching": "Fjernet fra Fortsæt med at se",
     "errorLoading": "Fejl: ${error}",
     "streamInterrupted": "Streamen blev afbrudt. Tryk på afspil, eller spol for at prøve igen.",
@@ -585,6 +594,11 @@
     "backgroundColor": "Baggrundsfarve",
     "position": "Position",
     "assOverride": "ASS-tilsidesættelse",
+    "overrideScale": "Skaler",
+    "overrideForce": "Gennemtving",
+    "overrideStrip": "Fjern formatering",
+    "positionTop": "Øverst",
+    "positionBottom": "Nederst",
     "bold": "Fed",
     "italic": "Kursiv",
     "renderResolution": "Gengivelsesopløsning",
@@ -710,7 +724,7 @@
     "searchFailed": "Søgning mislykkedes: ${error}",
     "connectionTimeout": "Forbindelsestimeout ved indlæsning af ${context}",
     "connectionFailed": "Kan ikke oprette forbindelse til medieserver",
-    "failedToLoad": "Kunne ikke indlæse ${context}: ${error}",
+    "unableToLoad": "Kunne ikke indlæse ${context}. Prøv igen.",
     "noClientAvailable": "Ingen klient tilgængelig",
     "pleaseEnterToken": "Indtast et token",
     "invalidToken": "Ugyldigt token",
@@ -966,7 +980,6 @@
     "deleted": "Samling slettet",
     "deleteFailed": "Kunne ikke slette samling",
     "deleteFailedWithError": "Kunne ikke slette samling: ${error}",
-    "failedToLoadItems": "Kunne ikke indlæse samlingselementer: ${error}",
     "selectCollection": "Vælg samling",
     "collectionName": "Samlingsnavn",
     "enterCollectionName": "Indtast samlingsnavn",
@@ -1049,6 +1062,8 @@
     "hostingSession": "Vært for session",
     "inSession": "I session",
     "sessionCode": "Sessionskode",
+    "openSessionControls": "Åbn sessionsstyring for Se sammen",
+    "copySessionCode": "Kopiér sessionskode",
     "hostControlsPlayback": "Vært styrer afspilning",
     "anyoneCanControl": "Alle kan styre afspilning",
     "hostControls": "Værtskontrol",
@@ -1262,6 +1277,8 @@
   },
   "videoSettings": {
     "playbackSpeed": "Afspilningshastighed",
+    "normalSpeed": "Normal",
+    "sleepTimerActive": "Aktiv (${duration})",
     "zoom": "Zoom",
     "sleepTimer": "Sove-timer",
     "audioSync": "Lydsynkronisering",
@@ -1359,6 +1376,8 @@
     "artworkUpdated": "Grafik opdateret",
     "artworkUpdateFailed": "Kunne ikke opdatere grafik",
     "noArtworkAvailable": "Ingen grafik tilgængelig",
+    "artworkOption": "Grafikvalg ${index}",
+    "selectedArtworkOption": "Grafikvalg ${index}, valgt",
     "notSet": "Ikke indstillet",
     "libraryDefault": "Biblioteksstandard",
     "accountDefault": "Kontostandard",
@@ -1486,6 +1505,7 @@
       "title": "Aktiver Plezy på ${service}",
       "body": "Besøg ${url} og indtast denne kode:",
       "openToActivate": "Åbn ${service} for at aktivere",
+      "copyCode": "Kopiér aktiveringskode",
       "waitingForAuthorization": "Venter på godkendelse…",
       "codeCopied": "Kode kopieret"
     },
@@ -1493,6 +1513,7 @@
       "title": "Log ind på ${service}",
       "body": "Scan denne QR-kode, eller åbn URL'en på en enhed.",
       "openToSignIn": "Åbn ${service} for at logge ind",
+      "copyUrl": "Kopiér login-URL",
       "urlCopied": "URL kopieret"
     },
     "libraryFilter": {

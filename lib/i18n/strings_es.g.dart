@@ -358,6 +358,7 @@ class _TranslationsSettingsEs extends TranslationsSettingsEn {
 	@override String get creditsPattern => 'Patrón de marcador de créditos';
 	@override String get creditsPatternDescription => 'Expresión regular para reconocer marcadores de créditos en los títulos de capítulos';
 	@override String get invalidRegex => 'Expresión regular no válida';
+	@override String get regex => 'Expresión regular';
 	@override String get downloads => 'Descargas';
 	@override String get downloadLocationDescription => 'Elegir dónde almacenar el contenido descargado';
 	@override String get downloadLocationDefault => 'Predeterminado (Almacenamiento de la App)';
@@ -481,6 +482,8 @@ class _TranslationsHotkeysEs extends TranslationsHotkeysEn {
 	@override String get clearShortcut => 'Borrar atajo';
 	@override String get noShortcutSet => 'Sin atajo asignado';
 	@override String get currentShortcut => 'Atajo actual:';
+	@override String get pressToRecord => 'Seleccionar para grabar un atajo';
+	@override String get recordingShortcut => 'Presiona el atajo ahora';
 	@override late final _TranslationsHotkeysActionsEs actions = _TranslationsHotkeysActionsEs._(_root);
 }
 
@@ -582,6 +585,8 @@ class _TranslationsAccessibilityEs extends TranslationsAccessibilityEn {
 	@override String get saturation => 'Saturación';
 	@override String get brightness => 'Brillo';
 	@override String get hexColor => 'Color hexadecimal';
+	@override String get expandText => 'Expandir texto';
+	@override String get collapseText => 'Contraer texto';
 }
 
 // Path: tooltips
@@ -693,6 +698,10 @@ class _TranslationsMessagesEs extends TranslationsMessagesEn {
 	@override String get markedAsWatchedOffline => 'Marcado como visto (se sincronizará al estar en línea)';
 	@override String get markedAsUnwatchedOffline => 'Marcado como no visto (se sincronizará al estar en línea)';
 	@override String autoRemovedWatchedDownload({required Object title}) => 'Eliminado automáticamente: ${title}';
+	@override String autoRemovedWatchedDownloads({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('es'))(n,
+		one: 'Se eliminó automáticamente ${n} descarga vista',
+		other: 'Se eliminaron automáticamente ${n} descargas vistas',
+	);
 	@override String get removedFromContinueWatching => 'Eliminado de Seguir Viendo';
 	@override String errorLoading({required Object error}) => 'Error: ${error}';
 	@override String get streamInterrupted => 'La reproducción se interrumpió. Pulsa reproducir o avanza para volver a intentarlo.';
@@ -751,6 +760,11 @@ class _TranslationsSubtitlingStylingEs extends TranslationsSubtitlingStylingEn {
 	@override String get backgroundColor => 'Color de Fondo';
 	@override String get position => 'Posición';
 	@override String get assOverride => 'Sobreescritura ASS';
+	@override String get overrideScale => 'Escalar';
+	@override String get overrideForce => 'Forzar';
+	@override String get overrideStrip => 'Quitar estilos';
+	@override String get positionTop => 'Arriba';
+	@override String get positionBottom => 'Abajo';
 	@override String get bold => 'Negrita';
 	@override String get italic => 'Cursiva';
 	@override String get renderResolution => 'Resolución de renderizado';
@@ -918,7 +932,7 @@ class _TranslationsErrorsEs extends TranslationsErrorsEn {
 	@override String searchFailed({required Object error}) => 'Error en la búsqueda: ${error}';
 	@override String connectionTimeout({required Object context}) => 'Tiempo de conexión agotado al cargar ${context}';
 	@override String get connectionFailed => 'No se puede conectar al servidor multimedia';
-	@override String failedToLoad({required Object context, required Object error}) => 'Error al cargar ${context}: ${error}';
+	@override String unableToLoad({required Object context}) => 'No se pudo cargar ${context}. Inténtalo de nuevo.';
 	@override String get noClientAvailable => 'No hay cliente disponible';
 	@override String get pleaseEnterToken => 'Por favor, introduce un token';
 	@override String get invalidToken => 'Token no válido';
@@ -1180,7 +1194,6 @@ class _TranslationsCollectionsEs extends TranslationsCollectionsEn {
 	@override String get deleted => 'Colección eliminada';
 	@override String get deleteFailed => 'Error al eliminar la colección';
 	@override String deleteFailedWithError({required Object error}) => 'Error al eliminar la colección: ${error}';
-	@override String failedToLoadItems({required Object error}) => 'Error al cargar los elementos de la colección: ${error}';
 	@override String get selectCollection => 'Seleccionar Colección';
 	@override String get collectionName => 'Nombre de la Colección';
 	@override String get enterCollectionName => 'Introduce el nombre de la colección';
@@ -1284,6 +1297,8 @@ class _TranslationsWatchTogetherEs extends TranslationsWatchTogetherEn {
 	@override String get hostingSession => 'Anfitrión de la Sesión';
 	@override String get inSession => 'En Sesión';
 	@override String get sessionCode => 'Código de Sesión';
+	@override String get openSessionControls => 'Abrir los controles de la sesión de Ver Juntos';
+	@override String get copySessionCode => 'Copiar código de sesión';
 	@override String get hostControlsPlayback => 'El anfitrión controla la reproducción';
 	@override String get anyoneCanControl => 'Cualquiera puede controlar la reproducción';
 	@override String get hostControls => 'Control del anfitrión';
@@ -1460,6 +1475,8 @@ class _TranslationsVideoSettingsEs extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => 'Velocidad de reproducción';
+	@override String get normalSpeed => 'Normal';
+	@override String sleepTimerActive({required Object duration}) => 'Activo (${duration})';
 	@override String get zoom => 'Zoom';
 	@override String get sleepTimer => 'Temporizador de apagado';
 	@override String get audioSync => 'Sincronización de audio';
@@ -1578,6 +1595,8 @@ class _TranslationsMetadataEditEs extends TranslationsMetadataEditEn {
 	@override String get artworkUpdated => 'Artwork actualizado';
 	@override String get artworkUpdateFailed => 'Error al actualizar el artwork';
 	@override String get noArtworkAvailable => 'No hay artwork disponible';
+	@override String artworkOption({required Object index}) => 'Opción de imagen ${index}';
+	@override String selectedArtworkOption({required Object index}) => 'Opción de imagen ${index}, seleccionada';
 	@override String get notSet => 'No establecido';
 	@override String get libraryDefault => 'Predeterminado de biblioteca';
 	@override String get accountDefault => 'Predeterminado de cuenta';
@@ -2055,6 +2074,7 @@ class _TranslationsServicesDeviceCodeEs extends TranslationsServicesDeviceCodeEn
 	@override String title({required Object service}) => 'Activar Plezy en ${service}';
 	@override String body({required Object url}) => 'Visita ${url} e introduce este código:';
 	@override String openToActivate({required Object service}) => 'Abrir ${service} para activar';
+	@override String get copyCode => 'Copiar código de activación';
 	@override String get waitingForAuthorization => 'Esperando autorización…';
 	@override String get codeCopied => 'Código copiado';
 }
@@ -2069,6 +2089,7 @@ class _TranslationsServicesOauthProxyEs extends TranslationsServicesOauthProxyEn
 	@override String title({required Object service}) => 'Inicia sesión en ${service}';
 	@override String get body => 'Escanea este código QR o abre la URL en cualquier dispositivo.';
 	@override String openToSignIn({required Object service}) => 'Abrir ${service} para iniciar sesión';
+	@override String get copyUrl => 'Copiar URL de inicio de sesión';
 	@override String get urlCopied => 'URL copiada';
 }
 
@@ -2318,6 +2339,7 @@ extension on TranslationsEs {
 			'settings.creditsPattern' => 'Patrón de marcador de créditos',
 			'settings.creditsPatternDescription' => 'Expresión regular para reconocer marcadores de créditos en los títulos de capítulos',
 			'settings.invalidRegex' => 'Expresión regular no válida',
+			'settings.regex' => 'Expresión regular',
 			'settings.downloads' => 'Descargas',
 			'settings.downloadLocationDescription' => 'Elegir dónde almacenar el contenido descargado',
 			'settings.downloadLocationDefault' => 'Predeterminado (Almacenamiento de la App)',
@@ -2423,6 +2445,8 @@ extension on TranslationsEs {
 			'hotkeys.clearShortcut' => 'Borrar atajo',
 			'hotkeys.noShortcutSet' => 'Sin atajo asignado',
 			'hotkeys.currentShortcut' => 'Atajo actual:',
+			'hotkeys.pressToRecord' => 'Seleccionar para grabar un atajo',
+			'hotkeys.recordingShortcut' => 'Presiona el atajo ahora',
 			'hotkeys.actions.playPause' => 'Reproducir/Pausar',
 			'hotkeys.actions.volumeUp' => 'Subir Volumen',
 			'hotkeys.actions.volumeDown' => 'Bajar Volumen',
@@ -2512,6 +2536,8 @@ extension on TranslationsEs {
 			'accessibility.saturation' => 'Saturación',
 			'accessibility.brightness' => 'Brillo',
 			'accessibility.hexColor' => 'Color hexadecimal',
+			'accessibility.expandText' => 'Expandir texto',
+			'accessibility.collapseText' => 'Contraer texto',
 			'tooltips.shufflePlay' => 'Reproducción aleatoria',
 			'tooltips.playTrailer' => 'Reproducir tráiler',
 			'tooltips.markAsWatched' => 'Marcar como visto',
@@ -2602,19 +2628,20 @@ extension on TranslationsEs {
 			'messages.markedAsWatchedOffline' => 'Marcado como visto (se sincronizará al estar en línea)',
 			'messages.markedAsUnwatchedOffline' => 'Marcado como no visto (se sincronizará al estar en línea)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Eliminado automáticamente: ${title}',
+			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('es'))(n, one: 'Se eliminó automáticamente ${n} descarga vista', other: 'Se eliminaron automáticamente ${n} descargas vistas', ), 
 			'messages.removedFromContinueWatching' => 'Eliminado de Seguir Viendo',
 			'messages.errorLoading' => ({required Object error}) => 'Error: ${error}',
 			'messages.streamInterrupted' => 'La reproducción se interrumpió. Pulsa reproducir o avanza para volver a intentarlo.',
 			'messages.liveStreamInterrupted' => 'La transmisión en vivo se interrumpió. Pulsa reproducir para volver a intentarlo.',
 			'messages.fileInfoNotAvailable' => 'Información de archivo no disponible',
+			_ => null,
+		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Error al cargar info de archivo: ${error}',
 			'messages.errorLoadingSeries' => 'Error al cargar la serie',
 			'messages.musicNotSupported' => 'La reproducción de música aún no está soportada',
 			'messages.noDescriptionAvailable' => 'No hay descripción disponible',
 			'messages.noProfilesAvailable' => 'No hay perfiles disponibles',
 			'messages.contactAdminForProfiles' => 'Contacta a tu administrador del servidor para añadir perfiles',
-			_ => null,
-		} ?? switch (path) {
 			'messages.unableToDetermineLibrarySection' => 'No se puede determinar la sección de biblioteca para este elemento',
 			'messages.logsCleared' => 'Logs borrados',
 			'messages.logsCopied' => 'Logs copiados al portapapeles',
@@ -2653,6 +2680,11 @@ extension on TranslationsEs {
 			'subtitlingStyling.backgroundColor' => 'Color de Fondo',
 			'subtitlingStyling.position' => 'Posición',
 			'subtitlingStyling.assOverride' => 'Sobreescritura ASS',
+			'subtitlingStyling.overrideScale' => 'Escalar',
+			'subtitlingStyling.overrideForce' => 'Forzar',
+			'subtitlingStyling.overrideStrip' => 'Quitar estilos',
+			'subtitlingStyling.positionTop' => 'Arriba',
+			'subtitlingStyling.positionBottom' => 'Abajo',
 			'subtitlingStyling.bold' => 'Negrita',
 			'subtitlingStyling.italic' => 'Cursiva',
 			'subtitlingStyling.renderResolution' => 'Resolución de renderizado',
@@ -2766,7 +2798,7 @@ extension on TranslationsEs {
 			'errors.searchFailed' => ({required Object error}) => 'Error en la búsqueda: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => 'Tiempo de conexión agotado al cargar ${context}',
 			'errors.connectionFailed' => 'No se puede conectar al servidor multimedia',
-			'errors.failedToLoad' => ({required Object context, required Object error}) => 'Error al cargar ${context}: ${error}',
+			'errors.unableToLoad' => ({required Object context}) => 'No se pudo cargar ${context}. Inténtalo de nuevo.',
 			'errors.noClientAvailable' => 'No hay cliente disponible',
 			'errors.pleaseEnterToken' => 'Por favor, introduce un token',
 			'errors.invalidToken' => 'Token no válido',
@@ -2987,7 +3019,6 @@ extension on TranslationsEs {
 			'collections.deleted' => 'Colección eliminada',
 			'collections.deleteFailed' => 'Error al eliminar la colección',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Error al eliminar la colección: ${error}',
-			'collections.failedToLoadItems' => ({required Object error}) => 'Error al cargar los elementos de la colección: ${error}',
 			'collections.selectCollection' => 'Seleccionar Colección',
 			'collections.collectionName' => 'Nombre de la Colección',
 			'collections.enterCollectionName' => 'Introduce el nombre de la colección',
@@ -3061,6 +3092,8 @@ extension on TranslationsEs {
 			'watchTogether.hostingSession' => 'Anfitrión de la Sesión',
 			'watchTogether.inSession' => 'En Sesión',
 			'watchTogether.sessionCode' => 'Código de Sesión',
+			'watchTogether.openSessionControls' => 'Abrir los controles de la sesión de Ver Juntos',
+			'watchTogether.copySessionCode' => 'Copiar código de sesión',
 			'watchTogether.hostControlsPlayback' => 'El anfitrión controla la reproducción',
 			'watchTogether.anyoneCanControl' => 'Cualquiera puede controlar la reproducción',
 			'watchTogether.hostControls' => 'Control del anfitrión',
@@ -3115,6 +3148,8 @@ extension on TranslationsEs {
 			'downloads.manage' => 'Gestionar',
 			'downloads.tvShows' => 'Series de TV',
 			'downloads.movies' => 'Películas',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.music' => 'Música',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} canciones en cola para descargar',
 			'downloads.noDownloads' => 'No hay descargas aún',
@@ -3127,8 +3162,6 @@ extension on TranslationsEs {
 			'downloads.serverErrorBitrate' => 'Error del servidor: el archivo puede superar el límite de bitrate remoto',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodios en cola para descargar',
 			'downloads.downloadDeleted' => 'Descarga eliminada',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.deleteConfirm' => ({required Object title}) => '¿Eliminar "${title}" de este dispositivo?',
 			'downloads.cancelledDownloadTitle' => 'Descarga cancelada',
 			'downloads.cancelledDownloadMessage' => 'Esta descarga se canceló. ¿Qué quieres hacer?',
@@ -3260,6 +3293,8 @@ extension on TranslationsEs {
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Conexión perdida tras ${attempts} intentos',
 			'companionRemote.errors.connectionLost' => 'Conexión perdida',
 			'videoSettings.playbackSpeed' => 'Velocidad de reproducción',
+			'videoSettings.normalSpeed' => 'Normal',
+			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Activo (${duration})',
 			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Temporizador de apagado',
 			'videoSettings.audioSync' => 'Sincronización de audio',
@@ -3351,6 +3386,8 @@ extension on TranslationsEs {
 			'metadataEdit.artworkUpdated' => 'Artwork actualizado',
 			'metadataEdit.artworkUpdateFailed' => 'Error al actualizar el artwork',
 			'metadataEdit.noArtworkAvailable' => 'No hay artwork disponible',
+			'metadataEdit.artworkOption' => ({required Object index}) => 'Opción de imagen ${index}',
+			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Opción de imagen ${index}, seleccionada',
 			'metadataEdit.notSet' => 'No establecido',
 			'metadataEdit.libraryDefault' => 'Predeterminado de biblioteca',
 			'metadataEdit.accountDefault' => 'Predeterminado de cuenta',
@@ -3465,11 +3502,13 @@ extension on TranslationsEs {
 			'services.deviceCode.title' => ({required Object service}) => 'Activar Plezy en ${service}',
 			'services.deviceCode.body' => ({required Object url}) => 'Visita ${url} e introduce este código:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Abrir ${service} para activar',
+			'services.deviceCode.copyCode' => 'Copiar código de activación',
 			'services.deviceCode.waitingForAuthorization' => 'Esperando autorización…',
 			'services.deviceCode.codeCopied' => 'Código copiado',
 			'services.oauthProxy.title' => ({required Object service}) => 'Inicia sesión en ${service}',
 			'services.oauthProxy.body' => 'Escanea este código QR o abre la URL en cualquier dispositivo.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Abrir ${service} para iniciar sesión',
+			'services.oauthProxy.copyUrl' => 'Copiar URL de inicio de sesión',
 			'services.oauthProxy.urlCopied' => 'URL copiada',
 			'services.libraryFilter.title' => 'Filtro de bibliotecas',
 			'services.libraryFilter.subtitleAllSyncing' => 'Sincronizando todas las bibliotecas',

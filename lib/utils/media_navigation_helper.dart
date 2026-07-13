@@ -140,8 +140,8 @@ bool shouldOpenEpisodeDetailsForActivation({
 /// For artists/albums, navigates to the music detail screens; tracks start
 /// playback in their album queue.
 ///
-/// The [onRefresh] callback is invoked with the item's id after returning from
-/// the detail screen, allowing the caller to refresh state.
+/// The [onRefresh] callback is invoked with the source item after returning
+/// from the detail screen, preserving its server-qualified identity.
 ///
 /// Set [isOffline] to true for downloaded content without server access.
 ///
@@ -156,13 +156,16 @@ bool shouldOpenEpisodeDetailsForActivation({
 Future<MediaNavigationResult> navigateToMediaItem(
   BuildContext context,
   Object item, {
-  void Function(String)? onRefresh,
+  void Function(MediaItem source)? onRefresh,
   bool isOffline = false,
   bool playDirectly = false,
 }) async {
   if (item is MediaPlaylist) {
-    await Navigator.push(context, MaterialPageRoute(builder: (context) => PlaylistDetailScreen(playlist: item)));
-    return MediaNavigationResult.navigated;
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (context) => PlaylistDetailScreen(playlist: item)),
+    );
+    return result == true ? MediaNavigationResult.listRefreshNeeded : MediaNavigationResult.navigated;
   }
 
   if (item is! MediaItem) {
@@ -233,7 +236,7 @@ Future<MediaNavigationResult> navigateToMediaItem(
       }
       final result = await navigateToVideoPlayer(context, metadata: mi, isOffline: isOffline);
       if (result == true && context.mounted) {
-        onRefresh?.call(mi.id);
+        onRefresh?.call(mi);
       }
       return MediaNavigationResult.navigated;
 
@@ -241,7 +244,7 @@ Future<MediaNavigationResult> navigateToMediaItem(
       if (playDirectly && !shouldOpenContinueWatchingDetails) {
         final result = await navigateToVideoPlayer(context, metadata: mi, isOffline: isOffline);
         if (result == true && context.mounted) {
-          onRefresh?.call(mi.id);
+          onRefresh?.call(mi);
         }
         return MediaNavigationResult.navigated;
       }
@@ -259,7 +262,7 @@ Future<MediaNavigationResult> navigateToMediaItemDetails(
   BuildContext context,
   MediaItem mi, {
   bool isOffline = false,
-  void Function(String)? onRefresh,
+  void Function(MediaItem source)? onRefresh,
   MediaItem? metadataOverride,
 }) async {
   // Catalog stand-ins (Explore tab) must never reach MediaDetailScreen — it
@@ -284,7 +287,7 @@ Future<MediaNavigationResult> navigateToMediaItemDetails(
     ),
   );
   if (result == true && context.mounted) {
-    onRefresh?.call(mi.id);
+    onRefresh?.call(mi);
   }
   return MediaNavigationResult.navigated;
 }

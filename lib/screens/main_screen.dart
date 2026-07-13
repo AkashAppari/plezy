@@ -18,6 +18,7 @@ import '../services/tvos_system_navigation_service.dart';
 import '../services/update_service.dart';
 import '../utils/app_logger.dart';
 import '../widgets/auth_error_banner.dart';
+import '../widgets/app_icon.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
@@ -1880,7 +1881,7 @@ class _MainScreenState extends State<MainScreen>
                               ),
                             )
                           else
-                            Icon(Symbols.wifi_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
+                            AppIcon(Symbols.wifi_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
                           const SizedBox(width: 8),
                           Text(
                             t.common.reconnect,

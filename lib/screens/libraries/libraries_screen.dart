@@ -512,7 +512,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   @override
-  void updateItemInLists(String itemId, MediaItem updatedItem) {
+  void updateItemInLists(String sourceGlobalKey, MediaItem updatedItem) {
     // Delegate to the active tab — parent doesn't maintain its own item list
   }
 

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/mpv/models.dart';
 import 'package:plezy/mpv/player/player.dart';
 import 'package:plezy/mpv/player/player_state.dart';
 import 'package:plezy/mpv/player/player_streams.dart';
+import 'package:plezy/screens/settings/subtitle_styling_screen.dart';
+import 'package:plezy/services/sleep_timer_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_tokens.dart';
 import 'package:plezy/widgets/video_controls/sheets/video_settings_sheet.dart';
@@ -30,10 +33,22 @@ const _testTokens = MonoTokens(
 );
 
 void main() {
+  setUpAll(() async {
+    await LocaleSettings.setLocale(AppLocale.ru);
+    LocaleSettings.setLocaleSync(AppLocale.en);
+  });
+
   setUp(() async {
+    LocaleSettings.setLocaleSync(AppLocale.en);
+    SleepTimerService().cancelTimer();
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
     await SettingsService.getInstance();
+  });
+
+  tearDown(() {
+    SleepTimerService().cancelTimer();
+    LocaleSettings.setLocaleSync(AppLocale.en);
   });
 
   testWidgets('shows audio passthrough on supported TV-style surfaces', (tester) async {
@@ -43,9 +58,45 @@ void main() {
 
     expect(find.text('Audio Passthrough'), findsOneWidget);
   });
+
+  testWidgets('localizes Off, Normal, and Active video setting values', (tester) async {
+    LocaleSettings.setLocaleSync(AppLocale.ru);
+
+    await _pumpSheet(tester, canControl: true);
+    expect(find.text('Обычная'), findsOneWidget);
+    expect(find.text('Выкл.'), findsOneWidget);
+
+    final sleepTimer = SleepTimerService();
+    sleepTimer.startTimer(const Duration(hours: 1), () {});
+    try {
+      await tester.pump();
+      expect(find.textContaining('Активен ('), findsOneWidget);
+    } finally {
+      sleepTimer.cancelTimer();
+    }
+  });
+
+  testWidgets('localizes every ASS subtitle override enum label', (tester) async {
+    LocaleSettings.setLocaleSync(AppLocale.ru);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(extensions: const [_testTokens]),
+        home: const SubtitleStylingScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Переопределение ASS'));
+    await tester.pumpAndSettle();
+
+    final dialog = find.byType(AlertDialog);
+    for (final label in ['Нет', 'Да', 'Масштабировать', 'Принудительно', 'Удалить стили']) {
+      expect(find.descendant(of: dialog, matching: find.text(label)), findsOneWidget);
+    }
+  });
 }
 
-Future<void> _pumpSheet(WidgetTester tester) async {
+Future<void> _pumpSheet(WidgetTester tester, {bool canControl = false}) async {
   await tester.pumpWidget(
     MaterialApp(
       theme: ThemeData(extensions: const [_testTokens]),
@@ -57,7 +108,7 @@ Future<void> _pumpSheet(WidgetTester tester) async {
             player: _FakeSettingsPlayer(),
             audioSyncOffset: 0,
             subtitleSyncOffset: 0,
-            canControl: false,
+            canControl: canControl,
           ),
         ),
       ),

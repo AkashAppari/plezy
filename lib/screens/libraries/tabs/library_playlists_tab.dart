@@ -7,7 +7,7 @@ import '../../../media/media_playlist.dart';
 import '../../../mixins/library_tab_focus_mixin.dart';
 import '../../../mixins/paginated_item_loader.dart';
 import '../../../services/settings_service.dart';
-import '../../../utils/app_logger.dart';
+import '../../../utils/error_message_utils.dart';
 import '../../../utils/layout_constants.dart';
 import '../../../utils/library_refresh_notifier.dart';
 import '../../../utils/media_server_http_client.dart';
@@ -84,6 +84,7 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
 
   @override
   Future<void> loadItems() async {
+    String? loadErrorMessage;
     await loadInitialPaginatedItems(
       pageSize: _pageSize,
       resetViewState: () {
@@ -95,8 +96,8 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
         items = loaded;
         isLoading = false;
       },
-      applyError: (error, _) {
-        errorMessage = 'Failed to load $errorContext: ${error.toString()}';
+      applyError: (error, stackTrace) {
+        errorMessage = loadErrorMessage ?? t.errors.unableToLoad(context: errorContext);
         isLoading = false;
       },
       onLoaded: (_, _) {
@@ -109,7 +110,7 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
         }
       },
       onError: (error, stackTrace) {
-        appLogger.e('Error loading $errorContext', error: error, stackTrace: stackTrace);
+        loadErrorMessage = localizedLoadErrorMessage(error, stackTrace, context: errorContext);
       },
     );
   }

@@ -278,7 +278,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
                     decoration: pillInputDecoration(
                       context,
                       hintText: widget.mediaTitle ?? t.metadataEdit.title,
-                      prefixIcon: const Icon(Symbols.search_rounded, size: 20),
+                      prefixIcon: const AppIcon(Symbols.search_rounded, size: 20),
                     ),
                     onChanged: _onTitleChanged,
                     textInputAction: TextInputAction.search,
@@ -446,7 +446,7 @@ class _LanguagePickerViewState extends State<_LanguagePickerView> with Controlle
               decoration: pillInputDecoration(
                 context,
                 hintText: t.videoControls.searchLanguages,
-                prefixIcon: const Icon(Symbols.search_rounded, size: 20),
+                prefixIcon: const AppIcon(Symbols.search_rounded, size: 20),
               ),
               onChanged: _onFilterChanged,
               onSubmitted: (_) => _focusFirstLanguageAfterSubmit(),

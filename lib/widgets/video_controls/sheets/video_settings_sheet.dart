@@ -350,7 +350,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       case _SettingsView.zoom:
         return Symbols.zoom_in_rounded;
       case _SettingsView.versionQuality:
-        return Symbols.art_track;
+        return Symbols.art_track_rounded;
       case _SettingsView.sleep:
         return Symbols.bedtime_rounded;
       case _SettingsView.audioSync:
@@ -385,10 +385,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   }
 
   String _formatSleepTimer(SleepTimerService sleepTimer) {
-    if (!sleepTimer.isActive) return 'Off';
+    if (!sleepTimer.isActive) return t.common.off;
     final remaining = sleepTimer.remainingTime;
-    if (remaining == null) return 'Off';
-    return 'Active (${formatDurationWithSeconds(remaining)})';
+    if (remaining == null) return t.common.off;
+    return t.videoSettings.sleepTimerActive(duration: formatDurationWithSeconds(remaining));
   }
 
   String _formatZoomScale(double scale) => '${(scale * 100).round()}%';
@@ -473,7 +473,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
         if (_hasVersionQuality)
           _SettingsMenuItem(
-            icon: Symbols.art_track,
+            icon: Symbols.art_track_rounded,
             title: _versionQualityTitle(),
             valueText: _versionQualityValueText(),
             allowValueOverflow: true,
@@ -593,7 +593,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         if (widget.onToggleAmbientLighting != null)
           FocusableListTile(
             leading: AppIcon(
-              Symbols.blur_on,
+              Symbols.blur_on_rounded,
               fill: 1,
               color: widget.isAmbientLightingEnabled ? Colors.amber : tokens(context).textMuted,
             ),

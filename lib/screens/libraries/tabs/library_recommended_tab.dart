@@ -60,9 +60,6 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
   }
 
   @override
-  String? get itemServerId => widget.library.serverId;
-
-  @override
   String? get watchStateServerId => widget.library.serverId;
 
   @override
@@ -106,12 +103,12 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
   }
 
   @override
-  void updateItemInLists(String itemId, MediaItem updatedItem) {
+  void updateItemInLists(String sourceGlobalKey, MediaItem updatedItem) {
     // Update the item in any hub that contains it. MediaHub items are
     // immutable lists; rebuild the affected hub in-place.
     for (var i = 0; i < items.length; i++) {
       final hub = items[i];
-      final itemIndex = hub.items.indexWhere((item) => item.id == itemId);
+      final itemIndex = hub.items.indexWhere((item) => item.globalKey == sourceGlobalKey);
       if (itemIndex != -1) {
         final newItems = List<MediaItem>.from(hub.items);
         newItems[itemIndex] = updatedItem;
@@ -131,16 +128,16 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
     }
 
     final affectedIds = {event.itemId, ...event.parentChain};
-    final refreshIds = <String>{};
+    final refreshItems = <String, MediaItem>{};
     for (final hub in items) {
       for (final item in hub.items) {
         if (affectedIds.contains(item.id)) {
-          refreshIds.add(item.id);
+          refreshItems[item.globalKey] = item;
         }
       }
     }
-    for (final itemId in refreshIds) {
-      unawaited(updateItem(itemId));
+    for (final item in refreshItems.values) {
+      unawaited(updateItem(item));
     }
   }
 

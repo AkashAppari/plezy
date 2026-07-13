@@ -39,6 +39,7 @@ import '../media/paged_media_list_state.dart';
 import '../widgets/media_card.dart';
 import '../widgets/media_rating_badge.dart';
 import '../i18n/strings.g.dart';
+import '../theme/mono_tokens.dart';
 import '../widgets/optimized_media_image.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/media_quality_labels.dart';
@@ -453,45 +454,48 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     );
   }
 
-  void _patchItemEverywhere(MediaItem item) {
+  void _patchItemEverywhere(String sourceGlobalKey, MediaItem item) {
     final base = _fullMetadata ?? widget.metadata;
-    if (base.id == item.id) {
+    if (base.globalKey == sourceGlobalKey) {
       _fullMetadata = _normalizeRefreshedItem(item, base);
     }
 
     final onDeckEpisode = _onDeckEpisode;
-    if (onDeckEpisode != null && onDeckEpisode.id == item.id) {
+    if (onDeckEpisode != null && onDeckEpisode.globalKey == sourceGlobalKey) {
       _onDeckEpisode = _normalizeRefreshedItem(item, onDeckEpisode);
     }
 
-    _patchItemInList(_seasons, item);
-    _patchItemInList(_episodes, item);
+    _patchItemInList(_seasons, sourceGlobalKey, item);
+    _patchItemInList(_episodes, sourceGlobalKey, item);
     _syncFlattenEpisodeState();
-    _seasonEpisodePager.patchEpisode(item.id, (existing) => _normalizeRefreshedItem(item, existing));
+    _seasonEpisodePager.patchEpisode(
+      item.id,
+      (existing) => existing.globalKey == sourceGlobalKey ? _normalizeRefreshedItem(item, existing) : existing,
+    );
     final extras = _extras;
     if (extras != null) {
-      _patchItemInList(extras, item);
+      _patchItemInList(extras, sourceGlobalKey, item);
     }
 
-    _relatedHubs = _patchItemInHubs(_relatedHubs, item);
+    _relatedHubs = _patchItemInHubs(_relatedHubs, sourceGlobalKey, item);
   }
 
-  void _patchItemInList(List<MediaItem> items, MediaItem item) {
+  void _patchItemInList(List<MediaItem> items, String sourceGlobalKey, MediaItem item) {
     for (var i = 0; i < items.length; i++) {
-      if (items[i].id == item.id) {
+      if (items[i].globalKey == sourceGlobalKey) {
         items[i] = _normalizeRefreshedItem(item, items[i]);
       }
     }
   }
 
-  List<MediaHub> _patchItemInHubs(List<MediaHub> hubs, MediaItem item) {
+  List<MediaHub> _patchItemInHubs(List<MediaHub> hubs, String sourceGlobalKey, MediaItem item) {
     var changed = false;
     final updatedHubs = <MediaHub>[];
     for (final hub in hubs) {
       var hubChanged = false;
       final items = List<MediaItem>.of(hub.items);
       for (var i = 0; i < items.length; i++) {
-        if (items[i].id == item.id) {
+        if (items[i].globalKey == sourceGlobalKey) {
           items[i] = _normalizeRefreshedItem(item, items[i]);
           hubChanged = true;
         }
@@ -502,18 +506,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return changed ? updatedHubs : hubs;
   }
 
-  Future<void> _refreshItemInPlace(String itemId) async {
-    final client = _getMediaClientForMetadata(context);
+  Future<void> _refreshItemInPlace(MediaItem source) async {
+    final serverId = source.serverId;
+    if (serverId == null) return;
+    final client = context.tryGetMediaClientForServer(ServerId(serverId));
     if (client == null) return;
 
     try {
-      final refreshed = await client.fetchItem(itemId);
+      final refreshed = await client.fetchItem(source.id);
       if (refreshed == null || !mounted) return;
       setStateIfMounted(() {
-        _patchItemEverywhere(refreshed);
+        _patchItemEverywhere(source.globalKey, refreshed);
       });
     } catch (e) {
-      appLogger.d('Item refresh failed for $itemId', error: e);
+      appLogger.d('Item refresh failed for ${source.globalKey}', error: e);
     }
   }
 
@@ -2305,9 +2311,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               child: MediaContextMenu(
                 key: contextMenuKey,
                 item: season,
-                onRefresh: (itemId) {
+                onRefresh: (source) {
                   _watchStateChanged = true;
-                  unawaited(_refreshItemInPlace(itemId));
+                  unawaited(_refreshItemInPlace(source));
                 },
                 onListRefresh: () {
                   if (widget.isOffline) {
@@ -2542,7 +2548,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Center(
-        child: Text(message, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey)),
+        child: Text(message, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: tokens(context).textMuted)),
       ),
     );
   }
@@ -2608,7 +2614,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               context,
               metadata: episode,
               isOffline: widget.isOffline,
-              onRefresh: () => unawaited(_refreshItemInPlace(episode.id)),
+              onRefresh: () => unawaited(_refreshItemInPlace(episode)),
             );
           },
           onRefresh: widget.isOffline ? null : _refreshItemInPlace,
@@ -3388,7 +3394,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               hubs: detailHubs,
               iconForHub: _getTvDetailHubIcon,
               onFocusedHubItemChanged: _handleTvDetailFocusedRailItemChanged,
-              onRefresh: (itemId) => unawaited(_refreshItemInPlace(itemId)),
+              onRefresh: (source) => unawaited(_refreshItemInPlace(source)),
               onActiveHubChanged: _handleTvDetailHubChanged,
               onActivateItem: _handleTvDetailRailItemActivated,
               trailingForHub: _tvDetailTrailingState,
@@ -3661,20 +3667,27 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             artworkPaths: [metadata.clearLogoPath],
             fit: BoxFit.contain,
             alignment: .centerLeft,
-            imageType: ImageType.logo,
+            imageType: ImageType.heroLogo,
             errorWidget: (context, url, error) => titleFallback(context),
           );
           if (localArtwork != null) return localArtwork;
 
           final client = _getArtworkMediaClient(context);
           final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+          final targetWidth = (width * dpr).round();
+          final targetHeight = (height * dpr).round();
+          final (memCacheWidth, memCacheHeight) = MediaImageHelper.getMemCacheDimensions(
+            displayWidth: targetWidth,
+            displayHeight: targetHeight,
+            imageType: ImageType.heroLogo,
+          );
           final logoUrl = MediaImageHelper.getOptimizedImageUrl(
             client: client,
             thumbPath: metadata.clearLogoPath,
             maxWidth: width,
             maxHeight: height,
             devicePixelRatio: dpr,
-            imageType: ImageType.logo,
+            imageType: ImageType.heroLogo,
           );
 
           if (logoUrl.isEmpty) return titleFallback(context);
@@ -3686,7 +3699,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               filterQuality: FilterQuality.medium,
               fit: BoxFit.contain,
               alignment: .centerLeft,
-              memCacheWidth: (width * dpr).clamp(200, 1000).round(),
+              memCacheWidth: memCacheWidth,
+              memCacheHeight: memCacheHeight,
               placeholder: (context, url) => const SizedBox.shrink(),
               errorBuilder: (context, error, stackTrace) => titleFallback(context),
             ),

@@ -292,8 +292,11 @@ void main() {
     await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
     await tester.pumpAndSettle();
 
-    expect(find.text(t.common.play), findsOneWidget);
-    final menuSurface = find.byWidgetPredicate((widget) => widget is Material && widget.elevation == 3);
+    final playMenuIcon = find.byWidgetPredicate(
+      (widget) => widget is AppIcon && widget.icon == Symbols.play_arrow_rounded,
+    );
+    expect(playMenuIcon, findsOneWidget);
+    final menuSurface = find.ancestor(of: playMenuIcon, matching: find.byType(BottomSheet));
     expect(menuSurface, findsOneWidget);
     expect(tester.getCenter(menuSurface).dx, closeTo(cardRect.center.dx, 0.1));
 
@@ -301,18 +304,23 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('stays hidden while the route observer suppresses it', (tester) async {
+  testWidgets('stays hidden while a named suppressing route is active', (tester) async {
     final service = _FakeMusicService(track: _track);
     final observer = MusicUiRouteObserver();
-    observer.suppress.value = true;
 
     await tester.pumpWidget(wrap(service: service, observer: observer));
     await tester.pumpAndSettle();
+    expect(find.text('Dawn'), findsOneWidget);
 
+    final route = MaterialPageRoute<void>(
+      settings: const RouteSettings(name: kNowPlayingRouteName),
+      builder: (_) => const SizedBox.shrink(),
+    );
+    observer.didPush(route, null);
+    await tester.pumpAndSettle();
     expect(find.text('Dawn'), findsNothing);
 
-    // Suppression lifting brings it back without a rebuild from the service.
-    observer.suppress.value = false;
+    observer.didRemove(route, null);
     await tester.pumpAndSettle();
     expect(find.text('Dawn'), findsOneWidget);
   });

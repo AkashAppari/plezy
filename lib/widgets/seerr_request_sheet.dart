@@ -401,7 +401,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
                   value: _is4k,
                   onChanged: _submitting ? null : _toggle4k,
                   title: Text(t.seerr.request4k),
-                  secondary: const AppIcon(Symbols.four_k, fill: 1),
+                  secondary: const AppIcon(Symbols.four_k_rounded, fill: 1),
                   contentPadding: EdgeInsets.zero,
                 ),
               if (_advancedAllowed && _serversForVariant.isNotEmpty) ..._buildAdvancedSection(theme),

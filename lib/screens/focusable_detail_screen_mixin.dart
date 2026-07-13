@@ -11,6 +11,7 @@ import '../widgets/ios_status_bar_tap_scroll_to_top.dart';
 import '../widgets/settings_builder.dart';
 import '../widgets/focusable_media_card.dart';
 import '../widgets/media_card_sliver_layout.dart';
+import '../widgets/overlay_sheet.dart';
 import '../widgets/skeleton_media_card.dart';
 
 /// Extract the stable id from a [MediaItem]/[MediaPlaylist] for use as a
@@ -89,25 +90,24 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
 
   FocusNode _focusNodeForIndex(int index) => focusNodeForIndex(index, firstItemFocusNode, prefix: 'detail_grid_item');
 
-  /// Wrap [slivers] in the standard detail-screen scaffold — PopScope that
-  /// defers to [handleBackNavigation], plus a Scaffold with a CustomScrollView
-  /// bound as the primary scroll view. Callers build the slivers themselves
-  /// (typically `[appBar, ...header, ...buildStateSlivers(), grid]`).
+  /// Wrap [slivers] in the standard detail-screen scaffold — an overlay-sheet
+  /// host that defers route back to [handleBackNavigation], plus a Scaffold
+  /// with a CustomScrollView bound as the primary scroll view. Callers build
+  /// the slivers themselves (typically
+  /// `[appBar, ...header, ...buildStateSlivers(), grid]`).
   Widget buildDetailScaffold({required List<Widget> slivers}) {
-    return PopScope(
-      canPop: PlatformDetector.isHandheldIOS(context),
-      onPopInvokedWithResult: (didPop, result) {
-        if (BackKeyCoordinator.consumeIfHandled()) return;
-        if (didPop) return;
-        final shouldPop = handleBackNavigation();
-        if (shouldPop && mounted) {
-          Navigator.pop(context);
-        }
-      },
-      child: PrimaryScrollController(
+    return PrimaryScrollController(
+      controller: scrollController,
+      child: IosStatusBarTapScrollToTop(
         controller: scrollController,
-        child: IosStatusBarTapScrollToTop(
-          controller: scrollController,
+        child: OverlaySheetHost(
+          canPop: PlatformDetector.isHandheldIOS(context),
+          onSystemBack: () {
+            if (BackKeyCoordinator.consumeIfHandled()) return;
+            if (handleBackNavigation() && mounted) {
+              Navigator.pop(context);
+            }
+          },
           child: Scaffold(body: CustomScrollView(primary: true, slivers: slivers)),
         ),
       ),
@@ -165,7 +165,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
   /// for album grids); null keeps the stock poster geometry.
   Widget buildFocusableGrid({
     required List<dynamic> items,
-    required void Function(String itemId) onRefresh,
+    required void Function(MediaItem source) onRefresh,
     String? collectionId,
     VoidCallback? onListRefresh,
     CardShape? shape,
@@ -216,7 +216,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
   Widget buildSparseFocusableGrid({
     required int totalItems,
     required MediaItem? Function(int index) itemAt,
-    required void Function(String itemId) onRefresh,
+    required void Function(MediaItem source) onRefresh,
     void Function(int index)? onSkeletonVisible,
     String? collectionId,
     VoidCallback? onListRefresh,

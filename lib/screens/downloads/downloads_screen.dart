@@ -20,11 +20,11 @@ import '../../widgets/settings_builder.dart';
 import '../../utils/global_key_utils.dart';
 import '../../mixins/tab_navigation_mixin.dart';
 import '../../mixins/refreshable.dart';
-import '../../utils/grid_size_calculator.dart';
+import '../../utils/media_image_helper.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/focusable_media_card.dart';
-import '../../widgets/media_grid_delegate.dart';
+import '../../widgets/media_card_sliver_layout.dart';
 import '../../widgets/download_tree_view.dart';
 import '../main_screen.dart';
 import '../libraries/state_messages.dart';
@@ -153,7 +153,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
                 onNavigateDown: _focusCurrentTab,
                 actions: [
                   FocusableAction(
-                    icon: Symbols.rule_settings,
+                    icon: Symbols.rule_settings_rounded,
                     tooltip: t.downloads.activeSyncRules,
                     onPressed: () =>
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncRulesScreen())),
@@ -306,50 +306,37 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent> {
         const effectivePadding = EdgeInsets.only(left: 8, right: 8, top: 8);
 
         return SettingsBuilder(
-          prefs: const [SettingsService.libraryDensity, SettingsService.tvFullCardLayout],
+          prefs: const [SettingsService.viewMode, SettingsService.libraryDensity, SettingsService.tvFullCardLayout],
           builder: (context) {
             final settings = SettingsService.instance;
+            final viewMode = settings.read(SettingsService.viewMode);
             final density = settings.read(SettingsService.libraryDensity);
             final fullCardLayout = PlatformDetector.isTV() && settings.read(SettingsService.tvFullCardLayout);
-            final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, density);
-            // Use LayoutBuilder to get actual available width (accounting for sidebar)
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                final availableWidth = constraints.maxWidth - effectivePadding.left - effectivePadding.right;
-                final gridSpacing = MediaGridDelegate.spacingFor(context: context, fullBleedImage: fullCardLayout);
-                final columnCount = GridSizeCalculator.getColumnCount(
-                  availableWidth,
-                  maxCrossAxisExtent,
-                  crossAxisSpacing: gridSpacing,
-                );
 
-                return GridView.builder(
-                  addAutomaticKeepAlives: false,
-                  addSemanticIndexes: false,
-                  padding: effectivePadding,
-                  // Allow focus decoration to render outside scroll bounds
-                  clipBehavior: Clip.none,
-                  gridDelegate: MediaGridDelegate.createDelegate(
-                    context: context,
-                    density: density,
-                    fullBleedImage: fullCardLayout,
-                  ),
+            return CustomScrollView(
+              // Allow focus decoration to render outside scroll bounds.
+              clipBehavior: Clip.none,
+              slivers: [
+                MediaCardSliverLayout(
+                  viewMode: viewMode,
                   itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    final isFirstColumn = GridSizeCalculator.isFirstColumn(index, columnCount);
-                    final isFirst = index == 0;
+                  density: density,
+                  padding: effectivePadding,
+                  fullBleedImage: fullCardLayout,
+                  itemBuilder: (context, position) {
+                    final item = items[position.index];
                     return FocusableMediaCard(
                       item: item,
-                      focusNode: isFirst ? _firstItemFocusNode : null,
+                      focusNode: position.index == 0 ? _firstItemFocusNode : null,
+                      disableScale: position.disableScale,
                       onBack: widget.onBack,
                       isOffline: true, // Downloaded content works without server
-                      fullBleedImage: fullCardLayout,
-                      onNavigateLeft: isFirstColumn ? _navigateToSidebar : null,
+                      fullBleedImage: fullCardLayout && position.isGrid,
+                      onNavigateLeft: position.isFirstColumn ? _navigateToSidebar : null,
                     );
                   },
-                );
-              },
+                ),
+              ],
             );
           },
         );
@@ -437,7 +424,22 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent> {
     final artist = album.albumArtistTitle;
     final serverId = album.serverId;
     final localArt = serverId == null ? null : provider.getArtworkLocalPath(ServerId(serverId), album.thumbPath);
-
+    final ImageProvider? localCoverImage;
+    if (localArt == null) {
+      localCoverImage = null;
+    } else {
+      final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+      final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
+        displayWidth: (48 * dpr).round(),
+        displayHeight: (48 * dpr).round(),
+        imageType: ImageType.square,
+      );
+      localCoverImage = MediaImageHelper.boundedDecode(
+        FileImage(File(localArt)),
+        memWidth: memWidth,
+        memHeight: memHeight,
+      );
+    }
     Widget fallbackCover() => Container(
       width: 48,
       height: 48,
@@ -451,9 +453,9 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent> {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(tk.radiusSm),
-            child: localArt != null
-                ? Image.file(
-                    File(localArt),
+            child: localCoverImage != null
+                ? Image(
+                    image: localCoverImage,
                     width: 48,
                     height: 48,
                     fit: BoxFit.cover,

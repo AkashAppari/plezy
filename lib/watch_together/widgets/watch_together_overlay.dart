@@ -12,6 +12,7 @@ import '../../utils/dialogs.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/bottom_sheet_header.dart';
+import '../../widgets/app_icon.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../models/watch_session.dart';
@@ -95,11 +96,11 @@ class _SessionIndicator extends StatelessWidget {
                     width: 16,
                     height: 16,
                     child: PlatformDetector.isTV()
-                        ? const Icon(Symbols.sync_rounded, size: 16, color: Colors.white)
+                        ? const AppIcon(Symbols.sync_rounded, size: 16, color: Colors.white)
                         : const CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
                 else
-                  Icon(Symbols.group, size: 18, color: isHost ? Colors.amber : Colors.white),
+                  AppIcon(Symbols.group_rounded, size: 18, color: isHost ? Colors.amber : Colors.white),
                 const SizedBox(width: 6),
                 Text(
                   '$participantCount',
@@ -143,7 +144,7 @@ class _SessionMenuSheet extends StatelessWidget {
       children: [
         BottomSheetHeader(
           title: t.watchTogether.title,
-          icon: Symbols.group,
+          icon: Symbols.group_rounded,
           iconColor: theme.colorScheme.primary,
           action: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -197,7 +198,7 @@ class _SessionMenuSheet extends StatelessWidget {
                             style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace', fontWeight: .bold),
                           ),
                           const SizedBox(width: 8),
-                          Icon(Symbols.content_copy_rounded, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                          AppIcon(Symbols.content_copy_rounded, size: 16, color: theme.colorScheme.onSurfaceVariant),
                         ],
                       ),
                     ),
@@ -215,8 +216,8 @@ class _SessionMenuSheet extends StatelessWidget {
                     backgroundColor: participant.isHost
                         ? theme.colorScheme.primary
                         : theme.colorScheme.surfaceContainerHighest,
-                    child: Icon(
-                      participant.isHost ? Symbols.star : Symbols.person,
+                    child: AppIcon(
+                      participant.isHost ? Symbols.star_rounded : Symbols.person_rounded,
                       color: participant.isHost ? Colors.white : theme.colorScheme.onSurfaceVariant,
                       size: 20,
                     ),
@@ -228,7 +229,7 @@ class _SessionMenuSheet extends StatelessWidget {
                           width: 16,
                           height: 16,
                           child: PlatformDetector.isTV()
-                              ? const Icon(Symbols.hourglass_empty_rounded, size: 16)
+                              ? const AppIcon(Symbols.hourglass_empty_rounded, size: 16)
                               : const CircularProgressIndicator(strokeWidth: 2),
                         )
                       : null,
@@ -239,7 +240,7 @@ class _SessionMenuSheet extends StatelessWidget {
               const Divider(),
               const SizedBox(height: 8),
               FocusableListTile(
-                leading: Icon(Symbols.logout, color: theme.colorScheme.error),
+                leading: AppIcon(Symbols.logout_rounded, color: theme.colorScheme.error),
                 title: Text(
                   provider.isHost ? t.watchTogether.endSession : t.watchTogether.leaveSession,
                   style: TextStyle(color: theme.colorScheme.error),
@@ -430,7 +431,7 @@ class _StatusPill extends StatelessWidget {
                 width: 14,
                 height: 14,
                 child: PlatformDetector.isTV()
-                    ? Icon(tvIcon, size: 14, color: Colors.white)
+                    ? AppIcon(tvIcon, size: 14, color: Colors.white)
                     : const CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
               ),
               const SizedBox(width: 8),

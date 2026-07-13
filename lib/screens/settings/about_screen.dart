@@ -6,6 +6,7 @@ import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/settings_section.dart';
 import '../../i18n/strings.g.dart';
+import '../../theme/mono_tokens.dart';
 import 'licenses_screen.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -39,7 +40,7 @@ class AboutScreen extends StatelessWidget {
                         const SizedBox(height: 8),
                         Text(
                           t.about.versionLabel(version: appVersion),
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: tokens(context).textMuted),
                         ),
                         const SizedBox(height: 24),
                         Text(

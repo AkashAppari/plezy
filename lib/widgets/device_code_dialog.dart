@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../focus/focusable_button.dart';
@@ -7,6 +8,7 @@ import '../focus/focusable_wrapper.dart';
 import '../i18n/strings.g.dart';
 import '../models/trackers/device_code.dart';
 import '../utils/snackbar_helper.dart';
+import 'app_icon.dart';
 import 'dialog_action_button.dart';
 import 'loading_indicator_box.dart';
 
@@ -77,7 +79,7 @@ class DeviceCodeDialog extends StatelessWidget {
               onPressed: _open,
               useBackgroundFocus: true,
               child: FilledButton.icon(
-                icon: const Icon(Icons.open_in_new),
+                icon: const AppIcon(Symbols.open_in_new_rounded),
                 label: Text(t.services.deviceCode.openToActivate(service: serviceName)),
                 onPressed: _open,
               ),

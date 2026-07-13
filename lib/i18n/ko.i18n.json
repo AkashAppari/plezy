@@ -227,6 +227,7 @@
     "creditsPattern": "크레딧 마커 패턴",
     "creditsPatternDescription": "챕터 제목에서 크레딧 마커를 인식하는 정규식 패턴",
     "invalidRegex": "잘못된 정규식",
+    "regex": "정규식",
     "downloads": "다운로드",
     "downloadLocationDescription": "다운로드 콘텐츠 저장 위치 선택",
     "downloadLocationDefault": "기본값 (앱 저장소)",
@@ -336,6 +337,8 @@
     "clearShortcut": "단축키 삭제",
     "noShortcutSet": "설정된 단축키 없음",
     "currentShortcut": "현재 단축키:",
+    "pressToRecord": "단축키를 기록하려면 선택",
+    "recordingShortcut": "지금 단축키를 누르세요",
     "actions": {
       "playPause": "재생/일시정지",
       "volumeUp": "볼륨 높이기",
@@ -434,7 +437,9 @@
     "hue": "색조",
     "saturation": "채도",
     "brightness": "밝기",
-    "hexColor": "16진수 색상"
+    "hexColor": "16진수 색상",
+    "expandText": "텍스트 펼치기",
+    "collapseText": "텍스트 접기"
   },
   "tooltips": {
     "shufflePlay": "무작위 재생",
@@ -534,6 +539,9 @@
     "markedAsWatchedOffline": "시청 완료로 표시됨 (연결 시 동기화됨)",
     "markedAsUnwatchedOffline": "미시청으로 표시됨 (연결 시 동기화됨)",
     "autoRemovedWatchedDownload": "자동 삭제됨: ${title}",
+    "autoRemovedWatchedDownloads": {
+      "other": "시청한 다운로드 ${n}개를 자동 삭제했습니다"
+    },
     "removedFromContinueWatching": "계속 시청 목록에서 제거됨",
     "errorLoading": "오류: ${error}",
     "streamInterrupted": "스트림이 중단되었습니다. 재생을 누르거나 탐색하여 다시 시도하세요.",
@@ -585,6 +593,11 @@
     "backgroundColor": "배경색",
     "position": "위치",
     "assOverride": "ASS 오버라이드",
+    "overrideScale": "크기 조정",
+    "overrideForce": "강제 적용",
+    "overrideStrip": "스타일 제거",
+    "positionTop": "위",
+    "positionBottom": "아래",
     "bold": "굵게",
     "italic": "기울임꼴",
     "renderResolution": "렌더링 해상도",
@@ -710,7 +723,7 @@
     "searchFailed": "검색 실패: ${error}",
     "connectionTimeout": "${context} 로드 중 연결 시간 초과",
     "connectionFailed": "미디어 서버에 연결할 수 없습니다",
-    "failedToLoad": "${context} 로드 실패: ${error}",
+    "unableToLoad": "${context}을(를) 불러올 수 없습니다. 다시 시도하세요.",
     "noClientAvailable": "사용 가능한 클라이언트가 없습니다",
     "pleaseEnterToken": "토큰을 입력해 주세요",
     "invalidToken": "토큰이 유효하지 않습니다",
@@ -965,7 +978,6 @@
     "deleted": "컬렉션 삭제됨",
     "deleteFailed": "컬렉션 삭제 실패",
     "deleteFailedWithError": "컬렉션 삭제 실패: ${error}",
-    "failedToLoadItems": "컬렉션 항목 로드 실패: ${error}",
     "selectCollection": "컬렉션 선택",
     "collectionName": "컬렉션 이름",
     "enterCollectionName": "컬렉션 이름 입력",
@@ -1047,6 +1059,8 @@
     "hostingSession": "세션 호스팅",
     "inSession": "세션 중",
     "sessionCode": "세션 코드",
+    "openSessionControls": "함께 보기 세션 제어 열기",
+    "copySessionCode": "세션 코드 복사",
     "hostControlsPlayback": "호스트 재생 제어",
     "anyoneCanControl": "누구나 재생 제어 가능",
     "hostControls": "호스트 제어",
@@ -1260,6 +1274,8 @@
   },
   "videoSettings": {
     "playbackSpeed": "재생 속도",
+    "normalSpeed": "보통",
+    "sleepTimerActive": "활성 (${duration})",
     "zoom": "확대/축소",
     "sleepTimer": "취침 타이머",
     "audioSync": "오디오 동기화",
@@ -1357,6 +1373,8 @@
     "artworkUpdated": "아트워크가 업데이트되었습니다",
     "artworkUpdateFailed": "아트워크 업데이트 실패",
     "noArtworkAvailable": "사용 가능한 아트워크 없음",
+    "artworkOption": "아트워크 옵션 ${index}",
+    "selectedArtworkOption": "아트워크 옵션 ${index}, 선택됨",
     "notSet": "설정되지 않음",
     "libraryDefault": "라이브러리 기본값",
     "accountDefault": "계정 기본값",
@@ -1484,6 +1502,7 @@
       "title": "${service}에서 Plezy 활성화",
       "body": "${url}을 방문하여 이 코드를 입력하세요:",
       "openToActivate": "활성화하려면 ${service} 열기",
+      "copyCode": "활성화 코드 복사",
       "waitingForAuthorization": "인증을 기다리는 중…",
       "codeCopied": "코드가 복사되었습니다"
     },
@@ -1491,6 +1510,7 @@
       "title": "${service}에 로그인",
       "body": "이 QR 코드를 스캔하거나 아무 기기에서 URL을 여세요.",
       "openToSignIn": "로그인하려면 ${service} 열기",
+      "copyUrl": "로그인 URL 복사",
       "urlCopied": "URL이 복사되었습니다"
     },
     "libraryFilter": {

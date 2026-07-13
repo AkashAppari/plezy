@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 // ignore: depend_on_referenced_packages
 import 'package:shared_preferences_foundation/shared_preferences_foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
@@ -68,6 +69,7 @@ import 'utils/media_server_http_client.dart';
 import 'utils/orientation_helper.dart';
 import 'utils/watch_state_notifier.dart';
 import 'i18n/strings.g.dart';
+import 'widgets/app_icon.dart';
 import 'focus/input_mode_tracker.dart';
 import 'focus/key_event_utils.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -678,7 +680,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         if (deleted.isNotEmpty) {
           final msg = deleted.length == 1
               ? t.messages.autoRemovedWatchedDownload(title: deleted.first)
-              : t.messages.autoRemovedWatchedDownload(title: '${deleted.length} items');
+              : t.messages.autoRemovedWatchedDownloads(n: deleted.length);
           showMainSnackBar(msg);
         }
       }
@@ -1404,9 +1406,9 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
             child: CircularProgressIndicator(strokeWidth: 1.5, color: coralColor),
           );
         } else if (connected) {
-          statusIcon = const Icon(Icons.check_circle, size: 14, color: successColor);
+          statusIcon = const AppIcon(Symbols.check_circle_rounded, size: 14, color: successColor);
         } else {
-          statusIcon = const Icon(Icons.cancel, size: 14, color: failColor);
+          statusIcon = const AppIcon(Symbols.cancel_rounded, size: 14, color: failColor);
         }
         return Padding(
           key: ValueKey(entry.key),

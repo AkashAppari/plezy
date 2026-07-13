@@ -184,10 +184,10 @@ String formatRating(double value) =>
 final RegExp _trailingZeroPattern = RegExp(r'\.?0+$');
 
 /// Format a playback rate for display (e.g. 1.25 → "1.25x", 2.0 → "2x").
-/// When [normalAtOne] is true, 1.0 renders as "Normal" for menu labels;
-/// the in-player pill passes false to keep a numeric indicator.
+/// When [normalAtOne] is true, 1.0 renders with the localized normal-speed
+/// label for menus; the in-player pill passes false to keep a numeric indicator.
 String formatPlaybackRate(double rate, {bool normalAtOne = false}) {
-  if (normalAtOne && (rate - 1.0).abs() < 0.005) return 'Normal';
+  if (normalAtOne && (rate - 1.0).abs() < 0.005) return t.videoSettings.normalSpeed;
   return '${rate.toStringAsFixed(2).replaceFirst(_trailingZeroPattern, '')}x';
 }
 

@@ -227,6 +227,7 @@
     "creditsPattern": "片尾标记模式",
     "creditsPatternDescription": "用于匹配章节标题中片尾标记的正则表达式",
     "invalidRegex": "无效的正则表达式",
+    "regex": "正则表达式",
     "downloads": "下载",
     "downloadLocationDescription": "选择下载内容的存储位置",
     "downloadLocationDefault": "默认（应用存储）",
@@ -336,6 +337,8 @@
     "clearShortcut": "清除快捷键",
     "noShortcutSet": "未设置快捷键",
     "currentShortcut": "当前快捷键:",
+    "pressToRecord": "选择以录制快捷键",
+    "recordingShortcut": "现在请按下快捷键",
     "actions": {
       "playPause": "播放/暂停",
       "volumeUp": "增大音量",
@@ -434,7 +437,9 @@
     "hue": "色相",
     "saturation": "饱和度",
     "brightness": "亮度",
-    "hexColor": "十六进制颜色"
+    "hexColor": "十六进制颜色",
+    "expandText": "展开文本",
+    "collapseText": "折叠文本"
   },
   "tooltips": {
     "shufflePlay": "随机播放",
@@ -534,6 +539,9 @@
     "markedAsWatchedOffline": "已标记为已观看 (将在联网时同步)",
     "markedAsUnwatchedOffline": "已标记为未观看 (将在联网时同步)",
     "autoRemovedWatchedDownload": "已自动移除: ${title}",
+    "autoRemovedWatchedDownloads": {
+      "other": "已自动移除 ${n} 个看过的下载"
+    },
     "removedFromContinueWatching": "已从继续观看中移除",
     "errorLoading": "错误: ${error}",
     "streamInterrupted": "视频流已中断。按播放键或拖动进度条重试。",
@@ -585,6 +593,11 @@
     "backgroundColor": "背景颜色",
     "position": "位置",
     "assOverride": "ASS 样式覆盖",
+    "overrideScale": "缩放",
+    "overrideForce": "强制",
+    "overrideStrip": "移除样式",
+    "positionTop": "顶部",
+    "positionBottom": "底部",
     "bold": "粗体",
     "italic": "斜体",
     "renderResolution": "渲染分辨率",
@@ -710,7 +723,7 @@
     "searchFailed": "搜索失败: ${error}",
     "connectionTimeout": "加载 ${context} 时连接超时",
     "connectionFailed": "无法连接到媒体服务器",
-    "failedToLoad": "无法加载 ${context}: ${error}",
+    "unableToLoad": "无法加载${context}。请重试。",
     "noClientAvailable": "没有可用客户端",
     "pleaseEnterToken": "请输入一个令牌",
     "invalidToken": "令牌无效",
@@ -965,7 +978,6 @@
     "deleted": "已删除合集",
     "deleteFailed": "删除合集失败",
     "deleteFailedWithError": "删除合集失败：${error}",
-    "failedToLoadItems": "加载合集项目失败：${error}",
     "selectCollection": "选择合集",
     "collectionName": "合集名称",
     "enterCollectionName": "输入合集名称",
@@ -1047,6 +1059,8 @@
     "hostingSession": "主持会话",
     "inSession": "在会话中",
     "sessionCode": "会话代码",
+    "openSessionControls": "打开“一起看”会话控制",
+    "copySessionCode": "复制会话代码",
     "hostControlsPlayback": "主持人控制播放",
     "anyoneCanControl": "任何人都可以控制播放",
     "hostControls": "主持人控制",
@@ -1260,6 +1274,8 @@
   },
   "videoSettings": {
     "playbackSpeed": "播放速度",
+    "normalSpeed": "正常",
+    "sleepTimerActive": "运行中（${duration}）",
     "zoom": "缩放",
     "sleepTimer": "睡眠定时器",
     "audioSync": "音频同步",
@@ -1357,6 +1373,8 @@
     "artworkUpdated": "封面图片已更新",
     "artworkUpdateFailed": "封面图片更新失败",
     "noArtworkAvailable": "没有可用的封面图片",
+    "artworkOption": "封面图片选项 ${index}",
+    "selectedArtworkOption": "封面图片选项 ${index}，已选择",
     "notSet": "未设置",
     "libraryDefault": "媒体库默认",
     "accountDefault": "账户默认",
@@ -1484,6 +1502,7 @@
       "title": "在 ${service} 上激活 Plezy",
       "body": "访问 ${url} 并输入此代码：",
       "openToActivate": "打开 ${service} 以激活",
+      "copyCode": "复制激活代码",
       "waitingForAuthorization": "等待授权…",
       "codeCopied": "代码已复制"
     },
@@ -1491,6 +1510,7 @@
       "title": "登录 ${service}",
       "body": "扫描此二维码，或在任意设备上打开 URL。",
       "openToSignIn": "打开 ${service} 以登录",
+      "copyUrl": "复制登录 URL",
       "urlCopied": "URL 已复制"
     },
     "libraryFilter": {

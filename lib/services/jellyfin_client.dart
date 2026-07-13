@@ -47,6 +47,7 @@ import '../utils/resolution_label.dart';
 import '../utils/track_label_builder.dart';
 import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
+import '../utils/json_utils.dart';
 import '../utils/jellyfin_time.dart';
 import 'jellyfin_auth_header.dart';
 import '../media/download_resolution.dart';
@@ -285,7 +286,7 @@ class JellyfinClient
   @override
   Future<HealthStatus> checkHealth() async {
     try {
-      final response = await _http.get('/Users/Me', timeout: const Duration(seconds: 8));
+      final response = await _http.get('/Users/Me', timeout: MediaServerTimeouts.jellyfinProbe);
       final ok = response.statusCode >= 200 && response.statusCode < 300;
       if (ok) {
         final data = response.data;

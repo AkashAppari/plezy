@@ -337,7 +337,7 @@ class TrackChapterControls extends StatelessWidget {
           buttons.add(
             _buildTrackButton(
               buttonIndex: currentIndex,
-              icon: Symbols.picture_in_picture_alt,
+              icon: Symbols.picture_in_picture_alt_rounded,
               tooltip: t.videoControls.pipButton,
               semanticLabel: t.videoControls.pipButton,
               isMobile: isMobile,

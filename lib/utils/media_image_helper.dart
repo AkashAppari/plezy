@@ -1,7 +1,15 @@
+import 'dart:convert';
 import 'dart:math';
+
+import 'package:cached_network_image_ce/cached_network_image.dart';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/widgets.dart';
+
+import '../media/media_item.dart';
 import '../media/media_server_client.dart';
 import '../services/device_performance.dart';
+import '../services/image_cache_service.dart';
+import '../services/settings_service.dart' show EpisodePosterMode;
 import 'platform_detector.dart';
 
 /// Image types for different transcoding strategies
@@ -10,6 +18,7 @@ enum ImageType {
   art, // Wide background art
   thumb, // 16:9 episode thumbnails
   logo, // Variable ratio clear logos
+  heroLogo, // Large hero clear logos
   avatar, // Square-ish user avatars
   square, // 1:1 music artwork (albums, artists, tracks)
 }
@@ -107,6 +116,7 @@ class MediaImageHelper {
         return roundDimensions(coverWidth, coverHeight);
 
       case ImageType.logo:
+      case ImageType.heroLogo:
         final logoWidth = targetWidth;
         final logoHeight = targetHeight;
         return roundDimensions(logoWidth, logoHeight);
@@ -243,6 +253,7 @@ class MediaImageHelper {
       ImageType.art when DevicePerformance.isReduced => (_reducedMaxArtWidth, _reducedMaxArtHeight),
       ImageType.art => (1920, 1080),
       ImageType.logo => (600, 300),
+      ImageType.heroLogo => (1000, 500),
       ImageType.avatar => (300, 300),
     };
 
@@ -260,6 +271,55 @@ class MediaImageHelper {
     final height = memHeight > 0 ? memHeight : null;
     if (width == null && height == null) return provider;
     return ResizeImage(provider, width: width, height: height, policy: ResizeImagePolicy.fit);
+  }
+
+  /// Selects the decode/transcode shape used by media cards and their
+  /// prefetchers. Keeping this derived from [MediaItem.cardShape] prevents the
+  /// renderer and prefetch pipeline from assigning different cache budgets.
+  static ImageType cardImageType(MediaItem item, EpisodePosterMode episodePosterMode, {bool mixedHubContext = false}) {
+    return switch (item.cardShape(episodePosterMode, mixedHubContext: mixedHubContext)) {
+      CardShape.square => ImageType.square,
+      CardShape.wide => ImageType.thumb,
+      CardShape.poster => ImageType.poster,
+    };
+  }
+
+  /// Creates the final provider for server-hosted artwork.
+  ///
+  /// The disk key deliberately depends only on the fully bucketed URL. Decode
+  /// dimensions belong to Flutter's memory-cache key and must not fragment the
+  /// shared disk cache during small layout changes.
+  static ImageProvider serverArtworkProvider({
+    required String imageUrl,
+    required int memWidth,
+    required int memHeight,
+    String? cacheKey,
+  }) {
+    final provider = CachedNetworkImageProvider(
+      imageUrl,
+      cacheKey: cacheKey ?? _serverArtworkCacheKey(imageUrl),
+      cacheManager: PlexImageCacheManager.instance,
+      headers: const {'User-Agent': 'Plezy'},
+    );
+    return boundedDecode(provider, memWidth: memWidth, memHeight: memHeight);
+  }
+
+  static final _serverArtworkCacheKeys = <String, String>{};
+  static const _serverArtworkCacheKeyLimit = 512;
+
+  static String _serverArtworkCacheKey(String imageUrl) {
+    final cached = _serverArtworkCacheKeys.remove(imageUrl);
+    if (cached != null) {
+      _serverArtworkCacheKeys[imageUrl] = cached;
+      return cached;
+    }
+
+    final key = 'plex_optimized_${sha1.convert(utf8.encode(imageUrl))}';
+    if (_serverArtworkCacheKeys.length >= _serverArtworkCacheKeyLimit) {
+      _serverArtworkCacheKeys.remove(_serverArtworkCacheKeys.keys.first);
+    }
+    _serverArtworkCacheKeys[imageUrl] = key;
+    return key;
   }
 
   /// Determines if an image path is suitable for transcoding

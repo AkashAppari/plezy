@@ -794,6 +794,9 @@ class TranslationsSettingsEn {
 	/// en: 'Invalid regular expression'
 	String get invalidRegex => 'Invalid regular expression';
 
+	/// en: 'Regular expression'
+	String get regex => 'Regular expression';
+
 	/// en: 'Downloads'
 	String get downloads => 'Downloads';
 
@@ -1647,6 +1650,12 @@ class TranslationsMessagesEn {
 	/// en: 'Auto-removed: ${title}'
 	String autoRemovedWatchedDownload({required Object title}) => 'Auto-removed: ${title}';
 
+	/// en: '(one) {Auto-removed ${n} watched download} (other) {Auto-removed ${n} watched downloads}'
+	String autoRemovedWatchedDownloads({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: 'Auto-removed ${n} watched download',
+		other: 'Auto-removed ${n} watched downloads',
+	);
+
 	/// en: 'Removed from Continue Watching'
 	String get removedFromContinueWatching => 'Removed from Continue Watching';
 
@@ -1802,6 +1811,21 @@ class TranslationsSubtitlingStylingEn {
 
 	/// en: 'ASS Override'
 	String get assOverride => 'ASS Override';
+
+	/// en: 'Scale'
+	String get overrideScale => 'Scale';
+
+	/// en: 'Force'
+	String get overrideForce => 'Force';
+
+	/// en: 'Remove styling'
+	String get overrideStrip => 'Remove styling';
+
+	/// en: 'Top'
+	String get positionTop => 'Top';
+
+	/// en: 'Bottom'
+	String get positionBottom => 'Bottom';
 
 	/// en: 'Bold'
 	String get bold => 'Bold';
@@ -2196,8 +2220,8 @@ class TranslationsErrorsEn {
 	/// en: 'Unable to connect to media server'
 	String get connectionFailed => 'Unable to connect to media server';
 
-	/// en: 'Failed to load ${context}: ${error}'
-	String failedToLoad({required Object context, required Object error}) => 'Failed to load ${context}: ${error}';
+	/// en: 'Unable to load ${context}. Please try again.'
+	String unableToLoad({required Object context}) => 'Unable to load ${context}. Please try again.';
 
 	/// en: 'No client available'
 	String get noClientAvailable => 'No client available';
@@ -2785,9 +2809,6 @@ class TranslationsCollectionsEn {
 
 	/// en: 'Failed to delete collection: ${error}'
 	String deleteFailedWithError({required Object error}) => 'Failed to delete collection: ${error}';
-
-	/// en: 'Failed to load collection items: ${error}'
-	String failedToLoadItems({required Object error}) => 'Failed to load collection items: ${error}';
 
 	/// en: 'Select Collection'
 	String get selectCollection => 'Select Collection';
@@ -3492,6 +3513,12 @@ class TranslationsVideoSettingsEn {
 
 	/// en: 'Playback Speed'
 	String get playbackSpeed => 'Playback Speed';
+
+	/// en: 'Normal'
+	String get normalSpeed => 'Normal';
+
+	/// en: 'Active (${duration})'
+	String sleepTimerActive({required Object duration}) => 'Active (${duration})';
 
 	/// en: 'Zoom'
 	String get zoom => 'Zoom';
@@ -5167,6 +5194,7 @@ extension on Translations {
 			'settings.creditsPattern' => 'Credits Marker Pattern',
 			'settings.creditsPatternDescription' => 'Regex pattern to match credits markers in chapter titles',
 			'settings.invalidRegex' => 'Invalid regular expression',
+			'settings.regex' => 'Regular expression',
 			'settings.downloads' => 'Downloads',
 			'settings.downloadLocationDescription' => 'Choose where to store downloaded content',
 			'settings.downloadLocationDefault' => 'Default (App Storage)',
@@ -5455,15 +5483,16 @@ extension on Translations {
 			'messages.markedAsWatchedOffline' => 'Marked as watched (will sync when online)',
 			'messages.markedAsUnwatchedOffline' => 'Marked as unwatched (will sync when online)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Auto-removed: ${title}',
+			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Auto-removed ${n} watched download', other: 'Auto-removed ${n} watched downloads', ), 
 			'messages.removedFromContinueWatching' => 'Removed from Continue Watching',
 			'messages.errorLoading' => ({required Object error}) => 'Error: ${error}',
 			'messages.streamInterrupted' => 'The stream was interrupted. Press play or seek to retry.',
 			'messages.liveStreamInterrupted' => 'The live stream was interrupted. Press play to retry.',
 			'messages.fileInfoNotAvailable' => 'File information not available',
-			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Error loading file info: ${error}',
-			'messages.errorLoadingSeries' => 'Error loading series',
 			_ => null,
 		} ?? switch (path) {
+			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Error loading file info: ${error}',
+			'messages.errorLoadingSeries' => 'Error loading series',
 			'messages.musicNotSupported' => 'Music playback is not yet supported',
 			'messages.noDescriptionAvailable' => 'No description available',
 			'messages.noProfilesAvailable' => 'No profiles available',
@@ -5506,6 +5535,11 @@ extension on Translations {
 			'subtitlingStyling.backgroundColor' => 'Background Color',
 			'subtitlingStyling.position' => 'Position',
 			'subtitlingStyling.assOverride' => 'ASS Override',
+			'subtitlingStyling.overrideScale' => 'Scale',
+			'subtitlingStyling.overrideForce' => 'Force',
+			'subtitlingStyling.overrideStrip' => 'Remove styling',
+			'subtitlingStyling.positionTop' => 'Top',
+			'subtitlingStyling.positionBottom' => 'Bottom',
 			'subtitlingStyling.bold' => 'Bold',
 			'subtitlingStyling.italic' => 'Italic',
 			'subtitlingStyling.renderResolution' => 'Render Resolution',
@@ -5619,7 +5653,7 @@ extension on Translations {
 			'errors.searchFailed' => ({required Object error}) => 'Search failed: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => 'Connection timeout while loading ${context}',
 			'errors.connectionFailed' => 'Unable to connect to media server',
-			'errors.failedToLoad' => ({required Object context, required Object error}) => 'Failed to load ${context}: ${error}',
+			'errors.unableToLoad' => ({required Object context}) => 'Unable to load ${context}. Please try again.',
 			'errors.noClientAvailable' => 'No client available',
 			'errors.pleaseEnterToken' => 'Please enter a token',
 			'errors.invalidToken' => 'Invalid token',
@@ -5840,7 +5874,6 @@ extension on Translations {
 			'collections.deleted' => 'Collection deleted',
 			'collections.deleteFailed' => 'Failed to delete collection',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Failed to delete collection: ${error}',
-			'collections.failedToLoadItems' => ({required Object error}) => 'Failed to load collection items: ${error}',
 			'collections.selectCollection' => 'Select Collection',
 			'collections.collectionName' => 'Collection Name',
 			'collections.enterCollectionName' => 'Enter collection name',
@@ -5970,14 +6003,14 @@ extension on Translations {
 			'downloads.manage' => 'Manage',
 			'downloads.tvShows' => 'TV Shows',
 			'downloads.movies' => 'Movies',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.music' => 'Music',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} tracks queued for download',
 			'downloads.noDownloads' => 'No downloads yet',
 			'downloads.noDownloadsDescription' => 'Downloaded content will appear here for offline viewing',
 			'downloads.downloadNow' => 'Download',
 			'downloads.deleteDownload' => 'Delete download',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryDownload' => 'Retry download',
 			'downloads.downloadQueued' => 'Download queued',
 			'downloads.downloadResumed' => 'Download resumed',
@@ -6115,6 +6148,8 @@ extension on Translations {
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Connection lost after ${attempts} attempts',
 			'companionRemote.errors.connectionLost' => 'Connection lost',
 			'videoSettings.playbackSpeed' => 'Playback Speed',
+			'videoSettings.normalSpeed' => 'Normal',
+			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Active (${duration})',
 			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Sleep Timer',
 			'videoSettings.audioSync' => 'Audio Sync',

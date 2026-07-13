@@ -199,13 +199,6 @@ class AppearanceSettingsScreen extends StatelessWidget {
     );
   }
 
-  String _themeModeLabel(settings.ThemeMode mode) => switch (mode) {
-    settings.ThemeMode.system => t.settings.systemTheme,
-    settings.ThemeMode.light => t.settings.lightTheme,
-    settings.ThemeMode.dark => t.settings.darkTheme,
-    settings.ThemeMode.oled => t.settings.oledTheme,
-  };
-
   // Writes the pref directly; ThemeProvider listens to the pref's listenable
   // and applies the change live. The Consumer only feeds the dynamic icon.
   Widget _themeSelector() {
@@ -215,8 +208,8 @@ class AppearanceSettingsScreen extends StatelessWidget {
           pref: SettingsService.themeMode,
           icon: themeProvider.themeModeIcon,
           title: t.settings.theme,
-          subtitleBuilder: _themeModeLabel,
-          options: settings.ThemeMode.values.map((m) => DialogOption(value: m, title: _themeModeLabel(m))).toList(),
+          subtitleBuilder: themeModeLabel,
+          options: settings.ThemeMode.values.map((m) => DialogOption(value: m, title: themeModeLabel(m))).toList(),
           decode: (v) => v,
           encode: (v) => v,
         );

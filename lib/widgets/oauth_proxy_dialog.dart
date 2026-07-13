@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -8,6 +9,7 @@ import '../focus/focusable_button.dart';
 import '../focus/focusable_wrapper.dart';
 import '../services/trackers/oauth_proxy_client.dart';
 import '../utils/snackbar_helper.dart';
+import 'app_icon.dart';
 import 'dialog_action_button.dart';
 import 'loading_indicator_box.dart';
 
@@ -86,7 +88,7 @@ class OAuthProxyDialog extends StatelessWidget {
               onPressed: _open,
               useBackgroundFocus: true,
               child: FilledButton.icon(
-                icon: const Icon(Icons.open_in_new),
+                icon: const AppIcon(Symbols.open_in_new_rounded),
                 label: Text(t.services.oauthProxy.openToSignIn(service: serviceName)),
                 onPressed: _open,
               ),

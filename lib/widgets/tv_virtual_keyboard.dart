@@ -7,6 +7,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../focus/dpad_navigator.dart';
 import '../i18n/strings.g.dart';
 import '../utils/platform_detector.dart';
+import 'app_icon.dart';
 import 'clickable_cursor.dart';
 import 'listenable_selector.dart';
 
@@ -220,12 +221,12 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> {
         _characters('456'),
         _characters('789'),
         [
-          _TvKey.action(t.common.clear, _TvKeyType.clear, icon: Icons.clear_all_rounded),
+          _TvKey.action(t.common.clear, _TvKeyType.clear, icon: Symbols.clear_all_rounded),
           const _TvKey.character('0'),
-          const _TvKey.action('Del', _TvKeyType.backspace, icon: Icons.backspace_outlined),
+          const _TvKey.action('Del', _TvKeyType.backspace, icon: Symbols.backspace_rounded),
         ],
         [
-          _TvKey.action(t.common.cancel, _TvKeyType.cancel, icon: Icons.close_rounded),
+          _TvKey.action(t.common.cancel, _TvKeyType.cancel, icon: Symbols.close_rounded),
           const _TvKey.character('.'),
           _TvKey.action(_doneLabel(), _TvKeyType.done, icon: _doneIcon()),
         ],
@@ -233,7 +234,7 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> {
     }
 
     final actionRow = [
-      const _TvKey.action('Space', _TvKeyType.space, icon: Icons.space_bar_rounded),
+      const _TvKey.action('Space', _TvKeyType.space, icon: Symbols.space_bar_rounded),
       const _TvKey.character('@'),
       const _TvKey.character('#'),
       const _TvKey.character('_'),
@@ -241,10 +242,10 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> {
       const _TvKey.character(':'),
       const _TvKey.character('='),
       _isMultiline
-          ? const _TvKey.action('Line', _TvKeyType.newline, icon: Icons.keyboard_return_rounded)
+          ? const _TvKey.action('Line', _TvKeyType.newline, icon: Symbols.keyboard_return_rounded)
           : const _TvKey.character('&'),
-      _TvKey.action(t.common.clear, _TvKeyType.clear, icon: Icons.clear_all_rounded),
-      _TvKey.action(t.common.cancel, _TvKeyType.cancel, icon: Icons.close_rounded),
+      _TvKey.action(t.common.clear, _TvKeyType.clear, icon: Symbols.clear_all_rounded),
+      _TvKey.action(t.common.cancel, _TvKeyType.cancel, icon: Symbols.close_rounded),
       _TvKey.action(_doneLabel(), _TvKeyType.done, icon: _doneIcon()),
     ];
 
@@ -253,10 +254,10 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> {
       [const _TvKey.spacer(), ..._characters('qwertyuiop'), const _TvKey.spacer()],
       [const _TvKey.spacer(), ..._characters('asdfghjkl'), const _TvKey.character("'"), const _TvKey.spacer()],
       [
-        const _TvKey.action('', _TvKeyType.symbols, icon: Icons.functions_rounded),
-        _TvKey.action('Shift', _TvKeyType.shift, icon: Symbols.shift),
+        const _TvKey.action('', _TvKeyType.symbols, icon: Symbols.functions_rounded),
+        _TvKey.action('Shift', _TvKeyType.shift, icon: Symbols.shift_rounded),
         ..._characters('zxcvbnm.-'),
-        const _TvKey.action('Del', _TvKeyType.backspace, icon: Icons.backspace_outlined),
+        const _TvKey.action('Del', _TvKeyType.backspace, icon: Symbols.backspace_rounded),
       ],
       [const _TvKey.spacer(), ...actionRow],
     ];
@@ -267,7 +268,7 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> {
       [
         const _TvKey.action('ABC', _TvKeyType.symbols),
         ..._symbols(['!', '?', r'$', '%', '^', '*', '+', '=', '~']),
-        const _TvKey.action('Del', _TvKeyType.backspace, icon: Icons.backspace_outlined),
+        const _TvKey.action('Del', _TvKeyType.backspace, icon: Symbols.backspace_rounded),
         const _TvKey.spacer(),
       ],
       [
@@ -285,13 +286,13 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> {
       [
         const _TvKey.spacer(),
         const _TvKey.spacer(),
-        const _TvKey.action('Space', _TvKeyType.space, icon: Icons.space_bar_rounded),
+        const _TvKey.action('Space', _TvKeyType.space, icon: Symbols.space_bar_rounded),
         const _TvKey.character('@'),
         const _TvKey.character('#'),
         const _TvKey.character('_'),
         const _TvKey.character('/'),
-        _TvKey.action(t.common.clear, _TvKeyType.clear, icon: Icons.clear_all_rounded),
-        _TvKey.action(t.common.cancel, _TvKeyType.cancel, icon: Icons.close_rounded),
+        _TvKey.action(t.common.clear, _TvKeyType.clear, icon: Symbols.clear_all_rounded),
+        _TvKey.action(t.common.cancel, _TvKeyType.cancel, icon: Symbols.close_rounded),
         _TvKey.action(_doneLabel(), _TvKeyType.done, icon: _doneIcon()),
         const _TvKey.spacer(),
         const _TvKey.spacer(),
@@ -330,13 +331,13 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> {
   IconData _doneIcon() {
     switch (widget.textInputAction) {
       case TextInputAction.search:
-        return Icons.search_rounded;
+        return Symbols.search_rounded;
       case TextInputAction.next:
-        return Icons.arrow_forward_rounded;
+        return Symbols.arrow_forward_rounded;
       case TextInputAction.go:
-        return Icons.keyboard_double_arrow_right_rounded;
+        return Symbols.keyboard_double_arrow_right_rounded;
       default:
-        return Icons.check_rounded;
+        return Symbols.check_rounded;
     }
   }
 
@@ -813,7 +814,7 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> {
   Widget _buildKeyContent(BuildContext context, _TvKey key, Color foreground, _TvKeyboardMetrics metrics) {
     final icon = key.icon;
     if (icon != null) {
-      return Icon(
+      return AppIcon(
         icon,
         color: foreground,
         size: key.type == _TvKeyType.space ? metrics.iconSize * 1.12 : metrics.iconSize,

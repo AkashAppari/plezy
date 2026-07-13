@@ -3,6 +3,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../focus/focusable_button.dart';
+import '../../i18n/strings.g.dart';
 
 /// Base widget for displaying state messages (empty, error, etc.)
 /// Provides a consistent UI pattern for showing icons, messages, and actions
@@ -43,6 +44,12 @@ class StateMessageWidget extends StatelessWidget {
   final VoidCallback? onActionNavigateRight;
   final VoidCallback? onActionBack;
 
+  /// Whether the action button should request focus when it appears.
+  final bool actionAutofocus;
+
+  /// Whether the action button uses a background focus indicator.
+  final bool actionUseBackgroundFocus;
+
   const StateMessageWidget({
     super.key,
     required this.message,
@@ -61,6 +68,8 @@ class StateMessageWidget extends StatelessWidget {
     this.onActionNavigateRight,
     this.onActionBack,
     this.actionIcon,
+    this.actionAutofocus = false,
+    this.actionUseBackgroundFocus = false,
   });
 
   @override
@@ -106,6 +115,8 @@ class StateMessageWidget extends StatelessWidget {
                 onNavigateRight: onActionNavigateRight,
                 onBack: onActionBack,
                 onPressed: onAction,
+                autofocus: actionAutofocus,
+                useBackgroundFocus: actionUseBackgroundFocus,
                 child: FilledButton.icon(
                   onPressed: onAction,
                   icon: AppIcon(actionIcon ?? Symbols.refresh_rounded, fill: 1),
@@ -197,6 +208,12 @@ class ErrorStateWidget extends StatelessWidget {
   /// Optional callback for retry action
   final VoidCallback? onRetry;
 
+  /// Whether the retry action should request focus when it appears.
+  final bool actionAutofocus;
+
+  /// Whether the retry action uses a background focus indicator.
+  final bool actionUseBackgroundFocus;
+
   /// Optional label for the retry button
   final String? retryLabel;
   final FocusNode? actionFocusNode;
@@ -218,6 +235,8 @@ class ErrorStateWidget extends StatelessWidget {
     this.onActionNavigateLeft,
     this.onActionNavigateRight,
     this.onActionBack,
+    this.actionAutofocus = false,
+    this.actionUseBackgroundFocus = false,
   });
 
   @override
@@ -228,7 +247,7 @@ class ErrorStateWidget extends StatelessWidget {
       iconColor: Theme.of(context).colorScheme.error,
       textColor: Theme.of(context).colorScheme.error,
       onAction: onRetry,
-      actionLabel: retryLabel ?? 'Retry',
+      actionLabel: retryLabel ?? t.common.retry,
       actionIcon: Symbols.refresh_rounded,
       actionFocusNode: actionFocusNode,
       onActionNavigateUp: onActionNavigateUp,
@@ -236,6 +255,8 @@ class ErrorStateWidget extends StatelessWidget {
       onActionNavigateLeft: onActionNavigateLeft,
       onActionNavigateRight: onActionNavigateRight,
       onActionBack: onActionBack,
+      actionAutofocus: actionAutofocus,
+      actionUseBackgroundFocus: actionUseBackgroundFocus,
     );
   }
 }

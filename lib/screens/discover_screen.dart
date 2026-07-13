@@ -9,7 +9,6 @@ import '../widgets/server_activities_button.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../focus/focusable_action_bar.dart';
-import '../focus/focusable_button.dart';
 import '../focus/hub_vertical_navigation.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
@@ -57,6 +56,7 @@ import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
 import '../theme/mono_tokens.dart';
 import 'libraries/content_state_builder.dart';
+import 'libraries/state_messages.dart';
 import 'main_screen.dart';
 import 'settings/settings_screen.dart';
 import '../watch_together/watch_together.dart';
@@ -87,10 +87,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   bool get _hasMoreContinueWatching => _discover.hasMoreContinueWatching;
   bool get _isLoading => _discover.isLoading;
   bool get _areHubsLoading => _discover.areHubsLoading;
-  String? get _errorMessage {
-    final raw = _discover.errorMessage;
-    return raw == null ? null : t.errors.failedToLoad(context: t.discover.title, error: raw);
-  }
+  String? get _errorMessage => _discover.errorMessage == null ? null : t.errors.unableToLoad(context: t.discover.title);
 
   bool _switchingProfile = false;
   final PageController _heroController = PageController();
@@ -1115,19 +1112,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     ),
 
                 if (_onDeck.isEmpty && _hubs.isEmpty && !_areHubsLoading)
-                  SliverFillRemaining(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: .center,
-                        children: [
-                          const AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: Colors.grey),
-                          const SizedBox(height: 16),
-                          Text(t.discover.noContentAvailable),
-                          const SizedBox(height: 8),
-                          Text(t.discover.addMediaToLibraries, style: const TextStyle(color: Colors.grey)),
-                        ],
-                      ),
-                    ),
+                  SliverEmptyState(
+                    message: t.discover.noContentAvailable,
+                    subtitle: t.discover.addMediaToLibraries,
+                    icon: Symbols.movie_rounded,
                   ),
 
                 SliverToBoxAdapter(child: SizedBox(height: 24 + bottomPadding)),
@@ -1195,35 +1183,18 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         children: [
           if (_isLoading || (_areHubsLoading && browseHubs.isEmpty)) const Center(child: CircularProgressIndicator()),
           if (_errorMessage != null)
-            Center(
-              child: Column(
-                mainAxisSize: .min,
-                children: [
-                  const AppIcon(Symbols.error_outline_rounded, fill: 1, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  Text(_errorMessage!),
-                  const SizedBox(height: 16),
-                  FocusableButton(
-                    autofocus: true,
-                    onPressed: _discover.load,
-                    useBackgroundFocus: true,
-                    child: FilledButton(onPressed: _discover.load, child: Text(t.common.retry)),
-                  ),
-                ],
-              ),
+            ErrorStateWidget(
+              message: _errorMessage!,
+              icon: Symbols.error_outline_rounded,
+              onRetry: _discover.load,
+              actionAutofocus: true,
+              actionUseBackgroundFocus: true,
             ),
           if (!_isLoading && _errorMessage == null && browseHubs.isEmpty && !_areHubsLoading)
-            Center(
-              child: Column(
-                mainAxisAlignment: .center,
-                children: [
-                  const AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  Text(t.discover.noContentAvailable),
-                  const SizedBox(height: 8),
-                  Text(t.discover.addMediaToLibraries, style: const TextStyle(color: Colors.grey)),
-                ],
-              ),
+            EmptyStateWidget(
+              message: t.discover.noContentAvailable,
+              subtitle: t.discover.addMediaToLibraries,
+              icon: Symbols.movie_rounded,
             ),
           if (browseHubs.isNotEmpty)
             Positioned(
@@ -1550,13 +1521,20 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               child: Builder(
                                 builder: (context) {
                                   final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+                                  final targetWidth = (heroLogoWidth * dpr).round();
+                                  final targetHeight = (heroLogoHeight * dpr).round();
+                                  final (memCacheWidth, memCacheHeight) = MediaImageHelper.getMemCacheDimensions(
+                                    displayWidth: targetWidth,
+                                    displayHeight: targetHeight,
+                                    imageType: ImageType.heroLogo,
+                                  );
                                   final logoUrl = MediaImageHelper.getOptimizedImageUrl(
                                     client: heroClient,
                                     thumbPath: heroItem.clearLogoPath,
                                     maxWidth: heroLogoWidth,
                                     maxHeight: heroLogoHeight,
                                     devicePixelRatio: dpr,
-                                    imageType: ImageType.logo,
+                                    imageType: ImageType.heroLogo,
                                   );
 
                                   return blurArtwork(
@@ -1565,7 +1543,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                       cacheManager: PlexImageCacheManager.instance,
                                       filterQuality: FilterQuality.medium,
                                       fit: BoxFit.contain,
-                                      memCacheWidth: (heroLogoWidth * dpr).clamp(200, isTv ? 1000 : 800).round(),
+                                      memCacheWidth: memCacheWidth,
+                                      memCacheHeight: memCacheHeight,
                                       alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
                                       placeholder: (context, url) => const SizedBox.shrink(),
                                       errorBuilder: (context, error, stackTrace) {

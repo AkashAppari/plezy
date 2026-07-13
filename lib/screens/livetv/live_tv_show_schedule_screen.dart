@@ -122,6 +122,7 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen>
       child: Builder(
         builder: (hostContext) => FocusedScrollScaffold(
           title: Text(widget.showTitle),
+          focusableAppBarActions: true,
           actions: showRecord
               ? [
                   FocusableActionBar(

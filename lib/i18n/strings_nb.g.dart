@@ -358,6 +358,7 @@ class _TranslationsSettingsNb extends TranslationsSettingsEn {
 	@override String get creditsPattern => 'Rulletekstmarkørmønster';
 	@override String get creditsPatternDescription => 'Regulært uttrykk for å gjenkjenne rulletekstmarkører i kapitteltitler';
 	@override String get invalidRegex => 'Ugyldig regulært uttrykk';
+	@override String get regex => 'Regulært uttrykk';
 	@override String get downloads => 'Nedlastinger';
 	@override String get downloadLocationDescription => 'Velg hvor nedlastet innhold skal lagres';
 	@override String get downloadLocationDefault => 'Standard (App-lagring)';
@@ -481,6 +482,8 @@ class _TranslationsHotkeysNb extends TranslationsHotkeysEn {
 	@override String get clearShortcut => 'Fjern snarvei';
 	@override String get noShortcutSet => 'Ingen snarvei satt';
 	@override String get currentShortcut => 'Gjeldende snarvei:';
+	@override String get pressToRecord => 'Velg for å registrere en snarvei';
+	@override String get recordingShortcut => 'Trykk på snarveien nå';
 	@override late final _TranslationsHotkeysActionsNb actions = _TranslationsHotkeysActionsNb._(_root);
 }
 
@@ -582,6 +585,8 @@ class _TranslationsAccessibilityNb extends TranslationsAccessibilityEn {
 	@override String get saturation => 'Metning';
 	@override String get brightness => 'Lysstyrke';
 	@override String get hexColor => 'Heksadesimal farge';
+	@override String get expandText => 'Utvid tekst';
+	@override String get collapseText => 'Fold sammen tekst';
 }
 
 // Path: tooltips
@@ -693,6 +698,10 @@ class _TranslationsMessagesNb extends TranslationsMessagesEn {
 	@override String get markedAsWatchedOffline => 'Merket som sett (synkroniseres når tilkoblet)';
 	@override String get markedAsUnwatchedOffline => 'Merket som usett (synkroniseres når tilkoblet)';
 	@override String autoRemovedWatchedDownload({required Object title}) => 'Automatisk fjernet: ${title}';
+	@override String autoRemovedWatchedDownloads({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nb'))(n,
+		one: 'Fjernet automatisk ${n} sett nedlasting',
+		other: 'Fjernet automatisk ${n} sette nedlastinger',
+	);
 	@override String get removedFromContinueWatching => 'Fjernet fra Fortsett å se';
 	@override String errorLoading({required Object error}) => 'Feil: ${error}';
 	@override String get streamInterrupted => 'Avspillingen ble avbrutt. Trykk på Spill av eller spol for å prøve på nytt.';
@@ -751,6 +760,11 @@ class _TranslationsSubtitlingStylingNb extends TranslationsSubtitlingStylingEn {
 	@override String get backgroundColor => 'Bakgrunnsfarge';
 	@override String get position => 'Posisjon';
 	@override String get assOverride => 'ASS-overstyring';
+	@override String get overrideScale => 'Skaler';
+	@override String get overrideForce => 'Tving';
+	@override String get overrideStrip => 'Fjern formatering';
+	@override String get positionTop => 'Øverst';
+	@override String get positionBottom => 'Nederst';
 	@override String get bold => 'Fet';
 	@override String get italic => 'Kursiv';
 	@override String get renderResolution => 'Gjengivelsesoppløsning';
@@ -918,7 +932,7 @@ class _TranslationsErrorsNb extends TranslationsErrorsEn {
 	@override String searchFailed({required Object error}) => 'Søk mislyktes: ${error}';
 	@override String connectionTimeout({required Object context}) => 'Tidsavbrudd ved lasting av ${context}';
 	@override String get connectionFailed => 'Kan ikke koble til medieserver';
-	@override String failedToLoad({required Object context, required Object error}) => 'Kunne ikke laste ${context}: ${error}';
+	@override String unableToLoad({required Object context}) => 'Kunne ikke laste ${context}. Prøv igjen.';
 	@override String get noClientAvailable => 'Ingen klient tilgjengelig';
 	@override String get pleaseEnterToken => 'Vennligst skriv inn et token';
 	@override String get invalidToken => 'Ugyldig token';
@@ -1180,7 +1194,6 @@ class _TranslationsCollectionsNb extends TranslationsCollectionsEn {
 	@override String get deleted => 'Samling slettet';
 	@override String get deleteFailed => 'Kunne ikke slette samling';
 	@override String deleteFailedWithError({required Object error}) => 'Kunne ikke slette samling: ${error}';
-	@override String failedToLoadItems({required Object error}) => 'Kunne ikke laste samlingselementer: ${error}';
 	@override String get selectCollection => 'Velg samling';
 	@override String get collectionName => 'Samlingsnavn';
 	@override String get enterCollectionName => 'Skriv inn samlingsnavn';
@@ -1284,6 +1297,8 @@ class _TranslationsWatchTogetherNb extends TranslationsWatchTogetherEn {
 	@override String get hostingSession => 'Er vert for økt';
 	@override String get inSession => 'I økt';
 	@override String get sessionCode => 'Øktkode';
+	@override String get openSessionControls => 'Åpne øktkontroller for Se sammen';
+	@override String get copySessionCode => 'Kopier øktkode';
 	@override String get hostControlsPlayback => 'Verten kontrollerer avspilling';
 	@override String get anyoneCanControl => 'Alle kan kontrollere avspilling';
 	@override String get hostControls => 'Vertskontroll';
@@ -1460,6 +1475,8 @@ class _TranslationsVideoSettingsNb extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => 'Avspillingshastighet';
+	@override String get normalSpeed => 'Normal';
+	@override String sleepTimerActive({required Object duration}) => 'Aktiv (${duration})';
 	@override String get zoom => 'Zoom';
 	@override String get sleepTimer => 'Søvntimer';
 	@override String get audioSync => 'Lydsynkronisering';
@@ -1578,6 +1595,8 @@ class _TranslationsMetadataEditNb extends TranslationsMetadataEditEn {
 	@override String get artworkUpdated => 'Kunstverk oppdatert';
 	@override String get artworkUpdateFailed => 'Kunne ikke oppdatere kunstverk';
 	@override String get noArtworkAvailable => 'Ingen kunstverk tilgjengelig';
+	@override String artworkOption({required Object index}) => 'Alternativ for kunstverk ${index}';
+	@override String selectedArtworkOption({required Object index}) => 'Alternativ for kunstverk ${index}, valgt';
 	@override String get notSet => 'Ikke angitt';
 	@override String get libraryDefault => 'Bibliotekstandard';
 	@override String get accountDefault => 'Kontostandard';
@@ -2055,6 +2074,7 @@ class _TranslationsServicesDeviceCodeNb extends TranslationsServicesDeviceCodeEn
 	@override String title({required Object service}) => 'Aktiver Plezy på ${service}';
 	@override String body({required Object url}) => 'Besøk ${url} og skriv inn denne koden:';
 	@override String openToActivate({required Object service}) => 'Åpne ${service} for å aktivere';
+	@override String get copyCode => 'Kopier aktiveringskode';
 	@override String get waitingForAuthorization => 'Venter på godkjenning…';
 	@override String get codeCopied => 'Kode kopiert';
 }
@@ -2069,6 +2089,7 @@ class _TranslationsServicesOauthProxyNb extends TranslationsServicesOauthProxyEn
 	@override String title({required Object service}) => 'Logg inn på ${service}';
 	@override String get body => 'Skann denne QR-koden eller åpne URL-en på en enhet.';
 	@override String openToSignIn({required Object service}) => 'Åpne ${service} for å logge inn';
+	@override String get copyUrl => 'Kopier URL for pålogging';
 	@override String get urlCopied => 'URL kopiert';
 }
 
@@ -2318,6 +2339,7 @@ extension on TranslationsNb {
 			'settings.creditsPattern' => 'Rulletekstmarkørmønster',
 			'settings.creditsPatternDescription' => 'Regulært uttrykk for å gjenkjenne rulletekstmarkører i kapitteltitler',
 			'settings.invalidRegex' => 'Ugyldig regulært uttrykk',
+			'settings.regex' => 'Regulært uttrykk',
 			'settings.downloads' => 'Nedlastinger',
 			'settings.downloadLocationDescription' => 'Velg hvor nedlastet innhold skal lagres',
 			'settings.downloadLocationDefault' => 'Standard (App-lagring)',
@@ -2423,6 +2445,8 @@ extension on TranslationsNb {
 			'hotkeys.clearShortcut' => 'Fjern snarvei',
 			'hotkeys.noShortcutSet' => 'Ingen snarvei satt',
 			'hotkeys.currentShortcut' => 'Gjeldende snarvei:',
+			'hotkeys.pressToRecord' => 'Velg for å registrere en snarvei',
+			'hotkeys.recordingShortcut' => 'Trykk på snarveien nå',
 			'hotkeys.actions.playPause' => 'Spill av/Pause',
 			'hotkeys.actions.volumeUp' => 'Volum opp',
 			'hotkeys.actions.volumeDown' => 'Volum ned',
@@ -2512,6 +2536,8 @@ extension on TranslationsNb {
 			'accessibility.saturation' => 'Metning',
 			'accessibility.brightness' => 'Lysstyrke',
 			'accessibility.hexColor' => 'Heksadesimal farge',
+			'accessibility.expandText' => 'Utvid tekst',
+			'accessibility.collapseText' => 'Fold sammen tekst',
 			'tooltips.shufflePlay' => 'Tilfeldig avspilling',
 			'tooltips.playTrailer' => 'Spill trailer',
 			'tooltips.markAsWatched' => 'Merk som sett',
@@ -2602,19 +2628,20 @@ extension on TranslationsNb {
 			'messages.markedAsWatchedOffline' => 'Merket som sett (synkroniseres når tilkoblet)',
 			'messages.markedAsUnwatchedOffline' => 'Merket som usett (synkroniseres når tilkoblet)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatisk fjernet: ${title}',
+			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nb'))(n, one: 'Fjernet automatisk ${n} sett nedlasting', other: 'Fjernet automatisk ${n} sette nedlastinger', ), 
 			'messages.removedFromContinueWatching' => 'Fjernet fra Fortsett å se',
 			'messages.errorLoading' => ({required Object error}) => 'Feil: ${error}',
 			'messages.streamInterrupted' => 'Avspillingen ble avbrutt. Trykk på Spill av eller spol for å prøve på nytt.',
 			'messages.liveStreamInterrupted' => 'Direktesendingen ble avbrutt. Trykk på Spill av for å prøve på nytt.',
 			'messages.fileInfoNotAvailable' => 'Filinformasjon ikke tilgjengelig',
+			_ => null,
+		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Feil ved lasting av filinformasjon: ${error}',
 			'messages.errorLoadingSeries' => 'Feil ved lasting av serie',
 			'messages.musicNotSupported' => 'Musikkavspilling støttes ikke ennå',
 			'messages.noDescriptionAvailable' => 'Ingen beskrivelse tilgjengelig',
 			'messages.noProfilesAvailable' => 'Ingen profiler tilgjengelige',
 			'messages.contactAdminForProfiles' => 'Kontakt serveradministratoren din for å legge til profiler',
-			_ => null,
-		} ?? switch (path) {
 			'messages.unableToDetermineLibrarySection' => 'Kan ikke fastslå bibliotekseksjonen for dette elementet',
 			'messages.logsCleared' => 'Logger tømt',
 			'messages.logsCopied' => 'Logger kopiert til utklippstavle',
@@ -2653,6 +2680,11 @@ extension on TranslationsNb {
 			'subtitlingStyling.backgroundColor' => 'Bakgrunnsfarge',
 			'subtitlingStyling.position' => 'Posisjon',
 			'subtitlingStyling.assOverride' => 'ASS-overstyring',
+			'subtitlingStyling.overrideScale' => 'Skaler',
+			'subtitlingStyling.overrideForce' => 'Tving',
+			'subtitlingStyling.overrideStrip' => 'Fjern formatering',
+			'subtitlingStyling.positionTop' => 'Øverst',
+			'subtitlingStyling.positionBottom' => 'Nederst',
 			'subtitlingStyling.bold' => 'Fet',
 			'subtitlingStyling.italic' => 'Kursiv',
 			'subtitlingStyling.renderResolution' => 'Gjengivelsesoppløsning',
@@ -2766,7 +2798,7 @@ extension on TranslationsNb {
 			'errors.searchFailed' => ({required Object error}) => 'Søk mislyktes: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => 'Tidsavbrudd ved lasting av ${context}',
 			'errors.connectionFailed' => 'Kan ikke koble til medieserver',
-			'errors.failedToLoad' => ({required Object context, required Object error}) => 'Kunne ikke laste ${context}: ${error}',
+			'errors.unableToLoad' => ({required Object context}) => 'Kunne ikke laste ${context}. Prøv igjen.',
 			'errors.noClientAvailable' => 'Ingen klient tilgjengelig',
 			'errors.pleaseEnterToken' => 'Vennligst skriv inn et token',
 			'errors.invalidToken' => 'Ugyldig token',
@@ -2987,7 +3019,6 @@ extension on TranslationsNb {
 			'collections.deleted' => 'Samling slettet',
 			'collections.deleteFailed' => 'Kunne ikke slette samling',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Kunne ikke slette samling: ${error}',
-			'collections.failedToLoadItems' => ({required Object error}) => 'Kunne ikke laste samlingselementer: ${error}',
 			'collections.selectCollection' => 'Velg samling',
 			'collections.collectionName' => 'Samlingsnavn',
 			'collections.enterCollectionName' => 'Skriv inn samlingsnavn',
@@ -3061,6 +3092,8 @@ extension on TranslationsNb {
 			'watchTogether.hostingSession' => 'Er vert for økt',
 			'watchTogether.inSession' => 'I økt',
 			'watchTogether.sessionCode' => 'Øktkode',
+			'watchTogether.openSessionControls' => 'Åpne øktkontroller for Se sammen',
+			'watchTogether.copySessionCode' => 'Kopier øktkode',
 			'watchTogether.hostControlsPlayback' => 'Verten kontrollerer avspilling',
 			'watchTogether.anyoneCanControl' => 'Alle kan kontrollere avspilling',
 			'watchTogether.hostControls' => 'Vertskontroll',
@@ -3115,6 +3148,8 @@ extension on TranslationsNb {
 			'downloads.manage' => 'Administrer',
 			'downloads.tvShows' => 'TV-serier',
 			'downloads.movies' => 'Filmer',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.music' => 'Musikk',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} spor i nedlastingskø',
 			'downloads.noDownloads' => 'Ingen nedlastinger ennå',
@@ -3127,8 +3162,6 @@ extension on TranslationsNb {
 			'downloads.serverErrorBitrate' => 'Serverfeil: filen kan overskride grensen for ekstern bitrate',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episoder i nedlastingskø',
 			'downloads.downloadDeleted' => 'Nedlasting slettet',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.deleteConfirm' => ({required Object title}) => 'Slette "${title}" fra denne enheten?',
 			'downloads.cancelledDownloadTitle' => 'Avbrutt nedlasting',
 			'downloads.cancelledDownloadMessage' => 'Denne nedlastingen ble avbrutt. Hva vil du gjøre?',
@@ -3260,6 +3293,8 @@ extension on TranslationsNb {
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Tilkobling mistet etter ${attempts} forsøk',
 			'companionRemote.errors.connectionLost' => 'Tilkobling mistet',
 			'videoSettings.playbackSpeed' => 'Avspillingshastighet',
+			'videoSettings.normalSpeed' => 'Normal',
+			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Aktiv (${duration})',
 			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Søvntimer',
 			'videoSettings.audioSync' => 'Lydsynkronisering',
@@ -3351,6 +3386,8 @@ extension on TranslationsNb {
 			'metadataEdit.artworkUpdated' => 'Kunstverk oppdatert',
 			'metadataEdit.artworkUpdateFailed' => 'Kunne ikke oppdatere kunstverk',
 			'metadataEdit.noArtworkAvailable' => 'Ingen kunstverk tilgjengelig',
+			'metadataEdit.artworkOption' => ({required Object index}) => 'Alternativ for kunstverk ${index}',
+			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Alternativ for kunstverk ${index}, valgt',
 			'metadataEdit.notSet' => 'Ikke angitt',
 			'metadataEdit.libraryDefault' => 'Bibliotekstandard',
 			'metadataEdit.accountDefault' => 'Kontostandard',
@@ -3465,11 +3502,13 @@ extension on TranslationsNb {
 			'services.deviceCode.title' => ({required Object service}) => 'Aktiver Plezy på ${service}',
 			'services.deviceCode.body' => ({required Object url}) => 'Besøk ${url} og skriv inn denne koden:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Åpne ${service} for å aktivere',
+			'services.deviceCode.copyCode' => 'Kopier aktiveringskode',
 			'services.deviceCode.waitingForAuthorization' => 'Venter på godkjenning…',
 			'services.deviceCode.codeCopied' => 'Kode kopiert',
 			'services.oauthProxy.title' => ({required Object service}) => 'Logg inn på ${service}',
 			'services.oauthProxy.body' => 'Skann denne QR-koden eller åpne URL-en på en enhet.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Åpne ${service} for å logge inn',
+			'services.oauthProxy.copyUrl' => 'Kopier URL for pålogging',
 			'services.oauthProxy.urlCopied' => 'URL kopiert',
 			'services.libraryFilter.title' => 'Biblioteksfilter',
 			'services.libraryFilter.subtitleAllSyncing' => 'Synkroniserer alle biblioteker',

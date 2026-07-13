@@ -22,7 +22,7 @@ class FolderTreeView extends StatefulWidget {
   final String libraryKey;
   final String? serverId; // Server this library belongs to
   final MediaKind? libraryKind;
-  final void Function(String)? onRefresh;
+  final void Function(MediaItem source)? onRefresh;
   final FocusNode? firstItemFocusNode;
   final VoidCallback? onNavigateUp;
   final VoidCallback? onNavigateLeft;
@@ -117,11 +117,12 @@ class FolderTreeViewState extends State<FolderTreeView> {
       });
 
       appLogger.d('Loaded ${folders.length} root folders');
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (!mounted || epoch != _loadEpoch) return;
 
+      final message = localizedLoadErrorMessage(e, stackTrace, context: t.libraries.folders);
       setState(() {
-        _errorMessage = mapUnexpectedErrorToMessage(e, context: t.libraries.folders);
+        _errorMessage = message;
         _isLoadingRoot = false;
       });
     }
@@ -181,10 +182,10 @@ class FolderTreeViewState extends State<FolderTreeView> {
       });
 
       appLogger.d('Loaded ${children.length} children for folder: ${folder.title}');
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (!mounted || epoch != _loadEpoch) return;
 
-      final message = mapUnexpectedErrorToMessage(e, context: t.libraries.folders);
+      final message = localizedLoadErrorMessage(e, stackTrace, context: t.libraries.folders);
       setState(() {
         _loadingFolders.remove(folderIdentity);
         // Drop partial pages so a retry refetches instead of leaving a
@@ -228,14 +229,14 @@ class FolderTreeViewState extends State<FolderTreeView> {
     _loadFolderChildren(parent);
   }
 
-  Future<void> _handleItemTap(MediaItem item) async {
+  Future<void> _handleItemTap(MediaItem item, MediaItem? parent) async {
     final result = await navigateToMediaItem(context, item, onRefresh: widget.onRefresh);
     if (!mounted) return;
     switch (result) {
       case MediaNavigationResult.unsupported:
         showAppSnackBar(context, t.messages.musicNotSupported);
       case MediaNavigationResult.listRefreshNeeded:
-        widget.onRefresh?.call(item.id);
+        _refreshAfterDeletion(parent);
       case MediaNavigationResult.navigated:
       case MediaNavigationResult.librarySelected:
         break;
@@ -398,7 +399,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
             isLoading: isLoading,
             serverId: widget.serverId,
             onExpand: isExpandable ? () => _toggleFolder(item) : null,
-            onTap: !isExpandable ? () => _handleItemTap(item) : null,
+            onTap: !isExpandable ? () => _handleItemTap(item, entry.parent) : null,
             onPlayAll: canPlayFolder ? () => _handleFolderPlay(item) : null,
             onShuffle: canPlayFolder ? () => _handleFolderShuffle(item) : null,
             focusNode: isFirstRootItem ? widget.firstItemFocusNode : null,

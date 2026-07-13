@@ -358,6 +358,7 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get creditsPattern => 'Aftitelingmarkeringspatroon';
 	@override String get creditsPatternDescription => 'Reguliere expressie om aftitelingmarkeringen in hoofdstuktitels te herkennen';
 	@override String get invalidRegex => 'Ongeldige reguliere expressie';
+	@override String get regex => 'Reguliere expressie';
 	@override String get downloads => 'Downloads';
 	@override String get downloadLocationDescription => 'Kies waar gedownloade content wordt opgeslagen';
 	@override String get downloadLocationDefault => 'Standaard (App-opslag)';
@@ -481,6 +482,8 @@ class _TranslationsHotkeysNl extends TranslationsHotkeysEn {
 	@override String get clearShortcut => 'Wis sneltoets';
 	@override String get noShortcutSet => 'Geen sneltoets ingesteld';
 	@override String get currentShortcut => 'Huidige sneltoets:';
+	@override String get pressToRecord => 'Selecteer om een sneltoets op te nemen';
+	@override String get recordingShortcut => 'Druk nu op de sneltoets';
 	@override late final _TranslationsHotkeysActionsNl actions = _TranslationsHotkeysActionsNl._(_root);
 }
 
@@ -582,6 +585,8 @@ class _TranslationsAccessibilityNl extends TranslationsAccessibilityEn {
 	@override String get saturation => 'Verzadiging';
 	@override String get brightness => 'Helderheid';
 	@override String get hexColor => 'Hexkleur';
+	@override String get expandText => 'Tekst uitvouwen';
+	@override String get collapseText => 'Tekst samenvouwen';
 }
 
 // Path: tooltips
@@ -693,6 +698,10 @@ class _TranslationsMessagesNl extends TranslationsMessagesEn {
 	@override String get markedAsWatchedOffline => 'Gemarkeerd als gekeken (sync wanneer online)';
 	@override String get markedAsUnwatchedOffline => 'Gemarkeerd als ongekeken (sync wanneer online)';
 	@override String autoRemovedWatchedDownload({required Object title}) => 'Automatisch verwijderd: ${title}';
+	@override String autoRemovedWatchedDownloads({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n,
+		one: 'Automatisch ${n} bekeken download verwijderd',
+		other: 'Automatisch ${n} bekeken downloads verwijderd',
+	);
 	@override String get removedFromContinueWatching => 'Verwijderd uit Doorgaan met kijken';
 	@override String errorLoading({required Object error}) => 'Fout: ${error}';
 	@override String get streamInterrupted => 'De stream is onderbroken. Druk op afspelen of spoel om het opnieuw te proberen.';
@@ -751,6 +760,11 @@ class _TranslationsSubtitlingStylingNl extends TranslationsSubtitlingStylingEn {
 	@override String get backgroundColor => 'Achtergrondkleur';
 	@override String get position => 'Positie';
 	@override String get assOverride => 'ASS-overschrijving';
+	@override String get overrideScale => 'Schalen';
+	@override String get overrideForce => 'Forceren';
+	@override String get overrideStrip => 'Opmaak verwijderen';
+	@override String get positionTop => 'Bovenaan';
+	@override String get positionBottom => 'Onderaan';
 	@override String get bold => 'Vet';
 	@override String get italic => 'Cursief';
 	@override String get renderResolution => 'Renderresolutie';
@@ -918,7 +932,7 @@ class _TranslationsErrorsNl extends TranslationsErrorsEn {
 	@override String searchFailed({required Object error}) => 'Zoeken mislukt: ${error}';
 	@override String connectionTimeout({required Object context}) => 'Verbinding time-out tijdens laden ${context}';
 	@override String get connectionFailed => 'Kan geen verbinding maken met mediaserver';
-	@override String failedToLoad({required Object context, required Object error}) => 'Kon ${context} niet laden: ${error}';
+	@override String unableToLoad({required Object context}) => 'Kan ${context} niet laden. Probeer het opnieuw.';
 	@override String get noClientAvailable => 'Geen client beschikbaar';
 	@override String get pleaseEnterToken => 'Voer een token in';
 	@override String get invalidToken => 'Ongeldig token';
@@ -1180,7 +1194,6 @@ class _TranslationsCollectionsNl extends TranslationsCollectionsEn {
 	@override String get deleted => 'Collectie verwijderd';
 	@override String get deleteFailed => 'Collectie verwijderen mislukt';
 	@override String deleteFailedWithError({required Object error}) => 'Collectie verwijderen mislukt: ${error}';
-	@override String failedToLoadItems({required Object error}) => 'Collectie-items laden mislukt: ${error}';
 	@override String get selectCollection => 'Selecteer collectie';
 	@override String get collectionName => 'Collectienaam';
 	@override String get enterCollectionName => 'Voer collectienaam in';
@@ -1284,6 +1297,8 @@ class _TranslationsWatchTogetherNl extends TranslationsWatchTogetherEn {
 	@override String get hostingSession => 'Sessie Hosten';
 	@override String get inSession => 'In Sessie';
 	@override String get sessionCode => 'Sessiecode';
+	@override String get openSessionControls => 'Sessiebesturing voor Samen Kijken openen';
+	@override String get copySessionCode => 'Sessiecode kopiëren';
 	@override String get hostControlsPlayback => 'Host bedient het afspelen';
 	@override String get anyoneCanControl => 'Iedereen kan het afspelen bedienen';
 	@override String get hostControls => 'Host bedient';
@@ -1460,6 +1475,8 @@ class _TranslationsVideoSettingsNl extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => 'Afspeelsnelheid';
+	@override String get normalSpeed => 'Normaal';
+	@override String sleepTimerActive({required Object duration}) => 'Actief (${duration})';
 	@override String get zoom => 'Zoom';
 	@override String get sleepTimer => 'Slaaptimer';
 	@override String get audioSync => 'Audio synchronisatie';
@@ -1578,6 +1595,8 @@ class _TranslationsMetadataEditNl extends TranslationsMetadataEditEn {
 	@override String get artworkUpdated => 'Artwork bijgewerkt';
 	@override String get artworkUpdateFailed => 'Artwork bijwerken mislukt';
 	@override String get noArtworkAvailable => 'Geen artwork beschikbaar';
+	@override String artworkOption({required Object index}) => 'Artworkoptie ${index}';
+	@override String selectedArtworkOption({required Object index}) => 'Artworkoptie ${index}, geselecteerd';
 	@override String get notSet => 'Niet ingesteld';
 	@override String get libraryDefault => 'Bibliotheekstandaard';
 	@override String get accountDefault => 'Accountstandaard';
@@ -2055,6 +2074,7 @@ class _TranslationsServicesDeviceCodeNl extends TranslationsServicesDeviceCodeEn
 	@override String title({required Object service}) => 'Plezy activeren op ${service}';
 	@override String body({required Object url}) => 'Ga naar ${url} en voer deze code in:';
 	@override String openToActivate({required Object service}) => 'Open ${service} om te activeren';
+	@override String get copyCode => 'Activeringscode kopiëren';
 	@override String get waitingForAuthorization => 'Wachten op autorisatie…';
 	@override String get codeCopied => 'Code gekopieerd';
 }
@@ -2069,6 +2089,7 @@ class _TranslationsServicesOauthProxyNl extends TranslationsServicesOauthProxyEn
 	@override String title({required Object service}) => 'Aanmelden bij ${service}';
 	@override String get body => 'Scan deze QR-code of open de URL op een apparaat.';
 	@override String openToSignIn({required Object service}) => '${service} openen om aan te melden';
+	@override String get copyUrl => 'Aanmeldings-URL kopiëren';
 	@override String get urlCopied => 'URL gekopieerd';
 }
 
@@ -2318,6 +2339,7 @@ extension on TranslationsNl {
 			'settings.creditsPattern' => 'Aftitelingmarkeringspatroon',
 			'settings.creditsPatternDescription' => 'Reguliere expressie om aftitelingmarkeringen in hoofdstuktitels te herkennen',
 			'settings.invalidRegex' => 'Ongeldige reguliere expressie',
+			'settings.regex' => 'Reguliere expressie',
 			'settings.downloads' => 'Downloads',
 			'settings.downloadLocationDescription' => 'Kies waar gedownloade content wordt opgeslagen',
 			'settings.downloadLocationDefault' => 'Standaard (App-opslag)',
@@ -2423,6 +2445,8 @@ extension on TranslationsNl {
 			'hotkeys.clearShortcut' => 'Wis sneltoets',
 			'hotkeys.noShortcutSet' => 'Geen sneltoets ingesteld',
 			'hotkeys.currentShortcut' => 'Huidige sneltoets:',
+			'hotkeys.pressToRecord' => 'Selecteer om een sneltoets op te nemen',
+			'hotkeys.recordingShortcut' => 'Druk nu op de sneltoets',
 			'hotkeys.actions.playPause' => 'Afspelen/Pauzeren',
 			'hotkeys.actions.volumeUp' => 'Volume omhoog',
 			'hotkeys.actions.volumeDown' => 'Volume omlaag',
@@ -2512,6 +2536,8 @@ extension on TranslationsNl {
 			'accessibility.saturation' => 'Verzadiging',
 			'accessibility.brightness' => 'Helderheid',
 			'accessibility.hexColor' => 'Hexkleur',
+			'accessibility.expandText' => 'Tekst uitvouwen',
+			'accessibility.collapseText' => 'Tekst samenvouwen',
 			'tooltips.shufflePlay' => 'Willekeurig afspelen',
 			'tooltips.playTrailer' => 'Trailer afspelen',
 			'tooltips.markAsWatched' => 'Markeer als gekeken',
@@ -2602,19 +2628,20 @@ extension on TranslationsNl {
 			'messages.markedAsWatchedOffline' => 'Gemarkeerd als gekeken (sync wanneer online)',
 			'messages.markedAsUnwatchedOffline' => 'Gemarkeerd als ongekeken (sync wanneer online)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatisch verwijderd: ${title}',
+			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n, one: 'Automatisch ${n} bekeken download verwijderd', other: 'Automatisch ${n} bekeken downloads verwijderd', ), 
 			'messages.removedFromContinueWatching' => 'Verwijderd uit Doorgaan met kijken',
 			'messages.errorLoading' => ({required Object error}) => 'Fout: ${error}',
 			'messages.streamInterrupted' => 'De stream is onderbroken. Druk op afspelen of spoel om het opnieuw te proberen.',
 			'messages.liveStreamInterrupted' => 'De livestream is onderbroken. Druk op afspelen om het opnieuw te proberen.',
 			'messages.fileInfoNotAvailable' => 'Bestand informatie niet beschikbaar',
+			_ => null,
+		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Fout bij laden bestand info: ${error}',
 			'messages.errorLoadingSeries' => 'Fout bij laden serie',
 			'messages.musicNotSupported' => 'Muziek afspelen wordt nog niet ondersteund',
 			'messages.noDescriptionAvailable' => 'Geen beschrijving beschikbaar',
 			'messages.noProfilesAvailable' => 'Geen profielen beschikbaar',
 			'messages.contactAdminForProfiles' => 'Neem contact op met je serverbeheerder om profielen toe te voegen',
-			_ => null,
-		} ?? switch (path) {
 			'messages.unableToDetermineLibrarySection' => 'Kan bibliotheeksectie voor dit item niet bepalen',
 			'messages.logsCleared' => 'Logs gewist',
 			'messages.logsCopied' => 'Logs gekopieerd naar klembord',
@@ -2653,6 +2680,11 @@ extension on TranslationsNl {
 			'subtitlingStyling.backgroundColor' => 'Achtergrondkleur',
 			'subtitlingStyling.position' => 'Positie',
 			'subtitlingStyling.assOverride' => 'ASS-overschrijving',
+			'subtitlingStyling.overrideScale' => 'Schalen',
+			'subtitlingStyling.overrideForce' => 'Forceren',
+			'subtitlingStyling.overrideStrip' => 'Opmaak verwijderen',
+			'subtitlingStyling.positionTop' => 'Bovenaan',
+			'subtitlingStyling.positionBottom' => 'Onderaan',
 			'subtitlingStyling.bold' => 'Vet',
 			'subtitlingStyling.italic' => 'Cursief',
 			'subtitlingStyling.renderResolution' => 'Renderresolutie',
@@ -2766,7 +2798,7 @@ extension on TranslationsNl {
 			'errors.searchFailed' => ({required Object error}) => 'Zoeken mislukt: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => 'Verbinding time-out tijdens laden ${context}',
 			'errors.connectionFailed' => 'Kan geen verbinding maken met mediaserver',
-			'errors.failedToLoad' => ({required Object context, required Object error}) => 'Kon ${context} niet laden: ${error}',
+			'errors.unableToLoad' => ({required Object context}) => 'Kan ${context} niet laden. Probeer het opnieuw.',
 			'errors.noClientAvailable' => 'Geen client beschikbaar',
 			'errors.pleaseEnterToken' => 'Voer een token in',
 			'errors.invalidToken' => 'Ongeldig token',
@@ -2987,7 +3019,6 @@ extension on TranslationsNl {
 			'collections.deleted' => 'Collectie verwijderd',
 			'collections.deleteFailed' => 'Collectie verwijderen mislukt',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Collectie verwijderen mislukt: ${error}',
-			'collections.failedToLoadItems' => ({required Object error}) => 'Collectie-items laden mislukt: ${error}',
 			'collections.selectCollection' => 'Selecteer collectie',
 			'collections.collectionName' => 'Collectienaam',
 			'collections.enterCollectionName' => 'Voer collectienaam in',
@@ -3061,6 +3092,8 @@ extension on TranslationsNl {
 			'watchTogether.hostingSession' => 'Sessie Hosten',
 			'watchTogether.inSession' => 'In Sessie',
 			'watchTogether.sessionCode' => 'Sessiecode',
+			'watchTogether.openSessionControls' => 'Sessiebesturing voor Samen Kijken openen',
+			'watchTogether.copySessionCode' => 'Sessiecode kopiëren',
 			'watchTogether.hostControlsPlayback' => 'Host bedient het afspelen',
 			'watchTogether.anyoneCanControl' => 'Iedereen kan het afspelen bedienen',
 			'watchTogether.hostControls' => 'Host bedient',
@@ -3115,6 +3148,8 @@ extension on TranslationsNl {
 			'downloads.manage' => 'Beheren',
 			'downloads.tvShows' => 'Series',
 			'downloads.movies' => 'Films',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.music' => 'Muziek',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} nummers in wachtrij voor download',
 			'downloads.noDownloads' => 'Nog geen downloads',
@@ -3127,8 +3162,6 @@ extension on TranslationsNl {
 			'downloads.serverErrorBitrate' => 'Serverfout: bestand overschrijdt mogelijk de externe bitrate-limiet',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} afleveringen in wachtrij voor download',
 			'downloads.downloadDeleted' => 'Download verwijderd',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" van dit apparaat verwijderen?',
 			'downloads.cancelledDownloadTitle' => 'Geannuleerde download',
 			'downloads.cancelledDownloadMessage' => 'Deze download is geannuleerd. Wat wil je doen?',
@@ -3260,6 +3293,8 @@ extension on TranslationsNl {
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Verbinding verloren na ${attempts} pogingen',
 			'companionRemote.errors.connectionLost' => 'Verbinding verloren',
 			'videoSettings.playbackSpeed' => 'Afspeelsnelheid',
+			'videoSettings.normalSpeed' => 'Normaal',
+			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Actief (${duration})',
 			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Slaaptimer',
 			'videoSettings.audioSync' => 'Audio synchronisatie',
@@ -3351,6 +3386,8 @@ extension on TranslationsNl {
 			'metadataEdit.artworkUpdated' => 'Artwork bijgewerkt',
 			'metadataEdit.artworkUpdateFailed' => 'Artwork bijwerken mislukt',
 			'metadataEdit.noArtworkAvailable' => 'Geen artwork beschikbaar',
+			'metadataEdit.artworkOption' => ({required Object index}) => 'Artworkoptie ${index}',
+			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Artworkoptie ${index}, geselecteerd',
 			'metadataEdit.notSet' => 'Niet ingesteld',
 			'metadataEdit.libraryDefault' => 'Bibliotheekstandaard',
 			'metadataEdit.accountDefault' => 'Accountstandaard',
@@ -3465,11 +3502,13 @@ extension on TranslationsNl {
 			'services.deviceCode.title' => ({required Object service}) => 'Plezy activeren op ${service}',
 			'services.deviceCode.body' => ({required Object url}) => 'Ga naar ${url} en voer deze code in:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} om te activeren',
+			'services.deviceCode.copyCode' => 'Activeringscode kopiëren',
 			'services.deviceCode.waitingForAuthorization' => 'Wachten op autorisatie…',
 			'services.deviceCode.codeCopied' => 'Code gekopieerd',
 			'services.oauthProxy.title' => ({required Object service}) => 'Aanmelden bij ${service}',
 			'services.oauthProxy.body' => 'Scan deze QR-code of open de URL op een apparaat.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => '${service} openen om aan te melden',
+			'services.oauthProxy.copyUrl' => 'Aanmeldings-URL kopiëren',
 			'services.oauthProxy.urlCopied' => 'URL gekopieerd',
 			'services.libraryFilter.title' => 'Bibliotheekfilter',
 			'services.libraryFilter.subtitleAllSyncing' => 'Alle bibliotheken synchroniseren',

@@ -38,8 +38,9 @@ Future<void> showCatalogItemMenu(BuildContext context, CatalogItem item, {Offset
     anchorRect = renderBox.localToGlobal(Offset.zero) & renderBox.size;
   }
 
-  final action = await showAppMenu<_CatalogMenuAction>(
+  final action = await showAdaptiveAppMenu<_CatalogMenuAction>(
     context,
+    title: item.title,
     anchorRect: anchorRect,
     focusFirstItem: position == null,
     entries: [

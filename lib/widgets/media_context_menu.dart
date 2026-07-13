@@ -1,6 +1,5 @@
 import 'dart:async';
 import '../media/ids.dart';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -98,7 +97,7 @@ class MediaContextMenu extends StatefulWidget {
   /// Dart has no nominal union type — guarded at runtime via the
   /// [_itemAsMediaItem] / [_itemAsPlaylist] helpers.
   final Object item;
-  final void Function(String itemId)? onRefresh;
+  final void Function(MediaItem source)? onRefresh;
   final VoidCallback? onRemoveFromContinueWatching;
   final VoidCallback? onListRefresh; // For refreshing list after deletion
   final VoidCallback? onTap;
@@ -142,9 +141,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   bool get isContextMenuOpen => _isContextMenuOpen;
 
-  void _notifyRefresh(String itemId) {
+  void _notifyRefresh(MediaItem source) {
     if (!mounted) return;
-    widget.onRefresh?.call(itemId);
+    widget.onRefresh?.call(source);
   }
 
   void _notifyListRefresh() {
@@ -189,7 +188,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     _ => null,
   };
 
-  /// Item identifier for refresh callbacks.
+  /// Item identifier used for playlist and download sync operations.
   String _itemId() => switch (widget.item) {
     MediaItem(:final id) => id,
     MediaPlaylist(:final id) => id,
@@ -233,8 +232,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         mediaKind != null &&
         (mediaKind == MediaKind.movie || mediaKind == MediaKind.episode) &&
         mediaItem?.hasActiveProgress == true;
-
-    final useBottomSheet = Platform.isIOS || Platform.isAndroid;
 
     // Check if user has admin privileges. Backend-neutral: Plex uses the
     // server-owned flag (folded with the active Plex Home profile's admin
@@ -575,43 +572,28 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       menuActions.add(_MenuAction(value: 'extra_$i', icon: entry.icon, label: entry.label));
     }
 
-    String? selected;
-
     final openedFromKeyboard = _openedFromKeyboard;
     _openedFromKeyboard = false;
 
-    if (useBottomSheet) {
-      // Present from the menu's own context: it sits at the trigger widget,
-      // below any screen-level OverlaySheetHost, while callers often pass a
-      // screen context from ABOVE its host (which would skip the host and
-      // fall back to a hostless modal sheet).
-      selected = await OverlaySheetController.showAdaptive<String>(
-        this.context,
-        showDragHandle: true,
-        isScrollControlled: true,
-        builder: (context) => AppMenuSheet<String>(
-          title: _itemDisplayTitle(),
-          entries: _menuEntries(menuActions),
-          focusFirstItem: openedFromKeyboard,
-        ),
-      );
-    } else {
-      Offset position;
-      if (_tapPosition != null) {
-        position = _tapPosition!;
-      } else {
-        final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
-        final RenderBox renderBox = context.findRenderObject() as RenderBox;
-        position = renderBox.localToGlobal(Offset.zero, ancestor: overlay);
-      }
-
-      selected = await showAppMenu<String>(
-        context,
-        entries: _menuEntries(menuActions),
-        position: position,
-        focusFirstItem: openedFromKeyboard,
-      );
+    var position = _tapPosition;
+    if (position == null) {
+      final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
+      final RenderBox renderBox = context.findRenderObject() as RenderBox;
+      position = renderBox.localToGlobal(Offset.zero, ancestor: overlay);
     }
+
+    // Present from the menu's own context: it sits at the trigger widget,
+    // below any screen-level OverlaySheetHost, while callers often pass a
+    // screen context from ABOVE its host (which would skip the host and
+    // fall back to a hostless modal sheet).
+    final selected = await showAdaptiveAppMenu<String>(
+      this.context,
+      title: _itemDisplayTitle(),
+      entries: _menuEntries(menuActions),
+      position: position,
+      focusFirstItem: openedFromKeyboard,
+      isScrollControlled: true,
+    );
 
     try {
       if (!context.mounted) return;
@@ -656,7 +638,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
                 context,
                 watched ? t.messages.markedAsWatchedOffline : t.messages.markedAsUnwatchedOffline,
               );
-              _notifyRefresh(item.id);
+              _notifyRefresh(item);
             }
           } else {
             await _executeAction(context, () async {
@@ -676,7 +658,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
               if (widget.onRemoveFromContinueWatching != null) {
                 widget.onRemoveFromContinueWatching!();
               } else {
-                _notifyRefresh(mediaItem.id);
+                _notifyRefresh(mediaItem);
               }
             }
           } catch (e) {
@@ -711,7 +693,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           if (context.mounted) {
             final item = mediaItem!;
             await Navigator.push(context, MaterialPageRoute(builder: (context) => MetadataEditScreen(metadata: item)));
-            _notifyRefresh(item.id);
+            _notifyRefresh(item);
           }
           break;
 
@@ -720,7 +702,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           if (context.mounted) {
             final item = mediaItem!;
             await Navigator.push(context, MaterialPageRoute(builder: (context) => PlexMatchScreen(metadata: item)));
-            _notifyRefresh(item.id);
+            _notifyRefresh(item);
           }
           break;
 
@@ -737,13 +719,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           await _navigateToRelated(
             context,
             mediaItem!.kind == MediaKind.season ? mediaItem.parentId : mediaItem.grandparentId,
-            (item) {
+            (context, item) async {
               final target = mediaDetailNavigationTargetFor(mediaItem, metadataOverride: item);
-              return mediaDetailRoute(
-                metadata: target.metadata,
-                initialSeasonIndex: target.initialSeasonIndex,
-                initialSeasonId: target.initialSeasonId,
-                initialEpisodeId: target.initialEpisodeId,
+              await Navigator.push(
+                context,
+                mediaDetailRoute(
+                  metadata: target.metadata,
+                  initialSeasonIndex: target.initialSeasonIndex,
+                  initialSeasonId: target.initialSeasonId,
+                  initialEpisodeId: target.initialEpisodeId,
+                ),
               );
             },
             t.messages.errorLoadingSeries,
@@ -828,12 +813,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
         case 'music_album':
           didNavigate = true;
-          await _navigateToRelated(
-            context,
-            mediaItem!.parentId,
-            (item) => MaterialPageRoute(builder: (_) => AlbumDetailScreen(album: item)),
-            t.common.error,
-          );
+          await _navigateToRelated(context, mediaItem!.parentId, navigateToAlbum, t.common.error);
           break;
 
         case 'music_artist':
@@ -841,7 +821,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           await _navigateToRelated(
             context,
             mediaItem!.kind == MediaKind.album ? mediaItem.parentId : mediaItem.grandparentId,
-            (item) => MaterialPageRoute(builder: (_) => ArtistDetailScreen(artist: item)),
+            navigateToArtist,
             t.common.error,
           );
           break;
@@ -884,7 +864,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       await action();
       if (context.mounted) {
         showSuccessSnackBar(context, successMessage);
-        _notifyRefresh(_itemId());
+        if (_mediaItem case final source?) _notifyRefresh(source);
       }
     } catch (e) {
       if (context.mounted) {
@@ -916,7 +896,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (!context.mounted) return;
       if (success) {
         showSuccessSnackBar(context, t.matchScreen.unmatchSuccess);
-        _notifyRefresh(item.id);
+        _notifyRefresh(item);
       } else {
         showErrorSnackBar(context, t.matchScreen.unmatchFailed);
       }
@@ -927,23 +907,24 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
   }
 
-  /// Navigate to a related item (series or season)
+  /// Fetch and navigate to a related item (series, album, or artist).
   Future<void> _navigateToRelated(
     BuildContext context,
     String? id,
-    Route<Object?> Function(MediaItem) routeBuilder,
+    Future<void> Function(BuildContext context, MediaItem item) navigate,
     String errorPrefix,
   ) async {
     if (id == null) return;
 
     final client = _getMediaClientForItem();
-    final refreshItemId = _itemId();
+    final source = _mediaItem;
+    if (source == null) return;
 
     try {
       final metadata = await client.fetchItem(id);
       if (metadata != null && context.mounted) {
-        await Navigator.push(context, routeBuilder(metadata));
-        _notifyRefresh(refreshItemId);
+        await navigate(context, metadata);
+        _notifyRefresh(source);
       }
     } catch (e) {
       if (context.mounted) {
@@ -1325,8 +1306,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       builder: (context) => RatingBottomSheet(
         item: item,
         serverClient: client,
-        onServerRatingChanged: (_) => _notifyRefresh(item.id),
-        onServerFavoriteChanged: (_) => _notifyRefresh(item.id),
+        onServerRatingChanged: (_) => _notifyRefresh(item),
+        onServerFavoriteChanged: (_) => _notifyRefresh(item),
       ),
     );
   }
@@ -1644,7 +1625,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         // DownloadProvider.deleteDownload now broadcasts the DeletionEvent,
         // so DeletionAware screens (e.g. offline season detail) update without
         // a duplicate notification here.
-        _notifyRefresh(item.id);
+        _notifyRefresh(item);
       }
     } catch (e) {
       appLogger.e('Failed to delete download', error: e);
@@ -1908,7 +1889,7 @@ class _PickerDialogScaffoldState<T> extends State<_PickerDialogScaffold<T>> {
                   decoration: pillInputDecoration(
                     context,
                     hintText: widget.searchHint,
-                    prefixIcon: const Icon(Symbols.search_rounded, size: 20),
+                    prefixIcon: const AppIcon(Symbols.search_rounded, size: 20),
                   ),
                   onChanged: _onFilterChanged,
                 ),

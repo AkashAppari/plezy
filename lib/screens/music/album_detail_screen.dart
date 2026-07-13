@@ -87,9 +87,6 @@ class _AlbumDetailScreenState extends BaseMediaListDetailScreen<AlbumDetailScree
   Future<List<MediaItem>> fetchItems() => mediaClient.fetchAlbumTracks(widget.album.id);
 
   @override
-  String getLoadErrorMessage(Object error) => t.messages.errorLoading(error: error.toString());
-
-  @override
   Future<void> loadItems() async {
     await super.loadItems();
     autoFocusFirstItemAfterLoad();

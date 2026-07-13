@@ -30,7 +30,7 @@ class VideoPlayerMacPipPlaceholder extends StatelessWidget {
               child: Column(
                 mainAxisSize: .min,
                 children: [
-                  Icon(Symbols.picture_in_picture_alt_rounded, size: 48, color: Colors.white.withValues(alpha: 0.5)),
+                  AppIcon(Symbols.picture_in_picture_alt_rounded, size: 48, color: Colors.white.withValues(alpha: 0.5)),
                   const SizedBox(height: 12),
                   Text(
                     t.videoControls.pipActive,
@@ -119,7 +119,7 @@ class VideoPlayerWatchTogetherOverlays extends StatelessWidget {
                       mainAxisSize: .min,
                       children: [
                         if (PlatformDetector.isTV())
-                          const Icon(Symbols.sync_rounded, size: 14, color: Colors.white)
+                          const AppIcon(Symbols.sync_rounded, size: 14, color: Colors.white)
                         else
                           const SizedBox(
                             width: 14,

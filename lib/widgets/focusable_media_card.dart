@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../focus/focus_theme.dart';
 import '../focus/focusable_wrapper.dart';
+import '../media/media_item.dart';
 import '../utils/platform_detector.dart';
 import 'media_card.dart';
 
@@ -17,7 +18,7 @@ class FocusableMediaCard extends StatefulWidget {
   final Object item;
   final double? width;
   final double? height;
-  final void Function(String itemId)? onRefresh;
+  final void Function(MediaItem source)? onRefresh;
   final VoidCallback? onRemoveFromContinueWatching;
   final VoidCallback? onListRefresh;
   final bool forceGridMode;

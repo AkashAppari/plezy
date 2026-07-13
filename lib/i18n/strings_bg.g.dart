@@ -358,6 +358,7 @@ class _TranslationsSettingsBg extends TranslationsSettingsEn {
 	@override String get creditsPattern => 'Шаблон за маркер на финални надписи';
 	@override String get creditsPatternDescription => 'Шаблон с регулярен израз за намиране на маркери за финални надписи в заглавия на глави';
 	@override String get invalidRegex => 'Невалиден регулярен израз';
+	@override String get regex => 'Регулярен израз';
 	@override String get downloads => 'Изтегляния';
 	@override String get downloadLocationDescription => 'Изберете къде да се съхранява изтегленото съдържание';
 	@override String get downloadLocationDefault => 'По подразбиране (хранилище на приложението)';
@@ -481,6 +482,8 @@ class _TranslationsHotkeysBg extends TranslationsHotkeysEn {
 	@override String get clearShortcut => 'Изчисти клавишната комбинация';
 	@override String get noShortcutSet => 'Няма зададена клавишна комбинация';
 	@override String get currentShortcut => 'Текуща комбинация:';
+	@override String get pressToRecord => 'Избери, за да запишеш клавишна комбинация';
+	@override String get recordingShortcut => 'Натисни клавишната комбинация сега';
 	@override late final _TranslationsHotkeysActionsBg actions = _TranslationsHotkeysActionsBg._(_root);
 }
 
@@ -582,6 +585,8 @@ class _TranslationsAccessibilityBg extends TranslationsAccessibilityEn {
 	@override String get saturation => 'Наситеност';
 	@override String get brightness => 'Яркост';
 	@override String get hexColor => 'Шестнадесетичен цвят';
+	@override String get expandText => 'Разгъни текста';
+	@override String get collapseText => 'Свий текста';
 }
 
 // Path: tooltips
@@ -693,6 +698,10 @@ class _TranslationsMessagesBg extends TranslationsMessagesEn {
 	@override String get markedAsWatchedOffline => 'Маркирано като гледано (ще се синхронизира, когато сте онлайн)';
 	@override String get markedAsUnwatchedOffline => 'Маркирано като негледано (ще се синхронизира, когато сте онлайн)';
 	@override String autoRemovedWatchedDownload({required Object title}) => 'Автоматично премахнато: ${title}';
+	@override String autoRemovedWatchedDownloads({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bg'))(n,
+		one: 'Автоматично премахнато ${n} гледано изтегляне',
+		other: 'Автоматично премахнати ${n} гледани изтегляния',
+	);
 	@override String get removedFromContinueWatching => 'Премахнато от продължаване на гледането';
 	@override String errorLoading({required Object error}) => 'Грешка: ${error}';
 	@override String get streamInterrupted => 'Потокът прекъсна. Натиснете „Пусни“ или превъртете, за да опитате отново.';
@@ -751,6 +760,11 @@ class _TranslationsSubtitlingStylingBg extends TranslationsSubtitlingStylingEn {
 	@override String get backgroundColor => 'Цвят на фона';
 	@override String get position => 'Позиция';
 	@override String get assOverride => 'ASS презаписване';
+	@override String get overrideScale => 'Мащабиране';
+	@override String get overrideForce => 'Принудително';
+	@override String get overrideStrip => 'Премахване на стиловете';
+	@override String get positionTop => 'Горе';
+	@override String get positionBottom => 'Долу';
 	@override String get bold => 'Получер';
 	@override String get italic => 'Курсив';
 	@override String get renderResolution => 'Резолюция на изобразяване';
@@ -918,7 +932,7 @@ class _TranslationsErrorsBg extends TranslationsErrorsEn {
 	@override String searchFailed({required Object error}) => 'Търсенето е неуспешно: ${error}';
 	@override String connectionTimeout({required Object context}) => 'Изтече времето за връзка при зареждане на ${context}';
 	@override String get connectionFailed => 'Не може да се осъществи връзка с медиен сървър';
-	@override String failedToLoad({required Object context, required Object error}) => 'Неуспешно зареждане на ${context}: ${error}';
+	@override String unableToLoad({required Object context}) => 'Не може да се зареди ${context}. Опитайте отново.';
 	@override String get noClientAvailable => 'Няма наличен клиент';
 	@override String get pleaseEnterToken => 'Моля, въведете токен';
 	@override String get invalidToken => 'Невалиден токен';
@@ -1180,7 +1194,6 @@ class _TranslationsCollectionsBg extends TranslationsCollectionsEn {
 	@override String get deleted => 'Колекцията е изтрита';
 	@override String get deleteFailed => 'Неуспешно изтриване на колекция';
 	@override String deleteFailedWithError({required Object error}) => 'Неуспешно изтриване на колекция: ${error}';
-	@override String failedToLoadItems({required Object error}) => 'Неуспешно зареждане на елементите в колекцията: ${error}';
 	@override String get selectCollection => 'Избери колекция';
 	@override String get collectionName => 'Име на колекция';
 	@override String get enterCollectionName => 'Въведете име на колекция';
@@ -1284,6 +1297,8 @@ class _TranslationsWatchTogetherBg extends TranslationsWatchTogetherEn {
 	@override String get hostingSession => 'Сесия с домакин';
 	@override String get inSession => 'В сесия';
 	@override String get sessionCode => 'Код на сесията';
+	@override String get openSessionControls => 'Отвори контролите за сесията „Гледане заедно“';
+	@override String get copySessionCode => 'Копирай кода на сесията';
 	@override String get hostControlsPlayback => 'Домакинът управлява възпроизвеждането';
 	@override String get anyoneCanControl => 'Всеки може да управлява възпроизвеждането';
 	@override String get hostControls => 'Контроли на домакина';
@@ -1460,6 +1475,8 @@ class _TranslationsVideoSettingsBg extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => 'Скорост на възпроизвеждане';
+	@override String get normalSpeed => 'Нормална';
+	@override String sleepTimerActive({required Object duration}) => 'Активен (${duration})';
 	@override String get zoom => 'Мащаб';
 	@override String get sleepTimer => 'Таймер за заспиване';
 	@override String get audioSync => 'Синхронизация на аудио';
@@ -1578,6 +1595,8 @@ class _TranslationsMetadataEditBg extends TranslationsMetadataEditEn {
 	@override String get artworkUpdated => 'Обложката е обновена';
 	@override String get artworkUpdateFailed => 'Неуспешно обновяване на обложката';
 	@override String get noArtworkAvailable => 'Няма налична обложка';
+	@override String artworkOption({required Object index}) => 'Вариант за обложка ${index}';
+	@override String selectedArtworkOption({required Object index}) => 'Вариант за обложка ${index}, избран';
 	@override String get notSet => 'Не е зададено';
 	@override String get libraryDefault => 'По подразбиране за библиотеката';
 	@override String get accountDefault => 'По подразбиране за акаунта';
@@ -2055,6 +2074,7 @@ class _TranslationsServicesDeviceCodeBg extends TranslationsServicesDeviceCodeEn
 	@override String title({required Object service}) => 'Активиране на Plezy в ${service}';
 	@override String body({required Object url}) => 'Посетете ${url} и въведете този код:';
 	@override String openToActivate({required Object service}) => 'Отворете ${service}, за да активирате';
+	@override String get copyCode => 'Копирай кода за активиране';
 	@override String get waitingForAuthorization => 'Изчакване на оторизация…';
 	@override String get codeCopied => 'Кодът е копиран';
 }
@@ -2069,6 +2089,7 @@ class _TranslationsServicesOauthProxyBg extends TranslationsServicesOauthProxyEn
 	@override String title({required Object service}) => 'Вход в ${service}';
 	@override String get body => 'Сканирайте този QR код или отворете URL-а на което и да е устройство.';
 	@override String openToSignIn({required Object service}) => 'Отворете ${service}, за да влезете';
+	@override String get copyUrl => 'Копирай URL адреса за вход';
 	@override String get urlCopied => 'URL адресът е копиран';
 }
 
@@ -2318,6 +2339,7 @@ extension on TranslationsBg {
 			'settings.creditsPattern' => 'Шаблон за маркер на финални надписи',
 			'settings.creditsPatternDescription' => 'Шаблон с регулярен израз за намиране на маркери за финални надписи в заглавия на глави',
 			'settings.invalidRegex' => 'Невалиден регулярен израз',
+			'settings.regex' => 'Регулярен израз',
 			'settings.downloads' => 'Изтегляния',
 			'settings.downloadLocationDescription' => 'Изберете къде да се съхранява изтегленото съдържание',
 			'settings.downloadLocationDefault' => 'По подразбиране (хранилище на приложението)',
@@ -2423,6 +2445,8 @@ extension on TranslationsBg {
 			'hotkeys.clearShortcut' => 'Изчисти клавишната комбинация',
 			'hotkeys.noShortcutSet' => 'Няма зададена клавишна комбинация',
 			'hotkeys.currentShortcut' => 'Текуща комбинация:',
+			'hotkeys.pressToRecord' => 'Избери, за да запишеш клавишна комбинация',
+			'hotkeys.recordingShortcut' => 'Натисни клавишната комбинация сега',
 			'hotkeys.actions.playPause' => 'Пускане/пауза',
 			'hotkeys.actions.volumeUp' => 'Увеличи звука',
 			'hotkeys.actions.volumeDown' => 'Намали звука',
@@ -2512,6 +2536,8 @@ extension on TranslationsBg {
 			'accessibility.saturation' => 'Наситеност',
 			'accessibility.brightness' => 'Яркост',
 			'accessibility.hexColor' => 'Шестнадесетичен цвят',
+			'accessibility.expandText' => 'Разгъни текста',
+			'accessibility.collapseText' => 'Свий текста',
 			'tooltips.shufflePlay' => 'Разбъркано възпроизвеждане',
 			'tooltips.playTrailer' => 'Пусни трейлър',
 			'tooltips.markAsWatched' => 'Маркирай като гледано',
@@ -2602,19 +2628,20 @@ extension on TranslationsBg {
 			'messages.markedAsWatchedOffline' => 'Маркирано като гледано (ще се синхронизира, когато сте онлайн)',
 			'messages.markedAsUnwatchedOffline' => 'Маркирано като негледано (ще се синхронизира, когато сте онлайн)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Автоматично премахнато: ${title}',
+			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bg'))(n, one: 'Автоматично премахнато ${n} гледано изтегляне', other: 'Автоматично премахнати ${n} гледани изтегляния', ), 
 			'messages.removedFromContinueWatching' => 'Премахнато от продължаване на гледането',
 			'messages.errorLoading' => ({required Object error}) => 'Грешка: ${error}',
 			'messages.streamInterrupted' => 'Потокът прекъсна. Натиснете „Пусни“ или превъртете, за да опитате отново.',
 			'messages.liveStreamInterrupted' => 'Потокът на живо прекъсна. Натиснете „Пусни“, за да опитате отново.',
 			'messages.fileInfoNotAvailable' => 'Информацията за файла не е налична',
+			_ => null,
+		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Грешка при зареждане на информация за файла: ${error}',
 			'messages.errorLoadingSeries' => 'Грешка при зареждане на сериала',
 			'messages.musicNotSupported' => 'Възпроизвеждането на музика все още не се поддържа',
 			'messages.noDescriptionAvailable' => 'Няма налично описание',
 			'messages.noProfilesAvailable' => 'Няма налични профили',
 			'messages.contactAdminForProfiles' => 'Свържете се с администратора на сървъра, за да добави профили',
-			_ => null,
-		} ?? switch (path) {
 			'messages.unableToDetermineLibrarySection' => 'Не може да се определи секцията на библиотеката за този елемент',
 			'messages.logsCleared' => 'Логовете са изчистени',
 			'messages.logsCopied' => 'Логовете са копирани в клипборда',
@@ -2653,6 +2680,11 @@ extension on TranslationsBg {
 			'subtitlingStyling.backgroundColor' => 'Цвят на фона',
 			'subtitlingStyling.position' => 'Позиция',
 			'subtitlingStyling.assOverride' => 'ASS презаписване',
+			'subtitlingStyling.overrideScale' => 'Мащабиране',
+			'subtitlingStyling.overrideForce' => 'Принудително',
+			'subtitlingStyling.overrideStrip' => 'Премахване на стиловете',
+			'subtitlingStyling.positionTop' => 'Горе',
+			'subtitlingStyling.positionBottom' => 'Долу',
 			'subtitlingStyling.bold' => 'Получер',
 			'subtitlingStyling.italic' => 'Курсив',
 			'subtitlingStyling.renderResolution' => 'Резолюция на изобразяване',
@@ -2766,7 +2798,7 @@ extension on TranslationsBg {
 			'errors.searchFailed' => ({required Object error}) => 'Търсенето е неуспешно: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => 'Изтече времето за връзка при зареждане на ${context}',
 			'errors.connectionFailed' => 'Не може да се осъществи връзка с медиен сървър',
-			'errors.failedToLoad' => ({required Object context, required Object error}) => 'Неуспешно зареждане на ${context}: ${error}',
+			'errors.unableToLoad' => ({required Object context}) => 'Не може да се зареди ${context}. Опитайте отново.',
 			'errors.noClientAvailable' => 'Няма наличен клиент',
 			'errors.pleaseEnterToken' => 'Моля, въведете токен',
 			'errors.invalidToken' => 'Невалиден токен',
@@ -2987,7 +3019,6 @@ extension on TranslationsBg {
 			'collections.deleted' => 'Колекцията е изтрита',
 			'collections.deleteFailed' => 'Неуспешно изтриване на колекция',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Неуспешно изтриване на колекция: ${error}',
-			'collections.failedToLoadItems' => ({required Object error}) => 'Неуспешно зареждане на елементите в колекцията: ${error}',
 			'collections.selectCollection' => 'Избери колекция',
 			'collections.collectionName' => 'Име на колекция',
 			'collections.enterCollectionName' => 'Въведете име на колекция',
@@ -3061,6 +3092,8 @@ extension on TranslationsBg {
 			'watchTogether.hostingSession' => 'Сесия с домакин',
 			'watchTogether.inSession' => 'В сесия',
 			'watchTogether.sessionCode' => 'Код на сесията',
+			'watchTogether.openSessionControls' => 'Отвори контролите за сесията „Гледане заедно“',
+			'watchTogether.copySessionCode' => 'Копирай кода на сесията',
 			'watchTogether.hostControlsPlayback' => 'Домакинът управлява възпроизвеждането',
 			'watchTogether.anyoneCanControl' => 'Всеки може да управлява възпроизвеждането',
 			'watchTogether.hostControls' => 'Контроли на домакина',
@@ -3115,6 +3148,8 @@ extension on TranslationsBg {
 			'downloads.manage' => 'Управление',
 			'downloads.tvShows' => 'ТВ сериали',
 			'downloads.movies' => 'Филми',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.music' => 'Музика',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} песни в опашката за изтегляне',
 			'downloads.noDownloads' => 'Все още няма изтегляния',
@@ -3127,8 +3162,6 @@ extension on TranslationsBg {
 			'downloads.serverErrorBitrate' => 'Грешка на сървъра: файлът може да надвишава лимита за отдалечен битрейт',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} епизода са добавени в опашката за изтегляне',
 			'downloads.downloadDeleted' => 'Изтеглянето е изтрито',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.deleteConfirm' => ({required Object title}) => 'Да се изтрие ли "${title}" от това устройство?',
 			'downloads.cancelledDownloadTitle' => 'Отменено изтегляне',
 			'downloads.cancelledDownloadMessage' => 'Това изтегляне беше отменено. Какво искате да направите?',
@@ -3260,6 +3293,8 @@ extension on TranslationsBg {
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Връзката е загубена след ${attempts} опита',
 			'companionRemote.errors.connectionLost' => 'Връзката е загубена',
 			'videoSettings.playbackSpeed' => 'Скорост на възпроизвеждане',
+			'videoSettings.normalSpeed' => 'Нормална',
+			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Активен (${duration})',
 			'videoSettings.zoom' => 'Мащаб',
 			'videoSettings.sleepTimer' => 'Таймер за заспиване',
 			'videoSettings.audioSync' => 'Синхронизация на аудио',
@@ -3351,6 +3386,8 @@ extension on TranslationsBg {
 			'metadataEdit.artworkUpdated' => 'Обложката е обновена',
 			'metadataEdit.artworkUpdateFailed' => 'Неуспешно обновяване на обложката',
 			'metadataEdit.noArtworkAvailable' => 'Няма налична обложка',
+			'metadataEdit.artworkOption' => ({required Object index}) => 'Вариант за обложка ${index}',
+			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Вариант за обложка ${index}, избран',
 			'metadataEdit.notSet' => 'Не е зададено',
 			'metadataEdit.libraryDefault' => 'По подразбиране за библиотеката',
 			'metadataEdit.accountDefault' => 'По подразбиране за акаунта',
@@ -3465,11 +3502,13 @@ extension on TranslationsBg {
 			'services.deviceCode.title' => ({required Object service}) => 'Активиране на Plezy в ${service}',
 			'services.deviceCode.body' => ({required Object url}) => 'Посетете ${url} и въведете този код:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Отворете ${service}, за да активирате',
+			'services.deviceCode.copyCode' => 'Копирай кода за активиране',
 			'services.deviceCode.waitingForAuthorization' => 'Изчакване на оторизация…',
 			'services.deviceCode.codeCopied' => 'Кодът е копиран',
 			'services.oauthProxy.title' => ({required Object service}) => 'Вход в ${service}',
 			'services.oauthProxy.body' => 'Сканирайте този QR код или отворете URL-а на което и да е устройство.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Отворете ${service}, за да влезете',
+			'services.oauthProxy.copyUrl' => 'Копирай URL адреса за вход',
 			'services.oauthProxy.urlCopied' => 'URL адресът е копиран',
 			'services.libraryFilter.title' => 'Филтър на библиотеките',
 			'services.libraryFilter.subtitleAllSyncing' => 'Синхронизират се всички библиотеки',

@@ -613,7 +613,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                           left: 0,
                           right: 0,
                           bottom: 12,
-                          child: Icon(Symbols.keyboard_arrow_down_rounded, color: Colors.white24, size: 24),
+                          child: AppIcon(Symbols.keyboard_arrow_down_rounded, color: Colors.white24, size: 24),
                         ),
                     ],
                   ),
@@ -636,7 +636,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                     child: Column(
                       mainAxisSize: .min,
                       children: [
-                        const Icon(Symbols.keyboard_arrow_up_rounded, color: Colors.white38, size: 20),
+                        const AppIcon(Symbols.keyboard_arrow_up_rounded, color: Colors.white38, size: 20),
                         const SizedBox(height: 4),
                         ContentStrip(
                           key: _contentStripKey,

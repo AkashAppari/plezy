@@ -11,6 +11,7 @@ import 'package:plezy/connection/connection.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/navigation/profile_navigation_scope.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -27,12 +28,19 @@ import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/profiles/plex_home_service.dart';
 import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
+import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/screens/music/album_detail_screen.dart';
+import 'package:plezy/screens/music/artist_detail_screen.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
+import 'package:plezy/services/download_manager_service.dart';
+import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/jellyfin_client.dart';
+import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
@@ -40,6 +48,7 @@ import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/media_context_menu.dart';
 import 'package:provider/provider.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/prefs.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -303,6 +312,102 @@ void main() {
       expect(find.text(t.playlists.selectPlaylist), findsNothing);
       expect(find.text('picker target'), findsOneWidget);
     });
+
+    testWidgets('track album action uses the profile navigator from the sibling menu overlay', (tester) async {
+      final track = testMediaItem(
+        id: 'track-1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.track,
+        title: 'Track',
+        parentId: 'album-1',
+        parentTitle: 'Album',
+        grandparentId: 'artist-1',
+        grandparentTitle: 'Artist',
+        serverId: 'srv-1',
+      );
+      final album = testMediaItem(
+        id: 'album-1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.album,
+        title: 'Album',
+        parentId: 'artist-1',
+        parentTitle: 'Artist',
+        serverId: 'srv-1',
+      );
+      final harness = await _pumpSiblingMusicMenu(tester, item: track, relatedItems: [album]);
+
+      await _selectSiblingMusicMenuAction(tester, harness, t.music.goToAlbum);
+
+      expect(find.byType(AlbumDetailScreen), findsOneWidget);
+      expect(harness.profileNavigatorKey.currentState!.canPop(), isTrue);
+      expect(harness.rootNavigatorKey.currentState!.canPop(), isFalse);
+      expect(
+        Provider.of<MusicPlaybackService>(tester.element(find.byType(AlbumDetailScreen)), listen: false),
+        same(harness.music),
+      );
+    });
+
+    testWidgets('album artist action uses the profile navigator from the sibling menu overlay', (tester) async {
+      final album = testMediaItem(
+        id: 'album-1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.album,
+        title: 'Album',
+        parentId: 'artist-1',
+        parentTitle: 'Artist',
+        serverId: 'srv-1',
+      );
+      final artist = testMediaItem(
+        id: 'artist-1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.artist,
+        title: 'Artist',
+        serverId: 'srv-1',
+      );
+      final harness = await _pumpSiblingMusicMenu(tester, item: album, relatedItems: [artist]);
+
+      await _selectSiblingMusicMenuAction(tester, harness, t.music.goToArtist);
+
+      expect(find.byType(ArtistDetailScreen), findsOneWidget);
+      expect(harness.profileNavigatorKey.currentState!.canPop(), isTrue);
+      expect(harness.rootNavigatorKey.currentState!.canPop(), isFalse);
+      expect(
+        Provider.of<MusicPlaybackService>(tester.element(find.byType(ArtistDetailScreen)), listen: false),
+        same(harness.music),
+      );
+    });
+
+    testWidgets('track artist action uses the profile navigator from the sibling menu overlay', (tester) async {
+      final track = testMediaItem(
+        id: 'track-1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.track,
+        title: 'Track',
+        parentId: 'album-1',
+        parentTitle: 'Album',
+        grandparentId: 'artist-1',
+        grandparentTitle: 'Artist',
+        serverId: 'srv-1',
+      );
+      final artist = testMediaItem(
+        id: 'artist-1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.artist,
+        title: 'Artist',
+        serverId: 'srv-1',
+      );
+      final harness = await _pumpSiblingMusicMenu(tester, item: track, relatedItems: [artist]);
+
+      await _selectSiblingMusicMenuAction(tester, harness, t.music.goToArtist);
+
+      expect(find.byType(ArtistDetailScreen), findsOneWidget);
+      expect(harness.profileNavigatorKey.currentState!.canPop(), isTrue);
+      expect(harness.rootNavigatorKey.currentState!.canPop(), isFalse);
+      expect(
+        Provider.of<MusicPlaybackService>(tester.element(find.byType(ArtistDetailScreen)), listen: false),
+        same(harness.music),
+      );
+    });
   });
 }
 
@@ -465,6 +570,170 @@ class _RecordingMusicPlaybackService extends StubMusicPlaybackService {
     playedContext = playContext;
     this.shuffle = shuffle;
   }
+}
+
+class _RelatedMusicClient implements MediaServerClient {
+  _RelatedMusicClient(Iterable<MediaItem> items) : _items = {for (final item in items) item.id: item};
+
+  final Map<String, MediaItem> _items;
+
+  @override
+  ServerId get serverId => ServerId('srv-1');
+
+  @override
+  String? get serverName => 'Server';
+
+  @override
+  MediaBackend get backend => MediaBackend.jellyfin;
+
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
+
+  @override
+  Future<MediaItem?> fetchItem(String id) async => _items[id];
+
+  @override
+  Future<List<MediaItem>> fetchAlbumTracks(String albumId) async => const [];
+
+  @override
+  Future<List<MediaItem>> fetchArtistAlbums(String artistId) async => const [];
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _SiblingMusicMenuHarness {
+  const _SiblingMusicMenuHarness({
+    required this.rootNavigatorKey,
+    required this.profileNavigatorKey,
+    required this.menuKey,
+    required this.music,
+  });
+
+  final GlobalKey<NavigatorState> rootNavigatorKey;
+  final GlobalKey<NavigatorState> profileNavigatorKey;
+  final GlobalKey<MediaContextMenuState> menuKey;
+  final _RecordingMusicPlaybackService music;
+}
+
+Future<_SiblingMusicMenuHarness> _pumpSiblingMusicMenu(
+  WidgetTester tester, {
+  required MediaItem item,
+  required List<MediaItem> relatedItems,
+}) async {
+  resetSharedPreferencesForTest();
+  SettingsService.resetForTesting();
+  await SettingsService.getInstance();
+  LocaleSettings.setLocaleSync(AppLocale.en);
+
+  final db = AppDatabase.forTesting(NativeDatabase.memory());
+  JellyfinApiCache.initialize(db);
+  final downloadManager = DownloadManagerService(
+    database: db,
+    storageService: DownloadStorageService.instance,
+    clientResolver: (serverId, {clientScopeId}) => null,
+  );
+  downloadManager.recoveryFuture = Future<void>.value();
+  final downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+  await downloadProvider.ensureInitialized();
+  final client = _RelatedMusicClient(relatedItems);
+  final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+  final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+  final connections = ConnectionRegistry(db);
+  final profileConnections = ProfileConnectionRegistry(db);
+  final plexHome = PlexHomeService(
+    connections: connections,
+    profileConnections: profileConnections,
+    plexHomeUserFetcher: (_) async => const [],
+  );
+  final activeProfileProvider = ActiveProfileProvider(
+    registry: ProfileRegistry(db),
+    plexHome: plexHome,
+    connections: connections,
+  );
+  final music = _RecordingMusicPlaybackService();
+  final rootNavigatorKey = GlobalKey<NavigatorState>();
+  final profileNavigatorKey = GlobalKey<NavigatorState>();
+  final menuKey = GlobalKey<MediaContextMenuState>();
+
+  addTearDown(() async {
+    downloadProvider.dispose();
+    downloadManager.dispose();
+    activeProfileProvider.dispose();
+    await plexHome.dispose();
+    music.dispose();
+    multiServerProvider.dispose();
+    manager.dispose();
+    await db.close();
+  });
+
+  await tester.pumpWidget(
+    TranslationProvider(
+      child: MaterialApp(
+        navigatorKey: rootNavigatorKey,
+        theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.macOS),
+        home: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+            ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
+            ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfileProvider),
+            ChangeNotifierProvider<MusicPlaybackService>.value(value: music),
+          ],
+          child: ProfileNavigationScope(
+            navigatorKey: profileNavigatorKey,
+            routeObserver: RouteObserver<PageRoute<dynamic>>(),
+            mainScaffoldMessengerKey: GlobalKey<ScaffoldMessengerState>(),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Navigator(
+                  key: profileNavigatorKey,
+                  onGenerateRoute: (_) => MaterialPageRoute<void>(
+                    builder: (_) => const Scaffold(body: Center(child: Text('profile content'))),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Material(
+                    child: MediaContextMenu(
+                      key: menuKey,
+                      item: item,
+                      child: const SizedBox(
+                        width: 180,
+                        height: 64,
+                        child: Center(child: Text('mini-player menu target')),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  return _SiblingMusicMenuHarness(
+    rootNavigatorKey: rootNavigatorKey,
+    profileNavigatorKey: profileNavigatorKey,
+    menuKey: menuKey,
+    music: music,
+  );
+}
+
+Future<void> _selectSiblingMusicMenuAction(
+  WidgetTester tester,
+  _SiblingMusicMenuHarness harness,
+  String actionLabel,
+) async {
+  harness.menuKey.currentState!.showContextMenu(tester.element(find.text('mini-player menu target')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(actionLabel));
+  await tester.pumpAndSettle();
 }
 
 PlexHomeUser _homeUser({required bool admin}) {

@@ -14,6 +14,8 @@ class SliverErrorState extends StatelessWidget {
   final VoidCallback? onActionNavigateLeft;
   final VoidCallback? onActionNavigateRight;
   final VoidCallback? onActionBack;
+  final bool actionAutofocus;
+  final bool actionUseBackgroundFocus;
 
   const SliverErrorState({
     super.key,
@@ -26,6 +28,8 @@ class SliverErrorState extends StatelessWidget {
     this.onActionNavigateLeft,
     this.onActionNavigateRight,
     this.onActionBack,
+    this.actionAutofocus = false,
+    this.actionUseBackgroundFocus = false,
   });
 
   @override
@@ -34,13 +38,15 @@ class SliverErrorState extends StatelessWidget {
       message: message,
       icon: Symbols.error_outline_rounded,
       onRetry: onRetry,
-      retryLabel: retryLabel ?? t.common.retry,
+      retryLabel: retryLabel,
       actionFocusNode: actionFocusNode,
       onActionNavigateUp: onActionNavigateUp,
       onActionNavigateDown: onActionNavigateDown,
       onActionNavigateLeft: onActionNavigateLeft,
       onActionNavigateRight: onActionNavigateRight,
       onActionBack: onActionBack,
+      actionAutofocus: actionAutofocus,
+      actionUseBackgroundFocus: actionUseBackgroundFocus,
     ),
   );
 }

@@ -90,6 +90,25 @@ void main() {
       await expectLater(svc.probe('https://jf.example.com'), throwsA(isA<MediaServerUrlException>()));
     });
 
+    test('applies the shared jellyfinProbe timeout to the injected auth client', () {
+      fakeAsync((async) {
+        final response = Completer<http.Response>();
+        final svc = _service(handler: (_) => response.future);
+        Object? probeError;
+
+        unawaited(_captureError(svc.probe('https://jf.example.com')).then((error) => probeError = error));
+        async.flushMicrotasks();
+
+        async.elapse(MediaServerTimeouts.jellyfinProbe - const Duration(milliseconds: 1));
+        async.flushMicrotasks();
+        expect(probeError, isNull);
+
+        async.elapse(const Duration(milliseconds: 2));
+        async.flushMicrotasks();
+        expect(probeError, isA<MediaServerUrlException>());
+      });
+    });
+
     test('registers base URL redaction before the first probe request', () async {
       final svc = _service(
         handler: (req) {

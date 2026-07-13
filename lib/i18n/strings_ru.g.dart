@@ -358,6 +358,7 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get creditsPattern => 'Шаблон маркера титров';
 	@override String get creditsPatternDescription => 'Регулярное выражение для распознавания маркеров титров в заголовках глав';
 	@override String get invalidRegex => 'Недопустимое регулярное выражение';
+	@override String get regex => 'Регулярное выражение';
 	@override String get downloads => 'Загрузки';
 	@override String get downloadLocationDescription => 'Выберите место для хранения загруженного контента';
 	@override String get downloadLocationDefault => 'По умолчанию (Хранилище приложения)';
@@ -481,6 +482,8 @@ class _TranslationsHotkeysRu extends TranslationsHotkeysEn {
 	@override String get clearShortcut => 'Очистить клавишу';
 	@override String get noShortcutSet => 'Сочетание не задано';
 	@override String get currentShortcut => 'Текущее сочетание:';
+	@override String get pressToRecord => 'Выберите, чтобы записать сочетание клавиш';
+	@override String get recordingShortcut => 'Нажмите сочетание клавиш сейчас';
 	@override late final _TranslationsHotkeysActionsRu actions = _TranslationsHotkeysActionsRu._(_root);
 }
 
@@ -582,6 +585,8 @@ class _TranslationsAccessibilityRu extends TranslationsAccessibilityEn {
 	@override String get saturation => 'Насыщенность';
 	@override String get brightness => 'Яркость';
 	@override String get hexColor => 'Шестнадцатеричный цвет';
+	@override String get expandText => 'Развернуть текст';
+	@override String get collapseText => 'Свернуть текст';
 }
 
 // Path: tooltips
@@ -693,6 +698,12 @@ class _TranslationsMessagesRu extends TranslationsMessagesEn {
 	@override String get markedAsWatchedOffline => 'Отмечено как просмотренное (синхронизируется при подключении)';
 	@override String get markedAsUnwatchedOffline => 'Отмечено как непросмотренное (синхронизируется при подключении)';
 	@override String autoRemovedWatchedDownload({required Object title}) => 'Автоудалено: ${title}';
+	@override String autoRemovedWatchedDownloads({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ru'))(n,
+		one: 'Автоматически удалена ${n} просмотренная загрузка',
+		few: 'Автоматически удалены ${n} просмотренные загрузки',
+		many: 'Автоматически удалено ${n} просмотренных загрузок',
+		other: 'Автоматически удалено ${n} просмотренной загрузки',
+	);
 	@override String get removedFromContinueWatching => 'Удалено из «Продолжить просмотр»';
 	@override String errorLoading({required Object error}) => 'Ошибка: ${error}';
 	@override String get streamInterrupted => 'Поток прервался. Нажмите «Воспроизвести» или перемотайте, чтобы повторить попытку.';
@@ -751,6 +762,11 @@ class _TranslationsSubtitlingStylingRu extends TranslationsSubtitlingStylingEn {
 	@override String get backgroundColor => 'Цвет фона';
 	@override String get position => 'Позиция';
 	@override String get assOverride => 'Переопределение ASS';
+	@override String get overrideScale => 'Масштабировать';
+	@override String get overrideForce => 'Принудительно';
+	@override String get overrideStrip => 'Удалить стили';
+	@override String get positionTop => 'Сверху';
+	@override String get positionBottom => 'Снизу';
 	@override String get bold => 'Жирный';
 	@override String get italic => 'Курсив';
 	@override String get renderResolution => 'Разрешение отрисовки';
@@ -918,7 +934,7 @@ class _TranslationsErrorsRu extends TranslationsErrorsEn {
 	@override String searchFailed({required Object error}) => 'Ошибка поиска: ${error}';
 	@override String connectionTimeout({required Object context}) => 'Таймаут подключения при загрузке ${context}';
 	@override String get connectionFailed => 'Не удалось подключиться к медиасерверу';
-	@override String failedToLoad({required Object context, required Object error}) => 'Не удалось загрузить ${context}: ${error}';
+	@override String unableToLoad({required Object context}) => 'Не удалось загрузить ${context}. Повторите попытку.';
 	@override String get noClientAvailable => 'Клиент недоступен';
 	@override String get pleaseEnterToken => 'Введите токен';
 	@override String get invalidToken => 'Недействительный токен';
@@ -1182,7 +1198,6 @@ class _TranslationsCollectionsRu extends TranslationsCollectionsEn {
 	@override String get deleted => 'Коллекция удалена';
 	@override String get deleteFailed => 'Не удалось удалить коллекцию';
 	@override String deleteFailedWithError({required Object error}) => 'Не удалось удалить коллекцию: ${error}';
-	@override String failedToLoadItems({required Object error}) => 'Не удалось загрузить элементы коллекции: ${error}';
 	@override String get selectCollection => 'Выбрать коллекцию';
 	@override String get collectionName => 'Название коллекции';
 	@override String get enterCollectionName => 'Введите название коллекции';
@@ -1288,6 +1303,8 @@ class _TranslationsWatchTogetherRu extends TranslationsWatchTogetherEn {
 	@override String get hostingSession => 'Хостинг сессии';
 	@override String get inSession => 'В сессии';
 	@override String get sessionCode => 'Код сессии';
+	@override String get openSessionControls => 'Открыть управление сессией «Смотреть вместе»';
+	@override String get copySessionCode => 'Скопировать код сессии';
 	@override String get hostControlsPlayback => 'Хост управляет воспроизведением';
 	@override String get anyoneCanControl => 'Любой может управлять воспроизведением';
 	@override String get hostControls => 'Управление хоста';
@@ -1464,6 +1481,8 @@ class _TranslationsVideoSettingsRu extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => 'Скорость воспроизведения';
+	@override String get normalSpeed => 'Обычная';
+	@override String sleepTimerActive({required Object duration}) => 'Активен (${duration})';
 	@override String get zoom => 'Масштаб';
 	@override String get sleepTimer => 'Таймер сна';
 	@override String get audioSync => 'Синхронизация аудио';
@@ -1582,6 +1601,8 @@ class _TranslationsMetadataEditRu extends TranslationsMetadataEditEn {
 	@override String get artworkUpdated => 'Обложка обновлена';
 	@override String get artworkUpdateFailed => 'Не удалось обновить обложку';
 	@override String get noArtworkAvailable => 'Обложки недоступны';
+	@override String artworkOption({required Object index}) => 'Вариант обложки ${index}';
+	@override String selectedArtworkOption({required Object index}) => 'Вариант обложки ${index}, выбран';
 	@override String get notSet => 'Не задано';
 	@override String get libraryDefault => 'По умолчанию библиотеки';
 	@override String get accountDefault => 'По умолчанию аккаунта';
@@ -2059,6 +2080,7 @@ class _TranslationsServicesDeviceCodeRu extends TranslationsServicesDeviceCodeEn
 	@override String title({required Object service}) => 'Активируйте Plezy в ${service}';
 	@override String body({required Object url}) => 'Перейдите на ${url} и введите этот код:';
 	@override String openToActivate({required Object service}) => 'Открыть ${service} для активации';
+	@override String get copyCode => 'Скопировать код активации';
 	@override String get waitingForAuthorization => 'Ожидание авторизации…';
 	@override String get codeCopied => 'Код скопирован';
 }
@@ -2073,6 +2095,7 @@ class _TranslationsServicesOauthProxyRu extends TranslationsServicesOauthProxyEn
 	@override String title({required Object service}) => 'Войти в ${service}';
 	@override String get body => 'Отсканируйте этот QR-код или откройте URL на любом устройстве.';
 	@override String openToSignIn({required Object service}) => 'Открыть ${service} для входа';
+	@override String get copyUrl => 'Скопировать URL для входа';
 	@override String get urlCopied => 'URL скопирован';
 }
 
@@ -2322,6 +2345,7 @@ extension on TranslationsRu {
 			'settings.creditsPattern' => 'Шаблон маркера титров',
 			'settings.creditsPatternDescription' => 'Регулярное выражение для распознавания маркеров титров в заголовках глав',
 			'settings.invalidRegex' => 'Недопустимое регулярное выражение',
+			'settings.regex' => 'Регулярное выражение',
 			'settings.downloads' => 'Загрузки',
 			'settings.downloadLocationDescription' => 'Выберите место для хранения загруженного контента',
 			'settings.downloadLocationDefault' => 'По умолчанию (Хранилище приложения)',
@@ -2427,6 +2451,8 @@ extension on TranslationsRu {
 			'hotkeys.clearShortcut' => 'Очистить клавишу',
 			'hotkeys.noShortcutSet' => 'Сочетание не задано',
 			'hotkeys.currentShortcut' => 'Текущее сочетание:',
+			'hotkeys.pressToRecord' => 'Выберите, чтобы записать сочетание клавиш',
+			'hotkeys.recordingShortcut' => 'Нажмите сочетание клавиш сейчас',
 			'hotkeys.actions.playPause' => 'Воспроизведение/Пауза',
 			'hotkeys.actions.volumeUp' => 'Громкость выше',
 			'hotkeys.actions.volumeDown' => 'Громкость ниже',
@@ -2516,6 +2542,8 @@ extension on TranslationsRu {
 			'accessibility.saturation' => 'Насыщенность',
 			'accessibility.brightness' => 'Яркость',
 			'accessibility.hexColor' => 'Шестнадцатеричный цвет',
+			'accessibility.expandText' => 'Развернуть текст',
+			'accessibility.collapseText' => 'Свернуть текст',
 			'tooltips.shufflePlay' => 'Случайное воспроизведение',
 			'tooltips.playTrailer' => 'Воспроизвести трейлер',
 			'tooltips.markAsWatched' => 'Отметить как просмотренное',
@@ -2606,19 +2634,20 @@ extension on TranslationsRu {
 			'messages.markedAsWatchedOffline' => 'Отмечено как просмотренное (синхронизируется при подключении)',
 			'messages.markedAsUnwatchedOffline' => 'Отмечено как непросмотренное (синхронизируется при подключении)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Автоудалено: ${title}',
+			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ru'))(n, one: 'Автоматически удалена ${n} просмотренная загрузка', few: 'Автоматически удалены ${n} просмотренные загрузки', many: 'Автоматически удалено ${n} просмотренных загрузок', other: 'Автоматически удалено ${n} просмотренной загрузки', ), 
 			'messages.removedFromContinueWatching' => 'Удалено из «Продолжить просмотр»',
 			'messages.errorLoading' => ({required Object error}) => 'Ошибка: ${error}',
 			'messages.streamInterrupted' => 'Поток прервался. Нажмите «Воспроизвести» или перемотайте, чтобы повторить попытку.',
 			'messages.liveStreamInterrupted' => 'Прямая трансляция прервалась. Нажмите «Воспроизвести», чтобы повторить попытку.',
 			'messages.fileInfoNotAvailable' => 'Информация о файле недоступна',
+			_ => null,
+		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Ошибка загрузки информации о файле: ${error}',
 			'messages.errorLoadingSeries' => 'Ошибка загрузки сериала',
 			'messages.musicNotSupported' => 'Воспроизведение музыки пока не поддерживается',
 			'messages.noDescriptionAvailable' => 'Описание недоступно',
 			'messages.noProfilesAvailable' => 'Профили недоступны',
 			'messages.contactAdminForProfiles' => 'Обратитесь к администратору сервера для добавления профилей',
-			_ => null,
-		} ?? switch (path) {
 			'messages.unableToDetermineLibrarySection' => 'Не удаётся определить раздел библиотеки для этого элемента',
 			'messages.logsCleared' => 'Логи очищены',
 			'messages.logsCopied' => 'Логи скопированы в буфер обмена',
@@ -2657,6 +2686,11 @@ extension on TranslationsRu {
 			'subtitlingStyling.backgroundColor' => 'Цвет фона',
 			'subtitlingStyling.position' => 'Позиция',
 			'subtitlingStyling.assOverride' => 'Переопределение ASS',
+			'subtitlingStyling.overrideScale' => 'Масштабировать',
+			'subtitlingStyling.overrideForce' => 'Принудительно',
+			'subtitlingStyling.overrideStrip' => 'Удалить стили',
+			'subtitlingStyling.positionTop' => 'Сверху',
+			'subtitlingStyling.positionBottom' => 'Снизу',
 			'subtitlingStyling.bold' => 'Жирный',
 			'subtitlingStyling.italic' => 'Курсив',
 			'subtitlingStyling.renderResolution' => 'Разрешение отрисовки',
@@ -2770,7 +2804,7 @@ extension on TranslationsRu {
 			'errors.searchFailed' => ({required Object error}) => 'Ошибка поиска: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => 'Таймаут подключения при загрузке ${context}',
 			'errors.connectionFailed' => 'Не удалось подключиться к медиасерверу',
-			'errors.failedToLoad' => ({required Object context, required Object error}) => 'Не удалось загрузить ${context}: ${error}',
+			'errors.unableToLoad' => ({required Object context}) => 'Не удалось загрузить ${context}. Повторите попытку.',
 			'errors.noClientAvailable' => 'Клиент недоступен',
 			'errors.pleaseEnterToken' => 'Введите токен',
 			'errors.invalidToken' => 'Недействительный токен',
@@ -2991,7 +3025,6 @@ extension on TranslationsRu {
 			'collections.deleted' => 'Коллекция удалена',
 			'collections.deleteFailed' => 'Не удалось удалить коллекцию',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Не удалось удалить коллекцию: ${error}',
-			'collections.failedToLoadItems' => ({required Object error}) => 'Не удалось загрузить элементы коллекции: ${error}',
 			'collections.selectCollection' => 'Выбрать коллекцию',
 			'collections.collectionName' => 'Название коллекции',
 			'collections.enterCollectionName' => 'Введите название коллекции',
@@ -3065,6 +3098,8 @@ extension on TranslationsRu {
 			'watchTogether.hostingSession' => 'Хостинг сессии',
 			'watchTogether.inSession' => 'В сессии',
 			'watchTogether.sessionCode' => 'Код сессии',
+			'watchTogether.openSessionControls' => 'Открыть управление сессией «Смотреть вместе»',
+			'watchTogether.copySessionCode' => 'Скопировать код сессии',
 			'watchTogether.hostControlsPlayback' => 'Хост управляет воспроизведением',
 			'watchTogether.anyoneCanControl' => 'Любой может управлять воспроизведением',
 			'watchTogether.hostControls' => 'Управление хоста',
@@ -3119,6 +3154,8 @@ extension on TranslationsRu {
 			'downloads.manage' => 'Управление',
 			'downloads.tvShows' => 'Сериалы',
 			'downloads.movies' => 'Фильмы',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.music' => 'Музыка',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} треков в очереди на загрузку',
 			'downloads.noDownloads' => 'Загрузок пока нет',
@@ -3131,8 +3168,6 @@ extension on TranslationsRu {
 			'downloads.serverErrorBitrate' => 'Ошибка сервера: файл может превышать удаленный лимит bitrate',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} эпизодов поставлено в очередь загрузки',
 			'downloads.downloadDeleted' => 'Загрузка удалена',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.deleteConfirm' => ({required Object title}) => 'Удалить "${title}" с этого устройства?',
 			'downloads.cancelledDownloadTitle' => 'Загрузка отменена',
 			'downloads.cancelledDownloadMessage' => 'Эта загрузка была отменена. Что вы хотите сделать?',
@@ -3264,6 +3299,8 @@ extension on TranslationsRu {
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Соединение потеряно после ${attempts} попыток',
 			'companionRemote.errors.connectionLost' => 'Соединение потеряно',
 			'videoSettings.playbackSpeed' => 'Скорость воспроизведения',
+			'videoSettings.normalSpeed' => 'Обычная',
+			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Активен (${duration})',
 			'videoSettings.zoom' => 'Масштаб',
 			'videoSettings.sleepTimer' => 'Таймер сна',
 			'videoSettings.audioSync' => 'Синхронизация аудио',
@@ -3355,6 +3392,8 @@ extension on TranslationsRu {
 			'metadataEdit.artworkUpdated' => 'Обложка обновлена',
 			'metadataEdit.artworkUpdateFailed' => 'Не удалось обновить обложку',
 			'metadataEdit.noArtworkAvailable' => 'Обложки недоступны',
+			'metadataEdit.artworkOption' => ({required Object index}) => 'Вариант обложки ${index}',
+			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Вариант обложки ${index}, выбран',
 			'metadataEdit.notSet' => 'Не задано',
 			'metadataEdit.libraryDefault' => 'По умолчанию библиотеки',
 			'metadataEdit.accountDefault' => 'По умолчанию аккаунта',
@@ -3469,11 +3508,13 @@ extension on TranslationsRu {
 			'services.deviceCode.title' => ({required Object service}) => 'Активируйте Plezy в ${service}',
 			'services.deviceCode.body' => ({required Object url}) => 'Перейдите на ${url} и введите этот код:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Открыть ${service} для активации',
+			'services.deviceCode.copyCode' => 'Скопировать код активации',
 			'services.deviceCode.waitingForAuthorization' => 'Ожидание авторизации…',
 			'services.deviceCode.codeCopied' => 'Код скопирован',
 			'services.oauthProxy.title' => ({required Object service}) => 'Войти в ${service}',
 			'services.oauthProxy.body' => 'Отсканируйте этот QR-код или откройте URL на любом устройстве.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Открыть ${service} для входа',
+			'services.oauthProxy.copyUrl' => 'Скопировать URL для входа',
 			'services.oauthProxy.urlCopied' => 'URL скопирован',
 			'services.libraryFilter.title' => 'Фильтр библиотек',
 			'services.libraryFilter.subtitleAllSyncing' => 'Синхронизация всех библиотек',

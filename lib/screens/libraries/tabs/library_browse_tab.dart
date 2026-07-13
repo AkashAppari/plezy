@@ -4,7 +4,6 @@ import '../../../media/ids.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
-import 'package:cached_network_image_ce/cached_network_image.dart';
 import '../../../media/library_first_character.dart';
 import '../../../media/library_query.dart';
 import '../../../media/media_backend.dart';
@@ -12,13 +11,11 @@ import '../../../media/media_item.dart';
 import '../../../media/media_kind.dart';
 import '../../../providers/multi_server_provider.dart';
 import '../../../utils/media_server_http_client.dart';
-import '../../../exceptions/media_server_exceptions.dart';
 import '../../../focus/dpad_navigator.dart';
 import '../../../focus/input_mode_tracker.dart';
 import '../../../media/media_filter.dart';
 import '../../../media/media_sort.dart';
 import '../../../widgets/settings_builder.dart';
-import '../../../services/image_cache_service.dart';
 import '../../../services/library_query_translator.dart';
 import '../../../services/plex_constants.dart';
 import '../../../utils/error_message_utils.dart';
@@ -108,9 +105,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         DeletionAware,
         PaginatedItemLoader<MediaItem, LibraryBrowseTab>,
         SkeletonUpgradeScheduler {
-  @override
-  String? get itemServerId => widget.library.serverId;
-
   String _toGlobalKey(String ratingKey, {required ServerId serverId}) => buildGlobalKey(serverId, ratingKey);
 
   @override
@@ -161,7 +155,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     final affectedIds = {event.itemId, ...event.parentChain};
     for (final item in loadedItems.values) {
       if (affectedIds.contains(item.id)) {
-        unawaited(updateItem(item.id));
+        unawaited(updateItem(item));
       }
     }
   }
@@ -219,9 +213,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   int get itemCount => totalSize;
 
   @override
-  void updateItemInLists(String itemId, MediaItem updatedMetadata) {
+  void updateItemInLists(String sourceGlobalKey, MediaItem updatedMetadata) {
     for (final entry in loadedItems.entries) {
-      if (entry.value.id == itemId) {
+      if (entry.value.globalKey == sourceGlobalKey) {
         loadedItems[entry.key] = updatedMetadata;
         break;
       }
@@ -600,10 +594,11 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       // Load items and first characters in parallel
       // _loadItems manages its own requestId internally
       await Future.wait([_loadItems(), _loadFirstCharacters(requestId: firstCharactersGeneration)]);
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (!mounted) return;
+      final message = localizedLoadErrorMessage(e, stackTrace, context: t.libraries.content);
       setState(() {
-        errorMessage = _getErrorMessage(e);
+        errorMessage = message;
         isLoading = false;
       });
     }
@@ -727,10 +722,11 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
           widget.onDataLoaded!();
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (generation != _contentRequestId || !mounted) return;
+      final message = localizedLoadErrorMessage(e, stackTrace, context: t.libraries.content);
       setState(() {
-        errorMessage = _getErrorMessage(e);
+        errorMessage = message;
         isLoading = false;
       });
     }
@@ -825,13 +821,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       default:
         return t.libraries.groupings.all;
     }
-  }
-
-  String _getErrorMessage(dynamic error) {
-    if (error is MediaServerHttpException) {
-      return mapHttpErrorToMessage(error, context: t.libraries.content);
-    }
-    return mapUnexpectedErrorToMessage(error, context: t.libraries.content);
   }
 
   Widget _buildBrowseOptionsSheet(BuildContext sheetContext) {
@@ -1634,7 +1623,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       final item = items[i];
       final thumb = item.posterThumb(mode: episodePosterMode);
       if (thumb == null || thumb.isEmpty) continue;
-      final imageType = item.usesWideAspectRatio(episodePosterMode) ? ImageType.thumb : ImageType.poster;
+      final imageType = MediaImageHelper.cardImageType(item, episodePosterMode);
 
       final imageUrl = MediaImageHelper.getOptimizedImageUrl(
         client: client,
@@ -1648,19 +1637,14 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
       final scaledWidth = itemWidth * devicePixelRatio;
       final scaledHeight = itemHeight * devicePixelRatio;
-      final (_, memHeight) = MediaImageHelper.getMemCacheDimensions(
+      final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
         displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
         displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
         imageType: imageType,
       );
 
       precacheImage(
-        CachedNetworkImageProvider(
-          imageUrl,
-          cacheManager: PlexImageCacheManager.instance,
-          headers: const {'User-Agent': 'Plezy'},
-          maxHeight: memHeight,
-        ),
+        MediaImageHelper.serverArtworkProvider(imageUrl: imageUrl, memWidth: memWidth, memHeight: memHeight),
         context,
       ).ignore();
     }

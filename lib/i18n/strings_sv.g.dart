@@ -358,6 +358,7 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String get creditsPattern => 'Eftertextmarkörsmönster';
 	@override String get creditsPatternDescription => 'Reguljärt uttryck för att matcha eftertextmarkörer i kapiteltitlar';
 	@override String get invalidRegex => 'Ogiltigt reguljärt uttryck';
+	@override String get regex => 'Reguljärt uttryck';
 	@override String get downloads => 'Nedladdningar';
 	@override String get downloadLocationDescription => 'Välj var nedladdat innehåll ska lagras';
 	@override String get downloadLocationDefault => 'Standard (App-lagring)';
@@ -481,6 +482,8 @@ class _TranslationsHotkeysSv extends TranslationsHotkeysEn {
 	@override String get clearShortcut => 'Rensa genväg';
 	@override String get noShortcutSet => 'Ingen genväg angiven';
 	@override String get currentShortcut => 'Aktuell genväg:';
+	@override String get pressToRecord => 'Välj för att registrera en genväg';
+	@override String get recordingShortcut => 'Tryck på genvägen nu';
 	@override late final _TranslationsHotkeysActionsSv actions = _TranslationsHotkeysActionsSv._(_root);
 }
 
@@ -582,6 +585,8 @@ class _TranslationsAccessibilitySv extends TranslationsAccessibilityEn {
 	@override String get saturation => 'Mättnad';
 	@override String get brightness => 'Ljusstyrka';
 	@override String get hexColor => 'Hexfärg';
+	@override String get expandText => 'Expandera text';
+	@override String get collapseText => 'Fäll ihop text';
 }
 
 // Path: tooltips
@@ -693,6 +698,10 @@ class _TranslationsMessagesSv extends TranslationsMessagesEn {
 	@override String get markedAsWatchedOffline => 'Markerad som sedd (synkroniseras när online)';
 	@override String get markedAsUnwatchedOffline => 'Markerad som osedd (synkroniseras när online)';
 	@override String autoRemovedWatchedDownload({required Object title}) => 'Automatiskt borttagen: ${title}';
+	@override String autoRemovedWatchedDownloads({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n,
+		one: 'Tog automatiskt bort ${n} sedd nedladdning',
+		other: 'Tog automatiskt bort ${n} sedda nedladdningar',
+	);
 	@override String get removedFromContinueWatching => 'Borttagen från Fortsätt titta';
 	@override String errorLoading({required Object error}) => 'Fel: ${error}';
 	@override String get streamInterrupted => 'Uppspelningen avbröts. Tryck på play eller spola för att försöka igen.';
@@ -751,6 +760,11 @@ class _TranslationsSubtitlingStylingSv extends TranslationsSubtitlingStylingEn {
 	@override String get backgroundColor => 'Bakgrundsfärg';
 	@override String get position => 'Position';
 	@override String get assOverride => 'ASS-åsidosättning';
+	@override String get overrideScale => 'Skala';
+	@override String get overrideForce => 'Tvinga';
+	@override String get overrideStrip => 'Ta bort formatering';
+	@override String get positionTop => 'Överst';
+	@override String get positionBottom => 'Nederst';
 	@override String get bold => 'Fet';
 	@override String get italic => 'Kursiv';
 	@override String get renderResolution => 'Renderingsupplösning';
@@ -918,7 +932,7 @@ class _TranslationsErrorsSv extends TranslationsErrorsEn {
 	@override String searchFailed({required Object error}) => 'Sökning misslyckades: ${error}';
 	@override String connectionTimeout({required Object context}) => 'Anslutnings-timeout vid laddning ${context}';
 	@override String get connectionFailed => 'Kan inte ansluta till mediaserver';
-	@override String failedToLoad({required Object context, required Object error}) => 'Misslyckades att ladda ${context}: ${error}';
+	@override String unableToLoad({required Object context}) => 'Det gick inte att läsa in ${context}. Försök igen.';
 	@override String get noClientAvailable => 'Ingen klient tillgänglig';
 	@override String get pleaseEnterToken => 'Vänligen ange en token';
 	@override String get invalidToken => 'Ogiltig token';
@@ -1180,7 +1194,6 @@ class _TranslationsCollectionsSv extends TranslationsCollectionsEn {
 	@override String get deleted => 'Samling borttagen';
 	@override String get deleteFailed => 'Det gick inte att ta bort samlingen';
 	@override String deleteFailedWithError({required Object error}) => 'Det gick inte att ta bort samlingen: ${error}';
-	@override String failedToLoadItems({required Object error}) => 'Det gick inte att läsa in samlingsobjekt: ${error}';
 	@override String get selectCollection => 'Välj samling';
 	@override String get collectionName => 'Samlingsnamn';
 	@override String get enterCollectionName => 'Ange samlingsnamn';
@@ -1284,6 +1297,8 @@ class _TranslationsWatchTogetherSv extends TranslationsWatchTogetherEn {
 	@override String get hostingSession => 'Värd för Session';
 	@override String get inSession => 'I Session';
 	@override String get sessionCode => 'Sessionskod';
+	@override String get openSessionControls => 'Öppna sessionskontroller för Titta Tillsammans';
+	@override String get copySessionCode => 'Kopiera sessionskod';
 	@override String get hostControlsPlayback => 'Värden styr uppspelningen';
 	@override String get anyoneCanControl => 'Alla kan styra uppspelningen';
 	@override String get hostControls => 'Värd styr';
@@ -1460,6 +1475,8 @@ class _TranslationsVideoSettingsSv extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => 'Uppspelningshastighet';
+	@override String get normalSpeed => 'Normal';
+	@override String sleepTimerActive({required Object duration}) => 'Aktiv (${duration})';
 	@override String get zoom => 'Zoom';
 	@override String get sleepTimer => 'Sovtimer';
 	@override String get audioSync => 'Ljudsynkronisering';
@@ -1578,6 +1595,8 @@ class _TranslationsMetadataEditSv extends TranslationsMetadataEditEn {
 	@override String get artworkUpdated => 'Artwork uppdaterad';
 	@override String get artworkUpdateFailed => 'Kunde inte uppdatera artwork';
 	@override String get noArtworkAvailable => 'Ingen artwork tillgänglig';
+	@override String artworkOption({required Object index}) => 'Bildalternativ ${index}';
+	@override String selectedArtworkOption({required Object index}) => 'Bildalternativ ${index}, valt';
 	@override String get notSet => 'Inte angiven';
 	@override String get libraryDefault => 'Biblioteksstandard';
 	@override String get accountDefault => 'Kontostandard';
@@ -2055,6 +2074,7 @@ class _TranslationsServicesDeviceCodeSv extends TranslationsServicesDeviceCodeEn
 	@override String title({required Object service}) => 'Aktivera Plezy på ${service}';
 	@override String body({required Object url}) => 'Besök ${url} och ange den här koden:';
 	@override String openToActivate({required Object service}) => 'Öppna ${service} för att aktivera';
+	@override String get copyCode => 'Kopiera aktiveringskod';
 	@override String get waitingForAuthorization => 'Väntar på auktorisering…';
 	@override String get codeCopied => 'Kod kopierad';
 }
@@ -2069,6 +2089,7 @@ class _TranslationsServicesOauthProxySv extends TranslationsServicesOauthProxyEn
 	@override String title({required Object service}) => 'Logga in på ${service}';
 	@override String get body => 'Skanna den här QR-koden eller öppna URL:en på valfri enhet.';
 	@override String openToSignIn({required Object service}) => 'Öppna ${service} för att logga in';
+	@override String get copyUrl => 'Kopiera inloggnings-URL';
 	@override String get urlCopied => 'URL kopierad';
 }
 
@@ -2318,6 +2339,7 @@ extension on TranslationsSv {
 			'settings.creditsPattern' => 'Eftertextmarkörsmönster',
 			'settings.creditsPatternDescription' => 'Reguljärt uttryck för att matcha eftertextmarkörer i kapiteltitlar',
 			'settings.invalidRegex' => 'Ogiltigt reguljärt uttryck',
+			'settings.regex' => 'Reguljärt uttryck',
 			'settings.downloads' => 'Nedladdningar',
 			'settings.downloadLocationDescription' => 'Välj var nedladdat innehåll ska lagras',
 			'settings.downloadLocationDefault' => 'Standard (App-lagring)',
@@ -2423,6 +2445,8 @@ extension on TranslationsSv {
 			'hotkeys.clearShortcut' => 'Rensa genväg',
 			'hotkeys.noShortcutSet' => 'Ingen genväg angiven',
 			'hotkeys.currentShortcut' => 'Aktuell genväg:',
+			'hotkeys.pressToRecord' => 'Välj för att registrera en genväg',
+			'hotkeys.recordingShortcut' => 'Tryck på genvägen nu',
 			'hotkeys.actions.playPause' => 'Spela/Pausa',
 			'hotkeys.actions.volumeUp' => 'Höj volym',
 			'hotkeys.actions.volumeDown' => 'Sänk volym',
@@ -2512,6 +2536,8 @@ extension on TranslationsSv {
 			'accessibility.saturation' => 'Mättnad',
 			'accessibility.brightness' => 'Ljusstyrka',
 			'accessibility.hexColor' => 'Hexfärg',
+			'accessibility.expandText' => 'Expandera text',
+			'accessibility.collapseText' => 'Fäll ihop text',
 			'tooltips.shufflePlay' => 'Blanda uppspelning',
 			'tooltips.playTrailer' => 'Spela trailer',
 			'tooltips.markAsWatched' => 'Markera som sedd',
@@ -2602,19 +2628,20 @@ extension on TranslationsSv {
 			'messages.markedAsWatchedOffline' => 'Markerad som sedd (synkroniseras när online)',
 			'messages.markedAsUnwatchedOffline' => 'Markerad som osedd (synkroniseras när online)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatiskt borttagen: ${title}',
+			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n, one: 'Tog automatiskt bort ${n} sedd nedladdning', other: 'Tog automatiskt bort ${n} sedda nedladdningar', ), 
 			'messages.removedFromContinueWatching' => 'Borttagen från Fortsätt titta',
 			'messages.errorLoading' => ({required Object error}) => 'Fel: ${error}',
 			'messages.streamInterrupted' => 'Uppspelningen avbröts. Tryck på play eller spola för att försöka igen.',
 			'messages.liveStreamInterrupted' => 'Livestreamen avbröts. Tryck på play för att försöka igen.',
 			'messages.fileInfoNotAvailable' => 'Filinformation inte tillgänglig',
+			_ => null,
+		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Fel vid laddning av filinformation: ${error}',
 			'messages.errorLoadingSeries' => 'Fel vid laddning av serie',
 			'messages.musicNotSupported' => 'Musikuppspelning stöds inte ännu',
 			'messages.noDescriptionAvailable' => 'Ingen beskrivning tillgänglig',
 			'messages.noProfilesAvailable' => 'Inga profiler tillgängliga',
 			'messages.contactAdminForProfiles' => 'Kontakta din serveradministratör för att lägga till profiler',
-			_ => null,
-		} ?? switch (path) {
 			'messages.unableToDetermineLibrarySection' => 'Kan inte avgöra biblioteksavdelningen för detta objekt',
 			'messages.logsCleared' => 'Loggar rensade',
 			'messages.logsCopied' => 'Loggar kopierade till urklipp',
@@ -2653,6 +2680,11 @@ extension on TranslationsSv {
 			'subtitlingStyling.backgroundColor' => 'Bakgrundsfärg',
 			'subtitlingStyling.position' => 'Position',
 			'subtitlingStyling.assOverride' => 'ASS-åsidosättning',
+			'subtitlingStyling.overrideScale' => 'Skala',
+			'subtitlingStyling.overrideForce' => 'Tvinga',
+			'subtitlingStyling.overrideStrip' => 'Ta bort formatering',
+			'subtitlingStyling.positionTop' => 'Överst',
+			'subtitlingStyling.positionBottom' => 'Nederst',
 			'subtitlingStyling.bold' => 'Fet',
 			'subtitlingStyling.italic' => 'Kursiv',
 			'subtitlingStyling.renderResolution' => 'Renderingsupplösning',
@@ -2766,7 +2798,7 @@ extension on TranslationsSv {
 			'errors.searchFailed' => ({required Object error}) => 'Sökning misslyckades: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => 'Anslutnings-timeout vid laddning ${context}',
 			'errors.connectionFailed' => 'Kan inte ansluta till mediaserver',
-			'errors.failedToLoad' => ({required Object context, required Object error}) => 'Misslyckades att ladda ${context}: ${error}',
+			'errors.unableToLoad' => ({required Object context}) => 'Det gick inte att läsa in ${context}. Försök igen.',
 			'errors.noClientAvailable' => 'Ingen klient tillgänglig',
 			'errors.pleaseEnterToken' => 'Vänligen ange en token',
 			'errors.invalidToken' => 'Ogiltig token',
@@ -2987,7 +3019,6 @@ extension on TranslationsSv {
 			'collections.deleted' => 'Samling borttagen',
 			'collections.deleteFailed' => 'Det gick inte att ta bort samlingen',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Det gick inte att ta bort samlingen: ${error}',
-			'collections.failedToLoadItems' => ({required Object error}) => 'Det gick inte att läsa in samlingsobjekt: ${error}',
 			'collections.selectCollection' => 'Välj samling',
 			'collections.collectionName' => 'Samlingsnamn',
 			'collections.enterCollectionName' => 'Ange samlingsnamn',
@@ -3061,6 +3092,8 @@ extension on TranslationsSv {
 			'watchTogether.hostingSession' => 'Värd för Session',
 			'watchTogether.inSession' => 'I Session',
 			'watchTogether.sessionCode' => 'Sessionskod',
+			'watchTogether.openSessionControls' => 'Öppna sessionskontroller för Titta Tillsammans',
+			'watchTogether.copySessionCode' => 'Kopiera sessionskod',
 			'watchTogether.hostControlsPlayback' => 'Värden styr uppspelningen',
 			'watchTogether.anyoneCanControl' => 'Alla kan styra uppspelningen',
 			'watchTogether.hostControls' => 'Värd styr',
@@ -3115,6 +3148,8 @@ extension on TranslationsSv {
 			'downloads.manage' => 'Hantera',
 			'downloads.tvShows' => 'TV-serier',
 			'downloads.movies' => 'Filmer',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.music' => 'Musik',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} låtar i nedladdningskö',
 			'downloads.noDownloads' => 'Inga nedladdningar ännu',
@@ -3127,8 +3162,6 @@ extension on TranslationsSv {
 			'downloads.serverErrorBitrate' => 'Serverfel: filen kan överskrida gränsen för fjärrbitrate',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} avsnitt köade för nedladdning',
 			'downloads.downloadDeleted' => 'Nedladdning borttagen',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.deleteConfirm' => ({required Object title}) => 'Ta bort "${title}" från den här enheten?',
 			'downloads.cancelledDownloadTitle' => 'Avbruten nedladdning',
 			'downloads.cancelledDownloadMessage' => 'Den här nedladdningen avbröts. Vad vill du göra?',
@@ -3260,6 +3293,8 @@ extension on TranslationsSv {
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Anslutning förlorad efter ${attempts} försök',
 			'companionRemote.errors.connectionLost' => 'Anslutning förlorad',
 			'videoSettings.playbackSpeed' => 'Uppspelningshastighet',
+			'videoSettings.normalSpeed' => 'Normal',
+			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Aktiv (${duration})',
 			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Sovtimer',
 			'videoSettings.audioSync' => 'Ljudsynkronisering',
@@ -3351,6 +3386,8 @@ extension on TranslationsSv {
 			'metadataEdit.artworkUpdated' => 'Artwork uppdaterad',
 			'metadataEdit.artworkUpdateFailed' => 'Kunde inte uppdatera artwork',
 			'metadataEdit.noArtworkAvailable' => 'Ingen artwork tillgänglig',
+			'metadataEdit.artworkOption' => ({required Object index}) => 'Bildalternativ ${index}',
+			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Bildalternativ ${index}, valt',
 			'metadataEdit.notSet' => 'Inte angiven',
 			'metadataEdit.libraryDefault' => 'Biblioteksstandard',
 			'metadataEdit.accountDefault' => 'Kontostandard',
@@ -3465,11 +3502,13 @@ extension on TranslationsSv {
 			'services.deviceCode.title' => ({required Object service}) => 'Aktivera Plezy på ${service}',
 			'services.deviceCode.body' => ({required Object url}) => 'Besök ${url} och ange den här koden:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Öppna ${service} för att aktivera',
+			'services.deviceCode.copyCode' => 'Kopiera aktiveringskod',
 			'services.deviceCode.waitingForAuthorization' => 'Väntar på auktorisering…',
 			'services.deviceCode.codeCopied' => 'Kod kopierad',
 			'services.oauthProxy.title' => ({required Object service}) => 'Logga in på ${service}',
 			'services.oauthProxy.body' => 'Skanna den här QR-koden eller öppna URL:en på valfri enhet.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Öppna ${service} för att logga in',
+			'services.oauthProxy.copyUrl' => 'Kopiera inloggnings-URL',
 			'services.oauthProxy.urlCopied' => 'URL kopierad',
 			'services.libraryFilter.title' => 'Biblioteksfilter',
 			'services.libraryFilter.subtitleAllSyncing' => 'Synkroniserar alla bibliotek',

@@ -227,6 +227,7 @@
     "creditsPattern": "Rulletekstmarkørmønster",
     "creditsPatternDescription": "Regulært uttrykk for å gjenkjenne rulletekstmarkører i kapitteltitler",
     "invalidRegex": "Ugyldig regulært uttrykk",
+    "regex": "Regulært uttrykk",
     "downloads": "Nedlastinger",
     "downloadLocationDescription": "Velg hvor nedlastet innhold skal lagres",
     "downloadLocationDefault": "Standard (App-lagring)",
@@ -336,6 +337,8 @@
     "clearShortcut": "Fjern snarvei",
     "noShortcutSet": "Ingen snarvei satt",
     "currentShortcut": "Gjeldende snarvei:",
+    "pressToRecord": "Velg for å registrere en snarvei",
+    "recordingShortcut": "Trykk på snarveien nå",
     "actions": {
       "playPause": "Spill av/Pause",
       "volumeUp": "Volum opp",
@@ -434,7 +437,9 @@
     "hue": "Fargetone",
     "saturation": "Metning",
     "brightness": "Lysstyrke",
-    "hexColor": "Heksadesimal farge"
+    "hexColor": "Heksadesimal farge",
+    "expandText": "Utvid tekst",
+    "collapseText": "Fold sammen tekst"
   },
   "tooltips": {
     "shufflePlay": "Tilfeldig avspilling",
@@ -534,6 +539,10 @@
     "markedAsWatchedOffline": "Merket som sett (synkroniseres når tilkoblet)",
     "markedAsUnwatchedOffline": "Merket som usett (synkroniseres når tilkoblet)",
     "autoRemovedWatchedDownload": "Automatisk fjernet: ${title}",
+    "autoRemovedWatchedDownloads": {
+      "one": "Fjernet automatisk ${n} sett nedlasting",
+      "other": "Fjernet automatisk ${n} sette nedlastinger"
+    },
     "removedFromContinueWatching": "Fjernet fra Fortsett å se",
     "errorLoading": "Feil: ${error}",
     "streamInterrupted": "Avspillingen ble avbrutt. Trykk på Spill av eller spol for å prøve på nytt.",
@@ -585,6 +594,11 @@
     "backgroundColor": "Bakgrunnsfarge",
     "position": "Posisjon",
     "assOverride": "ASS-overstyring",
+    "overrideScale": "Skaler",
+    "overrideForce": "Tving",
+    "overrideStrip": "Fjern formatering",
+    "positionTop": "Øverst",
+    "positionBottom": "Nederst",
     "bold": "Fet",
     "italic": "Kursiv",
     "renderResolution": "Gjengivelsesoppløsning",
@@ -710,7 +724,7 @@
     "searchFailed": "Søk mislyktes: ${error}",
     "connectionTimeout": "Tidsavbrudd ved lasting av ${context}",
     "connectionFailed": "Kan ikke koble til medieserver",
-    "failedToLoad": "Kunne ikke laste ${context}: ${error}",
+    "unableToLoad": "Kunne ikke laste ${context}. Prøv igjen.",
     "noClientAvailable": "Ingen klient tilgjengelig",
     "pleaseEnterToken": "Vennligst skriv inn et token",
     "invalidToken": "Ugyldig token",
@@ -966,7 +980,6 @@
     "deleted": "Samling slettet",
     "deleteFailed": "Kunne ikke slette samling",
     "deleteFailedWithError": "Kunne ikke slette samling: ${error}",
-    "failedToLoadItems": "Kunne ikke laste samlingselementer: ${error}",
     "selectCollection": "Velg samling",
     "collectionName": "Samlingsnavn",
     "enterCollectionName": "Skriv inn samlingsnavn",
@@ -1049,6 +1062,8 @@
     "hostingSession": "Er vert for økt",
     "inSession": "I økt",
     "sessionCode": "Øktkode",
+    "openSessionControls": "Åpne øktkontroller for Se sammen",
+    "copySessionCode": "Kopier øktkode",
     "hostControlsPlayback": "Verten kontrollerer avspilling",
     "anyoneCanControl": "Alle kan kontrollere avspilling",
     "hostControls": "Vertskontroll",
@@ -1262,6 +1277,8 @@
   },
   "videoSettings": {
     "playbackSpeed": "Avspillingshastighet",
+    "normalSpeed": "Normal",
+    "sleepTimerActive": "Aktiv (${duration})",
     "zoom": "Zoom",
     "sleepTimer": "Søvntimer",
     "audioSync": "Lydsynkronisering",
@@ -1359,6 +1376,8 @@
     "artworkUpdated": "Kunstverk oppdatert",
     "artworkUpdateFailed": "Kunne ikke oppdatere kunstverk",
     "noArtworkAvailable": "Ingen kunstverk tilgjengelig",
+    "artworkOption": "Alternativ for kunstverk ${index}",
+    "selectedArtworkOption": "Alternativ for kunstverk ${index}, valgt",
     "notSet": "Ikke angitt",
     "libraryDefault": "Bibliotekstandard",
     "accountDefault": "Kontostandard",
@@ -1486,6 +1505,7 @@
       "title": "Aktiver Plezy på ${service}",
       "body": "Besøk ${url} og skriv inn denne koden:",
       "openToActivate": "Åpne ${service} for å aktivere",
+      "copyCode": "Kopier aktiveringskode",
       "waitingForAuthorization": "Venter på godkjenning…",
       "codeCopied": "Kode kopiert"
     },
@@ -1493,6 +1513,7 @@
       "title": "Logg inn på ${service}",
       "body": "Skann denne QR-koden eller åpne URL-en på en enhet.",
       "openToSignIn": "Åpne ${service} for å logge inn",
+      "copyUrl": "Kopier URL for pålogging",
       "urlCopied": "URL kopiert"
     },
     "libraryFilter": {

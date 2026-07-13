@@ -119,6 +119,42 @@ Future<T?> showAppMenu<T>(
   );
 }
 
+Future<T?> showAdaptiveAppMenu<T>(
+  BuildContext context, {
+  required List<AppMenuEntry<T>> entries,
+  String? title,
+  Offset? position,
+  Rect? anchorRect,
+  AppMenuAnchorAlignment anchorAlignment = AppMenuAnchorAlignment.start,
+  bool focusFirstItem = false,
+  double minWidth = 220,
+  double? maxWidth,
+  bool isScrollControlled = false,
+}) {
+  // ThemeData.platform follows the real target platform by default, including
+  // Android TV and tvOS, while remaining overrideable in widget tests.
+  final platform = Theme.of(context).platform;
+  if (platform == TargetPlatform.iOS || platform == TargetPlatform.android) {
+    return OverlaySheetController.showAdaptive<T>(
+      context,
+      showDragHandle: true,
+      isScrollControlled: isScrollControlled,
+      builder: (context) => AppMenuSheet<T>(title: title, entries: entries, focusFirstItem: focusFirstItem),
+    );
+  }
+
+  return showAppMenu<T>(
+    context,
+    entries: entries,
+    position: position,
+    anchorRect: anchorRect,
+    anchorAlignment: anchorAlignment,
+    focusFirstItem: focusFirstItem,
+    minWidth: minWidth,
+    maxWidth: maxWidth,
+  );
+}
+
 Alignment _transitionAlignment(BuildContext context, {Offset? position, Rect? anchorRect}) {
   final size = MediaQuery.sizeOf(context);
   final origin = position ?? anchorRect?.center ?? Offset(size.width / 2, size.height / 2);

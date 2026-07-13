@@ -539,7 +539,7 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
 
   Widget _buildKeyContent(BuildContext context, _PinKey key, Color foreground) {
     final icon = key.icon;
-    if (icon != null) return Icon(icon, color: foreground, size: 30);
+    if (icon != null) return AppIcon(icon, color: foreground, size: 30);
 
     return FittedBox(
       fit: BoxFit.scaleDown,
@@ -678,9 +678,9 @@ class _PinKey {
       case _PinKeyType.digit:
         return null;
       case _PinKeyType.backspace:
-        return Icons.backspace_outlined;
+        return Symbols.backspace_rounded;
       case _PinKeyType.close:
-        return Icons.close_rounded;
+        return Symbols.close_rounded;
     }
   }
 }

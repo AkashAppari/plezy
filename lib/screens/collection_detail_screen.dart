@@ -9,6 +9,7 @@ import '../mixins/paginated_item_loader.dart';
 import '../providers/download_provider.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
+import '../utils/error_message_utils.dart';
 import '../utils/download_utils.dart';
 import '../utils/platform_detector.dart';
 import '../utils/media_server_http_client.dart';
@@ -41,9 +42,6 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
   MediaItem get mediaItem => widget.collection;
 
   @override
-  String? get itemServerId => widget.collection.serverId;
-
-  @override
   String get title => widget.collection.title!;
 
   @override
@@ -72,12 +70,12 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
   }
 
   @override
-  void updateItemInLists(String itemId, MediaItem updatedItem) {
+  void updateItemInLists(String sourceGlobalKey, MediaItem updatedItem) {
     // Search [loadedItems] (not the flat [items] snapshot, which only has
     // the first page) so refreshing an item at a scrolled-in position updates
     // the grid in place.
     for (final entry in loadedItems.entries) {
-      if (entry.value.id == itemId) {
+      if (entry.value.globalKey == sourceGlobalKey) {
         loadedItems[entry.key] = updatedItem;
         return;
       }
@@ -86,6 +84,7 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
 
   @override
   Future<void> loadItems() async {
+    String? loadErrorMessage;
     await loadInitialPaginatedItems(
       pageSize: _pageSize,
       resetViewState: () {
@@ -97,8 +96,8 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
         items = loaded;
         isLoading = false;
       },
-      applyError: (error, _) {
-        errorMessage = t.collections.failedToLoadItems(error: error.toString());
+      applyError: (error, stackTrace) {
+        errorMessage = loadErrorMessage ?? t.errors.unableToLoad(context: t.collections.collection);
         isLoading = false;
       },
       onLoaded: (loadedCount, totalCount) {
@@ -106,7 +105,7 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
         autoFocusFirstItemAfterLoad();
       },
       onError: (error, stackTrace) {
-        appLogger.e('Failed to load collection items', error: error, stackTrace: stackTrace);
+        loadErrorMessage = localizedLoadErrorMessage(error, stackTrace, context: t.collections.collection);
       },
     );
   }

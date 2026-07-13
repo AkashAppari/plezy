@@ -358,6 +358,7 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get creditsPattern => 'クレジットマーカーパターン';
 	@override String get creditsPatternDescription => 'チャプタータイトルのクレジットマーカーに一致する正規表現パターン';
 	@override String get invalidRegex => '無効な正規表現';
+	@override String get regex => '正規表現';
 	@override String get downloads => 'ダウンロード';
 	@override String get downloadLocationDescription => 'ダウンロードコンテンツの保存場所を選択';
 	@override String get downloadLocationDefault => 'デフォルト（アプリストレージ）';
@@ -481,6 +482,8 @@ class _TranslationsHotkeysJa extends TranslationsHotkeysEn {
 	@override String get clearShortcut => 'ショートカットをクリア';
 	@override String get noShortcutSet => 'ショートカット未設定';
 	@override String get currentShortcut => '現在のショートカット:';
+	@override String get pressToRecord => '選択してショートカットを記録';
+	@override String get recordingShortcut => 'ショートカットを押してください';
 	@override late final _TranslationsHotkeysActionsJa actions = _TranslationsHotkeysActionsJa._(_root);
 }
 
@@ -582,6 +585,8 @@ class _TranslationsAccessibilityJa extends TranslationsAccessibilityEn {
 	@override String get saturation => '彩度';
 	@override String get brightness => '明るさ';
 	@override String get hexColor => '16進カラー';
+	@override String get expandText => 'テキストを展開';
+	@override String get collapseText => 'テキストを折りたたむ';
 }
 
 // Path: tooltips
@@ -693,6 +698,9 @@ class _TranslationsMessagesJa extends TranslationsMessagesEn {
 	@override String get markedAsWatchedOffline => '視聴済みにしました（オンライン時に同期）';
 	@override String get markedAsUnwatchedOffline => '未視聴にしました（オンライン時に同期）';
 	@override String autoRemovedWatchedDownload({required Object title}) => '自動削除: ${title}';
+	@override String autoRemovedWatchedDownloads({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n,
+		other: '視聴済みダウンロードを${n}件自動削除しました',
+	);
 	@override String get removedFromContinueWatching => '視聴中から削除しました';
 	@override String errorLoading({required Object error}) => 'エラー: ${error}';
 	@override String get streamInterrupted => 'ストリームが中断されました。再生を押すかシークして再試行してください。';
@@ -751,6 +759,11 @@ class _TranslationsSubtitlingStylingJa extends TranslationsSubtitlingStylingEn {
 	@override String get backgroundColor => '背景色';
 	@override String get position => '位置';
 	@override String get assOverride => 'ASSオーバーライド';
+	@override String get overrideScale => '拡大縮小';
+	@override String get overrideForce => '強制';
+	@override String get overrideStrip => 'スタイルを削除';
+	@override String get positionTop => '上';
+	@override String get positionBottom => '下';
 	@override String get bold => '太字';
 	@override String get italic => '斜体';
 	@override String get renderResolution => 'レンダリング解像度';
@@ -918,7 +931,7 @@ class _TranslationsErrorsJa extends TranslationsErrorsEn {
 	@override String searchFailed({required Object error}) => '検索に失敗しました: ${error}';
 	@override String connectionTimeout({required Object context}) => '${context}の読み込み中に接続がタイムアウトしました';
 	@override String get connectionFailed => 'メディアサーバーに接続できません';
-	@override String failedToLoad({required Object context, required Object error}) => '${context}の読み込みに失敗しました: ${error}';
+	@override String unableToLoad({required Object context}) => '${context}を読み込めませんでした。もう一度お試しください。';
 	@override String get noClientAvailable => 'クライアントが利用できません';
 	@override String get pleaseEnterToken => 'トークンを入力してください';
 	@override String get invalidToken => '無効なトークン';
@@ -1179,7 +1192,6 @@ class _TranslationsCollectionsJa extends TranslationsCollectionsEn {
 	@override String get deleted => 'コレクションを削除しました';
 	@override String get deleteFailed => 'コレクションの削除に失敗しました';
 	@override String deleteFailedWithError({required Object error}) => 'コレクションの削除に失敗しました: ${error}';
-	@override String failedToLoadItems({required Object error}) => 'コレクションアイテムの読み込みに失敗しました: ${error}';
 	@override String get selectCollection => 'コレクションを選択';
 	@override String get collectionName => 'コレクション名';
 	@override String get enterCollectionName => 'コレクション名を入力';
@@ -1282,6 +1294,8 @@ class _TranslationsWatchTogetherJa extends TranslationsWatchTogetherEn {
 	@override String get hostingSession => 'セッションをホスト中';
 	@override String get inSession => 'セッション中';
 	@override String get sessionCode => 'セッションコード';
+	@override String get openSessionControls => '「一緒に見る」セッションのコントロールを開く';
+	@override String get copySessionCode => 'セッションコードをコピー';
 	@override String get hostControlsPlayback => 'ホストが再生を制御';
 	@override String get anyoneCanControl => '全員が再生を制御可能';
 	@override String get hostControls => 'ホストが制御';
@@ -1458,6 +1472,8 @@ class _TranslationsVideoSettingsJa extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => '再生速度';
+	@override String get normalSpeed => '標準';
+	@override String sleepTimerActive({required Object duration}) => '作動中（${duration}）';
 	@override String get zoom => 'ズーム';
 	@override String get sleepTimer => 'スリープタイマー';
 	@override String get audioSync => '音声同期';
@@ -1576,6 +1592,8 @@ class _TranslationsMetadataEditJa extends TranslationsMetadataEditEn {
 	@override String get artworkUpdated => 'アートワークを更新しました';
 	@override String get artworkUpdateFailed => 'アートワークの更新に失敗しました';
 	@override String get noArtworkAvailable => 'アートワークがありません';
+	@override String artworkOption({required Object index}) => 'アートワークの選択肢 ${index}';
+	@override String selectedArtworkOption({required Object index}) => 'アートワークの選択肢 ${index}、選択済み';
 	@override String get notSet => '未設定';
 	@override String get libraryDefault => 'ライブラリのデフォルト';
 	@override String get accountDefault => 'アカウントのデフォルト';
@@ -2053,6 +2071,7 @@ class _TranslationsServicesDeviceCodeJa extends TranslationsServicesDeviceCodeEn
 	@override String title({required Object service}) => '${service} で Plezy を有効化';
 	@override String body({required Object url}) => '${url} にアクセスしてこのコードを入力:';
 	@override String openToActivate({required Object service}) => '${service} を開いて有効化';
+	@override String get copyCode => 'アクティベーションコードをコピー';
 	@override String get waitingForAuthorization => '認証を待っています…';
 	@override String get codeCopied => 'コードをコピーしました';
 }
@@ -2067,6 +2086,7 @@ class _TranslationsServicesOauthProxyJa extends TranslationsServicesOauthProxyEn
 	@override String title({required Object service}) => '${service} にサインイン';
 	@override String get body => 'このQRコードをスキャンするか、任意のデバイスでURLを開いてください。';
 	@override String openToSignIn({required Object service}) => '${service} を開いてサインイン';
+	@override String get copyUrl => 'サインインURLをコピー';
 	@override String get urlCopied => 'URLをコピーしました';
 }
 
@@ -2316,6 +2336,7 @@ extension on TranslationsJa {
 			'settings.creditsPattern' => 'クレジットマーカーパターン',
 			'settings.creditsPatternDescription' => 'チャプタータイトルのクレジットマーカーに一致する正規表現パターン',
 			'settings.invalidRegex' => '無効な正規表現',
+			'settings.regex' => '正規表現',
 			'settings.downloads' => 'ダウンロード',
 			'settings.downloadLocationDescription' => 'ダウンロードコンテンツの保存場所を選択',
 			'settings.downloadLocationDefault' => 'デフォルト（アプリストレージ）',
@@ -2421,6 +2442,8 @@ extension on TranslationsJa {
 			'hotkeys.clearShortcut' => 'ショートカットをクリア',
 			'hotkeys.noShortcutSet' => 'ショートカット未設定',
 			'hotkeys.currentShortcut' => '現在のショートカット:',
+			'hotkeys.pressToRecord' => '選択してショートカットを記録',
+			'hotkeys.recordingShortcut' => 'ショートカットを押してください',
 			'hotkeys.actions.playPause' => '再生/一時停止',
 			'hotkeys.actions.volumeUp' => '音量を上げる',
 			'hotkeys.actions.volumeDown' => '音量を下げる',
@@ -2510,6 +2533,8 @@ extension on TranslationsJa {
 			'accessibility.saturation' => '彩度',
 			'accessibility.brightness' => '明るさ',
 			'accessibility.hexColor' => '16進カラー',
+			'accessibility.expandText' => 'テキストを展開',
+			'accessibility.collapseText' => 'テキストを折りたたむ',
 			'tooltips.shufflePlay' => 'シャッフル再生',
 			'tooltips.playTrailer' => '予告編を再生',
 			'tooltips.markAsWatched' => '視聴済みにする',
@@ -2600,19 +2625,20 @@ extension on TranslationsJa {
 			'messages.markedAsWatchedOffline' => '視聴済みにしました（オンライン時に同期）',
 			'messages.markedAsUnwatchedOffline' => '未視聴にしました（オンライン時に同期）',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '自動削除: ${title}',
+			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, other: '視聴済みダウンロードを${n}件自動削除しました', ), 
 			'messages.removedFromContinueWatching' => '視聴中から削除しました',
 			'messages.errorLoading' => ({required Object error}) => 'エラー: ${error}',
 			'messages.streamInterrupted' => 'ストリームが中断されました。再生を押すかシークして再試行してください。',
 			'messages.liveStreamInterrupted' => 'ライブストリームが中断されました。再生を押して再試行してください。',
 			'messages.fileInfoNotAvailable' => 'ファイル情報が利用できません',
+			_ => null,
+		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'ファイル情報の読み込みエラー: ${error}',
 			'messages.errorLoadingSeries' => 'シリーズの読み込みエラー',
 			'messages.musicNotSupported' => '音楽の再生はまだサポートされていません',
 			'messages.noDescriptionAvailable' => '説明はありません',
 			'messages.noProfilesAvailable' => '利用可能なプロフィールがありません',
 			'messages.contactAdminForProfiles' => 'プロファイルを追加するにはサーバー管理者に連絡してください',
-			_ => null,
-		} ?? switch (path) {
 			'messages.unableToDetermineLibrarySection' => 'このアイテムのライブラリセクションを判別できません',
 			'messages.logsCleared' => 'ログをクリアしました',
 			'messages.logsCopied' => 'ログをクリップボードにコピーしました',
@@ -2651,6 +2677,11 @@ extension on TranslationsJa {
 			'subtitlingStyling.backgroundColor' => '背景色',
 			'subtitlingStyling.position' => '位置',
 			'subtitlingStyling.assOverride' => 'ASSオーバーライド',
+			'subtitlingStyling.overrideScale' => '拡大縮小',
+			'subtitlingStyling.overrideForce' => '強制',
+			'subtitlingStyling.overrideStrip' => 'スタイルを削除',
+			'subtitlingStyling.positionTop' => '上',
+			'subtitlingStyling.positionBottom' => '下',
 			'subtitlingStyling.bold' => '太字',
 			'subtitlingStyling.italic' => '斜体',
 			'subtitlingStyling.renderResolution' => 'レンダリング解像度',
@@ -2764,7 +2795,7 @@ extension on TranslationsJa {
 			'errors.searchFailed' => ({required Object error}) => '検索に失敗しました: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => '${context}の読み込み中に接続がタイムアウトしました',
 			'errors.connectionFailed' => 'メディアサーバーに接続できません',
-			'errors.failedToLoad' => ({required Object context, required Object error}) => '${context}の読み込みに失敗しました: ${error}',
+			'errors.unableToLoad' => ({required Object context}) => '${context}を読み込めませんでした。もう一度お試しください。',
 			'errors.noClientAvailable' => 'クライアントが利用できません',
 			'errors.pleaseEnterToken' => 'トークンを入力してください',
 			'errors.invalidToken' => '無効なトークン',
@@ -2985,7 +3016,6 @@ extension on TranslationsJa {
 			'collections.deleted' => 'コレクションを削除しました',
 			'collections.deleteFailed' => 'コレクションの削除に失敗しました',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'コレクションの削除に失敗しました: ${error}',
-			'collections.failedToLoadItems' => ({required Object error}) => 'コレクションアイテムの読み込みに失敗しました: ${error}',
 			'collections.selectCollection' => 'コレクションを選択',
 			'collections.collectionName' => 'コレクション名',
 			'collections.enterCollectionName' => 'コレクション名を入力',
@@ -3059,6 +3089,8 @@ extension on TranslationsJa {
 			'watchTogether.hostingSession' => 'セッションをホスト中',
 			'watchTogether.inSession' => 'セッション中',
 			'watchTogether.sessionCode' => 'セッションコード',
+			'watchTogether.openSessionControls' => '「一緒に見る」セッションのコントロールを開く',
+			'watchTogether.copySessionCode' => 'セッションコードをコピー',
 			'watchTogether.hostControlsPlayback' => 'ホストが再生を制御',
 			'watchTogether.anyoneCanControl' => '全員が再生を制御可能',
 			'watchTogether.hostControls' => 'ホストが制御',
@@ -3113,6 +3145,8 @@ extension on TranslationsJa {
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => 'テレビ番組',
 			'downloads.movies' => '映画',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.music' => '音楽',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} 曲をダウンロード待機中',
 			'downloads.noDownloads' => 'ダウンロードなし',
@@ -3125,8 +3159,6 @@ extension on TranslationsJa {
 			'downloads.serverErrorBitrate' => 'サーバーエラー: ファイルがリモートビットレート制限を超えている可能性があります',
 			'downloads.episodesQueued' => ({required Object count}) => '${count}エピソードをダウンロードキューに追加しました',
 			'downloads.downloadDeleted' => 'ダウンロードを削除しました',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.deleteConfirm' => ({required Object title}) => 'このデバイスから「${title}」を削除しますか？',
 			'downloads.cancelledDownloadTitle' => 'キャンセルされたダウンロード',
 			'downloads.cancelledDownloadMessage' => 'このダウンロードはキャンセルされました。どうしますか？',
@@ -3258,6 +3290,8 @@ extension on TranslationsJa {
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => '${attempts}回試行後に接続が切断されました',
 			'companionRemote.errors.connectionLost' => '接続が切断されました',
 			'videoSettings.playbackSpeed' => '再生速度',
+			'videoSettings.normalSpeed' => '標準',
+			'videoSettings.sleepTimerActive' => ({required Object duration}) => '作動中（${duration}）',
 			'videoSettings.zoom' => 'ズーム',
 			'videoSettings.sleepTimer' => 'スリープタイマー',
 			'videoSettings.audioSync' => '音声同期',
@@ -3349,6 +3383,8 @@ extension on TranslationsJa {
 			'metadataEdit.artworkUpdated' => 'アートワークを更新しました',
 			'metadataEdit.artworkUpdateFailed' => 'アートワークの更新に失敗しました',
 			'metadataEdit.noArtworkAvailable' => 'アートワークがありません',
+			'metadataEdit.artworkOption' => ({required Object index}) => 'アートワークの選択肢 ${index}',
+			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'アートワークの選択肢 ${index}、選択済み',
 			'metadataEdit.notSet' => '未設定',
 			'metadataEdit.libraryDefault' => 'ライブラリのデフォルト',
 			'metadataEdit.accountDefault' => 'アカウントのデフォルト',
@@ -3463,11 +3499,13 @@ extension on TranslationsJa {
 			'services.deviceCode.title' => ({required Object service}) => '${service} で Plezy を有効化',
 			'services.deviceCode.body' => ({required Object url}) => '${url} にアクセスしてこのコードを入力:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => '${service} を開いて有効化',
+			'services.deviceCode.copyCode' => 'アクティベーションコードをコピー',
 			'services.deviceCode.waitingForAuthorization' => '認証を待っています…',
 			'services.deviceCode.codeCopied' => 'コードをコピーしました',
 			'services.oauthProxy.title' => ({required Object service}) => '${service} にサインイン',
 			'services.oauthProxy.body' => 'このQRコードをスキャンするか、任意のデバイスでURLを開いてください。',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => '${service} を開いてサインイン',
+			'services.oauthProxy.copyUrl' => 'サインインURLをコピー',
 			'services.oauthProxy.urlCopied' => 'URLをコピーしました',
 			'services.libraryFilter.title' => 'ライブラリフィルター',
 			'services.libraryFilter.subtitleAllSyncing' => 'すべてのライブラリを同期中',

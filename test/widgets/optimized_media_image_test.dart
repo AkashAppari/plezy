@@ -9,28 +9,49 @@ import 'package:plezy/utils/media_image_helper.dart';
 import 'package:plezy/widgets/optimized_media_image.dart';
 
 void main() {
-  testWidgets('network images use decode resize without disk cache resize', (tester) async {
+  testWidgets('network widget matches the shared server artwork provider', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    const imageUrl = 'https://example.invalid/episode-thumb.jpg';
+
     await tester.pumpWidget(
       const MaterialApp(
         home: SizedBox(
           width: 160,
           height: 90,
-          child: OptimizedMediaImage.thumb(
-            imagePath: 'https://example.invalid/episode-thumb.jpg',
-            width: 160,
-            height: 90,
-          ),
+          child: OptimizedMediaImage.thumb(imagePath: imageUrl, width: 160, height: 90),
         ),
       ),
     );
 
     final image = tester.widget<Image>(find.byType(Image));
-    final resizeProvider = image.image as ResizeImage;
-    final cachedProvider = resizeProvider.imageProvider as CachedNetworkImageProvider;
+    final widgetProvider = image.image as ResizeImage;
+    final widgetCached = widgetProvider.imageProvider as CachedNetworkImageProvider;
+    final sharedProvider =
+        MediaImageHelper.serverArtworkProvider(imageUrl: imageUrl, memWidth: 200, memHeight: 180) as ResizeImage;
+    final sharedCached = sharedProvider.imageProvider as CachedNetworkImageProvider;
 
-    expect(resizeProvider.height, isNotNull);
-    expect(cachedProvider.maxHeight, isNull);
-    expect(cachedProvider.maxWidth, isNull);
+    expect(widgetCached, sharedCached);
+    expect(widgetProvider.width, sharedProvider.width);
+    expect(widgetProvider.width, 200);
+    expect(widgetProvider.height, sharedProvider.height);
+    expect(widgetProvider.height, 180);
+    expect(widgetProvider.policy, sharedProvider.policy);
+    expect(widgetProvider.policy, ResizeImagePolicy.fit);
+    expect(widgetProvider.allowUpscaling, sharedProvider.allowUpscaling);
+    expect(widgetProvider.allowUpscaling, isFalse);
+    expect(widgetCached.url, sharedCached.url);
+    expect(widgetCached.url, imageUrl);
+    expect(widgetCached.cacheKey, sharedCached.cacheKey);
+    expect(widgetCached.cacheKey, isNotNull);
+    expect(widgetCached.headers, sharedCached.headers);
+    expect(widgetCached.headers, const {'User-Agent': 'Plezy'});
+    expect(widgetCached.maxWidth, sharedCached.maxWidth);
+    expect(widgetCached.maxWidth, isNull);
+    expect(widgetCached.maxHeight, sharedCached.maxHeight);
+    expect(widgetCached.maxHeight, isNull);
   });
 
   testWidgets('failed image placeholders keep explicit dimensions in loose layouts', (tester) async {
@@ -69,6 +90,10 @@ void main() {
   });
 
   testWidgets('same local artwork path re-resolves after the file appears', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
     final directory = Directory.systemTemp.createTempSync('plezy-image-test');
     addTearDown(() => directory.deleteSync(recursive: true));
     final file = File('${directory.path}/poster.png');
@@ -110,6 +135,13 @@ void main() {
     expect(file.existsSync(), isTrue);
     expect(find.byIcon(Symbols.image_not_supported_rounded), findsNothing);
     expect(find.byType(Image), findsOneWidget);
+    final localImage = tester.widget<Image>(find.byType(Image));
+    final localResize = localImage.image as ResizeImage;
+    final localProvider = localResize.imageProvider as FileImage;
+    expect(localResize.width, 120);
+    expect(localResize.height, 180);
+    expect(localResize.policy, ResizeImagePolicy.fit);
+    expect(localProvider.file.path, file.path);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 }

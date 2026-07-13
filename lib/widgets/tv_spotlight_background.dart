@@ -243,6 +243,12 @@ class TvSpotlightBackground extends StatelessWidget {
     if (logoPath == null || logoPath.isEmpty) {
       return SizedBox(width: logoWidth, height: logoHeight, child: _buildTitle(context, title));
     }
+    final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+    final (logoMemWidth, logoMemHeight) = MediaImageHelper.getMemCacheDimensions(
+      displayWidth: (logoWidth * dpr).round(),
+      displayHeight: (logoHeight * dpr).round(),
+      imageType: ImageType.heroLogo,
+    );
 
     final localLogoPath = localArtworkPathResolver?.call(logoPath);
     if (localLogoPath != null && File(localLogoPath).existsSync()) {
@@ -250,8 +256,12 @@ class TvSpotlightBackground extends StatelessWidget {
         width: logoWidth,
         height: logoHeight,
         child: blurArtwork(
-          Image.file(
-            File(localLogoPath),
+          Image(
+            image: MediaImageHelper.boundedDecode(
+              FileImage(File(localLogoPath)),
+              memWidth: logoMemWidth,
+              memHeight: logoMemHeight,
+            ),
             fit: BoxFit.contain,
             alignment: .centerLeft,
             errorBuilder: (context, error, stackTrace) => _buildTitle(context, title),
@@ -262,14 +272,13 @@ class TvSpotlightBackground extends StatelessWidget {
       );
     }
 
-    final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
     final imageUrl = MediaImageHelper.getOptimizedImageUrl(
       client: client,
       thumbPath: logoPath,
       maxWidth: logoWidth,
       maxHeight: logoHeight,
       devicePixelRatio: dpr,
-      imageType: ImageType.logo,
+      imageType: ImageType.heroLogo,
     );
     if (imageUrl.isEmpty) return _buildTitle(context, title);
 
@@ -282,7 +291,8 @@ class TvSpotlightBackground extends StatelessWidget {
           cacheManager: PlexImageCacheManager.instance,
           fit: BoxFit.contain,
           alignment: .centerLeft,
-          memCacheWidth: (logoWidth * dpr).clamp(200, 1000).round(),
+          memCacheWidth: logoMemWidth,
+          memCacheHeight: logoMemHeight,
           fadeInDuration: DevicePerformance.reducedDuration(const Duration(milliseconds: 200)),
           fadeOutDuration: DevicePerformance.reducedDuration(const Duration(milliseconds: 200)),
           placeholder: (context, url) => const SizedBox.shrink(),

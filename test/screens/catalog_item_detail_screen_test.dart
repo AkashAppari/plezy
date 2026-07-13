@@ -226,17 +226,22 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Hosted request sheet'), findsOneWidget);
 
-    await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
-    await tester.pumpAndSettle();
-    expect(find.text('Hosted request sheet'), findsNothing);
-
-    // Android TV also dispatches a route-level back for the same remote press,
-    // sometimes after the sheet's close animation has completed.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.gameButtonB);
+    // Android TV can dispatch route Back for the same remote press. Deliver
+    // that duplicate in the same key sequence, before the coordinator's
+    // one-frame ownership marker is cleared.
     await tester.binding.handlePopRoute();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.gameButtonB);
     await tester.pumpAndSettle();
 
+    expect(find.text('Hosted request sheet'), findsNothing);
     expect(find.byType(CatalogItemDetailScreen), findsOneWidget);
     await expectLater(sheetResult, completion(isNull));
+
+    // A later, independent system Back still pops the catalog route.
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(CatalogItemDetailScreen), findsNothing);
   });
 
   testWidgets('recommendation posters use compact grid-equivalent TV sizing', (tester) async {

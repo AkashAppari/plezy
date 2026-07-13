@@ -32,7 +32,7 @@ class EpisodeCard extends StatefulWidget {
   final MediaItem episode;
   final MediaServerClient? client;
   final VoidCallback onTap;
-  final Future<void> Function(String)? onRefresh;
+  final Future<void> Function(MediaItem source)? onRefresh;
   final Future<void> Function()? onListRefresh;
   final bool autofocus;
   final bool isOffline;
@@ -92,7 +92,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
           children: [
             const Padding(
               padding: .only(top: 2),
-              child: Icon(Symbols.star_rounded, size: 12, fill: 1, color: Colors.amber),
+              child: AppIcon(Symbols.star_rounded, size: 12, fill: 1, color: Colors.amber),
             ),
             const SizedBox(width: 2),
             Text(

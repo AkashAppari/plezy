@@ -358,6 +358,7 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get creditsPattern => '크레딧 마커 패턴';
 	@override String get creditsPatternDescription => '챕터 제목에서 크레딧 마커를 인식하는 정규식 패턴';
 	@override String get invalidRegex => '잘못된 정규식';
+	@override String get regex => '정규식';
 	@override String get downloads => '다운로드';
 	@override String get downloadLocationDescription => '다운로드 콘텐츠 저장 위치 선택';
 	@override String get downloadLocationDefault => '기본값 (앱 저장소)';
@@ -481,6 +482,8 @@ class _TranslationsHotkeysKo extends TranslationsHotkeysEn {
 	@override String get clearShortcut => '단축키 삭제';
 	@override String get noShortcutSet => '설정된 단축키 없음';
 	@override String get currentShortcut => '현재 단축키:';
+	@override String get pressToRecord => '단축키를 기록하려면 선택';
+	@override String get recordingShortcut => '지금 단축키를 누르세요';
 	@override late final _TranslationsHotkeysActionsKo actions = _TranslationsHotkeysActionsKo._(_root);
 }
 
@@ -582,6 +585,8 @@ class _TranslationsAccessibilityKo extends TranslationsAccessibilityEn {
 	@override String get saturation => '채도';
 	@override String get brightness => '밝기';
 	@override String get hexColor => '16진수 색상';
+	@override String get expandText => '텍스트 펼치기';
+	@override String get collapseText => '텍스트 접기';
 }
 
 // Path: tooltips
@@ -693,6 +698,9 @@ class _TranslationsMessagesKo extends TranslationsMessagesEn {
 	@override String get markedAsWatchedOffline => '시청 완료로 표시됨 (연결 시 동기화됨)';
 	@override String get markedAsUnwatchedOffline => '미시청으로 표시됨 (연결 시 동기화됨)';
 	@override String autoRemovedWatchedDownload({required Object title}) => '자동 삭제됨: ${title}';
+	@override String autoRemovedWatchedDownloads({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n,
+		other: '시청한 다운로드 ${n}개를 자동 삭제했습니다',
+	);
 	@override String get removedFromContinueWatching => '계속 시청 목록에서 제거됨';
 	@override String errorLoading({required Object error}) => '오류: ${error}';
 	@override String get streamInterrupted => '스트림이 중단되었습니다. 재생을 누르거나 탐색하여 다시 시도하세요.';
@@ -751,6 +759,11 @@ class _TranslationsSubtitlingStylingKo extends TranslationsSubtitlingStylingEn {
 	@override String get backgroundColor => '배경색';
 	@override String get position => '위치';
 	@override String get assOverride => 'ASS 오버라이드';
+	@override String get overrideScale => '크기 조정';
+	@override String get overrideForce => '강제 적용';
+	@override String get overrideStrip => '스타일 제거';
+	@override String get positionTop => '위';
+	@override String get positionBottom => '아래';
 	@override String get bold => '굵게';
 	@override String get italic => '기울임꼴';
 	@override String get renderResolution => '렌더링 해상도';
@@ -918,7 +931,7 @@ class _TranslationsErrorsKo extends TranslationsErrorsEn {
 	@override String searchFailed({required Object error}) => '검색 실패: ${error}';
 	@override String connectionTimeout({required Object context}) => '${context} 로드 중 연결 시간 초과';
 	@override String get connectionFailed => '미디어 서버에 연결할 수 없습니다';
-	@override String failedToLoad({required Object context, required Object error}) => '${context} 로드 실패: ${error}';
+	@override String unableToLoad({required Object context}) => '${context}을(를) 불러올 수 없습니다. 다시 시도하세요.';
 	@override String get noClientAvailable => '사용 가능한 클라이언트가 없습니다';
 	@override String get pleaseEnterToken => '토큰을 입력해 주세요';
 	@override String get invalidToken => '토큰이 유효하지 않습니다';
@@ -1179,7 +1192,6 @@ class _TranslationsCollectionsKo extends TranslationsCollectionsEn {
 	@override String get deleted => '컬렉션 삭제됨';
 	@override String get deleteFailed => '컬렉션 삭제 실패';
 	@override String deleteFailedWithError({required Object error}) => '컬렉션 삭제 실패: ${error}';
-	@override String failedToLoadItems({required Object error}) => '컬렉션 항목 로드 실패: ${error}';
 	@override String get selectCollection => '컬렉션 선택';
 	@override String get collectionName => '컬렉션 이름';
 	@override String get enterCollectionName => '컬렉션 이름 입력';
@@ -1282,6 +1294,8 @@ class _TranslationsWatchTogetherKo extends TranslationsWatchTogetherEn {
 	@override String get hostingSession => '세션 호스팅';
 	@override String get inSession => '세션 중';
 	@override String get sessionCode => '세션 코드';
+	@override String get openSessionControls => '함께 보기 세션 제어 열기';
+	@override String get copySessionCode => '세션 코드 복사';
 	@override String get hostControlsPlayback => '호스트 재생 제어';
 	@override String get anyoneCanControl => '누구나 재생 제어 가능';
 	@override String get hostControls => '호스트 제어';
@@ -1458,6 +1472,8 @@ class _TranslationsVideoSettingsKo extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => '재생 속도';
+	@override String get normalSpeed => '보통';
+	@override String sleepTimerActive({required Object duration}) => '활성 (${duration})';
 	@override String get zoom => '확대/축소';
 	@override String get sleepTimer => '취침 타이머';
 	@override String get audioSync => '오디오 동기화';
@@ -1576,6 +1592,8 @@ class _TranslationsMetadataEditKo extends TranslationsMetadataEditEn {
 	@override String get artworkUpdated => '아트워크가 업데이트되었습니다';
 	@override String get artworkUpdateFailed => '아트워크 업데이트 실패';
 	@override String get noArtworkAvailable => '사용 가능한 아트워크 없음';
+	@override String artworkOption({required Object index}) => '아트워크 옵션 ${index}';
+	@override String selectedArtworkOption({required Object index}) => '아트워크 옵션 ${index}, 선택됨';
 	@override String get notSet => '설정되지 않음';
 	@override String get libraryDefault => '라이브러리 기본값';
 	@override String get accountDefault => '계정 기본값';
@@ -2053,6 +2071,7 @@ class _TranslationsServicesDeviceCodeKo extends TranslationsServicesDeviceCodeEn
 	@override String title({required Object service}) => '${service}에서 Plezy 활성화';
 	@override String body({required Object url}) => '${url}을 방문하여 이 코드를 입력하세요:';
 	@override String openToActivate({required Object service}) => '활성화하려면 ${service} 열기';
+	@override String get copyCode => '활성화 코드 복사';
 	@override String get waitingForAuthorization => '인증을 기다리는 중…';
 	@override String get codeCopied => '코드가 복사되었습니다';
 }
@@ -2067,6 +2086,7 @@ class _TranslationsServicesOauthProxyKo extends TranslationsServicesOauthProxyEn
 	@override String title({required Object service}) => '${service}에 로그인';
 	@override String get body => '이 QR 코드를 스캔하거나 아무 기기에서 URL을 여세요.';
 	@override String openToSignIn({required Object service}) => '로그인하려면 ${service} 열기';
+	@override String get copyUrl => '로그인 URL 복사';
 	@override String get urlCopied => 'URL이 복사되었습니다';
 }
 
@@ -2316,6 +2336,7 @@ extension on TranslationsKo {
 			'settings.creditsPattern' => '크레딧 마커 패턴',
 			'settings.creditsPatternDescription' => '챕터 제목에서 크레딧 마커를 인식하는 정규식 패턴',
 			'settings.invalidRegex' => '잘못된 정규식',
+			'settings.regex' => '정규식',
 			'settings.downloads' => '다운로드',
 			'settings.downloadLocationDescription' => '다운로드 콘텐츠 저장 위치 선택',
 			'settings.downloadLocationDefault' => '기본값 (앱 저장소)',
@@ -2421,6 +2442,8 @@ extension on TranslationsKo {
 			'hotkeys.clearShortcut' => '단축키 삭제',
 			'hotkeys.noShortcutSet' => '설정된 단축키 없음',
 			'hotkeys.currentShortcut' => '현재 단축키:',
+			'hotkeys.pressToRecord' => '단축키를 기록하려면 선택',
+			'hotkeys.recordingShortcut' => '지금 단축키를 누르세요',
 			'hotkeys.actions.playPause' => '재생/일시정지',
 			'hotkeys.actions.volumeUp' => '볼륨 높이기',
 			'hotkeys.actions.volumeDown' => '볼륨 낮추기',
@@ -2510,6 +2533,8 @@ extension on TranslationsKo {
 			'accessibility.saturation' => '채도',
 			'accessibility.brightness' => '밝기',
 			'accessibility.hexColor' => '16진수 색상',
+			'accessibility.expandText' => '텍스트 펼치기',
+			'accessibility.collapseText' => '텍스트 접기',
 			'tooltips.shufflePlay' => '무작위 재생',
 			'tooltips.playTrailer' => '예고편 재생',
 			'tooltips.markAsWatched' => '시청 완료로 표시',
@@ -2600,19 +2625,20 @@ extension on TranslationsKo {
 			'messages.markedAsWatchedOffline' => '시청 완료로 표시됨 (연결 시 동기화됨)',
 			'messages.markedAsUnwatchedOffline' => '미시청으로 표시됨 (연결 시 동기화됨)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '자동 삭제됨: ${title}',
+			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, other: '시청한 다운로드 ${n}개를 자동 삭제했습니다', ), 
 			'messages.removedFromContinueWatching' => '계속 시청 목록에서 제거됨',
 			'messages.errorLoading' => ({required Object error}) => '오류: ${error}',
 			'messages.streamInterrupted' => '스트림이 중단되었습니다. 재생을 누르거나 탐색하여 다시 시도하세요.',
 			'messages.liveStreamInterrupted' => '라이브 스트림이 중단되었습니다. 재생을 눌러 다시 시도하세요.',
 			'messages.fileInfoNotAvailable' => '파일 정보가 없습니다',
+			_ => null,
+		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => '파일 정보 로딩 중 오류: ${error}',
 			'messages.errorLoadingSeries' => '시리즈 로딩 중 오류',
 			'messages.musicNotSupported' => '음악 재생 미지원',
 			'messages.noDescriptionAvailable' => '설명이 없습니다',
 			'messages.noProfilesAvailable' => '사용 가능한 프로필이 없습니다',
 			'messages.contactAdminForProfiles' => '프로필을 추가하려면 서버 관리자에게 문의하세요',
-			_ => null,
-		} ?? switch (path) {
 			'messages.unableToDetermineLibrarySection' => '이 항목의 라이브러리 섹션을 확인할 수 없습니다',
 			'messages.logsCleared' => '로그가 삭제 되었습니다',
 			'messages.logsCopied' => '로그가 클립보드에 복사 되었습니다',
@@ -2651,6 +2677,11 @@ extension on TranslationsKo {
 			'subtitlingStyling.backgroundColor' => '배경색',
 			'subtitlingStyling.position' => '위치',
 			'subtitlingStyling.assOverride' => 'ASS 오버라이드',
+			'subtitlingStyling.overrideScale' => '크기 조정',
+			'subtitlingStyling.overrideForce' => '강제 적용',
+			'subtitlingStyling.overrideStrip' => '스타일 제거',
+			'subtitlingStyling.positionTop' => '위',
+			'subtitlingStyling.positionBottom' => '아래',
 			'subtitlingStyling.bold' => '굵게',
 			'subtitlingStyling.italic' => '기울임꼴',
 			'subtitlingStyling.renderResolution' => '렌더링 해상도',
@@ -2764,7 +2795,7 @@ extension on TranslationsKo {
 			'errors.searchFailed' => ({required Object error}) => '검색 실패: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => '${context} 로드 중 연결 시간 초과',
 			'errors.connectionFailed' => '미디어 서버에 연결할 수 없습니다',
-			'errors.failedToLoad' => ({required Object context, required Object error}) => '${context} 로드 실패: ${error}',
+			'errors.unableToLoad' => ({required Object context}) => '${context}을(를) 불러올 수 없습니다. 다시 시도하세요.',
 			'errors.noClientAvailable' => '사용 가능한 클라이언트가 없습니다',
 			'errors.pleaseEnterToken' => '토큰을 입력해 주세요',
 			'errors.invalidToken' => '토큰이 유효하지 않습니다',
@@ -2985,7 +3016,6 @@ extension on TranslationsKo {
 			'collections.deleted' => '컬렉션 삭제됨',
 			'collections.deleteFailed' => '컬렉션 삭제 실패',
 			'collections.deleteFailedWithError' => ({required Object error}) => '컬렉션 삭제 실패: ${error}',
-			'collections.failedToLoadItems' => ({required Object error}) => '컬렉션 항목 로드 실패: ${error}',
 			'collections.selectCollection' => '컬렉션 선택',
 			'collections.collectionName' => '컬렉션 이름',
 			'collections.enterCollectionName' => '컬렉션 이름 입력',
@@ -3059,6 +3089,8 @@ extension on TranslationsKo {
 			'watchTogether.hostingSession' => '세션 호스팅',
 			'watchTogether.inSession' => '세션 중',
 			'watchTogether.sessionCode' => '세션 코드',
+			'watchTogether.openSessionControls' => '함께 보기 세션 제어 열기',
+			'watchTogether.copySessionCode' => '세션 코드 복사',
 			'watchTogether.hostControlsPlayback' => '호스트 재생 제어',
 			'watchTogether.anyoneCanControl' => '누구나 재생 제어 가능',
 			'watchTogether.hostControls' => '호스트 제어',
@@ -3113,6 +3145,8 @@ extension on TranslationsKo {
 			'downloads.manage' => '관리',
 			'downloads.tvShows' => 'TV 프로그램',
 			'downloads.movies' => '영화',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.music' => '음악',
 			'downloads.tracksQueued' => ({required Object count}) => '${count}곡 다운로드 대기 중',
 			'downloads.noDownloads' => '다운로드 없음',
@@ -3125,8 +3159,6 @@ extension on TranslationsKo {
 			'downloads.serverErrorBitrate' => '서버 오류: 파일이 원격 비트레이트 제한을 초과할 수 있습니다',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} 에피소드가 다운로드 대기열에 추가 되었습니다',
 			'downloads.downloadDeleted' => '다운로드 삭제됨',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.deleteConfirm' => ({required Object title}) => '이 기기에서 "${title}"을(를) 삭제할까요?',
 			'downloads.cancelledDownloadTitle' => '취소된 다운로드',
 			'downloads.cancelledDownloadMessage' => '이 다운로드가 취소되었습니다. 어떻게 하시겠습니까?',
@@ -3258,6 +3290,8 @@ extension on TranslationsKo {
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => '${attempts}회 시도 후 연결이 끊어졌습니다',
 			'companionRemote.errors.connectionLost' => '연결이 끊어졌습니다',
 			'videoSettings.playbackSpeed' => '재생 속도',
+			'videoSettings.normalSpeed' => '보통',
+			'videoSettings.sleepTimerActive' => ({required Object duration}) => '활성 (${duration})',
 			'videoSettings.zoom' => '확대/축소',
 			'videoSettings.sleepTimer' => '취침 타이머',
 			'videoSettings.audioSync' => '오디오 동기화',
@@ -3349,6 +3383,8 @@ extension on TranslationsKo {
 			'metadataEdit.artworkUpdated' => '아트워크가 업데이트되었습니다',
 			'metadataEdit.artworkUpdateFailed' => '아트워크 업데이트 실패',
 			'metadataEdit.noArtworkAvailable' => '사용 가능한 아트워크 없음',
+			'metadataEdit.artworkOption' => ({required Object index}) => '아트워크 옵션 ${index}',
+			'metadataEdit.selectedArtworkOption' => ({required Object index}) => '아트워크 옵션 ${index}, 선택됨',
 			'metadataEdit.notSet' => '설정되지 않음',
 			'metadataEdit.libraryDefault' => '라이브러리 기본값',
 			'metadataEdit.accountDefault' => '계정 기본값',
@@ -3463,11 +3499,13 @@ extension on TranslationsKo {
 			'services.deviceCode.title' => ({required Object service}) => '${service}에서 Plezy 활성화',
 			'services.deviceCode.body' => ({required Object url}) => '${url}을 방문하여 이 코드를 입력하세요:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => '활성화하려면 ${service} 열기',
+			'services.deviceCode.copyCode' => '활성화 코드 복사',
 			'services.deviceCode.waitingForAuthorization' => '인증을 기다리는 중…',
 			'services.deviceCode.codeCopied' => '코드가 복사되었습니다',
 			'services.oauthProxy.title' => ({required Object service}) => '${service}에 로그인',
 			'services.oauthProxy.body' => '이 QR 코드를 스캔하거나 아무 기기에서 URL을 여세요.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => '로그인하려면 ${service} 열기',
+			'services.oauthProxy.copyUrl' => '로그인 URL 복사',
 			'services.oauthProxy.urlCopied' => 'URL이 복사되었습니다',
 			'services.libraryFilter.title' => '라이브러리 필터',
 			'services.libraryFilter.subtitleAllSyncing' => '모든 라이브러리 동기화 중',

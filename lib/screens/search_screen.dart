@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../focus/focusable_text_field.dart';
 import '../focus/focusable_button.dart';
 import '../i18n/strings.g.dart';
+import '../media/ids.dart';
 import '../media/media_item.dart';
 import '../mixins/debounced_media_search.dart';
 import '../mixins/mounted_set_state_mixin.dart';
@@ -153,10 +154,23 @@ class _SearchScreenState extends State<SearchScreen>
     searchController.clear();
   }
 
-  void updateItem(String _) {
+  Future<void> updateItem(MediaItem source) async {
     if (!mounted) return;
-    // Trigger a refresh of the search to get updated metadata
-    runSearch(searchController.text.trim());
+    final serverId = source.serverId;
+    if (serverId == null) return;
+
+    try {
+      final multiServer = context.read<MultiServerProvider>();
+      final updated = await multiServer.getClientForServer(ServerId(serverId))?.fetchItem(source.id);
+      if (!mounted || updated == null) return;
+      final index = searchResults.indexWhere((item) => item.globalKey == source.globalKey);
+      if (index == -1) return;
+      setState(() {
+        searchResults[index] = updated;
+      });
+    } catch (e) {
+      appLogger.d('Search item refresh skipped for ${source.globalKey}', error: e);
+    }
   }
 
   /// Navigate focus to the sidebar
@@ -180,7 +194,7 @@ class _SearchScreenState extends State<SearchScreen>
               disableScale: true,
               focusNode: index == 0 ? firstResultFocusNode : null,
               onRefresh: updateItem,
-              onListRefresh: () => updateItem(item.id),
+              onListRefresh: refresh,
               onNavigateLeft: _navigateToSidebar,
               onNavigateUp: index == 0 ? focusSearchInput : null,
               showServerName: showServerName,

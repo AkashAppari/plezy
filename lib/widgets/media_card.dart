@@ -121,7 +121,7 @@ class MediaCard extends StatefulWidget {
   final Object item;
   final double? width;
   final double? height;
-  final void Function(String itemId)? onRefresh;
+  final void Function(MediaItem source)? onRefresh;
   final VoidCallback? onRemoveFromContinueWatching;
   final VoidCallback? onListRefresh; // Callback to refresh the entire parent list
   /// Overrides the card's default media navigation for specialized surfaces.
@@ -881,11 +881,12 @@ Widget _buildPosterImage(
     posterUrl = useRememberedFallback ? posterFallbackUrl : primaryPosterUrl;
     final mediaClient = isOffline ? null : context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId));
     final fallbackIcon = _mediaPosterFallbackIcon(item);
+    final imageType = MediaImageHelper.cardImageType(item, episodePosterMode, mixedHubContext: mixedHubContext);
 
     Widget image;
 
     // Square 1:1 artwork for music (artists/albums/tracks)
-    if (item.kind.isMusic) {
+    if (imageType == ImageType.square) {
       image = OptimizedMediaImage(
         client: mediaClient,
         imagePath: posterUrl,
@@ -912,7 +913,7 @@ Widget _buildPosterImage(
         imageType: ImageType.square,
         localFilePath: localPosterPath,
       );
-    } else if (item.usesWideAspectRatio(episodePosterMode, mixedHubContext: mixedHubContext)) {
+    } else if (imageType == ImageType.thumb) {
       // Use thumb image type for 16:9 content (episodes, or movies in mixed hubs)
       image = OptimizedMediaImage.thumb(
         client: mediaClient,

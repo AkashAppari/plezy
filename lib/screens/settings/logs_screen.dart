@@ -11,6 +11,7 @@ import 'package:logger/logger.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../focus/focusable_action_bar.dart';
 import '../../widgets/dialog_action_button.dart';
+import '../../widgets/app_icon.dart';
 import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
@@ -207,7 +208,7 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
                 ),
                 const SizedBox(width: 8),
                 IconButton(
-                  icon: const Icon(Icons.copy, size: 20),
+                  icon: const AppIcon(Symbols.content_copy_rounded, size: 20),
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: id));
                     showSuccessSnackBar(context, t.messages.logsCopied);

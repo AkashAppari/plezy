@@ -180,7 +180,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: const BorderRadius.all(Radius.circular(8)),
           ),
-          child: Icon(icon, color: tokens(context).text, size: iconSize),
+          child: AppIcon(icon, color: tokens(context).text, size: iconSize),
         ),
       ),
     );
@@ -213,7 +213,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: const BorderRadius.all(Radius.circular(8)),
           ),
-          child: Icon(icon, color: tokens(context).text, size: 22),
+          child: AppIcon(icon, color: tokens(context).text, size: 22),
         ),
       ),
     );

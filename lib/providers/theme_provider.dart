@@ -112,19 +112,6 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin, W
     _themeChannel.invokeMethod('setSplashTheme', {'mode': name});
   }
 
-  String get themeModeDisplayName {
-    switch (_themeMode) {
-      case settings.ThemeMode.light:
-        return 'Light';
-      case settings.ThemeMode.dark:
-        return 'Dark';
-      case settings.ThemeMode.oled:
-        return 'OLED';
-      case settings.ThemeMode.system:
-        return 'System';
-    }
-  }
-
   IconData get themeModeIcon {
     switch (_themeMode) {
       case settings.ThemeMode.light:

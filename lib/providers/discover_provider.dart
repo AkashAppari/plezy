@@ -421,43 +421,32 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return fetched.items;
   }
 
-  /// Refetch a single item (post-edit refresh from a hub row) and swap it
-  /// into whichever lists contain it. Items can come from any registered
-  /// server, so the owning server is resolved by scanning the visible lists.
-  Future<void> updateItem(String itemId) async {
+  /// Refetch a single item (post-edit refresh from a hub row) through its
+  /// source server and swap it into whichever lists contain that qualified
+  /// identity.
+  Future<void> updateItem(MediaItem source) async {
+    final serverId = source.serverId;
+    if (serverId == null) return;
+
     try {
-      final serverId = _serverIdForItem(itemId);
-      if (serverId == null) return;
-      final updated = await _multiServer.getClientForServer(ServerId(serverId))?.fetchItem(itemId);
+      final updated = await _multiServer.getClientForServer(ServerId(serverId))?.fetchItem(source.id);
       if (updated == null || isDisposed) return;
-      _updateItemInLists(itemId, updated);
+      _updateItemInLists(source.globalKey, updated);
       safeNotifyListeners();
     } catch (_) {
       // Silently fail — the item will refresh on the next full reload.
     }
   }
 
-  String? _serverIdForItem(String itemId) {
-    for (final item in _onDeck) {
-      if (item.id == itemId) return item.serverId;
-    }
-    for (final hub in _hubs) {
-      for (final item in hub.items) {
-        if (item.id == itemId) return item.serverId;
-      }
-    }
-    return null;
-  }
-
-  void _updateItemInLists(String itemId, MediaItem updatedItem) {
-    final onDeckIndex = _onDeck.indexWhere((item) => item.id == itemId);
+  void _updateItemInLists(String sourceGlobalKey, MediaItem updatedItem) {
+    final onDeckIndex = _onDeck.indexWhere((item) => item.globalKey == sourceGlobalKey);
     if (onDeckIndex != -1) {
       _onDeck = List.of(_onDeck)..[onDeckIndex] = updatedItem;
     }
 
     for (var i = 0; i < _hubs.length; i++) {
       final hub = _hubs[i];
-      final itemIndex = hub.items.indexWhere((item) => item.id == itemId);
+      final itemIndex = hub.items.indexWhere((item) => item.globalKey == sourceGlobalKey);
       if (itemIndex != -1) {
         final newItems = List<MediaItem>.from(hub.items);
         newItems[itemIndex] = updatedItem;
