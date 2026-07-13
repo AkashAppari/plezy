@@ -10,7 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../focus/focusable_action_bar.dart';
-import '../../focus/focusable_button.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
@@ -216,11 +216,7 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
               ],
             ),
             actions: [
-              FocusableButton(
-                autofocus: true,
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(t.common.close)),
-              ),
+              DialogActionButton(autofocus: true, onPressed: () => Navigator.of(ctx).pop(), label: t.common.close),
             ],
           ),
         ),

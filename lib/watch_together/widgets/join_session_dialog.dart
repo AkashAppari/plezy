@@ -112,6 +112,7 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> with ControllerDi
                   focusNode: _joinFocusNode,
                   onPressed: _join,
                   onNavigateUp: _sessionIdFocusNode.requestFocus,
+                  useBackgroundFocus: true,
                   child: FilledButton.icon(
                     onPressed: _join,
                     icon: const Icon(Symbols.group_add),

@@ -44,6 +44,8 @@ class RecordOptionsSheet {
   }) {
     return OverlaySheetController.pushAdaptive<RecordOutcome>(
       context,
+      isScrollControlled: true,
+      showDragHandle: true,
       builder: (sheetContext) =>
           _RecordOptionsContent(client: client, headerTitle: program.displayTitle, entries: entries),
     );
@@ -58,6 +60,8 @@ class RecordOptionsSheet {
   }) {
     return OverlaySheetController.pushAdaptive<RecordOutcome>(
       context,
+      isScrollControlled: true,
+      showDragHandle: true,
       builder: (sheetContext) => _RecordOptionsContent(
         client: client,
         headerTitle: rule.title ?? '',
@@ -343,6 +347,7 @@ class _RecordOptionsContentState extends State<_RecordOptionsContent> {
               FocusableButton(
                 focusNode: _saveFocusNode,
                 onPressed: _saving ? null : _save,
+                useBackgroundFocus: true,
                 child: FilledButton.icon(
                   onPressed: _saving ? null : _save,
                   icon: _saving

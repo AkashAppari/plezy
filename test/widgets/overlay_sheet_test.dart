@@ -240,5 +240,21 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('SHEET'), findsNothing);
     });
+
+    testWidgets('system back in a later frame is not mistaken for a duplicate TV key', (tester) async {
+      var backs = 0;
+      await pushHost(tester, canPop: false, onSystemBack: () => backs++);
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      BackKeyCoordinator.markHandled();
+      await tester.pump();
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(find.text('SHEET'), findsNothing);
+      expect(find.text('Open'), findsOneWidget);
+      expect(backs, 0);
+    });
   });
 }

@@ -96,7 +96,7 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen>
     return client?.liveTvDvr != null;
   }
 
-  Future<void> _onRecordShow() async {
+  Future<void> _onRecordShow(BuildContext hostContext) async {
     final client = context.read<MultiServerProvider>().getClientForServer(ServerId(widget.serverId));
     if (client == null) return;
     // Use the first program with a guid as the seed for `getSubscriptionTemplate`.
@@ -110,7 +110,7 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen>
       }
     }
     if (seed == null) return;
-    await recordProgram(context, client, seed);
+    await recordProgram(hostContext, client, seed);
   }
 
   @override
@@ -119,38 +119,42 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen>
     return OverlaySheetHost(
       // Close an open sheet on system back instead of popping the screen.
       canPop: true,
-      child: FocusedScrollScaffold(
-        title: Text(widget.showTitle),
-        actions: showRecord
-            ? [
-                FocusableActionBar(
-                  actions: [
-                    FocusableAction(
-                      icon: Symbols.fiber_manual_record_rounded,
-                      tooltip: t.liveTv.recordShow,
-                      onPressed: _onRecordShow,
-                    ),
+      child: Builder(
+        builder: (hostContext) => FocusedScrollScaffold(
+          title: Text(widget.showTitle),
+          actions: showRecord
+              ? [
+                  FocusableActionBar(
+                    actions: [
+                      FocusableAction(
+                        icon: Symbols.fiber_manual_record_rounded,
+                        tooltip: t.liveTv.recordShow,
+                        onPressed: () => _onRecordShow(hostContext),
+                      ),
+                    ],
+                  ),
+                ]
+              : null,
+          slivers: [
+            if (_isLoading)
+              LoadingIndicatorBox.sliver
+            else if (_programs.isEmpty)
+              SliverFillRemaining(child: Center(child: Text(t.liveTv.noPrograms)))
+            else
+              SliverToBoxAdapter(
+                child: SettingsGroup(
+                  children: [
+                    for (var index = 0; index < _programs.length; index++) _buildScheduleItem(index, hostContext),
                   ],
                 ),
-              ]
-            : null,
-        slivers: [
-          if (_isLoading)
-            LoadingIndicatorBox.sliver
-          else if (_programs.isEmpty)
-            SliverFillRemaining(child: Center(child: Text(t.liveTv.noPrograms)))
-          else
-            SliverToBoxAdapter(
-              child: SettingsGroup(
-                children: [for (var index = 0; index < _programs.length; index++) _buildScheduleItem(index)],
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildScheduleItem(int index) {
+  Widget _buildScheduleItem(int index, BuildContext hostContext) {
     final program = _programs[index];
     final channel = findChannelForProgram(program);
     void onTap() {
@@ -158,6 +162,7 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen>
         tuneChannel(channel);
       } else {
         showProgramDetails(
+          sheetContext: hostContext,
           program: program,
           channel: channel,
           posterThumb: program.thumb,
@@ -173,7 +178,7 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen>
       useBackgroundFocus: true,
       disableScale: true,
       onSelect: onTap,
-      onBack: () => Navigator.pop(context),
+      onBack: () => Navigator.pop(hostContext),
       child: _ScheduleListTile(program: program, channel: channel, onTap: onTap),
     );
   }

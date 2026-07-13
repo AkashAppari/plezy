@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../focus/focusable_text_field.dart';
+import '../focus/focusable_button.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../mixins/debounced_media_search.dart';
@@ -32,11 +33,23 @@ class _SearchScreenState extends State<SearchScreen>
     with Refreshable, FullRefreshable, SearchInputFocusable, FocusableTab, MountedSetStateMixin, DebouncedMediaSearch {
   String? _focusResultsForQuery;
   final _tvKeyboardController = TvKeyboardController();
+  final _clearFocusNode = FocusNode(debugLabel: 'Search.clear');
 
   @override
   void initState() {
     super.initState();
     FocusUtils.requestFocusAfterBuild(this, searchFocusNode);
+  }
+
+  @override
+  void dispose() {
+    _clearFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _clearSearch() {
+    searchController.clear();
+    searchFocusNode.requestFocus();
   }
 
   @override
@@ -192,34 +205,46 @@ class _SearchScreenState extends State<SearchScreen>
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-                child: FocusableTextField(
-                  controller: searchController,
-                  focusNode: searchFocusNode,
-                  tvKeyboardController: _tvKeyboardController,
-                  textInputAction: TextInputAction.search,
-                  onNavigateLeft: _navigateToSidebar,
-                  onNavigateDown: searchResults.isNotEmpty && !isSearching ? firstResultFocusNode.requestFocus : null,
-                  onEditingComplete: PlatformDetector.isTV() ? handleSearchSubmit : null,
-                  onBack: () {
-                    if (searchController.text.isNotEmpty) {
-                      searchController.clear();
-                    } else {
-                      _navigateToSidebar();
-                    }
-                  },
-                  decoration: pillInputDecoration(
-                    context,
-                    hintText: t.search.hint,
-                    prefixIcon: const AppIcon(Symbols.search_rounded, fill: 1),
-                    suffixIcon: searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const AppIcon(Symbols.clear_rounded, fill: 1),
-                            onPressed: () {
-                              searchController.clear();
-                            },
-                          )
-                        : null,
-                  ),
+                child: Stack(
+                  alignment: Alignment.centerRight,
+                  children: [
+                    FocusableTextField(
+                      controller: searchController,
+                      focusNode: searchFocusNode,
+                      tvKeyboardController: _tvKeyboardController,
+                      textInputAction: TextInputAction.search,
+                      onNavigateLeft: _navigateToSidebar,
+                      onNavigateRight: searchController.text.isNotEmpty ? _clearFocusNode.requestFocus : null,
+                      onNavigateDown: searchResults.isNotEmpty && !isSearching
+                          ? firstResultFocusNode.requestFocus
+                          : null,
+                      onEditingComplete: PlatformDetector.isTV() ? handleSearchSubmit : null,
+                      onBack: () {
+                        if (searchController.text.isNotEmpty) {
+                          searchController.clear();
+                        } else {
+                          _navigateToSidebar();
+                        }
+                      },
+                      decoration: pillInputDecoration(
+                        context,
+                        hintText: t.search.hint,
+                        prefixIcon: const AppIcon(Symbols.search_rounded, fill: 1),
+                        suffixIcon: searchController.text.isNotEmpty ? const SizedBox(width: 48) : null,
+                      ),
+                    ),
+                    if (searchController.text.isNotEmpty)
+                      FocusableButton(
+                        focusNode: _clearFocusNode,
+                        onPressed: _clearSearch,
+                        onNavigateLeft: searchFocusNode.requestFocus,
+                        onNavigateDown: searchResults.isNotEmpty && !isSearching
+                            ? firstResultFocusNode.requestFocus
+                            : null,
+                        autoScroll: false,
+                        child: IconButton(icon: const AppIcon(Symbols.clear_rounded, fill: 1), onPressed: _clearSearch),
+                      ),
+                  ],
                 ),
               ),
             ),

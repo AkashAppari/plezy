@@ -8,6 +8,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../../focus/dpad_navigator.dart';
+import '../../../focus/dpad_select_long_press_controller.dart';
 import '../../../focus/focus_theme.dart';
 import '../../../focus/input_mode_tracker.dart';
 import '../../../focus/key_event_utils.dart';
@@ -30,7 +31,6 @@ import '../../../utils/platform_detector.dart';
 import '../../../widgets/app_icon.dart';
 import '../../../widgets/app_menu.dart';
 import '../../../widgets/clickable_cursor.dart';
-import '../../../widgets/overlay_sheet.dart';
 import '../../../widgets/optimized_media_image.dart';
 import '../livetv_styles.dart';
 import '../program_details_sheet.dart';
@@ -81,7 +81,6 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
   static const _sourceHeaderRowHeight = 40.0;
   static const _timeHeaderHeight = 40.0;
   static const _minutesPerSlot = 30;
-  static const _longPressDuration = Duration(milliseconds: 500);
 
   /// Minimum time away (backgrounded or on another section) before the
   /// viewport is realigned to the live line on return.
@@ -101,7 +100,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
   bool _syncingScroll = false;
 
   Timer? _timeIndicatorTimer;
-  Timer? _programSelectLongPressTimer;
+  final _programSelectController = DpadSelectLongPressController();
   final _dayPickerKey = GlobalKey();
 
   // Stale-window catch-up state (#1297). The grid window is only auto
@@ -121,7 +120,6 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
   final ValueNotifier<bool> _hasFocusNotifier = ValueNotifier(false);
   LiveTvProgram? _focusedProgram;
   bool _pendingFocus = false;
-  bool _isProgramSelectKeyDown = false;
 
   /// Focus into the guide content (called from tab bar navigation or initial load).
   void focusContent() {
@@ -217,7 +215,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _programSelectLongPressTimer?.cancel();
+    _programSelectController.dispose();
     _guideFocusNode.dispose();
     _gridVerticalController.dispose();
     _gridHorizontalController.removeListener(_syncGridToHeader);
@@ -237,10 +235,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
     _hasFocusNotifier.value = hasFocus;
   }
 
-  void _resetProgramSelectLongPressState() {
-    _programSelectLongPressTimer?.cancel();
-    _isProgramSelectKeyDown = false;
-  }
+  void _resetProgramSelectLongPressState() => _programSelectController.reset();
 
   void _syncGridToHeader() {
     if (_syncingScroll) return;
@@ -580,39 +575,18 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
   }
 
   KeyEventResult _handleFocusedProgramSelectKey(KeyEvent event) {
-    if (!event.logicalKey.isSelectKey) return KeyEventResult.ignored;
     final target = _focusedProgramTarget();
     if (target == null) return KeyEventResult.ignored;
 
-    if (event is KeyDownEvent) {
-      if (!_isProgramSelectKeyDown) {
-        _isProgramSelectKeyDown = true;
-        _programSelectLongPressTimer?.cancel();
-        _programSelectLongPressTimer = Timer(_longPressDuration, () {
-          if (!mounted || !_isProgramSelectKeyDown) return;
-          SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
-          _resetProgramSelectLongPressState();
-          _showProgramDetails(target.channel, target.program);
-        });
-      }
-      return KeyEventResult.handled;
-    }
-
-    if (event is KeyRepeatEvent) {
-      return KeyEventResult.handled;
-    }
-
-    if (event is KeyUpEvent) {
-      final timerWasActive = _programSelectLongPressTimer?.isActive ?? false;
-      _programSelectLongPressTimer?.cancel();
-      if (timerWasActive && _isProgramSelectKeyDown) {
-        _activateProgram(target.channel, target.program);
-      }
-      _isProgramSelectKeyDown = false;
-      return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
+    return _programSelectController.handleKeyEvent(
+      event,
+      isOwnerActive: () => mounted && _focusedProgramTarget() == target,
+      onShortPress: () => _activateProgram(target.channel, target.program),
+      onLongPress: () {
+        _programSelectController.reset();
+        _showProgramDetails(target.channel, target.program);
+      },
+    );
   }
 
   KeyEventResult _handleFocusedProgramContextMenuKey(KeyEvent event) {
@@ -875,13 +849,11 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
       return const Center(child: CircularProgressIndicator());
     }
 
-    return OverlaySheetHost(
-      child: Focus(
-        focusNode: _guideFocusNode,
-        onFocusChange: _handleGuideFocusChange,
-        onKeyEvent: _handleKeyEvent,
-        child: _buildGuideGrid(theme),
-      ),
+    return Focus(
+      focusNode: _guideFocusNode,
+      onFocusChange: _handleGuideFocusChange,
+      onKeyEvent: _handleKeyEvent,
+      child: _buildGuideGrid(theme),
     );
   }
 

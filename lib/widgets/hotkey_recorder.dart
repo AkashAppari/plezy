@@ -5,10 +5,11 @@ import '../models/hotkey_model.dart';
 
 /// Captures a key combination from the user and calls [onHotKeyRecorded].
 class HotKeyRecorder extends StatefulWidget {
-  const HotKeyRecorder({super.key, this.initalHotKey, required this.onHotKeyRecorded});
+  const HotKeyRecorder({super.key, this.initalHotKey, required this.onHotKeyRecorded, this.enabled = true});
 
   final HotKey? initalHotKey;
   final ValueChanged<HotKey> onHotKeyRecorded;
+  final bool enabled;
 
   @override
   State<HotKeyRecorder> createState() => _HotKeyRecorderState();
@@ -25,12 +26,21 @@ class _HotKeyRecorderState extends State<HotKeyRecorder> {
   }
 
   @override
+  void didUpdateWidget(HotKeyRecorder oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initalHotKey != oldWidget.initalHotKey) {
+      _hotKey = widget.initalHotKey;
+    }
+  }
+
+  @override
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_handleKeyEvent);
     super.dispose();
   }
 
   bool _handleKeyEvent(KeyEvent keyEvent) {
+    if (!widget.enabled) return false;
     if (keyEvent is KeyUpEvent) return false;
 
     final physicalKeysPressed = HardwareKeyboard.instance.physicalKeysPressed;

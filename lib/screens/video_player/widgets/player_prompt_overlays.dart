@@ -237,6 +237,7 @@ class VideoPlayerPlayNextOverlay extends StatelessWidget {
                           onNavigateLeft: () => cancelFocusNode.requestFocus(),
                           onNavigateUp: () {},
                           onNavigateDown: () {},
+                          useBackgroundFocus: true,
                           child: FilledButton(
                             onPressed: onPlayNext,
                             style: FilledButton.styleFrom(
@@ -401,6 +402,7 @@ class VideoPlayerStillWatchingOverlay extends StatelessWidget {
                           onNavigateLeft: () => pauseFocusNode.requestFocus(),
                           onNavigateUp: () {},
                           onNavigateDown: () {},
+                          useBackgroundFocus: true,
                           child: FilledButton(
                             onPressed: onContinue,
                             style: FilledButton.styleFrom(

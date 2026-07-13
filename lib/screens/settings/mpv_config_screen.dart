@@ -16,6 +16,7 @@ import '../../services/settings_service.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/focusable_popup_menu_button.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
 
@@ -199,7 +200,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
         // The page already pads its slivers by 16.
         margin: EdgeInsets.zero,
         children: [
-          ListTile(
+          FocusableListTile(
             focusNode: _savePresetFocusNode,
             leading: const AppIcon(Symbols.save_rounded, fill: 1),
             title: Text(t.mpvConfig.saveAsPreset),
@@ -208,7 +209,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
           ),
           if (presets.isNotEmpty)
             ...presets.map(
-              (preset) => ListTile(
+              (preset) => FocusableListTile(
                 leading: const AppIcon(Symbols.folder_rounded, fill: 1),
                 title: Text(preset.name),
                 trailing: FocusablePopupMenuButton<String>(

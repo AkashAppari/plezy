@@ -24,6 +24,7 @@ import '../utils/provider_extensions.dart';
 import '../utils/snackbar_helper.dart';
 import 'app_icon.dart';
 import 'app_menu.dart';
+import 'bottom_sheet_header.dart';
 import 'overlay_sheet.dart';
 
 /// A menu action item for context menus
@@ -320,6 +321,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
   List<MediaLibrary>? _originalOrder; // Original order before move (for cancel)
   final FocusNode _listFocusNode = FocusNode();
   final ScrollController _dialogScrollController = ScrollController();
+  final ScrollController _sheetScrollController = ScrollController();
   bool _backKeyDownSeen = false;
 
   @override
@@ -332,6 +334,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
   void dispose() {
     _listFocusNode.dispose();
     _dialogScrollController.dispose();
+    _sheetScrollController.dispose();
     super.dispose();
   }
 
@@ -505,7 +508,11 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
           for (final item in menuItems)
             AppMenuItem<String>(value: item.value, icon: item.icon, label: item.label, destructive: item.isDestructive),
         ],
-        onSelected: (value) => widget.onLibraryMenuAction(value, library),
+        closeOnSelected: false,
+        onSelected: (value) {
+          OverlaySheetController.popAdaptive(context, value);
+          widget.onLibraryMenuAction(value, library);
+        },
       ),
     );
   }
@@ -547,6 +554,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
             ),
             body: Focus(
               focusNode: _listFocusNode,
+              descendantsAreFocusable: false,
               autofocus: InputModeTracker.isKeyboardMode(context),
               onKeyEvent: _handleKeyEvent,
               child: _buildFlatLibraryListDialog(hiddenLibraryKeys),
@@ -556,47 +564,19 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
       );
     }
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.7,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      expand: false,
-      builder: (context, scrollController) {
-        return Column(
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
-              ),
-              child: Row(
-                children: [
-                  const AppIcon(Symbols.edit_rounded, fill: 1),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(t.libraries.manageLibraries, style: const TextStyle(fontSize: 20, fontWeight: .bold)),
-                  ),
-                  IconButton(
-                    icon: const AppIcon(Symbols.close_rounded, fill: 1),
-                    onPressed: () => OverlaySheetController.popAdaptive(context),
-                  ),
-                ],
-              ),
-            ),
-
-            // Library list (grouped by server if multiple servers)
-            Expanded(
-              child: Focus(
-                focusNode: _listFocusNode,
-                autofocus: InputModeTracker.isKeyboardMode(context),
-                onKeyEvent: _handleKeyEvent,
-                child: _buildFlatLibraryList(scrollController, hiddenLibraryKeys),
-              ),
-            ),
-          ],
-        );
-      },
+    return Column(
+      children: [
+        BottomSheetHeader(title: t.libraries.manageLibraries, icon: Symbols.edit_rounded),
+        Flexible(
+          child: Focus(
+            focusNode: _listFocusNode,
+            descendantsAreFocusable: false,
+            autofocus: InputModeTracker.isKeyboardMode(context),
+            onKeyEvent: _handleKeyEvent,
+            child: _buildFlatLibraryList(_sheetScrollController, hiddenLibraryKeys),
+          ),
+        ),
+      ],
     );
   }
 

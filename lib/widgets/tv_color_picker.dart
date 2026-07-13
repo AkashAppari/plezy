@@ -300,6 +300,7 @@ class _ColorChannelRowState extends State<_ColorChannelRow> with KeyRepeatHelper
     return Focus(
       focusNode: _focusNode,
       autofocus: widget.autofocus,
+      descendantsAreFocusable: false,
       onFocusChange: (hasFocus) {
         setState(() => _isFocused = hasFocus);
         if (!hasFocus) stopRepeat();

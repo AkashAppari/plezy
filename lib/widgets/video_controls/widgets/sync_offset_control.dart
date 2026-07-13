@@ -1,11 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../../focus/dpad_navigator.dart';
+import '../../../focus/focusable_slider.dart';
 import '../../../focus/focusable_button.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../mpv/mpv.dart';
@@ -233,35 +232,19 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
             onLongPressStart: _startLongPressDecrement,
           ),
           Expanded(
-            child: Focus(
-              onKeyEvent: (node, event) {
-                // Select/enter on the slider jumps focus to the close button
-                if (event.logicalKey.isSelectKey && event is KeyDownEvent) {
-                  widget.closeFocusNode?.requestFocus();
-                  return KeyEventResult.handled;
-                }
-                return KeyEventResult.ignored;
-              },
-              canRequestFocus: false,
-              child: SliderTheme(
-                data: SliderTheme.of(context).copyWith(tickMarkShape: SliderTickMarkShape.noTickMark),
-                child: Slider(
-                  focusNode: widget.sliderFocusNode,
-                  value: sliderValue,
-                  min: _sliderMin,
-                  max: _sliderMax,
-                  divisions: _sliderDivisions,
-                  activeColor: Theme.of(context).colorScheme.primary,
-                  inactiveColor: Theme.of(context).colorScheme.outlineVariant,
-                  onChanged: (value) {
-                    setState(() {
-                      _currentOffset = value;
-                    });
-                  },
-                  onChangeEnd: (value) {
-                    _applyOffset(value);
-                  },
-                ),
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(tickMarkShape: SliderTickMarkShape.noTickMark),
+              child: FocusableSlider(
+                focusNode: widget.sliderFocusNode,
+                value: sliderValue,
+                min: _sliderMin,
+                max: _sliderMax,
+                divisions: _sliderDivisions,
+                activeColor: Theme.of(context).colorScheme.primary,
+                inactiveColor: Theme.of(context).colorScheme.outlineVariant,
+                onSelect: widget.closeFocusNode?.requestFocus,
+                onChanged: (value) => setState(() => _currentOffset = value),
+                onChangeEnd: _applyOffset,
               ),
             ),
           ),
@@ -373,6 +356,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
           // Reset button
           FocusableButton(
             onPressed: _currentOffset != 0 ? _resetOffset : null,
+            useBackgroundFocus: true,
             child: ElevatedButton.icon(
               onPressed: _currentOffset != 0 ? _resetOffset : null,
               icon: const AppIcon(Symbols.restart_alt_rounded, fill: 1),

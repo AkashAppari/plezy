@@ -7,6 +7,7 @@ import '../../i18n/strings.g.dart';
 import '../../services/settings_service.dart';
 import '../../services/trackers/tracker_constants.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_page.dart';
@@ -76,7 +77,7 @@ class TrackerAccountSettingsBody extends StatelessWidget {
               prefs: [SettingsService.trackerFilterModePref(service), SettingsService.trackerFilterIdsPref(service)],
               builder: (context) {
                 final settings = SettingsService.instance;
-                return ListTile(
+                return FocusableListTile(
                   leading: const AppIcon(Symbols.filter_list_rounded, fill: 1),
                   title: Text(t.services.libraryFilter.title),
                   subtitle: Text(TrackerLibraryFilterScreen.subtitleFor(settings, service)),
@@ -92,7 +93,7 @@ class TrackerAccountSettingsBody extends StatelessWidget {
         const SizedBox(height: 24),
         SettingsGroup(
           children: [
-            ListTile(
+            FocusableListTile(
               leading: AppIcon(Symbols.link_off_rounded, fill: 1, color: Theme.of(context).colorScheme.error),
               title: Text(t.common.disconnect, style: TextStyle(color: Theme.of(context).colorScheme.error)),
               onTap: () => unawaited(Future<void>.sync(onDisconnect)),

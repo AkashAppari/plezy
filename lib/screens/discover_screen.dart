@@ -9,6 +9,7 @@ import '../widgets/server_activities_button.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../focus/focusable_action_bar.dart';
+import '../focus/focusable_button.dart';
 import '../focus/hub_vertical_navigation.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
@@ -1202,7 +1203,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   const SizedBox(height: 16),
                   Text(_errorMessage!),
                   const SizedBox(height: 16),
-                  FilledButton(onPressed: _discover.load, child: Text(t.common.retry)),
+                  FocusableButton(
+                    autofocus: true,
+                    onPressed: _discover.load,
+                    useBackgroundFocus: true,
+                    child: FilledButton(onPressed: _discover.load, child: Text(t.common.retry)),
+                  ),
                 ],
               ),
             ),

@@ -452,19 +452,27 @@ class _ArtistLinkState extends State<_ArtistLink> {
     if (widget.onTap == null) return Text(widget.name, style: style);
 
     final showFocus = _focused && InputModeTracker.isKeyboardMode(context);
-    return Focus(
-      focusNode: _focusNode,
-      onFocusChange: (hasFocus) => setState(() => _focused = hasFocus),
-      onKeyEvent: dpadKeyHandler(onSelect: widget.onTap),
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          onTap: widget.onTap,
-          child: AnimatedContainer(
-            duration: FocusTheme.getAnimationDuration(context),
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: FocusTheme.focusBackgroundDecoration(isFocused: showFocus),
-            child: Text(widget.name, style: style),
+    return Semantics(
+      button: true,
+      enabled: true,
+      label: widget.name,
+      onTap: widget.onTap,
+      child: ExcludeSemantics(
+        child: Focus(
+          focusNode: _focusNode,
+          onFocusChange: (hasFocus) => setState(() => _focused = hasFocus),
+          onKeyEvent: dpadKeyHandler(onSelect: widget.onTap),
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: widget.onTap,
+              child: AnimatedContainer(
+                duration: FocusTheme.getAnimationDuration(context),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: FocusTheme.focusBackgroundDecoration(isFocused: showFocus),
+                child: Text(widget.name, style: style),
+              ),
+            ),
           ),
         ),
       ),

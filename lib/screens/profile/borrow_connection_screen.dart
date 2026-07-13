@@ -368,6 +368,7 @@ class _BorrowTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return InkWell(
+      canRequestFocus: false,
       onTap: onTap,
       borderRadius: borderRadius,
       child: Padding(

@@ -9,6 +9,7 @@ import '../../providers/trakt_account_provider.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/catalog_source_logo.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/settings_section.dart';
 import 'seerr_connect_screen.dart';
 import 'seerr_settings_screen.dart';
@@ -144,7 +145,7 @@ class _ServiceHubRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
+    return FocusableListTile(
       leading: leading,
       title: Text(title),
       subtitle: Text(username != null ? t.services.connectedAs(username: username!) : t.services.notConnected),

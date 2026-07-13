@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_action_bar.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
 import '../../services/music/music_playback_service.dart';
@@ -19,7 +20,7 @@ import '../../widgets/overlay_sheet.dart';
 /// [OverlaySheetHost] ancestor (all now-playing layouts do) so TV back
 /// handling stays centralized in the host.
 Future<void> showQueueSheet(BuildContext context) {
-  return OverlaySheetController.showAdaptive<void>(context, showDragHandle: true, builder: (_) => const QueueSheet());
+  return OverlaySheetController.of(context).show<void>(showDragHandle: true, builder: (_) => const QueueSheet());
 }
 
 /// Sheet chrome around [QueueList]: header with track count, shuffle/repeat
@@ -48,30 +49,27 @@ class QueueSheet extends StatelessWidget {
                   style: TextStyle(fontSize: 13, color: tk.textMuted),
                 ),
               ),
-              IconButton(
-                icon: AppIcon(
-                  Symbols.shuffle_rounded,
-                  fill: 1,
-                  size: 20,
-                  color: service.shuffled ? colorScheme.primary : tk.textMuted,
-                ),
-                tooltip: t.common.shuffle,
-                onPressed: service.toggleShuffle,
-              ),
-              IconButton(
-                icon: AppIcon(
-                  repeatModeIcon(service.repeatMode),
-                  fill: 1,
-                  size: 20,
-                  color: service.repeatMode == MusicRepeatMode.off ? tk.textMuted : colorScheme.primary,
-                ),
-                tooltip: repeatModeLabel(service.repeatMode),
-                onPressed: () => service.setRepeatMode(nextRepeatMode(service.repeatMode)),
-              ),
-              IconButton(
-                icon: AppIcon(Symbols.clear_all_rounded, fill: 1, size: 20, color: tk.textMuted),
-                tooltip: t.music.clearQueue,
-                onPressed: service.clearUpcoming,
+              FocusableActionBar(
+                actions: [
+                  FocusableAction(
+                    icon: Symbols.shuffle_rounded,
+                    iconColor: service.shuffled ? colorScheme.primary : tk.textMuted,
+                    tooltip: t.common.shuffle,
+                    onPressed: service.toggleShuffle,
+                  ),
+                  FocusableAction(
+                    icon: repeatModeIcon(service.repeatMode),
+                    iconColor: service.repeatMode == MusicRepeatMode.off ? tk.textMuted : colorScheme.primary,
+                    tooltip: repeatModeLabel(service.repeatMode),
+                    onPressed: () => service.setRepeatMode(nextRepeatMode(service.repeatMode)),
+                  ),
+                  FocusableAction(
+                    icon: Symbols.clear_all_rounded,
+                    iconColor: tk.textMuted,
+                    tooltip: t.music.clearQueue,
+                    onPressed: service.clearUpcoming,
+                  ),
+                ],
               ),
             ],
           ),

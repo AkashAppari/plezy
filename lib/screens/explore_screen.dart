@@ -25,6 +25,7 @@ import '../widgets/app_menu.dart';
 import '../widgets/catalog_source_logo.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/hub_section.dart';
+import '../widgets/focusable_popup_menu_button.dart';
 import '../widgets/settings_builder.dart';
 import '../widgets/rasterized_gradient.dart';
 import '../widgets/tv_browse_rail.dart';
@@ -154,26 +155,39 @@ class ExploreScreenState extends State<ExploreScreen>
     CatalogSource active, {
     TextStyle? textStyle,
     AppMenuAnchorAlignment anchorAlignment = AppMenuAnchorAlignment.start,
+    bool parentOwnsFocus = false,
   }) {
-    return AppMenuButton<CatalogSourceId>(
-      key: _sourceMenuKey,
+    final trigger = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Row(
+        mainAxisSize: .min,
+        children: [
+          CatalogSourceLogo(active.id, size: 22),
+          const SizedBox(width: 8),
+          Text(active.displayName, style: textStyle ?? Theme.of(context).textTheme.titleLarge),
+          const SizedBox(width: 4),
+          const AppIcon(Symbols.arrow_drop_down_rounded, fill: 1, size: 24),
+        ],
+      ),
+    );
+    if (parentOwnsFocus) {
+      return AppMenuButton<CatalogSourceId>(
+        key: _sourceMenuKey,
+        tooltip: t.explore.selectSource,
+        anchorAlignment: anchorAlignment,
+        onSelected: (id) => unawaited(sources.setActiveSource(id)),
+        entriesBuilder: (context) => _sourceMenuEntries(sources, active),
+        child: trigger,
+      );
+    }
+    return FocusablePopupMenuButton<CatalogSourceId>(
+      menuKey: _sourceMenuKey,
       tooltip: t.explore.selectSource,
+      semanticLabel: t.explore.selectSource,
       anchorAlignment: anchorAlignment,
       onSelected: (id) => unawaited(sources.setActiveSource(id)),
-      entriesBuilder: (context) => _sourceMenuEntries(sources, active),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Row(
-          mainAxisSize: .min,
-          children: [
-            CatalogSourceLogo(active.id, size: 22),
-            const SizedBox(width: 8),
-            Text(active.displayName, style: textStyle ?? Theme.of(context).textTheme.titleLarge),
-            const SizedBox(width: 4),
-            const AppIcon(Symbols.arrow_drop_down_rounded, fill: 1, size: 24),
-          ],
-        ),
-      ),
+      itemBuilder: (context) => _sourceMenuEntries(sources, active),
+      child: trigger,
     );
   }
 
@@ -352,6 +366,7 @@ class ExploreScreenState extends State<ExploreScreen>
                         context,
                       ).textTheme.titleMedium?.copyWith(color: foregroundColor, fontWeight: .w600),
                       anchorAlignment: AppMenuAnchorAlignment.end,
+                      parentOwnsFocus: true,
                     ),
                   ),
                 if (active != null)

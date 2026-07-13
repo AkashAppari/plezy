@@ -21,6 +21,7 @@ import '../utils/snackbar_helper.dart';
 import 'app_icon.dart';
 import 'app_menu.dart';
 import 'loading_indicator_box.dart';
+import 'focusable_list_tile.dart';
 import 'overlay_sheet.dart';
 import 'stat_chip.dart';
 
@@ -396,7 +397,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
             else ...[
               if (!_isMovie && _partialSeasons) ..._buildSeasonSection(theme),
               if (_can4k)
-                SwitchListTile(
+                FocusableSwitchListTile(
                   value: _is4k,
                   onChanged: _submitting ? null : _toggle4k,
                   title: Text(t.seerr.request4k),
@@ -432,7 +433,11 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
       children: [
         Text(t.seerr.requestsLoadFailed, style: theme.textTheme.bodyMedium),
         const SizedBox(height: 12),
-        OutlinedButton(onPressed: () => unawaited(_load()), child: Text(t.common.retry)),
+        FocusableButton(
+          autofocus: true,
+          onPressed: () => unawaited(_load()),
+          child: OutlinedButton(onPressed: () => unawaited(_load()), child: Text(t.common.retry)),
+        ),
       ],
     ),
   );
@@ -480,7 +485,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
     final number = season.seasonNumber;
     final blockedLabel = _seasonBlockedLabel(number);
     final episodeCount = season.episodeCount;
-    return CheckboxListTile(
+    return FocusableCheckboxListTile(
       focusNode: _seasonFocusNodes[index],
       value: blockedLabel != null || _selectedSeasons.contains(number),
       onChanged: blockedLabel != null || _submitting
@@ -604,7 +609,7 @@ class _PickerTile<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
+    return FocusableListTile(
       leading: AppIcon(icon, fill: 1),
       title: Text(label),
       subtitle: value.isEmpty ? null : Text(value, maxLines: 1, overflow: TextOverflow.ellipsis),

@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../i18n/strings.g.dart';
 import '../focus/focusable_button.dart';
+import '../focus/focusable_wrapper.dart';
 import '../services/trackers/oauth_proxy_client.dart';
 import '../utils/snackbar_helper.dart';
 import 'dialog_action_button.dart';
@@ -55,18 +56,26 @@ class OAuthProxyDialog extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          InkWell(
-            onTap: () => _copyUrl(context),
-            borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Text(
-                start.url,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontFamily: 'monospace',
-                  color: theme.colorScheme.onSurfaceVariant,
+          FocusableWrapper(
+            onSelect: () => _copyUrl(context),
+            semanticLabel: t.services.oauthProxy.copyUrl,
+            descendantsAreFocusable: false,
+            borderRadius: 8,
+            useBackgroundFocus: true,
+            child: InkWell(
+              canRequestFocus: false,
+              onTap: () => _copyUrl(context),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Text(
+                  start.url,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontFamily: 'monospace',
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
             ),
           ),
@@ -75,6 +84,7 @@ class OAuthProxyDialog extends StatelessWidget {
             width: double.infinity,
             child: FocusableButton(
               onPressed: _open,
+              useBackgroundFocus: true,
               child: FilledButton.icon(
                 icon: const Icon(Icons.open_in_new),
                 label: Text(t.services.oauthProxy.openToSignIn(service: serviceName)),

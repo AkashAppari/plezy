@@ -274,6 +274,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
                 isActive: isActive && !widget.requireSelection,
                 chips: _chipsFor(profile, view),
                 onTap: () => _switchTo(profile),
+                onLongPress: hasMenu ? () => _openProfileMenu(profile) : null,
                 // Manage available for any profile — adding/removing
                 // borrowed connections is supported on plex_home too. Delete
                 // stays local-only (Plex Home users are owned by Plex).
@@ -371,6 +372,7 @@ class _ProfileTile extends StatelessWidget {
   final BorderRadius borderRadius;
   final List<_ChipData> chips;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
   final VoidCallback? onManage;
   final VoidCallback? onDelete;
   final VoidCallback? onSignOut;
@@ -384,6 +386,7 @@ class _ProfileTile extends StatelessWidget {
     required this.borderRadius,
     required this.chips,
     required this.onTap,
+    this.onLongPress,
     this.onManage,
     this.onDelete,
     this.onSignOut,
@@ -397,7 +400,9 @@ class _ProfileTile extends StatelessWidget {
     final theme = Theme.of(context);
     final hasMenu = onManage != null || onDelete != null || onSignOut != null;
     return InkWell(
+      canRequestFocus: false,
       onTap: isActive ? null : onTap,
+      onLongPress: onLongPress,
       borderRadius: borderRadius,
       child: Padding(
         padding: const EdgeInsets.all(12),

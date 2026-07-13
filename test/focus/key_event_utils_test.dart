@@ -12,6 +12,7 @@ void main() {
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
     BackKeyUpSuppressor.clearSuppression();
+    BackKeyCoordinator.clear();
   });
 
   testWidgets('tvOS physical keyboard back runs on key down and suppresses key up', (tester) async {
@@ -72,6 +73,31 @@ void main() {
     expect(upResult, KeyEventResult.handled);
     expect(backs, 1);
     await tester.pump();
+  });
+
+  group('BackKeyCoordinator', () {
+    testWidgets('suppresses one parallel back dispatch in the current frame', (tester) async {
+      BackKeyCoordinator.markHandled();
+
+      expect(BackKeyCoordinator.consumeIfHandled(), isTrue);
+      expect(BackKeyCoordinator.consumeIfHandled(), isFalse);
+      await tester.pump();
+    });
+
+    testWidgets('does not suppress an independent system back in a later frame', (tester) async {
+      BackKeyCoordinator.markHandled();
+      await tester.pump();
+
+      expect(BackKeyCoordinator.consumeIfHandled(), isFalse);
+    });
+
+    testWidgets('clear discards a pending duplicate marker', (tester) async {
+      BackKeyCoordinator.markHandled();
+      BackKeyCoordinator.clear();
+
+      expect(BackKeyCoordinator.consumeIfHandled(), isFalse);
+      await tester.pump();
+    });
   });
 
   group('dpadKeyHandler trapHorizontalEdges', () {

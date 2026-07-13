@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/focusable_action_bar.dart';
+import '../../focus/focusable_button.dart';
 import '../../media/library_query.dart';
 import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
@@ -187,6 +188,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
   // Focus management for regular (non-smart) reorderable lists
   final FocusNode _listFocusNode = FocusNode(debugLabel: 'playlist_list');
+  final FocusNode _continuationRetryFocusNode = FocusNode(debugLabel: 'playlist_continuation_retry');
 
   // Navigation state for regular (non-smart) playlists
   int _focusedIndex = 0;
@@ -219,6 +221,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   void dispose() {
     _continuation.dispose();
     _listFocusNode.dispose();
+    _continuationRetryFocusNode.dispose();
     _focusRevision.dispose();
     disposeFocusResources();
     super.dispose();
@@ -637,12 +640,18 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         }
         return KeyEventResult.handled;
       }
-      if (key.isDownKey && _focusedIndex < items.length - 1) {
-        _focusedIndex++;
-        _focusedColumn = 0;
-        _notifyFocusChanged();
-        _ensureFocusedVisible();
-        return KeyEventResult.handled;
+      if (key.isDownKey) {
+        if (_focusedIndex < items.length - 1) {
+          _focusedIndex++;
+          _focusedColumn = 0;
+          _notifyFocusChanged();
+          _ensureFocusedVisible();
+          return KeyEventResult.handled;
+        }
+        if (_continuation.error != null) {
+          _continuationRetryFocusNode.requestFocus();
+          return KeyEventResult.handled;
+        }
       }
       if (key.isLeftKey) {
         // Navigate left within columns
@@ -871,7 +880,13 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
                   children: [
                     Text(error, textAlign: TextAlign.center),
                     const SizedBox(height: 8),
-                    TextButton(onPressed: _retryPlaylistContinuation, child: Text(t.common.retry)),
+                    FocusableButton(
+                      focusNode: _continuationRetryFocusNode,
+                      onPressed: _retryPlaylistContinuation,
+                      onNavigateUp: _isReadOnly ? navigateToGrid : _listFocusNode.requestFocus,
+                      onBack: handleBackFromContent,
+                      child: TextButton(onPressed: _retryPlaylistContinuation, child: Text(t.common.retry)),
+                    ),
                   ],
                 ),
         ),

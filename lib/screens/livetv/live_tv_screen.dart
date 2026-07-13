@@ -535,6 +535,8 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
     OverlaySheetController.showAdaptive(
       context,
+      isScrollControlled: true,
+      showDragHandle: true,
       builder: (sheetContext) => ReorderFavoritesSheet(
         favorites: List.from(_favoriteChannels),
         channelMap: channelMap,
@@ -712,6 +714,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
             FocusableButton(
               autofocus: true,
               onPressed: _loadChannels,
+              useBackgroundFocus: true,
               child: FilledButton.icon(
                 onPressed: _loadChannels,
                 icon: const AppIcon(Symbols.refresh_rounded),

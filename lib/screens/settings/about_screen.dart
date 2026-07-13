@@ -3,6 +3,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/settings_section.dart';
 import '../../i18n/strings.g.dart';
 import 'licenses_screen.dart';
@@ -56,7 +57,7 @@ class AboutScreen extends StatelessWidget {
                   SettingsGroup(
                     margin: EdgeInsets.zero,
                     children: [
-                      ListTile(
+                      FocusableListTile(
                         leading: const AppIcon(Symbols.description_rounded, fill: 1),
                         title: Text(t.about.openSourceLicenses),
                         subtitle: Text(t.about.viewLicensesDescription),

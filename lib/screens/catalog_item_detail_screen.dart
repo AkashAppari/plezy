@@ -446,6 +446,11 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     );
   }
 
+  void _handleSystemBack() {
+    if (BackKeyCoordinator.consumeIfHandled()) return;
+    Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
@@ -459,151 +464,154 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     // remain route-driven. The overlay host always gets first refusal.
     return OverlaySheetHost(
       canPop: !blockSystemBack,
-      child: Focus(
-        onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
-        child: Scaffold(
-          body: Stack(
-            children: [
-              SingleChildScrollView(
-                key: const Key('catalog_detail_scroll'),
-                controller: _scrollController,
-                // The backdrop lives inside the scrollable so it moves with
-                // the content (it extends under the status bar, so the safe
-                // areas are baked into the content padding instead of a
-                // SafeArea around the scroll view).
-                child: Stack(
-                  children: [
-                    if (item.backdropUrl != null)
-                      Positioned(
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: 320,
-                        child: ShaderMask(
-                          shaderCallback: (rect) => LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [Colors.black, Colors.black.withValues(alpha: 0.0)],
-                            stops: const [0.3, 1.0],
-                          ).createShader(rect),
-                          blendMode: BlendMode.dstIn,
-                          child: OptimizedMediaImage.thumb(
-                            imagePath: item.backdropUrl,
-                            width: double.infinity,
-                            height: 320,
-                            fit: BoxFit.cover,
-                            fallbackIcon: null,
+      onSystemBack: _handleSystemBack,
+      child: Builder(
+        builder: (hostContext) => Focus(
+          onKeyEvent: (_, event) => handleBackKeyNavigation(hostContext, event),
+          child: Scaffold(
+            body: Stack(
+              children: [
+                SingleChildScrollView(
+                  key: const Key('catalog_detail_scroll'),
+                  controller: _scrollController,
+                  // The backdrop lives inside the scrollable so it moves with
+                  // the content (it extends under the status bar, so the safe
+                  // areas are baked into the content padding instead of a
+                  // SafeArea around the scroll view).
+                  child: Stack(
+                    children: [
+                      if (item.backdropUrl != null)
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          height: 320,
+                          child: ShaderMask(
+                            shaderCallback: (rect) => LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [Colors.black, Colors.black.withValues(alpha: 0.0)],
+                              stops: const [0.3, 1.0],
+                            ).createShader(rect),
+                            blendMode: BlendMode.dstIn,
+                            child: OptimizedMediaImage.thumb(
+                              imagePath: item.backdropUrl,
+                              width: double.infinity,
+                              height: 320,
+                              fit: BoxFit.cover,
+                              fallbackIcon: null,
+                            ),
                           ),
                         ),
-                      ),
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(24, viewInsets.top + 120, 24, viewInsets.bottom + 32),
-                      child: Column(
-                        crossAxisAlignment: .start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: .start,
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: OptimizedMediaImage.poster(imagePath: item.posterUrl, width: 140, height: 210),
-                              ),
-                              const SizedBox(width: 20),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: .start,
-                                  children: [
-                                    Text(
-                                      item.title,
-                                      style: theme.textTheme.headlineMedium,
-                                      maxLines: 3,
-                                      overflow: .ellipsis,
-                                    ),
-                                    if (_metaLine.isNotEmpty) ...[
-                                      const SizedBox(height: 8),
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(24, viewInsets.top + 120, 24, viewInsets.bottom + 32),
+                        child: Column(
+                          crossAxisAlignment: .start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: .start,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: OptimizedMediaImage.poster(imagePath: item.posterUrl, width: 140, height: 210),
+                                ),
+                                const SizedBox(width: 20),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: .start,
+                                    children: [
                                       Text(
-                                        _metaLine,
-                                        style: theme.textTheme.bodyMedium?.copyWith(
-                                          color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                                        ),
+                                        item.title,
+                                        style: theme.textTheme.headlineMedium,
+                                        maxLines: 3,
+                                        overflow: .ellipsis,
                                       ),
-                                    ],
-                                    if (item.genres?.isNotEmpty ?? false) ...[
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        item.genres!.join(' • '),
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                      if (_metaLine.isNotEmpty) ...[
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          _metaLine,
+                                          style: theme.textTheme.bodyMedium?.copyWith(
+                                            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                    const SizedBox(height: 16),
-                                    if (_watchlistSource != null || _requestSource != null)
-                                      FocusableActionBar(
-                                        key: _actionBarKey,
-                                        onNavigateDown: _focusSectionBelowActions,
-                                        actions: [
-                                          if (_watchlistSource != null)
-                                            FocusableAction(
-                                              icon: onWatchlist ?? false
-                                                  ? Symbols.bookmark_added_rounded
-                                                  : Symbols.bookmark_add_rounded,
-                                              tooltip: onWatchlist ?? false
-                                                  ? t.explore.removeFromWatchlist
-                                                  : t.explore.addToWatchlist,
-                                              onPressed: onWatchlist == null
-                                                  ? () {}
-                                                  : () => unawaited(_toggleWatchlist()),
-                                            ),
-                                          if (_requestSource case final SeerrCatalogSource seerr)
-                                            FocusableAction(
-                                              icon: Symbols.download_rounded,
-                                              tooltip: t.seerr.request,
-                                              onPressed: () => unawaited(
-                                                showSeerrRequestSheet(
-                                                  context,
-                                                  source: seerr,
-                                                  kind: item.kind,
-                                                  tmdbId: item.ids.tmdb!,
-                                                  title: item.title,
+                                      ],
+                                      if (item.genres?.isNotEmpty ?? false) ...[
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          item.genres!.join(' • '),
+                                          style: theme.textTheme.bodySmall?.copyWith(
+                                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                          ),
+                                        ),
+                                      ],
+                                      const SizedBox(height: 16),
+                                      if (_watchlistSource != null || _requestSource != null)
+                                        FocusableActionBar(
+                                          key: _actionBarKey,
+                                          onNavigateDown: _focusSectionBelowActions,
+                                          actions: [
+                                            if (_watchlistSource != null)
+                                              FocusableAction(
+                                                icon: onWatchlist ?? false
+                                                    ? Symbols.bookmark_added_rounded
+                                                    : Symbols.bookmark_add_rounded,
+                                                tooltip: onWatchlist ?? false
+                                                    ? t.explore.removeFromWatchlist
+                                                    : t.explore.addToWatchlist,
+                                                onPressed: onWatchlist == null
+                                                    ? () {}
+                                                    : () => unawaited(_toggleWatchlist()),
+                                              ),
+                                            if (_requestSource case final SeerrCatalogSource seerr)
+                                              FocusableAction(
+                                                icon: Symbols.download_rounded,
+                                                tooltip: t.seerr.request,
+                                                onPressed: () => unawaited(
+                                                  showSeerrRequestSheet(
+                                                    hostContext,
+                                                    source: seerr,
+                                                    kind: item.kind,
+                                                    tmdbId: item.ids.tmdb!,
+                                                    title: item.title,
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                        ],
-                                      ),
-                                  ],
+                                          ],
+                                        ),
+                                    ],
+                                  ),
                                 ),
-                              ),
+                              ],
+                            ),
+                            if (_buildStatsChips(theme) case final Widget chips) ...[const SizedBox(height: 20), chips],
+                            const SizedBox(height: 24),
+                            if (item.overview != null) Text(item.overview!, style: theme.textTheme.bodyLarge),
+                            const SizedBox(height: 24),
+                            _buildLibrarySection(theme),
+                            if (_cast case final List<CatalogCastMember> cast when cast.isNotEmpty) ...[
+                              const SizedBox(height: 28),
+                              _buildCastSection(theme, cast),
                             ],
-                          ),
-                          if (_buildStatsChips(theme) case final Widget chips) ...[const SizedBox(height: 20), chips],
-                          const SizedBox(height: 24),
-                          if (item.overview != null) Text(item.overview!, style: theme.textTheme.bodyLarge),
-                          const SizedBox(height: 24),
-                          _buildLibrarySection(theme),
-                          if (_cast case final List<CatalogCastMember> cast when cast.isNotEmpty) ...[
-                            const SizedBox(height: 28),
-                            _buildCastSection(theme, cast),
+                            if (_related case final List<CatalogItem> related when related.isNotEmpty) ...[
+                              const SizedBox(height: 20),
+                              _buildRelatedSection(related),
+                            ],
                           ],
-                          if (_related case final List<CatalogItem> related when related.isNotEmpty) ...[
-                            const SizedBox(height: 20),
-                            _buildRelatedSection(related),
-                          ],
-                        ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              Positioned(
-                top: 0,
-                left: 0,
-                child: DesktopAppBarHelper.buildAdjustedLeading(
-                  const AppBarBackButton(style: BackButtonStyle.circular),
-                  context: context,
-                )!,
-              ),
-            ],
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  child: DesktopAppBarHelper.buildAdjustedLeading(
+                    const AppBarBackButton(style: BackButtonStyle.circular),
+                    context: hostContext,
+                  )!,
+                ),
+              ],
+            ),
           ),
         ),
       ),

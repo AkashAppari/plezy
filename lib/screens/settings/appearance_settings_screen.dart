@@ -16,6 +16,7 @@ import '../../focus/focusable_slider.dart';
 import '../../services/device_performance.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_page.dart';
 import '../../widgets/settings_builder.dart';
@@ -224,7 +225,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
   }
 
   Widget _languageSelector(BuildContext context) {
-    return ListTile(
+    return FocusableListTile(
       leading: const AppIcon(Symbols.language_rounded, fill: 1),
       title: Text(t.settings.language),
       subtitle: Text(_getLanguageDisplayName(LocaleSettings.currentLocale)),

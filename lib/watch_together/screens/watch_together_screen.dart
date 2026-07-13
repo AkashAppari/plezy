@@ -171,6 +171,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
                 child: FocusableButton(
                   autofocus: _recentRooms.isEmpty,
                   onPressed: _isBusy ? null : _createSession,
+                  useBackgroundFocus: true,
                   child: FilledButton.icon(
                     onPressed: _isBusy ? null : _createSession,
                     icon: _isCreating ? const LoadingIndicatorBox(size: 20) : const Icon(Symbols.add_rounded),
@@ -431,6 +432,7 @@ class _RecentRoomTile extends StatelessWidget {
                 : null,
             trailing: IconButton(icon: const Icon(Symbols.more_vert_rounded), onPressed: () => _showActions(context)),
             onTap: isBusy ? null : onTap,
+            onLongPress: () => _showActions(context),
           ),
         ),
       ),
@@ -438,8 +440,8 @@ class _RecentRoomTile extends StatelessWidget {
   }
 
   void _showActions(BuildContext context) {
-    OverlaySheetController.showAdaptive(
-      context,
+    OverlaySheetController.of(context).show(
+      showDragHandle: true,
       builder: (context) => AppMenuSheet<String>(
         entries: [
           AppMenuItem(value: 'rename', icon: Symbols.edit_rounded, label: t.watchTogether.renameRoom),
@@ -714,6 +716,7 @@ class _JoinCurrentPlaybackCardState extends State<_JoinCurrentPlaybackCard> {
               child: FocusableButton(
                 autofocus: true,
                 onPressed: _isJoining ? null : _joinCurrentPlayback,
+                useBackgroundFocus: true,
                 child: FilledButton.icon(
                   onPressed: _isJoining ? null : _joinCurrentPlayback,
                   icon: _isJoining ? const LoadingIndicatorBox() : const Icon(Symbols.play_arrow_rounded),

@@ -37,6 +37,7 @@ void showProgramDetailsSheet(
 }) {
   OverlaySheetController.showAdaptive(
     context,
+    showDragHandle: true,
     builder: (sheetContext) {
       return _ProgramDetailsSheetContent(
         program: program,
@@ -257,6 +258,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
       onNavigateRight: index < total - 1 ? () => _focusButton(index + 1) : null,
       onNavigateUp: onNavigateUp,
       onBack: _closeSheet,
+      useBackgroundFocus: true,
       child: child,
     );
   }

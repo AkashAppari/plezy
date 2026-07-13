@@ -17,7 +17,6 @@ import '../../../providers/multi_server_provider.dart';
 import '../../../services/settings_service.dart';
 import '../../../utils/app_logger.dart';
 import '../../../widgets/hub_section.dart';
-import '../../../widgets/overlay_sheet.dart';
 import '../live_tv_actions_mixin.dart';
 import '../live_tv_show_schedule_screen.dart';
 import '../live_tv_refresh_lifecycle.dart';
@@ -202,35 +201,33 @@ class WhatsOnTabState extends State<WhatsOnTab>
       return Center(child: Text(t.liveTv.noPrograms));
     }
 
-    return OverlaySheetHost(
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        clipBehavior: Clip.none,
-        itemCount: _hubs.length,
-        itemBuilder: (context, index) {
-          final hub = _hubs[index];
-          return HubSection(
-            key: _hubKeys[index],
-            hub: hub.mediaHub,
-            icon: Symbols.live_tv_rounded,
-            cardSizing: HubCardSizing.grid,
-            episodePosterModeOverride: EpisodePosterMode.seriesPoster,
-            onItemTap: (item) => _onItemTap(hub.entryFor(item)),
-            onItemLongPress: (item) {
-              final entry = hub.entryFor(item);
-              showProgramDetails(
-                program: entry.program,
-                channel: findChannelForProgram(entry.program),
-                posterThumb: entry.metadata.grandparentThumbPath ?? entry.metadata.thumbPath,
-                posterServerId: entry.metadata.serverId,
-              );
-            },
-            onVerticalNavigation: (isUp) => _handleVerticalNavigation(index, isUp),
-            onNavigateToSidebar: widget.onBack,
-            onBack: widget.onBack,
-          );
-        },
-      ),
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      clipBehavior: Clip.none,
+      itemCount: _hubs.length,
+      itemBuilder: (context, index) {
+        final hub = _hubs[index];
+        return HubSection(
+          key: _hubKeys[index],
+          hub: hub.mediaHub,
+          icon: Symbols.live_tv_rounded,
+          cardSizing: HubCardSizing.grid,
+          episodePosterModeOverride: EpisodePosterMode.seriesPoster,
+          onItemTap: (item) => _onItemTap(hub.entryFor(item)),
+          onItemLongPress: (item) {
+            final entry = hub.entryFor(item);
+            showProgramDetails(
+              program: entry.program,
+              channel: findChannelForProgram(entry.program),
+              posterThumb: entry.metadata.grandparentThumbPath ?? entry.metadata.thumbPath,
+              posterServerId: entry.metadata.serverId,
+            );
+          },
+          onVerticalNavigation: (isUp) => _handleVerticalNavigation(index, isUp),
+          onNavigateToSidebar: widget.onBack,
+          onBack: widget.onBack,
+        );
+      },
     );
   }
 }

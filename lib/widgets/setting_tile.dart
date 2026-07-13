@@ -6,7 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../screens/settings/settings_utils.dart';
 import '../services/settings_service.dart';
 import 'app_icon.dart';
-import 'clickable_cursor.dart';
+import 'focusable_list_tile.dart';
 import 'settings_section.dart';
 
 /// Reactive setting tiles bound to a [Pref] via [SettingsService.listenable].
@@ -43,22 +43,21 @@ class SettingSwitchTile extends StatelessWidget {
     final svc = _TileBase._svc;
     return ValueListenableBuilder<bool>(
       valueListenable: svc.listenable(pref),
-      builder: (_, value, _) => ClickableCursor(
-        enabled: enabled,
-        child: SwitchListTile(
-          focusNode: focusNode,
-          secondary: AppIcon(icon, fill: 1),
-          title: Text(title),
-          subtitle: subtitle != null ? Text(subtitle!) : null,
-          value: value,
-          onChanged: enabled
-              ? (v) async {
-                  await svc.write(pref, v);
-                  final callback = onAfterWrite;
-                  if (callback != null) await callback(v);
-                }
-              : null,
-        ),
+      builder: (_, value, _) => FocusableSwitchListTile(
+        focusNode: focusNode,
+        secondary: AppIcon(icon, fill: 1),
+        title: Text(title),
+        subtitle: subtitle != null ? Text(subtitle!) : null,
+        value: value,
+        dense: false,
+        visualDensity: VisualDensity.standard,
+        onChanged: enabled
+            ? (v) async {
+                await svc.write(pref, v);
+                final callback = onAfterWrite;
+                if (callback != null) await callback(v);
+              }
+            : null,
       ),
     );
   }
@@ -87,15 +86,15 @@ class SettingNavigationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClickableCursor(
-      child: ListTile(
-        focusNode: focusNode,
-        leading: AppIcon(icon, fill: 1),
-        title: Text(title),
-        subtitle: subtitle != null ? Text(subtitle!) : null,
-        trailing: AppIcon(trailingIcon, fill: 1),
-        onTap: onTap ?? () => Navigator.push(context, MaterialPageRoute(builder: destinationBuilder!)),
-      ),
+    return FocusableListTile(
+      focusNode: focusNode,
+      leading: AppIcon(icon, fill: 1),
+      title: Text(title),
+      subtitle: subtitle != null ? Text(subtitle!) : null,
+      trailing: AppIcon(trailingIcon, fill: 1),
+      onTap: onTap ?? () => Navigator.push(context, MaterialPageRoute(builder: destinationBuilder!)),
+      dense: false,
+      visualDensity: VisualDensity.standard,
     );
   }
 }
@@ -130,26 +129,26 @@ class SettingNumberTile extends StatelessWidget {
     final svc = _TileBase._svc;
     return ValueListenableBuilder<int>(
       valueListenable: svc.listenable(pref),
-      builder: (_, value, _) => ClickableCursor(
-        child: ListTile(
-          leading: AppIcon(icon, fill: 1),
-          title: Text(title),
-          subtitle: Text(subtitleBuilder(value)),
-          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-          onTap: () => showNumericInputDialog(
-            context: context,
-            title: title,
-            labelText: labelText,
-            suffixText: suffixText,
-            min: min,
-            max: max,
-            currentValue: value,
-            onSave: (v) async {
-              await svc.write(pref, v);
-              final callback = onAfterWrite;
-              if (callback != null) await callback(v);
-            },
-          ),
+      builder: (_, value, _) => FocusableListTile(
+        leading: AppIcon(icon, fill: 1),
+        title: Text(title),
+        subtitle: Text(subtitleBuilder(value)),
+        trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+        dense: false,
+        visualDensity: VisualDensity.standard,
+        onTap: () => showNumericInputDialog(
+          context: context,
+          title: title,
+          labelText: labelText,
+          suffixText: suffixText,
+          min: min,
+          max: max,
+          currentValue: value,
+          onSave: (v) async {
+            await svc.write(pref, v);
+            final callback = onAfterWrite;
+            if (callback != null) await callback(v);
+          },
         ),
       ),
     );
@@ -188,25 +187,25 @@ class SettingSelectionTile<T, S> extends StatelessWidget {
       valueListenable: svc.listenable(pref),
       builder: (_, raw, _) {
         final value = decode(raw);
-        return ClickableCursor(
-          child: ListTile(
-            leading: AppIcon(icon, fill: 1),
-            title: Text(title),
-            subtitle: Text(subtitleBuilder(value)),
-            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-            onTap: () async {
-              final picked = await showSelectionDialog<T>(
-                context: context,
-                title: title,
-                options: options,
-                currentValue: value,
-              );
-              if (picked == null) return;
-              await svc.write(pref, encode(picked));
-              final callback = onAfterWrite;
-              if (callback != null) await callback(picked);
-            },
-          ),
+        return FocusableListTile(
+          leading: AppIcon(icon, fill: 1),
+          title: Text(title),
+          subtitle: Text(subtitleBuilder(value)),
+          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          dense: false,
+          visualDensity: VisualDensity.standard,
+          onTap: () async {
+            final picked = await showSelectionDialog<T>(
+              context: context,
+              title: title,
+              options: options,
+              currentValue: value,
+            );
+            if (picked == null) return;
+            await svc.write(pref, encode(picked));
+            final callback = onAfterWrite;
+            if (callback != null) await callback(picked);
+          },
         );
       },
     );
@@ -237,23 +236,23 @@ class SettingRegexTile extends StatelessWidget {
     final svc = _TileBase._svc;
     return ValueListenableBuilder<String>(
       valueListenable: svc.listenable(pref),
-      builder: (_, value, _) => ClickableCursor(
-        child: ListTile(
-          leading: AppIcon(icon, fill: 1),
-          title: Text(title),
-          subtitle: Text(subtitle),
-          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-          onTap: () => showRegexInputDialog(
-            context: context,
-            title: title,
-            currentValue: value,
-            defaultValue: defaultValue,
-            onSave: (v) async {
-              await svc.write(pref, v);
-              final callback = onAfterWrite;
-              if (callback != null) await callback(v);
-            },
-          ),
+      builder: (_, value, _) => FocusableListTile(
+        leading: AppIcon(icon, fill: 1),
+        title: Text(title),
+        subtitle: Text(subtitle),
+        trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+        dense: false,
+        visualDensity: VisualDensity.standard,
+        onTap: () => showRegexInputDialog(
+          context: context,
+          title: title,
+          currentValue: value,
+          defaultValue: defaultValue,
+          onSave: (v) async {
+            await svc.write(pref, v);
+            final callback = onAfterWrite;
+            if (callback != null) await callback(v);
+          },
         ),
       ),
     );
@@ -329,30 +328,30 @@ class SettingColorTile extends StatelessWidget {
     final svc = _TileBase._svc;
     return ValueListenableBuilder<String>(
       valueListenable: svc.listenable(pref),
-      builder: (_, hex, _) => ClickableCursor(
-        child: ListTile(
-          leading: AppIcon(icon, fill: 1),
-          title: Text(title),
-          subtitle: subtitle != null ? Text(subtitle!) : null,
-          trailing: Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: hexToColor(hex),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-            ),
+      builder: (_, hex, _) => FocusableListTile(
+        leading: AppIcon(icon, fill: 1),
+        title: Text(title),
+        subtitle: subtitle != null ? Text(subtitle!) : null,
+        trailing: Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: hexToColor(hex),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
           ),
-          onTap: () => showColorInputDialog(
-            context: context,
-            title: title,
-            currentHex: hex,
-            onSave: (v) async {
-              await svc.write(pref, v);
-              final callback = onAfterWrite;
-              if (callback != null) await callback(v);
-            },
-          ),
+        ),
+        dense: false,
+        visualDensity: VisualDensity.standard,
+        onTap: () => showColorInputDialog(
+          context: context,
+          title: title,
+          currentHex: hex,
+          onSave: (v) async {
+            await svc.write(pref, v);
+            final callback = onAfterWrite;
+            if (callback != null) await callback(v);
+          },
         ),
       ),
     );

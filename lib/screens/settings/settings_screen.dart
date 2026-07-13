@@ -36,6 +36,7 @@ import '../../utils/platform_detector.dart';
 import '../../utils/update_dialog.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/dialog_action_button.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/library_management_sheet.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
@@ -190,7 +191,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   Widget _buildDonateTile() {
-    return ListTile(
+    return FocusableListTile(
       focusNode: _focusTracker.get(_kDonate),
       leading: const AppIcon(Symbols.favorite_rounded, fill: 1),
       title: Text(t.settings.supportDeveloper),
@@ -328,7 +329,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
             future: storageService.getCurrentDownloadPathDisplay(),
             builder: (context, snapshot) {
               final currentPath = snapshot.data ?? '...';
-              return ListTile(
+              return FocusableListTile(
                 focusNode: _focusTracker.get(_kDownloadLocation),
                 leading: const AppIcon(Symbols.folder_rounded, fill: 1),
                 title: Text(isCustom ? t.settings.downloadLocationCustom : t.settings.downloadLocationDefault),
@@ -389,7 +390,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     return SettingsGroup(
       title: t.settings.advanced,
       children: [
-        ListTile(
+        FocusableListTile(
           focusNode: _focusTracker.get(_kWatchTogetherRelay),
           leading: const AppIcon(Symbols.dns_rounded, fill: 1),
           title: Text(t.settings.watchTogetherRelay),
@@ -418,7 +419,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           subtitle: t.settings.viewLogsDescription,
           destinationBuilder: (context) => const LogsScreen(),
         ),
-        ListTile(
+        FocusableListTile(
           focusNode: _focusTracker.get(_kClearCache),
           leading: const AppIcon(Symbols.cleaning_services_rounded, fill: 1),
           title: Text(t.settings.clearCache),
@@ -426,7 +427,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
           onTap: () => _showClearCacheDialog(),
         ),
-        ListTile(
+        FocusableListTile(
           focusNode: _focusTracker.get(_kResetSettings),
           leading: const AppIcon(Symbols.restore_rounded, fill: 1),
           title: Text(t.settings.resetSettings),
@@ -435,7 +436,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           onTap: () => _showResetSettingsDialog(),
         ),
         if (kDebugMode)
-          ListTile(
+          FocusableListTile(
             leading: const AppIcon(Symbols.error_rounded, fill: 1),
             title: const Text('Test Sentry'),
             subtitle: const Text('Send a test error'),
@@ -445,7 +446,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
             },
           ),
         if (kDebugMode)
-          ListTile(
+          FocusableListTile(
             leading: const AppIcon(Symbols.timer_rounded, fill: 1),
             title: const Text('Test ANR'),
             subtitle: const Text('Block the main thread for 10 seconds'),
@@ -464,7 +465,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     return SettingsGroup(
       title: t.settings.backup,
       children: [
-        ListTile(
+        FocusableListTile(
           focusNode: _focusTracker.get(_kExportSettings),
           leading: const AppIcon(Symbols.upload_rounded, fill: 1),
           title: Text(t.settings.exportSettings),
@@ -472,7 +473,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
           onTap: _handleExportSettings,
         ),
-        ListTile(
+        FocusableListTile(
           focusNode: _focusTracker.get(_kImportSettings),
           leading: const AppIcon(Symbols.download_rounded, fill: 1),
           title: Text(t.settings.importSettings),
@@ -497,7 +498,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
       return SettingsGroup(
         title: t.settings.updates,
         children: [
-          ListTile(
+          FocusableListTile(
             focusNode: _focusTracker.get(_kCheckForUpdates),
             leading: const AppIcon(Symbols.system_update_rounded, fill: 1),
             title: Text(t.settings.checkForUpdates),
@@ -514,7 +515,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     return SettingsGroup(
       title: t.settings.updates,
       children: [
-        ListTile(
+        FocusableListTile(
           focusNode: _focusTracker.get(_kCheckForUpdates),
           leading: AppIcon(
             hasUpdate ? Symbols.system_update_rounded : Symbols.check_circle_rounded,

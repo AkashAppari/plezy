@@ -32,24 +32,35 @@ import 'dpad_navigator.dart';
 class BackKeyCoordinator {
   static bool _handledThisFrame = false;
   static bool _clearScheduled = false;
+  static int _clearGeneration = 0;
 
   static void markHandled() {
     _handledThisFrame = true;
     if (_clearScheduled) return;
+
     _clearScheduled = true;
-    // Clear on next frame to avoid blocking unrelated future back presses.
+    final clearGeneration = _clearGeneration;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (clearGeneration != _clearGeneration) return;
       _handledThisFrame = false;
       _clearScheduled = false;
     });
+    // addPostFrameCallback does not request a frame. Ensure the one-shot
+    // marker cannot leak when handling Back does not otherwise schedule one.
+    WidgetsBinding.instance.scheduleFrame();
+  }
+
+  static void clear() {
+    _handledThisFrame = false;
+    _clearScheduled = false;
+    // Invalidate a pending callback so it cannot clear a newer marker.
+    _clearGeneration++;
   }
 
   static bool consumeIfHandled() {
-    if (_handledThisFrame) {
-      _handledThisFrame = false;
-      return true;
-    }
-    return false;
+    if (!_handledThisFrame) return false;
+    clear();
+    return true;
   }
 }
 

@@ -3,6 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../focus/card_focus_scope.dart';
 import '../focus/dpad_navigator.dart';
+import '../focus/key_event_utils.dart';
 import '../media/media_server_client.dart';
 import '../services/settings_service.dart';
 import '../theme/mono_tokens.dart';
@@ -132,8 +133,14 @@ class CastMemberStripState extends State<CastMemberStrip> {
 
   KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
-    if (key.isBackKey || !event.isActionable) return KeyEventResult.ignored;
-    if (widget.members.isEmpty) return KeyEventResult.ignored;
+    if (key.isBackKey || widget.members.isEmpty) return KeyEventResult.ignored;
+
+    final onMemberTap = widget.onMemberTap;
+    if (onMemberTap != null) {
+      final selectResult = handleOneShotSelect(event, () => onMemberTap(_focusedIndex));
+      if (selectResult != KeyEventResult.ignored) return selectResult;
+    }
+    if (!event.isActionable) return KeyEventResult.ignored;
 
     if (key.isLeftKey) {
       _moveFocus(-1);
@@ -149,10 +156,6 @@ class CastMemberStripState extends State<CastMemberStrip> {
     }
     if (key.isDownKey && widget.onNavigateDown != null) {
       widget.onNavigateDown!();
-      return KeyEventResult.handled;
-    }
-    if (key.isSelectKey && widget.onMemberTap != null) {
-      widget.onMemberTap!(_focusedIndex);
       return KeyEventResult.handled;
     }
 

@@ -156,20 +156,41 @@ class OverlaySheetController {
 
   /// Push a sub-page using the overlay system if available, otherwise fall
   /// back to [showModalBottomSheet]. Returns the result from the page.
+  ///
+  /// Presentation options apply only to the modal fallback. A hosted push
+  /// retains the root sheet's presentation and changes only its page content.
   static Future<T?> pushAdaptive<T>(
     BuildContext context, {
     required WidgetBuilder builder,
     FocusNode? initialFocusNode,
+    BoxConstraints? constraints,
+    Color? backgroundColor,
+    bool barrierDismissible = true,
+    bool isScrollControlled = false,
+    bool showDragHandle = false,
   }) async {
     final controller = maybeOf(context);
     if (controller != null) {
       return controller.push<T>(builder: builder, initialFocusNode: initialFocusNode);
     }
+    final effectiveConstraints =
+        constraints ??
+        () {
+          final size = MediaQuery.sizeOf(context);
+          final isDesktop = size.width > 600;
+          return BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: size.height * 0.75);
+        }();
+    BackKeyCoordinator.clear();
     openSheetCount.value++;
     try {
       return await showModalBottomSheet<T>(
         context: context,
         builder: (context) => SafeArea(top: false, child: builder(context)),
+        constraints: effectiveConstraints,
+        backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.surface,
+        isDismissible: barrierDismissible,
+        isScrollControlled: isScrollControlled,
+        showDragHandle: showDragHandle,
       );
     } finally {
       openSheetCount.value--;
@@ -310,6 +331,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     Alignment alignment = Alignment.bottomCenter,
     bool showDragHandle = false,
   }) {
+    BackKeyCoordinator.clear();
     // If already open, close first (instant)
     final wasOpen = _isOpen;
     if (_isOpen) {

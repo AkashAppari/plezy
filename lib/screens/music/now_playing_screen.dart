@@ -10,6 +10,8 @@ import 'package:provider/provider.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/focus_theme.dart';
 import '../../focus/focusable_action_bar.dart';
+import '../../focus/focusable_button.dart';
+import '../../focus/focusable_slider.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
@@ -466,10 +468,13 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
             // Inset past the macOS traffic lights — this screen is a fullscreen
             // route, so the close button would otherwise sit underneath them.
             DesktopAppBarHelper.buildAdjustedLeading(
-              IconButton(
-                icon: AppIcon(Symbols.keyboard_arrow_down_rounded, fill: 1, color: tk.text),
-                tooltip: t.common.close,
+              FocusableButton(
                 onPressed: _pop,
+                child: IconButton(
+                  icon: AppIcon(Symbols.keyboard_arrow_down_rounded, fill: 1, color: tk.text),
+                  tooltip: t.common.close,
+                  onPressed: _pop,
+                ),
               ),
               context: context,
             )!,
@@ -502,15 +507,18 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
     final cluster = Row(
       mainAxisSize: .min,
       children: [
-        IconButton(
-          icon: AppIcon(
-            Symbols.lyrics_rounded,
-            fill: 1,
-            size: 22,
-            color: _showLyrics ? colorScheme.primary : tk.textMuted,
-          ),
-          tooltip: t.music.lyrics,
+        FocusableButton(
           onPressed: _toggleLyrics,
+          child: IconButton(
+            icon: AppIcon(
+              Symbols.lyrics_rounded,
+              fill: 1,
+              size: 22,
+              color: _showLyrics ? colorScheme.primary : tk.textMuted,
+            ),
+            tooltip: t.music.lyrics,
+            onPressed: _toggleLyrics,
+          ),
         ),
         if (PlatformDetector.isDesktop(context)) ...[const SizedBox(width: 4), _buildVolumeCluster(service)],
       ],
@@ -558,7 +566,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                   thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
                   overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
                 ),
-                child: Slider(
+                child: FocusableSlider(
                   value: volume.clamp(0.0, 100.0),
                   max: 100,
                   onChanged: (value) => unawaited(service.setVolume(value, persist: false)),
@@ -576,39 +584,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   /// entry. On TV ([focusable]) it joins the d-pad chain above the seek bar.
   Widget _buildOverflowButton(MediaItem track, {bool focusable = false}) {
     final tk = tokens(context);
-    final button = IconButton(
-      icon: AppIcon(Symbols.more_vert_rounded, fill: 1, color: tk.text),
-      onPressed: () => contextMenuKey.currentState?.showContextMenu(context),
-    );
-
-    Widget child = button;
-    if (focusable) {
-      child = ListenableBuilder(
-        listenable: _overflowFocusNode,
-        builder: (context, _) {
-          final showFocus = _overflowFocusNode.hasFocus && InputModeTracker.isKeyboardMode(context);
-          return Focus(
-            focusNode: _overflowFocusNode,
-            descendantsAreFocusable: false,
-            onKeyEvent: (node, event) {
-              final backResult = handleBackKeyAction(event, _pop);
-              if (backResult != KeyEventResult.ignored) return backResult;
-              return dpadKeyHandler(
-                onSelect: () => contextMenuKey.currentState?.showContextMenu(context),
-                onDown: _seekFocusNode.requestFocus,
-                onUp: () {},
-                trapHorizontalEdges: true,
-              )(node, event);
-            },
-            child: AnimatedContainer(
-              duration: FocusTheme.getAnimationDuration(context),
-              decoration: FocusTheme.textFillFocusDecoration(context, isFocused: showFocus, borderRadius: 20),
-              child: button,
-            ),
-          );
-        },
-      );
-    }
+    void showMenu() => contextMenuKey.currentState?.showContextMenu(context);
 
     return MediaContextMenu(
       key: contextMenuKey,
@@ -616,7 +592,21 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
       extraEntries: [
         MediaMenuExtraEntry(icon: Symbols.bedtime_rounded, label: t.music.sleepTimer, onSelected: _showSleepTimerSheet),
       ],
-      child: child,
+      child: FocusableButton(
+        focusNode: focusable ? _overflowFocusNode : null,
+        onPressed: showMenu,
+        onNavigateDown: focusable ? _seekFocusNode.requestFocus : null,
+        onNavigateUp: focusable ? () {} : null,
+        onNavigateLeft: focusable ? () {} : null,
+        onNavigateRight: focusable ? () {} : null,
+        onBack: focusable ? _pop : null,
+        useBackgroundFocus: focusable,
+        child: IconButton(
+          icon: AppIcon(Symbols.more_vert_rounded, fill: 1, color: tk.text),
+          onPressed: showMenu,
+          tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+        ),
+      ),
     );
   }
 

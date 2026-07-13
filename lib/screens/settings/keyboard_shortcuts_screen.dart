@@ -9,6 +9,7 @@ import '../../utils/snackbar_helper.dart';
 import '../../focus/focusable_button.dart';
 import '../../theme/mono_tokens.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/settings_section.dart';
 import 'hotkey_recorder_widget.dart';
 
@@ -47,7 +48,7 @@ class KeyboardShortcutsScreen extends StatelessWidget {
                 child: SettingsGroup(
                   children: [
                     for (final action in actions)
-                      ListTile(
+                      FocusableListTile(
                         title: Text(keyboardService.getActionDisplayName(action)),
                         subtitle: Text(action),
                         trailing: Container(

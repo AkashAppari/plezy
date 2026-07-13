@@ -9,6 +9,7 @@ import '../../services/settings_service.dart';
 import '../../utils/dialogs.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/key_event_utils.dart';
+import '../dialog_action_button.dart';
 
 class RemoteSessionDialog extends StatefulWidget {
   const RemoteSessionDialog({super.key});
@@ -115,22 +116,22 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
               title: Text(t.common.error),
               content: Text(_errorMessage!, style: const TextStyle(fontFamily: 'monospace')),
               actions: [
-                FocusableButton(
+                DialogActionButton(
                   autofocus: true,
                   focusNode: _errorCloseFocusNode,
                   onPressed: _close,
                   onBack: _close,
                   onNavigateRight: () => _errorRetryFocusNode.requestFocus(),
                   useBackgroundFocus: true,
-                  child: TextButton(onPressed: _close, child: Text(t.common.close)),
+                  label: t.common.close,
                 ),
-                FocusableButton(
+                DialogActionButton(
                   focusNode: _errorRetryFocusNode,
                   onPressed: _startServer,
                   onBack: _close,
                   onNavigateLeft: () => _errorCloseFocusNode.requestFocus(),
                   useBackgroundFocus: true,
-                  child: TextButton(onPressed: _startServer, child: Text(t.common.retry)),
+                  label: t.common.retry,
                 ),
               ],
             );

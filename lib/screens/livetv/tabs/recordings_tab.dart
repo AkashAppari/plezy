@@ -18,7 +18,6 @@ import '../../../utils/app_logger.dart';
 import '../../../utils/dialogs.dart';
 import '../../../utils/formatters.dart';
 import '../../../widgets/app_icon.dart';
-import '../../../widgets/overlay_sheet.dart';
 import '../../../widgets/settings_section.dart';
 import '../live_tv_refresh_lifecycle.dart';
 import '../livetv_recording_actions.dart';
@@ -265,42 +264,40 @@ class RecordingsTabState extends State<RecordingsTab> with WidgetsBindingObserve
       return Center(child: _EmptyMessage(text: t.liveTv.noScheduledRecordings));
     }
 
-    return OverlaySheetHost(
-      child: ListView(
-        padding: const EdgeInsets.only(bottom: 8),
-        children: [
-          if (grabs.isNotEmpty)
-            SettingsGroup(
-              title: t.liveTv.scheduledRecordings,
-              children: [
-                for (var i = 0; i < grabs.length; i++)
-                  _GrabTile(
-                    entry: grabs[i],
-                    autofocus: i == 0,
-                    focusNode: i == 0 ? _firstTileFocusNode : null,
-                    onTap: () => _onCancelGrab(grabs[i]),
-                    onNavigateUp: i == 0 ? widget.onNavigateUp : null,
-                    onBack: widget.onBack,
-                  ),
-              ],
-            ),
-          if (rules.isNotEmpty)
-            SettingsGroup(
-              title: t.liveTv.recordingRules,
-              children: [
-                for (var i = 0; i < rules.length; i++)
-                  _RuleTile(
-                    entry: rules[i],
-                    autofocus: grabs.isEmpty && i == 0,
-                    focusNode: grabs.isEmpty && i == 0 ? _firstTileFocusNode : null,
-                    onTap: () => _onRuleTap(rules[i]),
-                    onNavigateUp: grabs.isEmpty && i == 0 ? widget.onNavigateUp : null,
-                    onBack: widget.onBack,
-                  ),
-              ],
-            ),
-        ],
-      ),
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 8),
+      children: [
+        if (grabs.isNotEmpty)
+          SettingsGroup(
+            title: t.liveTv.scheduledRecordings,
+            children: [
+              for (var i = 0; i < grabs.length; i++)
+                _GrabTile(
+                  entry: grabs[i],
+                  autofocus: i == 0,
+                  focusNode: i == 0 ? _firstTileFocusNode : null,
+                  onTap: () => _onCancelGrab(grabs[i]),
+                  onNavigateUp: i == 0 ? widget.onNavigateUp : null,
+                  onBack: widget.onBack,
+                ),
+            ],
+          ),
+        if (rules.isNotEmpty)
+          SettingsGroup(
+            title: t.liveTv.recordingRules,
+            children: [
+              for (var i = 0; i < rules.length; i++)
+                _RuleTile(
+                  entry: rules[i],
+                  autofocus: grabs.isEmpty && i == 0,
+                  focusNode: grabs.isEmpty && i == 0 ? _firstTileFocusNode : null,
+                  onTap: () => _onRuleTap(rules[i]),
+                  onNavigateUp: grabs.isEmpty && i == 0 ? widget.onNavigateUp : null,
+                  onBack: widget.onBack,
+                ),
+            ],
+          ),
+      ],
     );
   }
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../focus/focusable_button.dart';
 import '../focus/focusable_text_field.dart';
 import '../focus/input_mode_tracker.dart';
 import '../i18n/strings.g.dart';
@@ -47,24 +46,24 @@ Future<bool> showConfirmDialog(
         title: Text(title),
         content: Text(message),
         actions: [
-          FocusableButton(
+          DialogActionButton(
             autofocus: true,
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              style: TextButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
-              child: Text(cancelText ?? t.common.cancel),
-            ),
+            label: cancelText ?? t.common.cancel,
+            style: TextButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
           ),
-          FocusableButton(
+          DialogActionButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              style: isDestructive
-                  ? FilledButton.styleFrom(backgroundColor: colorScheme.error, foregroundColor: colorScheme.onError)
-                  : null,
-              child: Text(confirmText),
-            ),
+            label: confirmText,
+            isPrimary: true,
+            style: isDestructive
+                ? FilledButton.styleFrom(
+                    padding: _buttonPadding,
+                    shape: _buttonShape,
+                    backgroundColor: colorScheme.error,
+                    foregroundColor: colorScheme.onError,
+                  )
+                : FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
           ),
         ],
       );
@@ -93,14 +92,12 @@ Future<void> showServerLimitDialog(BuildContext context) async {
       title: Text(t.messages.serverLimitTitle),
       content: Text(t.messages.serverLimitBody),
       actions: [
-        FocusableButton(
+        DialogActionButton(
           autofocus: true,
           onPressed: () => Navigator.of(ctx).pop(),
-          child: FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            style: FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
-            child: Text(t.common.close),
-          ),
+          label: t.common.close,
+          isPrimary: true,
+          style: FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
         ),
       ],
     ),

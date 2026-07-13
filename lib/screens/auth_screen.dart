@@ -319,6 +319,7 @@ class _AuthScreenState extends State<AuthScreen> {
           FocusableButton(
             autofocus: true,
             onPressed: busy ? null : startQr,
+            useBackgroundFocus: true,
             child: ElevatedButton(
               onPressed: busy ? null : startQr,
               style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
@@ -347,6 +348,7 @@ class _AuthScreenState extends State<AuthScreen> {
         ] else ...[
           FocusableButton(
             onPressed: busy ? null : startBrowser,
+            useBackgroundFocus: true,
             child: ElevatedButton.icon(
               onPressed: busy ? null : startBrowser,
               style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
@@ -512,8 +514,8 @@ class _DebugTokenDialogState extends State<_DebugTokenDialog> with ControllerDis
         ],
       ),
       actions: [
-        DialogActionButton(onPressed: _busy ? () {} : () => Navigator.of(context).pop(), label: t.common.cancel),
-        DialogActionButton(onPressed: _busy ? () {} : _submit, label: t.auth.authenticate, isPrimary: true),
+        DialogActionButton(onPressed: _busy ? null : () => Navigator.of(context).pop(), label: t.common.cancel),
+        DialogActionButton(onPressed: _busy ? null : _submit, label: t.auth.authenticate, isPrimary: true),
       ],
     );
   }

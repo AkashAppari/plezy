@@ -139,6 +139,13 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     OverlaySheetController.of(context).refocus();
   }
 
+  void _hideLanguagePickerView() {
+    setState(() => _showLanguagePicker = false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _languageFocusNode.requestFocus();
+    });
+  }
+
   void _focusFirstResult() {
     if (_results != null && _results!.isNotEmpty && !_isSearching && _error == null) {
       _firstResultFocusNode.requestFocus();
@@ -219,7 +226,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
       return _LanguagePickerView(
         currentCode: _languageCode,
         onSelected: _onLanguageSelected,
-        onBack: () => setState(() => _showLanguagePicker = false),
+        onBack: _hideLanguagePickerView,
       );
     }
 

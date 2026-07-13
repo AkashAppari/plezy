@@ -24,6 +24,7 @@ import '../widgets/desktop_app_bar.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/overlay_sheet.dart';
 import '../focus/focusable_action_bar.dart';
+import '../focus/focusable_button.dart';
 import '../focus/key_event_utils.dart';
 import '../mixins/grid_focus_node_mixin.dart';
 import 'libraries/sort_bottom_sheet.dart';
@@ -76,6 +77,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
 
   /// Key for getting a context below OverlaySheetHost
   final GlobalKey _overlayChildKey = GlobalKey();
+  final FocusNode _continuationRetryFocusNode = FocusNode(debugLabel: 'hub_continuation_retry');
 
   @override
   bool get hasItems => _filteredItems.isNotEmpty;
@@ -120,6 +122,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   @override
   void dispose() {
     _continuation.dispose();
+    _continuationRetryFocusNode.dispose();
     disposeFocusResources();
     super.dispose();
   }
@@ -426,7 +429,13 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                   children: [
                     Text(error, textAlign: TextAlign.center),
                     const SizedBox(height: 8),
-                    TextButton(onPressed: _retryHubContinuation, child: Text(t.common.retry)),
+                    FocusableButton(
+                      focusNode: _continuationRetryFocusNode,
+                      onPressed: _retryHubContinuation,
+                      onNavigateUp: () => _focusNodeForIndex(_filteredItems.length - 1).requestFocus(),
+                      onBack: handleBackFromContent,
+                      child: TextButton(onPressed: _retryHubContinuation, child: Text(t.common.retry)),
+                    ),
                   ],
                 ),
         ),
@@ -527,6 +536,11 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                             isInContinueWatching: widget.isInContinueWatching,
                             usesContinueWatchingAction: widget.usesContinueWatchingAction,
                             onNavigateUp: position.isFirstRow ? navigateToAppBar : null,
+                            onNavigateDown:
+                                _continuation.error != null &&
+                                    position.index >= position.itemCount - position.columnCount
+                                ? _continuationRetryFocusNode.requestFocus
+                                : null,
                             onNavigateLeft: position.isGrid && position.isFirstColumn ? () {} : null,
                             onBack: handleBackFromContent,
                             onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),

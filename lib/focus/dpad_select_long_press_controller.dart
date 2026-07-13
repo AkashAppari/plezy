@@ -8,9 +8,7 @@ import 'dpad_navigator.dart';
 /// Tracks the timer and physical key state for a D-pad SELECT long press.
 ///
 /// Focus loss, context-menu dispatch, and transferred/touch gesture suppression
-/// stay with the caller because their behavior differs between widgets. The TV
-/// guide program selector also stays local: it captures a program at key-down
-/// and resets its state before opening program details.
+/// stay with the caller because their behavior differs between widgets.
 class DpadSelectLongPressController {
   static const defaultDuration = Duration(milliseconds: 500);
 

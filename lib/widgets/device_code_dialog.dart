@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../focus/focusable_button.dart';
+import '../focus/focusable_wrapper.dart';
 import '../i18n/strings.g.dart';
 import '../models/trackers/device_code.dart';
 import '../utils/snackbar_helper.dart';
@@ -45,17 +46,25 @@ class DeviceCodeDialog extends StatelessWidget {
           Text(t.services.deviceCode.body(url: code.verificationUrl), style: theme.textTheme.bodyMedium),
           const SizedBox(height: 16),
           Center(
-            child: InkWell(
-              onTap: () => _copy(context),
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                child: Text(
-                  code.userCode,
-                  style: theme.textTheme.displaySmall?.copyWith(
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                    letterSpacing: 4,
-                    fontWeight: .w600,
+            child: FocusableWrapper(
+              onSelect: () => _copy(context),
+              semanticLabel: t.services.deviceCode.copyCode,
+              descendantsAreFocusable: false,
+              useBackgroundFocus: true,
+              borderRadius: 8,
+              child: InkWell(
+                canRequestFocus: false,
+                onTap: () => _copy(context),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  child: Text(
+                    code.userCode,
+                    style: theme.textTheme.displaySmall?.copyWith(
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                      letterSpacing: 4,
+                      fontWeight: .w600,
+                    ),
                   ),
                 ),
               ),
@@ -66,6 +75,7 @@ class DeviceCodeDialog extends StatelessWidget {
             width: double.infinity,
             child: FocusableButton(
               onPressed: _open,
+              useBackgroundFocus: true,
               child: FilledButton.icon(
                 icon: const Icon(Icons.open_in_new),
                 label: Text(t.services.deviceCode.openToActivate(service: serviceName)),

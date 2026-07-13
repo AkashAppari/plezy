@@ -227,6 +227,7 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet> {
         Expanded(
           child: Focus(
             focusNode: _listFocusNode,
+            descendantsAreFocusable: false,
             autofocus: isKeyboardMode,
             onKeyEvent: _handleKeyEvent,
             child: ReorderableListView.builder(

@@ -30,6 +30,8 @@ class VideoControlsHeader extends StatelessWidget {
 
   /// Optional callback for back button. If null, defaults to Navigator.pop(true).
   final VoidCallback? onBack;
+  final VoidCallback? onCancelAutoHide;
+  final VoidCallback? onStartAutoHide;
 
   const VideoControlsHeader({
     super.key,
@@ -37,6 +39,8 @@ class VideoControlsHeader extends StatelessWidget {
     this.style = VideoHeaderStyle.multiLine,
     this.trailing,
     this.onBack,
+    this.onCancelAutoHide,
+    this.onStartAutoHide,
   });
 
   @override
@@ -54,7 +58,13 @@ class VideoControlsHeader extends StatelessWidget {
           selector: (_, p) => p.isInSession,
           builder: (context, inSession, child) {
             if (!inSession) return const SizedBox.shrink();
-            return const Padding(padding: .only(right: 8), child: WatchTogetherSessionIndicator());
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: WatchTogetherSessionIndicator(
+                onCancelAutoHide: onCancelAutoHide,
+                onStartAutoHide: onStartAutoHide,
+              ),
+            );
           },
         ),
         ?trailing,

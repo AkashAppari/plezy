@@ -387,7 +387,7 @@ class _AppMenuItemTileState<T> extends State<AppMenuItemTile<T>> with FocusableT
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final enabled = item.enabled && widget.onPressed != null;
-    final active = enabled && (_isFocused || _isHovered);
+    final active = enabled && ((_isFocused && InputModeTracker.isKeyboardMode(context)) || _isHovered);
     final foreground = _foregroundColor(context, active: active);
     final subtitleColor = foreground.withValues(alpha: active && item.stateLayerColor != null ? 0.86 : 0.68);
     final background = _backgroundColor(context, active: active);

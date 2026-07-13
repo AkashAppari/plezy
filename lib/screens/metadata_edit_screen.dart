@@ -3,8 +3,8 @@ import '../media/ids.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../focus/focusable_button.dart';
 import '../focus/focusable_wrapper.dart';
+import '../focus/focusable_button.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../metadata_edit/metadata_edit_adapters.dart';
@@ -274,11 +274,19 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
     final sections = adapter.schemaFor(draft).where((section) => section.fields.isNotEmpty).toList();
     return FocusedScrollScaffold(
       title: Text(t.metadataEdit.screenTitle),
+      focusableAppBarActions: true,
       actions: [
         if (_isSaving)
           const Padding(padding: .all(12), child: LoadingIndicatorBox(size: 24))
         else
-          IconButton(onPressed: _hasChanges ? _save : null, icon: const AppIcon(Symbols.check_rounded, fill: 1)),
+          FocusableButton(
+            onPressed: _hasChanges ? _save : null,
+            child: IconButton(
+              onPressed: _hasChanges ? _save : null,
+              icon: const AppIcon(Symbols.check_rounded, fill: 1),
+              tooltip: t.common.save,
+            ),
+          ),
       ],
       slivers: [
         SliverPadding(
@@ -492,27 +500,17 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
       ),
       actions: [
         if (_isApplying) const Padding(padding: .all(8), child: LoadingIndicatorBox(size: 24)),
-        FocusableButton(
+        DialogActionButton(
           onPressed: _addFromUrl,
-          child: TextButton.icon(
-            onPressed: _addFromUrl,
-            icon: const AppIcon(Symbols.link_rounded, size: 18),
-            label: Text(t.metadataEdit.fromUrl),
-          ),
+          label: t.metadataEdit.fromUrl,
+          icon: const AppIcon(Symbols.link_rounded, size: 18),
         ),
-        FocusableButton(
+        DialogActionButton(
           onPressed: _uploadFile,
-          child: TextButton.icon(
-            onPressed: _uploadFile,
-            icon: const AppIcon(Symbols.upload_rounded, size: 18),
-            label: Text(t.metadataEdit.uploadFile),
-          ),
+          label: t.metadataEdit.uploadFile,
+          icon: const AppIcon(Symbols.upload_rounded, size: 18),
         ),
-        FocusableButton(
-          autofocus: true,
-          onPressed: () => Navigator.pop(context),
-          child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-        ),
+        DialogActionButton(autofocus: true, onPressed: () => Navigator.pop(context), label: t.common.cancel),
       ],
     );
   }
@@ -533,6 +531,9 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
         final artwork = _artworkList![index];
         return FocusableWrapper(
           borderRadius: 8,
+          semanticLabel: artwork.selected
+              ? t.metadataEdit.selectedArtworkOption(index: index + 1)
+              : t.metadataEdit.artworkOption(index: index + 1),
           onSelect: () => _selectArtwork(artwork),
           child: GestureDetector(
             onTap: () => _selectArtwork(artwork),

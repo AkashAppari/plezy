@@ -487,7 +487,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     if (!mounted) return;
     SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
     final controller = OverlaySheetController.of(context);
-    controller.show(builder: (sheetContext) => _buildBrowseOptionsSheet(sheetContext));
+    controller.show(showDragHandle: true, builder: (sheetContext) => _buildBrowseOptionsSheet(sheetContext));
   }
 
   /// Reset transient browse state before loading a different library.

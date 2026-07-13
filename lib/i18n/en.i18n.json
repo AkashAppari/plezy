@@ -336,6 +336,8 @@
     "clearShortcut": "Clear shortcut",
     "noShortcutSet": "No shortcut set",
     "currentShortcut": "Current shortcut:",
+    "pressToRecord": "Select to record a shortcut",
+    "recordingShortcut": "Press the shortcut now",
     "actions": {
       "playPause": "Play/Pause",
       "volumeUp": "Volume Up",
@@ -434,7 +436,9 @@
     "hue": "Hue",
     "saturation": "Saturation",
     "brightness": "Brightness",
-    "hexColor": "Hex color"
+    "hexColor": "Hex color",
+    "expandText": "Expand text",
+    "collapseText": "Collapse text"
   },
   "tooltips": {
     "shufflePlay": "Shuffle play",
@@ -1048,6 +1052,8 @@
     "hostingSession": "Hosting Session",
     "inSession": "In Session",
     "sessionCode": "Session Code",
+    "openSessionControls": "Open Watch Together session controls",
+    "copySessionCode": "Copy session code",
     "hostControlsPlayback": "Host controls playback",
     "anyoneCanControl": "Anyone can control playback",
     "hostControls": "Host controls",
@@ -1358,6 +1364,8 @@
     "artworkUpdated": "Artwork updated",
     "artworkUpdateFailed": "Failed to update artwork",
     "noArtworkAvailable": "No artwork available",
+    "artworkOption": "Artwork option ${index}",
+    "selectedArtworkOption": "Artwork option ${index}, selected",
     "notSet": "Not set",
     "libraryDefault": "Library default",
     "accountDefault": "Account default",
@@ -1485,6 +1493,7 @@
       "title": "Activate Plezy on ${service}",
       "body": "Visit ${url} and enter this code:",
       "openToActivate": "Open ${service} to activate",
+      "copyCode": "Copy activation code",
       "waitingForAuthorization": "Waiting for authorization…",
       "codeCopied": "Code copied"
     },
@@ -1492,6 +1501,7 @@
       "title": "Sign in to ${service}",
       "body": "Scan this QR code or open the URL on any device.",
       "openToSignIn": "Open ${service} to sign in",
+      "copyUrl": "Copy sign-in URL",
       "urlCopied": "URL copied"
     },
     "libraryFilter": {

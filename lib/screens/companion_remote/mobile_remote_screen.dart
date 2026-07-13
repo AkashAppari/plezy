@@ -135,7 +135,9 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
       _sendCommand(RemoteCommandType.tabSearch);
     }
     final provider = context.read<CompanionRemoteProvider>();
-    OverlaySheetController.of(context).show(builder: (_) => _SearchBottomSheet(provider: provider));
+    OverlaySheetController.of(
+      context,
+    ).show(showDragHandle: true, builder: (_) => _SearchBottomSheet(provider: provider));
   }
 
   void _sendCommand(RemoteCommandType type) {

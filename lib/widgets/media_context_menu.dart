@@ -43,7 +43,7 @@ import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/dialogs.dart';
 import '../services/external_player_service.dart';
-import '../focus/focusable_button.dart';
+import 'dialog_action_button.dart';
 import '../focus/focusable_text_field.dart';
 import '../focus/key_event_utils.dart';
 import '../screens/plex_match_screen.dart';
@@ -588,6 +588,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       selected = await OverlaySheetController.showAdaptive<String>(
         this.context,
         showDragHandle: true,
+        isScrollControlled: true,
         builder: (context) => AppMenuSheet<String>(
           title: _itemDisplayTitle(),
           entries: _menuEntries(menuActions),
@@ -1320,6 +1321,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     await OverlaySheetController.showAdaptive(
       this.context,
       showDragHandle: true,
+      isScrollControlled: true,
       builder: (context) => RatingBottomSheet(
         item: item,
         serverClient: client,
@@ -1959,12 +1961,7 @@ class _PickerDialogScaffoldState<T> extends State<_PickerDialogScaffold<T>> {
             ],
           ),
         ),
-        actions: [
-          FocusableButton(
-            onPressed: () => Navigator.pop(context),
-            child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-          ),
-        ],
+        actions: [DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.cancel)],
       ),
     );
   }

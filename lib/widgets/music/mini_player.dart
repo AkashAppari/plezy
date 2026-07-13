@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_action_bar.dart';
+import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/ids.dart';
 import '../../media/media_item.dart';
@@ -16,7 +18,6 @@ import '../../utils/music_navigation.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/video_player_navigation.dart';
-import '../app_icon.dart';
 import '../media_context_menu.dart';
 import '../optimized_media_image.dart';
 import '../overlay_sheet.dart';
@@ -252,7 +253,14 @@ class _MiniPlayerCard extends StatefulWidget {
 }
 
 class _MiniPlayerCardState extends State<_MiniPlayerCard> with ContextMenuTapMixin<_MiniPlayerCard> {
-  bool _hovered = false;
+  final _detailsFocusNode = FocusNode(debugLabel: 'mini_player_details');
+  final _transportKey = GlobalKey<FocusableActionBarState>();
+
+  @override
+  void dispose() {
+    _detailsFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -266,96 +274,111 @@ class _MiniPlayerCardState extends State<_MiniPlayerCard> with ContextMenuTapMix
       color: tk.surface,
       clipBehavior: Clip.antiAlias,
       borderRadius: BorderRadius.circular(tk.radiusLg),
-      child: InkWell(
-        mouseCursor: SystemMouseCursors.click,
-        onTap: () => unawaited(openNowPlaying(context)),
-        onTapDown: storeTapPosition,
-        onLongPress: showContextMenuFromTap,
-        onSecondaryTapDown: storeTapPosition,
-        onSecondaryTap: showContextMenuFromTap,
-        child: SizedBox(
-          height: _MusicMiniPlayerOverlayState._cardHeight,
-          child: Stack(
-            children: [
-              // Played fraction tints the card background itself — the card
-              // fills up as the track progresses (clipped by the Material's
-              // rounded corners above).
-              const Positioned.fill(child: _MiniPlayerProgress()),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(tk.radiusSm),
-                      child: OptimizedMediaImage(
-                        client: client,
-                        imagePath: widget.track.thumbPath,
-                        imageType: ImageType.square,
-                        width: 48,
-                        height: 48,
-                        fallbackIcon: Symbols.music_note_rounded,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: .center,
-                        crossAxisAlignment: .start,
-                        children: [
-                          Text(
-                            widget.track.title ?? '',
-                            maxLines: 1,
-                            overflow: .ellipsis,
-                            style: TextStyle(fontSize: 14, fontWeight: .w600, color: tk.text),
-                          ),
-                          if (artist != null && artist.isNotEmpty)
-                            Text(
-                              artist,
-                              maxLines: 1,
-                              overflow: .ellipsis,
-                              style: TextStyle(fontSize: 12, color: tk.textMuted),
+      child: SizedBox(
+        height: _MusicMiniPlayerOverlayState._cardHeight,
+        child: Stack(
+          children: [
+            const Positioned.fill(child: _MiniPlayerProgress()),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: FocusableWrapper(
+                      focusNode: _detailsFocusNode,
+                      onSelect: () => unawaited(openNowPlaying(context)),
+                      enableLongPress: true,
+                      onLongPress: showContextMenuFromTap,
+                      onNavigateRight: () => _transportKey.currentState?.requestFocusOnFirst(),
+                      semanticLabel: widget.track.title,
+                      descendantsAreFocusable: false,
+                      disableScale: true,
+                      useBackgroundFocus: true,
+                      borderRadius: tk.radiusLg,
+                      child: InkWell(
+                        canRequestFocus: false,
+                        mouseCursor: SystemMouseCursors.click,
+                        onTap: () => unawaited(openNowPlaying(context)),
+                        onTapDown: storeTapPosition,
+                        onLongPress: showContextMenuFromTap,
+                        onSecondaryTapDown: storeTapPosition,
+                        onSecondaryTap: showContextMenuFromTap,
+                        child: Row(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(tk.radiusSm),
+                              child: OptimizedMediaImage(
+                                client: client,
+                                imagePath: widget.track.thumbPath,
+                                imageType: ImageType.square,
+                                width: 48,
+                                height: 48,
+                                fallbackIcon: Symbols.music_note_rounded,
+                              ),
                             ),
-                        ],
-                      ),
-                    ),
-                    if (widget.desktop)
-                      IconButton(
-                        icon: AppIcon(Symbols.skip_previous_rounded, fill: 1, color: tk.text),
-                        tooltip: t.music.previousTrack,
-                        onPressed: () => unawaited(service.previous()),
-                      ),
-                    IconButton(
-                      icon: AppIcon(
-                        isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
-                        fill: 1,
-                        color: tk.text,
-                      ),
-                      tooltip: isPlaying ? t.common.pause : t.common.play,
-                      onPressed: () => unawaited(service.togglePlayPause()),
-                    ),
-                    IconButton(
-                      icon: AppIcon(Symbols.skip_next_rounded, fill: 1, color: tk.text),
-                      tooltip: t.music.nextTrack,
-                      onPressed: () => unawaited(service.next()),
-                    ),
-                    if (widget.desktop)
-                      AnimatedOpacity(
-                        opacity: _hovered ? 1 : 0,
-                        duration: tk.fast,
-                        child: IgnorePointer(
-                          ignoring: !_hovered,
-                          child: IconButton(
-                            icon: AppIcon(Symbols.close_rounded, fill: 1, size: 20, color: tk.textMuted),
-                            tooltip: t.music.stopPlayback,
-                            onPressed: widget.onDismissed,
-                          ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment: .center,
+                                crossAxisAlignment: .start,
+                                children: [
+                                  Text(
+                                    widget.track.title ?? '',
+                                    maxLines: 1,
+                                    overflow: .ellipsis,
+                                    style: TextStyle(fontSize: 14, fontWeight: .w600, color: tk.text),
+                                  ),
+                                  if (artist != null && artist.isNotEmpty)
+                                    Text(
+                                      artist,
+                                      maxLines: 1,
+                                      overflow: .ellipsis,
+                                      style: TextStyle(fontSize: 12, color: tk.textMuted),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                  ],
-                ),
+                    ),
+                  ),
+                  FocusableActionBar(
+                    key: _transportKey,
+                    onNavigateLeft: _detailsFocusNode.requestFocus,
+                    actions: [
+                      if (widget.desktop)
+                        FocusableAction(
+                          icon: Symbols.skip_previous_rounded,
+                          iconColor: tk.text,
+                          tooltip: t.music.previousTrack,
+                          onPressed: () => unawaited(service.previous()),
+                        ),
+                      FocusableAction(
+                        icon: isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
+                        iconColor: tk.text,
+                        tooltip: isPlaying ? t.common.pause : t.common.play,
+                        onPressed: () => unawaited(service.togglePlayPause()),
+                      ),
+                      FocusableAction(
+                        icon: Symbols.skip_next_rounded,
+                        iconColor: tk.text,
+                        tooltip: t.music.nextTrack,
+                        onPressed: () => unawaited(service.next()),
+                      ),
+                      if (widget.desktop)
+                        FocusableAction(
+                          icon: Symbols.close_rounded,
+                          iconColor: tk.textMuted,
+                          tooltip: t.music.stopPlayback,
+                          onPressed: widget.onDismissed,
+                        ),
+                    ],
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -377,12 +400,7 @@ class _MiniPlayerCardState extends State<_MiniPlayerCard> with ContextMenuTapMix
       child: card,
     );
 
-    if (!widget.desktop) return card;
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: card,
-    );
+    return card;
   }
 }
 

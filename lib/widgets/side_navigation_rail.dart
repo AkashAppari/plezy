@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 
 import '../focus/dpad_navigator.dart';
 import '../focus/focus_memory_tracker.dart';
+import '../focus/input_mode_tracker.dart';
 import '../media/media_item.dart';
 import '../media/media_library.dart';
 import '../mixins/mounted_set_state_mixin.dart';
@@ -103,7 +104,7 @@ class NavigationRailItem extends StatelessWidget {
     return ListenableBuilder(
       listenable: focusNode,
       builder: (context, _) {
-        final focused = focusNode.hasFocus;
+        final focused = focusNode.hasFocus && InputModeTracker.isKeyboardMode(context);
         return Focus(
           focusNode: focusNode,
           autofocus: autofocus,
@@ -1014,9 +1015,10 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                 child: Container(
                   decoration: BoxDecoration(
                     color: () {
-                      if (isCollapsed) return librariesFocusNode.hasFocus ? t.text.withValues(alpha: 0.08) : null;
+                      final showFocus = librariesFocusNode.hasFocus && InputModeTracker.isKeyboardMode(context);
+                      if (isCollapsed) return showFocus ? t.text.withValues(alpha: 0.08) : null;
                       if (showLibrariesSelectedBackground) return t.text.withValues(alpha: 0.1);
-                      if (librariesFocusNode.hasFocus) return t.text.withValues(alpha: 0.08);
+                      if (showFocus) return t.text.withValues(alpha: 0.08);
                       return null;
                     }(),
                     borderRadius: BorderRadius.circular(tokens(context).radiusMd),
@@ -1240,7 +1242,9 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
               borderRadius: radius,
               child: Container(
                 decoration: BoxDecoration(
-                  color: focusNode.hasFocus ? t.text.withValues(alpha: 0.08) : null,
+                  color: focusNode.hasFocus && InputModeTracker.isKeyboardMode(context)
+                      ? t.text.withValues(alpha: 0.08)
+                      : null,
                   borderRadius: radius,
                 ),
                 clipBehavior: Clip.hardEdge,

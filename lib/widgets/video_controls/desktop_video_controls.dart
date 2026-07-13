@@ -693,6 +693,8 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
               metadata: widget.metadata,
               style: Platform.isMacOS ? VideoHeaderStyle.singleLine : VideoHeaderStyle.multiLine,
               onBack: widget.onBack,
+              onCancelAutoHide: widget.onCancelAutoHide,
+              onStartAutoHide: widget.onStartAutoHide,
             ),
           ),
           if (_isLive && (widget.captureBuffer == null || widget.isAtLiveEdge)) ...[
