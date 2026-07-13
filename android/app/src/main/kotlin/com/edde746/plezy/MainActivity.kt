@@ -21,6 +21,7 @@ import android.view.WindowInsets
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
+import androidx.annotation.RequiresApi
 import com.edde746.plezy.exoplayer.ExoPlayerPlugin
 import com.edde746.plezy.mpv.MpvAudioPlayerPlugin
 import com.edde746.plezy.mpv.MpvPlayerPlugin
@@ -676,6 +677,7 @@ class MainActivity : FlutterActivity() {
     }
   }
 
+  @RequiresApi(Build.VERSION_CODES.O)
   private fun isPipPermissionGranted(): Boolean {
     val appOpsManager = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
     return appOpsManager.checkOpNoThrow(
@@ -685,6 +687,7 @@ class MainActivity : FlutterActivity() {
     ) == AppOpsManager.MODE_ALLOWED
   }
 
+  @RequiresApi(Build.VERSION_CODES.O)
   private fun buildPipParams(width: Int, height: Int, autoEnterEnabled: Boolean? = null): PictureInPictureParams {
     val (w, h) = if (width <= 0 || height <= 0) {
       Pair(16, 9)

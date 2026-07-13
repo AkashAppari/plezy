@@ -23,6 +23,7 @@ import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.widget.FrameLayout
 import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
 import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
@@ -2057,6 +2058,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       .build()
   }
 
+  @RequiresApi(Build.VERSION_CODES.Q)
   @Suppress("DEPRECATION")
   private fun isDirectPlaybackSupportedApi29(
     audioFormat: AudioFormat,

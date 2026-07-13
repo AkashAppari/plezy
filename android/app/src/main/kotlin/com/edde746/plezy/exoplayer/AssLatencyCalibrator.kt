@@ -3,6 +3,7 @@ package com.edde746.plezy.exoplayer
 import android.os.Build
 import android.view.SurfaceControl
 import android.view.SurfaceView
+import androidx.annotation.RequiresApi
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.abs
@@ -101,6 +102,7 @@ internal class AssLatencyCalibrator(
 
   /** Never called while holding [lock]: applyTransactionToFrame is a binder call and runs on the
    *  GL swap path. The native slot allocation is atomic, so concurrent callers are safe. */
+  @RequiresApi(34)
   private fun attach(surface: SurfaceView, releaseTimeNs: Long, source: Int) {
     try {
       val tx = SurfaceControl.Transaction()

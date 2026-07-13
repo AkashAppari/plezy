@@ -166,6 +166,12 @@ android {
       jniLibs.srcDir(File(mpvDir, "libcxx/jni"))
     }
   }
+
+  lint {
+    // Enforce the app-owned minSdk boundary without auditing upstream AndroidX.
+    checkDependencies = false
+    checkOnly += setOf("NewApi")
+  }
 }
 
 flutter {

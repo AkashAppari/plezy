@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.PixelFormat
 import android.media.AudioAttributes
 import android.media.ImageReader
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -135,9 +136,15 @@ class MpvPlayerCore(
     Log.d(TAG, "Created MPV placeholder surface")
   }
 
+  @Suppress("DEPRECATION")
   private fun currentDisplayFpsOverride(): String? {
     if (audioOnly) return null
-    val refreshRate = activity.display?.mode?.refreshRate ?: return null
+    val display = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      activity.display
+    } else {
+      activity.windowManager.defaultDisplay
+    }
+    val refreshRate = display?.mode?.refreshRate ?: return null
     if (refreshRate <= 0f) return null
     return refreshRate.toString()
   }

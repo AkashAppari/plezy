@@ -176,6 +176,10 @@ jobs:
         working-directory: android
         run: ./gradlew :app:testDebugUnitTest :saf_util:testDebugUnitTest :libass:testDebugUnitTest -x :app:compileFlutterBuildDebug --continue
 
+      - name: Check Android API compatibility
+        working-directory: android
+        run: ./gradlew :app:lintDebug
+
   native-format:
     name: Native Formatting
     runs-on: ubuntu-latest
