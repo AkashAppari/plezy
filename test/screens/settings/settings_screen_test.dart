@@ -67,7 +67,7 @@ void main() {
     }
   });
 
-  testWidgets('migrated rows use the standard navigation geometry without losing activation', (tester) async {
+  testWidgets('migrated rows retain compact mobile navigation geometry and activation', (tester) async {
     final harness = await _pumpSettingsScreen(tester);
     addTearDown(() => harness.dispose(tester));
 
@@ -108,10 +108,10 @@ void main() {
         find.descendant(of: focusableFinder, matching: find.byType(ListTile)),
       );
 
-      expect(focusable.dense, isFalse, reason: '${row.title} must not inherit the compact tile default');
-      expect(focusable.visualDensity, VisualDensity.standard);
-      expect(materialTile.dense, isFalse);
-      expect(materialTile.visualDensity, VisualDensity.standard);
+      expect(focusable.dense, isTrue, reason: '${row.title} must use the shared compact mobile density');
+      expect(focusable.visualDensity, const VisualDensity(vertical: -3));
+      expect(materialTile.dense, isTrue);
+      expect(materialTile.visualDensity, const VisualDensity(vertical: -3));
       expect(focusable.onTap, isNotNull, reason: '${row.title} must remain pointer activatable');
       expect(materialTile.onTap, isNotNull);
       expect(materialTile.focusNode, isNotNull, reason: '${row.title} must remain D-pad focusable');
@@ -316,7 +316,10 @@ Future<_SettingsHarness> _pumpSettingsScreen(WidgetTester tester) async {
           ChangeNotifierProvider<TrackersProvider>.value(value: trackers),
           ChangeNotifierProvider<SeerrAccountProvider>.value(value: seerr),
         ],
-        child: MaterialApp(theme: monoTheme(dark: true), home: const SettingsScreen()),
+        child: MaterialApp(
+          theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.android),
+          home: const SettingsScreen(),
+        ),
       ),
     ),
   );
