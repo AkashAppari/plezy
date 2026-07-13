@@ -1300,13 +1300,18 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       ...jellyfinImageQueryParameters,
     }, retry: _libraryHubRetry);
 
-    // Music libraries get their own hub set (Latest Albums / Recently Played /
-    // Most Played) — Resume and NextUp are video concepts and Jellyfin's
-    // Resume endpoint is queried with MediaTypes=Video anyway. The branch
-    // ignores [includePlaybackHubs]: the played rows never duplicate the
-    // app-level Continue Watching shelf that flag exists to dedupe.
+    // Music libraries get their own hub set. Home passes
+    // includePlaybackHubs=false because it already renders the app-level
+    // playback shelf; in that mode only fetch Latest Albums. Recently Played
+    // and Most Played remain available on the library's Recommended tab.
     if (libraryKind == MediaKind.artist) {
-      return _fetchMusicLibraryHubs(libraryId, libraryName: libraryName, limit: limit, latestFuture: latestFuture);
+      return _fetchMusicLibraryHubs(
+        libraryId,
+        libraryName: libraryName,
+        limit: limit,
+        latestFuture: latestFuture,
+        includePlaybackHubs: includePlaybackHubs,
+      );
     }
 
     if (!includePlaybackHubs) {
@@ -1396,7 +1401,23 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     required String libraryName,
     required int limit,
     required Future<List<Map<String, dynamic>>> latestFuture,
+    required bool includePlaybackHubs,
   }) async {
+    if (!includePlaybackHubs) {
+      final latest = await latestFuture;
+      return [
+        JellyfinMappers.syntheticHub(
+          mapItem: _mapItem,
+          identifier: 'library.$libraryId.recent',
+          title: t.discover.latestAlbumsIn(library: libraryName),
+          type: 'album',
+          items: latest,
+          previewLimit: limit,
+          serverId: serverId,
+          serverName: serverName,
+        ),
+      ].where((hub) => hub.items.isNotEmpty).toList();
+    }
     final playedParams = <String, String>{
       'userId': connection.userId,
       'ParentId': libraryId,

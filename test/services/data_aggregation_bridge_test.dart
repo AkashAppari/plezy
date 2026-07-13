@@ -793,6 +793,60 @@ void main() {
         captured.where((uri) => uri.path == '/Users/user-1/Items/Latest').map((uri) => uri.queryParameters['ParentId']),
         ['movies', 'mv', 'home-vids', 'music'],
       );
+      expect(
+        captured.where((uri) => uri.path == '/Items' && uri.queryParameters['Filters'] == 'IsPlayed'),
+        isEmpty,
+        reason: 'the home screen excludes playback-derived music rows',
+      );
+    });
+
+    test('music library recommendations retain recently and most-played rows', () async {
+      final captured = <Uri>[];
+      final client = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          captured.add(req.url);
+          if (req.url.path == '/Users/user-1/Items/Latest') {
+            return _json([
+              {'Id': 'album-1', 'Type': 'MusicAlbum', 'Name': 'Latest Album', 'ParentLibraryId': 'music'},
+            ]);
+          }
+          if (req.url.path == '/Items' && req.url.queryParameters['Filters'] == 'IsPlayed') {
+            final sortBy = req.url.queryParameters['SortBy'];
+            return _json({
+              'Items': [
+                {
+                  'Id': sortBy == 'DatePlayed' ? 'recent-track' : 'most-played-track',
+                  'Type': 'Audio',
+                  'Name': sortBy == 'DatePlayed' ? 'Recent Track' : 'Most Played Track',
+                  'ParentLibraryId': 'music',
+                },
+              ],
+            });
+          }
+          return http.Response('unexpected request', 500);
+        }),
+      );
+      addTearDown(client.close);
+
+      final hubs = await client.fetchLibraryHubs(
+        'music',
+        libraryName: 'Music',
+        libraryKind: MediaKind.artist,
+        includePlaybackHubs: true,
+      );
+
+      expect(hubs.map((hub) => hub.identifier), [
+        'library.music.recent',
+        'library.music.recentlyplayed',
+        'library.music.mostplayed',
+      ]);
+      expect(
+        captured
+            .where((uri) => uri.path == '/Items' && uri.queryParameters['Filters'] == 'IsPlayed')
+            .map((uri) => uri.queryParameters['SortBy']),
+        ['DatePlayed', 'PlayCount'],
+      );
     });
 
     test('Plex home layout keeps promoted hubs instead of splitting by preview libraries', () async {

@@ -148,6 +148,53 @@ void main() {
     });
   });
 
+  group('endpoint exhaustion verification', () {
+    test('content-route exhaustion keeps an authenticated Jellyfin server online', () async {
+      final manager = MultiServerManager();
+      addTearDown(manager.dispose);
+      final client = testJellyfinClient(
+        connection: _jellyfinConnection('user-a'),
+        handler: (_) async =>
+            http.Response('{"Policy":{"IsAdministrator":false}}', 200, headers: {'content-type': 'application/json'}),
+      );
+      manager.debugRegisterJellyfinClientForTesting(client);
+
+      final emitted = <Map<String, bool>>[];
+      final sub = manager.statusStream.listen(emitted.add);
+      addTearDown(sub.cancel);
+
+      await manager.debugVerifyServerEndpointsExhaustedForTesting(ServerId('jf-machine'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(manager.isServerOnline(ServerId('jf-machine')), isTrue);
+      expect(manager.authErrorServerIds, isEmpty);
+      expect(emitted, isEmpty, reason: 'a successful health probe must not publish a false offline transition');
+    });
+
+    test('auth rejection is published without attempting generic reconnection', () async {
+      final manager = MultiServerManager();
+      addTearDown(manager.dispose);
+      final client = testJellyfinClient(
+        connection: _jellyfinConnection('user-a'),
+        handler: (_) async => http.Response('', 401),
+      );
+      manager.debugRegisterJellyfinClientForTesting(client);
+
+      final emitted = <Map<String, bool>>[];
+      final sub = manager.statusStream.listen(emitted.add);
+      addTearDown(sub.cancel);
+
+      await manager.debugVerifyServerEndpointsExhaustedForTesting(ServerId('jf-machine'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(manager.isServerOnline(ServerId('jf-machine')), isFalse);
+      expect(manager.authErrorServerIds, {'jf-machine'});
+      expect(emitted, [
+        {'jf-machine': false},
+      ]);
+    });
+  });
+
   group('refreshTokensForProfile', () {
     test('successful in-place Plex token refresh clears auth-error state', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());

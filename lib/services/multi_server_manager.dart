@@ -85,6 +85,11 @@ class MultiServerManager {
   /// Debounce timers for endpoint-exhaustion-triggered reconnection (per server)
   final Map<String, Timer> _reconnectDebounce = {};
 
+  /// Servers whose endpoint-exhaustion signal is being confirmed by an
+  /// auth-required health probe. Exhaustion callbacks raised by that probe
+  /// are ignored so a failed confirmation cannot recursively schedule itself.
+  final Set<String> _endpointHealthChecks = {};
+
   /// Coalescing guard for checkServerHealth — prevents concurrent health checks
   Future<void>? _activeHealthCheck;
 
@@ -1120,37 +1125,62 @@ class MultiServerManager {
   }
 
   /// Called when all failover endpoints are exhausted for a server.
-  /// Debounced per-server to prevent cascading reconnections from parallel failures.
+  ///
+  /// A content route timing out does not prove the server itself is offline.
+  /// Debounce parallel failures, then confirm with the backend's lightweight
+  /// auth-required health probe before publishing an offline transition.
   void _onServerEndpointsExhausted(ServerId serverId) {
-    // Cancel any existing debounce timer for this server
-    _reconnectDebounce[serverId]?.cancel();
+    if (_endpointHealthChecks.contains(serverId)) return;
 
+    _reconnectDebounce[serverId]?.cancel();
     _reconnectDebounce[serverId] = Timer(const Duration(seconds: 5), () {
       _reconnectDebounce.remove(serverId);
+      unawaited(_verifyServerEndpointsExhausted(serverId));
+    });
+  }
+
+  Future<void> _verifyServerEndpointsExhausted(ServerId serverId) async {
+    final client = _clients[serverId];
+    if (client == null || !_endpointHealthChecks.add(serverId)) return;
+
+    try {
+      final health = await client.checkHealth();
+      if (!identical(_clients[serverId], client)) return;
+
+      if (client is JellyfinClient) {
+        _jellyfinHealthByCompoundId[client.connection.id] = health;
+      }
+
+      if (health == HealthStatus.online) {
+        _applyHealth(serverId, health);
+        appLogger.d('Endpoint exhaustion not confirmed for $serverId; health probe succeeded');
+        return;
+      }
+
+      _applyHealth(serverId, health);
+      if (health == HealthStatus.authError) return;
 
       final plexServer = _plexServers[serverId];
-      final jellyfinCompoundId = _activeJellyfinMachine[serverId];
-      final jellyfinClient = jellyfinCompoundId != null ? _jellyfinByCompoundId[jellyfinCompoundId] : null;
+      final jellyfinClient = client is JellyfinClient ? client : null;
       if (plexServer == null && jellyfinClient == null) return;
 
-      appLogger.i('All endpoints exhausted for $serverId, triggering reconnection');
-      updateServerStatus(serverId, false);
+      appLogger.i('Health probe confirmed $serverId offline, triggering reconnection');
 
-      // Guard with _activeOptimizations to prevent duplicate reconnections
       if (_activeOptimizations.containsKey(serverId)) return;
-
       final reconnect = plexServer != null
           ? _reconnectServer(serverId, plexServer)
           : _reconnectJellyfinServer(serverId, jellyfinClient!);
       _activeOptimizations[serverId] = reconnect.whenComplete(() {
         _activeOptimizations.remove(serverId);
       });
-    });
+    } finally {
+      _endpointHealthChecks.remove(serverId);
+    }
   }
 
   /// Jellyfin clients outlive their active binding (a previous profile's
   /// client stays in [_jellyfinByCompoundId]); only the currently bound
-  /// client's exhaustion may flip the machine's status.
+  /// client's exhaustion may verify and flip the machine's status.
   void _onJellyfinEndpointsExhausted(String machineId, String compoundId) {
     if (_activeJellyfinMachine[machineId] != compoundId) {
       appLogger.d('Ignoring endpoint exhaustion from inactive Jellyfin client', error: compoundId);
@@ -1158,6 +1188,10 @@ class MultiServerManager {
     }
     _onServerEndpointsExhausted(ServerId(machineId));
   }
+
+  @visibleForTesting
+  Future<void> debugVerifyServerEndpointsExhaustedForTesting(ServerId serverId) =>
+      _verifyServerEndpointsExhausted(serverId);
 
   /// Disconnect all servers
   void disconnectAll() {
