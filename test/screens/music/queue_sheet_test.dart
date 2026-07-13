@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/focusable_action_bar.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
@@ -11,11 +12,12 @@ import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/widgets/app_icon.dart';
 import 'package:plezy/widgets/music/track_row.dart';
 import 'package:provider/provider.dart';
 
-import '../../test_helpers/prefs.dart';
 import '../../test_helpers/media_items.dart';
+import '../../test_helpers/prefs.dart';
 
 MediaItem _track(String id, String title) => testMediaItem(
   id: id,
@@ -73,7 +75,11 @@ void main() {
   Widget wrap(MusicPlaybackService service) {
     final manager = MultiServerManager();
     final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
-    addTearDown(multiServerProvider.dispose);
+    addTearDown(service.dispose);
+    addTearDown(() {
+      multiServerProvider.dispose();
+      manager.dispose();
+    });
 
     return TranslationProvider(
       child: MultiProvider(
@@ -107,6 +113,21 @@ void main() {
     expect(find.text('Alpha'), findsOneWidget);
     expect(find.text('Beta'), findsOneWidget);
     expect(find.text('Gamma'), findsOneWidget);
+  });
+
+  testWidgets('renders all queue header action icons at 20px', (tester) async {
+    final service = _FakeQueueService([_track('t1', 'Alpha'), _track('t2', 'Beta'), _track('t3', 'Gamma')]);
+
+    await tester.pumpWidget(wrap(service));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final headerIcons = tester
+        .widgetList<AppIcon>(find.descendant(of: find.byType(FocusableActionBar), matching: find.byType(AppIcon)))
+        .toList();
+
+    expect(headerIcons, hasLength(3));
+    expect(headerIcons.map((icon) => icon.size), everyElement(20));
   });
 
   testWidgets('tapping a played or upcoming row jumps to its queue index', (tester) async {

@@ -113,14 +113,15 @@ class _PlayerTile extends StatelessWidget {
       trailing: Row(
         mainAxisSize: .min,
         children: [
-          FocusableButton(
-            onPressed: () => svc.removeCustomExternalPlayer(player.id),
-            autoScroll: false,
-            child: IconButton(
-              icon: const AppIcon(Symbols.delete_rounded, fill: 1, size: 20),
+          if (isCustom)
+            FocusableButton(
               onPressed: () => svc.removeCustomExternalPlayer(player.id),
+              autoScroll: false,
+              child: IconButton(
+                icon: const AppIcon(Symbols.delete_rounded, fill: 1, size: 20),
+                onPressed: () => svc.removeCustomExternalPlayer(player.id),
+              ),
             ),
-          ),
           AppIcon(
             isSelected ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
             fill: 1,

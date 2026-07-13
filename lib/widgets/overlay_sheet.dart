@@ -157,8 +157,13 @@ class OverlaySheetController {
   /// Push a sub-page using the overlay system if available, otherwise fall
   /// back to [showModalBottomSheet]. Returns the result from the page.
   ///
-  /// Presentation options apply only to the modal fallback. A hosted push
-  /// retains the root sheet's presentation and changes only its page content.
+  /// When a hosted sheet is already open, this pushes a nested page and
+  /// retains the root sheet's presentation. When a host is available but
+  /// idle, this opens [builder] as its root sheet using the supplied hosted
+  /// presentation options. Without a host, the modal fallback is used.
+  ///
+  /// [isScrollControlled] applies only to the modal fallback; hosted sheets
+  /// use their explicit or default constraints.
   static Future<T?> pushAdaptive<T>(
     BuildContext context, {
     required WidgetBuilder builder,
@@ -171,7 +176,17 @@ class OverlaySheetController {
   }) async {
     final controller = maybeOf(context);
     if (controller != null) {
-      return controller.push<T>(builder: builder, initialFocusNode: initialFocusNode);
+      if (controller.isOpen) {
+        return controller.push<T>(builder: builder, initialFocusNode: initialFocusNode);
+      }
+      return controller.show<T>(
+        builder: builder,
+        constraints: constraints,
+        backgroundColor: backgroundColor,
+        barrierDismissible: barrierDismissible,
+        initialFocusNode: initialFocusNode,
+        showDragHandle: showDragHandle,
+      );
     }
     final effectiveConstraints =
         constraints ??

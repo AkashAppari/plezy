@@ -485,6 +485,30 @@ class FakeMediaControlsManager extends MediaControlsManager {
   }
 }
 
+class _GatedVolumeWriter {
+  final writes = <double>[];
+  final gates = <Completer<void>>[];
+  final _writeWaiters = <int, Completer<void>>{};
+  var inFlight = 0;
+  var maxInFlight = 0;
+
+  Future<void> write(double volume) {
+    writes.add(volume);
+    inFlight++;
+    if (inFlight > maxInFlight) maxInFlight = inFlight;
+
+    final gate = Completer<void>();
+    gates.add(gate);
+    _writeWaiters.remove(writes.length)?.complete();
+    return gate.future.whenComplete(() => inFlight--);
+  }
+
+  Future<void> waitForWrites(int count) {
+    if (writes.length >= count) return Future<void>.value();
+    return (_writeWaiters[count] ??= Completer<void>()).future;
+  }
+}
+
 class _Harness {
   _Harness._(this.service, this.resolver, this.client, this.controls, this.players);
 
@@ -500,7 +524,7 @@ class _Harness {
 
   FakePlayer get player => players.last;
 
-  factory _Harness.create() {
+  factory _Harness.create({Future<void> Function(double)? volumePersistenceWriter}) {
     final client = FakeMediaServerClient();
     final resolver = FakeMusicSourceResolver(client: client);
     final controls = FakeMediaControlsManager();
@@ -519,6 +543,7 @@ class _Harness {
       // Collapse the boundary-pulse confirmation window so completed-driven
       // paths resolve within pumpEventQueue.
       completedConfirmDelay: Duration.zero,
+      volumePersistenceWriter: volumePersistenceWriter,
     );
     harness = _Harness._(service, resolver, client, controls, players);
     return harness;
@@ -541,9 +566,11 @@ void main() {
   final t3 = _track('t3');
 
   late _Harness h;
+  late Future<void> Function(double) persistenceWriter;
 
   setUp(() {
-    h = _Harness.create();
+    persistenceWriter = (_) async {};
+    h = _Harness.create(volumePersistenceWriter: (volume) => persistenceWriter(volume));
   });
 
   tearDown(() {
@@ -567,6 +594,83 @@ void main() {
     expect(h.player.volumes, [42]);
     expect(volumeNotifications, 1);
     expect(serviceNotifications, 0);
+  });
+
+  test('volume persistence keeps one write in flight and coalesces a burst to the latest value', () async {
+    final writer = _GatedVolumeWriter();
+    persistenceWriter = writer.write;
+    var settled = 0;
+
+    final callers = [
+      h.service.setVolume(10).whenComplete(() => settled++),
+      h.service.setVolume(20).whenComplete(() => settled++),
+      h.service.setVolume(30).whenComplete(() => settled++),
+    ];
+
+    await writer.waitForWrites(1);
+    expect(writer.writes, [10]);
+    expect(writer.inFlight, 1);
+    expect(writer.maxInFlight, 1);
+    expect(settled, 0);
+
+    writer.gates[0].complete();
+    await writer.waitForWrites(2);
+    expect(writer.writes, [10, 30]);
+    expect(writer.inFlight, 1);
+    expect(writer.maxInFlight, 1);
+    expect(settled, 0);
+
+    writer.gates[1].complete();
+    await Future.wait(callers);
+    expect(writer.inFlight, 0);
+    expect(settled, 3);
+  });
+
+  test('volume persistence propagates a drain error and accepts a later write', () async {
+    final writer = _GatedVolumeWriter();
+    persistenceWriter = writer.write;
+    final persistenceError = StateError('persistence failed');
+    var firstSettled = false;
+    var secondSettled = false;
+
+    final first = h.service
+        .setVolume(40)
+        .then<void>(
+          (_) => fail('first caller unexpectedly succeeded'),
+          onError: (Object error, StackTrace stackTrace) {
+            firstSettled = true;
+            expect(error, same(persistenceError));
+          },
+        );
+    final second = h.service
+        .setVolume(50)
+        .then<void>(
+          (_) => fail('second caller unexpectedly succeeded'),
+          onError: (Object error, StackTrace stackTrace) {
+            secondSettled = true;
+            expect(error, same(persistenceError));
+          },
+        );
+
+    await writer.waitForWrites(1);
+    writer.gates[0].completeError(persistenceError);
+    await writer.waitForWrites(2);
+    expect(writer.writes, [40, 50]);
+    expect(firstSettled, isFalse);
+    expect(secondSettled, isFalse);
+
+    writer.gates[1].complete();
+    await Future.wait([first, second]);
+    expect(firstSettled, isTrue);
+    expect(secondSettled, isTrue);
+    expect(writer.inFlight, 0);
+
+    final recovered = h.service.setVolume(60);
+    await writer.waitForWrites(3);
+    expect(writer.writes, [40, 50, 60]);
+    writer.gates[2].complete();
+    await recovered;
+    expect(writer.inFlight, 0);
   });
 
   test('playFromList opens the first track and arms the second', () async {

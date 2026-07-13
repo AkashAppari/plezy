@@ -2149,7 +2149,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (!widget.isOffline) _ratingChipFocusNode.requestFocus();
   }
 
-  /// Focus the first available section below the primary action row.
+  /// Focus the overview, or the first available content section when there is no overview.
   void _focusBelowActionRow() {
     final metadata = _fullMetadata ?? _metadata;
 
@@ -2158,13 +2158,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       return;
     }
 
-    // DOWN order: overview → seasons → cast → extras
-    if (!PlatformDetector.isTV() && metadata.summary != null && metadata.summary!.isNotEmpty) {
+    if (metadata.summary != null && metadata.summary!.isNotEmpty) {
       _overviewFocusNode.requestFocus();
       _scrollSectionIntoView(_overviewSectionKey);
       return;
     }
 
+    _focusBelowOverview();
+  }
+
+  /// Focus the first available content section after the overview.
+  void _focusBelowOverview() {
+    final metadata = _fullMetadata ?? _metadata;
+
+    // DOWN order: season tabs → episodes → cast → extras → related hubs → info rows.
     if (metadata.isShow && !_showEpisodesDirectly && _seasons.isNotEmpty && _seasonTabFocusNodes.isNotEmpty) {
       // Focus the selected season tab chip
       _seasonTabFocusNodes[_selectedSeasonIndex].requestFocus();
@@ -2193,6 +2200,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (_relatedHubs.isNotEmpty) {
       _relatedHubKeys.first.currentState?.requestFocusFromMemory();
       return;
+    }
+
+    if (_hasInfoRows) {
+      _focusInfoRows();
     }
   }
 
@@ -3155,7 +3166,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                     );
                                     _playButtonFocusNode.requestFocus();
                                   },
-                                  onNavigateDown: _focusBelowActionRow,
+                                  onNavigateDown: _focusBelowOverview,
                                   onNavigateLeft: () {},
                                   onNavigateRight: () {},
                                 ),

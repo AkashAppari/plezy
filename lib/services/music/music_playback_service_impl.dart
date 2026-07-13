@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart' show ValueListenable;
+import 'package:flutter/foundation.dart' show ValueListenable, visibleForTesting;
 import 'package:flutter/widgets.dart';
 import 'package:os_media_controls/os_media_controls.dart';
 
@@ -66,10 +66,12 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     this._mediaControlsFactory = MediaControlsManager.new,
     this._completedConfirmDelay = const Duration(milliseconds: 400),
     PlaybackCoordinator? coordinator,
+    @visibleForTesting Future<void> Function(double)? volumePersistenceWriter,
   }) : assert(resolver != null || database != null, 'database is required to build the default resolver'),
        _serverManager = serverManager,
        _resolver = resolver ?? ServerMusicSourceResolver(serverManager: serverManager, database: database!),
-       _coordinator = coordinator ?? PlaybackCoordinator.instance {
+       _coordinator = coordinator ?? PlaybackCoordinator.instance,
+       _volumePersistenceWriter = volumePersistenceWriter ?? _writePersistedVolume {
     _coordinator.registerMusicSession(stopAndDispose: _stopForVideoClaim);
     // tvOS has no background-audio session in v1 — pause on backgrounding so
     // audio doesn't play over other apps / the home screen. Other platforms
@@ -96,6 +98,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   final Player Function() _audioPlayerFactory;
   final MediaControlsManager Function() _mediaControlsFactory;
   final PlaybackCoordinator _coordinator;
+  final Future<void> Function(double) _volumePersistenceWriter;
 
   final MusicQueueController _queue = MusicQueueController();
 
@@ -104,6 +107,10 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   /// volume when settings aren't bootstrapped (tests).
   double _volume = SettingsService.instanceOrNull?.read(SettingsService.musicVolume) ?? 100.0;
   late final ValueNotifier<double> _volumeNotifier = ValueNotifier<double>(_volume);
+  // One settings write stays in flight while rapid updates replace the single
+  // pending slot. The drain intentionally survives service disposal.
+  double? _pendingVolumeWrite;
+  Future<void>? _volumeWriteDrain;
 
   Player? _player;
   final List<StreamSubscription<Object?>> _playerSubs = [];
@@ -850,14 +857,58 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   @override
   Future<void> setVolume(double volume, {bool persist = true}) async {
     final clamped = volume.clamp(0.0, 100.0);
+    Future<void>? playerUpdate;
     if (clamped != _volume) {
       _volume = clamped;
       _volumeNotifier.value = clamped;
-      await _player?.setVolume(clamped);
+      playerUpdate = _player?.setVolume(clamped);
     }
-    if (persist) {
-      final settings = SettingsService.instanceOrNull;
-      if (settings != null) await settings.write(SettingsService.musicVolume, clamped);
+
+    final persistence = persist ? _persistVolume(clamped) : null;
+    if (playerUpdate != null && persistence != null) {
+      await Future.wait([playerUpdate, persistence]);
+    } else {
+      await playerUpdate;
+      await persistence;
+    }
+  }
+
+  static Future<void> _writePersistedVolume(double volume) async {
+    final settings = SettingsService.instanceOrNull;
+    if (settings != null) await settings.write(SettingsService.musicVolume, volume);
+  }
+
+  Future<void> _persistVolume(double volume) {
+    _pendingVolumeWrite = volume;
+    final activeDrain = _volumeWriteDrain;
+    if (activeDrain != null) return activeDrain;
+
+    final completer = Completer<void>();
+    _volumeWriteDrain = completer.future;
+    unawaited(_drainVolumeWrites(completer));
+    return completer.future;
+  }
+
+  Future<void> _drainVolumeWrites(Completer<void> completer) async {
+    Object? firstError;
+    StackTrace? firstStackTrace;
+
+    while (_pendingVolumeWrite != null) {
+      final volume = _pendingVolumeWrite!;
+      _pendingVolumeWrite = null;
+      try {
+        await _volumePersistenceWriter(volume);
+      } catch (error, stackTrace) {
+        firstError ??= error;
+        firstStackTrace ??= stackTrace;
+      }
+    }
+
+    _volumeWriteDrain = null;
+    if (firstError != null) {
+      completer.completeError(firstError, firstStackTrace);
+    } else {
+      completer.complete();
     }
   }
 

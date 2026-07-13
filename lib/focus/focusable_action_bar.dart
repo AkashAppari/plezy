@@ -29,6 +29,7 @@ class FocusableAction {
   final IconData icon;
   final Color? iconColor;
   final double iconFill;
+  final double iconSize;
 
   final String? debugLabel;
   final FocusNode? focusNode;
@@ -43,6 +44,7 @@ class FocusableAction {
     this.icon = Icons.circle,
     this.iconColor,
     this.iconFill = 1.0,
+    this.iconSize = 24,
     this.debugLabel,
     this.focusNode,
     this.autofocus = false,
@@ -246,7 +248,7 @@ class FocusableActionBarState extends State<FocusableActionBar> {
                 child:
                     action.child ??
                     IconButton(
-                      icon: AppIcon(action.icon, fill: action.iconFill, color: action.iconColor),
+                      icon: AppIcon(action.icon, size: action.iconSize, fill: action.iconFill, color: action.iconColor),
                       tooltip: action.tooltip,
                       onPressed: action.onPressed,
                     ),

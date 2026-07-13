@@ -140,6 +140,147 @@ void main() {
     expect(screenBacks, 0);
   });
 
+  testWidgets('pushAdaptive opens a root page on an idle host and returns its result', (tester) async {
+    final result = ValueNotifier<String>('pending');
+    addTearDown(result.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: OverlaySheetHost(
+          child: Scaffold(
+            body: Builder(
+              builder: (context) => Column(
+                children: [
+                  ElevatedButton(
+                    onPressed: () async {
+                      final value = await OverlaySheetController.pushAdaptive<String>(
+                        context,
+                        builder: (sheetContext) => SizedBox(
+                          height: 120,
+                          child: Column(
+                            children: [
+                              const Text('Adaptive root page'),
+                              ElevatedButton(
+                                onPressed: () => OverlaySheetController.of(sheetContext).close('root result'),
+                                child: const Text('Close adaptive root'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                      result.value = value ?? 'null';
+                    },
+                    child: const Text('Push adaptive root'),
+                  ),
+                  ValueListenableBuilder<String>(
+                    valueListenable: result,
+                    builder: (_, value, _) => Text('Root result: $value'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Push adaptive root'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Adaptive root page'), findsOneWidget);
+    expect(find.text('Root result: pending'), findsOneWidget);
+
+    await tester.tap(find.text('Close adaptive root'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Adaptive root page'), findsNothing);
+    expect(find.text('Root result: root result'), findsOneWidget);
+  });
+
+  testWidgets('pushAdaptive pushes a nested page on an open host and pop restores the root', (tester) async {
+    final nestedResult = ValueNotifier<String>('pending');
+    addTearDown(nestedResult.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: OverlaySheetHost(
+          child: Scaffold(
+            body: Center(
+              child: Builder(
+                builder: (context) => ElevatedButton(
+                  onPressed: () {
+                    OverlaySheetController.of(context).show<void>(
+                      builder: (rootContext) => SizedBox(
+                        height: 160,
+                        child: Column(
+                          children: [
+                            const Text('Existing root page'),
+                            ElevatedButton(
+                              onPressed: () async {
+                                final value = await OverlaySheetController.pushAdaptive<String>(
+                                  rootContext,
+                                  builder: (nestedContext) => SizedBox(
+                                    height: 120,
+                                    child: Column(
+                                      children: [
+                                        const Text('Adaptive nested page'),
+                                        ElevatedButton(
+                                          onPressed: () =>
+                                              OverlaySheetController.of(nestedContext).pop('nested result'),
+                                          child: const Text('Pop adaptive nested'),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                                nestedResult.value = value ?? 'null';
+                              },
+                              child: const Text('Push adaptive nested'),
+                            ),
+                            ValueListenableBuilder<String>(
+                              valueListenable: nestedResult,
+                              builder: (_, value, _) => Text('Nested result: $value'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => OverlaySheetController.of(rootContext).close(),
+                              child: const Text('Close existing root'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text('Open existing root'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open existing root'));
+    await tester.pumpAndSettle();
+    expect(find.text('Existing root page'), findsOneWidget);
+
+    await tester.tap(find.text('Push adaptive nested'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Adaptive nested page'), findsOneWidget);
+    expect(find.text('Existing root page'), findsNothing);
+
+    await tester.tap(find.text('Pop adaptive nested'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Adaptive nested page'), findsNothing);
+    expect(find.text('Existing root page'), findsOneWidget);
+    expect(find.text('Nested result: nested result'), findsOneWidget);
+
+    await tester.tap(find.text('Close existing root'));
+    await tester.pumpAndSettle();
+    expect(find.text('Existing root page'), findsNothing);
+  });
+
   group('opt-in canPop / onSystemBack', () {
     // Pushes an OverlaySheetHost route on top of a home route so we can observe
     // whether a simulated system back pops the route. The host's child has an

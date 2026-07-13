@@ -54,18 +54,21 @@ class QueueSheet extends StatelessWidget {
                   FocusableAction(
                     icon: Symbols.shuffle_rounded,
                     iconColor: service.shuffled ? colorScheme.primary : tk.textMuted,
+                    iconSize: 20,
                     tooltip: t.common.shuffle,
                     onPressed: service.toggleShuffle,
                   ),
                   FocusableAction(
                     icon: repeatModeIcon(service.repeatMode),
                     iconColor: service.repeatMode == MusicRepeatMode.off ? tk.textMuted : colorScheme.primary,
+                    iconSize: 20,
                     tooltip: repeatModeLabel(service.repeatMode),
                     onPressed: () => service.setRepeatMode(nextRepeatMode(service.repeatMode)),
                   ),
                   FocusableAction(
                     icon: Symbols.clear_all_rounded,
                     iconColor: tk.textMuted,
+                    iconSize: 20,
                     tooltip: t.music.clearQueue,
                     onPressed: service.clearUpcoming,
                   ),

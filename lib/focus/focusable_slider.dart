@@ -70,6 +70,7 @@ class _FocusableSliderState extends State<FocusableSlider> {
 
   @override
   Widget build(BuildContext context) {
+    final sliderTheme = SliderTheme.of(context);
     return FocusableWrapper(
       focusNode: widget.focusNode,
       autofocus: widget.autofocus,
@@ -79,8 +80,8 @@ class _FocusableSliderState extends State<FocusableSlider> {
       onFocusChange: (focused) => setState(() => _isFocused = focused),
       onKeyEvent: _handleKeyEvent,
       child: SliderTheme(
-        data: SliderTheme.of(context).copyWith(
-          overlayShape: const RoundSliderOverlayShape(overlayRadius: 0),
+        data: sliderTheme.copyWith(
+          overlayShape: sliderTheme.overlayShape ?? const RoundSliderOverlayShape(overlayRadius: 0),
           thumbSize: WidgetStatePropertyAll(
             (!InputModeTracker.isKeyboardMode(context) || _isFocused) ? const Size(4, 20) : Size.zero,
           ),

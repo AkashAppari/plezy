@@ -268,8 +268,10 @@ class _SessionMenuSheet extends StatelessWidget {
       isDestructive: true,
     );
 
-    if (!confirmed || !context.mounted) return;
-    OverlaySheetController.closeAdaptive(context);
+    if (!confirmed) return;
+    if (context.mounted) {
+      OverlaySheetController.closeAdaptive(context);
+    }
     unawaited(provider.leaveSession());
     onLeaveSession?.call();
   }

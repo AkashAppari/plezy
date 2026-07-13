@@ -17,6 +17,10 @@ class CollapsibleText extends StatefulWidget {
   final ValueChanged<bool>? onOverflowChanged;
   final bool skipTraversal;
 
+  /// Hides this widget's expand/collapse label and semantic tap action while
+  /// preserving the semantics of the text itself.
+  final bool suppressExpandSemantics;
+
   const CollapsibleText({
     super.key,
     required this.text,
@@ -30,6 +34,7 @@ class CollapsibleText extends StatefulWidget {
     this.onNavigateRight,
     this.onOverflowChanged,
     this.skipTraversal = true,
+    this.suppressExpandSemantics = false,
   });
 
   @override
@@ -70,7 +75,31 @@ class _CollapsibleTextState extends State<CollapsibleText> {
 
         if (!overflows) {
           textPainter.dispose();
-          return Text(widget.text, style: style);
+          Widget result = Text(widget.text, style: style);
+          final hasFocusBehavior =
+              widget.focusNode != null ||
+              widget.onNavigateUp != null ||
+              widget.onNavigateDown != null ||
+              widget.onNavigateLeft != null ||
+              widget.onNavigateRight != null;
+          if (!hasFocusBehavior) return result;
+
+          result = FocusableWrapper(
+            focusNode: widget.focusNode,
+            onNavigateUp: widget.onNavigateUp,
+            onNavigateDown: widget.onNavigateDown,
+            onNavigateLeft: widget.onNavigateLeft,
+            onNavigateRight: widget.onNavigateRight,
+            descendantsAreFocusable: false,
+            disableScale: true,
+            useBackgroundFocus: true,
+            borderRadius: 8,
+            child: result,
+          );
+          if (widget.skipTraversal) {
+            result = ExcludeFocusTraversal(child: result);
+          }
+          return result;
         }
 
         String displayText = widget.text;
@@ -102,7 +131,11 @@ class _CollapsibleTextState extends State<CollapsibleText> {
           onNavigateDown: widget.onNavigateDown,
           onNavigateLeft: widget.onNavigateLeft,
           onNavigateRight: widget.onNavigateRight,
-          semanticLabel: _expanded ? t.accessibility.collapseText : t.accessibility.expandText,
+          semanticLabel: widget.suppressExpandSemantics
+              ? null
+              : _expanded
+              ? t.accessibility.collapseText
+              : t.accessibility.expandText,
           descendantsAreFocusable: false,
           disableScale: true,
           useBackgroundFocus: true,
@@ -114,7 +147,11 @@ class _CollapsibleTextState extends State<CollapsibleText> {
         }
 
         return ClickableCursor(
-          child: GestureDetector(onTap: _toggleExpanded, child: result),
+          child: GestureDetector(
+            onTap: _toggleExpanded,
+            excludeFromSemantics: widget.suppressExpandSemantics,
+            child: result,
+          ),
         );
       },
     );

@@ -508,11 +508,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
           for (final item in menuItems)
             AppMenuItem<String>(value: item.value, icon: item.icon, label: item.label, destructive: item.isDestructive),
         ],
-        closeOnSelected: false,
-        onSelected: (value) {
-          OverlaySheetController.popAdaptive(context, value);
-          widget.onLibraryMenuAction(value, library);
-        },
+        onSelected: (value) => widget.onLibraryMenuAction(value, library),
       ),
     );
   }

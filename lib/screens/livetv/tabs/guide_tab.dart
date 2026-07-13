@@ -55,6 +55,30 @@ class GuideTab extends StatefulWidget {
   State<GuideTab> createState() => GuideTabState();
 }
 
+@visibleForTesting
+({String channelScopeKey, ({String kind, String value})? programId, int? beginsAt, int? endsAt}) guideAiringIdentity(
+  LiveTvChannel channel,
+  LiveTvProgram program,
+) {
+  ({String kind, String value})? programId;
+  if (program.ratingKey case final ratingKey? when ratingKey.isNotEmpty) {
+    programId = (kind: 'ratingKey', value: ratingKey);
+  } else if (program.guid case final guid? when guid.isNotEmpty) {
+    programId = (kind: 'guid', value: guid);
+  } else if (program.key case final key? when key.isNotEmpty) {
+    programId = (kind: 'key', value: key);
+  }
+
+  // Keep the slot even with an ID so repeated airings cannot inherit each
+  // other's hold; with no ID, channel scope plus timing is the fallback.
+  return (
+    channelScopeKey: liveTvChannelScopeKey(channel),
+    programId: programId,
+    beginsAt: program.beginsAt,
+    endsAt: program.endsAt,
+  );
+}
+
 enum _GuideZone { timeNav, grid }
 
 sealed class _GuideRow {
@@ -578,9 +602,19 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
     final target = _focusedProgramTarget();
     if (target == null) return KeyEventResult.ignored;
 
+    final ownerChannelIndex = _gridChannelIndex;
+    final targetIdentity = guideAiringIdentity(target.channel, target.program);
     return _programSelectController.handleKeyEvent(
       event,
-      isOwnerActive: () => mounted && _focusedProgramTarget() == target,
+      isOwnerActive: () {
+        if (!mounted || _focusZone != _GuideZone.grid || _gridColumn != 1 || _gridChannelIndex != ownerChannelIndex) {
+          return false;
+        }
+
+        final activeTarget = _focusedProgramTarget();
+        return activeTarget != null &&
+            guideAiringIdentity(activeTarget.channel, activeTarget.program) == targetIdentity;
+      },
       onShortPress: () => _activateProgram(target.channel, target.program),
       onLongPress: () {
         _programSelectController.reset();

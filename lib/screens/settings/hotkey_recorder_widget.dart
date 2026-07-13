@@ -113,13 +113,12 @@ class _HotKeyRecorderWidgetState extends State<HotKeyRecorderWidget> {
                             border: Border.fromBorderSide(BorderSide(color: Theme.of(context).dividerColor)),
                             borderRadius: const BorderRadius.all(Radius.circular(6)),
                           ),
-                          child: hasShortcut
-                              ? HotKeyRecorder(
-                                  initalHotKey: _recordedHotKey,
-                                  enabled: _isCapturing,
-                                  onHotKeyRecorded: _handleHotKeyRecorded,
-                                )
-                              : Text(recordLabel),
+                          child: HotKeyRecorder(
+                            initalHotKey: _recordedHotKey,
+                            enabled: _isCapturing,
+                            placeholder: Text(recordLabel),
+                            onHotKeyRecorded: _handleHotKeyRecorded,
+                          ),
                         ),
                       ),
                     ),

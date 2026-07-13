@@ -274,35 +274,35 @@ class _MiniPlayerCardState extends State<_MiniPlayerCard> with ContextMenuTapMix
       color: tk.surface,
       clipBehavior: Clip.antiAlias,
       borderRadius: BorderRadius.circular(tk.radiusLg),
-      child: SizedBox(
-        height: _MusicMiniPlayerOverlayState._cardHeight,
-        child: Stack(
-          children: [
-            const Positioned.fill(child: _MiniPlayerProgress()),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: FocusableWrapper(
-                      focusNode: _detailsFocusNode,
-                      onSelect: () => unawaited(openNowPlaying(context)),
-                      enableLongPress: true,
-                      onLongPress: showContextMenuFromTap,
-                      onNavigateRight: () => _transportKey.currentState?.requestFocusOnFirst(),
-                      semanticLabel: widget.track.title,
-                      descendantsAreFocusable: false,
-                      disableScale: true,
-                      useBackgroundFocus: true,
-                      borderRadius: tk.radiusLg,
-                      child: InkWell(
-                        canRequestFocus: false,
-                        mouseCursor: SystemMouseCursors.click,
-                        onTap: () => unawaited(openNowPlaying(context)),
-                        onTapDown: storeTapPosition,
-                        onLongPress: showContextMenuFromTap,
-                        onSecondaryTapDown: storeTapPosition,
-                        onSecondaryTap: showContextMenuFromTap,
+      child: InkWell(
+        canRequestFocus: false,
+        mouseCursor: SystemMouseCursors.click,
+        onTap: () => unawaited(openNowPlaying(context)),
+        onTapDown: storeTapPosition,
+        onLongPress: showContextMenuFromTap,
+        onSecondaryTapDown: storeTapPosition,
+        onSecondaryTap: showContextMenuFromTap,
+        child: SizedBox(
+          height: _MusicMiniPlayerOverlayState._cardHeight,
+          child: Stack(
+            children: [
+              const Positioned.fill(child: _MiniPlayerProgress()),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: FocusableWrapper(
+                        focusNode: _detailsFocusNode,
+                        onSelect: () => unawaited(openNowPlaying(context)),
+                        enableLongPress: true,
+                        onLongPress: showContextMenu,
+                        onNavigateRight: () => _transportKey.currentState?.requestFocusOnFirst(),
+                        semanticLabel: widget.track.title,
+                        descendantsAreFocusable: false,
+                        disableScale: true,
+                        useBackgroundFocus: true,
+                        borderRadius: tk.radiusLg,
                         child: Row(
                           children: [
                             ClipRRect(
@@ -342,43 +342,44 @@ class _MiniPlayerCardState extends State<_MiniPlayerCard> with ContextMenuTapMix
                         ),
                       ),
                     ),
-                  ),
-                  FocusableActionBar(
-                    key: _transportKey,
-                    onNavigateLeft: _detailsFocusNode.requestFocus,
-                    actions: [
-                      if (widget.desktop)
+                    FocusableActionBar(
+                      key: _transportKey,
+                      onNavigateLeft: _detailsFocusNode.requestFocus,
+                      actions: [
+                        if (widget.desktop)
+                          FocusableAction(
+                            icon: Symbols.skip_previous_rounded,
+                            iconColor: tk.text,
+                            tooltip: t.music.previousTrack,
+                            onPressed: () => unawaited(service.previous()),
+                          ),
                         FocusableAction(
-                          icon: Symbols.skip_previous_rounded,
+                          icon: isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
                           iconColor: tk.text,
-                          tooltip: t.music.previousTrack,
-                          onPressed: () => unawaited(service.previous()),
+                          tooltip: isPlaying ? t.common.pause : t.common.play,
+                          onPressed: () => unawaited(service.togglePlayPause()),
                         ),
-                      FocusableAction(
-                        icon: isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
-                        iconColor: tk.text,
-                        tooltip: isPlaying ? t.common.pause : t.common.play,
-                        onPressed: () => unawaited(service.togglePlayPause()),
-                      ),
-                      FocusableAction(
-                        icon: Symbols.skip_next_rounded,
-                        iconColor: tk.text,
-                        tooltip: t.music.nextTrack,
-                        onPressed: () => unawaited(service.next()),
-                      ),
-                      if (widget.desktop)
                         FocusableAction(
-                          icon: Symbols.close_rounded,
-                          iconColor: tk.textMuted,
-                          tooltip: t.music.stopPlayback,
-                          onPressed: widget.onDismissed,
+                          icon: Symbols.skip_next_rounded,
+                          iconColor: tk.text,
+                          tooltip: t.music.nextTrack,
+                          onPressed: () => unawaited(service.next()),
                         ),
-                    ],
-                  ),
-                ],
+                        if (widget.desktop)
+                          FocusableAction(
+                            icon: Symbols.close_rounded,
+                            iconColor: tk.textMuted,
+                            iconSize: 20,
+                            tooltip: t.music.stopPlayback,
+                            onPressed: widget.onDismissed,
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

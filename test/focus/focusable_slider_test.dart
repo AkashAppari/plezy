@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/focusable_slider.dart';
 
 void main() {
-  testWidgets('D-pad adjustment reports a complete persisted change', (tester) async {
+  testWidgets('each D-pad arrow reports a complete persisted change', (tester) async {
     final focusNode = FocusNode(debugLabel: 'slider');
     addTearDown(focusNode.dispose);
     final starts = <double>[];
@@ -38,11 +38,34 @@ void main() {
     await tester.pump();
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
     await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.pump();
 
-    expect(starts, [0.0]);
-    expect(changes, [1.0]);
-    expect(ends, [1.0]);
-    expect(value, 1.0);
+    expect(starts, [0.0, 1.0]);
+    expect(changes, [1.0, 0.0]);
+    expect(ends, [1.0, 0.0]);
+    expect(value, 0.0);
+  });
+
+  testWidgets('preserves an inherited 12px slider overlay', (tester) async {
+    const inheritedOverlay = RoundSliderOverlayShape(overlayRadius: 12);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SliderTheme(
+            data: const SliderThemeData(overlayShape: inheritedOverlay),
+            child: FocusableSlider(value: 0, onChanged: (_) {}),
+          ),
+        ),
+      ),
+    );
+
+    final sliderContext = tester.element(find.byType(Slider));
+    final overlay = SliderTheme.of(sliderContext).overlayShape;
+
+    expect(overlay, same(inheritedOverlay));
+    expect(overlay!.getPreferredSize(false, false), const Size.square(24));
   });
 
   testWidgets('SELECT invokes the slider action once', (tester) async {

@@ -307,6 +307,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                                 text: episode.summary!,
                                 maxLines: 3,
                                 small: true,
+                                suppressExpandSemantics: true,
                                 style: Theme.of(
                                   context,
                                 ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, height: 1.3),
