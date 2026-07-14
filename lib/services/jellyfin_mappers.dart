@@ -101,14 +101,22 @@ class JellyfinImageAbsolutizer {
   /// absolute, self-authenticated form. Cheap — touches a handful of
   /// nullable strings and reuses the existing [MediaItem.copyWith].
   MediaItem applyTo(MediaItem item) {
+    final backdropPaths = item.backdropPaths?.map((path) => absolutize(path)!).toList(growable: false);
+    final grandparentBackdropPaths = item.grandparentBackdropPaths
+        ?.map((path) => absolutize(path)!)
+        .toList(growable: false);
     return item.copyWith(
       thumbPath: absolutize(item.thumbPath),
-      artPath: absolutize(item.artPath),
+      artPath: backdropPaths == null || backdropPaths.isEmpty ? absolutize(item.artPath) : backdropPaths.first,
+      backdropPaths: backdropPaths,
       clearLogoPath: absolutize(item.clearLogoPath),
       backgroundSquarePath: absolutize(item.backgroundSquarePath),
       parentThumbPath: absolutize(item.parentThumbPath),
       grandparentThumbPath: absolutize(item.grandparentThumbPath),
-      grandparentArtPath: absolutize(item.grandparentArtPath),
+      grandparentArtPath: grandparentBackdropPaths == null || grandparentBackdropPaths.isEmpty
+          ? absolutize(item.grandparentArtPath)
+          : grandparentBackdropPaths.first,
+      grandparentBackdropPaths: grandparentBackdropPaths,
       // Cast headshots come from the same /Items/{personId}/Images/Primary
       // endpoint and need the same absolutize+api_key treatment, otherwise
       // they get routed through Plex's photo proxy and 404.
@@ -157,6 +165,14 @@ class JellyfinMappers {
     // folders so folder browsing never falls back to raw-map sniffing.
     final kind = type == null && item['IsFolder'] == true ? MediaKind.folder : MediaKind.fromString(type);
     final albumPrimaryImage = kind == MediaKind.track ? _albumPrimaryImage(item) : null;
+    final backdropPaths = _backdropImagePaths(id, item['BackdropImageTags']);
+    final parentBackdropPaths = _parentBackdropImagePaths(item);
+    final seriesBackdropPath = _seriesBackdropImage(item);
+    final grandparentBackdropPaths = parentBackdropPaths.isNotEmpty
+        ? parentBackdropPaths
+        : seriesBackdropPath == null
+        ? const <String>[]
+        : <String>[seriesBackdropPath];
 
     final mapped = JellyfinMediaItem(
       id: id,
@@ -196,9 +212,11 @@ class JellyfinMappers {
       grandparentTitle:
           item['SeriesName'] as String? ?? (kind == MediaKind.track ? item['AlbumArtist'] as String? : null),
       grandparentThumbPath: _seriesPrimaryImage(item),
-      grandparentArtPath: _parentBackdropImage(item) ?? _seriesBackdropImage(item),
+      grandparentArtPath: grandparentBackdropPaths.firstOrNull,
+      grandparentBackdropPaths: grandparentBackdropPaths.isEmpty ? null : grandparentBackdropPaths,
       thumbPath: _selfImagePath(id, item, 'Primary') ?? albumPrimaryImage,
-      artPath: _selfImagePath(id, item, 'Backdrop'),
+      artPath: backdropPaths.firstOrNull,
+      backdropPaths: backdropPaths.isEmpty ? null : backdropPaths,
       // Episodes/seasons don't carry their own logo — Jellyfin exposes the
       // parent's logo via ParentLogoItemId/ParentLogoImageTag, which is
       // what JF web renders on the hero card.
@@ -477,18 +495,22 @@ class JellyfinMappers {
 
   static String? _selfImagePath(String id, Map<String, dynamic> item, String type) {
     final tags = item['ImageTags'];
-    final backdropTags = item['BackdropImageTags'];
-    String? tag;
-    if (type == 'Backdrop' && backdropTags is List && backdropTags.isNotEmpty) {
-      tag = backdropTags.first as String?;
-      return tag != null ? _itemImagePath(id, 'Backdrop', tag: tag, imageIndex: 0) : null;
-    }
-    if (tags is Map<String, dynamic>) {
-      final value = tags[type];
-      if (value is String) tag = value;
-    }
-    if (tag == null) return null;
+    if (tags is! Map<String, dynamic>) return null;
+    final tag = tags[type];
+    if (tag is! String || tag.isEmpty) return null;
     return _itemImagePath(id, type, tag: tag);
+  }
+
+  static List<String> _backdropImagePaths(String id, Object? rawTags) {
+    if (rawTags is! List) return const [];
+    final paths = <String>[];
+    final seenTags = <String>{};
+    for (var index = 0; index < rawTags.length; index++) {
+      final tag = rawTags[index];
+      if (tag is! String || tag.isEmpty || !seenTags.add(tag)) continue;
+      paths.add(_itemImagePath(id, 'Backdrop', tag: tag, imageIndex: index));
+    }
+    return paths;
   }
 
   /// First album-artist id for Audio/MusicAlbum rows — the music counterpart
@@ -536,19 +558,14 @@ class JellyfinMappers {
   }
 
   /// Parent backdrop helper — works for episodes (parent = series) and
-  /// seasons (parent = series). Pulls the explicit
-  /// `ParentBackdropItemId`/`ParentBackdropImageTags` pair Jellyfin
-  /// inherits onto child items, falling back to a tagless URL when only
-  /// the id is present.
-  static String? _parentBackdropImage(Map<String, dynamic> item) {
+  /// seasons (parent = series). Pulls every explicit
+  /// `ParentBackdropItemId`/`ParentBackdropImageTags` pair Jellyfin inherits
+  /// onto child items, falling back to a tagless URL when only the id exists.
+  static List<String> _parentBackdropImagePaths(Map<String, dynamic> item) {
     final parentId = item['ParentBackdropItemId'] as String?;
-    if (parentId == null) return null;
-    final tags = item['ParentBackdropImageTags'];
-    if (tags is List && tags.isNotEmpty) {
-      final tag = tags.first as String?;
-      if (tag != null) return _itemImagePath(parentId, 'Backdrop', tag: tag, imageIndex: 0);
-    }
-    return _itemImagePath(parentId, 'Backdrop', imageIndex: 0);
+    if (parentId == null || parentId.isEmpty) return const [];
+    final paths = _backdropImagePaths(parentId, item['ParentBackdropImageTags']);
+    return paths.isEmpty ? [_itemImagePath(parentId, 'Backdrop', imageIndex: 0)] : paths;
   }
 
   /// Parent logo helper — episodes/seasons inherit the series' logo via

@@ -85,7 +85,7 @@ void main() {
       expect(params['IncludeItemTypes'], isNotEmpty);
       expect(params['EnableTotalRecordCount'], 'true');
       expect(params['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
-      expect(params['ImageTypeLimit'], '1');
+      expect(params['ImageTypeLimit'], '3');
     });
 
     test('movie kind maps to IncludeItemTypes=Movie', () {

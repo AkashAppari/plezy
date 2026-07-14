@@ -40,6 +40,7 @@ import '../widgets/media_card.dart';
 import '../widgets/media_rating_badge.dart';
 import '../i18n/strings.g.dart';
 import '../theme/mono_tokens.dart';
+import '../widgets/cycling_media_backdrop.dart';
 import '../widgets/optimized_media_image.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/media_quality_labels.dart';
@@ -1200,55 +1201,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final localPath = context.read<DownloadProvider>().getArtworkLocalPath(ServerId(_metadata.serverId!), artworkPath);
     if (localPath == null || !File(localPath).existsSync()) return null;
     return localPath;
-  }
-
-  Widget _buildHeroNetworkArtwork(
-    BuildContext context, {
-    required MediaServerClient? client,
-    required List<String> artworkPaths,
-    required Size mediaSize,
-    required double dpr,
-    required int memCacheHeight,
-    int index = 0,
-  }) {
-    if (index >= artworkPaths.length) return const PlaceholderContainer();
-
-    final imageUrl = MediaImageHelper.getOptimizedImageUrl(
-      client: client,
-      thumbPath: artworkPaths[index],
-      maxWidth: mediaSize.width,
-      maxHeight: mediaSize.height * 0.6,
-      devicePixelRatio: dpr,
-      imageType: ImageType.art,
-    );
-    if (imageUrl.isEmpty) {
-      return _buildHeroNetworkArtwork(
-        context,
-        client: client,
-        artworkPaths: artworkPaths,
-        mediaSize: mediaSize,
-        dpr: dpr,
-        memCacheHeight: memCacheHeight,
-        index: index + 1,
-      );
-    }
-
-    return CachedNetworkImage(
-      imageUrl: imageUrl,
-      cacheManager: PlexImageCacheManager.instance,
-      fit: BoxFit.cover,
-      memCacheHeight: memCacheHeight,
-      placeholder: (context, url) => const PlaceholderContainer(),
-      errorBuilder: (context, error, stackTrace) => _buildHeroNetworkArtwork(
-        context,
-        client: client,
-        artworkPaths: artworkPaths,
-        mediaSize: mediaSize,
-        dpr: dpr,
-        memCacheHeight: memCacheHeight,
-        index: index + 1,
-      ),
-    );
   }
 
   String _syncRuleKeyForMetadata(BuildContext context, DownloadProvider downloadProvider, MediaItem metadata) {
@@ -3427,6 +3379,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 client: _getArtworkMediaClient(context),
                 showInfo: false,
                 localArtworkPathResolver: widget.isOffline ? (path) => _offlineArtworkLocalPath(context, path) : null,
+                allowNetwork: !widget.isOffline,
               ),
               _buildTvDetailRevealGate(revealContent, handleBack),
             ],
@@ -4159,32 +4112,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               final heroArtPaths = metadata.heroArtCandidates(containerAspectRatio: containerAspect);
               if (heroArtPaths.isEmpty) return const PlaceholderContainer();
 
-              final localArtwork = _buildOfflineArtworkIfAvailable(
-                context,
-                artworkPaths: heroArtPaths,
-                fit: BoxFit.cover,
-                imageType: ImageType.art,
-                errorWidget: (context, url, error) => const PlaceholderContainer(),
-              );
-              if (localArtwork != null) return localArtwork;
-
-              final client = _getArtworkMediaClient(context);
-              final mqSize = MediaQuery.sizeOf(context);
-              final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
-              final (_, memHeight) = MediaImageHelper.getMemCacheDimensions(
-                displayWidth: (mqSize.width * dpr).round(),
-                displayHeight: (headerHeight * dpr).round(),
-                imageType: ImageType.art,
-              );
-
               return blurArtwork(
-                _buildHeroNetworkArtwork(
-                  context,
-                  client: client,
-                  artworkPaths: heroArtPaths,
-                  mediaSize: mqSize,
-                  dpr: dpr,
-                  memCacheHeight: memHeight,
+                CyclingMediaBackdrop(
+                  mediaKey: metadata.globalKey,
+                  imagePaths: metadata.heroBackdropPaths,
+                  fallbackImagePaths: heroArtPaths,
+                  client: _getArtworkMediaClient(context),
+                  localArtworkPathResolver: widget.isOffline ? (path) => _offlineArtworkLocalPath(context, path) : null,
+                  allowNetwork: !widget.isOffline,
+                  width: size.width,
+                  height: headerHeight,
+                  fallbackColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                 ),
               );
             },

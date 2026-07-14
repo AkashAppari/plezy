@@ -21,6 +21,7 @@ MediaItem _movie({
   int? durationMs,
   int? viewOffsetMs,
   String? artPath,
+  List<String>? backdropPaths,
   String? backgroundSquarePath,
   MediaBackend backend = MediaBackend.plex,
 }) => testMediaItem(
@@ -34,6 +35,7 @@ MediaItem _movie({
   durationMs: durationMs,
   viewOffsetMs: viewOffsetMs,
   artPath: artPath,
+  backdropPaths: backdropPaths,
   backgroundSquarePath: backgroundSquarePath,
   serverId: 's1',
 );
@@ -124,6 +126,46 @@ void main() {
       expect(episode.heroArtCandidates(containerAspectRatio: 16 / 9), ['/show-art', '/episode-art', '/square']);
       expect(episode.heroArt(containerAspectRatio: 16 / 9), '/show-art');
       expect(episode.heroArtCandidates(containerAspectRatio: 1.0), ['/square', '/show-art', '/episode-art']);
+    });
+
+    test('Jellyfin movies expose every backdrop in display order', () {
+      final movie = _movie(
+        backend: MediaBackend.jellyfin,
+        artPath: '/art-0',
+        backdropPaths: ['/art-0', '/art-1', '/art-2'],
+        backgroundSquarePath: '/square',
+      );
+
+      expect(movie.heroBackdropPaths, ['/art-0', '/art-1', '/art-2']);
+      expect(movie.heroArtCandidates(containerAspectRatio: 16 / 9), ['/art-0', '/art-1', '/art-2', '/square']);
+    });
+
+    test('episodes prefer inherited backdrops over their own art', () {
+      final episode = testMediaItem(
+        id: 'e-multi',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.episode,
+        artPath: '/episode-0',
+        backdropPaths: ['/episode-0', '/episode-1'],
+        grandparentArtPath: '/show-0',
+        grandparentBackdropPaths: ['/show-0', '/show-1', '/show-2'],
+      );
+
+      expect(episode.heroBackdropPaths, ['/show-0', '/show-1', '/show-2']);
+      expect(episode.heroArtCandidates(containerAspectRatio: 16 / 9), [
+        '/show-0',
+        '/show-1',
+        '/show-2',
+        '/episode-0',
+        '/episode-1',
+      ]);
+    });
+
+    test('legacy scalar art remains a single static backdrop', () {
+      final movie = _movie(artPath: '/legacy-art');
+
+      expect(movie.resolvedBackdropPaths, ['/legacy-art']);
+      expect(movie.heroBackdropPaths, ['/legacy-art']);
     });
   });
 
@@ -336,6 +378,23 @@ void main() {
       expect(json['backend'], 'jellyfin');
       expect(decoded, isA<JellyfinMediaItem>());
       expect((decoded as JellyfinMediaItem).playlistItemId, 'entry-1');
+    });
+
+    test('round-trips Jellyfin backdrop lists', () {
+      const original = JellyfinMediaItem(
+        id: 'j-backdrops',
+        kind: MediaKind.episode,
+        artPath: '/episode-0',
+        backdropPaths: ['/episode-0', '/episode-1'],
+        grandparentArtPath: '/show-0',
+        grandparentBackdropPaths: ['/show-0', '/show-1'],
+      );
+
+      final decoded = MediaItem.fromJson(original.toJson());
+
+      expect(decoded.backdropPaths, ['/episode-0', '/episode-1']);
+      expect(decoded.grandparentBackdropPaths, ['/show-0', '/show-1']);
+      expect(decoded.heroBackdropPaths, ['/show-0', '/show-1']);
     });
 
     test('missing backend keeps legacy Plex fallback', () {

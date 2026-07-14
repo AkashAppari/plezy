@@ -16,6 +16,7 @@ import '../utils/formatters.dart';
 import '../utils/layout_constants.dart';
 import '../utils/media_image_helper.dart';
 import 'app_icon.dart';
+import 'cycling_media_backdrop.dart';
 import 'fitting_title_text.dart';
 import 'media_rating_badge.dart';
 import 'optimized_media_image.dart' show blurArtwork;
@@ -34,6 +35,7 @@ class TvSpotlightBackground extends StatelessWidget {
   final bool showPrimaryAction;
   final bool showInfo;
   final String? Function(String? artworkPath)? localArtworkPathResolver;
+  final bool allowNetwork;
 
   const TvSpotlightBackground({
     super.key,
@@ -49,6 +51,7 @@ class TvSpotlightBackground extends StatelessWidget {
     this.showPrimaryAction = true,
     this.showInfo = true,
     this.localArtworkPathResolver,
+    this.allowNetwork = true,
   });
 
   double _scale(BuildContext context) => TvLayoutConstants.scaleOf(context);
@@ -59,21 +62,33 @@ class TvSpotlightBackground extends StatelessWidget {
     final bgColor = Theme.of(context).scaffoldBackgroundColor;
 
     // The gradients never differ between spotlight items, so only the artwork
-    // cross-fades — by image paint alpha, not widget opacity. The former
-    // whole-stack AnimatedSwitcher kept two full-screen saveLayers (each with
-    // a backdrop + two full-screen gradient fills) blending per frame on
-    // every focus move, which alone saturated low-end TV GPUs while browsing.
+    // cross-fades by image paint alpha. Keeping the gradients outside the
+    // rotating layer avoids full-screen saveLayers on low-end TVs.
+    final size = MediaQuery.sizeOf(context);
+    final containerAspect = size.width / size.height;
+    final fallbackPaths = media == null
+        ? const <String>[]
+        : <String>[
+            ...media.heroArtCandidates(containerAspectRatio: containerAspect),
+            ?media.thumbPath,
+          ];
     return Stack(
       fit: StackFit.expand,
       children: [
         RepaintBoundary(
           child: blurArtwork(
-            _SpotlightArtworkCrossfade(
+            CyclingMediaBackdrop(
               mediaKey: media?.globalKey,
-              image: media == null ? null : _artworkProvider(context, media),
-              duration: DevicePerformance.reducedDuration(const Duration(milliseconds: 280)),
-              fallbackColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-              emptyColor: bgColor,
+              imagePaths: media?.heroBackdropPaths ?? const [],
+              fallbackImagePaths: fallbackPaths,
+              client: client,
+              localArtworkPathResolver: localArtworkPathResolver == null
+                  ? null
+                  : (path) => localArtworkPathResolver!(path),
+              allowNetwork: allowNetwork,
+              width: size.width,
+              height: size.height,
+              fallbackColor: media == null ? bgColor : Theme.of(context).colorScheme.surfaceContainerHighest,
             ),
           ),
         ),
@@ -125,56 +140,6 @@ class TvSpotlightBackground extends StatelessWidget {
           ),
       ],
     );
-  }
-
-  /// Resolves the backdrop image provider for [media]; null means "no art"
-  /// (the crossfade shows [_SpotlightArtworkCrossfade.fallbackColor]).
-  ImageProvider? _artworkProvider(BuildContext context, MediaItem media) {
-    final size = MediaQuery.sizeOf(context);
-    final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
-    final containerAspect = size.width / size.height;
-    final artCandidates = <String?>[
-      media.heroArt(containerAspectRatio: containerAspect) ??
-          media.grandparentArtPath ??
-          media.artPath ??
-          media.backgroundSquarePath ??
-          media.thumbPath,
-      media.grandparentArtPath,
-      media.artPath,
-      media.backgroundSquarePath,
-      media.thumbPath,
-    ];
-    final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
-      displayWidth: (size.width * dpr).round(),
-      displayHeight: (size.height * dpr).round(),
-      imageType: ImageType.art,
-    );
-
-    for (final candidate in artCandidates) {
-      final localPath = localArtworkPathResolver?.call(candidate);
-      if (localPath != null && File(localPath).existsSync()) {
-        // Local originals skipped the server transcode entirely, so the
-        // decode bound is the only thing between a full-resolution art file
-        // and the GPU on a low-RAM TV.
-        return MediaImageHelper.boundedDecode(FileImage(File(localPath)), memWidth: memWidth, memHeight: memHeight);
-      }
-    }
-
-    final artPath = artCandidates.firstWhere((path) => path != null && path.isNotEmpty, orElse: () => null);
-
-    final imageUrl = MediaImageHelper.getOptimizedImageUrl(
-      client: client,
-      thumbPath: artPath,
-      maxWidth: size.width,
-      maxHeight: size.height,
-      devicePixelRatio: dpr,
-      imageType: ImageType.art,
-    );
-
-    if (imageUrl.isEmpty) return null;
-
-    final provider = CachedNetworkImageProvider(imageUrl, cacheManager: PlexImageCacheManager.instance);
-    return MediaImageHelper.boundedDecode(provider, memWidth: memWidth, memHeight: memHeight);
   }
 
   Widget _buildHorizontalScrim(Color bgColor) {
@@ -416,181 +381,6 @@ class TvSpotlightBackground extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-/// Cross-fades full-screen backdrop art without saveLayers: the previous
-/// image stays fully opaque underneath while the incoming one fades in via
-/// `Image.opacity` (paint alpha in RawImage). The fade only starts once the
-/// incoming image has a frame, so swaps never flash a placeholder — the old
-/// backdrop simply stays until the new one is ready.
-class _SpotlightArtworkCrossfade extends StatefulWidget {
-  const _SpotlightArtworkCrossfade({
-    required this.mediaKey,
-    required this.image,
-    required this.duration,
-    required this.fallbackColor,
-    required this.emptyColor,
-  });
-
-  /// Identity of the current spotlight item; fades trigger on changes.
-  final String? mediaKey;
-
-  /// null with a non-null [mediaKey] means "item without art" (fallback box);
-  /// null with a null [mediaKey] means "no item" (empty box).
-  final ImageProvider? image;
-  final Duration duration;
-  final Color fallbackColor;
-  final Color emptyColor;
-
-  @override
-  State<_SpotlightArtworkCrossfade> createState() => _SpotlightArtworkCrossfadeState();
-}
-
-class _SpotlightArtworkCrossfadeState extends State<_SpotlightArtworkCrossfade> with SingleTickerProviderStateMixin {
-  late final AnimationController _fade = AnimationController(vsync: this, duration: widget.duration);
-  late String? _currentKey = widget.mediaKey;
-  late ImageProvider? _base = widget.image;
-  late Color _baseColor = widget.mediaKey == null ? widget.emptyColor : widget.fallbackColor;
-  ImageProvider? _incoming;
-  bool _incomingIsColor = false;
-  Color _incomingColor = Colors.transparent;
-  bool _incomingErrored = false;
-  bool _incomingHasFrame = false;
-  bool _fadeStarted = false;
-
-  @override
-  void didUpdateWidget(covariant _SpotlightArtworkCrossfade oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _fade.duration = widget.duration;
-    if (widget.mediaKey == _currentKey) {
-      // Same item, possibly a re-resolved provider (size change): update the
-      // settled base silently — gaplessPlayback covers the swap.
-      if (widget.image != null && widget.image != _base && _incoming == null && !_incomingIsColor) {
-        _base = widget.image;
-      }
-      return;
-    }
-    _currentKey = widget.mediaKey;
-    final incomingColor = widget.mediaKey == null ? widget.emptyColor : widget.fallbackColor;
-    if (widget.image != null && widget.image == _base) {
-      // Same artwork (e.g. episodes sharing show art): nothing to fade.
-      _dropIncoming();
-      return;
-    }
-    setState(() {
-      _fade.stop();
-      _fade.value = 0;
-      _fadeStarted = false;
-      _incomingErrored = false;
-      _incomingHasFrame = false;
-      if (widget.image != null) {
-        _incoming = widget.image;
-        _incomingIsColor = false;
-      } else {
-        _incoming = null;
-        _incomingIsColor = true;
-        _incomingColor = incomingColor;
-        _startFade(); // no frame to wait for
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _fade.dispose();
-    super.dispose();
-  }
-
-  void _startFade() {
-    if (_fadeStarted) return;
-    _fadeStarted = true;
-    _fade.forward().whenComplete(_promoteIncoming);
-  }
-
-  void _promoteIncoming() {
-    if (!mounted || (_incoming == null && !_incomingIsColor)) return;
-    setState(() {
-      if (_incomingIsColor) {
-        _base = null;
-        _baseColor = _incomingColor;
-      } else if (_incomingErrored || !_incomingHasFrame) {
-        // Never promote a provider that produced no frame: the base would
-        // re-resolve (and re-fail) it. Settle on the fallback box instead.
-        _base = null;
-        _baseColor = widget.fallbackColor;
-      } else {
-        _base = _incoming;
-      }
-      _dropIncoming();
-    });
-  }
-
-  void _dropIncoming() {
-    _incoming = null;
-    _incomingIsColor = false;
-    _incomingErrored = false;
-    _incomingHasFrame = false;
-    _fadeStarted = false;
-    _fade.value = 0;
-  }
-
-  Widget _image(ImageProvider provider, {Animation<double>? opacity}) {
-    final isIncoming = opacity != null;
-    return Image(
-      // Keyed by provider so a replaced incoming gets a fresh element — the
-      // framework never clears a retained error on provider swap, which would
-      // flash the previous item's failure at the next fade.
-      key: isIncoming ? ValueKey<ImageProvider>(provider) : null,
-      image: provider,
-      fit: BoxFit.cover,
-      excludeFromSemantics: true,
-      // Keeps the previous frame on provider promotion instead of flashing.
-      gaplessPlayback: true,
-      opacity: opacity,
-      frameBuilder: !isIncoming
-          ? null
-          : (context, child, frame, wasSynchronouslyLoaded) {
-              if (frame != null || wasSynchronouslyLoaded) {
-                _incomingHasFrame = true;
-                _startFade();
-              }
-              return child;
-            },
-      errorBuilder: !isIncoming
-          // The settled base must show a static fallback: anything riding
-          // _fade here would flash transparent when the controller resets
-          // for the next swap.
-          ? (context, error, stackTrace) => ColoredBox(color: widget.fallbackColor)
-          : (context, error, stackTrace) {
-              // Broken incoming art: fade a plain box in instead (bounded to
-              // the error case); promotion then settles on the color, not
-              // the dead provider.
-              _incomingErrored = true;
-              _startFade();
-              return FadeTransition(
-                opacity: _fade,
-                child: ColoredBox(color: widget.fallbackColor),
-              );
-            },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        if (_base != null) _image(_base!) else ColoredBox(color: _baseColor),
-        if (_incoming != null) _image(_incoming!, opacity: _fade),
-        if (_incomingIsColor)
-          AnimatedBuilder(
-            animation: _fade,
-            builder: (context, _) =>
-                ColoredBox(color: _incomingColor.withValues(alpha: _incomingColor.a * _fade.value)),
-          ),
-      ],
     );
   }
 }

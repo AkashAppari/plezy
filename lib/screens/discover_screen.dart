@@ -22,6 +22,7 @@ import '../media/media_server_client.dart';
 import '../media/media_hub.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/content_utils.dart';
+import '../widgets/cycling_media_backdrop.dart';
 import '../widgets/optimized_media_image.dart' show blurArtwork;
 import '../widgets/rasterized_gradient.dart';
 import '../providers/discover_provider.dart';
@@ -1351,6 +1352,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final isEpisode = heroItem.isEpisode;
     final showName = heroItem.grandparentTitle ?? heroItem.displayTitle;
     final screenWidth = MediaQuery.sizeOf(context).width;
+    final heroArtPaths = heroItem.heroArtCandidates(containerAspectRatio: screenWidth / heroHeight);
     final isLargeScreen = ScreenBreakpoints.isWideTabletOrLarger(screenWidth);
     final isTv = PlatformDetector.isTV();
     final alignLeft = isTv || isLargeScreen;
@@ -1390,9 +1392,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             clipBehavior: Clip.none,
             children: [
               // Background Image with fade/zoom animation and parallax
-              if (heroItem.artPath != null ||
-                  heroItem.backgroundSquarePath != null ||
-                  heroItem.grandparentArtPath != null)
+              if (heroArtPaths.isNotEmpty)
                 ClipRect(
                   child: AnimatedBuilder(
                     animation: _scrollController,
@@ -1415,35 +1415,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           // heroClient resolves to the actual server's client
                           // (Plex or Jellyfin) so each backend's transcoder
                           // builds sized URLs.
-                          final size = MediaQuery.sizeOf(context);
-                          final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
-                          final containerAspect = screenWidth / heroHeight;
-                          final imageUrl = MediaImageHelper.getOptimizedImageUrl(
-                            client: heroClient,
-                            thumbPath:
-                                heroItem.heroArt(containerAspectRatio: containerAspect) ?? heroItem.grandparentArtPath,
-                            maxWidth: size.width,
-                            maxHeight: size.height * 0.7,
-                            devicePixelRatio: dpr,
-                            imageType: ImageType.art,
-                          );
-
-                          final (_, memHeight) = MediaImageHelper.getMemCacheDimensions(
-                            displayWidth: (screenWidth * dpr).round(),
-                            displayHeight: (heroHeight * dpr).round(),
-                            imageType: ImageType.art,
-                          );
-
                           return blurArtwork(
-                            CachedNetworkImage(
-                              imageUrl: imageUrl,
-                              cacheManager: PlexImageCacheManager.instance,
-                              fit: BoxFit.cover,
-                              memCacheHeight: memHeight,
-                              placeholder: (context, url) =>
-                                  ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
-                              errorBuilder: (context, error, stackTrace) =>
-                                  ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+                            CyclingMediaBackdrop(
+                              mediaKey: heroItem.globalKey,
+                              imagePaths: heroItem.heroBackdropPaths,
+                              fallbackImagePaths: heroArtPaths,
+                              client: heroClient,
+                              active: _isTabVisible,
+                              width: screenWidth,
+                              height: heroHeight,
+                              fallbackColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                             ),
                           );
                         },

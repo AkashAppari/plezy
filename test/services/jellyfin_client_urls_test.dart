@@ -219,7 +219,7 @@ void main() {
       });
       expect(requests.every((uri) => uri.queryParameters['userId'] == 'user-1'), isTrue);
       expect(requests.every((uri) => uri.queryParameters['EnableImageTypes'] == 'Primary,Backdrop,Thumb,Logo'), isTrue);
-      expect(requests.every((uri) => uri.queryParameters['ImageTypeLimit'] == '1'), isTrue);
+      expect(requests.every((uri) => uri.queryParameters['ImageTypeLimit'] == '3'), isTrue);
       expect(extras.map((item) => item.id).toList(), ['trailer-1', 'featurette-1']);
       expect(extras.every((item) => item.kind.isVideo), isTrue);
       expect(extras.every((item) => item.serverId == 'srv-1'), isTrue);
@@ -1724,7 +1724,12 @@ void main() {
           return http.Response(
             jsonEncode({
               'Items': [
-                {'Id': 'movie-1', 'Type': 'Movie', 'Name': 'Movie'},
+                {
+                  'Id': 'movie-1',
+                  'Type': 'Movie',
+                  'Name': 'Movie',
+                  'BackdropImageTags': ['backdrop-0', 'backdrop-1', 'backdrop-2'],
+                },
               ],
               'TotalRecordCount': 123,
             }),
@@ -1741,6 +1746,11 @@ void main() {
       );
 
       expect(page.items.single.id, 'movie-1');
+      expect(page.items.single.backdropPaths!.map((url) => Uri.parse(url).path).toList(), [
+        '/Items/movie-1/Images/Backdrop/0',
+        '/Items/movie-1/Images/Backdrop/1',
+        '/Items/movie-1/Images/Backdrop/2',
+      ]);
       expect(page.totalCount, 123);
       expect(captured, isNotNull);
       expect(captured!.path, '/Items');
@@ -1751,7 +1761,7 @@ void main() {
       expect(captured!.queryParameters['IncludeItemTypes'], 'Movie');
       expect(captured!.queryParameters['Fields'], isNot(contains('MediaSources')));
       expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
-      expect(captured!.queryParameters['ImageTypeLimit'], '1');
+      expect(captured!.queryParameters['ImageTypeLimit'], '3');
     });
 
     test('music browse and detail requests use leaf-appropriate fields', () async {
@@ -2113,7 +2123,7 @@ void main() {
       expect(captured!.queryParameters['SortOrder'], 'Descending,Descending,Ascending');
       expect(captured!.queryParameters['CollapseBoxSetItems'], 'false');
       expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
-      expect(captured!.queryParameters['ImageTypeLimit'], '1');
+      expect(captured!.queryParameters['ImageTypeLimit'], '3');
     });
 
     test('fetchItemWithOnDeck keeps resumable NextUp semantics for show detail lookup', () async {
@@ -2143,7 +2153,7 @@ void main() {
       expect(capturedNextUp!.queryParameters['seriesId'], 'show-1');
       expect(capturedNextUp!.queryParameters['Limit'], '1');
       expect(capturedNextUp!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
-      expect(capturedNextUp!.queryParameters['ImageTypeLimit'], '1');
+      expect(capturedNextUp!.queryParameters['ImageTypeLimit'], '3');
       expect(capturedNextUp!.queryParameters.containsKey('EnableResumable'), isFalse);
       expect(capturedNextUp!.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
     });
@@ -2267,14 +2277,14 @@ void main() {
       expect(resume.queryParameters['Recursive'], 'true');
       expect(resume.queryParameters['EnableTotalRecordCount'], 'false');
       expect(resume.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
-      expect(resume.queryParameters['ImageTypeLimit'], '1');
+      expect(resume.queryParameters['ImageTypeLimit'], '3');
       final nextUp = requests.singleWhere((uri) => uri.path == '/Shows/NextUp');
       expect(nextUp.queryParameters['userId'], 'user-1');
       expect(nextUp.queryParameters['Limit'], '3');
       expect(nextUp.queryParameters['EnableResumable'], 'false');
       expect(nextUp.queryParameters['EnableTotalRecordCount'], 'false');
       expect(nextUp.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
-      expect(nextUp.queryParameters['ImageTypeLimit'], '1');
+      expect(nextUp.queryParameters['ImageTypeLimit'], '3');
       expect(nextUp.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
     });
 
@@ -2541,7 +2551,7 @@ void main() {
       expect(nextUp.queryParameters['EnableResumable'], 'false');
       expect(nextUp.queryParameters['EnableTotalRecordCount'], 'false');
       expect(nextUp.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
-      expect(nextUp.queryParameters['ImageTypeLimit'], '1');
+      expect(nextUp.queryParameters['ImageTypeLimit'], '3');
       expect(nextUp.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
     });
 
@@ -2582,7 +2592,7 @@ void main() {
       expect(nextUp.queryParameters['EnableResumable'], 'false');
       expect(nextUp.queryParameters['EnableTotalRecordCount'], 'false');
       expect(nextUp.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
-      expect(nextUp.queryParameters['ImageTypeLimit'], '1');
+      expect(nextUp.queryParameters['ImageTypeLimit'], '3');
       expect(nextUp.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
     });
 
@@ -2632,7 +2642,7 @@ void main() {
       expect(captured!.queryParameters['Limit'], '80');
       expect(captured!.queryParameters['IncludeItemTypes'], 'Movie,Series,Episode');
       expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
-      expect(captured!.queryParameters['ImageTypeLimit'], '1');
+      expect(captured!.queryParameters['ImageTypeLimit'], '3');
       expect(captured!.queryParameters.containsKey('ParentId'), isFalse);
       client.close();
     });
@@ -2650,7 +2660,7 @@ void main() {
       expect(captured!.queryParameters['Recursive'], 'true');
       expect(captured!.queryParameters['EnableTotalRecordCount'], 'true');
       expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
-      expect(captured!.queryParameters['ImageTypeLimit'], '1');
+      expect(captured!.queryParameters['ImageTypeLimit'], '3');
       expect(captured!.queryParameters.containsKey('ParentId'), isFalse);
       client.close();
     });
@@ -2668,7 +2678,7 @@ void main() {
       expect(captured!.queryParameters['EnableResumable'], 'false');
       expect(captured!.queryParameters['EnableTotalRecordCount'], 'true');
       expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
-      expect(captured!.queryParameters['ImageTypeLimit'], '1');
+      expect(captured!.queryParameters['ImageTypeLimit'], '3');
       expect(captured!.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
       client.close();
     });
@@ -2682,7 +2692,7 @@ void main() {
       expect(captured!.queryParameters['ParentId'], 'lib-99');
       expect(captured!.queryParameters['Limit'], '30');
       expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
-      expect(captured!.queryParameters['ImageTypeLimit'], '1');
+      expect(captured!.queryParameters['ImageTypeLimit'], '3');
       // ParentId-scoped Latest should NOT also pin IncludeItemTypes (the
       // library already constrains the kinds returned).
       expect(captured!.queryParameters.containsKey('IncludeItemTypes'), isFalse);
@@ -2701,7 +2711,7 @@ void main() {
       expect(captured!.queryParameters['Recursive'], 'true');
       expect(captured!.queryParameters['EnableTotalRecordCount'], 'true');
       expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
-      expect(captured!.queryParameters['ImageTypeLimit'], '1');
+      expect(captured!.queryParameters['ImageTypeLimit'], '3');
       client.close();
     });
 
@@ -2717,7 +2727,7 @@ void main() {
       expect(captured!.queryParameters['EnableResumable'], 'false');
       expect(captured!.queryParameters['EnableTotalRecordCount'], 'true');
       expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
-      expect(captured!.queryParameters['ImageTypeLimit'], '1');
+      expect(captured!.queryParameters['ImageTypeLimit'], '3');
       expect(captured!.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
       client.close();
     });
@@ -2902,7 +2912,7 @@ void main() {
       );
       expect(itemsRequest.queryParameters.containsKey('EnableTotalRecordCount'), isFalse);
       expect(itemsRequest.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
-      expect(itemsRequest.queryParameters['ImageTypeLimit'], '1');
+      expect(itemsRequest.queryParameters['ImageTypeLimit'], '3');
     });
 
     test('fetchCollectionsPage uses requested collection page bounds', () async {

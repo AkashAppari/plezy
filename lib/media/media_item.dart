@@ -45,8 +45,10 @@ sealed class MediaItem with _$MediaItem {
     String? grandparentTitle,
     String? grandparentThumbPath,
     String? grandparentArtPath,
+    List<String>? grandparentBackdropPaths,
     String? thumbPath,
     String? artPath,
+    List<String>? backdropPaths,
     String? clearLogoPath,
     String? backgroundSquarePath,
     int? durationMs,
@@ -105,8 +107,10 @@ sealed class MediaItem with _$MediaItem {
         grandparentTitle: grandparentTitle,
         grandparentThumbPath: grandparentThumbPath,
         grandparentArtPath: grandparentArtPath,
+        grandparentBackdropPaths: grandparentBackdropPaths,
         thumbPath: thumbPath,
         artPath: artPath,
+        backdropPaths: backdropPaths,
         clearLogoPath: clearLogoPath,
         backgroundSquarePath: backgroundSquarePath,
         durationMs: durationMs,
@@ -164,8 +168,10 @@ sealed class MediaItem with _$MediaItem {
         grandparentTitle: grandparentTitle,
         grandparentThumbPath: grandparentThumbPath,
         grandparentArtPath: grandparentArtPath,
+        grandparentBackdropPaths: grandparentBackdropPaths,
         thumbPath: thumbPath,
         artPath: artPath,
+        backdropPaths: backdropPaths,
         clearLogoPath: clearLogoPath,
         backgroundSquarePath: backgroundSquarePath,
         durationMs: durationMs,
@@ -230,8 +236,10 @@ sealed class MediaItem with _$MediaItem {
     String? grandparentTitle,
     String? grandparentThumbPath,
     String? grandparentArtPath,
+    List<String>? grandparentBackdropPaths,
     String? thumbPath,
     String? artPath,
+    List<String>? backdropPaths,
     String? clearLogoPath,
     String? backgroundSquarePath,
     @JsonKey(fromJson: flexibleInt) int? durationMs,
@@ -305,8 +313,10 @@ sealed class MediaItem with _$MediaItem {
     String? grandparentTitle,
     String? grandparentThumbPath,
     String? grandparentArtPath,
+    List<String>? grandparentBackdropPaths,
     String? thumbPath,
     String? artPath,
+    List<String>? backdropPaths,
     String? clearLogoPath,
     String? backgroundSquarePath,
     @JsonKey(fromJson: flexibleInt) int? durationMs,
@@ -600,6 +610,34 @@ sealed class MediaItem with _$MediaItem {
     return usesWideAspectRatio(mode, mixedHubContext: mixedHubContext) ? CardShape.wide : CardShape.poster;
   }
 
+  /// Every own-item backdrop in Jellyfin display order. Older persisted
+  /// objects and backends with one backdrop fall back to [artPath].
+  List<String> get resolvedBackdropPaths {
+    final paths = backdropPaths;
+    if (paths != null && paths.isNotEmpty) return paths;
+    final primary = artPath;
+    return primary == null || primary.isEmpty ? const [] : [primary];
+  }
+
+  /// Every inherited series backdrop in Jellyfin display order. Older
+  /// persisted objects fall back to [grandparentArtPath].
+  List<String> get resolvedGrandparentBackdropPaths {
+    final paths = grandparentBackdropPaths;
+    if (paths != null && paths.isNotEmpty) return paths;
+    final primary = grandparentArtPath;
+    return primary == null || primary.isEmpty ? const [] : [primary];
+  }
+
+  /// Backdrops eligible for rotation. Episodes prefer inherited series art;
+  /// other kinds rotate only their own artwork.
+  List<String> get heroBackdropPaths {
+    if (kind == MediaKind.episode) {
+      final inherited = resolvedGrandparentBackdropPaths;
+      if (inherited.isNotEmpty) return inherited;
+    }
+    return resolvedBackdropPaths;
+  }
+
   /// Returns the best hero art path based on the container's aspect ratio.
   String? heroArt({required double containerAspectRatio}) {
     final candidates = heroArtCandidates(containerAspectRatio: containerAspectRatio);
@@ -609,11 +647,13 @@ sealed class MediaItem with _$MediaItem {
 
   /// Returns hero art candidates in display-preference order.
   List<String> heroArtCandidates({required double containerAspectRatio}) {
+    final own = resolvedBackdropPaths;
+    final inherited = resolvedGrandparentBackdropPaths;
     final preferred = switch (kind) {
-      MediaKind.episode when containerAspectRatio < 1.39 => [backgroundSquarePath, grandparentArtPath, artPath],
-      MediaKind.episode => [grandparentArtPath, artPath, backgroundSquarePath],
-      _ when containerAspectRatio < 1.39 => [backgroundSquarePath, artPath],
-      _ => [artPath, backgroundSquarePath],
+      MediaKind.episode when containerAspectRatio < 1.39 => <String?>[backgroundSquarePath, ...inherited, ...own],
+      MediaKind.episode => <String?>[...inherited, ...own, backgroundSquarePath],
+      _ when containerAspectRatio < 1.39 => <String?>[backgroundSquarePath, ...own],
+      _ => <String?>[...own, backgroundSquarePath],
     };
 
     final candidates = <String>[];

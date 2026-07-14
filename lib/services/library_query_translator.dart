@@ -2,10 +2,12 @@ import '../media/library_query.dart';
 import '../media/media_kind.dart';
 import 'plex_constants.dart';
 
-/// Limit browse payload image tags to the artwork types the UI maps.
+/// Browse responses retain up to three backdrops so hero surfaces can rotate
+/// artwork without allowing image-tag payloads to grow without bound.
+const jellyfinBackdropImageLimit = 3;
 const jellyfinImageQueryParameters = <String, String>{
   'EnableImageTypes': 'Primary,Backdrop,Thumb,Logo',
-  'ImageTypeLimit': '1',
+  'ImageTypeLimit': '$jellyfinBackdropImageLimit',
 };
 
 /// Translates a backend-neutral [LibraryQuery] into the per-backend

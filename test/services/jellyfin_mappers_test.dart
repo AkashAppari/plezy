@@ -41,7 +41,7 @@ void main() {
         'DateCreated': '2025-01-15T10:00:00.0000000Z',
         'DateLastSaved': '2026-03-01T10:00:00.0000000Z',
         'ImageTags': {'Primary': 'thumbtag', 'Logo': 'logotag'},
-        'BackdropImageTags': ['backtag'],
+        'BackdropImageTags': ['backtag', 'backtag-2', 'backtag-3'],
       };
 
       final item = JellyfinMappers.mediaItem(
@@ -79,11 +79,35 @@ void main() {
       // Image paths.
       expect(item.thumbPath, '/Items/abc123/Images/Primary?tag=thumbtag');
       expect(item.artPath, '/Items/abc123/Images/Backdrop/0?tag=backtag');
+      expect(item.backdropPaths, [
+        '/Items/abc123/Images/Backdrop/0?tag=backtag',
+        '/Items/abc123/Images/Backdrop/1?tag=backtag-2',
+        '/Items/abc123/Images/Backdrop/2?tag=backtag-3',
+      ]);
       expect(item.clearLogoPath, '/Items/abc123/Images/Logo?tag=logotag');
 
       // Multi-server fields.
       expect(item.serverId, _serverId);
       expect(item.serverName, 'Home');
+    });
+
+    test('preserves backdrop indices, deduplicates tags, and absolutizes every valid path', () {
+      const absolutizer = JellyfinImageAbsolutizer(baseUrl: 'https://jellyfin.example', accessToken: 'secret');
+      final item = JellyfinMappers.mediaItem(
+        {
+          'Id': 'movie-1',
+          'Type': 'Movie',
+          'BackdropImageTags': ['first', 42, '', 'first', 'fifth'],
+        },
+        serverId: ServerId(_serverId),
+        absolutizer: absolutizer,
+      )!;
+
+      expect(item.artPath, 'https://jellyfin.example/Items/movie-1/Images/Backdrop/0?tag=first&api_key=secret');
+      expect(item.backdropPaths, [
+        'https://jellyfin.example/Items/movie-1/Images/Backdrop/0?tag=first&api_key=secret',
+        'https://jellyfin.example/Items/movie-1/Images/Backdrop/4?tag=fifth&api_key=secret',
+      ]);
     });
 
     test('does not treat Jellyfin PlayCount as watched when Played is false', () {
@@ -172,6 +196,28 @@ void main() {
       expect(item.grandparentTitle, 'Breaking Bad');
       expect(item.grandparentThumbPath, '/Items/series-1/Images/Primary?tag=seriesPrimary');
       expect(item.grandparentArtPath, '/Items/series-1/Images/Backdrop/0');
+    });
+
+    test('episode maps every inherited series backdrop', () {
+      final item = JellyfinMappers.mediaItem(
+        {
+          'Id': 'ep-parent-art',
+          'Type': 'Episode',
+          'SeriesId': 'series-fallback',
+          'ParentBackdropItemId': 'series-parent',
+          'ParentBackdropImageTags': ['parent-0', 'parent-1', 'parent-2'],
+        },
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      expect(item.grandparentArtPath, '/Items/series-parent/Images/Backdrop/0?tag=parent-0');
+      expect(item.grandparentBackdropPaths, [
+        '/Items/series-parent/Images/Backdrop/0?tag=parent-0',
+        '/Items/series-parent/Images/Backdrop/1?tag=parent-1',
+        '/Items/series-parent/Images/Backdrop/2?tag=parent-2',
+      ]);
+      expect(item.heroBackdropPaths, item.grandparentBackdropPaths);
     });
 
     test('episode season poster falls back to series poster when season image tag is absent', () {

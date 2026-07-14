@@ -30,8 +30,15 @@ PlexMediaItem _$PlexMediaItemFromJson(Map<String, dynamic> json) =>
       grandparentTitle: json['grandparentTitle'] as String?,
       grandparentThumbPath: json['grandparentThumbPath'] as String?,
       grandparentArtPath: json['grandparentArtPath'] as String?,
+      grandparentBackdropPaths:
+          (json['grandparentBackdropPaths'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList(),
       thumbPath: json['thumbPath'] as String?,
       artPath: json['artPath'] as String?,
+      backdropPaths: (json['backdropPaths'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
       clearLogoPath: json['clearLogoPath'] as String?,
       backgroundSquarePath: json['backgroundSquarePath'] as String?,
       durationMs: flexibleInt(json['durationMs']),
@@ -100,8 +107,10 @@ Map<String, dynamic> _$PlexMediaItemToJson(PlexMediaItem instance) =>
       'grandparentTitle': ?instance.grandparentTitle,
       'grandparentThumbPath': ?instance.grandparentThumbPath,
       'grandparentArtPath': ?instance.grandparentArtPath,
+      'grandparentBackdropPaths': ?instance.grandparentBackdropPaths,
       'thumbPath': ?instance.thumbPath,
       'artPath': ?instance.artPath,
+      'backdropPaths': ?instance.backdropPaths,
       'clearLogoPath': ?instance.clearLogoPath,
       'backgroundSquarePath': ?instance.backgroundSquarePath,
       'durationMs': ?instance.durationMs,
@@ -169,8 +178,15 @@ JellyfinMediaItem _$JellyfinMediaItemFromJson(Map<String, dynamic> json) =>
       grandparentTitle: json['grandparentTitle'] as String?,
       grandparentThumbPath: json['grandparentThumbPath'] as String?,
       grandparentArtPath: json['grandparentArtPath'] as String?,
+      grandparentBackdropPaths:
+          (json['grandparentBackdropPaths'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList(),
       thumbPath: json['thumbPath'] as String?,
       artPath: json['artPath'] as String?,
+      backdropPaths: (json['backdropPaths'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
       clearLogoPath: json['clearLogoPath'] as String?,
       backgroundSquarePath: json['backgroundSquarePath'] as String?,
       durationMs: flexibleInt(json['durationMs']),
@@ -229,8 +245,10 @@ Map<String, dynamic> _$JellyfinMediaItemToJson(JellyfinMediaItem instance) =>
       'grandparentTitle': ?instance.grandparentTitle,
       'grandparentThumbPath': ?instance.grandparentThumbPath,
       'grandparentArtPath': ?instance.grandparentArtPath,
+      'grandparentBackdropPaths': ?instance.grandparentBackdropPaths,
       'thumbPath': ?instance.thumbPath,
       'artPath': ?instance.artPath,
+      'backdropPaths': ?instance.backdropPaths,
       'clearLogoPath': ?instance.clearLogoPath,
       'backgroundSquarePath': ?instance.backgroundSquarePath,
       'durationMs': ?instance.durationMs,
