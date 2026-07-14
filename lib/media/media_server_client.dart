@@ -493,12 +493,13 @@ abstract class MediaServerClient {
   /// Reverse lookup: find a library movie/show matching any of [ids].
   /// Both backends search by [title] (narrowed by a ±1 [year] window when
   /// known, with an unfiltered fallback) and verify candidates against
-  /// their exact external ids — Plex against the `Guid` array (its `guid=`
-  /// field filter only matches the primary `plex://` guid), Jellyfin
-  /// against the inline `ProviderIds`. False negatives possible on
-  /// differing titles, false positives never. Returns null when this
-  /// server has no match or [kind] is not movie/show. Used to match
-  /// external catalog items (Explore tab) back to the user's libraries.
+  /// their exact external ids. Plex checks its modern `Guid` array first,
+  /// then recognized legacy scalar `guid` formats; its `guid=` field filter
+  /// only matches the primary `plex://` guid. Jellyfin checks the inline
+  /// `ProviderIds`. False negatives remain possible on differing titles,
+  /// but title alone never produces a match. Returns null when this server
+  /// has no match or [kind] is not movie/show. Used to match external catalog
+  /// items (Explore tab) back to the user's libraries.
   Future<MediaItem?> findByExternalIds(ExternalIds ids, {required MediaKind kind, String? title, int? year});
 
   /// Chapters and intro/credits markers for [itemId]. Plex returns both in one

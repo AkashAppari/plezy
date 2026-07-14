@@ -1,9 +1,9 @@
 /// External IDs (IMDb / TMDB / TVDB) extracted from a media server's
 /// metadata. Shared by the Trakt and tracker resolvers.
 ///
-/// - **Plex** stores them in a `Guid` array (`imdb://tt123`,
-///   `tmdb://456`, `tvdb://789`) — fetched via
-///   [PlexClient.fetchExternalGuids]. Use [ExternalIds.fromGuids].
+/// - **Plex** stores modern IDs in a `Guid` array (`imdb://tt123`,
+///   `tmdb://456`, `tvdb://789`) and some legacy agents expose one scalar
+///   `guid`. Use [ExternalIds.fromGuids] or [ExternalIds.fromLegacyPlexGuid].
 /// - **Jellyfin** stores them inline as a `ProviderIds` map on every
 ///   `BaseItemDto`. Use [ExternalIds.fromJellyfinProviderIds].
 class ExternalIds {
@@ -40,6 +40,57 @@ class ExternalIds {
       }
     }
     return ExternalIds(imdb: imdb, tmdb: tmdb, tvdb: tvdb);
+  }
+
+  /// Build from a legacy Plex item's scalar `guid`.
+  ///
+  /// Only agent formats that map directly to IMDb, TMDB, or TVDB are
+  /// recognized. HAMA AniDB identifiers require an external mapping and are
+  /// deliberately left unsupported here.
+  factory ExternalIds.fromLegacyPlexGuid(Object? guid) {
+    if (guid is! String || guid.isEmpty) return const ExternalIds();
+
+    final uri = Uri.tryParse(guid);
+    if (uri == null || !uri.hasAuthority || uri.path.isNotEmpty) return const ExternalIds();
+
+    final value = uri.host;
+    switch (uri.scheme.toLowerCase()) {
+      case 'com.plexapp.agents.imdb':
+        return ExternalIds(imdb: _normalizeImdb(value, allowBareDigits: false));
+      case 'com.plexapp.agents.themoviedb':
+        return ExternalIds(tmdb: _parseNumericId(value));
+      case 'com.plexapp.agents.thetvdb':
+        return ExternalIds(tvdb: _parseNumericId(value));
+      case 'com.plexapp.agents.hama':
+        final separator = value.indexOf('-');
+        if (separator <= 0 || separator == value.length - 1) return const ExternalIds();
+        final source = value.substring(0, separator).toLowerCase();
+        final id = value.substring(separator + 1);
+        if (source == 'imdb') {
+          return ExternalIds(imdb: _normalizeImdb(id, allowBareDigits: true));
+        }
+        if (source == 'tmdb' || source == 'tsdb') {
+          return ExternalIds(tmdb: _parseNumericId(id));
+        }
+        if (_hamaTvdbSource.hasMatch(source)) {
+          return ExternalIds(tvdb: _parseNumericId(id));
+        }
+    }
+    return const ExternalIds();
+  }
+
+  static final RegExp _decimalId = RegExp(r'^[0-9]+$');
+  static final RegExp _hamaTvdbSource = RegExp(r'^tvdb(?:[2-9])?$');
+
+  static int? _parseNumericId(String value) => _decimalId.hasMatch(value) ? int.tryParse(value) : null;
+
+  static String? _normalizeImdb(String value, {required bool allowBareDigits}) {
+    final normalized = value.toLowerCase();
+    if (normalized.startsWith('tt')) {
+      final digits = normalized.substring(2);
+      return _decimalId.hasMatch(digits) ? 'tt$digits' : null;
+    }
+    return allowBareDigits && _decimalId.hasMatch(normalized) ? 'tt$normalized' : null;
   }
 
   /// Pick the first raw Jellyfin item whose inline `ProviderIds` intersect

@@ -3554,12 +3554,12 @@ class PlexClient
     return ExternalIds.fromGuids(guids);
   }
 
-  /// Server-wide title filter + client-side Guid-array verification. Plex's
+  /// Server-wide title filter + client-side external-ID verification. Plex's
   /// `guid=` field filter matches only the item's primary `plex://` guid
   /// (verified against PMS 1.43) — never the external `imdb://`/`tmdb://`
-  /// ids in the `Guid` array — so this mirrors the Jellyfin
-  /// title-search-and-verify approach: exact-id verification, false
-  /// negatives possible on differing titles, false positives never.
+  /// ids in the modern `Guid` array — so this mirrors the Jellyfin
+  /// title-search-and-verify approach. Recognized legacy scalar `guid` values
+  /// are checked only after modern verification fails.
   ///
   /// When [year] is known, a ±1 window is applied server-side first
   /// (`year=` takes comma-separated values as OR, verified on PMS 1.43) so
@@ -3575,7 +3575,7 @@ class PlexClient
     };
     if (plexType == null || !ids.hasAny || title == null || title.isEmpty) return null;
 
-    Future<MediaItem?> attempt(String? years) async {
+    Future<({Map<String, dynamic>? modern, Map<String, dynamic>? legacy})> attempt(String? years) async {
       final response = await _getWithFailover(
         '/library/all',
         queryParameters: {
@@ -3588,23 +3588,32 @@ class PlexClient
       );
       final container = _getMediaContainer(response);
       final metadata = container?['Metadata'];
-      if (metadata is! List) return null;
+      if (metadata is! List) return (modern: null, legacy: null);
+
+      Map<String, dynamic>? legacy;
       for (final item in metadata) {
         if (item is! Map<String, dynamic>) continue;
         final guids = item['Guid'];
-        if (guids is! List) continue;
-        if (ids.intersects(ExternalIds.fromGuids(guids))) {
-          return PlexMappers.mediaItem(_createTaggedMetadataWithLibrary(item));
+        if (guids is List && ids.intersects(ExternalIds.fromGuids(guids))) {
+          return (modern: item, legacy: legacy);
+        }
+        if (legacy == null && ids.intersects(ExternalIds.fromLegacyPlexGuid(item['guid']))) {
+          legacy = item;
         }
       }
-      return null;
+      return (modern: null, legacy: legacy);
     }
 
+    ({Map<String, dynamic>? modern, Map<String, dynamic>? legacy})? filtered;
     if (year != null) {
-      final match = await attempt('${year - 1},$year,${year + 1}');
-      if (match != null) return match;
+      filtered = await attempt('${year - 1},$year,${year + 1}');
+      final modern = filtered.modern;
+      if (modern != null) return PlexMappers.mediaItem(_createTaggedMetadataWithLibrary(modern));
     }
-    return attempt(null);
+
+    final unfiltered = await attempt(null);
+    final match = unfiltered.modern ?? filtered?.legacy ?? unfiltered.legacy;
+    return match == null ? null : PlexMappers.mediaItem(_createTaggedMetadataWithLibrary(match));
   }
 
   @override
