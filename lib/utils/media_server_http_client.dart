@@ -13,7 +13,9 @@ import 'managed_http_client.dart';
 import '../exceptions/media_server_exceptions.dart';
 
 // Platform-specific imports are conditional
-import 'platform_http_client_stub.dart' if (dart.library.io) 'platform_http_client_io.dart' as platform;
+import 'platform_http_client_stub.dart'
+    if (dart.library.io) 'platform_http_client_io.dart'
+    as platform;
 
 /// Response from [MediaServerHttpClient] requests.
 class MediaServerResponse {
@@ -26,7 +28,17 @@ class MediaServerResponse {
   final Map<String, String> headers;
   final Uri? requestUri;
 
-  MediaServerResponse({required this.statusCode, this.data, required this.headers, this.requestUri});
+  /// Final response URI after redirects, or [requestUri] when the transport
+  /// does not expose redirect metadata.
+  final Uri? effectiveUri;
+
+  MediaServerResponse({
+    required this.statusCode,
+    this.data,
+    required this.headers,
+    this.requestUri,
+    Uri? effectiveUri,
+  }) : effectiveUri = effectiveUri ?? requestUri;
 }
 
 /// Throw [MediaServerHttpException] for non-2xx responses so callers don't blindly
@@ -76,7 +88,11 @@ class MediaServerHttpClient {
     // Plex home loads fan out many HTTP/1.1 calls on Linux. Keep that tuning
     // opt-in so generic tracker/auth clients stay disposable and closeable.
     bool usePlexApiClient = false,
-  }) : _client = client ?? (usePlexApiClient ? platform.createPlexApiClient() : platform.createPlatformClient()),
+  }) : _client =
+           client ??
+           (usePlexApiClient
+               ? platform.createPlexApiClient()
+               : platform.createPlatformClient()),
        defaultHeaders = Map.of(defaultHeaders);
 
   /// The underlying [http.Client] for direct streaming / multipart requests.
@@ -93,7 +109,14 @@ class MediaServerHttpClient {
     Map<String, String>? headers,
     Duration? timeout,
     AbortController? abort,
-  }) => _send('GET', path, queryParameters: queryParameters, headers: headers, timeout: timeout, abort: abort);
+  }) => _send(
+    'GET',
+    path,
+    queryParameters: queryParameters,
+    headers: headers,
+    timeout: timeout,
+    abort: abort,
+  );
 
   Future<MediaServerResponse> post(
     String path, {
@@ -135,7 +158,14 @@ class MediaServerHttpClient {
     Map<String, String>? headers,
     Duration? timeout,
     AbortController? abort,
-  }) => _send('DELETE', path, queryParameters: queryParameters, headers: headers, timeout: timeout, abort: abort);
+  }) => _send(
+    'DELETE',
+    path,
+    queryParameters: queryParameters,
+    headers: headers,
+    timeout: timeout,
+    abort: abort,
+  );
 
   /// Fetch raw bytes (e.g. images, BIF files, subtitles).
   Future<Uint8List> getBytes(
@@ -145,13 +175,20 @@ class MediaServerHttpClient {
     AbortController? abort,
   }) async {
     if (_closing) {
-      throw MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'HTTP client is closing');
+      throw MediaServerHttpException(
+        type: MediaServerHttpErrorType.cancelled,
+        message: 'HTTP client is closing',
+      );
     }
 
     final uri = _isAbsoluteUrl(url) ? Uri.parse(url) : _buildUri(url, null);
     final requestAbort = AbortController();
     _activeAborts.add(requestAbort);
-    final request = http.AbortableRequest('GET', uri, abortTrigger: _abortTrigger(requestAbort, abort));
+    final request = http.AbortableRequest(
+      'GET',
+      uri,
+      abortTrigger: _abortTrigger(requestAbort, abort),
+    );
     request.headers.addAll({...defaultHeaders, ...?headers});
 
     final sw = Stopwatch()..start();
@@ -191,13 +228,20 @@ class MediaServerHttpClient {
     AbortController? abort,
   }) async {
     if (_closing) {
-      throw MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'HTTP client is closing');
+      throw MediaServerHttpException(
+        type: MediaServerHttpErrorType.cancelled,
+        message: 'HTTP client is closing',
+      );
     }
 
     final uri = _isAbsoluteUrl(url) ? Uri.parse(url) : _buildUri(url, null);
     final requestAbort = AbortController();
     _activeAborts.add(requestAbort);
-    final request = http.AbortableRequest('GET', uri, abortTrigger: _abortTrigger(requestAbort, abort));
+    final request = http.AbortableRequest(
+      'GET',
+      uri,
+      abortTrigger: _abortTrigger(requestAbort, abort),
+    );
     request.headers.addAll({...defaultHeaders, ...?headers});
 
     try {
@@ -255,7 +299,9 @@ class MediaServerHttpClient {
     _client.close();
   }
 
-  Future<void> closeGracefully({Duration drainTimeout = const Duration(seconds: 2)}) async {
+  Future<void> closeGracefully({
+    Duration drainTimeout = const Duration(seconds: 2),
+  }) async {
     _closing = true;
     _abortActiveRequests();
     if (_client case final ManagedHttpClient managed) {
@@ -275,7 +321,10 @@ class MediaServerHttpClient {
     AbortController? abort,
   }) async {
     if (_closing) {
-      throw MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'HTTP client is closing');
+      throw MediaServerHttpException(
+        type: MediaServerHttpErrorType.cancelled,
+        message: 'HTTP client is closing',
+      );
     }
 
     final uri = _isAbsoluteUrl(path)
@@ -286,7 +335,11 @@ class MediaServerHttpClient {
 
     final requestAbort = AbortController();
     _activeAborts.add(requestAbort);
-    final request = http.AbortableRequest(method, uri, abortTrigger: _abortTrigger(requestAbort, abort));
+    final request = http.AbortableRequest(
+      method,
+      uri,
+      abortTrigger: _abortTrigger(requestAbort, abort),
+    );
     request.headers.addAll(mergedHeaders);
     _setBody(request, body);
 
@@ -298,6 +351,10 @@ class MediaServerHttpClient {
         operation: '$method ${uri.path} connect',
         abort: requestAbort,
       );
+      final effectiveUri = switch (streamed) {
+        http.BaseResponseWithUrl(:final url) => url,
+        _ => uri,
+      };
 
       final bytes = await _withAbortOnTimeout(
         streamed.stream.toBytes(),
@@ -327,6 +384,7 @@ class MediaServerHttpClient {
         data: data,
         headers: streamed.headers,
         requestUri: uri,
+        effectiveUri: effectiveUri,
       );
     } catch (e) {
       requestAbort.abort();
@@ -345,7 +403,9 @@ class MediaServerHttpClient {
 
   Future<void> _abortTrigger(AbortController owned, AbortController? external) {
     final externalTrigger = external?.trigger;
-    return externalTrigger == null ? owned.trigger : Future.any<void>([owned.trigger, externalTrigger]);
+    return externalTrigger == null
+        ? owned.trigger
+        : Future.any<void>([owned.trigger, externalTrigger]);
   }
 
   Future<T> _withAbortOnTimeout<T>(
@@ -366,7 +426,8 @@ class MediaServerHttpClient {
   /// Use this from callers that need to construct URLs with the client's
   /// current (possibly failover-switched) base, rather than reading
   /// `config.baseUrl` directly.
-  Uri buildUri(String path, {Map<String, dynamic>? queryParameters}) => _buildUri(path, queryParameters);
+  Uri buildUri(String path, {Map<String, dynamic>? queryParameters}) =>
+      _buildUri(path, queryParameters);
 
   /// Build a full URI from [baseUrl] + [path] + [queryParameters].
   /// Uses [Uri.encodeComponent] which encodes spaces as `%20` (not `+`).
@@ -417,7 +478,8 @@ class MediaServerHttpClient {
     return parts.join('&');
   }
 
-  static bool _isAbsoluteUrl(String url) => url.startsWith('http://') || url.startsWith('https://');
+  static bool _isAbsoluteUrl(String url) =>
+      url.startsWith('http://') || url.startsWith('https://');
 
   /// Set the request body, choosing encoding based on the body type.
   void _setBody(http.Request request, Object? body) {
@@ -437,7 +499,9 @@ class MediaServerHttpClient {
     // http.BaseRequest's headers map is case-sensitive; Jellyfin returns 415
     // if both `Content-Type` (from defaults) and `content-type` (added below)
     // end up coexisting, so check both casings before adding.
-    final hasContentType = request.headers.keys.any((k) => k.toLowerCase() == 'content-type');
+    final hasContentType = request.headers.keys.any(
+      (k) => k.toLowerCase() == 'content-type',
+    );
     if (!hasContentType) {
       request.headers['content-type'] = 'application/json';
     }
@@ -445,16 +509,22 @@ class MediaServerHttpClient {
 
   /// Decode the response body: lenient UTF-8, then JSON parse if applicable.
   /// Large payloads are decoded in a background isolate.
-  Future<dynamic> _decodeBody(List<int> bytes, Map<String, String> headers) async {
+  Future<dynamic> _decodeBody(
+    List<int> bytes,
+    Map<String, String> headers,
+  ) async {
     if (bytes.isEmpty) return null;
 
-    final contentType = (_headerValue(headers, 'content-type') ?? '').toLowerCase();
+    final contentType = (_headerValue(headers, 'content-type') ?? '')
+        .toLowerCase();
     final isJson = contentType.contains('json');
 
     // For large JSON payloads, do both UTF-8 decode and JSON parse in a
     // single isolate roundtrip to avoid two context switches.
     if (isJson && bytes.length > 50 * 1024) {
-      return await tryIsolateRun(() => jsonDecode(utf8.decode(bytes, allowMalformed: true)));
+      return await tryIsolateRun(
+        () => jsonDecode(utf8.decode(bytes, allowMalformed: true)),
+      );
     }
 
     final body = await _decodeTextBody(bytes);
@@ -477,7 +547,9 @@ class MediaServerHttpClient {
   }
 
   void _logResponse(String method, Uri uri, int statusCode, int ms) {
-    appLogger.d('$method ${LogRedactionManager.redact(uri.toString())} → $statusCode (${ms}ms)');
+    appLogger.d(
+      '$method ${LogRedactionManager.redact(uri.toString())} → $statusCode (${ms}ms)',
+    );
   }
 }
 

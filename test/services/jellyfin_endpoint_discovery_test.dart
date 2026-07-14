@@ -13,6 +13,31 @@ http.Response _info({required String id, String name = 'Home'}) => http.Response
   headers: {'content-type': 'application/json'},
 );
 
+class _RedirectedInfoClient extends http.BaseClient {
+  _RedirectedInfoClient(this.resolveUrl);
+
+  final Uri Function(Uri requestedUrl) resolveUrl;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    await request.finalize().drain<void>();
+    return _ResponseWithUrl(
+      Stream<List<int>>.value(utf8.encode(jsonEncode({'Id': 'srv-1', 'ServerName': 'Home', 'Version': '10.11.11'}))),
+      200,
+      url: resolveUrl(request.url),
+      request: request,
+      headers: const {'content-type': 'application/json'},
+    );
+  }
+}
+
+class _ResponseWithUrl extends http.StreamedResponse implements http.BaseResponseWithUrl {
+  _ResponseWithUrl(super.stream, super.statusCode, {required this.url, super.request, super.headers});
+
+  @override
+  final Uri url;
+}
+
 void main() {
   group('JellyfinEndpointDiscovery', () {
     test('normalizes and deduplicates endpoint URLs', () {
@@ -212,6 +237,56 @@ void main() {
       await expectLater(
         discovery.raceEndpoints(['https://jf.example.com'], expectedMachineId: 'srv-1'),
         throwsA(isA<MediaServerUrlException>()),
+      );
+    });
+    test('promotes a same-host HTTPS redirect before persisting the endpoint', () async {
+      final discovery = JellyfinEndpointDiscovery(
+        testHttpClientFactory: () => _RedirectedInfoClient((requestedUrl) => requestedUrl.replace(scheme: 'https')),
+      );
+
+      final result = await discovery.raceEndpoints(
+        ['http://jf.example.com'],
+        baseUrlsToPersist: ['http://jf.example.com'],
+      );
+
+      expect(result.activeBaseUrl, 'https://jf.example.com');
+      expect(result.baseUrls, ['https://jf.example.com']);
+    });
+
+    test('preserves a Jellyfin base path when promoting a redirect', () async {
+      final discovery = JellyfinEndpointDiscovery(
+        testHttpClientFactory: () => _RedirectedInfoClient((requestedUrl) => requestedUrl.replace(scheme: 'https')),
+      );
+
+      final result = await discovery.raceEndpoints(
+        ['http://jf.example.com/jellyfin'],
+        baseUrlsToPersist: ['http://jf.example.com/jellyfin'],
+      );
+
+      expect(result.activeBaseUrl, 'https://jf.example.com/jellyfin');
+      expect(result.baseUrls, ['https://jf.example.com/jellyfin']);
+    });
+
+    test('rejects a probe redirect to a different host', () async {
+      final discovery = JellyfinEndpointDiscovery(
+        testHttpClientFactory: () =>
+            _RedirectedInfoClient((requestedUrl) => requestedUrl.replace(scheme: 'https', host: 'login.example.com')),
+      );
+
+      await expectLater(
+        discovery.probe('http://jf.example.com'),
+        throwsA(isA<MediaServerUrlException>().having((error) => error.message, 'message', contains('different host'))),
+      );
+    });
+
+    test('rejects a probe redirect that downgrades HTTPS', () async {
+      final discovery = JellyfinEndpointDiscovery(
+        testHttpClientFactory: () => _RedirectedInfoClient((requestedUrl) => requestedUrl.replace(scheme: 'http')),
+      );
+
+      await expectLater(
+        discovery.probe('https://jf.example.com'),
+        throwsA(isA<MediaServerUrlException>().having((error) => error.message, 'message', contains('insecure URL'))),
       );
     });
   });
