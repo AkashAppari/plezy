@@ -91,7 +91,7 @@ dev_dependencies:
   json_serializable: ^6.7.1
   slang_build_runner: ^4.14.0
   sentry_dart_plugin: ^3.3.0
-  # dart_code_linter 4.1.6 crashes analyzer 10.0.1 during plugin analysis.
+  # Used by the explicit check-unused-* CI steps; its analyzer plugin is disabled.
   dart_code_linter: 4.0.2
   drift_dev: ^2.28.3
   shared_preferences_platform_interface: ^2.4.0
