@@ -54,7 +54,9 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
 
         // Build the stream URL (with optional offset for time-shift)
         final streamUrl = await session.streamUrlAt(offsetSeconds: offsetSeconds);
-        if (streamUrl == null || !mounted) throw Exception('Failed to build stream path');
+        if (streamUrl == null || !mounted) {
+          throw Exception('Failed to build stream path');
+        }
 
         // Track stream start epoch for position calculations
         if (offsetSeconds != null) {
@@ -228,7 +230,6 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         // so tracks are discovered in a single prepare/loadfile cycle. Any
         // backend that cannot do that still uses the post-open sub-add path.
         final openTiming = _playbackOpenTiming(
-          backend: _currentMetadata.backend,
           isTranscoding: result.isTranscoding,
           resumePosition: resumePosition,
           durationMs: _currentMetadata.durationMs,

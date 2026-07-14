@@ -1003,7 +1003,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
     }
   }
 
-  /// Build a live TV stream URL (decision + start path).
+  /// Build a live TV HLS stream URL (decision + start path).
   ///
   /// [sessionPath] and [sessionIdentifier] come from [_tuneChannel].
   /// [transcodeSessionId] should be reused across seeks within the same
@@ -1024,7 +1024,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
         'path': sessionPath,
         'mediaIndex': '0',
         'partIndex': '0',
-        'protocol': 'http',
+        'protocol': 'hls',
         'fastSeek': '1',
         'directPlay': '0',
         'directStream': directStream ? '1' : '0',
@@ -1041,16 +1041,13 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
         'copyts': '0',
         'Accept-Language': 'en',
         'X-Plex-Session-Identifier': sessionIdentifier,
-        'X-Plex-Chunked': '1',
+        'X-Plex-Client-Profile-Extra': _buildPlexHlsClientProfileExtra(),
         'X-Plex-Incomplete-Segments': '1',
         'X-Plex-Product': config.product,
         'X-Plex-Version': config.version,
         'X-Plex-Client-Identifier': config.clientIdentifier,
-        // Pinned rather than config.platform: this decision request is only
-        // known to work with the 'Plex Desktop' profile + 'Flutter' platform
-        // pairing, and real OS names map to server-side preset profiles.
-        'X-Plex-Platform': 'Flutter',
-        'X-Plex-Client-Profile-Name': 'Plex Desktop',
+        'X-Plex-Platform': 'Generic',
+        'X-Plex-Client-Profile-Name': 'Generic',
         if (offsetSeconds != null) 'offset': offsetSeconds.toString(),
         if (config.token != null) 'X-Plex-Token': config.token!,
       };
@@ -1092,7 +1089,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
           .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
           .join('&');
 
-      return '/video/:/transcode/universal/start?$startQuery';
+      return '/video/:/transcode/universal/start.m3u8?$startQuery';
     } catch (e, st) {
       appLogger.e('Failed to build live stream path', error: e, stackTrace: st);
       return null;

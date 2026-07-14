@@ -88,7 +88,9 @@ void main() {
       final requests = <String>[];
       final client = makeClient((request) async {
         requests.add(request.url.path);
-        if (request.url.path.endsWith('/tune')) return jsonResponse(tuneResponse());
+        if (request.url.path.endsWith('/tune')) {
+          return jsonResponse(tuneResponse());
+        }
         return jsonResponse(const {});
       });
       addTearDown(client.close);
@@ -106,10 +108,14 @@ void main() {
       expect(requests, ['/livetv/dvrs/dvr-1/channels/ch-1/tune']);
     });
 
-    test('streamUrlAt builds live-edge and offset URLs against one transcode session', () async {
+    test('streamUrlAt builds live-edge and offset HLS URLs against one transcode session', () async {
       final client = makeClient((request) async {
-        if (request.url.path.endsWith('/tune')) return jsonResponse(tuneResponse());
-        if (request.url.path == '/video/:/transcode/universal/decision') return http.Response('ok', 200);
+        if (request.url.path.endsWith('/tune')) {
+          return jsonResponse(tuneResponse());
+        }
+        if (request.url.path == '/video/:/transcode/universal/decision') {
+          return http.Response('ok', 200);
+        }
         return jsonResponse(const {});
       });
       addTearDown(client.close);
@@ -121,8 +127,12 @@ void main() {
 
       expect(liveEdge, isNotNull);
       final liveEdgeUri = Uri.parse(liveEdge!);
-      expect(liveEdgeUri.path, '/video/:/transcode/universal/start');
+      expect(liveEdgeUri.path, '/video/:/transcode/universal/start.m3u8');
       expect(liveEdgeUri.queryParameters['path'], '/livetv/sessions/session-abc');
+      expect(liveEdgeUri.queryParameters['protocol'], 'hls');
+      expect(liveEdgeUri.queryParameters['X-Plex-Incomplete-Segments'], '1');
+      expect(liveEdgeUri.queryParameters.containsKey('X-Plex-Chunked'), isFalse);
+      expect(liveEdgeUri.queryParameters['X-Plex-Client-Profile-Extra'], contains('protocol=hls&container=mpegts'));
       expect(liveEdgeUri.queryParameters['X-Plex-Token'], 'tok');
       expect(liveEdgeUri.queryParameters.containsKey('offset'), isFalse);
 
@@ -136,7 +146,9 @@ void main() {
     test('reportTimeline targets the tuned program and grows duration to the position', () async {
       Map<String, String>? timelineQuery;
       final client = makeClient((request) async {
-        if (request.url.path.endsWith('/tune')) return jsonResponse(tuneResponse());
+        if (request.url.path.endsWith('/tune')) {
+          return jsonResponse(tuneResponse());
+        }
         if (request.url.path == '/:/timeline') {
           timelineQuery = request.url.queryParameters;
           return jsonResponse({
@@ -169,7 +181,9 @@ void main() {
       final requests = <Uri>[];
       final client = makeClient((request) async {
         requests.add(request.url);
-        if (request.url.path.endsWith('/tune')) return jsonResponse(tuneResponse());
+        if (request.url.path.endsWith('/tune')) {
+          return jsonResponse(tuneResponse());
+        }
         if (request.url.path == '/:/timeline') {
           throw http.ClientException('temporary timeline DNS failure', request.url);
         }
@@ -194,7 +208,9 @@ void main() {
           tunes++;
           return jsonResponse(tuneResponse());
         }
-        if (request.url.path == '/video/:/transcode/universal/decision') return http.Response('ok', 200);
+        if (request.url.path == '/video/:/transcode/universal/decision') {
+          return http.Response('ok', 200);
+        }
         return jsonResponse(const {});
       });
       addTearDown(client.close);

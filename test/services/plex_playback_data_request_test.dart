@@ -365,7 +365,7 @@ void main() {
     expect(subtitles, isEmpty);
   });
 
-  test('selected internal text subtitles are embedded in HTTP MKV transcode', () {
+  test('selected internal text subtitles are segmented into the HLS transcode', () {
     final client = makeClient((_) async => http.Response('not used', 500));
     addTearDown(client.close);
 
@@ -384,33 +384,42 @@ void main() {
       ),
     );
 
-    expect(params['protocol'], 'http');
-    expect(params['subtitles'], 'embedded');
+    expect(params['protocol'], 'hls');
+    expect(params['subtitles'], 'segmented');
     expect(params['subtitleStreamID'], '401');
     expect(params['advancedSubtitles'], 'text');
-    expect(params['X-Plex-Chunked'], '1');
-    expect(params.containsKey('X-Plex-Incomplete-Segments'), isFalse);
-    expect(params['X-Plex-Client-Profile-Extra'], contains('add-settings(DirectPlayStreamSelection=true)'));
+    expect(params.containsKey('X-Plex-Chunked'), isFalse);
+    expect(params['X-Plex-Incomplete-Segments'], '1');
+    expect(params['X-Plex-Client-Profile-Name'], 'Generic');
+
+    final profile = params['X-Plex-Client-Profile-Extra'];
+    expect(profile, contains('add-settings(DirectPlayStreamSelection=true)'));
     expect(
-      params['X-Plex-Client-Profile-Extra'],
+      profile,
+      contains(
+        'add-limitation(scope=videoCodec&scopeName=*&type=upperBound'
+        '&name=video.bitrate&value=3000&replace=true)',
+      ),
+    );
+    expect(
+      profile,
       contains(
         'add-transcode-target(type=videoProfile&context=streaming'
-        '&protocol=http&container=mkv&videoCodec=h264%2Chevc%2C*'
-        '&audioCodec=opus%2Cvorbis%2Cflac%2C*&subtitleCodec=ass%2Cpgs%2Cvobsub%2C*)',
+        '&protocol=hls&container=mpegts&videoCodec=h264%2Chevc%2Cmpeg2video'
+        '&audioCodec=aac%2Cac3%2Ceac3%2Cmp3)',
       ),
     );
     expect(
-      params['X-Plex-Client-Profile-Extra'],
+      profile,
       contains(
-        'add-transcode-target-settings(type=videoProfile&context=streaming'
-        '&protocol=http&CopyMatroskaAttachments=true)',
+        'add-transcode-target(type=subtitleProfile&context=streaming'
+        '&protocol=hls&container=webvtt&subtitleCodec=webvtt)',
       ),
     );
-    expect(params['X-Plex-Client-Profile-Extra'], isNot(contains('protocol=hls')));
-    expect(params['X-Plex-Client-Profile-Extra'], isNot(contains('type=subtitleProfile')));
+    expect(profile, isNot(contains('protocol=http&container=mkv')));
   });
 
-  test('transcode start path uses HTTP start endpoint without token', () {
+  test('transcode start path uses the HLS manifest endpoint without token', () {
     final client = makeClient((_) async => http.Response('not used', 500));
     addTearDown(client.close);
 
@@ -420,16 +429,13 @@ void main() {
       preset: TranscodeQualityPreset.p720_3mbps,
       sessionIdentifier: 'session-id',
       transcodeSessionId: 'transcode-id',
-      offsetMs: 90500,
     );
 
     final startPath = client.buildTranscodeStartPathFromParamsForTesting(params);
 
-    expect(params['offset'], '90');
-    expect(startPath, startsWith('/video/:/transcode/universal/start?'));
-    expect(startPath, isNot(contains('start.m3u8')));
-    expect(startPath, contains('protocol=http'));
-    expect(startPath, contains('offset=90'));
+    expect(startPath, startsWith('/video/:/transcode/universal/start.m3u8?'));
+    expect(startPath, contains('protocol=hls'));
+    expect(startPath, isNot(contains('offset=')));
     expect(startPath, isNot(contains('X-Plex-Token')));
   });
 
@@ -450,7 +456,7 @@ void main() {
     expect(params['partIndex'], '2');
   });
 
-  test('selected image-based subtitles are embedded in HTTP MKV transcode without advancedSubtitles', () {
+  test('selected image subtitles are burned into HLS without advancedSubtitles', () {
     final client = makeClient((_) async => http.Response('not used', 500));
     addTearDown(client.close);
 
@@ -469,21 +475,18 @@ void main() {
       ),
     );
 
-    // PGS is copied into the MKV as a stream; `advancedSubtitles=text` is
-    // text-only and must be absent so the server doesn't try to convert it.
-    expect(params['subtitles'], 'embedded');
+    expect(params['subtitles'], 'burn');
     expect(params['subtitleStreamID'], '401');
-    expect(params['protocol'], 'http');
+    expect(params['protocol'], 'hls');
     expect(params.containsKey('advancedSubtitles'), isFalse);
-    expect(params['X-Plex-Client-Profile-Extra'], isNot(contains('type=subtitleProfile')));
   });
 
-  test('image-based embedded subtitles are carried in the MKV, not as sidecars', () {
+  test('image-based embedded subtitles are rendered by HLS, not attached as sidecars', () {
     final client = makeClient((_) async => http.Response('not used', 500));
     addTearDown(client.close);
 
-    // Embedded bitmap streams have no Plex `key`, so there is no sidecar URL to
-    // build — they ride the main HTTP/MKV stream via `subtitles=embedded`.
+    // Embedded bitmap streams have no Plex `key`; the HLS request burns the
+    // selected track into the video rendition.
     final subtitles = buildTranscodeSubtitles(client, [
       MediaSubtitleTrack(id: 401, codec: 'pgs', languageCode: 'eng', selected: true, forced: false),
       MediaSubtitleTrack(id: 402, codec: 'dvd_subtitle', languageCode: 'eng', selected: true, forced: false),

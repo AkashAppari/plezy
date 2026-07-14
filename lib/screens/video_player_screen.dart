@@ -133,7 +133,7 @@ Future<void> _setWakelock(bool enabled) async {
 /// The in-place media-source transitions a [VideoPlayerScreenState] can run.
 /// They are mutually exclusive by construction — entry points bail while a
 /// transition is in flight.
-enum _PlaybackTransition { idle, reloadingMedia, restartingTranscode, switchingChannel }
+enum _PlaybackTransition { idle, reloadingMedia, switchingChannel }
 
 /// Outcome of [VideoPlayerScreenState._reloadMediaInPlace].
 enum _MediaReloadOutcome {
@@ -156,10 +156,9 @@ enum _MediaReloadOutcome {
   failed,
 }
 
-/// Handle for one playback attempt (initial start, in-place reload,
-/// transcode restart). Async continuations check [isCurrent] after every
-/// await: it holds while the screen is mounted, the captured player is
-/// still the active one, and no newer attempt has bumped the generation.
+/// Handle for one playback attempt (initial start or in-place reload).
+/// Async continuations check [isCurrent] after every await while the screen
+/// is mounted, the captured player is active, and no newer attempt exists.
 class _PlaybackAttempt {
   _PlaybackAttempt._(this._owner, this.generation, this.player);
 
@@ -179,15 +178,13 @@ class _PlaybackOpenTiming {
 }
 
 _PlaybackOpenTiming _playbackOpenTiming({
-  required MediaBackend backend,
   required bool isTranscoding,
   required Duration? resumePosition,
   required int? durationMs,
 }) {
-  final usesSourceOffsetTranscode = isTranscoding && backend == MediaBackend.plex;
   return _PlaybackOpenTiming(
-    mediaStart: usesSourceOffsetTranscode ? null : resumePosition,
-    timelineOffset: usesSourceOffsetTranscode ? resumePosition ?? Duration.zero : Duration.zero,
+    mediaStart: resumePosition,
+    timelineOffset: Duration.zero,
     timelineDuration: isTranscoding && durationMs != null ? Duration(milliseconds: durationMs) : null,
   );
 }
@@ -281,9 +278,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _isLoadingNext = false;
   bool _isLoadingPrevious = false;
 
-  // In-flight media-source transition. At most one can run at a time: the
-  // entry guards make reload / transcode-restart / channel-switch mutually
-  // exclusive instead of relying on three independent booleans.
+  // In-flight media-source transition. At most one can run at a time: reloads
+  // and channel switches are mutually exclusive.
   _PlaybackTransition _playbackTransition = _PlaybackTransition.idle;
   bool _playbackIntentShouldPlay = true;
 

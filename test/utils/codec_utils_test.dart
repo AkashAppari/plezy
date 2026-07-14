@@ -75,12 +75,12 @@ void main() {
       }
     });
 
-    test('isEmbeddableSubtitleCodec covers text and image, not unknown', () {
+    test('isTranscodableSubtitleCodec covers text and image, not unknown', () {
       for (final codec in ['srt', 'ass', 'pgs', 'vobsub', 'dvd_subtitle']) {
-        expect(CodecUtils.isEmbeddableSubtitleCodec(codec), isTrue, reason: codec);
+        expect(CodecUtils.isTranscodableSubtitleCodec(codec), isTrue, reason: codec);
       }
-      expect(CodecUtils.isEmbeddableSubtitleCodec('weird'), isFalse);
-      expect(CodecUtils.isEmbeddableSubtitleCodec(null), isFalse);
+      expect(CodecUtils.isTranscodableSubtitleCodec('weird'), isFalse);
+      expect(CodecUtils.isTranscodableSubtitleCodec(null), isFalse);
     });
   });
 

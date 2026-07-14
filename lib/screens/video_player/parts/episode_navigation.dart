@@ -136,7 +136,9 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     int? newSubtitleStreamId,
   }) async {
     final currentPlayer = player;
-    if (!mounted || currentPlayer == null || _playbackTransition != _PlaybackTransition.idle) return;
+    if (!mounted || currentPlayer == null || _playbackTransition != _PlaybackTransition.idle) {
+      return;
+    }
 
     final effectiveMediaIndex = newMediaIndex ?? _effectiveSelectedMediaIndex;
     final effectivePreset = newPreset ?? _selectedQualityPreset;
@@ -153,7 +155,9 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     final isPresetChange = effectivePreset != _selectedQualityPreset;
     final isAudioChange = effectiveAudioStreamId != _selectedAudioStreamId;
     final isSubtitleChange = newSubtitleStreamId != null && effectiveSubtitleStreamId != currentSubtitleStreamId;
-    if (!isVersionChange && !isPresetChange && !isAudioChange && !isSubtitleChange) return;
+    if (!isVersionChange && !isPresetChange && !isAudioChange && !isSubtitleChange) {
+      return;
+    }
 
     // Read the client before any await — context across an async gap. A
     // missing client leaves this null and the guard below reports it.
@@ -392,7 +396,9 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         hasVideoUrl: true,
         ensureAudioFocus: () => currentPlayer.requestAudioFocus(),
       );
-      if (frameRatePlan == null || !isCurrentReload()) return _MediaReloadOutcome.superseded;
+      if (frameRatePlan == null || !isCurrentReload()) {
+        return _MediaReloadOutcome.superseded;
+      }
       _frameRate.resetForNewItem();
       if (frameRatePlan.countsAsApplied) _frameRate.applied = true;
 
@@ -404,7 +410,6 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       );
       if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
       final openTiming = _playbackOpenTiming(
-        backend: metadata.backend,
         isTranscoding: result.isTranscoding,
         resumePosition: openResumePosition,
         durationMs: metadata.durationMs,

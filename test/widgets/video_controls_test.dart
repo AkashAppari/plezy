@@ -1192,10 +1192,9 @@ void main() {
   });
 
   group('shouldSkipDuplicateTimelineSeek', () {
-    test('skips a matching non-transcode final seek', () {
+    test('skips a matching final seek', () {
       expect(
         shouldSkipDuplicateTimelineSeek(
-          isTranscoding: false,
           lastDispatchedSeek: const Duration(minutes: 7, seconds: 30),
           finalSeek: const Duration(minutes: 7, seconds: 30),
         ),
@@ -1203,32 +1202,16 @@ void main() {
       );
     });
 
-    test('does not skip matching transcode seek', () {
-      expect(
-        shouldSkipDuplicateTimelineSeek(
-          isTranscoding: true,
-          lastDispatchedSeek: const Duration(minutes: 7, seconds: 30),
-          finalSeek: const Duration(minutes: 7, seconds: 30),
-        ),
-        isFalse,
-      );
-    });
-
     test('does not skip when no matching seek was already dispatched', () {
       expect(
         shouldSkipDuplicateTimelineSeek(
-          isTranscoding: false,
           lastDispatchedSeek: const Duration(minutes: 7),
           finalSeek: const Duration(minutes: 7, seconds: 30),
         ),
         isFalse,
       );
       expect(
-        shouldSkipDuplicateTimelineSeek(
-          isTranscoding: false,
-          lastDispatchedSeek: null,
-          finalSeek: const Duration(minutes: 7, seconds: 30),
-        ),
+        shouldSkipDuplicateTimelineSeek(lastDispatchedSeek: null, finalSeek: const Duration(minutes: 7, seconds: 30)),
         isFalse,
       );
     });

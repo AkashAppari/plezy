@@ -61,11 +61,10 @@ class _ExternalSubtitleOpenPlan {
 
 /// Shared building blocks for opening media on the live player.
 ///
-/// The initial start flow ([_startPlayback]), the in-place reload flow
-/// ([_reloadMediaInPlace]), and the transcode-restart seek
-/// ([_restartPlexTranscodeAt]) all route through these helpers so per-open
+/// The initial start flow ([_startPlayback]) and in-place reload flow
+/// ([_reloadMediaInPlace]) both route through these helpers so per-open
 /// behavior (display priming, frame-rate suppression windows, native
-/// subtitle styling, the open sequence itself) cannot drift between paths.
+/// subtitle styling, and the open sequence) cannot drift between paths.
 /// This is also the only place that reads
 /// [SettingsService.displaySwitchDelay].
 extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
@@ -537,8 +536,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     await player.setProperty('stream-buffer-size', '${ringBytes ?? mpvDefaultStreamBufferBytes}');
   }
 
-  /// Open [videoUrl] on [player]: stream tuning + force-seekable hint →
-  /// open → native subtitle style.
+  /// Open [videoUrl] on [player]: stream tuning → open → native subtitle style.
   ///
   /// [shouldContinue] is re-checked between the awaits so stale generations
   /// stop without touching the player further. [onOpened] fires immediately
@@ -567,10 +565,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       isTranscoding: isTranscoding,
       selectedVersion: selectedVersion,
     );
-    // Transcode streams can be seekable even when MPV cannot prove it
-    // from response headers. Reset non-transcodes so live/direct/offline
-    // streams keep native seekability detection.
-    await player.setProperty('force-seekable', isTranscoding ? 'yes' : 'no');
     if (shouldContinue != null && !shouldContinue()) return false;
     await player.open(
       Media(videoUrl, start: timing.mediaStart, headers: headers),

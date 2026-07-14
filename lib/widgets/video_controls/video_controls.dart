@@ -96,11 +96,10 @@ part 'parts/visibility.dart';
 
 /// Subtitle tracks offered in the player's "source" subtitle list.
 ///
-/// While transcoding, only tracks the HTTP/MKV stream can actually deliver are
-/// shown: keyed sidecars plus any codec the transcode can embed (text or
-/// image — see [CodecUtils.isEmbeddableSubtitleCodec]). Outside transcode the
-/// full list is returned unchanged, since the player has direct access to every
-/// embedded stream.
+/// While transcoding, only tracks Plex can deliver in HLS are shown: keyed
+/// sidecars, text codecs that can become WebVTT, and image codecs that can be
+/// burned into the rendition. Outside transcode the full list is returned
+/// unchanged, since the player has direct access to every embedded stream.
 List<MediaSubtitleTrack> selectableSourceSubtitleTracks(
   List<MediaSubtitleTrack> tracks, {
   required bool isTranscoding,
@@ -109,7 +108,7 @@ List<MediaSubtitleTrack> selectableSourceSubtitleTracks(
   return tracks
       .where((track) {
         final hasKey = track.key != null && track.key!.isNotEmpty;
-        return hasKey || CodecUtils.isEmbeddableSubtitleCodec(track.codec);
+        return hasKey || CodecUtils.isTranscodableSubtitleCodec(track.codec);
       })
       .toList(growable: false);
 }
@@ -316,7 +315,9 @@ bool primePlayerNavigationFocusForEvent(
   required bool isAppleTV,
 }) {
   if (!isCurrentRoute || playerReady || event is! KeyDownEvent) return false;
-  if (classifyPlayerNavigationKey(event, isAppleTV: isAppleTV) == PlayerNavigationKey.none) return false;
+  if (classifyPlayerNavigationKey(event, isAppleTV: isAppleTV) == PlayerNavigationKey.none) {
+    return false;
+  }
   focusNode.requestFocus();
   return true;
 }
@@ -346,12 +347,8 @@ KeyEventResult handlePlayerNavigationKeyAction(
 }
 
 @visibleForTesting
-bool shouldSkipDuplicateTimelineSeek({
-  required bool isTranscoding,
-  required Duration? lastDispatchedSeek,
-  required Duration finalSeek,
-}) {
-  return !isTranscoding && lastDispatchedSeek == finalSeek;
+bool shouldSkipDuplicateTimelineSeek({required Duration? lastDispatchedSeek, required Duration finalSeek}) {
+  return lastDispatchedSeek == finalSeek;
 }
 
 typedef PlaybackSourceChangeCallback =
@@ -395,8 +392,8 @@ class PlexVideoControls extends StatefulWidget {
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
   final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
 
-  /// Called for app-level seek requests. Plex transcodes use this to restart
-  /// the server-side transcode session at the requested absolute timestamp.
+  /// Called for app-level seek requests so the owning screen can coordinate
+  /// playback state around the native player seek.
   final Future<void> Function(Duration position)? onSeekRequested;
 
   /// Called for app-level play/pause requests so the owning screen can track
@@ -957,7 +954,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                 onEnd: () {
                                   if (!_showControls) {
                                     widget.chromeController.markControlsHidden();
-                                    if (_controlsMounted) setState(() => _controlsMounted = false);
+                                    if (_controlsMounted) {
+                                      setState(() => _controlsMounted = false);
+                                    }
                                   }
                                 },
                                 child: Builder(
@@ -1108,7 +1107,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                           valueListenable: _edgeAdjustmentIndicator,
                           builder: (context, indicator, _) {
                             final side = indicator.side;
-                            if (side == null) return const SizedBox.shrink();
+                            if (side == null) {
+                              return const SizedBox.shrink();
+                            }
                             return AnimatedOpacity(
                               opacity: indicator.visible ? 1.0 : 0.0,
                               duration: const Duration(milliseconds: 160),
@@ -1132,7 +1133,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                       right: 24,
                       bottom: () {
                         if (!_showControls) return 24.0;
-                        if (widget.chromeController.contentStripVisible) return 180.0;
+                        if (widget.chromeController.contentStripVisible) {
+                          return 180.0;
+                        }
                         return isMobile ? 80.0 : 115.0;
                       }(),
                       child: AnimatedOpacity(

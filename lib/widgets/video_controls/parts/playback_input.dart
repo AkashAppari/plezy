@@ -6,7 +6,9 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   void _onRateChanged(double newRate) {
     if (!mounted) return;
     if (_isLongPressing) return;
-    if (_suppressRateToastUntil != null && DateTime.now().isBefore(_suppressRateToastUntil!)) return;
+    if (_suppressRateToastUntil != null && DateTime.now().isBefore(_suppressRateToastUntil!)) {
+      return;
+    }
     final prev = _lastReportedRate;
     if (prev != null && (prev - newRate).abs() < 0.005) return;
     _lastReportedRate = newRate;
@@ -80,13 +82,8 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     await (widget.onPlayPauseRequested ?? widget.player.playOrPause)();
   }
 
-  /// Throttled seek for timeline slider - executes immediately then throttles to 200ms
+  /// Throttled seek for timeline slider - executes immediately then throttles to 200ms.
   void _throttledSeek(Duration position) {
-    if (widget.isTranscoding) {
-      _lastDispatchedTimelineSeek = null;
-      _lastDispatchedTimelineSeekFuture = null;
-      return;
-    }
     _seekThrottle([position]);
   }
 
@@ -104,11 +101,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     _lastDispatchedTimelineSeek = null;
     _lastDispatchedTimelineSeekFuture = null;
 
-    if (shouldSkipDuplicateTimelineSeek(
-      isTranscoding: widget.isTranscoding,
-      lastDispatchedSeek: lastDispatched,
-      finalSeek: clamped,
-    )) {
+    if (shouldSkipDuplicateTimelineSeek(lastDispatchedSeek: lastDispatched, finalSeek: clamped)) {
       if (seekFuture == null) {
         widget.onSeekCompleted?.call(clamped);
         return;
@@ -322,7 +315,9 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
       onTimeout: () => null,
     );
     if (!mounted) return;
-    if (_pendingEdgeAdjustmentSide != side || _pendingEdgeAdjustmentGeneration != generation) return;
+    if (_pendingEdgeAdjustmentSide != side || _pendingEdgeAdjustmentGeneration != generation) {
+      return;
+    }
 
     final latestDelta = _pendingEdgeAdjustmentDelta;
     _clearPendingEdgeAdjustment();
@@ -485,9 +480,6 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   }
 
   /// Handle stacking skip - add to accumulated skip when feedback is active.
-  /// Feedback refreshes before the seek is issued: the seek can be slow (a
-  /// transcode restart does a server round-trip) and the pill must react to
-  /// the tap, not to seek completion.
   void _handleStackingSkip({required bool isForward}) {
     if (!widget.canControl) return;
 
