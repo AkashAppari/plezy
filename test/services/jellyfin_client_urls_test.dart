@@ -1781,7 +1781,9 @@ void main() {
 
       await scoped.fetchLibraryContent('lib-1', const LibraryQuery(kind: MediaKind.album, offset: 0, limit: 20));
       await scoped.fetchLibraryContent('lib-1', const LibraryQuery(kind: MediaKind.track, offset: 0, limit: 20));
-      await scoped.fetchArtistAlbums('artist-1');
+      await scoped.fetchArtistAlbums(
+        testMediaItem(id: 'artist-1', backend: MediaBackend.jellyfin, kind: MediaKind.artist),
+      );
       await scoped.fetchAlbumTracks('album-1');
 
       final albumBrowse = captured[0].queryParameters;

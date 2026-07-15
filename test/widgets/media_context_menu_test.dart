@@ -596,7 +596,7 @@ class _RelatedMusicClient implements MediaServerClient {
   Future<List<MediaItem>> fetchAlbumTracks(String albumId) async => const [];
 
   @override
-  Future<List<MediaItem>> fetchArtistAlbums(String artistId) async => const [];
+  Future<List<MediaItem>> fetchArtistAlbums(MediaItem artist) async => const [];
 
   @override
   void close() {}

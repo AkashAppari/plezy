@@ -2856,10 +2856,33 @@ class PlexClient
   @override
   Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId) async => null;
 
-  /// Plex artists are folder-parents of their albums, so both music child
-  /// listings are plain `/library/metadata/{id}/children` fetches.
+  /// Plex's artist `/children` response only contains the primary album
+  /// bucket. Filter album rows in the artist's music section to include every
+  /// release format Plex associates with the artist.
   @override
-  Future<List<MediaItem>> fetchArtistAlbums(String artistId) => fetchChildren(artistId);
+  Future<List<MediaItem>> fetchArtistAlbums(MediaItem artist) async {
+    final embeddedSectionId = artist.libraryId;
+    final sectionId = embeddedSectionId != null && embeddedSectionId.isNotEmpty
+        ? embeddedSectionId
+        : (await _getMetadataWithImages(artist.id))?.librarySectionID?.toString();
+    if (sectionId == null || sectionId.isEmpty) {
+      throw StateError('Plex artist ${artist.id} is missing a library section ID');
+    }
+
+    // Preserve the existing artist-list cache identity so offline fallback
+    // and item invalidation continue to cover the complete discography.
+    final cacheKey = '/library/metadata/${artist.id}/children';
+    final metadata = await fetchWithCacheFallback<List<PlexMetadataDto>>(
+      cacheKey: cacheKey,
+      networkCall: () => _getAllPagesResponse(
+        '/library/sections/$sectionId/all',
+        queryParameters: {'type': PlexMetadataType.album, 'artist.id': artist.id, 'sort': 'album.year:desc'},
+      ),
+      parseCache: (cachedData) => _parseMetadataListFromCachedResponse(cachedData),
+      parseResponse: (response) => _extractMetadataList(response),
+    );
+    return (metadata ?? const <PlexMetadataDto>[]).map((item) => PlexMappers.mediaItem(item)).toList();
+  }
 
   @override
   Future<List<MediaItem>> fetchAlbumTracks(String albumId) => fetchChildren(albumId);

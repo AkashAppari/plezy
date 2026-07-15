@@ -9,16 +9,16 @@ mixin _JellyfinMusicMethods on MediaServerCacheMixin {
   FailoverHttpClient get _http;
   List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
 
-  /// Albums credited to [artistId], newest first. Queries `AlbumArtistIds`
+  /// Albums credited to [artist], newest first. Queries `AlbumArtistIds`
   /// rather than `ParentId` because Jellyfin links albums to artists via
   /// tags — an artist's albums are usually not its folder children.
   @override
-  Future<List<MediaItem>> fetchArtistAlbums(String artistId) async {
+  Future<List<MediaItem>> fetchArtistAlbums(MediaItem artist) async {
     final response = await _http.get(
       '/Items',
       queryParameters: {
         'userId': connection.userId,
-        'AlbumArtistIds': artistId,
+        'AlbumArtistIds': artist.id,
         'IncludeItemTypes': 'MusicAlbum',
         'Recursive': 'true',
         'SortBy': 'PremiereDate,ProductionYear,SortName',

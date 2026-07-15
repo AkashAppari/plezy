@@ -6,10 +6,12 @@ import 'package:http/http.dart' as http;
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/ids.dart';
+import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   late AppDatabase db;
@@ -288,5 +290,95 @@ void main() {
       'season-2',
       'season-3',
     ]);
+  });
+
+  test('artist albums include every Plex release bucket and cache all pages', () async {
+    const cacheKey = '/library/metadata/artist-1/children';
+    final requests = <Uri>[];
+    final client = makeClient((request) async {
+      requests.add(request.url);
+      final start = int.parse(request.url.queryParameters['X-Plex-Container-Start']!);
+      final metadata = start == 0
+          ? [
+              {'ratingKey': 'album-lp', 'type': 'album', 'title': 'LP'},
+              {'ratingKey': 'album-ep', 'type': 'album', 'title': 'EP'},
+            ]
+          : [
+              {'ratingKey': 'album-single', 'type': 'album', 'title': 'Single'},
+              {'ratingKey': 'album-compilation', 'type': 'album', 'title': 'Compilation'},
+            ];
+      return http.Response(
+        jsonEncode({
+          'MediaContainer': {'librarySectionID': 7, 'size': metadata.length, 'totalSize': 4, 'Metadata': metadata},
+        }),
+        200,
+        headers: const {'content-type': 'application/json'},
+      );
+    });
+    addTearDown(client.close);
+
+    final albums = await client.fetchArtistAlbums(
+      testMediaItem(id: 'artist-1', kind: MediaKind.artist, libraryId: '7'),
+    );
+    final cached = await PlexApiCache.instance.get(ServerId('server-id'), cacheKey);
+    final cachedContainer = cached!['MediaContainer'] as Map<String, dynamic>;
+    final cachedMetadata = cachedContainer['Metadata'] as List<dynamic>;
+
+    expect(albums.map((album) => album.id), ['album-lp', 'album-ep', 'album-single', 'album-compilation']);
+    expect(requests, hasLength(2));
+    expect(requests.every((uri) => uri.path == '/library/sections/7/all'), isTrue);
+    expect(requests.every((uri) => uri.queryParameters['type'] == '9'), isTrue);
+    expect(requests.every((uri) => uri.queryParameters['artist.id'] == 'artist-1'), isTrue);
+    expect(requests.every((uri) => uri.queryParameters['sort'] == 'album.year:desc'), isTrue);
+    expect(requests.map((uri) => uri.queryParameters['X-Plex-Container-Start']), ['0', '2']);
+    expect(cachedMetadata.map((item) => (item as Map<String, dynamic>)['ratingKey']), [
+      'album-lp',
+      'album-ep',
+      'album-single',
+      'album-compilation',
+    ]);
+  });
+
+  test('artist albums resolve a missing music section from artist metadata', () async {
+    final requestedPaths = <String>[];
+    final client = makeClient((request) async {
+      requestedPaths.add(request.url.path);
+      if (request.url.path == '/library/metadata/artist-1') {
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'librarySectionID': 7,
+              'Metadata': [
+                {'ratingKey': 'artist-1', 'type': 'artist', 'title': 'Artist'},
+              ],
+            },
+          }),
+          200,
+          headers: const {'content-type': 'application/json'},
+        );
+      }
+      if (request.url.path == '/library/sections/7/all') {
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'librarySectionID': 7,
+              'size': 1,
+              'Metadata': [
+                {'ratingKey': 'album-1', 'type': 'album', 'title': 'Album'},
+              ],
+            },
+          }),
+          200,
+          headers: const {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('not found', 404);
+    });
+    addTearDown(client.close);
+
+    final albums = await client.fetchArtistAlbums(testMediaItem(id: 'artist-1', kind: MediaKind.artist));
+
+    expect(requestedPaths, ['/library/metadata/artist-1', '/library/sections/7/all']);
+    expect(albums.map((album) => album.id), ['album-1']);
   });
 }

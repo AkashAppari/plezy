@@ -62,7 +62,7 @@ class _ArtistDetailScreenState extends BaseMediaListDetailScreen<ArtistDetailScr
   bool get hasItems => items.isNotEmpty;
 
   @override
-  Future<List<MediaItem>> fetchItems() => mediaClient.fetchArtistAlbums(widget.artist.id);
+  Future<List<MediaItem>> fetchItems() => mediaClient.fetchArtistAlbums(widget.artist);
 
   @override
   Future<void> loadItems() async {

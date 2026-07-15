@@ -238,12 +238,12 @@ abstract class MediaServerClient {
   /// series" via the null vs `[]` distinction.
   Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId);
 
-  /// Albums credited to the artist [artistId], newest first. Not the same as
-  /// [fetchChildren]: Plex artists *are* folder-parents of their albums
-  /// (`/library/metadata/{id}/children`), but Jellyfin albums link to artists
-  /// only via tags, so it queries
+  /// Albums credited to [artist], newest first. Plex filters album rows in
+  /// the artist's music section so release formats omitted from
+  /// `/library/metadata/{id}/children` remain visible. Jellyfin links albums
+  /// to artists via tags and queries
   /// `/Items?AlbumArtistIds={id}&IncludeItemTypes=MusicAlbum`.
-  Future<List<MediaItem>> fetchArtistAlbums(String artistId);
+  Future<List<MediaItem>> fetchArtistAlbums(MediaItem artist);
 
   /// Tracks of album [albumId] in disc/track order. Plex:
   /// `/library/metadata/{id}/children`; Jellyfin:
