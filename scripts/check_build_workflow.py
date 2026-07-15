@@ -75,7 +75,7 @@ require(
 for expected in (
     "if: matrix.flutter_setup == 'action'",
     "if: matrix.flutter_setup == 'git'",
-    "git clone --depth 1 --branch 3.44.0",
+    "git -C $root fetch --depth 1 origin 559ffa3f75e7402d65a8def9c28389a9b2e6fe42",
     "flutter pub get --enforce-lockfile --no-example",
     "--dart-define=SENTRY_DIST=github-windows-${{ matrix.arch }}",
     "--split-debug-info=debug-info/windows-${{ matrix.arch }}",
@@ -161,9 +161,9 @@ for artifact in (
 
 release = job("create-release")
 require(
-    "needs: [build-android, build-ios, build-macos, build-windows, package-windows, build-linux]"
+    "needs: [validate-trusted-ref, build-android, build-ios, build-macos, build-windows, package-windows, build-linux]"
     in release,
-    "release dependencies must include both architecture matrices and Windows packaging",
+    "release dependencies must include the trust gate, both architecture matrices, and Windows packaging",
 )
 for artifact in (
     "android-apk",
@@ -201,6 +201,64 @@ require(
 require(
     "Refuse to overwrite a published release" not in release,
     "untagged draft creation must not inspect or block on published releases",
+)
+
+trusted_ref = job("validate-trusted-ref")
+require("permissions: {}" in trusted_ref, "trusted-ref validation must have no token permissions")
+require(
+    '"$GITHUB_REF" != "refs/heads/main"' in trusted_ref,
+    "trusted-ref validation must reject non-main refs",
+)
+for protected_job in (
+    "build-android",
+    "build-ios",
+    "build-macos",
+    "build-windows",
+    "build-linux",
+):
+    require(
+        "needs: validate-trusted-ref" in job(protected_job),
+        f"{protected_job} must depend on trusted-ref validation",
+    )
+
+require(
+    "TRUSTED_BUILD_CACHE_VERSION: trusted-build-v1" in text,
+    "build caches must use a dedicated trusted namespace",
+)
+require("restore-keys:" not in text, "privileged build caches must not use prefix fallback")
+cache_keys = re.findall(r"(?m)^          key: (.+)$", text)
+require(bool(cache_keys), "build workflow must define cache keys")
+for cache_key in cache_keys:
+    require(
+        "TRUSTED_BUILD_CACHE_VERSION" in cache_key,
+        f"cache key is outside the trusted build namespace: {cache_key}",
+    )
+require(
+    text.count("cache-key:") == text.count("cache: true"),
+    "every Flutter SDK cache must define its trusted cache key",
+)
+
+action_refs = re.findall(r"(?m)^\s*(?:-\s+)?uses:\s+([^\s@]+)@([^\s#]+)", text)
+require(bool(action_refs), "build workflow must use pinned actions")
+for action, ref in action_refs:
+    require(
+        re.fullmatch(r"[0-9a-f]{40}", ref) is not None,
+        f"action {action} must be pinned to a full commit SHA",
+    )
+
+checkout_count = sum(action == "actions/checkout" for action, _ in action_refs)
+require(
+    text.count("persist-credentials: false") == checkout_count,
+    "every build checkout must discard GitHub credentials",
+)
+require(
+    "raw.githubusercontent.com/edde746/auto_updater/9e150f71e17495b7361aedbe6df22e89ad52c254/"
+    in text,
+    "Windows signing helper must remain pinned to the locked auto_updater commit",
+)
+require(
+    'dependencies=@{cryptography="2.9.0"}' in text,
+    "Windows signing dependency must remain exact",
 )
 
 if errors:

@@ -29,6 +29,7 @@ env:
   GIT_COMMIT_DART_DEFINE: --dart-define=GIT_COMMIT=${{ github.sha }}
   SENTRY_ENV_DART_DEFINE: --dart-define=SENTRY_ENVIRONMENT=github
   DONATIONS_DART_DEFINE: --dart-define=ENABLE_DONATIONS=true
+  TRUSTED_BUILD_CACHE_VERSION: trusted-build-v1
   LINUX_APT_PACKAGES: >
     clang cmake meson ninja-build pkg-config nasm libgtk-3-dev libevdev-dev liblzma-dev
     libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev
@@ -39,7 +40,21 @@ env:
     ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick libcurl4-openssl-dev
 
 jobs:
+  validate-trusted-ref:
+    name: Validate trusted build ref
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Require the protected main branch
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "Release builds may only run from refs/heads/main." >&2
+            exit 1
+          fi
+
   build-android:
+    needs: validate-trusted-ref
     if: ${{ inputs.build_android }}
     runs-on: ubuntu-latest
     permissions:
@@ -47,38 +62,39 @@ jobs:
       attestations: write
       contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5
         with:
           distribution: "temurin"
           java-version: "17"
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
           flutter-version: "3.44.0"
           cache: true
+          cache-key: "${{ env.TRUSTED_BUILD_CACHE_VERSION }}-flutter-:os:-:channel:-:version:-:arch:-:hash:"
           pub-cache: false
 
       - name: Cache Pub dependencies
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.pub-cache
-          key: ${{ runner.os }}-${{ runner.arch }}-pub-v2-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-${{ runner.arch }}-pub-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
 
       - name: Cache Gradle
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
       - name: Install dependencies
         run: flutter pub get --enforce-lockfile --no-example
@@ -114,7 +130,7 @@ jobs:
           tar -czf plezy-android-x86_64.tar.gz -C build/app/outputs/flutter-apk app-x86_64-release.apk --transform 's/app-x86_64-release.apk/plezy.apk/'
 
       - name: Attest APKs
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest-build-provenance@78e6cbd37d0ac1a40113c04f2037dacf1ea3f12e # v4
         with:
           subject-path: |
             plezy-android-arm64-v8a.tar.gz
@@ -122,7 +138,7 @@ jobs:
             plezy-android-x86_64.tar.gz
 
       - name: Upload APKs
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: android-apk
           path: |
@@ -131,6 +147,7 @@ jobs:
             plezy-android-x86_64.tar.gz
 
   build-ios:
+    needs: validate-trusted-ref
     if: ${{ inputs.build_ios }}
     runs-on: macos-26
     permissions:
@@ -138,33 +155,34 @@ jobs:
       attestations: write
       contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
           flutter-version: "3.44.0"
           cache: true
+          cache-key: "${{ env.TRUSTED_BUILD_CACHE_VERSION }}-flutter-:os:-:channel:-:version:-:arch:-:hash:"
           pub-cache: false
 
       - name: Cache Pub dependencies
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.pub-cache
-          key: ${{ runner.os }}-${{ runner.arch }}-pub-v2-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-${{ runner.arch }}-pub-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
 
       - name: Cache CocoaPods
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ios/Pods
             ~/Library/Caches/CocoaPods
             ~/.cocoapods
-          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-ios-pods-${{ hashFiles('**/Podfile.lock') }}
 
       - name: Install dependencies
         run: flutter pub get --enforce-lockfile --no-example
@@ -186,17 +204,18 @@ jobs:
           zip -r plezy-ios.ipa Payload
 
       - name: Attest IPA
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest-build-provenance@78e6cbd37d0ac1a40113c04f2037dacf1ea3f12e # v4
         with:
           subject-path: plezy-ios.ipa
 
       - name: Upload IPA
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ios-ipa
           path: plezy-ios.ipa
 
   build-macos:
+    needs: validate-trusted-ref
     if: ${{ inputs.build_macos }}
     runs-on: macos-26
     permissions:
@@ -204,33 +223,34 @@ jobs:
       attestations: write
       contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
           flutter-version: "3.44.0"
           cache: true
+          cache-key: "${{ env.TRUSTED_BUILD_CACHE_VERSION }}-flutter-:os:-:channel:-:version:-:arch:-:hash:"
           pub-cache: false
 
       - name: Cache Pub dependencies
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.pub-cache
-          key: ${{ runner.os }}-${{ runner.arch }}-pub-v2-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-${{ runner.arch }}-pub-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
 
       - name: Cache CocoaPods
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             macos/Pods
             ~/Library/Caches/CocoaPods
             ~/.cocoapods
-          key: ${{ runner.os }}-macos-pods-${{ hashFiles('**/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-macos-pods-
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-macos-pods-${{ hashFiles('**/Podfile.lock') }}
 
       - name: Install dependencies
         run: flutter pub get --enforce-lockfile --no-example
@@ -355,7 +375,7 @@ jobs:
           echo "MACOS_DMG_SIZE=$(stat -f%z plezy-macos.dmg)" >> $GITHUB_ENV
 
       - name: Attest macOS DMG
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest-build-provenance@78e6cbd37d0ac1a40113c04f2037dacf1ea3f12e # v4
         with:
           subject-path: plezy-macos.dmg
 
@@ -365,7 +385,7 @@ jobs:
           echo "${{ env.MACOS_DMG_SIZE }}" > macos-dmg-size.txt
 
       - name: Upload macOS DMG
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: macos-dmg
           path: |
@@ -374,6 +394,7 @@ jobs:
             macos-dmg-size.txt
 
   build-windows:
+    needs: validate-trusted-ref
     name: Build Windows (${{ matrix.arch }})
     if: ${{ inputs.build_windows }}
     runs-on: ${{ matrix.runner }}
@@ -394,14 +415,16 @@ jobs:
               build/windows/arm64/_deps
               build/windows/arm64/mpv-dev-arm64
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
 
       - name: Cache Windows native dependencies
         id: windows-native-cache
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ${{ matrix.native_cache_path }}
-          key: windows-native-${{ matrix.arch }}-${{ hashFiles('windows/CMakeLists.txt') }}
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-windows-native-${{ matrix.arch }}-${{ hashFiles('windows/CMakeLists.txt') }}
 
       - name: Install 7-Zip
         if: matrix.arch == 'arm64' && steps.windows-native-cache.outputs.cache-hit != 'true'
@@ -410,11 +433,12 @@ jobs:
 
       - name: Setup Flutter
         if: matrix.flutter_setup == 'action'
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
           flutter-version: "3.44.0"
           cache: true
+          cache-key: "${{ env.TRUSTED_BUILD_CACHE_VERSION }}-flutter-:os:-:channel:-:version:-:arch:-:hash:"
           pub-cache: false
 
       - name: Set up Flutter 3.44.0 (git tag)
@@ -427,16 +451,19 @@ jobs:
         shell: pwsh
         run: |
           $root = "$env:RUNNER_TEMP\flutter"
-          git clone --depth 1 --branch 3.44.0 https://github.com/flutter/flutter.git $root
+          git init $root
+          git -C $root remote add origin https://github.com/flutter/flutter.git
+          git -C $root fetch --depth 1 origin 559ffa3f75e7402d65a8def9c28389a9b2e6fe42
+          git -C $root checkout --detach FETCH_HEAD
           "$root\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
           & "$root\bin\flutter.bat" --version
 
       - name: Cache Pub dependencies
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~\AppData\Local\Pub\Cache
-          key: ${{ runner.os }}-${{ runner.arch }}-pub-v2-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-${{ runner.arch }}-pub-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
 
       - name: Install dependencies
         shell: pwsh
@@ -461,7 +488,7 @@ jobs:
         run: .\scripts\upload-symbols.ps1 windows-${{ matrix.arch }}
 
       - name: Upload ${{ matrix.arch }} build
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: windows-${{ matrix.arch }}-build
           path: build/windows/${{ matrix.arch }}/runner/Release/
@@ -475,19 +502,21 @@ jobs:
       attestations: write
       contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup Dart
-        uses: dart-lang/setup-dart@v1
+        uses: dart-lang/setup-dart@65eb853c7ba17dde3be364c3d2858773e7144260 # v1
 
       - name: Download x64 build
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: windows-x64-build
           path: build-x64
 
       - name: Download arm64 build
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: windows-arm64-build
           path: build-arm64
@@ -509,8 +538,8 @@ jobs:
         shell: pwsh
         run: |
           mkdir _signer | Out-Null
-          @{name="signer"; environment=@{sdk=">=3.0.0 <4.0.0"}; dependencies=@{cryptography="^2.7.0"}} | ConvertTo-Json -Depth 3 | Out-File _signer/pubspec.yaml
-          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/edde746/auto_updater/main/packages/auto_updater/bin/sign_update.dart" -OutFile _signer/sign.dart
+          @{name="signer"; environment=@{sdk=">=3.0.0 <4.0.0"}; dependencies=@{cryptography="2.9.0"}} | ConvertTo-Json -Depth 3 | Out-File _signer/pubspec.yaml
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/edde746/auto_updater/9e150f71e17495b7361aedbe6df22e89ad52c254/packages/auto_updater/bin/sign_update.dart" -OutFile _signer/sign.dart
           Push-Location _signer
           dart pub get
           Set-Content -Path ed25519_key.pem -Value $env:SPARKLE_PRIVATE_KEY -Encoding ascii -NoNewline
@@ -522,7 +551,7 @@ jobs:
           Set-Content -Path win-installer-size.txt -Value (Get-Item plezy-windows-installer.exe).Length.ToString() -Encoding ascii -NoNewline
 
       - name: Attest Windows artifacts
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest-build-provenance@78e6cbd37d0ac1a40113c04f2037dacf1ea3f12e # v4
         with:
           subject-path: |
             plezy-windows-x64-portable.7z
@@ -530,19 +559,19 @@ jobs:
             plezy-windows-installer.exe
 
       - name: Upload x64 portable
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: windows-x64-portable
           path: plezy-windows-x64-portable.7z
 
       - name: Upload arm64 portable
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: windows-arm64-portable
           path: plezy-windows-arm64-portable.7z
 
       - name: Upload installer
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: windows-installer
           path: |
@@ -551,6 +580,7 @@ jobs:
             win-installer-size.txt
 
   build-linux:
+    needs: validate-trusted-ref
     name: Build Linux (${{ matrix.arch }})
     if: ${{ inputs.build_linux }}
     runs-on: ${{ matrix.runner }}
@@ -571,28 +601,31 @@ jobs:
             flutter_channel: master
             pkg_config_arch: aarch64-linux-gnu
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: ${{ matrix.flutter_channel }}
           flutter-version: "3.44.0"
           cache: true
+          cache-key: "${{ env.TRUSTED_BUILD_CACHE_VERSION }}-flutter-:os:-:channel:-:version:-:arch:-:hash:"
           pub-cache: false
 
       - name: Cache Pub dependencies
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.pub-cache
-          key: ${{ runner.os }}-${{ runner.arch }}-pub-v2-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-${{ runner.arch }}-pub-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
 
       - name: Cache APT packages
-        uses: awalsh128/cache-apt-pkgs-action@latest
+        uses: awalsh128/cache-apt-pkgs-action@2153a1bf62a0ad7830c24ccdf1d588bedc2834a7 # latest
         with:
           packages: ${{ env.LINUX_APT_PACKAGES }}
-          version: 1.1
+          version: trusted-build-v1.1
 
       - name: Install Linux dependencies
         shell: bash
@@ -613,10 +646,10 @@ jobs:
 
       - name: Cache libmpv build
         id: libmpv-cache
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: libmpv-prefix
-          key: libmpv-${{ runner.arch }}-${{ hashFiles('linux/packaging/build-libmpv.sh') }}
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-libmpv-${{ runner.arch }}-${{ hashFiles('linux/packaging/build-libmpv.sh') }}
 
       - name: Build libmpv
         if: steps.libmpv-cache.outputs.cache-hit != 'true'
@@ -625,7 +658,7 @@ jobs:
 
       - name: Install fpm
         shell: bash
-        run: sudo gem install fpm
+        run: sudo gem install fpm --version 1.17.0 --no-document
 
       - name: Install dependencies
         shell: bash
@@ -702,7 +735,7 @@ jobs:
           tar -czf "$GITHUB_WORKSPACE/plezy-linux-${{ matrix.arch }}.tar.gz" *
 
       - name: Attest Linux ${{ matrix.arch }} artifacts
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest-build-provenance@78e6cbd37d0ac1a40113c04f2037dacf1ea3f12e # v4
         with:
           subject-path: |
             plezy-linux-${{ matrix.arch }}.tar.gz
@@ -711,7 +744,7 @@ jobs:
             plezy-linux-${{ matrix.arch }}.pkg.tar.zst
 
       - name: Upload Linux ${{ matrix.arch }} artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: linux-${{ matrix.arch }}
           path: |
@@ -721,16 +754,17 @@ jobs:
             plezy-linux-${{ matrix.arch }}.pkg.tar.zst
 
   create-release:
-    needs: [build-android, build-ios, build-macos, build-windows, package-windows, build-linux]
-    if: ${{ always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && inputs.build_android && inputs.build_ios && inputs.build_macos && inputs.build_windows && inputs.build_linux }}
+    needs: [validate-trusted-ref, build-android, build-ios, build-macos, build-windows, package-windows, build-linux]
+    if: ${{ always() && needs.validate-trusted-ref.result == 'success' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && inputs.build_android && inputs.build_ios && inputs.build_macos && inputs.build_windows && inputs.build_linux }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           sparse-checkout: pubspec.yaml
           sparse-checkout-cone-mode: false
+          persist-credentials: false
 
       - name: Read version from pubspec.yaml
         id: version
@@ -742,56 +776,56 @@ jobs:
 
       - name: Download Android artifacts
         if: ${{ inputs.build_android }}
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: android-apk
           path: artifacts/android-apk
 
       - name: Download iOS artifact
         if: ${{ inputs.build_ios }}
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: ios-ipa
           path: artifacts/ios-ipa
 
       - name: Download macOS artifact
         if: ${{ inputs.build_macos }}
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: macos-dmg
           path: artifacts/macos-dmg
 
       - name: Download Windows x64 artifact
         if: ${{ inputs.build_windows }}
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: windows-x64-portable
           path: artifacts/windows-x64-portable
 
       - name: Download Windows arm64 artifact
         if: ${{ inputs.build_windows }}
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: windows-arm64-portable
           path: artifacts/windows-arm64-portable
 
       - name: Download Windows installer artifact
         if: ${{ inputs.build_windows }}
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: windows-installer
           path: artifacts/windows-installer
 
       - name: Download Linux x64 artifacts
         if: ${{ inputs.build_linux }}
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: linux-x64
           path: artifacts/linux-x64
 
       - name: Download Linux arm64 artifacts
         if: ${{ inputs.build_linux }}
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: linux-arm64
           path: artifacts/linux-arm64
@@ -899,7 +933,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Create Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@c12583777ecdfd3be55c69cf75464299dc01057e # v3
         with:
           files: ${{ steps.release-files.outputs.files }}
           draft: true
