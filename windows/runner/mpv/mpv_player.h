@@ -14,7 +14,7 @@
 #include <thread>
 #include <vector>
 
-#include "../../../native/mpv/mpv_player_common.h"
+#include "../../../shared/mpv/mpv_player_common.h"
 
 namespace mpv {
 

@@ -1,5 +1,5 @@
-#ifndef PLEZY_NATIVE_MPV_PLAYER_COMMON_H_
-#define PLEZY_NATIVE_MPV_PLAYER_COMMON_H_
+#ifndef PLEZY_SHARED_MPV_PLAYER_COMMON_H_
+#define PLEZY_SHARED_MPV_PLAYER_COMMON_H_
 
 #include <mpv/client.h>
 
@@ -247,4 +247,4 @@ class AudioRecoveryState {
 }  // namespace mpv_common
 }  // namespace plezy
 
-#endif  // PLEZY_NATIVE_MPV_PLAYER_COMMON_H_
+#endif  // PLEZY_SHARED_MPV_PLAYER_COMMON_H_

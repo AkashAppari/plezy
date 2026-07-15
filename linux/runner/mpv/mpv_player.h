@@ -17,7 +17,7 @@
 #include <tuple>
 #include <vector>
 
-#include "../../../native/mpv/mpv_player_common.h"
+#include "../../../shared/mpv/mpv_player_common.h"
 
 // Forward declaration for Flutter types
 struct _FlValue;
