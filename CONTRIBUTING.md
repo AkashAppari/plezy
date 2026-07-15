@@ -38,6 +38,34 @@ The project includes automated CI checks that run on all pull requests:
 
 All these checks must pass before your changes can be merged.
 
+### Maestro end-to-end tests
+
+Android E2E tests use [Maestro](https://maestro.mobile.dev/) against a disposable, pre-seeded Jellyfin container.
+
+Prerequisites: Java 17, Flutter and Android SDK/platform tools, a running Android emulator, Docker, and the
+[Maestro CLI](https://docs.maestro.dev/getting-started/installing-maestro).
+
+Run the suites from the repository root (`py -3` can replace `python3` on Windows):
+
+```bash
+python3 scripts/run_maestro.py basic    # Basic user flows
+python3 scripts/run_maestro.py catalog  # Catalog and music flows
+python3 scripts/run_maestro.py media    # Codec playback and track selection
+```
+
+Run one flow with `--flow`:
+
+```bash
+python3 scripts/run_maestro.py basic --flow .maestro/flows/04_search.yaml
+```
+
+Use `--skip-build` to reuse the debug APK and `--skip-jellyfin-build` to reuse the Jellyfin image. Set
+`--device <adb-serial>` when multiple devices are connected; physical devices also require `--adb-reverse`.
+
+Top-level flows live in `.maestro/flows/`, shared setup in `.maestro/subflows/`, and focused regressions in
+`.maestro/regression_flows/`. CI runs the same suites from `.github/workflows/e2e.yml` and uploads diagnostics on
+failure.
+
 ## Internationalization (i18n)
 
 This project uses `slang` for internationalization with JSON files.

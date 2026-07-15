@@ -6,9 +6,12 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     final tvScale = TvLayoutConstants.scaleOf(context);
     final actionSize = isTv ? _tvDetailActionSize * tvScale : 48.0;
     final playButtonLabel = _getPlayButtonLabel(metadata);
+    final playIcon = _getPlayButtonIcon(metadata);
+    final playActionLabel = playIcon == Symbols.resume_rounded ? t.common.resume : t.common.play;
+    final playSemanticsLabel = playButtonLabel.isEmpty ? playActionLabel : '$playActionLabel $playButtonLabel';
     final playIconSize = isTv ? 22 * tvScale : 20.0;
     final playTextStyle = TextStyle(fontSize: isTv ? 17 * tvScale : 16, fontWeight: .w700);
-    final playButtonIcon = AppIcon(_getPlayButtonIcon(metadata), fill: 1, size: playIconSize);
+    final playButtonIcon = AppIcon(playIcon, fill: 1, size: playIconSize);
 
     Future<void> onPlayPressed() async {
       // For TV shows, play the OnDeck episode if available
@@ -102,24 +105,30 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     final gap = isTv ? 8.0 * tvScale : 12.0;
 
     Widget playButton(FocusableActionBuildState state) {
-      return SizedBox(
-        height: actionSize,
-        child: FilledButton(
-          onPressed: onPlayPressed,
-          style: actionButtonStyle(
-            showFocus: state.showFocus,
-            padding: .symmetric(horizontal: isTv ? 17 * tvScale : 16, vertical: isTv ? 9 * tvScale : 0),
+      return Semantics(
+        label: playSemanticsLabel,
+        button: true,
+        onTap: onPlayPressed,
+        excludeSemantics: true,
+        child: SizedBox(
+          height: actionSize,
+          child: FilledButton(
+            onPressed: onPlayPressed,
+            style: actionButtonStyle(
+              showFocus: state.showFocus,
+              padding: .symmetric(horizontal: isTv ? 17 * tvScale : 16, vertical: isTv ? 9 * tvScale : 0),
+            ),
+            child: playButtonLabel.isNotEmpty
+                ? Row(
+                    mainAxisSize: .min,
+                    children: [
+                      playButtonIcon,
+                      SizedBox(width: isTv ? 7 * tvScale : 8),
+                      Text(playButtonLabel, style: playTextStyle),
+                    ],
+                  )
+                : playButtonIcon,
           ),
-          child: playButtonLabel.isNotEmpty
-              ? Row(
-                  mainAxisSize: .min,
-                  children: [
-                    playButtonIcon,
-                    SizedBox(width: isTv ? 7 * tvScale : 8),
-                    Text(playButtonLabel, style: playTextStyle),
-                  ],
-                )
-              : playButtonIcon,
         ),
       );
     }

@@ -86,6 +86,7 @@ if python3 scripts/check_build_workflow.py &&
    python3 scripts/check_update_packages_workflow.py &&
    python3 scripts/test_pubspec_version.py &&
    python3 scripts/test_clean_translations.py &&
+   python3 scripts/test_run_maestro.py &&
    python3 scripts/test_check_icon_consistency.py; then
   ok "workflow and script guards passed"
 else

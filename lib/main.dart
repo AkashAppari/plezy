@@ -112,8 +112,8 @@ void _registerTvosPlatformPlugins() {
 
 Future<void> main() async {
   final binding = WidgetsFlutterBinding.ensureInitialized();
-  // Build the semantics tree in debug so Maestro/UI automation can locate
-  // widgets by text. Zero cost in release builds.
+  // Keep the accessibility tree available to Maestro and other UI automation
+  // without adding release-build overhead.
   if (kDebugMode) binding.ensureSemantics();
   _installZeroOffsetPointerGuard(); // Workaround for iPadOS 26.1+ modal dismissal bug
 

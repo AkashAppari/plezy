@@ -1,0 +1,399 @@
+name: E2E - Maestro
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: maestro-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android-maestro:
+    name: Android basic, catalog, and codec flows
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: "3.44.0"
+          cache: true
+          pub-cache: false
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-v3-${{ hashFiles('**/pubspec.yaml', '**/pubspec.lock') }}
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-e2e-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-e2e-
+            ${{ runner.os }}-gradle-
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Install Maestro
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - name: Build deterministic Jellyfin image
+        run: python3 scripts/run_maestro.py build-image
+
+      - name: Run Maestro suites
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: >-
+            -no-window -gpu swiftshader_indirect -no-snapshot -noaudio
+            -no-boot-anim -camera-back none
+          script: |
+            python3 scripts/run_maestro.py basic --skip-build --skip-jellyfin-build
+            python3 scripts/run_maestro.py catalog \
+              --skip-build --skip-jellyfin-build --device emulator-5554
+            python3 scripts/run_maestro.py media \
+              --skip-build --skip-jellyfin-build --device emulator-5554
+
+      - name: Upload Maestro diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-android-diagnostics
+          path: |
+            build/maestro
+            build/maestro-real-jellyfin
+            build/maestro-media
+            ~/.maestro/tests
+          if-no-files-found: ignore
+          retention-days: 7
+
+  android-legacy-playback:
+    name: Android 9 / API 28 Play Store playback
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: "3.44.0"
+          cache: true
+          pub-cache: false
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-v3-${{ hashFiles('**/pubspec.yaml', '**/pubspec.lock') }}
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-e2e-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-e2e-
+            ${{ runner.os }}-gradle-
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Install Maestro
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - name: Build deterministic Jellyfin image
+        run: python3 scripts/run_maestro.py build-image
+
+      - name: Run legacy playback flow
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 28
+          target: google_apis_playstore
+          arch: x86
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: >-
+            -no-window -gpu swiftshader_indirect -no-snapshot -noaudio
+            -no-boot-anim -camera-back none
+          script: |
+            python3 scripts/run_maestro.py basic \
+              --skip-build --skip-jellyfin-build \
+              --device emulator-5554 \
+              --flow .maestro/flows/05_playback.yaml \
+              --jellyfin-log build/maestro-legacy/jellyfin.log \
+              --diagnostics-dir build/maestro-legacy/diagnostics
+
+      - name: Upload legacy playback diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-android-legacy-diagnostics
+          path: |
+            build/maestro-legacy
+            ~/.maestro/tests
+          if-no-files-found: ignore
+          retention-days: 7
+
+  android-tv-regressions:
+    name: Android TV and D-pad regressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: "3.44.0"
+          cache: true
+          pub-cache: false
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-v3-${{ hashFiles('**/pubspec.yaml', '**/pubspec.lock') }}
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-e2e-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-e2e-
+            ${{ runner.os }}-gradle-
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Install Maestro
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - name: Build deterministic Jellyfin image
+        run: python3 scripts/run_maestro.py build-image
+
+      - name: Run TV regression flows
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: >-
+            -no-window -gpu swiftshader_indirect -no-snapshot -noaudio
+            -no-boot-anim -camera-back none
+          script: |
+            python3 scripts/run_maestro.py basic \
+              --skip-build --skip-jellyfin-build \
+              --device emulator-5554 \
+              --flow .maestro/regression_flows/03_tv_library_focus.yaml \
+              --jellyfin-log build/maestro-tv/library-focus.log \
+              --diagnostics-dir build/maestro-tv/library-focus-diagnostics
+            python3 scripts/run_maestro.py basic \
+              --skip-build --skip-jellyfin-build \
+              --device emulator-5554 \
+              --flow .maestro/regression_flows/04_tv_player_keys.yaml \
+              --jellyfin-log build/maestro-tv/player-keys.log \
+              --diagnostics-dir build/maestro-tv/player-keys-diagnostics
+            python3 scripts/run_maestro.py basic \
+              --skip-build --skip-jellyfin-build \
+              --device emulator-5554 \
+              --flow .maestro/regression_flows/05_tv_next_episode_back.yaml \
+              --jellyfin-log build/maestro-tv/next-episode.log \
+              --diagnostics-dir build/maestro-tv/next-episode-diagnostics
+
+      - name: Upload TV regression diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-android-tv-diagnostics
+          path: |
+            build/maestro-tv
+            ~/.maestro/tests
+          if-no-files-found: ignore
+          retention-days: 7
+
+  android-playback-recovery:
+    name: Android playback recovery
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: "3.44.0"
+          cache: true
+          pub-cache: false
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-v3-${{ hashFiles('**/pubspec.yaml', '**/pubspec.lock') }}
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-e2e-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-e2e-
+            ${{ runner.os }}-gradle-
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Install Maestro
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - name: Build deterministic Jellyfin image
+        run: python3 scripts/run_maestro.py build-image
+
+      - name: Run media recovery flows
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: >-
+            -no-window -gpu swiftshader_indirect -no-snapshot -noaudio
+            -no-boot-anim -camera-back none
+          script: |
+            python3 scripts/run_maestro.py basic \
+              --skip-build --skip-jellyfin-build \
+              --device emulator-5554 \
+              --fault music-failure \
+              --flow .maestro/real_flows/02_music_browse.yaml \
+              --jellyfin-log build/maestro-recovery/music-jellyfin.log \
+              --proxy-journal build/maestro-recovery/music-proxy-journal.jsonl \
+              --diagnostics-dir build/maestro-recovery/music-diagnostics
+            python3 scripts/run_maestro.py basic \
+              --skip-build --skip-jellyfin-build \
+              --device emulator-5554 \
+              --fault recovery \
+              --flow .maestro/regression_flows/06_playback_recovery.yaml \
+              --jellyfin-log build/maestro-recovery/jellyfin.log \
+              --proxy-journal build/maestro-recovery/proxy-journal.jsonl \
+              --diagnostics-dir build/maestro-recovery/diagnostics
+
+      - name: Upload recovery diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-android-recovery-diagnostics
+          path: |
+            build/maestro-recovery
+            ~/.maestro/tests
+          if-no-files-found: ignore
+          retention-days: 7

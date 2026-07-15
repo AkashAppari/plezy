@@ -122,6 +122,7 @@ class TrackSelectionHelper {
     Widget tile = FocusableListTile(
       key: key,
       focusNode: focusNode,
+      selected: isSelected,
       title: Text(
         label,
         style: TextStyle(color: isSelected ? primaryColor : null),

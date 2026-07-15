@@ -1,3 +1,5 @@
+import 'dart:ui' show Tristate;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
@@ -120,6 +122,11 @@ void main() {
       expect(find.text('AAC · Stereo'), findsOneWidget);
       expect(find.text('Tamil'), findsOneWidget);
       expect(find.text('Dolby Digital Plus 5.1 with Atmos · E-AC3 · 5.1'), findsOneWidget);
+
+      final englishTile = find.ancestor(of: find.text('English'), matching: find.byType(ListTile));
+      final tamilTile = find.ancestor(of: find.text('Tamil'), matching: find.byType(ListTile));
+      expect(tester.getSemantics(englishTile).getSemanticsData().flagsCollection.isSelected, Tristate.isTrue);
+      expect(tester.getSemantics(tamilTile).getSemanticsData().flagsCollection.isSelected, Tristate.isFalse);
     });
   });
 
