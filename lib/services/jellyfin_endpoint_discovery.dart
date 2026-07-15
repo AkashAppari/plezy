@@ -19,11 +19,7 @@ class JellyfinServerInfo {
   /// Server's reported version string.
   final String version;
 
-  const JellyfinServerInfo({
-    required this.serverName,
-    required this.machineId,
-    required this.version,
-  });
+  const JellyfinServerInfo({required this.serverName, required this.machineId, required this.version});
 }
 
 class JellyfinEndpointRaceResult {
@@ -31,11 +27,7 @@ class JellyfinEndpointRaceResult {
   final List<String> baseUrls;
   final JellyfinServerInfo serverInfo;
 
-  const JellyfinEndpointRaceResult({
-    required this.activeBaseUrl,
-    required this.baseUrls,
-    required this.serverInfo,
-  });
+  const JellyfinEndpointRaceResult({required this.activeBaseUrl, required this.baseUrls, required this.serverInfo});
 }
 
 class JellyfinEndpointProbeResult {
@@ -82,30 +74,23 @@ class JellyfinEndpointDiscovery {
 
   MediaServerHttpClient _buildHttpClient({required String baseUrl}) {
     LogRedactionManager.registerServerUrl(baseUrl);
-    return MediaServerHttpClient(
-      baseUrl: baseUrl,
-      client: _testHttpClientFactory?.call(),
-    );
+    return MediaServerHttpClient(baseUrl: baseUrl, client: _testHttpClientFactory?.call());
   }
 
   /// Probe the server identified by [baseUrl] without authenticating.
-  Future<JellyfinServerInfo> probe(
-    String baseUrl, {
-    Duration timeout = MediaServerTimeouts.jellyfinProbe,
-  }) async {
+  Future<JellyfinServerInfo> probe(String baseUrl, {Duration timeout = MediaServerTimeouts.jellyfinProbe}) async {
     final result = await _probeServer(baseUrl, timeout: timeout);
     return result.serverInfo;
   }
 
-  Future<({JellyfinServerInfo serverInfo, String effectiveBaseUrl})>
-  _probeServer(String baseUrl, {required Duration timeout}) async {
+  Future<({JellyfinServerInfo serverInfo, String effectiveBaseUrl})> _probeServer(
+    String baseUrl, {
+    required Duration timeout,
+  }) async {
     final normalised = normalizeBaseUrl(baseUrl);
     final client = _buildHttpClient(baseUrl: normalised);
     try {
-      final response = await client.get(
-        '/System/Info/Public',
-        timeout: timeout,
-      );
+      final response = await client.get('/System/Info/Public', timeout: timeout);
       throwIfHttpError(response);
       final effectiveBaseUrl = _resolveEffectiveBaseUrl(normalised, response);
       if (effectiveBaseUrl != normalised) {
@@ -118,16 +103,10 @@ class JellyfinEndpointDiscovery {
       final id = data['Id'];
       final name = data['ServerName'] ?? data['LocalAddress'];
       if (id is! String || name is! String) {
-        throw MediaServerUrlException(
-          'Server response missing Id/ServerName — not a Jellyfin server?',
-        );
+        throw MediaServerUrlException('Server response missing Id/ServerName — not a Jellyfin server?');
       }
       return (
-        serverInfo: JellyfinServerInfo(
-          serverName: name,
-          machineId: id,
-          version: data['Version'] as String? ?? '',
-        ),
+        serverInfo: JellyfinServerInfo(serverName: name, machineId: id, version: data['Version'] as String? ?? ''),
         effectiveBaseUrl: effectiveBaseUrl,
       );
     } on MediaServerUrlException {
@@ -156,57 +135,28 @@ class JellyfinEndpointDiscovery {
       throw MediaServerUrlException('Enter at least one Jellyfin server URL');
     }
 
-    final persistUrls = baseUrlsToPersist == null
-        ? urls
-        : normalizeBaseUrls(baseUrlsToPersist);
-    final validateUrls = baseUrlsToValidate == null
-        ? urls
-        : normalizeBaseUrls(baseUrlsToValidate);
+    final persistUrls = baseUrlsToPersist == null ? urls : normalizeBaseUrls(baseUrlsToPersist);
+    final validateUrls = baseUrlsToValidate == null ? urls : normalizeBaseUrls(baseUrlsToValidate);
     final validateUrlSet = validateUrls.toSet();
-    final validationGroups = baseUrlValidationGroups == null
-        ? null
-        : _normalizeBaseUrlGroups(baseUrlValidationGroups);
+    final validationGroups = baseUrlValidationGroups == null ? null : _normalizeBaseUrlGroups(baseUrlValidationGroups);
 
-    final preferred = preferredUrl == null || preferredUrl.trim().isEmpty
-        ? null
-        : normalizeBaseUrl(preferredUrl);
-    final candidates = [
-      for (var i = 0; i < urls.length; i++)
-        JellyfinEndpointCandidate(url: urls[i], index: i),
-    ];
+    final preferred = preferredUrl == null || preferredUrl.trim().isEmpty ? null : normalizeBaseUrl(preferredUrl);
+    final candidates = [for (var i = 0; i < urls.length; i++) JellyfinEndpointCandidate(url: urls[i], index: i)];
 
-    EndpointRaceSelection<
-      JellyfinEndpointCandidate,
-      JellyfinEndpointProbeResult
-    >?
-    firstSelection;
-    EndpointRaceSelection<
-      JellyfinEndpointCandidate,
-      JellyfinEndpointProbeResult
-    >?
-    bestSelection;
+    EndpointRaceSelection<JellyfinEndpointCandidate, JellyfinEndpointProbeResult>? firstSelection;
+    EndpointRaceSelection<JellyfinEndpointCandidate, JellyfinEndpointProbeResult>? bestSelection;
 
-    await for (final selection
-        in raceEndpointCandidates<
-          JellyfinEndpointCandidate,
-          JellyfinEndpointProbeResult
-        >(
-          label: 'Jellyfin server URL',
-          candidates: candidates,
-          preferredUrl: preferred,
-          urlOf: (candidate) => candidate.url,
-          failureLogFields: (candidate, result) => {
-            'error': result.error,
-            'latencyMs': result.latencyMs,
-          },
-          probe: (candidate, timeout) =>
-              _probeWithLatency(candidate.url, timeout: timeout),
-          measure: (candidate) =>
-              _probeWithAverageLatency(candidate.url, attempts: 2),
-          isSuccess: (result) => result.success,
-          selectBestCandidate: (results) =>
-              _selectLowestLatencyCandidate(results),
-        )) {
+    await for (final selection in raceEndpointCandidates<JellyfinEndpointCandidate, JellyfinEndpointProbeResult>(
+      label: 'Jellyfin server URL',
+      candidates: candidates,
+      preferredUrl: preferred,
+      urlOf: (candidate) => candidate.url,
+      failureLogFields: (candidate, result) => {'error': result.error, 'latencyMs': result.latencyMs},
+      probe: (candidate, timeout) => _probeWithLatency(candidate.url, timeout: timeout),
+      measure: (candidate) => _probeWithAverageLatency(candidate.url, attempts: 2),
+      isSuccess: (result) => result.success,
+      selectBestCandidate: (results) => _selectLowestLatencyCandidate(results),
+    )) {
       if (selection.phase == EndpointRacePhase.first) {
         firstSelection = selection;
       } else {
@@ -219,31 +169,19 @@ class JellyfinEndpointDiscovery {
       throw MediaServerUrlException('No reachable Jellyfin server found');
     }
 
-    final Map<JellyfinEndpointCandidate, JellyfinEndpointProbeResult>
-    successfulResults =
-        bestSelection?.successfulResults ??
-        firstSelection?.successfulResults ??
-        const {};
+    final Map<JellyfinEndpointCandidate, JellyfinEndpointProbeResult> successfulResults =
+        bestSelection?.successfulResults ?? firstSelection?.successfulResults ?? const {};
     var selectedCandidate = selected.candidate;
     var selectedResult = selected.result;
 
     final expectedMachineIdTrimmed = expectedMachineId?.trim();
     final hasExpectedMachineId = expectedMachineIdTrimmed?.isNotEmpty == true;
     if (hasExpectedMachineId) {
-      final matchingResults =
-          Map<
-            JellyfinEndpointCandidate,
-            JellyfinEndpointProbeResult
-          >.fromEntries(
-            successfulResults.entries.where(
-              (entry) =>
-                  entry.value.serverInfo?.machineId == expectedMachineIdTrimmed,
-            ),
-          );
+      final matchingResults = Map<JellyfinEndpointCandidate, JellyfinEndpointProbeResult>.fromEntries(
+        successfulResults.entries.where((entry) => entry.value.serverInfo?.machineId == expectedMachineIdTrimmed),
+      );
       final matchingCandidate = _selectLowestLatencyCandidate(matchingResults);
-      final matchingResult = matchingCandidate == null
-          ? null
-          : matchingResults[matchingCandidate];
+      final matchingResult = matchingCandidate == null ? null : matchingResults[matchingCandidate];
       if (matchingCandidate != null && matchingResult != null) {
         selectedCandidate = matchingCandidate;
         selectedResult = matchingResult;
@@ -255,33 +193,18 @@ class JellyfinEndpointDiscovery {
       throw MediaServerUrlException('No reachable Jellyfin server found');
     }
 
-    final expected = hasExpectedMachineId
-        ? expectedMachineIdTrimmed!
-        : selectedInfo.machineId;
+    final expected = hasExpectedMachineId ? expectedMachineIdTrimmed! : selectedInfo.machineId;
     if (validationGroups != null) {
       if (validationGroups.length > 1) {
         for (final group in validationGroups) {
           final groupSet = group.toSet();
-          final groupResults =
-              Map<
-                JellyfinEndpointCandidate,
-                JellyfinEndpointProbeResult
-              >.fromEntries(
-                successfulResults.entries.where(
-                  (entry) => groupSet.contains(entry.key.url),
-                ),
-              );
-          final candidate = _selectValidationCandidate(
-            groupResults,
-            expectedMachineId: expectedMachineIdTrimmed,
+          final groupResults = Map<JellyfinEndpointCandidate, JellyfinEndpointProbeResult>.fromEntries(
+            successfulResults.entries.where((entry) => groupSet.contains(entry.key.url)),
           );
-          final info = candidate == null
-              ? null
-              : groupResults[candidate]?.serverInfo;
+          final candidate = _selectValidationCandidate(groupResults, expectedMachineId: expectedMachineIdTrimmed);
+          final info = candidate == null ? null : groupResults[candidate]?.serverInfo;
           if (info != null && info.machineId != expected) {
-            throw MediaServerUrlException(
-              'The URLs point to different Jellyfin servers',
-            );
+            throw MediaServerUrlException('The URLs point to different Jellyfin servers');
           }
         }
       }
@@ -290,17 +213,13 @@ class JellyfinEndpointDiscovery {
         if (!validateUrlSet.contains(entry.key.url)) continue;
         final info = entry.value.serverInfo;
         if (info != null && info.machineId != expected) {
-          throw MediaServerUrlException(
-            'The URLs point to different Jellyfin servers',
-          );
+          throw MediaServerUrlException('The URLs point to different Jellyfin servers');
         }
       }
     }
 
     if (selectedInfo.machineId != expected) {
-      throw MediaServerUrlException(
-        'The URL does not match this Jellyfin server',
-      );
+      throw MediaServerUrlException('The URL does not match this Jellyfin server');
     }
 
     final effectiveUrls = <String, String>{};
@@ -310,12 +229,9 @@ class JellyfinEndpointDiscovery {
         effectiveUrls[entry.key.url] = effectiveBaseUrl;
       }
     }
-    final activeBaseUrl =
-        selectedResult.effectiveBaseUrl ?? selectedCandidate.url;
+    final activeBaseUrl = selectedResult.effectiveBaseUrl ?? selectedCandidate.url;
     effectiveUrls[selectedCandidate.url] = activeBaseUrl;
-    final persistedUrls = [
-      for (final url in persistUrls) effectiveUrls[url] ?? url,
-    ];
+    final persistedUrls = [for (final url in persistUrls) effectiveUrls[url] ?? url];
 
     return JellyfinEndpointRaceResult(
       activeBaseUrl: activeBaseUrl,
@@ -324,10 +240,7 @@ class JellyfinEndpointDiscovery {
     );
   }
 
-  Future<JellyfinEndpointProbeResult> _probeWithLatency(
-    String baseUrl, {
-    required Duration timeout,
-  }) async {
+  Future<JellyfinEndpointProbeResult> _probeWithLatency(String baseUrl, {required Duration timeout}) async {
     final stopwatch = Stopwatch()..start();
     try {
       final probe = await _probeServer(baseUrl, timeout: timeout);
@@ -340,40 +253,24 @@ class JellyfinEndpointDiscovery {
       );
     } catch (e) {
       stopwatch.stop();
-      return JellyfinEndpointProbeResult(
-        success: false,
-        latencyMs: stopwatch.elapsedMilliseconds,
-        error: e.toString(),
-      );
+      return JellyfinEndpointProbeResult(success: false, latencyMs: stopwatch.elapsedMilliseconds, error: e.toString());
     }
   }
 
-  Future<JellyfinEndpointProbeResult> _probeWithAverageLatency(
-    String baseUrl, {
-    required int attempts,
-  }) async {
+  Future<JellyfinEndpointProbeResult> _probeWithAverageLatency(String baseUrl, {required int attempts}) async {
     final results = <JellyfinEndpointProbeResult>[];
     JellyfinServerInfo? info;
     String? effectiveBaseUrl;
     for (var i = 0; i < attempts; i++) {
-      final result = await _probeWithLatency(
-        baseUrl,
-        timeout: MediaServerTimeouts.connectionRace,
-      );
+      final result = await _probeWithLatency(baseUrl, timeout: MediaServerTimeouts.connectionRace);
       if (!result.success) {
-        return JellyfinEndpointProbeResult(
-          success: false,
-          latencyMs: result.latencyMs,
-          error: result.error,
-        );
+        return JellyfinEndpointProbeResult(success: false, latencyMs: result.latencyMs, error: result.error);
       }
       info = result.serverInfo;
       effectiveBaseUrl = result.effectiveBaseUrl;
       results.add(result);
     }
-    final avgLatency =
-        results.map((result) => result.latencyMs).reduce((a, b) => a + b) ~/
-        results.length;
+    final avgLatency = results.map((result) => result.latencyMs).reduce((a, b) => a + b) ~/ results.length;
     return JellyfinEndpointProbeResult(
       success: true,
       latencyMs: avgLatency,
@@ -400,30 +297,19 @@ class JellyfinEndpointDiscovery {
     required String? expectedMachineId,
   }) {
     if (expectedMachineId?.isNotEmpty == true) {
-      final matchingResults =
-          Map<
-            JellyfinEndpointCandidate,
-            JellyfinEndpointProbeResult
-          >.fromEntries(
-            results.entries.where(
-              (entry) => entry.value.serverInfo?.machineId == expectedMachineId,
-            ),
-          );
+      final matchingResults = Map<JellyfinEndpointCandidate, JellyfinEndpointProbeResult>.fromEntries(
+        results.entries.where((entry) => entry.value.serverInfo?.machineId == expectedMachineId),
+      );
       final match = _selectLowestLatencyCandidate(matchingResults);
       if (match != null) return match;
     }
     return _selectLowestLatencyCandidate(results);
   }
 
-  static String _resolveEffectiveBaseUrl(
-    String requestedBaseUrl,
-    MediaServerResponse response,
-  ) {
+  static String _resolveEffectiveBaseUrl(String requestedBaseUrl, MediaServerResponse response) {
     final requestedUri = response.requestUri;
     final effectiveUri = response.effectiveUri;
-    if (requestedUri == null ||
-        effectiveUri == null ||
-        effectiveUri == requestedUri) {
+    if (requestedUri == null || effectiveUri == null || effectiveUri == requestedUri) {
       return requestedBaseUrl;
     }
 
@@ -434,34 +320,19 @@ class JellyfinEndpointDiscovery {
         (effectiveScheme != 'http' && effectiveScheme != 'https')) {
       throw MediaServerUrlException('Server redirected to an unsupported URL');
     }
-    if (requestedBaseUri.host.toLowerCase() !=
-        effectiveUri.host.toLowerCase()) {
-      throw MediaServerUrlException(
-        'Server redirected to a different host. Enter the final Jellyfin URL directly',
-      );
+    if (requestedBaseUri.host.toLowerCase() != effectiveUri.host.toLowerCase()) {
+      throw MediaServerUrlException('Server redirected to a different host. Enter the final Jellyfin URL directly');
     }
-    if (requestedBaseUri.scheme.toLowerCase() == 'https' &&
-        effectiveScheme != 'https') {
-      throw MediaServerUrlException(
-        'Server redirected from HTTPS to an insecure URL',
-      );
+    if (requestedBaseUri.scheme.toLowerCase() == 'https' && effectiveScheme != 'https') {
+      throw MediaServerUrlException('Server redirected from HTTPS to an insecure URL');
     }
 
     const publicInfoPath = '/System/Info/Public';
     if (!effectiveUri.path.endsWith(publicInfoPath)) {
-      throw MediaServerUrlException(
-        'Server redirected to an unsupported URL. Enter the final Jellyfin URL directly',
-      );
+      throw MediaServerUrlException('Server redirected to an unsupported URL. Enter the final Jellyfin URL directly');
     }
-    final basePath = effectiveUri.path.substring(
-      0,
-      effectiveUri.path.length - publicInfoPath.length,
-    );
-    return normalizeBaseUrl(
-      effectiveUri
-          .replace(path: basePath, query: null, fragment: null)
-          .toString(),
-    );
+    final basePath = effectiveUri.path.substring(0, effectiveUri.path.length - publicInfoPath.length);
+    return normalizeBaseUrl(effectiveUri.replace(path: basePath, query: null, fragment: null).toString());
   }
 
   /// Normalizes a concrete Jellyfin base URL without inventing a scheme or port.
@@ -480,9 +351,7 @@ class JellyfinEndpointDiscovery {
     final result = <String>[];
     final seen = <String>{};
     void add(Uri uri) {
-      final normalized = stripTrailingSlash(
-        uri.replace(query: null, fragment: null).toString(),
-      );
+      final normalized = stripTrailingSlash(uri.replace(query: null, fragment: null).toString());
       if (normalized.isEmpty || !seen.add(normalized)) return;
       result.add(normalized);
     }
@@ -499,9 +368,7 @@ class JellyfinEndpointDiscovery {
     return List.unmodifiable(result);
   }
 
-  static JellyfinEndpointUserInputCandidates buildUserInputCandidates(
-    Iterable<String> input,
-  ) {
+  static JellyfinEndpointUserInputCandidates buildUserInputCandidates(Iterable<String> input) {
     final probeBaseUrls = <String>[];
     final explicitBaseUrls = <String>[];
     final validationBaseUrlGroups = <List<String>>[];
@@ -557,9 +424,7 @@ class JellyfinEndpointDiscovery {
     return List.unmodifiable(result);
   }
 
-  static List<List<String>> _normalizeBaseUrlGroups(
-    Iterable<Iterable<String>> groups,
-  ) {
+  static List<List<String>> _normalizeBaseUrlGroups(Iterable<Iterable<String>> groups) {
     final result = <List<String>>[];
     for (final group in groups) {
       final normalized = normalizeBaseUrls(group);
@@ -568,8 +433,7 @@ class JellyfinEndpointDiscovery {
     return List.unmodifiable(result);
   }
 
-  static bool _hasScheme(String input) =>
-      RegExp(r'^[a-zA-Z][a-zA-Z\d+.-]*://').hasMatch(input);
+  static bool _hasScheme(String input) => RegExp(r'^[a-zA-Z][a-zA-Z\d+.-]*://').hasMatch(input);
 
   static List<String> _activeFirst(String activeBaseUrl, List<String> urls) {
     final result = <String>[];

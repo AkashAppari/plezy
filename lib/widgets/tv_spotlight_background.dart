@@ -68,10 +68,7 @@ class TvSpotlightBackground extends StatelessWidget {
     final containerAspect = size.width / size.height;
     final fallbackPaths = media == null
         ? const <String>[]
-        : <String>[
-            ...media.heroArtCandidates(containerAspectRatio: containerAspect),
-            ?media.thumbPath,
-          ];
+        : <String>[...media.heroArtCandidates(containerAspectRatio: containerAspect), ?media.thumbPath];
     return Stack(
       fit: StackFit.expand,
       children: [
