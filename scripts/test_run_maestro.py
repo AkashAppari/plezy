@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from contextlib import redirect_stderr
+from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import replace
 import io
 from pathlib import Path
@@ -14,6 +14,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import run_maestro  # noqa: E402
+import run_maestro_ci  # noqa: E402
 
 
 class ParseConfigTests(unittest.TestCase):
@@ -132,6 +133,37 @@ class LifecycleTests(unittest.TestCase):
 
         self.assertEqual(run_command.call_count, 2)
         sleep.assert_called_once_with(5)
+
+
+class CiGroupTests(unittest.TestCase):
+    def test_android_15_group_runs_every_suite_after_failure(self) -> None:
+        expected_runs = len(run_maestro_ci.GROUPS["android-15"])
+        statuses = [0, 1, *([0] * (expected_runs - 2))]
+
+        with (
+            patch.object(run_maestro_ci.run_maestro, "main", side_effect=statuses) as run,
+            redirect_stdout(io.StringIO()),
+        ):
+            exit_status = run_maestro_ci.run_group("android-15")
+
+        self.assertEqual(exit_status, 1)
+        self.assertEqual(run.call_count, expected_runs)
+
+    def test_group_recipes_are_valid_runner_invocations(self) -> None:
+        for recipes in run_maestro_ci.GROUPS.values():
+            for arguments in recipes:
+                with self.subTest(arguments=arguments):
+                    run_maestro.parse_config(arguments, {})
+
+    def test_group_stops_after_interruption(self) -> None:
+        with (
+            patch.object(run_maestro_ci.run_maestro, "main", return_value=143) as run,
+            redirect_stdout(io.StringIO()),
+        ):
+            exit_status = run_maestro_ci.run_group("android-15")
+
+        self.assertEqual(exit_status, 143)
+        run.assert_called_once_with(("basic",))
 
 
 if __name__ == "__main__":

@@ -199,40 +199,7 @@ jobs:
           emulator-options: >-
             -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio
             -no-boot-anim -camera-back none
-          script: |
-            status=0
-            run_flow() {
-              "$@" || status=1
-            }
-
-            run_flow python3 scripts/run_maestro.py basic
-            run_flow python3 scripts/run_maestro.py catalog
-            run_flow python3 scripts/run_maestro.py media
-            run_flow python3 scripts/run_maestro.py basic \
-              --flow .maestro/regression_flows/03_tv_library_focus.yaml \
-              --jellyfin-log build/maestro-tv/library-focus.log \
-              --diagnostics-dir build/maestro-tv/library-focus-diagnostics
-            run_flow python3 scripts/run_maestro.py basic \
-              --flow .maestro/regression_flows/04_tv_player_keys.yaml \
-              --jellyfin-log build/maestro-tv/player-keys.log \
-              --diagnostics-dir build/maestro-tv/player-keys-diagnostics
-            run_flow python3 scripts/run_maestro.py basic \
-              --flow .maestro/regression_flows/05_tv_next_episode_back.yaml \
-              --jellyfin-log build/maestro-tv/next-episode.log \
-              --diagnostics-dir build/maestro-tv/next-episode-diagnostics
-            run_flow python3 scripts/run_maestro.py basic \
-              --fault music-failure \
-              --flow .maestro/real_flows/02_music_browse.yaml \
-              --jellyfin-log build/maestro-recovery/music-jellyfin.log \
-              --proxy-journal build/maestro-recovery/music-proxy-journal.jsonl \
-              --diagnostics-dir build/maestro-recovery/music-diagnostics
-            run_flow python3 scripts/run_maestro.py basic \
-              --fault recovery \
-              --flow .maestro/regression_flows/06_playback_recovery.yaml \
-              --jellyfin-log build/maestro-recovery/jellyfin.log \
-              --proxy-journal build/maestro-recovery/proxy-journal.jsonl \
-              --diagnostics-dir build/maestro-recovery/diagnostics
-            exit "$status"
+          script: python3 scripts/run_maestro_ci.py android-15
 
       - name: Run Android 9 legacy playback
         id: api28
@@ -253,11 +220,7 @@ jobs:
           emulator-options: >-
             -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio
             -no-boot-anim -camera-back none
-          script: |
-            python3 scripts/run_maestro.py basic \
-              --flow .maestro/flows/05_playback.yaml \
-              --jellyfin-log build/maestro-legacy/jellyfin.log \
-              --diagnostics-dir build/maestro-legacy/diagnostics
+          script: python3 scripts/run_maestro_ci.py android-9
       # Fork PRs may restore trusted caches, but only trusted events publish cache entries.
       - name: Save Pub dependency cache
         if: github.event_name != 'pull_request' && steps.pub-cache.outputs.cache-hit != 'true'
