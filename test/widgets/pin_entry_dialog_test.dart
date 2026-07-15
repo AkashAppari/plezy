@@ -219,6 +219,29 @@ void main() {
     expect(find.byType(PinEntryDialog), findsNothing);
   });
 
+  testWidgets('held D-pad select activates each PIN key once', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    String? result;
+
+    await _pumpPinDialogLauncher(tester, onResult: (pin) => result = pin);
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    await _holdDpadSelect(tester); // 1
+    await _pressDpadKey(tester, LogicalKeyboardKey.arrowRight, PhysicalKeyboardKey.arrowRight);
+    await _pressDpadKey(tester, LogicalKeyboardKey.select, PhysicalKeyboardKey.select); // 2
+    await _pressDpadKey(tester, LogicalKeyboardKey.arrowRight, PhysicalKeyboardKey.arrowRight);
+    await _pressDpadKey(tester, LogicalKeyboardKey.select, PhysicalKeyboardKey.select); // 3
+    await _pressDpadKey(tester, LogicalKeyboardKey.arrowLeft, PhysicalKeyboardKey.arrowLeft);
+    await _pressDpadKey(tester, LogicalKeyboardKey.arrowLeft, PhysicalKeyboardKey.arrowLeft);
+    await _pressDpadKey(tester, LogicalKeyboardKey.arrowDown, PhysicalKeyboardKey.arrowDown);
+    await _pressDpadKey(tester, LogicalKeyboardKey.select, PhysicalKeyboardKey.select); // 4
+    await tester.pumpAndSettle();
+
+    expect(result, '1234');
+    expect(find.byType(PinEntryDialog), findsNothing);
+  });
+
   testWidgets('Android TV keyboard-mapped enter/select activates highlighted PIN key', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
     String? result;
@@ -356,6 +379,34 @@ Future<void> _pumpPinDialogLauncher(
 
 Future<void> _pressKey(WidgetTester tester, LogicalKeyboardKey key) async {
   await tester.sendKeyEvent(key);
+  await tester.pump();
+}
+
+Future<void> _holdDpadSelect(WidgetTester tester) async {
+  _dispatchKey(
+    const KeyDownEvent(
+      physicalKey: PhysicalKeyboardKey.select,
+      logicalKey: LogicalKeyboardKey.select,
+      timeStamp: Duration.zero,
+      deviceType: ui.KeyEventDeviceType.directionalPad,
+    ),
+  );
+  _dispatchKey(
+    const KeyRepeatEvent(
+      physicalKey: PhysicalKeyboardKey.select,
+      logicalKey: LogicalKeyboardKey.select,
+      timeStamp: Duration(milliseconds: 100),
+      deviceType: ui.KeyEventDeviceType.directionalPad,
+    ),
+  );
+  _dispatchKey(
+    const KeyUpEvent(
+      physicalKey: PhysicalKeyboardKey.select,
+      logicalKey: LogicalKeyboardKey.select,
+      timeStamp: Duration(milliseconds: 200),
+      deviceType: ui.KeyEventDeviceType.directionalPad,
+    ),
+  );
   await tester.pump();
 }
 

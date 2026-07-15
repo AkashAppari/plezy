@@ -43,6 +43,21 @@ void main() {
     expect(find.byType(Dialog), findsOneWidget);
   });
 
+  testWidgets('held select activates the highlighted key once', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await _pumpKeyboard(tester, controller: controller);
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.select);
+    await tester.sendKeyRepeatEvent(LogicalKeyboardKey.select);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.select);
+    await tester.pump();
+
+    expect(controller.text, '1');
+    expect(find.byType(Dialog), findsOneWidget);
+  });
+
   testWidgets('directional pad enter activates highlighted key', (tester) async {
     final controller = TextEditingController();
     addTearDown(controller.dispose);

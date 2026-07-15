@@ -380,15 +380,13 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
 
     final backResult = handleBackKeyAction(event, widget.onCancel);
     if (backResult != KeyEventResult.ignored) return backResult;
+    if (event.isTvSelectEvent || (PlatformDetector.isTV() && event.isPhysicalKeyboardEnter)) {
+      return handleOneShotSelect(event, () => _activate(_rows[_row][_column]));
+    }
 
     if (event is KeyDownEvent || event is KeyRepeatEvent) {
       if (key == LogicalKeyboardKey.backspace || key == LogicalKeyboardKey.delete) {
         _deleteLastDigit();
-        return KeyEventResult.handled;
-      }
-
-      if (event.isTvSelectEvent || (PlatformDetector.isTV() && event.isPhysicalKeyboardEnter)) {
-        _activate(_rows[_row][_column]);
         return KeyEventResult.handled;
       }
 

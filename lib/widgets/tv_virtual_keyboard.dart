@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../focus/dpad_navigator.dart';
+import '../focus/key_event_utils.dart';
 import '../i18n/strings.g.dart';
 import '../utils/platform_detector.dart';
 import 'app_icon.dart';
@@ -348,6 +349,9 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> {
       if (event is KeyUpEvent) Navigator.of(context).pop();
       return KeyEventResult.handled;
     }
+    if (event.isTvSelectEvent) {
+      return handleOneShotSelect(event, () => _activate(_rows[_row][_column]));
+    }
 
     if (event is KeyDownEvent || event is KeyRepeatEvent) {
       if (_handlePhysicalKeyboardTextInput(event)) return KeyEventResult.handled;
@@ -367,11 +371,6 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> {
         } else if (event is KeyDownEvent) {
           _submit();
         }
-        return KeyEventResult.handled;
-      }
-
-      if (event.isTvSelectEvent) {
-        _activate(_rows[_row][_column]);
         return KeyEventResult.handled;
       }
 
