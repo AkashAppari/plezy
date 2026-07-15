@@ -41,7 +41,7 @@ class TvSpotlightController extends ValueNotifier<MediaItem?> {
       fallback ??= hub.items.first;
       if (current == null) continue;
       for (final item in hub.items) {
-        if (item.globalKey == current.globalKey) return current;
+        if (item.globalKey == current.globalKey) return item;
       }
     }
     return fallback;
