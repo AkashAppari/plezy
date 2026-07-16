@@ -60,4 +60,10 @@ void main() {
     expect(plain!.synced, isFalse);
     expect(plain.lines.map((line) => line.text), ['Plain first line', 'Plain second line']);
   });
+
+  test('returns null for XML with unclosed tags', () {
+    final lyrics = parsePlexLyricsResponse('<MediaContainer><Lyrics><Line><Span text="Truncated">');
+
+    expect(lyrics, isNull);
+  });
 }

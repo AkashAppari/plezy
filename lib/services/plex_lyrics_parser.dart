@@ -22,7 +22,7 @@ Lyrics? parsePlexLyricsResponse(Object? raw) {
   if (trimmed.startsWith('<')) {
     try {
       return _parseXmlLyrics(trimmed);
-    } on XmlParserException {
+    } on XmlException {
       return null;
     }
   }
