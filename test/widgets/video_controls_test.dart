@@ -428,6 +428,7 @@ void main() {
       bool Function()? isChromePresented,
       Future<bool> Function()? exitFullscreenIfActive,
       bool physicalEscapeExitsFullscreen = true,
+      bool Function()? physicalEscapeExitsFullscreenProvider,
       VoidCallback? exitPlayer,
       VoidCallback? navigateHome,
       bool Function()? isActive,
@@ -438,7 +439,7 @@ void main() {
         dismissPrompt: dismissPrompt ?? () {},
         isChromePresented: isChromePresented ?? () => chromeController.controlsPresented,
         exitFullscreenIfActive: exitFullscreenIfActive ?? () async => false,
-        physicalEscapeExitsFullscreen: physicalEscapeExitsFullscreen,
+        physicalEscapeExitsFullscreen: physicalEscapeExitsFullscreenProvider ?? () => physicalEscapeExitsFullscreen,
         exitPlayer: exitPlayer ?? () {},
         navigateHome: navigateHome ?? () {},
         isActive: isActive,
@@ -554,6 +555,31 @@ void main() {
       await tester.pump();
 
       expect(chromeController.controlsVisible, isTrue);
+      expect(exits, 0);
+    });
+
+    testWidgets('enabling player navigation makes physical Escape preserve fullscreen', (tester) async {
+      final chromeController = PlayerChromeController();
+      addTearDown(chromeController.dispose);
+      var physicalEscapeExitsFullscreen = true;
+      var fullscreenChecks = 0;
+      var exits = 0;
+      final coordinator = coordinatorFor(
+        chromeController,
+        exitFullscreenIfActive: () async {
+          fullscreenChecks++;
+          return true;
+        },
+        physicalEscapeExitsFullscreenProvider: () => physicalEscapeExitsFullscreen,
+        exitPlayer: () => exits++,
+      );
+      physicalEscapeExitsFullscreen = false;
+      await pumpNavigationFocus(tester, coordinator);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+
+      expect(fullscreenChecks, 0);
+      expect(chromeController.controlsVisible, isFalse);
       expect(exits, 0);
     });
 
@@ -702,6 +728,20 @@ void main() {
         ),
         PlayerBackDisposition.exitPlayer,
       );
+    });
+  });
+
+  group('shouldPhysicalEscapeExitFullscreen', () {
+    test('uses fullscreen-first behavior for normal Windows and Linux navigation', () {
+      expect(shouldPhysicalEscapeExitFullscreen(isMacOS: false, videoPlayerNavigationEnabled: false), isTrue);
+    });
+
+    test('preserves fullscreen when HTPC-style player navigation is enabled', () {
+      expect(shouldPhysicalEscapeExitFullscreen(isMacOS: false, videoPlayerNavigationEnabled: true), isFalse);
+    });
+
+    test('preserves native fullscreen inside the macOS player', () {
+      expect(shouldPhysicalEscapeExitFullscreen(isMacOS: true, videoPlayerNavigationEnabled: false), isFalse);
     });
   });
 

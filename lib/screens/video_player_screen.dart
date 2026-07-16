@@ -591,10 +591,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       isChromePresented: () =>
           _isPlayerInitialized && player != null && _hasFirstFrame.value && _chromeController.controlsPresented,
       exitFullscreenIfActive: FullscreenStateManager().exitFullscreenIfActive,
-      // macOS fullscreen belongs to the app window, not the player route.
-      // Escape stages through chrome/player Back and the root Home screen
-      // owns leaving native fullscreen.
-      physicalEscapeExitsFullscreen: !Platform.isMacOS,
+      // macOS fullscreen belongs to the app window, while HTPC-style player
+      // navigation treats physical Escape as semantic Back. In both cases the
+      // player must leave native fullscreen alone.
+      physicalEscapeExitsFullscreen: () => shouldPhysicalEscapeExitFullscreen(
+        isMacOS: Platform.isMacOS,
+        videoPlayerNavigationEnabled: _videoPlayerNavigationEnabled,
+      ),
       exitPlayer: () => unawaited(_handleBackButton()),
       navigateHome: _handleHomeButton,
       isActive: () => mounted,

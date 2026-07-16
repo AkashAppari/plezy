@@ -184,6 +184,10 @@ enum PlayerNavigationKey { none, physicalEscape, back, home }
 
 enum PlayerBackDisposition { closeContentStrip, exitFullscreenIfActive, hideControls, exitPlayer }
 
+bool shouldPhysicalEscapeExitFullscreen({required bool isMacOS, required bool videoPlayerNavigationEnabled}) {
+  return !isMacOS && !videoPlayerNavigationEnabled;
+}
+
 /// Coordinates the player-level stages shared by keyboard, controller, and
 /// companion navigation after descendants have handled local overlays.
 class PlayerNavigationCoordinator {
@@ -192,7 +196,7 @@ class PlayerNavigationCoordinator {
   final VoidCallback dismissPrompt;
   final bool Function() isChromePresented;
   final Future<bool> Function() exitFullscreenIfActive;
-  final bool physicalEscapeExitsFullscreen;
+  final bool Function() _physicalEscapeExitsFullscreen;
   final VoidCallback exitPlayer;
   final VoidCallback navigateHome;
   final bool Function() isActive;
@@ -205,13 +209,15 @@ class PlayerNavigationCoordinator {
     required this.dismissPrompt,
     required this.isChromePresented,
     required this.exitFullscreenIfActive,
-    this.physicalEscapeExitsFullscreen = true,
+    bool Function()? physicalEscapeExitsFullscreen,
     required this.exitPlayer,
     required this.navigateHome,
     bool Function()? isActive,
-  }) : isActive = isActive ?? _alwaysActive;
+  }) : _physicalEscapeExitsFullscreen = physicalEscapeExitsFullscreen ?? _alwaysTrue,
+       isActive = isActive ?? _alwaysActive;
 
   static bool _alwaysActive() => true;
+  static bool _alwaysTrue() => true;
 
   void handle(PlayerNavigationKey navigationKey) {
     if (navigationKey == PlayerNavigationKey.home) {
@@ -226,7 +232,7 @@ class PlayerNavigationCoordinator {
       navigationKey: navigationKey,
       contentStripVisible: chromeController.contentStripVisible,
       controlsVisible: isChromePresented(),
-      physicalEscapeExitsFullscreen: physicalEscapeExitsFullscreen,
+      physicalEscapeExitsFullscreen: _physicalEscapeExitsFullscreen(),
     );
     _applyDisposition(disposition);
   }
