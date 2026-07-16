@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import '../media/ids.dart';
 import 'dart:io';
 
@@ -98,6 +99,12 @@ import '../widgets/tv_browse_rail.dart';
 import '../widgets/tv_spotlight_background.dart';
 
 part 'media_detail/action_buttons.dart';
+
+/// Ceiling for the detail hero's backdrop box, as a fraction of the window
+/// height. Roughly the natural height of a 16:9 backdrop on a 16:10 desktop
+/// window, so it does not bite there; it only kicks in on short/wide windows,
+/// where an unbounded box would leave artwork showing under the overview.
+const double _maxHeroArtViewportFraction = 0.86;
 
 const double _tvDetailTallPosterScale = TvBrowseRailLayout.compactTallPosterScale;
 const double _tvDetailEpisodeThumbnailScale = TvBrowseRailLayout.compactEpisodeThumbnailScale;
@@ -3085,11 +3092,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             child: Scaffold(
               body: Stack(
                 children: [
+                  // Background art sits behind the scroll view so it can be
+                  // taller than the hero sliver without displacing content.
+                  _buildHeroBackdropLayer(context, metadata, size, headerHeight),
+
                   CustomScrollView(
                     primary: true,
                     slivers: [
-                      // Hero header with background art
-                      SliverToBoxAdapter(child: _buildHeroHeader(context, metadata, size, headerHeight)),
+                      // Hero header content over the background art
+                      SliverToBoxAdapter(
+                        child: SizedBox(height: headerHeight, child: _buildHeroHeader(context, metadata)),
+                      ),
 
                       // Main content
                       SliverToBoxAdapter(
@@ -4099,92 +4112,125 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return _getRelatedHubIcon(hub);
   }
 
-  Widget _buildHeroHeader(BuildContext context, MediaItem metadata, Size size, double headerHeight) {
-    return Stack(
-      children: [
-        // Background Art (fixed height, no parallax)
-        SizedBox(
-          height: headerHeight,
-          width: double.infinity,
-          child: Builder(
-            builder: (context) {
-              final containerAspect = size.width / headerHeight;
-              final heroArtPaths = metadata.heroArtCandidates(containerAspectRatio: containerAspect);
-              if (heroArtPaths.isEmpty) return const PlaceholderContainer();
+  /// Height of the backdrop paint box, which is deliberately taller than the
+  /// hero sliver on wide windows.
+  ///
+  /// Cover-fitting a 16:9 backdrop into a hero that is much wider than 16:9
+  /// scales it to the window width and then throws away the top and bottom of
+  /// the frame. Painting into the artwork's own natural height instead keeps
+  /// the whole frame, and the extra height is spent behind the content that
+  /// follows the hero rather than pushing that content down — the sliver
+  /// layout below is unchanged.
+  ///
+  /// Never shorter than the hero: portrait windows are already taller than the
+  /// artwork and keep cropping the sides as before. Never taller than
+  /// [_maxHeroArtViewportFraction] either, because the scrim ramps across this
+  /// box, so a box that overshoots the window would still be translucent where
+  /// the overview text begins.
+  double _heroArtHeight(Size size, double headerHeight) {
+    const backdropAspect = 16 / 9;
+    final maxArtHeight = math.max(headerHeight, size.height * _maxHeroArtViewportFraction);
+    return (size.width / backdropAspect).clamp(headerHeight, maxArtHeight).toDouble();
+  }
 
-              return blurArtwork(
-                CyclingMediaBackdrop(
-                  mediaKey: metadata.globalKey,
-                  imagePaths: metadata.heroBackdropPaths,
-                  fallbackImagePaths: heroArtPaths,
-                  client: _getArtworkMediaClient(context),
-                  localArtworkPathResolver: widget.isOffline ? (path) => _offlineArtworkLocalPath(context, path) : null,
-                  allowNetwork: !widget.isOffline,
-                  width: size.width,
-                  height: headerHeight,
-                  fallbackColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+  /// Backdrop + scrim, painted behind the scroll view and translated with it so
+  /// it keeps the hero's fixed, no-parallax relationship to the content.
+  Widget _buildHeroBackdropLayer(BuildContext context, MediaItem metadata, Size size, double headerHeight) {
+    final artHeight = _heroArtHeight(size, headerHeight);
+
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      height: artHeight,
+      child: IgnorePointer(
+        child: AnimatedBuilder(
+          animation: _scrollController,
+          builder: (context, child) {
+            final offset = _scrollController.hasClients ? _scrollController.offset : 0.0;
+            return Transform.translate(offset: Offset(0, -offset), child: child);
+          },
+          child: RepaintBoundary(
+            child: Stack(
+              fit: .expand,
+              children: [
+                Builder(
+                  builder: (context) {
+                    final containerAspect = size.width / artHeight;
+                    final heroArtPaths = metadata.heroArtCandidates(containerAspectRatio: containerAspect);
+                    if (heroArtPaths.isEmpty) return const PlaceholderContainer();
+
+                    return blurArtwork(
+                      CyclingMediaBackdrop(
+                        mediaKey: metadata.globalKey,
+                        imagePaths: metadata.heroBackdropPaths,
+                        fallbackImagePaths: heroArtPaths,
+                        client: _getArtworkMediaClient(context),
+                        localArtworkPathResolver: widget.isOffline
+                            ? (path) => _offlineArtworkLocalPath(context, path)
+                            : null,
+                        allowNetwork: !widget.isOffline,
+                        width: size.width,
+                        height: artHeight,
+                        fallbackColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
-        ),
 
-        // Gradient overlay
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: -1, // Extend 1px past to prevent subpixel gap
-          child: Builder(
-            builder: (context) {
-              final bgColor = Theme.of(context).scaffoldBackgroundColor;
-              // Full-height eased scrim. The light global dim (alpha 0.2 at
-              // the very top) lowers the contrast the ramp has to bridge on
-              // bright artwork — without it, any fade to solid compresses
-              // into a visible band above the content stack. The body samples
-              // easeInOut (continuous curvature — hand-picked stops kink at
-              // every boundary); the tail instead decays the remaining
-              // transparency geometrically (~1/8 per sample) because an eased
-              // zero-slope landing leaves a faint artwork glow that pure-black
-              // (OLED) backgrounds expose. Solid bg from 94% so nothing ghosts
-              // at the header/content boundary on any theme.
-              const scrimAlphas = [0.20, 0.234, 0.325, 0.453, 0.60, 0.747, 0.875, 0.985, 0.998, 1.0];
-              const scrimXs = [0.0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.9375, 1.0];
-              const solidStop = 0.94;
-              return RasterizedGradient(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    for (final a in scrimAlphas) bgColor.withValues(alpha: a),
-                    bgColor,
-                  ],
-                  stops: [for (final x in scrimXs) solidStop * x, 1.0],
+                // Gradient overlay
+                Builder(
+                  builder: (context) {
+                    final bgColor = Theme.of(context).scaffoldBackgroundColor;
+                    // Full-height eased scrim. The light global dim (alpha 0.2 at
+                    // the very top) lowers the contrast the ramp has to bridge on
+                    // bright artwork — without it, any fade to solid compresses
+                    // into a visible band above the content stack. The body samples
+                    // easeInOut (continuous curvature — hand-picked stops kink at
+                    // every boundary); the tail instead decays the remaining
+                    // transparency geometrically (~1/8 per sample) because an eased
+                    // zero-slope landing leaves a faint artwork glow that pure-black
+                    // (OLED) backgrounds expose. Solid bg from 94% so nothing ghosts
+                    // where the artwork ends, on any theme.
+                    //
+                    // The ramp spans the art box, not the hero, so on wide windows
+                    // it keeps fading past the hero edge and the bottom of the frame
+                    // dissolves behind the overview instead of being cut off.
+                    const scrimAlphas = [0.20, 0.234, 0.325, 0.453, 0.60, 0.747, 0.875, 0.985, 0.998, 1.0];
+                    const scrimXs = [0.0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.9375, 1.0];
+                    const solidStop = 0.94;
+                    return RasterizedGradient(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          for (final a in scrimAlphas) bgColor.withValues(alpha: a),
+                          bgColor,
+                        ],
+                        stops: [for (final x in scrimXs) solidStop * x, 1.0],
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
-        ),
-
-        // Content at bottom
-        Positioned(
-          top: 0,
-          bottom: 16,
-          left: 0,
-          right: 0,
-          // bottom: false — the hero is the top sliver, so the bottom safe-area
-          // inset would otherwise push the action row far up off the hero edge.
-          // Left/right stay enabled for the landscape notch.
-          child: SafeArea(
-            top: false,
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _buildHeroHeaderContent(context, metadata),
+              ],
             ),
           ),
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildHeroHeader(BuildContext context, MediaItem metadata) {
+    // bottom: false — the hero is the top sliver, so the bottom safe-area
+    // inset would otherwise push the action row far up off the hero edge.
+    // Left/right stay enabled for the landscape notch.
+    return SafeArea(
+      top: false,
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: _buildHeroHeaderContent(context, metadata),
+      ),
     );
   }
 
