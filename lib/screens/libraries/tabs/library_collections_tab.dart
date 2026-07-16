@@ -137,7 +137,15 @@ class _LibraryCollectionsTabState extends BaseLibraryTabState<MediaItem, Library
     return base.copyWith(top: base.top + _focusDecorationPadding);
   }
 
-  bool get _usesSquareCards => widget.library.kind.isMusic;
+  bool get _usesSquareCards {
+    final loaded = loadedItems.values;
+    return loaded.isNotEmpty && loaded.every(_isMusicCollection);
+  }
+
+  // Plex collection rows are library-scoped, so their container kind is a
+  // safe fallback. Jellyfin BoxSets are server-wide and must opt in per item.
+  bool _isMusicCollection(MediaItem item) =>
+      item.kind.isMusic || (item is PlexMediaItem && widget.library.kind.isMusic);
 
   Widget _buildItemsSliver(ViewMode viewMode, int density, {required bool fullCardLayout}) {
     final shape = _usesSquareCards ? CardShape.square : null;

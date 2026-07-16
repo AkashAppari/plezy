@@ -22,6 +22,7 @@ import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
+import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/focusable_media_card.dart';
 import 'package:plezy/widgets/media_card_sliver_layout.dart';
 import 'package:provider/provider.dart';
@@ -37,7 +38,10 @@ void main() {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
     LocaleSettings.setLocaleSync(AppLocale.en);
+    TvDetectionService.debugSetAppleTVOverride(false);
   });
+
+  tearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
 
   testWidgets('music collection contents use square grid geometry and cards', (tester) async {
     final album = testMediaItem(
@@ -49,6 +53,8 @@ void main() {
       serverName: 'Server',
     );
     final harness = await _createHarness([album]);
+    TvDetectionService.debugSetAppleTVOverride(true);
+    await SettingsService.instance.write(SettingsService.tvFullCardLayout, true);
 
     await tester.pumpWidget(
       harness.wrap(SizedBox(width: 1280, height: 720, child: CollectionDetailScreen(collection: _collection))),

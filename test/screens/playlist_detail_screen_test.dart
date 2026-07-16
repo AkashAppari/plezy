@@ -131,6 +131,8 @@ void main() {
         serverName: 'Server',
       ),
     ]);
+    TvDetectionService.debugSetAppleTVOverride(true);
+    await SettingsService.instance.write(SettingsService.tvFullCardLayout, true);
 
     await tester.pumpWidget(
       harness.wrap(

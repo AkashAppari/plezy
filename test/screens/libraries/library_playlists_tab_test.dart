@@ -24,6 +24,7 @@ import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/card_inflation_budget.dart';
 import 'package:plezy/widgets/focusable_media_card.dart';
 import 'package:plezy/widgets/media_card_sliver_layout.dart';
@@ -54,8 +55,11 @@ void main() {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
     CardInflationBudget.reset();
+    TvDetectionService.debugSetAppleTVOverride(false);
     await SettingsService.getInstance();
   });
+
+  tearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
 
   testWidgets('grid lazily builds playlist cards and preserves focus navigation', (tester) async {
     final harness = _PlaylistHarness();
@@ -154,6 +158,8 @@ void main() {
     final harness = _PlaylistHarness(playlistType: 'audio');
     addTearDown(harness.dispose);
     addTearDown(harness.rebuild.dispose);
+    TvDetectionService.debugSetAppleTVOverride(true);
+    await SettingsService.instance.write(SettingsService.tvFullCardLayout, true);
 
     await _pumpTab(tester, harness: harness, library: _musicLibrary, onBack: () {}, onSidebar: () {});
 
