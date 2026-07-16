@@ -56,7 +56,6 @@ import '../models/audio_quality_preset.dart';
 import '../models/plex/plex_video_playback_data.dart';
 import '../models/transcode_quality_preset.dart';
 import '../utils/device_identity.dart';
-import '../utils/lrc_parser.dart';
 import '../utils/failover_http_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_retry.dart';
@@ -71,6 +70,7 @@ import '../mpv/mpv.dart';
 import 'api_cache.dart';
 import 'plex_api_cache.dart';
 import 'plex_constants.dart';
+import 'plex_lyrics_parser.dart';
 import 'plex_mappers.dart';
 import 'plex_playback_mapper.dart';
 import 'playback_initialization_types.dart';
@@ -2900,22 +2900,33 @@ class PlexClient
   }
 
   /// Plex lyrics: sidecar `.lrc`/`.txt` files surface as track Part streams
-  /// with `streamType 4`; the raw text lives at the stream's `key`
-  /// (`/library/streams/{id}`). Returns `null` when the track has no lyric
-  /// stream (or it can't be fetched) — lyrics are decorative, so errors
-  /// degrade to "none" rather than failing the caller.
+  /// with `streamType 4`. Plex normalizes the selected stream to a structured
+  /// `Lyrics > Line > Span` response at `/library/streams/{id}?format=xml`.
+  /// Returns `null` when the track has no lyric stream (or it can't be
+  /// fetched) — lyrics are decorative, so errors degrade to "none" rather
+  /// than failing the caller.
   @override
   Future<Lyrics?> fetchLyrics(MediaItem track) async {
     try {
-      final metadataJson = await _fetchRawMetadataJsonCacheFirst(track.id);
-      final streamKey = _findLyricStreamKey(metadataJson);
+      var metadataJson = await _fetchRawMetadataJsonCacheFirst(track.id);
+      var streamKey = _findLyricStreamKey(metadataJson);
+      if (streamKey == null && !_hasStreamMetadata(metadataJson) && !isOfflineMode) {
+        final response = await _getWithFailover(
+          '/library/metadata/${track.id}',
+          queryParameters: {'checkFiles': 1, 'includeStreams': 1},
+        );
+        metadataJson = _getFirstMetadataJson(response);
+        streamKey = _findLyricStreamKey(metadataJson);
+      }
       if (streamKey == null) return null;
-      final response = await _getWithFailover(streamKey);
-      final raw = response.data;
-      if (raw is! String) return null;
-      return parseLrc(raw);
-    } catch (e) {
-      appLogger.w('Failed to fetch lyrics for ${track.id}', error: e);
+      final response = await _getWithFailover(
+        streamKey,
+        queryParameters: {'format': 'xml'},
+        headers: const {'Accept': 'application/xml'},
+      );
+      return parsePlexLyricsResponse(response.data);
+    } catch (e, stackTrace) {
+      appLogger.w('Failed to fetch lyrics for ${track.id}', error: e, stackTrace: stackTrace);
       return null;
     }
   }
@@ -2924,31 +2935,35 @@ class PlexClient
   /// ([PlexStreamType.lyrics]), preferring `lrc` (synced) over other
   /// formats (`txt`).
   String? _findLyricStreamKey(Map<String, dynamic>? metadataJson) {
-    final mediaList = metadataJson?['Media'];
-    if (mediaList is! List) return null;
     String? fallbackKey;
-    for (final media in mediaList) {
+    for (final media in flexibleList(metadataJson?['Media']) ?? const <dynamic>[]) {
       if (media is! Map) continue;
-      final parts = media['Part'];
-      if (parts is! List) continue;
-      for (final part in parts) {
+      for (final part in flexibleList(media['Part']) ?? const <dynamic>[]) {
         if (part is! Map) continue;
-        final streams = part['Stream'];
-        if (streams is! List) continue;
-        for (final stream in streams) {
+        for (final stream in flexibleList(part['Stream']) ?? const <dynamic>[]) {
           if (stream is! Map) continue;
           if (flexibleInt(stream['streamType']) != PlexStreamType.lyrics) {
             continue;
           }
-          final key = stream['key'] as String?;
+          final key = stream['key']?.toString();
           if (key == null || key.isEmpty) continue;
-          final format = ((stream['format'] ?? stream['codec']) as String?)?.toLowerCase();
+          final format = (stream['format'] ?? stream['codec'])?.toString().toLowerCase();
           if (format == 'lrc') return key;
           fallbackKey ??= key;
         }
       }
     }
     return fallbackKey;
+  }
+
+  bool _hasStreamMetadata(Map<String, dynamic>? metadataJson) {
+    for (final media in flexibleList(metadataJson?['Media']) ?? const <dynamic>[]) {
+      if (media is! Map) continue;
+      for (final part in flexibleList(media['Part']) ?? const <dynamic>[]) {
+        if (part is Map && part.containsKey('Stream')) return true;
+      }
+    }
+    return false;
   }
 
   /// Plex playback resolution. Reuses [getVideoPlaybackData] for metadata,

@@ -145,6 +145,128 @@ void main() {
     expect(captured?.url.queryParameters, containsPair('genre.locked', '1'));
   });
 
+  test('lyrics parse Plex structured responses with singleton media shapes', () async {
+    final requests = <http.Request>[];
+    final client = makeClient((request) async {
+      requests.add(request);
+      if (request.url.path == '/library/metadata/track-1') {
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'Metadata': [
+                {
+                  'ratingKey': 'track-1',
+                  'type': 'track',
+                  'Media': {
+                    'Part': {
+                      'Stream': {
+                        'id': '501',
+                        'key': '/library/streams/501',
+                        'streamType': '4',
+                        'codec': 'lrc',
+                        'format': 'lrc',
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          }),
+          200,
+          headers: const {'content-type': 'application/json'},
+        );
+      }
+      if (request.url.path == '/library/streams/501') {
+        return http.Response(
+          '''
+<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer size="1">
+  <Lyrics timed="1">
+    <Line startOffset="500">
+      <Span text="First line" />
+    </Line>
+    <Line startOffset="4000">
+      <Span text="Second " />
+      <Span text="line" />
+    </Line>
+  </Lyrics>
+</MediaContainer>
+''',
+          200,
+          headers: const {'content-type': 'application/xml'},
+        );
+      }
+      return http.Response('not found', 404);
+    });
+    addTearDown(client.close);
+
+    final lyrics = await client.fetchLyrics(testMediaItem(id: 'track-1', kind: MediaKind.track));
+
+    expect(lyrics, isNotNull);
+    expect(lyrics!.synced, isTrue);
+    expect(lyrics.lines.map((line) => line.text), ['First line', 'Second line']);
+    expect(lyrics.lines.map((line) => line.startMs), [500, 4000]);
+    expect(requests.map((request) => request.url.path), ['/library/metadata/track-1', '/library/streams/501']);
+    expect(requests.last.url.queryParameters, containsPair('format', 'xml'));
+    expect(requests.last.url.queryParameters, isNot(contains('includeInlineAttribution')));
+    expect(requests.last.headers['accept'], 'application/xml');
+  });
+
+  test('lyrics refresh incomplete cached metadata and prefer LRC streams', () async {
+    const metadataEndpoint = '/library/metadata/track-1';
+    await PlexApiCache.instance.put(ServerId('server-id'), metadataEndpoint, {
+      'MediaContainer': {
+        'Metadata': [
+          {'ratingKey': 'track-1', 'type': 'track'},
+        ],
+      },
+    });
+    final requestedPaths = <String>[];
+    final client = makeClient((request) async {
+      requestedPaths.add(request.url.path);
+      if (request.url.path == metadataEndpoint) {
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'Metadata': [
+                {
+                  'ratingKey': 'track-1',
+                  'type': 'track',
+                  'Media': [
+                    {
+                      'Part': [
+                        {
+                          'Stream': [
+                            {'id': 501, 'key': '/library/streams/501', 'streamType': 4, 'codec': 'txt'},
+                            {'id': 502, 'key': '/library/streams/502', 'streamType': 4, 'codec': 'lrc'},
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          }),
+          200,
+          headers: const {'content-type': 'application/json'},
+        );
+      }
+      if (request.url.path == '/library/streams/502') {
+        return http.Response('[00:01.00]Preferred timed line', 200, headers: const {'content-type': 'text/plain'});
+      }
+      return http.Response('not found', 404);
+    });
+    addTearDown(client.close);
+
+    final lyrics = await client.fetchLyrics(testMediaItem(id: 'track-1', kind: MediaKind.track));
+
+    expect(lyrics, isNotNull);
+    expect(lyrics!.synced, isTrue);
+    expect(lyrics.lines.single.text, 'Preferred timed line');
+    expect(requestedPaths, [metadataEndpoint, '/library/streams/502']);
+  });
+
   test('cached child fetch rejects decodable HTTP error responses before caching', () async {
     for (final statusCode in [404, 500]) {
       final parentId = 'parent-$statusCode';
