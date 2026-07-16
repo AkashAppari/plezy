@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../../focus/input_mode_tracker.dart';
 import '../../../media/library_query.dart';
+import '../../../media/media_item.dart';
 import '../../../media/media_kind.dart';
 import '../../../media/media_playlist.dart';
 import '../../../mixins/library_tab_focus_mixin.dart';
@@ -142,15 +143,21 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
     return base.copyWith(top: base.top + _focusDecorationPadding);
   }
 
+  bool get _usesSquareCards => widget.library.kind.isMusic;
+
   Widget _buildItemsSliver(ViewMode viewMode, int density, {required bool fullCardLayout}) {
+    final shape = _usesSquareCards ? CardShape.square : null;
+    final useFullCardLayout = fullCardLayout && shape != CardShape.square;
     return MediaCardSliverLayout(
       viewMode: viewMode,
       itemCount: totalSize,
       density: density,
       padding: _effectivePadding,
-      fullBleedImage: fullCardLayout,
-      listEpoch: (ViewMode.list, totalSize, density),
-      gridEpochBuilder: (geometry) => (ViewMode.grid, geometry.columnCount, totalSize, fullCardLayout, density),
+      fullBleedImage: useFullCardLayout,
+      shape: shape,
+      listEpoch: (ViewMode.list, totalSize, density, shape),
+      gridEpochBuilder: (geometry) =>
+          (ViewMode.grid, geometry.columnCount, totalSize, useFullCardLayout, density, shape),
       itemBuilder: (context, position) {
         final index = position.index;
         final playlist = loadedItems[index];
@@ -184,7 +191,7 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
             index,
             isFirstRow: position.isFirstRow,
             isFirstColumn: position.isFirstColumn,
-            fullBleedImage: fullCardLayout,
+            fullBleedImage: useFullCardLayout,
           ),
         );
       },
@@ -210,6 +217,7 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
       focusNode: index == 0 ? firstItemFocusNode : null,
       disableScale: disableScale,
       fullBleedImage: fullBleedImage,
+      cardShapeOverride: _usesSquareCards ? CardShape.square : null,
       onListRefresh: loadItems,
       onNavigateUp: isFirstRow ? widget.onBack : null,
       onBack: widget.onBack,

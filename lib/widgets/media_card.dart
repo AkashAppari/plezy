@@ -140,6 +140,11 @@ class MediaCard extends StatefulWidget {
   final EpisodePosterMode? episodePosterModeOverride;
   final bool fullBleedImage;
 
+  /// Overrides the silhouette inferred from the item itself. Collection and
+  /// playlist records do not encode the media-library shape, so their owning
+  /// surface supplies this for music libraries.
+  final CardShape? cardShapeOverride;
+
   const MediaCard({
     super.key,
     required this.item,
@@ -160,6 +165,7 @@ class MediaCard extends StatefulWidget {
     this.showServerName = false,
     this.episodePosterModeOverride,
     this.fullBleedImage = false,
+    this.cardShapeOverride,
   }) : usesContinueWatchingAction = usesContinueWatchingAction ?? isInContinueWatching;
 
   @override
@@ -309,6 +315,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
             localPosterPath: localPosterPath,
             showServerName: widget.showServerName,
             episodePosterModeOverride: widget.episodePosterModeOverride,
+            cardShapeOverride: widget.cardShapeOverride,
             enableDetailLinks: widget.onTap == null,
           );
 
@@ -391,6 +398,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
                   localPosterPath: localPosterPath,
                   mixedHubContext: widget.mixedHubContext,
                   episodePosterModeOverride: widget.episodePosterModeOverride,
+                  cardShapeOverride: widget.cardShapeOverride,
                   knownWidth: width,
                   knownHeight: height,
                 ),
@@ -424,6 +432,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
               localPosterPath: localPosterPath,
               mixedHubContext: widget.mixedHubContext,
               episodePosterModeOverride: widget.episodePosterModeOverride,
+              cardShapeOverride: widget.cardShapeOverride,
               knownWidth: posterHeight != null ? posterWidth : null,
               knownHeight: posterHeight,
             ),
@@ -500,6 +509,7 @@ class _MediaCardList extends StatelessWidget {
   final String? localPosterPath;
   final bool showServerName;
   final EpisodePosterMode? episodePosterModeOverride;
+  final CardShape? cardShapeOverride;
   final bool enableDetailLinks;
 
   const _MediaCardList({
@@ -515,10 +525,12 @@ class _MediaCardList extends StatelessWidget {
     this.localPosterPath,
     this.showServerName = false,
     this.episodePosterModeOverride,
+    this.cardShapeOverride,
     required this.enableDetailLinks,
   });
 
   CardShape _cardShape() {
+    if (cardShapeOverride case final shape?) return shape;
     if (item is! MediaItem) return CardShape.poster;
     final EpisodePosterMode mode =
         episodePosterModeOverride ?? SettingsService.instance.read(SettingsService.episodePosterMode);
@@ -701,6 +713,7 @@ class _MediaCardList extends StatelessWidget {
                         isOffline: isOffline,
                         localPosterPath: localPosterPath,
                         episodePosterModeOverride: episodePosterModeOverride,
+                        cardShapeOverride: cardShapeOverride,
                       ),
                     ),
                     if (item is MediaItem && _showsWatchedIndicator(item as MediaItem))
@@ -852,6 +865,7 @@ Widget _buildPosterImage(
   String? localPosterPath,
   bool mixedHubContext = false,
   EpisodePosterMode? episodePosterModeOverride,
+  CardShape? cardShapeOverride,
   double? knownWidth,
   double? knownHeight,
 }) {
@@ -859,6 +873,20 @@ Widget _buildPosterImage(
 
   if (item is MediaPlaylist) {
     posterUrl = item.displayImagePath;
+
+    if (cardShapeOverride == CardShape.square) {
+      return OptimizedMediaImage(
+        client: isOffline ? null : context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId)),
+        imagePath: posterUrl,
+        width: knownWidth ?? double.infinity,
+        height: knownHeight ?? double.infinity,
+        fit: BoxFit.cover,
+        placeholder: _buildPosterLoadingPlaceholder,
+        fallbackIcon: Symbols.playlist_play_rounded,
+        imageType: ImageType.square,
+        localFilePath: localPosterPath,
+      );
+    }
 
     return OptimizedMediaImage.playlist(
       client: isOffline ? null : context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId)),
@@ -881,7 +909,12 @@ Widget _buildPosterImage(
     posterUrl = useRememberedFallback ? posterFallbackUrl : primaryPosterUrl;
     final mediaClient = isOffline ? null : context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId));
     final fallbackIcon = _mediaPosterFallbackIcon(item);
-    final imageType = MediaImageHelper.cardImageType(item, episodePosterMode, mixedHubContext: mixedHubContext);
+    final imageType = switch (cardShapeOverride) {
+      CardShape.square => ImageType.square,
+      CardShape.wide => ImageType.thumb,
+      CardShape.poster => ImageType.poster,
+      null => MediaImageHelper.cardImageType(item, episodePosterMode, mixedHubContext: mixedHubContext),
+    };
 
     Widget image;
 

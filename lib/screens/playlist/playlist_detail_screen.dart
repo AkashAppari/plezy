@@ -779,7 +779,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
           if (_isReadOnly)
             // Smart playlists / Jellyfin playlists: focusable grid view
             // (read-only, no reordering or removal)
-            buildFocusableGrid(items: items, onRefresh: updateItem)
+            buildFocusableGrid(items: items, onRefresh: updateItem, shape: _isAudioPlaylist ? CardShape.square : null)
           else
             // Plex regular playlists: sliver reorderable list
             _buildReorderableList(isKeyboardMode),

@@ -177,13 +177,14 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
         final viewMode = svc.read(SettingsService.viewMode);
         final libraryDensity = svc.read(SettingsService.libraryDensity);
         final fullCardLayout = PlatformDetector.isTV() && svc.read(SettingsService.tvFullCardLayout);
+        final useFullCardLayout = fullCardLayout && shape != CardShape.square;
 
         return MediaCardSliverLayout(
           viewMode: viewMode,
           itemCount: items.length,
           density: libraryDensity,
           padding: const EdgeInsets.all(8),
-          fullBleedImage: fullCardLayout,
+          fullBleedImage: useFullCardLayout,
           shape: shape,
           itemBuilder: (context, position) {
             final index = position.index;
@@ -198,7 +199,8 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
               onRefresh: onRefresh,
               collectionId: collectionId,
               onListRefresh: onListRefresh,
-              fullBleedImage: fullCardLayout && position.isGrid,
+              fullBleedImage: useFullCardLayout && position.isGrid,
+              cardShapeOverride: shape,
               onNavigateUp: position.isFirstRow ? navigateToAppBar : null,
               onBack: handleBackFromContent,
               onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
@@ -220,6 +222,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
     void Function(int index)? onSkeletonVisible,
     String? collectionId,
     VoidCallback? onListRefresh,
+    CardShape? shape,
   }) {
     return SettingsBuilder(
       prefs: const [SettingsService.viewMode, SettingsService.libraryDensity, SettingsService.tvFullCardLayout],
@@ -228,6 +231,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
         final viewMode = svc.read(SettingsService.viewMode);
         final libraryDensity = svc.read(SettingsService.libraryDensity);
         final fullCardLayout = PlatformDetector.isTV() && svc.read(SettingsService.tvFullCardLayout);
+        final useFullCardLayout = fullCardLayout && shape != CardShape.square;
 
         Widget buildTile(int index, {required bool inFirstRow, required bool disableScale}) {
           final item = itemAt(index);
@@ -244,7 +248,8 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
             onRefresh: onRefresh,
             collectionId: collectionId,
             onListRefresh: onListRefresh,
-            fullBleedImage: fullCardLayout && !disableScale,
+            fullBleedImage: useFullCardLayout && !disableScale,
+            cardShapeOverride: shape,
             onNavigateUp: inFirstRow ? navigateToAppBar : null,
             onBack: handleBackFromContent,
             onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
@@ -256,7 +261,8 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
           itemCount: totalItems,
           density: libraryDensity,
           padding: const EdgeInsets.all(8),
-          fullBleedImage: fullCardLayout,
+          fullBleedImage: useFullCardLayout,
+          shape: shape,
           itemBuilder: (context, position) =>
               buildTile(position.index, inFirstRow: position.isFirstRow, disableScale: position.disableScale),
         );

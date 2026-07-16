@@ -30,7 +30,11 @@ import 'package:plezy/utils/media_navigation_helper.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/media_card.dart';
+import 'package:plezy/widgets/focusable_media_card.dart';
+import 'package:plezy/widgets/media_card_sliver_layout.dart';
+import 'package:plezy/widgets/optimized_media_image.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
+import 'package:plezy/utils/media_image_helper.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/media_items.dart';
@@ -86,6 +90,59 @@ void main() {
     expect(find.text('Item ${playlistItemsPageSize + 4}'), findsOneWidget);
     expect(find.textContaining('Unsupported operation'), findsNothing);
     expect(find.text(t.common.retry), findsNothing);
+  });
+
+  testWidgets('editable audio playlist rows render square track artwork', (tester) async {
+    final harness = await _createHarness([
+      testMediaItem(
+        id: 'track_1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.track,
+        title: 'Track 1',
+        serverId: 'server_1',
+        serverName: 'Server',
+      ),
+    ]);
+
+    await tester.pumpWidget(
+      harness.wrap(const SizedBox(width: 1280, height: 720, child: PlaylistDetailScreen(playlist: _audioPlaylist))),
+    );
+    await tester.pumpAndSettle();
+
+    final card = find.byType(PlaylistItemCard);
+    final artwork = find.descendant(of: card, matching: find.byType(ClipRRect));
+    expect(tester.getSize(artwork), const Size.square(60));
+    expect(
+      tester
+          .widget<OptimizedMediaImage>(find.descendant(of: card, matching: find.byType(OptimizedMediaImage)))
+          .imageType,
+      ImageType.square,
+    );
+  });
+
+  testWidgets('read-only audio playlists use square grid geometry and cards', (tester) async {
+    final harness = await _createHarness([
+      testMediaItem(
+        id: 'track_1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.track,
+        title: 'Track 1',
+        serverId: 'server_1',
+        serverName: 'Server',
+      ),
+    ]);
+
+    await tester.pumpWidget(
+      harness.wrap(
+        const SizedBox(width: 1280, height: 720, child: PlaylistDetailScreen(playlist: _smartAudioPlaylist)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final layout = tester.widget<MediaCardSliverLayout>(find.byType(MediaCardSliverLayout));
+    expect(layout.shape, CardShape.square);
+    expect(layout.fullBleedImage, isFalse);
+    expect(tester.widget<FocusableMediaCard>(find.byType(FocusableMediaCard)).cardShapeOverride, CardShape.square);
   });
 
   testWidgets('keeps partial playlist pages and retries from the failed offset', (tester) async {
@@ -400,6 +457,25 @@ const _playlist = MediaPlaylist(
   backend: MediaBackend.plex,
   title: 'Long Playlist',
   playlistType: 'video',
+  serverId: 'server_1',
+  serverName: 'Server',
+);
+
+const _audioPlaylist = MediaPlaylist(
+  id: 'audio_playlist_1',
+  backend: MediaBackend.plex,
+  title: 'Audio Playlist',
+  playlistType: 'audio',
+  serverId: 'server_1',
+  serverName: 'Server',
+);
+
+const _smartAudioPlaylist = MediaPlaylist(
+  id: 'smart_audio_playlist_1',
+  backend: MediaBackend.plex,
+  title: 'Smart Audio Playlist',
+  playlistType: 'audio',
+  smart: true,
   serverId: 'server_1',
   serverName: 'Server',
 );

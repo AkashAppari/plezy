@@ -8,6 +8,7 @@ import '../../mixins/context_menu_tap_mixin.dart';
 import '../../providers/watch_state_store.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/formatters.dart';
+import '../../utils/media_image_helper.dart';
 import '../../utils/provider_extensions.dart';
 import '../../i18n/strings.g.dart';
 import '../../widgets/media_context_menu.dart';
@@ -190,39 +191,56 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
 
   Widget _buildPosterImage(BuildContext context, MediaItem item) {
     final posterUrl = item.posterThumb();
+    final isSquare = item.kind.isMusic;
+    final imageSize = isSquare ? const Size.square(60) : const Size(60, 90);
     return SizedBox(
       width: 60,
       height: 90,
-      child: Stack(
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.all(Radius.circular(6)),
-            child: OptimizedMediaImage.poster(
-              // Backend-neutral lookup so Jellyfin items render via their own
-              // image transcoder; null falls through to the placeholder below.
-              client: context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId)),
-              imagePath: posterUrl,
-              width: 60,
-              height: 90,
-              fit: BoxFit.cover,
-              placeholder: (context, url) => _buildPlaceholder(),
-              errorWidget: (context, url, error) => _buildPlaceholder(),
-            ),
+      child: Center(
+        child: SizedBox.fromSize(
+          size: imageSize,
+          child: Stack(
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.all(Radius.circular(6)),
+                child: OptimizedMediaImage(
+                  // Backend-neutral lookup so Jellyfin items render via their own
+                  // image transcoder; null falls through to the placeholder below.
+                  client: context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId)),
+                  imagePath: posterUrl,
+                  width: imageSize.width,
+                  height: imageSize.height,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => _buildPlaceholder(imageSize, item),
+                  errorWidget: (context, url, error) => _buildPlaceholder(imageSize, item),
+                  fallbackIcon: _fallbackIcon(item),
+                  imageType: isSquare ? ImageType.square : ImageType.poster,
+                ),
+              ),
+              WatchedIndicator(item: item, size: WatchedIndicatorSize.compact),
+            ],
           ),
-          WatchedIndicator(item: item, size: WatchedIndicatorSize.compact),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildPlaceholder() {
+  Widget _buildPlaceholder(Size size, MediaItem item) {
     return Container(
-      width: 60,
-      height: 90,
+      width: size.width,
+      height: size.height,
       decoration: BoxDecoration(color: Colors.grey[850], borderRadius: const BorderRadius.all(Radius.circular(6))),
-      child: const AppIcon(Symbols.movie_rounded, fill: 1, color: Colors.grey, size: 24),
+      child: AppIcon(_fallbackIcon(item), fill: 1, color: Colors.grey, size: 24),
     );
   }
+
+  IconData _fallbackIcon(MediaItem item) => switch (item.kind) {
+    MediaKind.artist => Symbols.artist_rounded,
+    MediaKind.album => Symbols.album_rounded,
+    MediaKind.track => Symbols.music_note_rounded,
+    MediaKind.show || MediaKind.season || MediaKind.episode => Symbols.tv_rounded,
+    _ => Symbols.movie_rounded,
+  };
 
   String _buildSubtitle(MediaItem item) {
     final kind = item.kind;

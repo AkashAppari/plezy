@@ -137,15 +137,21 @@ class _LibraryCollectionsTabState extends BaseLibraryTabState<MediaItem, Library
     return base.copyWith(top: base.top + _focusDecorationPadding);
   }
 
+  bool get _usesSquareCards => widget.library.kind.isMusic;
+
   Widget _buildItemsSliver(ViewMode viewMode, int density, {required bool fullCardLayout}) {
+    final shape = _usesSquareCards ? CardShape.square : null;
+    final useFullCardLayout = fullCardLayout && shape != CardShape.square;
     return MediaCardSliverLayout(
       viewMode: viewMode,
       itemCount: totalSize,
       density: density,
       padding: _effectivePadding,
-      fullBleedImage: fullCardLayout,
-      listEpoch: (ViewMode.list, totalSize, density),
-      gridEpochBuilder: (geometry) => (ViewMode.grid, geometry.columnCount, totalSize, fullCardLayout, density),
+      fullBleedImage: useFullCardLayout,
+      shape: shape,
+      listEpoch: (ViewMode.list, totalSize, density, shape),
+      gridEpochBuilder: (geometry) =>
+          (ViewMode.grid, geometry.columnCount, totalSize, useFullCardLayout, density, shape),
       itemBuilder: (context, position) {
         final index = position.index;
         final item = loadedItems[index];
@@ -179,7 +185,7 @@ class _LibraryCollectionsTabState extends BaseLibraryTabState<MediaItem, Library
             index,
             isFirstRow: position.isFirstRow,
             isFirstColumn: position.isFirstColumn,
-            fullBleedImage: fullCardLayout,
+            fullBleedImage: useFullCardLayout,
           ),
         );
       },
@@ -205,6 +211,7 @@ class _LibraryCollectionsTabState extends BaseLibraryTabState<MediaItem, Library
       focusNode: index == 0 ? firstItemFocusNode : null,
       disableScale: disableScale,
       fullBleedImage: fullBleedImage,
+      cardShapeOverride: _usesSquareCards ? CardShape.square : null,
       onListRefresh: loadItems,
       onNavigateUp: isFirstRow ? widget.onBack : null,
       onBack: widget.onBack,

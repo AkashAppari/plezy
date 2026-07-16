@@ -50,6 +50,11 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
   @override
   bool get hasItems => totalSize > 0;
 
+  CardShape? get _contentShape {
+    final loaded = loadedItems.values;
+    return loaded.isNotEmpty && loaded.every((item) => item.kind.isMusic) ? CardShape.square : null;
+  }
+
   @override
   void dispose() {
     disposePagination();
@@ -240,6 +245,7 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
             onSkeletonVisible: (index) => ensureIndexLoaded(index, pageSize: _pageSize),
             collectionId: widget.collection.id,
             onListRefresh: loadItems,
+            shape: _contentShape,
           ),
       ],
     );

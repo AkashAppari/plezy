@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_playlist.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/layout_constants.dart';
@@ -137,6 +138,49 @@ void main() {
     final base = MediaCardListLayout.basePosterWidth(LibraryDensity.defaultValue);
     final imageBox = find.descendant(of: find.byType(MediaCard), matching: find.byType(ClipRRect)).first;
     expect(tester.getSize(imageBox), Size(base, base));
+  });
+
+  testWidgets('music collection override renders square artwork and requests a square transcode', (tester) async {
+    await tester.pumpWidget(
+      _TestApp(
+        child: MediaCard(
+          item: _item(MediaKind.collection),
+          width: 200,
+          height: 194,
+          forceGridMode: true,
+          isOffline: true,
+          cardShapeOverride: CardShape.square,
+        ),
+      ),
+    );
+
+    final imageBox = find.descendant(of: find.byType(MediaCard), matching: find.byType(ClipRRect)).first;
+    expect(tester.getSize(imageBox), const Size(194, 194));
+    expect(tester.widget<OptimizedMediaImage>(find.byType(OptimizedMediaImage)).imageType, ImageType.square);
+  });
+
+  testWidgets('music playlist override uses square artwork in list mode', (tester) async {
+    const playlist = MediaPlaylist(
+      id: 'playlist_1',
+      backend: MediaBackend.plex,
+      title: 'Music playlist',
+      playlistType: 'audio',
+    );
+
+    await tester.pumpWidget(
+      const _TestApp(
+        child: SizedBox(
+          width: 420,
+          height: 160,
+          child: MediaCard(item: playlist, forceListMode: true, isOffline: true, cardShapeOverride: CardShape.square),
+        ),
+      ),
+    );
+
+    final base = MediaCardListLayout.basePosterWidth(LibraryDensity.defaultValue);
+    final imageBox = find.descendant(of: find.byType(MediaCard), matching: find.byType(ClipRRect)).first;
+    expect(tester.getSize(imageBox), Size(base, base));
+    expect(tester.widget<OptimizedMediaImage>(find.byType(OptimizedMediaImage)).imageType, ImageType.square);
   });
 
   testWidgets('track artwork failure falls back to album artwork', (tester) async {
