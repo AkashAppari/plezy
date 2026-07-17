@@ -82,15 +82,18 @@ class _ArtistDetailScreenState extends BaseMediaListDetailScreen<ArtistDetailScr
   /// gated on playback availability first so the stub never fetches.
   Future<void> _playAll({bool shuffle = false}) async {
     if (!ensureMusicPlaybackAvailable(context)) return;
+    final service = context.read<MusicPlaybackService>();
+    final intent = service.beginPlayIntent();
     List<MediaItem> tracks;
     try {
       tracks = await mediaClient.fetchPlayableDescendants(widget.artist.id);
     } catch (e, stackTrace) {
+      if (!mounted || !service.isPlayIntentCurrent(intent)) return;
       final message = localizedLoadErrorMessage(e, stackTrace, context: widget.artist.displayTitle);
-      if (mounted) showErrorSnackBar(context, message);
+      showErrorSnackBar(context, message);
       return;
     }
-    if (!mounted) return;
+    if (!mounted || !service.isPlayIntentCurrent(intent)) return;
     if (tracks.isEmpty) {
       showAppSnackBar(context, emptyMessage);
       return;

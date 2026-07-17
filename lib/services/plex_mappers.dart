@@ -564,6 +564,8 @@ class PlexMetadataDto {
   final double? userRating;
   @JsonKey(fromJson: flexibleInt)
   final int? year;
+  @JsonKey(fromJson: flexibleInt)
+  final int? parentYear;
   final String? originallyAvailableAt;
   final String? thumb;
   final String? art;
@@ -666,6 +668,7 @@ class PlexMetadataDto {
     this.audienceRating,
     this.userRating,
     this.year,
+    this.parentYear,
     this.originallyAvailableAt,
     this.thumb,
     this.art,
@@ -793,6 +796,7 @@ class PlexMetadataDto {
     double? audienceRating,
     double? userRating,
     int? year,
+    int? parentYear,
     String? originallyAvailableAt,
     String? thumb,
     String? art,
@@ -862,6 +866,7 @@ class PlexMetadataDto {
       audienceRating: audienceRating ?? this.audienceRating,
       userRating: userRating ?? this.userRating,
       year: year ?? this.year,
+      parentYear: parentYear ?? this.parentYear,
       originallyAvailableAt: originallyAvailableAt ?? this.originallyAvailableAt,
       thumb: thumb ?? this.thumb,
       art: art ?? this.art,
@@ -961,9 +966,10 @@ class PlexMappers {
 
   /// Map a parsed [PlexMetadataDto] into a [PlexMediaItem].
   static PlexMediaItem mediaItem(PlexMetadataDto dto) {
+    final kind = MediaKind.fromString(dto.type);
     return PlexMediaItem(
       id: dto.ratingKey,
-      kind: MediaKind.fromString(dto.type),
+      kind: kind,
       guid: dto.guid,
       title: dto.title,
       titleSort: dto.titleSort,
@@ -972,7 +978,10 @@ class PlexMappers {
       originalTitle: dto.originalTitle,
       editionTitle: dto.editionTitle,
       studio: dto.studio,
-      year: dto.year,
+      // Plex stores an ordinary track's release year on the parent album.
+      // Normalize it into the neutral item's year, matching Jellyfin Audio
+      // rows, while leaving episode/season hierarchy semantics unchanged.
+      year: kind == MediaKind.track ? dto.year ?? dto.parentYear : dto.year,
       originallyAvailableAt: dto.originallyAvailableAt,
       contentRating: dto.contentRating,
       parentId: dto.parentRatingKey,

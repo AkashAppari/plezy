@@ -526,6 +526,10 @@ sealed class MediaItem with _$MediaItem {
     _ => null,
   };
 
+  /// Release year for music items. Track mappers normalize the containing
+  /// album's year into [year] when the backend exposes it as parent metadata.
+  int? get albumYear => kind == MediaKind.track || kind == MediaKind.album ? year : null;
+
   /// Album-artist name for music items: a track's grandparent, an album's
   /// parent.
   String? get albumArtistTitle => switch (kind) {

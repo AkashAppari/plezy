@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -69,6 +71,8 @@ class _FakeDownloadProvider extends ChangeNotifier implements DownloadProvider {
 /// Fixed-state fake: reports a playing session with a single-track queue.
 class _FakeMusicService extends StubMusicPlaybackService {
   MediaItem? track;
+  final StreamController<Duration> _positionController = StreamController<Duration>.broadcast(sync: true);
+  Duration _position = Duration.zero;
   int previousCalls = 0;
   int toggleCalls = 0;
   int nextCalls = 0;
@@ -86,6 +90,12 @@ class _FakeMusicService extends StubMusicPlaybackService {
   MusicPlaybackStatus get status => track == null ? MusicPlaybackStatus.idle : MusicPlaybackStatus.playing;
 
   @override
+  Duration get position => _position;
+
+  @override
+  Stream<Duration> get positionStream => _positionController.stream;
+
+  @override
   Duration? get duration => track == null ? null : const Duration(minutes: 3);
 
   @override
@@ -93,6 +103,17 @@ class _FakeMusicService extends StubMusicPlaybackService {
 
   @override
   int get currentIndex => track == null ? -1 : 0;
+
+  void emitPosition(Duration position) {
+    _position = position;
+    _positionController.add(position);
+  }
+
+  void advanceTo(MediaItem next) {
+    track = next;
+    _position = Duration.zero;
+    notifyListeners();
+  }
 
   @override
   Future<void> previous() async {
@@ -112,6 +133,12 @@ class _FakeMusicService extends StubMusicPlaybackService {
   @override
   Future<void> stop() async {
     stopCalls++;
+  }
+
+  @override
+  void dispose() {
+    _positionController.close();
+    super.dispose();
   }
 }
 
@@ -181,6 +208,37 @@ void main() {
     expect(find.text('Dawn'), findsOneWidget);
     expect(find.text('Test Artist'), findsOneWidget);
     expect(find.byType(IconButton), findsNWidgets(2)); // play/pause + next (mobile layout)
+  });
+
+  testWidgets('progress resets immediately when the current track changes', (tester) async {
+    final nextTrack = testMediaItem(
+      id: 'track_2',
+      backend: MediaBackend.plex,
+      kind: MediaKind.track,
+      title: 'Noon',
+      durationMs: 180000,
+      serverId: 'server_1',
+    );
+    final service = _FakeMusicService(track: _track);
+    final observer = MusicUiRouteObserver();
+
+    await tester.pumpWidget(wrap(service: service, observer: observer));
+    await tester.pumpAndSettle();
+    service.emitPosition(const Duration(minutes: 2));
+    await tester.pump();
+
+    Iterable<double?> progressWidths() => tester
+        .widgetList<FractionallySizedBox>(find.byType(FractionallySizedBox))
+        .where((box) => box.heightFactor == 1)
+        .map((box) => box.widthFactor);
+
+    expect(progressWidths(), contains(closeTo(2 / 3, 0.001)));
+
+    service.advanceTo(nextTrack);
+    await tester.pump();
+
+    expect(progressWidths(), contains(0.0));
+    expect(progressWidths(), isNot(contains(closeTo(2 / 3, 0.001))));
   });
 
   testWidgets('tapping the card edge opens the named Now Playing route', (tester) async {

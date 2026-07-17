@@ -15,6 +15,7 @@ import '../test_helpers/media_items.dart';
 MediaItem _movie({
   String id = 'm1',
   String? title = 'Movie',
+  int? year,
   int? viewCount,
   int? leafCount,
   int? viewedLeafCount,
@@ -29,6 +30,7 @@ MediaItem _movie({
   backend: backend,
   kind: MediaKind.movie,
   title: title,
+  year: year,
   viewCount: viewCount,
   leafCount: leafCount,
   viewedLeafCount: viewedLeafCount,
@@ -444,6 +446,18 @@ void main() {
     test('null title degrades to empty string (no NPE)', () {
       final movie = _movie(title: null);
       expect(movie.displayTitle, '');
+    });
+  });
+
+  group('MediaItem music metadata', () {
+    test('album year is exposed only for tracks and albums', () {
+      final track = testMediaItem(kind: MediaKind.track, parentTitle: 'Album', year: 2001);
+      final album = testMediaItem(kind: MediaKind.album, title: 'Album', year: 2001);
+
+      expect(track.albumTitle, 'Album');
+      expect(track.albumYear, 2001);
+      expect(album.albumYear, 2001);
+      expect(_movie(year: 2001).albumYear, isNull);
     });
   });
 }

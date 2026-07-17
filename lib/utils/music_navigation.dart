@@ -123,6 +123,8 @@ Future<void> playTracks(
 /// album, isn't found in it, or the album fetch fails.
 Future<void> playTrackWithAlbumContext(BuildContext context, MediaItem track) async {
   if (!ensureMusicPlaybackAvailable(context)) return;
+  final service = context.read<MusicPlaybackService>();
+  final intent = service.beginPlayIntent();
 
   final albumId = track.parentId;
   final client = context.getMediaClientForItemOrNull(track);
@@ -130,7 +132,7 @@ Future<void> playTrackWithAlbumContext(BuildContext context, MediaItem track) as
     try {
       final tracks = await client.fetchAlbumTracks(albumId);
       final startIndex = tracks.indexWhere((item) => item.id == track.id);
-      if (!context.mounted) return;
+      if (!context.mounted || !service.isPlayIntentCurrent(intent)) return;
       if (startIndex != -1) {
         await playTracks(
           context,
@@ -141,11 +143,13 @@ Future<void> playTrackWithAlbumContext(BuildContext context, MediaItem track) as
         return;
       }
     } catch (e) {
+      if (!service.isPlayIntentCurrent(intent)) return;
       appLogger.w('Failed to fetch album context for track ${track.id}; playing single track', error: e);
       if (!context.mounted) return;
     }
   }
 
+  if (!context.mounted || !service.isPlayIntentCurrent(intent)) return;
   await playTracks(
     context,
     tracks: [track],

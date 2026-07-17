@@ -90,6 +90,7 @@ void main() {
       expect(item.trackNumber, 1);
       expect(item.discNumber, 1);
       expect(item.albumTitle, 'Live at Testhalle');
+      expect(item.albumYear, 2022);
       expect(item.albumArtistTitle, 'The Synth Pops');
       // Artists == [AlbumArtist] → no per-track performer override.
       expect(item.originalTitle, isNull);

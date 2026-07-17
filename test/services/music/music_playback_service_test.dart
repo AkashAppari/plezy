@@ -89,6 +89,8 @@ class FakePlayer implements Player {
   final List<Media?> setNextCalls = [];
   final List<Duration> seeks = [];
   final List<double> volumes = [];
+  Completer<void>? playGate;
+  Completer<void>? pauseGate;
 
   /// Arming these URIs throws, simulating a native setNext failure.
   final Set<String> failingSetNextUris = {};
@@ -178,6 +180,7 @@ class FakePlayer implements Player {
   @override
   Future<void> play() async {
     playCalls++;
+    await playGate?.future;
     _state = _state.copyWith(playing: true, completed: false);
     playingCtrl.add(true);
   }
@@ -185,6 +188,7 @@ class FakePlayer implements Player {
   @override
   Future<void> pause() async {
     pauseCalls++;
+    await pauseGate?.future;
     _state = _state.copyWith(playing: false);
     playingCtrl.add(false);
   }
@@ -351,6 +355,7 @@ class RecordedReport {
 class FakeMediaServerClient extends Fake implements MediaServerClient {
   final List<RecordedReport> reports = [];
   final List<String> markedWatched = [];
+  Completer<List<MediaItem>>? instantMixGate;
 
   Iterable<RecordedReport> reportsFor(String state) => reports.where((r) => r.state == state);
 
@@ -362,6 +367,14 @@ class FakeMediaServerClient extends Fake implements MediaServerClient {
 
   @override
   bool get marksWatchedOnPlaybackStopped => false;
+
+  @override
+  void close() {}
+
+  @override
+  Future<List<MediaItem>> fetchInstantMix(String itemId, {int limit = 100}) {
+    return instantMixGate?.future ?? Future.value(const []);
+  }
 
   @override
   Future<void> markWatched(MediaItem item) async {
@@ -419,6 +432,7 @@ class FakeMusicSourceResolver implements MusicSourceResolver {
   final MediaServerClient? client;
   final Set<String> failingIds = {};
   final Map<String, int> resolveCounts = {};
+  final Map<String, Completer<void>> resolveGates = {};
 
   /// Per-track URL overrides (e.g. content:// shapes for offline tracks).
   final Map<String, String> urlOverrides = {};
@@ -426,6 +440,7 @@ class FakeMusicSourceResolver implements MusicSourceResolver {
   @override
   Future<MusicSource> resolve(MediaItem track) async {
     resolveCounts[track.id] = (resolveCounts[track.id] ?? 0) + 1;
+    await resolveGates[track.id]?.future;
     if (failingIds.contains(track.id)) {
       throw StateError('resolve failed for ${track.id}');
     }
@@ -510,13 +525,14 @@ class _GatedVolumeWriter {
 }
 
 class _Harness {
-  _Harness._(this.service, this.resolver, this.client, this.controls, this.players);
+  _Harness._(this.service, this.resolver, this.client, this.controls, this.players, this.serverManager);
 
   final MusicPlaybackServiceImpl service;
   final FakeMusicSourceResolver resolver;
   final FakeMediaServerClient client;
   final FakeMediaControlsManager controls;
   final List<FakePlayer> players;
+  final MultiServerManager serverManager;
 
   /// Seeded into every created FakePlayer — lets a test configure arm
   /// failures before the first player exists.
@@ -529,9 +545,10 @@ class _Harness {
     final resolver = FakeMusicSourceResolver(client: client);
     final controls = FakeMediaControlsManager();
     final players = <FakePlayer>[];
+    final serverManager = MultiServerManager()..debugRegisterClientForTesting(client);
     late final _Harness harness;
     final service = MusicPlaybackServiceImpl(
-      serverManager: MultiServerManager(),
+      serverManager: serverManager,
       resolver: resolver,
       audioPlayerFactory: () {
         final player = FakePlayer();
@@ -545,7 +562,7 @@ class _Harness {
       completedConfirmDelay: Duration.zero,
       volumePersistenceWriter: volumePersistenceWriter,
     );
-    harness = _Harness._(service, resolver, client, controls, players);
+    harness = _Harness._(service, resolver, client, controls, players, serverManager);
     return harness;
   }
 
@@ -579,6 +596,7 @@ void main() {
       player.closeControllers();
     }
     h.controls.closeControllers();
+    h.serverManager.dispose();
   });
 
   test('volume updates notify only the dedicated volume listenable', () async {
@@ -685,6 +703,47 @@ void main() {
     // Track services bound: session started + OS metadata pushed.
     expect(h.client.reportsFor('started').map((r) => r.itemId), ['t1']);
     expect(h.controls.metadataTitles, ['Track t1']);
+  });
+
+  test('a superseded slow gapless resolve cannot overwrite the newly requested arm', () async {
+    final oldArmGate = Completer<void>();
+    h.resolver.resolveGates[t2.id] = oldArmGate;
+
+    await h.playTracks([t1, t2]);
+    expect(h.player.armed, isNull);
+
+    h.service.addNext([t3]);
+    oldArmGate.complete();
+    await pumpEventQueue();
+
+    expect(h.player.armed?.uri, _urlFor(t3));
+  });
+
+  test('end-of-track sleep invalidates a slow gapless resolve', () async {
+    final armGate = Completer<void>();
+    h.resolver.resolveGates[t2.id] = armGate;
+
+    await h.playTracks([t1, t2]);
+    h.service.setSleepTimer(null, endOfTrack: true);
+    armGate.complete();
+    await pumpEventQueue();
+
+    expect(h.service.sleepTimerEndOfTrack, isTrue);
+    expect(h.player.armed, isNull);
+  });
+
+  test('a slow instant mix cannot replace a newer explicit queue', () async {
+    final mixGate = Completer<List<MediaItem>>();
+    h.client.instantMixGate = mixGate;
+
+    final mix = h.service.playInstantMix(t1);
+    await h.playTracks([t3]);
+    mixGate.complete([t1, t2]);
+    await mix;
+    await pumpEventQueue();
+
+    expect(h.service.currentTrack?.id, t3.id);
+    expect(h.service.queue.map((track) => track.id), [t3.id]);
   });
 
   test('trackTransition advances the cursor, re-arms, and reports the previous track stopped at duration', () async {
@@ -874,6 +933,35 @@ void main() {
     expect(h.player.disposed, isTrue);
     expect(h.controls.cleared, isTrue);
     expect(h.client.reportsFor('stopped').map((r) => r.itemId), ['t1']);
+  });
+
+  test('a late play completion cannot revive a stopped session', () async {
+    await h.playTracks([t1]);
+    await h.service.pause();
+    final gate = Completer<void>();
+    h.player.playGate = gate;
+
+    final play = h.service.play();
+    await h.service.stop();
+    gate.complete();
+    await play;
+
+    expect(h.service.status, MusicPlaybackStatus.idle);
+    expect(h.service.currentTrack, isNull);
+  });
+
+  test('a late pause completion cannot change a stopped session', () async {
+    await h.playTracks([t1]);
+    final gate = Completer<void>();
+    h.player.pauseGate = gate;
+
+    final pause = h.service.pause();
+    await h.service.stop();
+    gate.complete();
+    await pause;
+
+    expect(h.service.status, MusicPlaybackStatus.idle);
+    expect(h.service.currentTrack, isNull);
   });
 
   test('interruption pauses and resumes when the system says shouldResume', () async {

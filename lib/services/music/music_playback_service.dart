@@ -9,8 +9,9 @@ enum MusicRepeatMode { off, all, one }
 /// Coarse playback state of the music session.
 enum MusicPlaybackStatus { idle, loading, playing, paused, error }
 
-/// What kind of container playback was started from — drives the
-/// "Playing from …" line in the player UI.
+/// What kind of container playback was started from. The player keeps
+/// artist/playlist/mix provenance stable, while album and ad-hoc queues use
+/// the active track's album for the "Playing from …" line.
 enum MusicPlayContextKind { album, artist, playlist, mix, tracks }
 
 /// Provenance of the current queue (album/artist/playlist/instant mix).
@@ -19,7 +20,8 @@ class MusicPlayContext {
   /// don't).
   final String? id;
 
-  /// Display title ("Playing from {title}").
+  /// Display title of the session source. Used directly for stable
+  /// artist/playlist/mix provenance labels.
   final String title;
 
   final MusicPlayContextKind kind;
@@ -64,6 +66,18 @@ abstract class MusicPlaybackService extends ChangeNotifier {
   /// Playback failures the UI should surface (snackbar); the service already
   /// handles recovery (skip / stop) itself.
   Stream<Object> get errors;
+
+  /// Claims the latest user intent to replace playback after asynchronous
+  /// queue construction. Callers must check [isPlayIntentCurrent] before
+  /// committing fetched tracks.
+  int beginPlayIntent();
+
+  /// Whether [intent] is still the latest playback-replacement request.
+  bool isPlayIntentCurrent(int intent);
+
+  /// Changes whenever a queue session starts or stops. Asynchronous enqueue
+  /// actions use this to avoid appending fetched tracks to a newer session.
+  int get queueSessionRevision;
 
   /// Start a new queue from [tracks], optionally at [startTrack] (defaults
   /// to the first track). [shuffle] shuffles with the start track anchored
@@ -146,6 +160,8 @@ abstract class MusicPlaybackService extends ChangeNotifier {
 /// null-safe without per-call-site feature checks.
 class StubMusicPlaybackService extends MusicPlaybackService {
   final ValueNotifier<double> _volumeNotifier = ValueNotifier<double>(100);
+  int _playIntentGeneration = 0;
+  int _queueSessionRevision = 0;
   @override
   bool get isAvailable => false;
 
@@ -183,12 +199,24 @@ class StubMusicPlaybackService extends MusicPlaybackService {
   Stream<Object> get errors => const Stream.empty();
 
   @override
+  int beginPlayIntent() => ++_playIntentGeneration;
+
+  @override
+  bool isPlayIntentCurrent(int intent) => intent == _playIntentGeneration;
+
+  @override
+  int get queueSessionRevision => _queueSessionRevision;
+
+  @override
   Future<void> playFromList({
     required List<MediaItem> tracks,
     MediaItem? startTrack,
     required MusicPlayContext playContext,
     bool shuffle = false,
-  }) async {}
+  }) async {
+    beginPlayIntent();
+    _queueSessionRevision++;
+  }
 
   @override
   Future<void> playInstantMix(MediaItem seed) async {}
@@ -244,7 +272,10 @@ class StubMusicPlaybackService extends MusicPlaybackService {
   void clearUpcoming() {}
 
   @override
-  Future<void> stop() async {}
+  Future<void> stop() async {
+    beginPlayIntent();
+    _queueSessionRevision++;
+  }
 
   @override
   bool get sleepTimerActive => false;

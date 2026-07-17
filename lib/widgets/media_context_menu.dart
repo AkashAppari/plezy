@@ -1062,8 +1062,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     // Availability gate before the container fetch so the stub costs no
     // server round-trip.
     if (!ensureMusicPlaybackAvailable(context)) return;
-    final tracks = await _musicTracksForItem(item);
-    if (!context.mounted) return;
+    final service = context.read<MusicPlaybackService>();
+    final intent = service.beginPlayIntent();
+    List<MediaItem> tracks;
+    try {
+      tracks = await _musicTracksForItem(item);
+    } catch (_) {
+      if (!service.isPlayIntentCurrent(intent)) return;
+      rethrow;
+    }
+    if (!context.mounted || !service.isPlayIntentCurrent(intent)) return;
     await playTracks(
       context,
       tracks: tracks,
@@ -1079,8 +1087,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final service = context.read<MusicPlaybackService?>();
     // Menu entries are hidden on the stub; defensive re-check.
     if (service == null || !service.isAvailable) return;
-    final tracks = await _musicTracksForItem(_mediaItem!);
-    if (tracks.isEmpty) return;
+    final queueSessionRevision = service.queueSessionRevision;
+    List<MediaItem> tracks;
+    try {
+      tracks = await _musicTracksForItem(_mediaItem!);
+    } catch (_) {
+      if (!context.mounted || service.queueSessionRevision != queueSessionRevision) return;
+      rethrow;
+    }
+    if (!context.mounted || service.queueSessionRevision != queueSessionRevision || tracks.isEmpty) return;
     if (playNext) {
       service.addNext(tracks);
     } else {
@@ -1383,18 +1398,19 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     // Match PlaylistDetailScreen: fail the availability gate before paying
     // for a full playlist fetch, then hand the tracks to the music session.
     if (!ensureMusicPlaybackAvailable(context)) return;
+    final service = context.read<MusicPlaybackService>();
+    final intent = service.beginPlayIntent();
 
     List<MediaItem> tracks;
     try {
       tracks = await fetchAllPlaylistItems(_getMediaClientForItem(), playlist.id);
     } catch (e, st) {
+      if (!context.mounted || !service.isPlayIntentCurrent(intent)) return;
       appLogger.w('Failed to fetch audio playlist ${playlist.id}', error: e, stackTrace: st);
-      if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
-      }
+      showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       return;
     }
-    if (!context.mounted) return;
+    if (!context.mounted || !service.isPlayIntentCurrent(intent)) return;
     if (tracks.isEmpty) {
       showErrorSnackBar(context, t.messages.failedToCreatePlayQueueNoItems);
       return;

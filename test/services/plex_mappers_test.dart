@@ -243,6 +243,7 @@ void main() {
         'parentIndex': 1,
         'parentRatingKey': '510',
         'parentTitle': 'Season 1',
+        'parentYear': 2008,
         'parentThumb': '/library/metadata/510/thumb/1',
         'grandparentRatingKey': '500',
         'grandparentTitle': 'Breaking Bad',
@@ -258,6 +259,7 @@ void main() {
       expect(item.parentIndex, 1);
       expect(item.parentId, '510');
       expect(item.parentTitle, 'Season 1');
+      expect(item.year, isNull);
       expect(item.parentThumbPath, '/library/metadata/510/thumb/1');
       expect(item.grandparentId, '500');
       expect(item.grandparentTitle, 'Breaking Bad');
@@ -299,6 +301,7 @@ void main() {
         'index': 8,
         'parentRatingKey': '700',
         'parentTitle': 'Random Access Memories',
+        'parentYear': 2013,
         'grandparentRatingKey': '699',
         'grandparentTitle': 'Daft Punk',
         'duration': 369000,
@@ -311,6 +314,8 @@ void main() {
       expect(item.durationMs, 369000);
       expect(item.parentId, '700');
       expect(item.parentTitle, 'Random Access Memories');
+      expect(item.year, 2013);
+      expect(item.albumYear, 2013);
       expect(item.grandparentId, '699');
       expect(item.grandparentTitle, 'Daft Punk');
     });

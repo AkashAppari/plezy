@@ -96,6 +96,8 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       return;
     }
     if (!ensureMusicPlaybackAvailable(context)) return;
+    final service = context.read<MusicPlaybackService>();
+    final intent = service.beginPlayIntent();
     List<MediaItem> tracks;
     if (_isPlaylistFullyLoaded) {
       tracks = items;
@@ -103,12 +105,13 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       try {
         tracks = await fetchAllPlaylistItems(mediaClient, widget.playlist.id);
       } catch (e, stackTrace) {
+        if (!mounted || !service.isPlayIntentCurrent(intent)) return;
         final message = localizedLoadErrorMessage(e, stackTrace, context: widget.playlist.title);
-        if (mounted) showErrorSnackBar(context, message);
+        showErrorSnackBar(context, message);
         return;
       }
-      if (!mounted) return;
     }
+    if (!mounted || !service.isPlayIntentCurrent(intent)) return;
     await playTracks(context, tracks: tracks, startTrack: startTrack, playContext: _musicPlayContext, shuffle: shuffle);
   }
 

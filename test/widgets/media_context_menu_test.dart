@@ -1,4 +1,5 @@
 import '../test_helpers/paged_fakes.dart';
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/native.dart';
@@ -200,6 +201,30 @@ void main() {
       expect(music.callCount, 2);
       expect(music.playedTracks, tracks);
       expect(music.shuffle, isTrue);
+
+      final staleFetchGate = Completer<void>();
+      client.fetchGate = staleFetchGate;
+      menuKey.currentState!.showContextMenu(tester.element(find.text('audio target')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(t.common.play));
+      await tester.pump();
+
+      final newerTrack = testMediaItem(
+        id: 'newer-track',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.track,
+        title: 'Newer Track',
+        serverId: 'srv-1',
+      );
+      await music.playFromList(
+        tracks: [newerTrack],
+        playContext: const MusicPlayContext(title: 'Newer Queue', kind: MusicPlayContextKind.tracks),
+      );
+      staleFetchGate.complete();
+      await tester.pumpAndSettle();
+
+      expect(music.callCount, 3, reason: 'the stale playlist fetch must not start a fourth queue');
+      expect(music.playedTracks, [newerTrack]);
       expect(tester.takeException(), isNull);
     });
 
@@ -408,6 +433,49 @@ void main() {
         same(harness.music),
       );
     });
+
+    testWidgets('a slow music enqueue does not append to a newer queue session', (tester) async {
+      final album = testMediaItem(
+        id: 'album-1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.album,
+        title: 'Album',
+        serverId: 'srv-1',
+      );
+      final albumTrack = testMediaItem(
+        id: 'album-track',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.track,
+        title: 'Album Track',
+        serverId: 'srv-1',
+      );
+      final harness = await _pumpSiblingMusicMenu(tester, item: album, relatedItems: [albumTrack]);
+      final fetchGate = Completer<void>();
+      harness.client.albumTracksGate = fetchGate;
+
+      harness.menuKey.currentState!.showContextMenu(tester.element(find.text('mini-player menu target')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(t.music.playNext));
+      await tester.pump();
+
+      final newerTrack = testMediaItem(
+        id: 'newer-track',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.track,
+        title: 'Newer Track',
+        serverId: 'srv-1',
+      );
+      await harness.music.playFromList(
+        tracks: [newerTrack],
+        playContext: const MusicPlayContext(title: 'Newer Queue', kind: MusicPlayContextKind.tracks),
+      );
+      fetchGate.complete();
+      await tester.pumpAndSettle();
+
+      expect(harness.music.addedNext, isEmpty);
+      expect(harness.music.playedTracks, [newerTrack]);
+      expect(tester.takeException(), isNull);
+    });
   });
 }
 
@@ -522,6 +590,7 @@ Future<void> _openPlaylistPicker(WidgetTester tester, GlobalKey<MediaContextMenu
 
 class _AudioPlaylistClient implements MediaServerClient {
   final List<MediaItem> tracks;
+  Completer<void>? fetchGate;
 
   _AudioPlaylistClient(this.tracks);
 
@@ -539,6 +608,7 @@ class _AudioPlaylistClient implements MediaServerClient {
 
   @override
   Future<LibraryPage<MediaItem>> fetchPlaylistPage(String id, {int? start, int? size, AbortController? abort}) async {
+    await fetchGate?.future;
     return fakeLibraryPage(tracks, start: start, size: size);
   }
 
@@ -551,6 +621,7 @@ class _AudioPlaylistClient implements MediaServerClient {
 
 class _RecordingMusicPlaybackService extends StubMusicPlaybackService {
   List<MediaItem>? playedTracks;
+  final List<MediaItem> addedNext = [];
   MusicPlayContext? playedContext;
   bool? shuffle;
   int callCount = 0;
@@ -565,17 +636,27 @@ class _RecordingMusicPlaybackService extends StubMusicPlaybackService {
     required MusicPlayContext playContext,
     bool shuffle = false,
   }) async {
+    await super.playFromList(tracks: tracks, startTrack: startTrack, playContext: playContext, shuffle: shuffle);
     callCount++;
     playedTracks = tracks;
     playedContext = playContext;
     this.shuffle = shuffle;
   }
+
+  @override
+  void addNext(List<MediaItem> tracks) {
+    addedNext.addAll(tracks);
+  }
 }
 
 class _RelatedMusicClient implements MediaServerClient {
-  _RelatedMusicClient(Iterable<MediaItem> items) : _items = {for (final item in items) item.id: item};
+  _RelatedMusicClient(Iterable<MediaItem> items)
+    : _items = {for (final item in items) item.id: item},
+      albumTracks = items.where((item) => item.kind == MediaKind.track).toList();
 
   final Map<String, MediaItem> _items;
+  final List<MediaItem> albumTracks;
+  Completer<void>? albumTracksGate;
 
   @override
   ServerId get serverId => ServerId('srv-1');
@@ -593,7 +674,10 @@ class _RelatedMusicClient implements MediaServerClient {
   Future<MediaItem?> fetchItem(String id) async => _items[id];
 
   @override
-  Future<List<MediaItem>> fetchAlbumTracks(String albumId) async => const [];
+  Future<List<MediaItem>> fetchAlbumTracks(String albumId) async {
+    await albumTracksGate?.future;
+    return albumTracks;
+  }
 
   @override
   Future<List<MediaItem>> fetchArtistAlbums(MediaItem artist) async => const [];
@@ -611,12 +695,14 @@ class _SiblingMusicMenuHarness {
     required this.profileNavigatorKey,
     required this.menuKey,
     required this.music,
+    required this.client,
   });
 
   final GlobalKey<NavigatorState> rootNavigatorKey;
   final GlobalKey<NavigatorState> profileNavigatorKey;
   final GlobalKey<MediaContextMenuState> menuKey;
   final _RecordingMusicPlaybackService music;
+  final _RelatedMusicClient client;
 }
 
 Future<_SiblingMusicMenuHarness> _pumpSiblingMusicMenu(
@@ -722,6 +808,7 @@ Future<_SiblingMusicMenuHarness> _pumpSiblingMusicMenu(
     profileNavigatorKey: profileNavigatorKey,
     menuKey: menuKey,
     music: music,
+    client: client,
   );
 }
 

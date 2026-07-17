@@ -286,7 +286,7 @@ class _MiniPlayerCardState extends State<_MiniPlayerCard> with ContextMenuTapMix
           height: _MusicMiniPlayerOverlayState._cardHeight,
           child: Stack(
             children: [
-              const Positioned.fill(child: _MiniPlayerProgress()),
+              Positioned.fill(child: _MiniPlayerProgress(key: ValueKey(widget.track.globalKey))),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Row(
@@ -409,7 +409,7 @@ class _MiniPlayerCardState extends State<_MiniPlayerCard> with ContextMenuTapMix
 /// background layer, never the card content above it. The played fraction
 /// renders as a subtle full-height tint that fills the card left-to-right.
 class _MiniPlayerProgress extends StatelessWidget {
-  const _MiniPlayerProgress();
+  const _MiniPlayerProgress({super.key});
 
   @override
   Widget build(BuildContext context) {

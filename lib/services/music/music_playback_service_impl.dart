@@ -137,6 +137,20 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   /// (resolves, opens, arms) drop out instead of acting on the new state.
   int _generation = 0;
 
+  /// Queue construction can involve a server round-trip before playback is
+  /// replaced. Only the latest explicit play intent may commit its result.
+  int _playIntentGeneration = 0;
+
+  /// Identifies the queue session that asynchronous enqueue work belongs to.
+  int _queueSessionRevision = 0;
+
+  /// Gapless arm work is serialized, and each requested recomputation gets
+  /// a revision. This prevents an older resolve/setNext continuation from
+  /// landing after a queue edit, repeat change, or sleep-timer change.
+  int _armRequestGeneration = 0;
+  int _processedArmRequestGeneration = 0;
+  Future<void>? _armDrain;
+
   int _consecutiveFailures = 0;
   bool _resumeAfterInterruption = false;
   bool _disposed = false;
@@ -208,6 +222,15 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   @override
   bool get sleepTimerEndOfTrack => _sleepTimerEndOfTrack;
 
+  @override
+  int beginPlayIntent() => ++_playIntentGeneration;
+
+  @override
+  bool isPlayIntentCurrent(int intent) => !_disposed && intent == _playIntentGeneration;
+
+  @override
+  int get queueSessionRevision => _queueSessionRevision;
+
   // ---------------------------------------------------------------------
   // Session start
   // ---------------------------------------------------------------------
@@ -219,25 +242,30 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     required MusicPlayContext playContext,
     bool shuffle = false,
   }) {
+    beginPlayIntent();
     return _startQueue(tracks: tracks, startTrack: startTrack, playContext: playContext, shuffle: shuffle);
   }
 
   @override
   Future<void> playInstantMix(MediaItem seed) async {
+    final intent = beginPlayIntent();
     final client = _clientFor(seed);
     if (client == null) {
-      _errorsController.add(StateError('No server available for instant mix'));
+      if (isPlayIntentCurrent(intent)) {
+        _errorsController.add(StateError('No server available for instant mix'));
+      }
       return;
     }
     List<MediaItem> tracks;
     try {
       tracks = await client.fetchInstantMix(seed.id);
     } catch (e, st) {
+      if (!isPlayIntentCurrent(intent)) return;
       appLogger.w('Instant mix fetch failed for ${seed.id}', error: e, stackTrace: st);
       _errorsController.add(e);
       return;
     }
-    if (_disposed || tracks.isEmpty) return;
+    if (!isPlayIntentCurrent(intent) || tracks.isEmpty) return;
     await _startQueue(
       tracks: tracks,
       playContext: MusicPlayContext(title: seed.displayTitle, kind: MusicPlayContextKind.mix),
@@ -252,11 +280,14 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     bool autoplay = true,
   }) async {
     if (tracks.isEmpty || _disposed) return;
+    beginPlayIntent();
+    _queueSessionRevision++;
     // Android 13+: the background playback notification needs
     // POST_NOTIFICATIONS. Fire-and-forget — playback and the foreground
     // service run regardless; a denial only hides the notification.
     unawaited(ensureNotificationPermission());
     final generation = ++_generation;
+    _invalidateArmRequests();
     _finalizeCurrentTrack();
     var startIndex = 0;
     if (startTrack != null) {
@@ -333,13 +364,14 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
 
     _setStatus(play ? MusicPlaybackStatus.playing : MusicPlaybackStatus.paused);
     _bindTrackServices(track, source);
-    unawaited(_armNext(generation));
+    _requestArmNext();
   }
 
   /// Manual advance: finalize the current tracker at its current position and
   /// open the queue entry at [cursor].
   Future<void> _advanceTo(int cursor, {bool play = true}) async {
     final generation = ++_generation;
+    _invalidateArmRequests();
     _finalizeCurrentTrack();
     _queue.jumpTo(cursor);
     await _openCurrent(generation, play: play);
@@ -348,9 +380,9 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   /// Arm (or clear) what the backend should auto-advance into. Skips the
   /// resolve round-trip when the desired target is already armed; repeat-one
   /// reuses the current track's resolved source.
-  Future<void> _armNext(int generation) async {
+  Future<void> _applyArmNext(int generation, int armRequest) async {
     final player = _player;
-    if (player == null || generation != _generation) return;
+    if (player == null || !_isCurrentArmRequest(player, generation, armRequest)) return;
 
     final targetCursor = _sleepTimerEndOfTrack ? null : _queue.nextIndex();
     final target = targetCursor == null ? null : _queue.trackAt(targetCursor);
@@ -366,7 +398,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
 
     _rememberStaleArm();
     await _trySetNext(player, null);
-    if (generation != _generation || _player != player) return;
+    if (!_isCurrentArmRequest(player, generation, armRequest)) return;
 
     MusicSource source;
     if (targetCursor == _queue.cursor && _currentSource != null) {
@@ -382,15 +414,55 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
         return;
       }
     }
-    if (generation != _generation || _player != player) return;
-    _armed = _ArmedTrack(track: target, source: source);
+    if (!_isCurrentArmRequest(player, generation, armRequest)) return;
+    final armed = _ArmedTrack(track: target, source: source);
+    _armed = armed;
     appLogger.d('Music: arming cursor $targetCursor "${target.title}"');
     final ok = await _trySetNext(player, Media(source.url, headers: source.headers));
-    if (!ok && generation == _generation && _player == player) {
+    if (!ok && identical(_armed, armed)) {
       // Nothing is armed natively; clear the record so the confirmed
       // completed fallback can advance explicitly instead of waiting for a
       // transition that can never come.
       _armed = null;
+    }
+  }
+
+  bool _isCurrentArmRequest(Player player, int generation, int armRequest) {
+    return !_disposed && generation == _generation && armRequest == _armRequestGeneration && _player == player;
+  }
+
+  void _requestArmNext() {
+    if (_disposed) return;
+    _armRequestGeneration++;
+    _ensureArmDrain();
+  }
+
+  void _invalidateArmRequests() {
+    _armRequestGeneration++;
+  }
+
+  void _ensureArmDrain() {
+    if (_disposed || _armDrain != null) return;
+    final drain = _drainArmRequests();
+    _armDrain = drain;
+    unawaited(
+      drain.whenComplete(() {
+        if (_armDrain != drain) return;
+        _armDrain = null;
+        if (!_disposed && _processedArmRequestGeneration != _armRequestGeneration) {
+          _ensureArmDrain();
+        }
+      }),
+    );
+  }
+
+  Future<void> _drainArmRequests() async {
+    while (!_disposed) {
+      final armRequest = _armRequestGeneration;
+      final generation = _generation;
+      await _applyArmNext(generation, armRequest);
+      _processedArmRequestGeneration = armRequest;
+      if (armRequest == _armRequestGeneration) return;
     }
   }
 
@@ -418,11 +490,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   /// edits that keep the same next track cost no server round-trip.
   void _rearmIfNeeded() {
     if (_player == null || _currentTrack == null) return;
-    final targetCursor = _sleepTimerEndOfTrack ? null : _queue.nextIndex();
-    final target = targetCursor == null ? null : _queue.trackAt(targetCursor);
-    if (target == null && _armed == null) return;
-    if (target != null && _armed?.track.globalKey == target.globalKey) return;
-    unawaited(_armNext(_generation));
+    _requestArmNext();
   }
 
   // ---------------------------------------------------------------------
@@ -501,7 +569,8 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     }
     final adopted = armed;
     _armed = null;
-    final generation = ++_generation;
+    _generation++;
+    _invalidateArmRequests();
 
     // The finished track played out fully — report stopped at its duration.
     final finishedMs = _currentTrack?.durationMs;
@@ -537,7 +606,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     appLogger.d('Music: transition received "${adopted.track.title}" → cursor ${_queue.cursor}');
     _setStatus(MusicPlaybackStatus.playing, forceNotify: true);
     _bindTrackServices(_currentTrack!, adopted.source);
-    unawaited(_armNext(generation));
+    _requestArmNext();
   }
 
   /// Completed (eof-reached) is NOT a last-entry-only signal: mpv pulses it
@@ -591,6 +660,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   /// remains; pressing play restarts the current track from the top.
   void _parkAtEnd() {
     _generation++;
+    _invalidateArmRequests();
     final finishedMs = _currentTrack?.durationMs;
     _finalizeCurrentTrack(positionOverride: finishedMs != null ? Duration(milliseconds: finishedMs) : null);
     _setStatus(MusicPlaybackStatus.paused, forceNotify: true);
@@ -778,26 +848,35 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   Future<void> play() async {
     final player = _player;
     if (player == null || _currentTrack == null) return;
+    final generation = _generation;
     if (player.state.completed) {
       // Parked at queue end: restart the current track.
       await player.seek(Duration.zero);
+      if (!_isCurrentTransport(player, generation)) return;
       final currentTrack = _currentTrack;
       final currentSource = _currentSource;
       if (currentTrack != null && currentSource != null) {
         _bindTrackServices(currentTrack, currentSource);
       }
-      unawaited(_armNext(_generation));
+      _requestArmNext();
     }
     await player.play();
+    if (!_isCurrentTransport(player, generation)) return;
     _setStatus(MusicPlaybackStatus.playing);
   }
 
   @override
   Future<void> pause() async {
     final player = _player;
-    if (player == null) return;
+    if (player == null || _currentTrack == null) return;
+    final generation = _generation;
     await player.pause();
+    if (!_isCurrentTransport(player, generation)) return;
     _setStatus(MusicPlaybackStatus.paused);
+  }
+
+  bool _isCurrentTransport(Player player, int generation) {
+    return !_disposed && _currentTrack != null && generation == _generation && _player == player;
   }
 
   @override
@@ -1031,7 +1110,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     // End-of-track mode suppresses gapless arming (and leaving it restores
     // the arm), so the track genuinely completes instead of transitioning.
     if (hadEndOfTrack != _sleepTimerEndOfTrack) {
-      unawaited(_armNext(_generation));
+      _requestArmNext();
     }
     notifyListeners();
   }
@@ -1064,7 +1143,10 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   Future<void> _stopForVideoClaim() => _stopSession(endStatus: MusicPlaybackStatus.idle);
 
   Future<void> _stopSession({required MusicPlaybackStatus endStatus}) async {
+    beginPlayIntent();
+    _queueSessionRevision++;
     _generation++;
+    _invalidateArmRequests();
     _completedConfirmTimer?.cancel();
     _completedConfirmTimer = null;
     _cancelSleepTimer();
@@ -1076,6 +1158,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _staleArm = null;
     _playContext = null;
     _resumeAfterInterruption = false;
+    _setStatus(endStatus, forceNotify: true);
 
     final player = _player;
     _player = null;
@@ -1110,8 +1193,6 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       unawaited(controls.clear());
       controls.dispose();
     }
-
-    _setStatus(endStatus, forceNotify: true);
   }
 
   @override
@@ -1137,6 +1218,10 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   @override
   void dispose() {
     if (_disposed) return;
+    _playIntentGeneration++;
+    _queueSessionRevision++;
+    _generation++;
+    _invalidateArmRequests();
     _disposed = true;
     if (_observesLifecycle) {
       WidgetsBinding.instance.removeObserver(this);
