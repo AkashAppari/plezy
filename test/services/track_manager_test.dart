@@ -525,6 +525,23 @@ void main() {
       await mgr.onSubtitleTrackChanged(SubtitleTrack.off);
       expect(captured, 0);
     });
+
+    test('persists a known source stream id without reverse-matching native metadata', () async {
+      await SettingsService.getInstance();
+      final player = _FakePlayer(tracks: const Tracks(subtitle: playerSubs));
+      int? captured;
+      final mgr = _make(
+        player: player,
+        mediaInfo: info(),
+        persister: ({required int partId, required String trackType, int? streamID}) async {
+          captured = streamID;
+        },
+      );
+      addTearDown(mgr.dispose);
+
+      await mgr.onSubtitleTrackChanged(const SubtitleTrack(id: 'native-without-metadata'), sourceStreamId: 32);
+      expect(captured, 32);
+    });
   });
 
   // ============================================================

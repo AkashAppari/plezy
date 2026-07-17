@@ -346,6 +346,39 @@ void main() {
     expect(subtitles.single.uri, 'https://plex.example.com/library/streams/402.srt?encoding=utf-8&X-Plex-Token=token');
   });
 
+  test('transcode negotiation honors an explicit source subtitle preference', () {
+    final client = makeClient((_) async => http.Response('not used', 500));
+    addTearDown(client.close);
+    final info = mediaInfoWithSubtitles([
+      MediaSubtitleTrack(id: 401, languageCode: 'eng', selected: true, forced: false),
+      MediaSubtitleTrack(id: 402, languageCode: 'swe', selected: false, forced: false),
+    ]);
+
+    final selected = client.resolveTranscodeSubtitleTrackForTesting(
+      info,
+      const SubtitleTrack(id: 'source:402', language: 'swe'),
+    );
+
+    expect(selected?.id, 402);
+    expect(client.resolveTranscodeSubtitleTrackForTesting(info, SubtitleTrack.off), isNull);
+  });
+
+  test('transcode negotiation falls back to the new source default for a stale source id', () {
+    final client = makeClient((_) async => http.Response('not used', 500));
+    addTearDown(client.close);
+    final info = mediaInfoWithSubtitles([
+      MediaSubtitleTrack(id: 501, languageCode: 'eng', selected: true, forced: false),
+      MediaSubtitleTrack(id: 502, languageCode: 'swe', selected: false, forced: false),
+    ]);
+
+    final selected = client.resolveTranscodeSubtitleTrackForTesting(
+      info,
+      const SubtitleTrack(id: 'source:402', language: 'und'),
+    );
+
+    expect(selected?.id, 501);
+  });
+
   test('selected internal text subtitles are not attached as external sidecars', () {
     final client = makeClient((_) async => http.Response('not used', 500));
     addTearDown(client.close);

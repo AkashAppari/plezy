@@ -652,6 +652,7 @@ class _TranslationsVideoControlsNl extends TranslationsVideoControlsEn {
 	@override String get qualityOriginal => 'Origineel';
 	@override String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
 	@override String get transcodeUnavailableFallback => 'Transcoderen niet beschikbaar — originele kwaliteit wordt afgespeeld';
+	@override String get subtitleUnavailableFallback => 'De geselecteerde ondertitels konden niet worden geladen — afspelen gaat door zonder ondertitels';
 	@override String get pipButton => 'Beeld-in-beeld modus';
 	@override String get aspectRatioButton => 'Beeldverhouding';
 	@override String get ambientLighting => 'Omgevingsverlichting';
@@ -677,11 +678,11 @@ class _TranslationsVideoControlsNl extends TranslationsVideoControlsEn {
 	@override String get searchSubtitles => 'Ondertitels zoeken';
 	@override String get language => 'Taal';
 	@override String get noSubtitlesFound => 'Geen ondertitels gevonden';
-	@override String get downloadedSubtitle => 'Gedownload';
 	@override String get noSubtitlesAvailable => 'Geen ondertitels beschikbaar';
 	@override String get noAudioTracksAvailable => 'Geen audiotracks beschikbaar';
 	@override String get noTracksAvailable => 'Geen tracks beschikbaar';
 	@override String get subtitleDownloaded => 'Ondertitel gedownload';
+	@override String get subtitleDownloadedNotApplied => 'De ondertiteling is gedownload, maar kon niet worden geselecteerd';
 	@override String get subtitleDownloadFailed => 'Ondertitel downloaden mislukt';
 	@override String get searchLanguages => 'Talen zoeken...';
 }
@@ -2585,6 +2586,7 @@ extension on TranslationsNl {
 			'videoControls.qualityOriginal' => 'Origineel',
 			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
 			'videoControls.transcodeUnavailableFallback' => 'Transcoderen niet beschikbaar — originele kwaliteit wordt afgespeeld',
+			'videoControls.subtitleUnavailableFallback' => 'De geselecteerde ondertitels konden niet worden geladen — afspelen gaat door zonder ondertitels',
 			'videoControls.pipButton' => 'Beeld-in-beeld modus',
 			'videoControls.aspectRatioButton' => 'Beeldverhouding',
 			'videoControls.ambientLighting' => 'Omgevingsverlichting',
@@ -2616,11 +2618,11 @@ extension on TranslationsNl {
 			'videoControls.searchSubtitles' => 'Ondertitels zoeken',
 			'videoControls.language' => 'Taal',
 			'videoControls.noSubtitlesFound' => 'Geen ondertitels gevonden',
-			'videoControls.downloadedSubtitle' => 'Gedownload',
 			'videoControls.noSubtitlesAvailable' => 'Geen ondertitels beschikbaar',
 			'videoControls.noAudioTracksAvailable' => 'Geen audiotracks beschikbaar',
 			'videoControls.noTracksAvailable' => 'Geen tracks beschikbaar',
 			'videoControls.subtitleDownloaded' => 'Ondertitel gedownload',
+			'videoControls.subtitleDownloadedNotApplied' => 'De ondertiteling is gedownload, maar kon niet worden geselecteerd',
 			'videoControls.subtitleDownloadFailed' => 'Ondertitel downloaden mislukt',
 			'videoControls.searchLanguages' => 'Talen zoeken...',
 			'messages.markedAsWatched' => 'Gemarkeerd als gekeken',
@@ -2633,9 +2635,9 @@ extension on TranslationsNl {
 			'messages.errorLoading' => ({required Object error}) => 'Fout: ${error}',
 			'messages.streamInterrupted' => 'De stream is onderbroken. Druk op afspelen of spoel om het opnieuw te proberen.',
 			'messages.liveStreamInterrupted' => 'De livestream is onderbroken. Druk op afspelen om het opnieuw te proberen.',
-			'messages.fileInfoNotAvailable' => 'Bestand informatie niet beschikbaar',
 			_ => null,
 		} ?? switch (path) {
+			'messages.fileInfoNotAvailable' => 'Bestand informatie niet beschikbaar',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Fout bij laden bestand info: ${error}',
 			'messages.errorLoadingSeries' => 'Fout bij laden serie',
 			'messages.musicNotSupported' => 'Muziek afspelen wordt nog niet ondersteund',
@@ -3147,9 +3149,9 @@ extension on TranslationsNl {
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Beheren',
 			'downloads.tvShows' => 'Series',
-			'downloads.movies' => 'Films',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.movies' => 'Films',
 			'downloads.music' => 'Muziek',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} nummers in wachtrij voor download',
 			'downloads.noDownloads' => 'Nog geen downloads',

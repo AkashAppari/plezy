@@ -652,6 +652,7 @@ class _TranslationsVideoControlsFr extends TranslationsVideoControlsEn {
 	@override String get qualityOriginal => 'Originale';
 	@override String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
 	@override String get transcodeUnavailableFallback => 'Transcodage indisponible — lecture en qualité originale';
+	@override String get subtitleUnavailableFallback => 'Impossible de charger les sous-titres sélectionnés — poursuite de la lecture sans sous-titres';
 	@override String get pipButton => 'Mode PiP (Picture-in-Picture)';
 	@override String get aspectRatioButton => 'Format d\'image';
 	@override String get ambientLighting => 'Éclairage ambiant';
@@ -677,11 +678,11 @@ class _TranslationsVideoControlsFr extends TranslationsVideoControlsEn {
 	@override String get searchSubtitles => 'Rechercher des sous-titres';
 	@override String get language => 'Langue';
 	@override String get noSubtitlesFound => 'Aucun sous-titre trouvé';
-	@override String get downloadedSubtitle => 'Téléchargé';
 	@override String get noSubtitlesAvailable => 'Aucun sous-titre disponible';
 	@override String get noAudioTracksAvailable => 'Aucune piste audio disponible';
 	@override String get noTracksAvailable => 'Aucune piste disponible';
 	@override String get subtitleDownloaded => 'Sous-titre téléchargé';
+	@override String get subtitleDownloadedNotApplied => 'Le sous-titre a été téléchargé, mais n’a pas pu être sélectionné';
 	@override String get subtitleDownloadFailed => 'Échec du téléchargement du sous-titre';
 	@override String get searchLanguages => 'Rechercher des langues...';
 }
@@ -2585,6 +2586,7 @@ extension on TranslationsFr {
 			'videoControls.qualityOriginal' => 'Originale',
 			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
 			'videoControls.transcodeUnavailableFallback' => 'Transcodage indisponible — lecture en qualité originale',
+			'videoControls.subtitleUnavailableFallback' => 'Impossible de charger les sous-titres sélectionnés — poursuite de la lecture sans sous-titres',
 			'videoControls.pipButton' => 'Mode PiP (Picture-in-Picture)',
 			'videoControls.aspectRatioButton' => 'Format d\'image',
 			'videoControls.ambientLighting' => 'Éclairage ambiant',
@@ -2616,11 +2618,11 @@ extension on TranslationsFr {
 			'videoControls.searchSubtitles' => 'Rechercher des sous-titres',
 			'videoControls.language' => 'Langue',
 			'videoControls.noSubtitlesFound' => 'Aucun sous-titre trouvé',
-			'videoControls.downloadedSubtitle' => 'Téléchargé',
 			'videoControls.noSubtitlesAvailable' => 'Aucun sous-titre disponible',
 			'videoControls.noAudioTracksAvailable' => 'Aucune piste audio disponible',
 			'videoControls.noTracksAvailable' => 'Aucune piste disponible',
 			'videoControls.subtitleDownloaded' => 'Sous-titre téléchargé',
+			'videoControls.subtitleDownloadedNotApplied' => 'Le sous-titre a été téléchargé, mais n’a pas pu être sélectionné',
 			'videoControls.subtitleDownloadFailed' => 'Échec du téléchargement du sous-titre',
 			'videoControls.searchLanguages' => 'Rechercher des langues...',
 			'messages.markedAsWatched' => 'Marqué comme vu',
@@ -2633,9 +2635,9 @@ extension on TranslationsFr {
 			'messages.errorLoading' => ({required Object error}) => 'Erreur: ${error}',
 			'messages.streamInterrupted' => 'La lecture a été interrompue. Appuyez sur Lecture ou avancez pour réessayer.',
 			'messages.liveStreamInterrupted' => 'Le direct a été interrompu. Appuyez sur Lecture pour réessayer.',
-			'messages.fileInfoNotAvailable' => 'Informations sur le fichier non disponibles',
 			_ => null,
 		} ?? switch (path) {
+			'messages.fileInfoNotAvailable' => 'Informations sur le fichier non disponibles',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Erreur lors du chargement des informations sur le fichier: ${error}',
 			'messages.errorLoadingSeries' => 'Erreur lors du chargement de la série',
 			'messages.musicNotSupported' => 'La lecture de musique n\'est pas encore prise en charge',
@@ -3147,9 +3149,9 @@ extension on TranslationsFr {
 			'downloads.title' => 'Téléchargements',
 			'downloads.manage' => 'Gérer',
 			'downloads.tvShows' => 'Show TV',
-			'downloads.movies' => 'Films',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.movies' => 'Films',
 			'downloads.music' => 'Musique',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} titres en file d\'attente de téléchargement',
 			'downloads.noDownloads' => 'Aucun téléchargement pour le moment',

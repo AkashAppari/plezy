@@ -652,6 +652,7 @@ class _TranslationsVideoControlsRu extends TranslationsVideoControlsEn {
 	@override String get qualityOriginal => 'Оригинал';
 	@override String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
 	@override String get transcodeUnavailableFallback => 'Транскодирование недоступно — воспроизведение в оригинальном качестве';
+	@override String get subtitleUnavailableFallback => 'Не удалось загрузить выбранные субтитры — воспроизведение продолжится без субтитров';
 	@override String get pipButton => 'Режим «картинка в картинке»';
 	@override String get aspectRatioButton => 'Соотношение сторон';
 	@override String get ambientLighting => 'Фоновая подсветка';
@@ -677,11 +678,11 @@ class _TranslationsVideoControlsRu extends TranslationsVideoControlsEn {
 	@override String get searchSubtitles => 'Поиск субтитров';
 	@override String get language => 'Язык';
 	@override String get noSubtitlesFound => 'Субтитры не найдены';
-	@override String get downloadedSubtitle => 'Загружено';
 	@override String get noSubtitlesAvailable => 'Нет доступных субтитров';
 	@override String get noAudioTracksAvailable => 'Нет доступных аудиодорожек';
 	@override String get noTracksAvailable => 'Нет доступных дорожек';
 	@override String get subtitleDownloaded => 'Субтитры загружены';
+	@override String get subtitleDownloadedNotApplied => 'Субтитры загружены, но их не удалось выбрать';
 	@override String get subtitleDownloadFailed => 'Не удалось загрузить субтитры';
 	@override String get searchLanguages => 'Поиск языков...';
 }
@@ -2591,6 +2592,7 @@ extension on TranslationsRu {
 			'videoControls.qualityOriginal' => 'Оригинал',
 			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
 			'videoControls.transcodeUnavailableFallback' => 'Транскодирование недоступно — воспроизведение в оригинальном качестве',
+			'videoControls.subtitleUnavailableFallback' => 'Не удалось загрузить выбранные субтитры — воспроизведение продолжится без субтитров',
 			'videoControls.pipButton' => 'Режим «картинка в картинке»',
 			'videoControls.aspectRatioButton' => 'Соотношение сторон',
 			'videoControls.ambientLighting' => 'Фоновая подсветка',
@@ -2622,11 +2624,11 @@ extension on TranslationsRu {
 			'videoControls.searchSubtitles' => 'Поиск субтитров',
 			'videoControls.language' => 'Язык',
 			'videoControls.noSubtitlesFound' => 'Субтитры не найдены',
-			'videoControls.downloadedSubtitle' => 'Загружено',
 			'videoControls.noSubtitlesAvailable' => 'Нет доступных субтитров',
 			'videoControls.noAudioTracksAvailable' => 'Нет доступных аудиодорожек',
 			'videoControls.noTracksAvailable' => 'Нет доступных дорожек',
 			'videoControls.subtitleDownloaded' => 'Субтитры загружены',
+			'videoControls.subtitleDownloadedNotApplied' => 'Субтитры загружены, но их не удалось выбрать',
 			'videoControls.subtitleDownloadFailed' => 'Не удалось загрузить субтитры',
 			'videoControls.searchLanguages' => 'Поиск языков...',
 			'messages.markedAsWatched' => 'Отмечено как просмотренное',
@@ -2639,9 +2641,9 @@ extension on TranslationsRu {
 			'messages.errorLoading' => ({required Object error}) => 'Ошибка: ${error}',
 			'messages.streamInterrupted' => 'Поток прервался. Нажмите «Воспроизвести» или перемотайте, чтобы повторить попытку.',
 			'messages.liveStreamInterrupted' => 'Прямая трансляция прервалась. Нажмите «Воспроизвести», чтобы повторить попытку.',
-			'messages.fileInfoNotAvailable' => 'Информация о файле недоступна',
 			_ => null,
 		} ?? switch (path) {
+			'messages.fileInfoNotAvailable' => 'Информация о файле недоступна',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Ошибка загрузки информации о файле: ${error}',
 			'messages.errorLoadingSeries' => 'Ошибка загрузки сериала',
 			'messages.musicNotSupported' => 'Воспроизведение музыки пока не поддерживается',
@@ -3153,9 +3155,9 @@ extension on TranslationsRu {
 			'downloads.title' => 'Загрузки',
 			'downloads.manage' => 'Управление',
 			'downloads.tvShows' => 'Сериалы',
-			'downloads.movies' => 'Фильмы',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.movies' => 'Фильмы',
 			'downloads.music' => 'Музыка',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} треков в очереди на загрузку',
 			'downloads.noDownloads' => 'Загрузок пока нет',

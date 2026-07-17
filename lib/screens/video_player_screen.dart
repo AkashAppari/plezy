@@ -51,13 +51,17 @@ import '../services/playback_initialization_service.dart';
 import '../services/playback_context.dart';
 import '../services/local_playback_history.dart';
 import '../services/playback_session.dart';
+import '../services/playback_subtitle_resolver.dart';
+import '../services/mpv_sidecar_open_guard.dart';
 import '../services/playback_progress_tracker.dart';
 import '../services/playback_source_resolver.dart';
+import '../services/multi_server_manager.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/display_mode_service.dart';
 import '../services/settings_service.dart';
 import '../services/sleep_timer_service.dart';
 import '../services/track_manager.dart';
+import '../services/track_selection_service.dart';
 import '../services/ambient_lighting_service.dart';
 import '../services/video_filter_manager.dart';
 import '../services/video_pip_manager.dart';
@@ -133,7 +137,24 @@ Future<void> _setWakelock(bool enabled) async {
 /// The in-place media-source transitions a [VideoPlayerScreenState] can run.
 /// They are mutually exclusive by construction — entry points bail while a
 /// transition is in flight.
-enum _PlaybackTransition { idle, reloadingMedia, switchingChannel }
+enum _PlaybackTransition { idle, switchingSource, reloadingMedia, switchingChannel }
+
+enum _SubtitleSelectionSlot { primary, secondary }
+
+/// Identity token for one owner of the in-place playback transition lock.
+///
+/// The enum describes what the current owner is doing; it is not itself an
+/// ownership token because a superseded async flow can outlive a newer flow
+/// that has since acquired the same enum value.
+final class _PlaybackTransitionLease {
+  _PlaybackTransitionLease();
+
+  bool _wasSuperseded = false;
+
+  bool get wasSuperseded => _wasSuperseded;
+
+  void _markSuperseded() => _wasSuperseded = true;
+}
 
 /// Outcome of [VideoPlayerScreenState._reloadMediaInPlace].
 enum _MediaReloadOutcome {
@@ -281,7 +302,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   // In-flight media-source transition. At most one can run at a time: reloads
   // and channel switches are mutually exclusive.
   _PlaybackTransition _playbackTransition = _PlaybackTransition.idle;
+  _PlaybackTransitionLease? _playbackTransitionLease;
+  Completer<void>? _playbackTransitionIdleCompleter;
   bool _playbackIntentShouldPlay = true;
+  int _pendingSubtitleCycleCount = 0;
+  bool _subtitleCycleDrainActive = false;
 
   /// Media key of the last Watch Together switch failure the user was
   /// toasted about — the heartbeat retry loop must not re-toast every 2s.
@@ -523,11 +548,75 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
   }
 
+  PlaybackSession _updatePlaybackSessionSubtitleSelection(
+    PlaybackSession session,
+    PlaybackSubtitleSelection selection,
+  ) {
+    final updated = session.withSubtitleSelection(selection);
+    _playbackSession = updated;
+    return updated;
+  }
+
   ScrubFrame? _getThumbnailData(Duration time) => _scrubPreviewSource?.getFrame(time);
 
   int _beginPlaybackGeneration({bool isMediaReload = false}) {
-    if (!isMediaReload) _playbackTransition = _PlaybackTransition.idle;
+    if (!isMediaReload) _forcePlaybackTransitionIdle();
     return ++_playbackGeneration;
+  }
+
+  _PlaybackTransitionLease? _tryAcquirePlaybackTransition(_PlaybackTransition transition) {
+    assert(transition != _PlaybackTransition.idle);
+    if (_playbackTransition != _PlaybackTransition.idle) return null;
+    final lease = _PlaybackTransitionLease();
+    _playbackTransitionLease = lease;
+    _changePlaybackTransition(transition);
+    return lease;
+  }
+
+  bool _ownsPlaybackTransition(_PlaybackTransitionLease lease, {_PlaybackTransition? expected}) {
+    return identical(_playbackTransitionLease, lease) && (expected == null || _playbackTransition == expected);
+  }
+
+  bool _advancePlaybackTransition(
+    _PlaybackTransitionLease lease,
+    _PlaybackTransition transition, {
+    _PlaybackTransition? expected,
+  }) {
+    assert(transition != _PlaybackTransition.idle);
+    if (!_ownsPlaybackTransition(lease, expected: expected)) return false;
+    _changePlaybackTransition(transition);
+    return true;
+  }
+
+  void _releasePlaybackTransition(_PlaybackTransitionLease lease) {
+    if (!identical(_playbackTransitionLease, lease)) return;
+    _playbackTransitionLease = null;
+    _changePlaybackTransition(_PlaybackTransition.idle);
+  }
+
+  void _forcePlaybackTransitionIdle() {
+    _playbackTransitionLease?._markSuperseded();
+    _playbackTransitionLease = null;
+    _changePlaybackTransition(_PlaybackTransition.idle);
+  }
+
+  void _changePlaybackTransition(_PlaybackTransition transition) {
+    if (_playbackTransition == transition) return;
+    _playbackTransition = transition;
+    if (transition == _PlaybackTransition.idle) {
+      final completer = _playbackTransitionIdleCompleter;
+      _playbackTransitionIdleCompleter = null;
+      if (completer != null && !completer.isCompleted) completer.complete();
+    } else {
+      _playbackTransitionIdleCompleter ??= Completer<void>();
+    }
+  }
+
+  Future<void> _waitForPlaybackTransitionIdle() async {
+    while (mounted && _playbackTransition != _PlaybackTransition.idle) {
+      _playbackTransitionIdleCompleter ??= Completer<void>();
+      await _playbackTransitionIdleCompleter!.future;
+    }
   }
 
   /// Start a new playback attempt: bumps the generation and captures the
@@ -820,6 +909,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           offlineLibraryMode: false,
           qualityPreset: _selectedQualityPreset,
           selectedAudioStreamId: _selectedAudioStreamId,
+          preferredSubtitleTrack: _preferredSubtitleTrack,
           sessionIdentifier: _playbackSessionIdentifier,
           transcodeSessionId: _playbackTranscodeSessionId,
         );
@@ -1216,6 +1306,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
 
+    final transitionCompleter = _playbackTransitionIdleCompleter;
+    _playbackTransitionIdleCompleter = null;
+    if (transitionCompleter != null && !transitionCompleter.isCompleted) transitionCompleter.complete();
+
     _cleanupCompanionRemoteCallbacks();
 
     // Notify Watch Together guests that host is exiting the player.
@@ -1481,9 +1575,104 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   Future<void> _onAudioTrackChanged(AudioTrack track) async => _trackManager?.onAudioTrackChanged(track);
 
-  Future<void> _onSubtitleTrackChanged(SubtitleTrack track) async => _trackManager?.onSubtitleTrackChanged(track);
+  Future<void> _onSubtitleTrackChanged(SubtitleTrack track, {int? sourceStreamId}) async {
+    _rememberNativeSubtitleSelection(track, sourceStreamId: sourceStreamId);
+    await _trackManager?.onSubtitleTrackChanged(track, sourceStreamId: sourceStreamId);
+  }
 
-  void _onSecondarySubtitleTrackChanged(SubtitleTrack track) => _trackManager?.onSecondarySubtitleTrackChanged(track);
+  void _rememberNativeSubtitleSelection(SubtitleTrack track, {int? sourceStreamId}) {
+    _rememberNativeSubtitleSelectionForSlot(
+      track,
+      slot: _SubtitleSelectionSlot.primary,
+      sourceStreamId: sourceStreamId,
+    );
+  }
+
+  void _onSecondarySubtitleTrackChanged(SubtitleTrack track) {
+    _rememberNativeSubtitleSelectionForSlot(track, slot: _SubtitleSelectionSlot.secondary);
+    _trackManager?.onSecondarySubtitleTrackChanged(track);
+  }
+
+  void _rememberNativeSubtitleSelectionForSlot(
+    SubtitleTrack track, {
+    required _SubtitleSelectionSlot slot,
+    int? sourceStreamId,
+  }) {
+    final session = _playbackSession;
+    if (session == null) return;
+    final currentSelection = session.subtitleSelection;
+    if (track.id == SubtitleTrack.off.id) {
+      _updatePlaybackSessionSubtitleSelection(session, switch (slot) {
+        _SubtitleSelectionSlot.primary => const PlaybackSubtitleSelection.off(),
+        _SubtitleSelectionSlot.secondary => PlaybackSubtitleSelection(
+          primaryTrack: currentSelection.primaryTrack,
+          primarySourceStreamId: currentSelection.primarySourceStreamId,
+          primarySidecar: currentSelection.primarySidecar,
+        ),
+      });
+      if (mounted) _setPlayerState(() {});
+      return;
+    }
+
+    final info = _currentMediaInfo;
+    final currentPlayer = player;
+    if (info == null || currentPlayer == null) return;
+
+    MediaSubtitleTrack? sourceTrack;
+    final currentSourceId = switch (slot) {
+      _SubtitleSelectionSlot.primary => currentSelection.primarySourceStreamId,
+      _SubtitleSelectionSlot.secondary => currentSelection.secondarySourceStreamId,
+    };
+    final currentSidecar = switch (slot) {
+      _SubtitleSelectionSlot.primary => currentSelection.primarySidecar,
+      _SubtitleSelectionSlot.secondary => currentSelection.secondarySidecar,
+    };
+    if (sourceStreamId != null) {
+      for (final candidate in info.subtitleTracks) {
+        if (candidate.id == sourceStreamId) {
+          sourceTrack = candidate;
+          break;
+        }
+      }
+    } else if (track.isExternal && currentSourceId != null && currentSidecar?.track.uri == track.uri) {
+      for (final candidate in info.subtitleTracks) {
+        if (candidate.id == currentSourceId) {
+          sourceTrack = candidate;
+          break;
+        }
+      }
+    }
+    sourceTrack ??= findPlexTrackForMpvSubtitle(
+      track,
+      info.subtitleTracks,
+      allMpvTracks: currentPlayer.state.tracks.subtitle,
+    );
+    if (sourceTrack == null) return;
+
+    final sidecar = _sidecarForSourceStreamId(session, sourceTrack.id);
+    final resolvedTrack = PlaybackSubtitleResolver.subtitleTrackForSource(sourceTrack, sidecar: sidecar);
+    final selection = PlaybackSubtitleSelection(
+      primaryTrack: slot == _SubtitleSelectionSlot.primary ? resolvedTrack : currentSelection.primaryTrack,
+      primarySourceStreamId: slot == _SubtitleSelectionSlot.primary
+          ? sourceTrack.id
+          : currentSelection.primarySourceStreamId,
+      primarySidecar: slot == _SubtitleSelectionSlot.primary ? sidecar : currentSelection.primarySidecar,
+      secondaryTrack: slot == _SubtitleSelectionSlot.secondary ? resolvedTrack : currentSelection.secondaryTrack,
+      secondarySourceStreamId: slot == _SubtitleSelectionSlot.secondary
+          ? sourceTrack.id
+          : currentSelection.secondarySourceStreamId,
+      secondarySidecar: slot == _SubtitleSelectionSlot.secondary ? sidecar : currentSelection.secondarySidecar,
+    );
+    _updatePlaybackSessionSubtitleSelection(session, selection);
+    if (mounted) _setPlayerState(() {});
+  }
+
+  PlaybackSubtitleSidecar? _sidecarForSourceStreamId(PlaybackSession session, int sourceStreamId) {
+    for (final candidate in session.context.result.subtitleSidecars) {
+      if (candidate.sourceStreamId == sourceStreamId) return candidate;
+    }
+    return null;
+  }
 
   Future<void> _sendStoppedProgressOnce({Duration? positionOverride}) {
     if (widget.isLive) {

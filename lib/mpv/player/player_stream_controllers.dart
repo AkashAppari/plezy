@@ -22,6 +22,9 @@ mixin PlayerStreamControllersMixin {
   final bufferRangesController = StreamController<List<BufferRange>>.broadcast();
   final playbackRestartController = StreamController<void>.broadcast();
   final fileLoadedController = StreamController<void>.broadcast();
+  final fileStartedController = StreamController<void>.broadcast();
+  final fileLoadFailedController = StreamController<void>.broadcast();
+  final primaryMediaReadyController = StreamController<void>.broadcast();
   final backendSwitchedController = StreamController<void>.broadcast();
   final trackTransitionController = StreamController<String>.broadcast();
 
@@ -45,6 +48,9 @@ mixin PlayerStreamControllersMixin {
       bufferRanges: bufferRangesController.stream,
       playbackRestart: playbackRestartController.stream,
       fileLoaded: fileLoadedController.stream,
+      fileStarted: fileStartedController.stream,
+      fileLoadFailed: fileLoadFailedController.stream,
+      primaryMediaReady: primaryMediaReadyController.stream,
       backendSwitched: backendSwitchedController.stream,
       trackTransition: trackTransitionController.stream,
     );
@@ -69,6 +75,9 @@ mixin PlayerStreamControllersMixin {
     await bufferRangesController.close();
     await playbackRestartController.close();
     await fileLoadedController.close();
+    await fileStartedController.close();
+    await fileLoadFailedController.close();
+    await primaryMediaReadyController.close();
     await backendSwitchedController.close();
     await trackTransitionController.close();
   }

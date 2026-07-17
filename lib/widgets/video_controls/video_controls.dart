@@ -30,6 +30,7 @@ import 'package:flutter/services.dart'
 import '../../services/fullscreen_state_manager.dart';
 import '../../services/macos_window_service.dart';
 import '../../services/pip_service.dart';
+import '../../services/playback_subtitle_resolver.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../mixins/settings_effect_mixin.dart';
@@ -96,21 +97,51 @@ part 'parts/visibility.dart';
 
 /// Subtitle tracks offered in the player's "source" subtitle list.
 ///
-/// While transcoding, only tracks Plex can deliver in HLS are shown: keyed
-/// sidecars, text codecs that can become WebVTT, and image codecs that can be
-/// burned into the rendition. Outside transcode the full list is returned
-/// unchanged, since the player has direct access to every embedded stream.
+/// Direct play exposes embedded tracks in the native player and can attach
+/// arbitrary sidecars itself. A transcode can only deliver external sidecars
+/// or embedded codecs that the server can convert/burn into the rendition.
 List<MediaSubtitleTrack> selectableSourceSubtitleTracks(
   List<MediaSubtitleTrack> tracks, {
   required bool isTranscoding,
+  required Set<int> sidecarSourceIds,
+  required bool supportsEmbeddedTranscodeSelection,
 }) {
-  if (!isTranscoding) return tracks;
+  if (!isTranscoding) {
+    return tracks
+        .where((track) {
+          final requiresSidecar =
+              track.isExternalFile || (!track.usesExternalDelivery && track.key != null && track.key!.isNotEmpty);
+          return !requiresSidecar || sidecarSourceIds.contains(track.id);
+        })
+        .toList(growable: false);
+  }
   return tracks
-      .where((track) {
-        final hasKey = track.key != null && track.key!.isNotEmpty;
-        return hasKey || CodecUtils.isTranscodableSubtitleCodec(track.codec);
-      })
+      .where(
+        (track) =>
+            sidecarSourceIds.contains(track.id) ||
+            (supportsEmbeddedTranscodeSelection && CodecUtils.isTranscodableSubtitleCodec(track.codec)),
+      )
       .toList(growable: false);
+}
+
+@visibleForTesting
+MediaSubtitleTrack? findNewExternalSubtitleTrack(List<MediaSubtitleTrack> tracks, Set<int> existingSourceIds) {
+  for (final track in tracks) {
+    if (track.isExternal && !existingSourceIds.contains(track.id)) return track;
+  }
+  return null;
+}
+
+@visibleForTesting
+SubtitleDownloadApplyOutcome subtitleDownloadApplyOutcomeFor(PlaybackSourceChangeOutcome outcome) {
+  return switch (outcome) {
+    PlaybackSourceChangeOutcome.applied ||
+    PlaybackSourceChangeOutcome.unchanged => SubtitleDownloadApplyOutcome.applied,
+    PlaybackSourceChangeOutcome.busy => SubtitleDownloadApplyOutcome.busy,
+    PlaybackSourceChangeOutcome.superseded => SubtitleDownloadApplyOutcome.superseded,
+    PlaybackSourceChangeOutcome.unavailable => SubtitleDownloadApplyOutcome.unavailable,
+    PlaybackSourceChangeOutcome.failed => SubtitleDownloadApplyOutcome.failed,
+  };
 }
 
 @visibleForTesting
@@ -132,7 +163,7 @@ ShaderPreset resolveShaderTogglePreset({
   List<MediaAudioTrack> sourceAudioTracks,
   int? selectedAudioStreamId,
   List<MediaSubtitleTrack> sourceSubtitleTracks,
-  int? selectedSubtitleStreamId,
+  PlaybackSourceSubtitleChoice? selectedSubtitleChoice,
   bool canSwitch,
 })
 effectiveVersionQualityControls({
@@ -143,7 +174,7 @@ effectiveVersionQualityControls({
   required List<MediaAudioTrack> sourceAudioTracks,
   required int? selectedAudioStreamId,
   required List<MediaSubtitleTrack> sourceSubtitleTracks,
-  required int? selectedSubtitleStreamId,
+  required PlaybackSourceSubtitleChoice? selectedSubtitleChoice,
 }) {
   if (isOfflinePlayback) {
     return (
@@ -153,7 +184,7 @@ effectiveVersionQualityControls({
       sourceAudioTracks: const <MediaAudioTrack>[],
       selectedAudioStreamId: null,
       sourceSubtitleTracks: const <MediaSubtitleTrack>[],
-      selectedSubtitleStreamId: null,
+      selectedSubtitleChoice: null,
       canSwitch: false,
     );
   }
@@ -164,7 +195,7 @@ effectiveVersionQualityControls({
     sourceAudioTracks: sourceAudioTracks,
     selectedAudioStreamId: selectedAudioStreamId,
     sourceSubtitleTracks: sourceSubtitleTracks,
-    selectedSubtitleStreamId: selectedSubtitleStreamId,
+    selectedSubtitleChoice: selectedSubtitleChoice,
     canSwitch: true,
   );
 }
@@ -358,12 +389,14 @@ bool shouldSkipDuplicateTimelineSeek({required Duration? lastDispatchedSeek, req
 }
 
 typedef PlaybackSourceChangeCallback =
-    Future<void> Function({
+    Future<PlaybackSourceChangeOutcome> Function({
       int? newMediaIndex,
       TranscodeQualityPreset? newPreset,
       int? newAudioStreamId,
-      int? newSubtitleStreamId,
+      PlaybackSourceSubtitleChoice? newSubtitleChoice,
     });
+
+enum PlaybackSourceChangeOutcome { applied, unchanged, busy, unavailable, superseded, failed }
 
 typedef _EdgeAdjustmentIndicatorState = ({bool visible, MobileEdgeAdjustmentSide? side, double value});
 
@@ -381,7 +414,9 @@ class PlexVideoControls extends StatefulWidget {
   final List<MediaAudioTrack> sourceAudioTracks;
   final int? selectedAudioStreamId;
   final List<MediaSubtitleTrack> sourceSubtitleTracks;
-  final int? selectedSubtitleStreamId;
+  final PlaybackSourceSubtitleChoice? selectedSubtitleChoice;
+  final int? selectedSecondarySubtitleStreamId;
+  final Set<int> sourceSubtitleSidecarIds;
   final int? sourcePartId;
   final PlaybackSourceChangeCallback? onPlaybackSourceChanged;
   final int boxFitMode;
@@ -492,7 +527,9 @@ class PlexVideoControls extends StatefulWidget {
     this.sourceAudioTracks = const [],
     this.selectedAudioStreamId,
     this.sourceSubtitleTracks = const [],
-    this.selectedSubtitleStreamId,
+    this.selectedSubtitleChoice,
+    this.selectedSecondarySubtitleStreamId,
+    this.sourceSubtitleSidecarIds = const <int>{},
     this.sourcePartId,
     this.onPlaybackSourceChanged,
     this.boxFitMode = 0,

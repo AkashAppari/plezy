@@ -7,7 +7,6 @@ appId: com.edde746.plezy
     timeout: 10000
 - tapOn: "Search movies, shows, music..."
 - inputText: "${SAMPLE_TITLE}"
-- hideKeyboard
 - extendedWaitUntil:
     visible: "(?s).*${SAMPLE_TITLE}$"
     timeout: 15000

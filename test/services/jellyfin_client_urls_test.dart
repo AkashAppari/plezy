@@ -565,6 +565,7 @@ void main() {
       expect(result.mediaInfo!.subtitleTracks.single.isExternalFile, isFalse);
       expect(result.mediaInfo!.subtitleTracks.single.usesExternalDelivery, isTrue);
       expect(result.externalSubtitles, hasLength(1));
+      expect(result.subtitleSidecars.single.sourceStreamId, 2);
       expect(result.externalSubtitles.single.title, 'English');
       expect(result.externalSubtitles.single.language, 'eng');
       final subtitleUri = Uri.parse(result.externalSubtitles.single.uri!);
@@ -732,13 +733,14 @@ void main() {
       expect(uri.queryParameters['api_key'], 'tok-abc');
       expect(result.mediaInfo!.subtitleTracks, hasLength(1));
       expect(result.externalSubtitles, hasLength(1));
+      expect(result.subtitleSidecars.single.sourceStreamId, 3);
       expect(result.externalSubtitles.single.title, 'English');
       final subtitleUri = Uri.parse(result.externalSubtitles.single.uri!);
       expect(subtitleUri.path, '/Videos/item-1/src-1/Subtitles/3/Stream.srt');
       expect(subtitleUri.queryParameters['api_key'], 'tok-abc');
     });
 
-    test('getPlaybackInitialization skips negotiated subtitle delivery for original playback', () async {
+    test('getPlaybackInitialization exposes negotiated subtitle delivery for DirectStream playback', () async {
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((request) async {
@@ -819,7 +821,10 @@ void main() {
       expect(result.playMethod, 'DirectStream');
       expect(result.mediaInfo!.subtitleTracks, hasLength(2));
       expect(result.mediaInfo!.subtitleTracks.every((track) => track.usesExternalDelivery), isTrue);
-      expect(result.externalSubtitles, isEmpty);
+      expect(result.subtitleSidecars.map((sidecar) => sidecar.sourceStreamId), [3, 4]);
+      expect(result.externalSubtitles, hasLength(2));
+      expect(Uri.parse(result.externalSubtitles.first.uri!).path, '/Videos/item-1/src-1/Subtitles/3/Stream.srt');
+      expect(Uri.parse(result.externalSubtitles.last.uri!).path, '/Videos/item-1/src-1/Subtitles/4/Stream.srt');
     });
 
     test('getPlaybackInitialization ignores TranscodingUrl for original playback static fallback', () async {

@@ -5,6 +5,7 @@ import '../media/media_item.dart';
 import '../media/media_server_client.dart';
 import '../models/audio_quality_preset.dart';
 import '../models/transcode_quality_preset.dart';
+import '../mpv/mpv.dart';
 import 'multi_server_manager.dart';
 import 'playback_context.dart';
 import 'playback_initialization_service.dart';
@@ -31,6 +32,7 @@ class PlaybackSourceResolver {
     required TranscodeQualityPreset qualityPreset,
     AudioQualityPreset? audioQualityPreset,
     int? selectedAudioStreamId,
+    SubtitleTrack? preferredSubtitleTrack,
     String? sessionIdentifier,
     String? transcodeSessionId,
     bool? preferOffline,
@@ -46,6 +48,7 @@ class PlaybackSourceResolver {
       qualityPreset: qualityPreset,
       audioQualityPreset: audioQualityPreset,
       selectedAudioStreamId: selectedAudioStreamId,
+      preferredSubtitleTrack: preferredSubtitleTrack,
       sessionIdentifier: sessionIdentifier,
       transcodeSessionId: transcodeSessionId,
     );

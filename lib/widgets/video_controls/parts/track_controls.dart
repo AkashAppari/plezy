@@ -86,10 +86,9 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       sourceAudioTracks: widget.sourceAudioTracks,
       selectedAudioStreamId: widget.selectedAudioStreamId,
       sourceSubtitleTracks: widget.sourceSubtitleTracks,
-      selectedSubtitleStreamId: widget.selectedSubtitleStreamId,
+      selectedSubtitleChoice: widget.selectedSubtitleChoice,
     );
-    final canSwitchSourceSubtitles =
-        versionQuality.canSwitch && versionQuality.isTranscoding && widget.metadata.backend == MediaBackend.plex;
+    final canSwitchSourceSubtitles = versionQuality.canSwitch && versionQuality.sourceSubtitleTracks.isNotEmpty;
     return TrackControlsState(
       availableVersions: versionQuality.availableVersions,
       selectedMediaIndex: widget.selectedMediaIndex,
@@ -101,7 +100,9 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       sourceSubtitleTracks: canSwitchSourceSubtitles
           ? versionQuality.sourceSubtitleTracks
           : const <MediaSubtitleTrack>[],
-      selectedSubtitleStreamId: canSwitchSourceSubtitles ? versionQuality.selectedSubtitleStreamId : null,
+      selectedSubtitleChoice: canSwitchSourceSubtitles ? versionQuality.selectedSubtitleChoice : null,
+      selectedSecondarySubtitleStreamId: canSwitchSourceSubtitles ? widget.selectedSecondarySubtitleStreamId : null,
+      sourceSubtitleSidecarIds: canSwitchSourceSubtitles ? widget.sourceSubtitleSidecarIds : const <int>{},
       sourcePartId: canSwitchSourceSubtitles ? widget.sourcePartId : null,
       sourceDurationMs: widget.metadata.durationMs,
       boxFitMode: widget.boxFitMode,
@@ -123,8 +124,8 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       onSwitchVersion: versionQuality.canSwitch ? (i) => _switchVersionAndQuality(newMediaIndex: i) : null,
       onSwitchQualityPreset: versionQuality.canSwitch ? (p) => _switchVersionAndQuality(newPreset: p) : null,
       onSwitchAudioStreamId: versionQuality.canSwitch ? (id) => _switchVersionAndQuality(newAudioStreamId: id) : null,
-      onSwitchSubtitleStreamId: canSwitchSourceSubtitles
-          ? (id) => _switchVersionAndQuality(newSubtitleStreamId: id)
+      onSwitchSubtitle: canSwitchSourceSubtitles
+          ? (choice) => _switchVersionAndQuality(newSubtitleChoice: choice)
           : null,
       onAudioTrackChanged: widget.onAudioTrackChanged,
       onSubtitleTrackChanged: _onSubtitleTrackChanged,

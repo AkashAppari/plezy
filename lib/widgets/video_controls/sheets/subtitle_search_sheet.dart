@@ -21,6 +21,7 @@ import '../../../widgets/overlay_sheet.dart';
 import '../../../widgets/pill_input_decoration.dart';
 import 'base_video_control_sheet.dart';
 import '../../loading_indicator_box.dart';
+import '../models/track_controls_state.dart';
 
 @visibleForTesting
 String resolveSubtitleSearchLanguageCode({String? savedLanguageCode, required Locale systemLocale}) {
@@ -33,7 +34,8 @@ class SubtitleSearchSheet extends StatefulWidget {
   final String ratingKey;
   final String serverId;
   final String? mediaTitle;
-  final Future<void> Function()? onSubtitleDownloaded;
+  final Future<SubtitleDownloadApplyOutcome> Function({required String serverId, required String ratingKey})?
+  onSubtitleDownloaded;
 
   const SubtitleSearchSheet({
     super.key,
@@ -205,10 +207,17 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
       if (!mounted) return;
 
       if (success) {
-        await widget.onSubtitleDownloaded?.call();
+        final outcome =
+            await widget.onSubtitleDownloaded?.call(serverId: widget.serverId, ratingKey: widget.ratingKey) ??
+            SubtitleDownloadApplyOutcome.unavailable;
         if (!mounted) return;
-        showSuccessSnackBar(context, t.videoControls.subtitleDownloaded);
-        OverlaySheetController.of(context).close();
+        if (outcome == SubtitleDownloadApplyOutcome.applied) {
+          showSuccessSnackBar(context, t.videoControls.subtitleDownloaded);
+          OverlaySheetController.of(context).close();
+        } else {
+          showErrorSnackBar(context, t.videoControls.subtitleDownloadedNotApplied);
+          setState(() => _downloadingKey = null);
+        }
       } else {
         showErrorSnackBar(context, t.videoControls.subtitleDownloadFailed);
         setState(() => _downloadingKey = null);

@@ -652,6 +652,7 @@ class _TranslationsVideoControlsPl extends TranslationsVideoControlsEn {
 	@override String get qualityOriginal => 'Oryginalna';
 	@override String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
 	@override String get transcodeUnavailableFallback => 'Transkodowanie niedostępne — odtwarzanie w oryginalnej jakości';
+	@override String get subtitleUnavailableFallback => 'Nie udało się wczytać wybranych napisów — odtwarzanie jest kontynuowane bez napisów';
 	@override String get pipButton => 'Tryb obraz w obrazie';
 	@override String get aspectRatioButton => 'Proporcje';
 	@override String get ambientLighting => 'Oświetlenie otoczenia';
@@ -677,11 +678,11 @@ class _TranslationsVideoControlsPl extends TranslationsVideoControlsEn {
 	@override String get searchSubtitles => 'Szukaj napisów';
 	@override String get language => 'Język';
 	@override String get noSubtitlesFound => 'Nie znaleziono napisów';
-	@override String get downloadedSubtitle => 'Pobrano';
 	@override String get noSubtitlesAvailable => 'Brak dostępnych napisów';
 	@override String get noAudioTracksAvailable => 'Brak dostępnych ścieżek audio';
 	@override String get noTracksAvailable => 'Brak dostępnych ścieżek';
 	@override String get subtitleDownloaded => 'Napisy pobrane';
+	@override String get subtitleDownloadedNotApplied => 'Napisy zostały pobrane, ale nie można ich było wybrać';
 	@override String get subtitleDownloadFailed => 'Nie udało się pobrać napisów';
 	@override String get searchLanguages => 'Szukaj języków...';
 }
@@ -2591,6 +2592,7 @@ extension on TranslationsPl {
 			'videoControls.qualityOriginal' => 'Oryginalna',
 			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
 			'videoControls.transcodeUnavailableFallback' => 'Transkodowanie niedostępne — odtwarzanie w oryginalnej jakości',
+			'videoControls.subtitleUnavailableFallback' => 'Nie udało się wczytać wybranych napisów — odtwarzanie jest kontynuowane bez napisów',
 			'videoControls.pipButton' => 'Tryb obraz w obrazie',
 			'videoControls.aspectRatioButton' => 'Proporcje',
 			'videoControls.ambientLighting' => 'Oświetlenie otoczenia',
@@ -2622,11 +2624,11 @@ extension on TranslationsPl {
 			'videoControls.searchSubtitles' => 'Szukaj napisów',
 			'videoControls.language' => 'Język',
 			'videoControls.noSubtitlesFound' => 'Nie znaleziono napisów',
-			'videoControls.downloadedSubtitle' => 'Pobrano',
 			'videoControls.noSubtitlesAvailable' => 'Brak dostępnych napisów',
 			'videoControls.noAudioTracksAvailable' => 'Brak dostępnych ścieżek audio',
 			'videoControls.noTracksAvailable' => 'Brak dostępnych ścieżek',
 			'videoControls.subtitleDownloaded' => 'Napisy pobrane',
+			'videoControls.subtitleDownloadedNotApplied' => 'Napisy zostały pobrane, ale nie można ich było wybrać',
 			'videoControls.subtitleDownloadFailed' => 'Nie udało się pobrać napisów',
 			'videoControls.searchLanguages' => 'Szukaj języków...',
 			'messages.markedAsWatched' => 'Oznaczono jako obejrzane',
@@ -2639,9 +2641,9 @@ extension on TranslationsPl {
 			'messages.errorLoading' => ({required Object error}) => 'Błąd: ${error}',
 			'messages.streamInterrupted' => 'Strumień został przerwany. Naciśnij odtwarzanie lub przewiń, aby spróbować ponownie.',
 			'messages.liveStreamInterrupted' => 'Transmisja na żywo została przerwana. Naciśnij odtwarzanie, aby spróbować ponownie.',
-			'messages.fileInfoNotAvailable' => 'Informacje o pliku niedostępne',
 			_ => null,
 		} ?? switch (path) {
+			'messages.fileInfoNotAvailable' => 'Informacje o pliku niedostępne',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Błąd ładowania informacji o pliku: ${error}',
 			'messages.errorLoadingSeries' => 'Błąd ładowania serialu',
 			'messages.musicNotSupported' => 'Odtwarzanie muzyki nie jest jeszcze obsługiwane',
@@ -3153,9 +3155,9 @@ extension on TranslationsPl {
 			'downloads.title' => 'Pobrania',
 			'downloads.manage' => 'Zarządzaj',
 			'downloads.tvShows' => 'Seriale TV',
-			'downloads.movies' => 'Filmy',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.movies' => 'Filmy',
 			'downloads.music' => 'Muzyka',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} utworów w kolejce do pobrania',
 			'downloads.noDownloads' => 'Brak pobrań',

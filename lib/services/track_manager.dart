@@ -324,7 +324,7 @@ class TrackManager {
   }
 
   /// Handle subtitle track changes — save stream selection and language preference.
-  Future<void> onSubtitleTrackChanged(SubtitleTrack track) async {
+  Future<void> onSubtitleTrackChanged(SubtitleTrack track, {int? sourceStreamId}) async {
     final info = mediaInfo;
     final partId = await _guardTrackChange(info);
     if (partId == null) return;
@@ -334,6 +334,9 @@ class TrackManager {
     if (track.id == 'no') {
       streamID = 0;
       appLogger.i('User turned subtitles off, saving preference');
+    } else if (sourceStreamId != null) {
+      streamID = sourceStreamId;
+      appLogger.d('Using authoritative subtitle streamID $streamID');
     } else if (info != null) {
       final matchedPlex = findPlexTrackForMpvSubtitle(
         track,

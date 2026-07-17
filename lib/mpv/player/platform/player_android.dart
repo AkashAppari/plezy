@@ -27,6 +27,8 @@ class PlayerAndroid extends PlayerBase {
   /// (which resets only on initialize/dispose).
   bool _usingMpvFallback = false;
 
+  bool get usingMpvFallback => _usingMpvFallback;
+
   String? _hiddenSubtitleTrackId;
 
   @override

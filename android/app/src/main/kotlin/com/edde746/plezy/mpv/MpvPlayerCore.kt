@@ -334,7 +334,10 @@ class MpvPlayerCore(
           is MpvEvent.EndFile -> {
             delegate?.onEvent("end-file", endFileDiagnostics.onEndFile(event))
           }
-          is MpvEvent.StartFile -> endFileDiagnostics.onStartFile()
+          is MpvEvent.StartFile -> {
+            endFileDiagnostics.onStartFile()
+            delegate?.onEvent("start-file", null)
+          }
           is MpvEvent.FileLoaded -> delegate?.onEvent("file-loaded", null)
           is MpvEvent.PlaybackRestart -> delegate?.onEvent("playback-restart", null)
           else -> {}

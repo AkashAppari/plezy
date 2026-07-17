@@ -652,6 +652,7 @@ class _TranslationsVideoControlsIt extends TranslationsVideoControlsEn {
 	@override String get qualityOriginal => 'Originale';
 	@override String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
 	@override String get transcodeUnavailableFallback => 'Transcodifica non disponibile — riproduzione in qualità originale';
+	@override String get subtitleUnavailableFallback => 'Impossibile caricare i sottotitoli selezionati — la riproduzione continua senza sottotitoli';
 	@override String get pipButton => 'Modalità Picture-in-Picture';
 	@override String get aspectRatioButton => 'Proporzioni';
 	@override String get ambientLighting => 'Illuminazione ambientale';
@@ -677,11 +678,11 @@ class _TranslationsVideoControlsIt extends TranslationsVideoControlsEn {
 	@override String get searchSubtitles => 'Cerca sottotitoli';
 	@override String get language => 'Lingua';
 	@override String get noSubtitlesFound => 'Nessun sottotitolo trovato';
-	@override String get downloadedSubtitle => 'Scaricato';
 	@override String get noSubtitlesAvailable => 'Nessun sottotitolo disponibile';
 	@override String get noAudioTracksAvailable => 'Nessuna traccia audio disponibile';
 	@override String get noTracksAvailable => 'Nessuna traccia disponibile';
 	@override String get subtitleDownloaded => 'Sottotitolo scaricato';
+	@override String get subtitleDownloadedNotApplied => 'Il sottotitolo è stato scaricato, ma non è stato possibile selezionarlo';
 	@override String get subtitleDownloadFailed => 'Impossibile scaricare il sottotitolo';
 	@override String get searchLanguages => 'Cerca lingue...';
 }
@@ -2585,6 +2586,7 @@ extension on TranslationsIt {
 			'videoControls.qualityOriginal' => 'Originale',
 			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
 			'videoControls.transcodeUnavailableFallback' => 'Transcodifica non disponibile — riproduzione in qualità originale',
+			'videoControls.subtitleUnavailableFallback' => 'Impossibile caricare i sottotitoli selezionati — la riproduzione continua senza sottotitoli',
 			'videoControls.pipButton' => 'Modalità Picture-in-Picture',
 			'videoControls.aspectRatioButton' => 'Proporzioni',
 			'videoControls.ambientLighting' => 'Illuminazione ambientale',
@@ -2616,11 +2618,11 @@ extension on TranslationsIt {
 			'videoControls.searchSubtitles' => 'Cerca sottotitoli',
 			'videoControls.language' => 'Lingua',
 			'videoControls.noSubtitlesFound' => 'Nessun sottotitolo trovato',
-			'videoControls.downloadedSubtitle' => 'Scaricato',
 			'videoControls.noSubtitlesAvailable' => 'Nessun sottotitolo disponibile',
 			'videoControls.noAudioTracksAvailable' => 'Nessuna traccia audio disponibile',
 			'videoControls.noTracksAvailable' => 'Nessuna traccia disponibile',
 			'videoControls.subtitleDownloaded' => 'Sottotitolo scaricato',
+			'videoControls.subtitleDownloadedNotApplied' => 'Il sottotitolo è stato scaricato, ma non è stato possibile selezionarlo',
 			'videoControls.subtitleDownloadFailed' => 'Impossibile scaricare il sottotitolo',
 			'videoControls.searchLanguages' => 'Cerca lingue...',
 			'messages.markedAsWatched' => 'Segna come visto',
@@ -2633,9 +2635,9 @@ extension on TranslationsIt {
 			'messages.errorLoading' => ({required Object error}) => 'Errore: ${error}',
 			'messages.streamInterrupted' => 'La riproduzione si è interrotta. Premi Riproduci o scorri per riprovare.',
 			'messages.liveStreamInterrupted' => 'La diretta si è interrotta. Premi Riproduci per riprovare.',
-			'messages.fileInfoNotAvailable' => 'Informazioni sul file non disponibili',
 			_ => null,
 		} ?? switch (path) {
+			'messages.fileInfoNotAvailable' => 'Informazioni sul file non disponibili',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Errore caricamento informazioni sul file: ${error}',
 			'messages.errorLoadingSeries' => 'Errore caricamento serie',
 			'messages.musicNotSupported' => 'La riproduzione musicale non è ancora supportata',
@@ -3147,9 +3149,9 @@ extension on TranslationsIt {
 			'downloads.title' => 'Download',
 			'downloads.manage' => 'Gestisci',
 			'downloads.tvShows' => 'Serie TV',
-			'downloads.movies' => 'Film',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.movies' => 'Film',
 			'downloads.music' => 'Musica',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} brani in coda per il download',
 			'downloads.noDownloads' => 'Nessun download',

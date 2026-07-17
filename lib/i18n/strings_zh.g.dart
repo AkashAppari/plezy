@@ -652,6 +652,7 @@ class _TranslationsVideoControlsZh extends TranslationsVideoControlsEn {
 	@override String get qualityOriginal => '原始';
 	@override String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
 	@override String get transcodeUnavailableFallback => '转码不可用 — 以原始画质播放';
+	@override String get subtitleUnavailableFallback => '无法加载所选字幕 — 将继续无字幕播放';
 	@override String get pipButton => '画中画模式';
 	@override String get aspectRatioButton => '宽高比';
 	@override String get ambientLighting => '氛围灯光';
@@ -677,11 +678,11 @@ class _TranslationsVideoControlsZh extends TranslationsVideoControlsEn {
 	@override String get searchSubtitles => '搜索字幕';
 	@override String get language => '语言';
 	@override String get noSubtitlesFound => '未找到字幕';
-	@override String get downloadedSubtitle => '已下载';
 	@override String get noSubtitlesAvailable => '没有可用字幕';
 	@override String get noAudioTracksAvailable => '没有可用音轨';
 	@override String get noTracksAvailable => '没有可用轨道';
 	@override String get subtitleDownloaded => '字幕已下载';
+	@override String get subtitleDownloadedNotApplied => '字幕已下载，但无法选择';
 	@override String get subtitleDownloadFailed => '字幕下载失败';
 	@override String get searchLanguages => '搜索语言...';
 }
@@ -2582,6 +2583,7 @@ extension on TranslationsZh {
 			'videoControls.qualityOriginal' => '原始',
 			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
 			'videoControls.transcodeUnavailableFallback' => '转码不可用 — 以原始画质播放',
+			'videoControls.subtitleUnavailableFallback' => '无法加载所选字幕 — 将继续无字幕播放',
 			'videoControls.pipButton' => '画中画模式',
 			'videoControls.aspectRatioButton' => '宽高比',
 			'videoControls.ambientLighting' => '氛围灯光',
@@ -2613,11 +2615,11 @@ extension on TranslationsZh {
 			'videoControls.searchSubtitles' => '搜索字幕',
 			'videoControls.language' => '语言',
 			'videoControls.noSubtitlesFound' => '未找到字幕',
-			'videoControls.downloadedSubtitle' => '已下载',
 			'videoControls.noSubtitlesAvailable' => '没有可用字幕',
 			'videoControls.noAudioTracksAvailable' => '没有可用音轨',
 			'videoControls.noTracksAvailable' => '没有可用轨道',
 			'videoControls.subtitleDownloaded' => '字幕已下载',
+			'videoControls.subtitleDownloadedNotApplied' => '字幕已下载，但无法选择',
 			'videoControls.subtitleDownloadFailed' => '字幕下载失败',
 			'videoControls.searchLanguages' => '搜索语言...',
 			'messages.markedAsWatched' => '已标记为已观看',
@@ -2630,9 +2632,9 @@ extension on TranslationsZh {
 			'messages.errorLoading' => ({required Object error}) => '错误: ${error}',
 			'messages.streamInterrupted' => '视频流已中断。按播放键或拖动进度条重试。',
 			'messages.liveStreamInterrupted' => '直播流已中断。按播放键重试。',
-			'messages.fileInfoNotAvailable' => '文件信息不可用',
 			_ => null,
 		} ?? switch (path) {
+			'messages.fileInfoNotAvailable' => '文件信息不可用',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => '加载文件信息时出错: ${error}',
 			'messages.errorLoadingSeries' => '加载系列时出错',
 			'messages.musicNotSupported' => '尚不支持播放音乐',
@@ -3144,9 +3146,9 @@ extension on TranslationsZh {
 			'downloads.title' => '下载',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => '电视剧',
-			'downloads.movies' => '电影',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.movies' => '电影',
 			'downloads.music' => '音乐',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} 首曲目已加入下载队列',
 			'downloads.noDownloads' => '暂无下载',

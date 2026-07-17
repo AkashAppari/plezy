@@ -652,6 +652,7 @@ class _TranslationsVideoControlsJa extends TranslationsVideoControlsEn {
 	@override String get qualityOriginal => 'オリジナル';
 	@override String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
 	@override String get transcodeUnavailableFallback => 'トランスコードは利用できません — オリジナル画質で再生中';
+	@override String get subtitleUnavailableFallback => '選択した字幕を読み込めませんでした — 字幕なしで再生を続けます';
 	@override String get pipButton => 'ピクチャーインピクチャーモード';
 	@override String get aspectRatioButton => 'アスペクト比';
 	@override String get ambientLighting => 'アンビエントライティング';
@@ -677,11 +678,11 @@ class _TranslationsVideoControlsJa extends TranslationsVideoControlsEn {
 	@override String get searchSubtitles => '字幕を検索';
 	@override String get language => '言語';
 	@override String get noSubtitlesFound => '字幕が見つかりません';
-	@override String get downloadedSubtitle => 'ダウンロード済み';
 	@override String get noSubtitlesAvailable => '利用可能な字幕はありません';
 	@override String get noAudioTracksAvailable => '利用可能な音声トラックはありません';
 	@override String get noTracksAvailable => '利用可能なトラックはありません';
 	@override String get subtitleDownloaded => '字幕をダウンロードしました';
+	@override String get subtitleDownloadedNotApplied => '字幕はダウンロードされましたが、選択できませんでした';
 	@override String get subtitleDownloadFailed => '字幕のダウンロードに失敗しました';
 	@override String get searchLanguages => '言語を検索...';
 }
@@ -2582,6 +2583,7 @@ extension on TranslationsJa {
 			'videoControls.qualityOriginal' => 'オリジナル',
 			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
 			'videoControls.transcodeUnavailableFallback' => 'トランスコードは利用できません — オリジナル画質で再生中',
+			'videoControls.subtitleUnavailableFallback' => '選択した字幕を読み込めませんでした — 字幕なしで再生を続けます',
 			'videoControls.pipButton' => 'ピクチャーインピクチャーモード',
 			'videoControls.aspectRatioButton' => 'アスペクト比',
 			'videoControls.ambientLighting' => 'アンビエントライティング',
@@ -2613,11 +2615,11 @@ extension on TranslationsJa {
 			'videoControls.searchSubtitles' => '字幕を検索',
 			'videoControls.language' => '言語',
 			'videoControls.noSubtitlesFound' => '字幕が見つかりません',
-			'videoControls.downloadedSubtitle' => 'ダウンロード済み',
 			'videoControls.noSubtitlesAvailable' => '利用可能な字幕はありません',
 			'videoControls.noAudioTracksAvailable' => '利用可能な音声トラックはありません',
 			'videoControls.noTracksAvailable' => '利用可能なトラックはありません',
 			'videoControls.subtitleDownloaded' => '字幕をダウンロードしました',
+			'videoControls.subtitleDownloadedNotApplied' => '字幕はダウンロードされましたが、選択できませんでした',
 			'videoControls.subtitleDownloadFailed' => '字幕のダウンロードに失敗しました',
 			'videoControls.searchLanguages' => '言語を検索...',
 			'messages.markedAsWatched' => '視聴済みにしました',
@@ -2630,9 +2632,9 @@ extension on TranslationsJa {
 			'messages.errorLoading' => ({required Object error}) => 'エラー: ${error}',
 			'messages.streamInterrupted' => 'ストリームが中断されました。再生を押すかシークして再試行してください。',
 			'messages.liveStreamInterrupted' => 'ライブストリームが中断されました。再生を押して再試行してください。',
-			'messages.fileInfoNotAvailable' => 'ファイル情報が利用できません',
 			_ => null,
 		} ?? switch (path) {
+			'messages.fileInfoNotAvailable' => 'ファイル情報が利用できません',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'ファイル情報の読み込みエラー: ${error}',
 			'messages.errorLoadingSeries' => 'シリーズの読み込みエラー',
 			'messages.musicNotSupported' => '音楽の再生はまだサポートされていません',
@@ -3144,9 +3146,9 @@ extension on TranslationsJa {
 			'downloads.title' => 'ダウンロード',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => 'テレビ番組',
-			'downloads.movies' => '映画',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.movies' => '映画',
 			'downloads.music' => '音楽',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} 曲をダウンロード待機中',
 			'downloads.noDownloads' => 'ダウンロードなし',

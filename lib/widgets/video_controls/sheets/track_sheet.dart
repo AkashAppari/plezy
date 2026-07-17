@@ -3,6 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../media/media_source_info.dart';
 import '../../../mpv/mpv.dart';
+import '../../../services/playback_subtitle_resolver.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../utils/scroll_utils.dart';
 import '../../../utils/track_label_builder.dart';
@@ -103,6 +104,7 @@ class TrackSheet extends StatelessWidget {
                   supportsSecondary: supportsSecondary,
                   showHeader: showHeader,
                   trackControlsState: state,
+                  sourceSidecars: state.directPlaySourceSidecars,
                 );
               }
 
@@ -221,8 +223,9 @@ class _SourceSubtitleColumnState extends State<_SourceSubtitleColumn> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedId = _effectiveSelectedStreamId();
-    final selectedIndex = selectedId == 0 ? 0 : widget.tracks.indexWhere((t) => t.id == selectedId) + 1;
+    final selectedChoice = _effectiveSelectedChoice();
+    final selectedId = selectedChoice.sourceStreamId;
+    final selectedIndex = selectedChoice.isOff ? 0 : widget.tracks.indexWhere((t) => t.id == selectedId) + 1;
     _initialScroll.maybeScrollTo(selectedIndex);
 
     return Column(
@@ -237,10 +240,10 @@ class _SourceSubtitleColumnState extends State<_SourceSubtitleColumn> {
                 return TrackSelectionHelper.buildOffTile<SubtitleTrack>(
                   context: context,
                   key: _initialScroll.firstItemKey,
-                  isSelected: selectedId == 0,
+                  isSelected: selectedChoice.isOff,
                   onTap: () {
                     OverlaySheetController.of(context).close();
-                    widget.trackControlsState.onSwitchSubtitleStreamId!(0);
+                    widget.trackControlsState.onSwitchSubtitle!(const PlaybackSourceSubtitleChoice.off());
                   },
                 );
               }
@@ -252,7 +255,7 @@ class _SourceSubtitleColumnState extends State<_SourceSubtitleColumn> {
                 isSelected: track.id == selectedId,
                 onTap: () {
                   OverlaySheetController.of(context).close();
-                  widget.trackControlsState.onSwitchSubtitleStreamId!(track.id);
+                  widget.trackControlsState.onSwitchSubtitle!(PlaybackSourceSubtitleChoice.source(track.id));
                 },
               );
             },
@@ -263,13 +266,15 @@ class _SourceSubtitleColumnState extends State<_SourceSubtitleColumn> {
     );
   }
 
-  int _effectiveSelectedStreamId() {
-    final explicit = widget.trackControlsState.selectedSubtitleStreamId;
-    if (explicit != null && (explicit == 0 || widget.tracks.any((track) => track.id == explicit))) return explicit;
-    for (final track in widget.tracks) {
-      if (track.selected) return track.id;
+  PlaybackSourceSubtitleChoice _effectiveSelectedChoice() {
+    final explicit = widget.trackControlsState.selectedSubtitleChoice;
+    if (explicit != null && (explicit.isOff || widget.tracks.any((track) => track.id == explicit.sourceStreamId))) {
+      return explicit;
     }
-    return 0;
+    for (final track in widget.tracks) {
+      if (track.selected) return PlaybackSourceSubtitleChoice.source(track.id);
+    }
+    return const PlaybackSourceSubtitleChoice.off();
   }
 }
 
@@ -349,6 +354,7 @@ class _SubtitleColumn extends StatefulWidget {
   final bool supportsSecondary;
   final bool showHeader;
   final TrackControlsState trackControlsState;
+  final List<MediaSubtitleTrack> sourceSidecars;
 
   const _SubtitleColumn({
     required this.tracks,
@@ -357,6 +363,7 @@ class _SubtitleColumn extends StatefulWidget {
     this.supportsSecondary = false,
     required this.showHeader,
     required this.trackControlsState,
+    this.sourceSidecars = const [],
   });
 
   @override
@@ -378,9 +385,15 @@ class _SubtitleColumnState extends State<_SubtitleColumn> {
     final secondarySub = widget.selection.secondarySubtitle;
     final isOffSelected = selectedSub == null || selectedSub.id == 'no';
     final hasSecondary = widget.supportsSecondary && secondarySub != null;
+    final selectedSourceId = widget.trackControlsState.selectedSubtitleChoice?.sourceStreamId;
+    final selectedSecondarySourceId = widget.trackControlsState.selectedSecondarySubtitleStreamId;
+    final unloadedSourceSidecars = widget.sourceSidecars
+        .where((track) => track.id != selectedSourceId && track.id != selectedSecondarySourceId)
+        .toList(growable: false);
 
-    // +1 for "Off" row
-    final itemCount = widget.tracks.length + 1;
+    // +1 for "Off" row. The selected direct-play sidecar is already present
+    // in [tracks], so only the other server sidecars are appended.
+    final itemCount = widget.tracks.length + unloadedSourceSidecars.length + 1;
 
     final selectedIndex = isOffSelected ? null : widget.tracks.indexWhere((t) => t.id == selectedSub.id) + 1;
     _initialScroll.maybeScrollTo(selectedIndex);
@@ -423,7 +436,22 @@ class _SubtitleColumnState extends State<_SubtitleColumn> {
                 );
               }
 
-              final track = widget.tracks[index - 1];
+              final trackIndex = index - 1;
+              if (trackIndex >= widget.tracks.length) {
+                final sourceIndex = trackIndex - widget.tracks.length;
+                final sourceTrack = unloadedSourceSidecars[sourceIndex];
+                return TrackSelectionHelper.buildTrackTile<SubtitleTrack>(
+                  context: context,
+                  label: sourceTrack.labelForIndex(trackIndex),
+                  isSelected: false,
+                  onTap: () {
+                    OverlaySheetController.of(context).close();
+                    widget.trackControlsState.onSwitchSubtitle!(PlaybackSourceSubtitleChoice.source(sourceTrack.id));
+                  },
+                );
+              }
+
+              final track = widget.tracks[trackIndex];
               final isPrimary = !isOffSelected && track.id == selectedSub.id;
               final isSecondary = hasSecondary && track.id == secondarySub.id;
               final label = TrackLabelBuilder.subtitleLabel(
@@ -431,7 +459,7 @@ class _SubtitleColumnState extends State<_SubtitleColumn> {
                 language: track.language,
                 codec: track.codec,
                 forced: track.isForced,
-                index: index - 1,
+                index: trackIndex,
               );
 
               Widget? badge;

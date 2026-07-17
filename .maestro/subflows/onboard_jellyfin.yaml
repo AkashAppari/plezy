@@ -22,7 +22,6 @@ appId: com.edde746.plezy
     timeout: 10000
 - tapOn: "(?s)Server URLs.*"
 - inputText: ${JELLYFIN_URL}
-- hideKeyboard
 - tapOn: "Find server"
 - extendedWaitUntil:
     visible: "Maestro Jellyfin"
@@ -31,8 +30,11 @@ appId: com.edde746.plezy
 - inputText: "maestro"
 - tapOn: "Password"
 - inputText: "maestro"
-- hideKeyboard
-- tapOn: "Sign in"
+- hideKeyboard:
+    optional: true
+- tapOn:
+    text: "Sign in"
+    optional: true
 - extendedWaitUntil:
     visible: "Discover"
     timeout: 30000

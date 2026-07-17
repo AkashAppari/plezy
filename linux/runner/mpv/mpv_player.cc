@@ -627,6 +627,10 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       fl_value_unref(data);
       break;
     }
+    case MPV_EVENT_START_FILE: {
+      SendEvent("start-file");
+      break;
+    }
     case MPV_EVENT_FILE_LOADED: {
       audio_recovery_.SetFileLoaded(true);
       SendEvent("file-loaded");

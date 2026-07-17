@@ -63,6 +63,8 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   int _nextPropId = 0;
   final Map<int, String> _propIdToName = {};
   Map<String, SubtitleTrack> _externalSubtitleMetadataByUri = const {};
+  bool _primaryMediaLoadStarted = false;
+  bool _primaryMediaReadyEmitted = false;
 
   @protected
   bool initialized = false;
@@ -260,6 +262,10 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       case 'track-list':
         final trackList = MpvNodeDecoder.decodeList(value);
         if (trackList != null) {
+          if (_primaryMediaLoadStarted && !_primaryMediaReadyEmitted && _hasPrimaryMediaTrack(trackList)) {
+            _primaryMediaReadyEmitted = true;
+            primaryMediaReadyController.add(null);
+          }
           final result = parseTrackList(trackList);
           _state = _state.copyWith(tracks: result.tracks);
           tracksController.add(result.tracks);
@@ -354,7 +360,14 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   void handlePlayerEvent(String name, Map? data) {
     if (_disposed) return;
     switch (name) {
+      case 'start-file':
+        _primaryMediaLoadStarted = true;
+        _primaryMediaReadyEmitted = false;
+        fileStartedController.add(null);
+        break;
+
       case 'end-file':
+        _primaryMediaLoadStarted = false;
         setSeekable(false);
         final rawReason = data?['reason'];
         final reason = switch (rawReason) {
@@ -370,6 +383,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           _state = _state.copyWith(completed: true);
           completedController.add(true);
         } else if (reason == 'error') {
+          fileLoadFailedController.add(null);
           errorController.add(
             PlayerError(data?['message'] as String? ?? 'Playback error', cause: data?['cause'] as String?),
           );
@@ -394,6 +408,19 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         logController.add(PlayerLog(level: level, prefix: prefix, text: text));
         break;
     }
+  }
+
+  bool _hasPrimaryMediaTrack(List trackList) {
+    for (final track in trackList) {
+      if (track is! Map || track['external'] == true) continue;
+      final type = track['type'];
+      if (type == 'audio') return true;
+      // mpv exposes embedded/external cover art as a video track. It is not
+      // evidence that the primary audio file has finished discovery, so it
+      // must not start the external-sidecar timeout on its own.
+      if (type == 'video' && track['albumart'] != true) return true;
+    }
+    return false;
   }
 
   PlayerLogLevel parseLogLevel(String level) {

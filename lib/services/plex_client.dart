@@ -74,6 +74,7 @@ import 'plex_lyrics_parser.dart';
 import 'plex_mappers.dart';
 import 'plex_playback_mapper.dart';
 import 'playback_initialization_types.dart';
+import 'track_selection_service.dart';
 
 part 'plex_client/parts/live_tv.dart';
 part 'plex_client/parts/playlists.dart';
@@ -3019,7 +3020,7 @@ class PlexClient
         }
 
         final resolvedAudioId = _resolveAudioStreamId(options.selectedAudioStreamId, data.mediaInfo);
-        final selectedSubtitleTrack = _selectedSubtitleTrack(data.mediaInfo);
+        final selectedSubtitleTrack = _resolveTranscodeSubtitleTrack(data.mediaInfo, options.preferredSubtitleTrack);
         final result = await buildTranscodeStartPath(
           ratingKey: options.metadata.id,
           mediaIndex: data.selectedMediaIndex,
@@ -3033,12 +3034,12 @@ class PlexClient
 
         if (result.outcome == TranscodeDecisionOutcome.transcodeOk && result.startPath != null) {
           final transcodeUrl = '${config.baseUrl}${result.startPath}'.withPlexToken(config.token);
-          final sidecarSubs = _buildTranscodeSidecarSubtitles(data.mediaInfo);
+          final subtitleSidecars = _buildTranscodeSidecarSubtitles(data.mediaInfo);
           return PlaybackInitializationResult(
             availableVersions: data.availableVersions,
             videoUrl: transcodeUrl,
             mediaInfo: data.mediaInfo,
-            externalSubtitles: sidecarSubs,
+            subtitleSidecars: subtitleSidecars,
             isOffline: false,
             isTranscoding: true,
             activeAudioStreamId: resolvedAudioId,
@@ -3055,7 +3056,7 @@ class PlexClient
         availableVersions: data.availableVersions,
         videoUrl: data.videoUrl,
         mediaInfo: data.mediaInfo,
-        externalSubtitles: _buildExternalSubtitles(data.mediaInfo),
+        subtitleSidecars: _buildExternalSubtitles(data.mediaInfo),
         isOffline: false,
         playMethod: 'DirectPlay',
         playSessionId: options.sessionIdentifier,
@@ -3084,7 +3085,7 @@ class PlexClient
       availableVersions: data.availableVersions,
       videoUrl: data.videoUrl,
       mediaInfo: data.mediaInfo,
-      externalSubtitles: _buildExternalSubtitles(data.mediaInfo),
+      subtitleSidecars: _buildExternalSubtitles(data.mediaInfo),
       isOffline: false,
       isTranscoding: false,
       fallbackReason: fallbackReason,
@@ -3113,6 +3114,33 @@ class PlexClient
       if (track.selected) return track;
     }
     return null;
+  }
+
+  MediaSubtitleTrack? _resolveTranscodeSubtitleTrack(MediaSourceInfo? info, SubtitleTrack? preferred) {
+    if (info == null) return null;
+    if (preferred == null) return _selectedSubtitleTrack(info);
+    if (preferred.id == SubtitleTrack.off.id) return null;
+
+    MediaSubtitleTrack? matched;
+    if (preferred.id.startsWith('source:')) {
+      final sourceId = int.tryParse(preferred.id.substring('source:'.length));
+      if (sourceId != null) {
+        for (final track in info.subtitleTracks) {
+          if (track.id == sourceId) {
+            matched = track;
+            break;
+          }
+        }
+      }
+    }
+
+    matched ??= findPlexTrackForMpvSubtitle(preferred, info.subtitleTracks);
+    return matched ?? _selectedSubtitleTrack(info);
+  }
+
+  @visibleForTesting
+  MediaSubtitleTrack? resolveTranscodeSubtitleTrackForTesting(MediaSourceInfo? info, SubtitleTrack? preferred) {
+    return _resolveTranscodeSubtitleTrack(info, preferred);
   }
 
   /// Build the absolute URL for an external subtitle track on this Plex
@@ -3167,19 +3195,19 @@ class PlexClient
 
   /// Build subtitle sidecars for Plex transcode playback. Keyed tracks remain
   /// external; the selected internal track is delivered by the HLS rendition.
-  List<SubtitleTrack> _buildTranscodeSidecarSubtitles(MediaSourceInfo? mediaInfo) {
+  List<PlaybackSubtitleSidecar> _buildTranscodeSidecarSubtitles(MediaSourceInfo? mediaInfo) {
     if (mediaInfo == null) return const [];
     if (config.token == null) {
       appLogger.w('No auth token available for transcode sidecar subtitles');
       return const [];
     }
 
-    final tracks = <SubtitleTrack>[];
+    final tracks = <PlaybackSubtitleSidecar>[];
     for (final sub in mediaInfo.subtitleTracks) {
       try {
         final url = _buildSidecarSubtitleUrl(sub);
         if (url == null) continue;
-        tracks.add(_subtitleTrackFromMediaTrack(sub, url));
+        tracks.add(PlaybackSubtitleSidecar(sourceStreamId: sub.id, track: _subtitleTrackFromMediaTrack(sub, url)));
       } catch (e) {
         appLogger.w('Failed to build sidecar subtitle for stream ${sub.id}', error: e);
       }
@@ -3189,12 +3217,12 @@ class PlexClient
 
   @visibleForTesting
   List<SubtitleTrack> buildTranscodeSidecarSubtitlesForTesting(MediaSourceInfo? mediaInfo) {
-    return _buildTranscodeSidecarSubtitles(mediaInfo);
+    return _buildTranscodeSidecarSubtitles(mediaInfo).map((sidecar) => sidecar.track).toList(growable: false);
   }
 
   /// Build list of external subtitle tracks from media info
-  List<SubtitleTrack> _buildExternalSubtitles(MediaSourceInfo? mediaInfo) {
-    final externalSubtitles = <SubtitleTrack>[];
+  List<PlaybackSubtitleSidecar> _buildExternalSubtitles(MediaSourceInfo? mediaInfo) {
+    final externalSubtitles = <PlaybackSubtitleSidecar>[];
 
     if (mediaInfo == null) {
       return externalSubtitles;
@@ -3215,13 +3243,16 @@ class PlexClient
         }
 
         externalSubtitles.add(
-          SubtitleTrack.uri(
-            url,
-            title: plexTrack.displayTitle ?? plexTrack.title ?? plexTrack.language ?? 'Track ${plexTrack.id}',
-            language: plexTrack.languageCode,
-            codec: plexTrack.codec,
-            isDefault: plexTrack.selected,
-            isForced: plexTrack.forced,
+          PlaybackSubtitleSidecar(
+            sourceStreamId: plexTrack.id,
+            track: SubtitleTrack.uri(
+              url,
+              title: plexTrack.displayTitle ?? plexTrack.title ?? plexTrack.language ?? 'Track ${plexTrack.id}',
+              language: plexTrack.languageCode,
+              codec: plexTrack.codec,
+              isDefault: plexTrack.selected,
+              isForced: plexTrack.forced,
+            ),
           ),
         );
       } catch (e) {

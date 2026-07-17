@@ -10,8 +10,10 @@ import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/media/media_version.dart';
 import 'package:plezy/models/shader_preset.dart';
 import 'package:plezy/mpv/mpv.dart';
+import 'package:plezy/services/playback_subtitle_resolver.dart';
 import 'package:plezy/theme/mono_tokens.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
+import 'package:plezy/widgets/video_controls/models/track_controls_state.dart';
 import 'package:plezy/widgets/video_controls/player_chrome_controller.dart';
 import 'package:plezy/widgets/video_controls/painters/buffer_range_painter.dart';
 import 'package:plezy/widgets/video_controls/widgets/mobile_skip_zones.dart';
@@ -91,7 +93,7 @@ void main() {
         sourceAudioTracks: [audio],
         selectedAudioStreamId: 1,
         sourceSubtitleTracks: [subtitle],
-        selectedSubtitleStreamId: 2,
+        selectedSubtitleChoice: const PlaybackSourceSubtitleChoice.source(2),
       );
 
       expect(result.canSwitch, isFalse);
@@ -101,7 +103,7 @@ void main() {
       expect(result.sourceAudioTracks, isEmpty);
       expect(result.selectedAudioStreamId, isNull);
       expect(result.sourceSubtitleTracks, isEmpty);
-      expect(result.selectedSubtitleStreamId, isNull);
+      expect(result.selectedSubtitleChoice, isNull);
     });
 
     test('keeps switchable state during online playback', () {
@@ -117,7 +119,7 @@ void main() {
         sourceAudioTracks: [audio],
         selectedAudioStreamId: 1,
         sourceSubtitleTracks: [subtitle],
-        selectedSubtitleStreamId: 2,
+        selectedSubtitleChoice: const PlaybackSourceSubtitleChoice.source(2),
       );
 
       expect(result.canSwitch, isTrue);
@@ -127,7 +129,7 @@ void main() {
       expect(result.sourceAudioTracks, [audio]);
       expect(result.selectedAudioStreamId, 1);
       expect(result.sourceSubtitleTracks, [subtitle]);
-      expect(result.selectedSubtitleStreamId, 2);
+      expect(result.selectedSubtitleChoice, const PlaybackSourceSubtitleChoice.source(2));
     });
   });
 
@@ -137,23 +139,106 @@ void main() {
 
     test('returns the full list unchanged when not transcoding', () {
       final tracks = [sub(1, codec: 'srt'), sub(2, codec: 'pgs'), sub(3, codec: 'weird')];
-      expect(selectableSourceSubtitleTracks(tracks, isTranscoding: false), same(tracks));
+      expect(
+        selectableSourceSubtitleTracks(
+          tracks,
+          isTranscoding: false,
+          sidecarSourceIds: const {},
+          supportsEmbeddedTranscodeSelection: false,
+        ),
+        tracks,
+      );
     });
 
     test('keeps text, image and keyed tracks while transcoding', () {
       final text = sub(1, codec: 'srt');
       final image = sub(2, codec: 'pgs');
       final keyed = sub(3, codec: 'weird', key: '/library/streams/3');
-      final result = selectableSourceSubtitleTracks([text, image, keyed], isTranscoding: true);
+      final result = selectableSourceSubtitleTracks(
+        [text, image, keyed],
+        isTranscoding: true,
+        sidecarSourceIds: {keyed.id},
+        supportsEmbeddedTranscodeSelection: true,
+      );
       expect(result, [text, image, keyed]);
     });
 
-    test('drops non-keyed unsupported codecs while transcoding', () {
+    test('drops unsupported embedded codecs while transcoding', () {
       final text = sub(1, codec: 'ass');
       final unsupported = sub(2, codec: 'weird');
-      final result = selectableSourceSubtitleTracks([text, unsupported], isTranscoding: true);
+      final result = selectableSourceSubtitleTracks(
+        [text, unsupported],
+        isTranscoding: true,
+        sidecarSourceIds: const {},
+        supportsEmbeddedTranscodeSelection: true,
+      );
       expect(result, [text]);
     });
+
+    test('only offers resolved sidecars when embedded transcode selection is unsupported', () {
+      final external = sub(1, codec: 'srt', key: '/Videos/item/source/Subtitles/1/Stream.srt');
+      final embedded = sub(2, codec: 'srt');
+      final unavailableExternal = sub(3, codec: 'srt', key: '/missing');
+
+      final result = selectableSourceSubtitleTracks(
+        [external, embedded, unavailableExternal],
+        isTranscoding: true,
+        sidecarSourceIds: {external.id},
+        supportsEmbeddedTranscodeSelection: false,
+      );
+
+      expect(result, [external]);
+    });
+
+    test('only offers resolved file sidecars during direct play', () {
+      final embedded = sub(1, codec: 'srt');
+      final availableExternal = sub(2, codec: 'srt', key: '/available');
+      final unavailableExternal = sub(3, codec: 'srt', key: '/missing');
+
+      final result = selectableSourceSubtitleTracks(
+        [embedded, availableExternal, unavailableExternal],
+        isTranscoding: false,
+        sidecarSourceIds: {availableExternal.id},
+        supportsEmbeddedTranscodeSelection: false,
+      );
+
+      expect(result, [embedded, availableExternal]);
+    });
+
+    test('keeps Jellyfin external-delivery rows that remain embedded during direct play', () {
+      final deliveryExternalEmbedded = MediaSubtitleTrack(
+        id: 1,
+        codec: 'srt',
+        key: '/Videos/item/source/Subtitles/1/Stream.srt',
+        usesExternalDelivery: true,
+        selected: false,
+        forced: false,
+      );
+
+      final result = selectableSourceSubtitleTracks(
+        [deliveryExternalEmbedded],
+        isTranscoding: false,
+        sidecarSourceIds: const {},
+        supportsEmbeddedTranscodeSelection: false,
+      );
+
+      expect(result, [deliveryExternalEmbedded]);
+    });
+  });
+
+  test('findNewExternalSubtitleTrack ignores embedded and existing source rows', () {
+    final embedded = MediaSubtitleTrack(id: 1, selected: false, forced: false);
+    final existing = MediaSubtitleTrack(id: 2, external: true, selected: false, forced: false);
+    final downloaded = MediaSubtitleTrack(id: 3, external: true, selected: false, forced: false);
+
+    expect(findNewExternalSubtitleTrack([embedded, existing, downloaded], {1, 2}), downloaded);
+  });
+
+  test('subtitle download treats an already-selected source as applied', () {
+    expect(
+      subtitleDownloadApplyOutcomeFor(PlaybackSourceChangeOutcome.unchanged),
+      SubtitleDownloadApplyOutcome.applied,
+    );
   });
 
   group('shouldShowSkipMarkerButton', () {

@@ -48,19 +48,37 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
     });
   }
 
-  int? _selectedSourceSubtitleStreamIdForControls(List<MediaSubtitleTrack> tracks) {
+  PlaybackSourceSubtitleChoice? _selectedSourceSubtitleChoiceForControls(List<MediaSubtitleTrack> tracks) {
     if (tracks.isEmpty) return null;
-    for (final track in tracks) {
-      if (track.selected) return track.id;
+    final selection = _playbackSession?.subtitleSelection;
+    if (selection != null) {
+      if (selection.isOff) return const PlaybackSourceSubtitleChoice.off();
+      final sourceId = selection.primarySourceStreamId;
+      if (sourceId != null && tracks.any((track) => track.id == sourceId)) {
+        return PlaybackSourceSubtitleChoice.source(sourceId);
+      }
     }
-    return 0;
+    for (final track in tracks) {
+      if (track.selected) return PlaybackSourceSubtitleChoice.source(track.id);
+    }
+    return const PlaybackSourceSubtitleChoice.off();
   }
 
   List<MediaSubtitleTrack> _sourceSubtitleTracksForControls() {
+    final sidecarSourceIds = _sourceSubtitleSidecarIdsForControls();
     return selectableSourceSubtitleTracks(
       _currentMediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[],
       isTranscoding: _isTranscoding,
+      sidecarSourceIds: sidecarSourceIds,
+      supportsEmbeddedTranscodeSelection: _currentMetadata.backend == MediaBackend.plex,
     );
+  }
+
+  Set<int> _sourceSubtitleSidecarIdsForControls() {
+    return {
+      for (final sidecar in _playbackSession?.context.result.subtitleSidecars ?? const <PlaybackSubtitleSidecar>[])
+        ?sidecar.sourceStreamId,
+    };
   }
 
   Widget _buildLoadingSpinner() {
@@ -249,6 +267,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
 
                     final sourceAudioTracks = _currentMediaInfo?.audioTracks ?? const <MediaAudioTrack>[];
                     final sourceSubtitleTracks = _sourceSubtitleTracksForControls();
+                    final sourceSubtitleSidecarIds = _sourceSubtitleSidecarIdsForControls();
 
                     return Video(
                       player: player!,
@@ -267,7 +286,9 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         sourceAudioTracks: sourceAudioTracks,
                         selectedAudioStreamId: _selectedAudioStreamId,
                         sourceSubtitleTracks: sourceSubtitleTracks,
-                        selectedSubtitleStreamId: _selectedSourceSubtitleStreamIdForControls(sourceSubtitleTracks),
+                        selectedSubtitleChoice: _selectedSourceSubtitleChoiceForControls(sourceSubtitleTracks),
+                        selectedSecondarySubtitleStreamId: _playbackSession?.subtitleSelection.secondarySourceStreamId,
+                        sourceSubtitleSidecarIds: sourceSubtitleSidecarIds,
                         sourcePartId: _currentMediaInfo?.partId,
                         onPlaybackSourceChanged: _switchPlaybackSource,
                         onTogglePIPMode: _togglePIPMode,

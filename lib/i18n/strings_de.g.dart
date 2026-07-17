@@ -652,6 +652,7 @@ class _TranslationsVideoControlsDe extends TranslationsVideoControlsEn {
 	@override String get qualityOriginal => 'Original';
 	@override String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
 	@override String get transcodeUnavailableFallback => 'Transkodierung nicht verfügbar — Wiedergabe in Originalqualität';
+	@override String get subtitleUnavailableFallback => 'Die ausgewählten Untertitel konnten nicht geladen werden — Wiedergabe ohne Untertitel wird fortgesetzt';
 	@override String get pipButton => 'Bild-in-Bild Modus';
 	@override String get aspectRatioButton => 'Seitenverhältnis';
 	@override String get ambientLighting => 'Umgebungsbeleuchtung';
@@ -677,11 +678,11 @@ class _TranslationsVideoControlsDe extends TranslationsVideoControlsEn {
 	@override String get searchSubtitles => 'Untertitel suchen';
 	@override String get language => 'Sprache';
 	@override String get noSubtitlesFound => 'Keine Untertitel gefunden';
-	@override String get downloadedSubtitle => 'Heruntergeladen';
 	@override String get noSubtitlesAvailable => 'Keine Untertitel verfügbar';
 	@override String get noAudioTracksAvailable => 'Keine Audiospuren verfügbar';
 	@override String get noTracksAvailable => 'Keine Spuren verfügbar';
 	@override String get subtitleDownloaded => 'Untertitel heruntergeladen';
+	@override String get subtitleDownloadedNotApplied => 'Der Untertitel wurde heruntergeladen, konnte aber nicht ausgewählt werden';
 	@override String get subtitleDownloadFailed => 'Untertitel konnte nicht heruntergeladen werden';
 	@override String get searchLanguages => 'Sprachen suchen...';
 }
@@ -2585,6 +2586,7 @@ extension on TranslationsDe {
 			'videoControls.qualityOriginal' => 'Original',
 			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
 			'videoControls.transcodeUnavailableFallback' => 'Transkodierung nicht verfügbar — Wiedergabe in Originalqualität',
+			'videoControls.subtitleUnavailableFallback' => 'Die ausgewählten Untertitel konnten nicht geladen werden — Wiedergabe ohne Untertitel wird fortgesetzt',
 			'videoControls.pipButton' => 'Bild-in-Bild Modus',
 			'videoControls.aspectRatioButton' => 'Seitenverhältnis',
 			'videoControls.ambientLighting' => 'Umgebungsbeleuchtung',
@@ -2616,11 +2618,11 @@ extension on TranslationsDe {
 			'videoControls.searchSubtitles' => 'Untertitel suchen',
 			'videoControls.language' => 'Sprache',
 			'videoControls.noSubtitlesFound' => 'Keine Untertitel gefunden',
-			'videoControls.downloadedSubtitle' => 'Heruntergeladen',
 			'videoControls.noSubtitlesAvailable' => 'Keine Untertitel verfügbar',
 			'videoControls.noAudioTracksAvailable' => 'Keine Audiospuren verfügbar',
 			'videoControls.noTracksAvailable' => 'Keine Spuren verfügbar',
 			'videoControls.subtitleDownloaded' => 'Untertitel heruntergeladen',
+			'videoControls.subtitleDownloadedNotApplied' => 'Der Untertitel wurde heruntergeladen, konnte aber nicht ausgewählt werden',
 			'videoControls.subtitleDownloadFailed' => 'Untertitel konnte nicht heruntergeladen werden',
 			'videoControls.searchLanguages' => 'Sprachen suchen...',
 			'messages.markedAsWatched' => 'Als gesehen markiert',
@@ -2633,9 +2635,9 @@ extension on TranslationsDe {
 			'messages.errorLoading' => ({required Object error}) => 'Fehler: ${error}',
 			'messages.streamInterrupted' => 'Der Stream wurde unterbrochen. Drücke auf Wiedergabe oder spule, um es erneut zu versuchen.',
 			'messages.liveStreamInterrupted' => 'Der Livestream wurde unterbrochen. Drücke auf Wiedergabe, um es erneut zu versuchen.',
-			'messages.fileInfoNotAvailable' => 'Dateiinfo nicht verfügbar',
 			_ => null,
 		} ?? switch (path) {
+			'messages.fileInfoNotAvailable' => 'Dateiinfo nicht verfügbar',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Fehler beim Laden der Dateiinfo: ${error}',
 			'messages.errorLoadingSeries' => 'Fehler beim Laden der Serie',
 			'messages.musicNotSupported' => 'Musikwiedergabe wird noch nicht unterstützt',
@@ -3147,9 +3149,9 @@ extension on TranslationsDe {
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Verwalten',
 			'downloads.tvShows' => 'Serien',
-			'downloads.movies' => 'Filme',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.movies' => 'Filme',
 			'downloads.music' => 'Musik',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} Titel zum Download in Warteschlange',
 			'downloads.noDownloads' => 'Noch keine Downloads',

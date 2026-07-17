@@ -971,6 +971,11 @@ class MpvPlayerCoreBase: NSObject {
     case MPV_EVENT_GET_PROPERTY_REPLY:
       completeGetPropertyRequest(event)
 
+    case MPV_EVENT_START_FILE:
+      DispatchQueue.main.async {
+        self.delegate?.onEvent(name: "start-file", data: nil)
+      }
+
     case MPV_EVENT_FILE_LOADED:
       DispatchQueue.main.async {
         self.delegate?.onEvent(name: "file-loaded", data: nil)

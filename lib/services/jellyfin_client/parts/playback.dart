@@ -227,6 +227,12 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
           capturePlaySessionId(directStreamUrl);
           videoUrl = _withApiKey(directStreamUrl);
           playMethod = 'DirectStream';
+          // DirectStream remuxes the selected streams into a new container.
+          // Subtitle streams marked for external delivery are not present in
+          // that container, so expose their server URLs as sidecars just as we
+          // do for transcoded playback. True DirectPlay keeps using the
+          // embedded native tracks and does not incur a sidecar fetch.
+          includeExternalSubtitleDelivery = true;
         } else {
           if (!wantsOriginal) {
             fallbackReason = TranscodeFallbackReason.directPlayOnly;
@@ -241,8 +247,8 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     mediaInfo = _withSelectedJellyfinAudioStream(mediaInfo, effectiveAudioStreamId);
     // Tracks have no subtitle streams to assemble (a `Lyric` stream may be
     // present, but lyrics flow through fetchLyrics, not the subtitle path).
-    final externalSubtitles = isTrack
-        ? const <SubtitleTrack>[]
+    final subtitleSidecars = isTrack
+        ? const <PlaybackSubtitleSidecar>[]
         : _buildExternalSubtitles(
             metadata.id,
             effectiveSourceId,
@@ -258,7 +264,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
       availableVersions: bundle.availableVersions,
       videoUrl: videoUrl,
       mediaInfo: mediaInfo,
-      externalSubtitles: externalSubtitles,
+      subtitleSidecars: subtitleSidecars,
       isOffline: false,
       isTranscoding: isTranscoding,
       fallbackReason: fallbackReason,
@@ -344,30 +350,35 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     return path.startsWith('/') ? path : '/$path';
   }
 
-  List<SubtitleTrack> _buildExternalSubtitles(
+  List<PlaybackSubtitleSidecar> _buildExternalSubtitles(
     String itemId,
     String? mediaSourceId,
     MediaSourceInfo mediaInfo, {
     bool includeExternalDelivery = false,
   }) {
-    final externalSubtitles = <SubtitleTrack>[];
+    final externalSubtitles = <PlaybackSubtitleSidecar>[];
     for (final track in mediaInfo.subtitleTracks) {
-      if (!track.isExternalFile && !(includeExternalDelivery && track.usesExternalDelivery)) continue;
+      if (!track.isExternalFile && !(includeExternalDelivery && track.usesExternalDelivery)) {
+        continue;
+      }
       final path = track.key ?? _jellyfinSubtitleFallbackPath(itemId, mediaSourceId, track);
       if (path == null) continue;
       // Jellyfin's subtitle URL is a path relative to baseUrl; build the
       // absolute URL with the api_key query param.
       final url = _withApiKey(path);
       externalSubtitles.add(
-        SubtitleTrack.uri(
-          url,
-          title:
-              cleanSubtitleTitle(track.displayTitle ?? track.title, codec: track.codec) ??
-              cleanTrackMetadataValue(track.language),
-          language: cleanTrackMetadataValue(track.languageCode),
-          codec: track.codec,
-          isDefault: track.selected,
-          isForced: track.forced,
+        PlaybackSubtitleSidecar(
+          sourceStreamId: track.id,
+          track: SubtitleTrack.uri(
+            url,
+            title:
+                cleanSubtitleTitle(track.displayTitle ?? track.title, codec: track.codec) ??
+                cleanTrackMetadataValue(track.language),
+            language: cleanTrackMetadataValue(track.languageCode),
+            codec: track.codec,
+            isDefault: track.selected,
+            isForced: track.forced,
+          ),
         ),
       );
     }

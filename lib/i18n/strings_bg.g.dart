@@ -652,6 +652,7 @@ class _TranslationsVideoControlsBg extends TranslationsVideoControlsEn {
 	@override String get qualityOriginal => 'Оригинал';
 	@override String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
 	@override String get transcodeUnavailableFallback => 'Транскодирането не е налично — пуска се оригиналното качество';
+	@override String get subtitleUnavailableFallback => 'Избраните субтитри не можаха да се заредят — възпроизвеждането продължава без субтитри';
 	@override String get pipButton => 'Режим картина в картината';
 	@override String get aspectRatioButton => 'Съотношение на страните';
 	@override String get ambientLighting => 'Амбиентно осветление';
@@ -677,11 +678,11 @@ class _TranslationsVideoControlsBg extends TranslationsVideoControlsEn {
 	@override String get searchSubtitles => 'Търсене на субтитри';
 	@override String get language => 'Език';
 	@override String get noSubtitlesFound => 'Не са намерени субтитри';
-	@override String get downloadedSubtitle => 'Изтеглени субтитри';
 	@override String get noSubtitlesAvailable => 'Няма налични субтитри';
 	@override String get noAudioTracksAvailable => 'Няма налични аудио писти';
 	@override String get noTracksAvailable => 'Няма налични писти';
 	@override String get subtitleDownloaded => 'Субтитърът е изтеглен';
+	@override String get subtitleDownloadedNotApplied => 'Субтитрите са изтеглени, но не можаха да бъдат избрани';
 	@override String get subtitleDownloadFailed => 'Неуспешно изтегляне на субтитър';
 	@override String get searchLanguages => 'Търсене на езици...';
 }
@@ -2585,6 +2586,7 @@ extension on TranslationsBg {
 			'videoControls.qualityOriginal' => 'Оригинал',
 			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
 			'videoControls.transcodeUnavailableFallback' => 'Транскодирането не е налично — пуска се оригиналното качество',
+			'videoControls.subtitleUnavailableFallback' => 'Избраните субтитри не можаха да се заредят — възпроизвеждането продължава без субтитри',
 			'videoControls.pipButton' => 'Режим картина в картината',
 			'videoControls.aspectRatioButton' => 'Съотношение на страните',
 			'videoControls.ambientLighting' => 'Амбиентно осветление',
@@ -2616,11 +2618,11 @@ extension on TranslationsBg {
 			'videoControls.searchSubtitles' => 'Търсене на субтитри',
 			'videoControls.language' => 'Език',
 			'videoControls.noSubtitlesFound' => 'Не са намерени субтитри',
-			'videoControls.downloadedSubtitle' => 'Изтеглени субтитри',
 			'videoControls.noSubtitlesAvailable' => 'Няма налични субтитри',
 			'videoControls.noAudioTracksAvailable' => 'Няма налични аудио писти',
 			'videoControls.noTracksAvailable' => 'Няма налични писти',
 			'videoControls.subtitleDownloaded' => 'Субтитърът е изтеглен',
+			'videoControls.subtitleDownloadedNotApplied' => 'Субтитрите са изтеглени, но не можаха да бъдат избрани',
 			'videoControls.subtitleDownloadFailed' => 'Неуспешно изтегляне на субтитър',
 			'videoControls.searchLanguages' => 'Търсене на езици...',
 			'messages.markedAsWatched' => 'Маркирано като гледано',
@@ -2633,9 +2635,9 @@ extension on TranslationsBg {
 			'messages.errorLoading' => ({required Object error}) => 'Грешка: ${error}',
 			'messages.streamInterrupted' => 'Потокът прекъсна. Натиснете „Пусни“ или превъртете, за да опитате отново.',
 			'messages.liveStreamInterrupted' => 'Потокът на живо прекъсна. Натиснете „Пусни“, за да опитате отново.',
-			'messages.fileInfoNotAvailable' => 'Информацията за файла не е налична',
 			_ => null,
 		} ?? switch (path) {
+			'messages.fileInfoNotAvailable' => 'Информацията за файла не е налична',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Грешка при зареждане на информация за файла: ${error}',
 			'messages.errorLoadingSeries' => 'Грешка при зареждане на сериала',
 			'messages.musicNotSupported' => 'Възпроизвеждането на музика все още не се поддържа',
@@ -3147,9 +3149,9 @@ extension on TranslationsBg {
 			'downloads.title' => 'Изтегляния',
 			'downloads.manage' => 'Управление',
 			'downloads.tvShows' => 'ТВ сериали',
-			'downloads.movies' => 'Филми',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.movies' => 'Филми',
 			'downloads.music' => 'Музика',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} песни в опашката за изтегляне',
 			'downloads.noDownloads' => 'Все още няма изтегляния',

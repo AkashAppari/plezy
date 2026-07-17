@@ -21,12 +21,8 @@ appId: com.edde746.plezy
           end: 70%, 68%
           duration: 300
 - assertVisible: "${SUBTITLE_TRACK}"
-- swipe:
-    start: 70%, 78%
-    end: 70%, 68%
-    duration: 300
 - tapOn:
-    point: "70%,86%"
+    text: "${SUBTITLE_TRACK}"
 - runFlow:
     file: show_codec_track_sheet.yaml
     env:

@@ -652,6 +652,7 @@ class _TranslationsVideoControlsPt extends TranslationsVideoControlsEn {
 	@override String get qualityOriginal => 'Original';
 	@override String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
 	@override String get transcodeUnavailableFallback => 'Transcodificação indisponível — reproduzindo qualidade original';
+	@override String get subtitleUnavailableFallback => 'Não foi possível carregar as legendas selecionadas — a reprodução continuará sem legendas';
 	@override String get pipButton => 'Modo Picture-in-Picture';
 	@override String get aspectRatioButton => 'Proporção';
 	@override String get ambientLighting => 'Iluminação ambiente';
@@ -677,11 +678,11 @@ class _TranslationsVideoControlsPt extends TranslationsVideoControlsEn {
 	@override String get searchSubtitles => 'Pesquisar legendas';
 	@override String get language => 'Idioma';
 	@override String get noSubtitlesFound => 'Nenhuma legenda encontrada';
-	@override String get downloadedSubtitle => 'Baixado';
 	@override String get noSubtitlesAvailable => 'Nenhuma legenda disponível';
 	@override String get noAudioTracksAvailable => 'Nenhuma faixa de áudio disponível';
 	@override String get noTracksAvailable => 'Nenhuma faixa disponível';
 	@override String get subtitleDownloaded => 'Legenda baixada';
+	@override String get subtitleDownloadedNotApplied => 'A legenda foi transferida, mas não foi possível selecioná-la';
 	@override String get subtitleDownloadFailed => 'Falha ao baixar legenda';
 	@override String get searchLanguages => 'Pesquisar idiomas...';
 }
@@ -2585,6 +2586,7 @@ extension on TranslationsPt {
 			'videoControls.qualityOriginal' => 'Original',
 			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
 			'videoControls.transcodeUnavailableFallback' => 'Transcodificação indisponível — reproduzindo qualidade original',
+			'videoControls.subtitleUnavailableFallback' => 'Não foi possível carregar as legendas selecionadas — a reprodução continuará sem legendas',
 			'videoControls.pipButton' => 'Modo Picture-in-Picture',
 			'videoControls.aspectRatioButton' => 'Proporção',
 			'videoControls.ambientLighting' => 'Iluminação ambiente',
@@ -2616,11 +2618,11 @@ extension on TranslationsPt {
 			'videoControls.searchSubtitles' => 'Pesquisar legendas',
 			'videoControls.language' => 'Idioma',
 			'videoControls.noSubtitlesFound' => 'Nenhuma legenda encontrada',
-			'videoControls.downloadedSubtitle' => 'Baixado',
 			'videoControls.noSubtitlesAvailable' => 'Nenhuma legenda disponível',
 			'videoControls.noAudioTracksAvailable' => 'Nenhuma faixa de áudio disponível',
 			'videoControls.noTracksAvailable' => 'Nenhuma faixa disponível',
 			'videoControls.subtitleDownloaded' => 'Legenda baixada',
+			'videoControls.subtitleDownloadedNotApplied' => 'A legenda foi transferida, mas não foi possível selecioná-la',
 			'videoControls.subtitleDownloadFailed' => 'Falha ao baixar legenda',
 			'videoControls.searchLanguages' => 'Pesquisar idiomas...',
 			'messages.markedAsWatched' => 'Marcado como assistido',
@@ -2633,9 +2635,9 @@ extension on TranslationsPt {
 			'messages.errorLoading' => ({required Object error}) => 'Erro: ${error}',
 			'messages.streamInterrupted' => 'A transmissão foi interrompida. Toque em reproduzir ou avance para tentar novamente.',
 			'messages.liveStreamInterrupted' => 'A transmissão ao vivo foi interrompida. Toque em reproduzir para tentar novamente.',
-			'messages.fileInfoNotAvailable' => 'Informações do arquivo não disponíveis',
 			_ => null,
 		} ?? switch (path) {
+			'messages.fileInfoNotAvailable' => 'Informações do arquivo não disponíveis',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Erro ao carregar info do arquivo: ${error}',
 			'messages.errorLoadingSeries' => 'Erro ao carregar série',
 			'messages.musicNotSupported' => 'Reprodução de música ainda não é suportada',
@@ -3147,9 +3149,9 @@ extension on TranslationsPt {
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Gerenciar',
 			'downloads.tvShows' => 'Séries de TV',
-			'downloads.movies' => 'Filmes',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.movies' => 'Filmes',
 			'downloads.music' => 'Música',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} faixas na fila para download',
 			'downloads.noDownloads' => 'Nenhum download ainda',

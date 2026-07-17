@@ -652,6 +652,7 @@ class _TranslationsVideoControlsNb extends TranslationsVideoControlsEn {
 	@override String get qualityOriginal => 'Original';
 	@override String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
 	@override String get transcodeUnavailableFallback => 'Transkoding utilgjengelig — spiller av i original kvalitet';
+	@override String get subtitleUnavailableFallback => 'De valgte undertekstene kunne ikke lastes inn — avspillingen fortsetter uten undertekster';
 	@override String get pipButton => 'Bilde-i-bilde-modus';
 	@override String get aspectRatioButton => 'Sideforhold';
 	@override String get ambientLighting => 'Omgivelseslys';
@@ -677,11 +678,11 @@ class _TranslationsVideoControlsNb extends TranslationsVideoControlsEn {
 	@override String get searchSubtitles => 'Søk etter undertekster';
 	@override String get language => 'Språk';
 	@override String get noSubtitlesFound => 'Ingen undertekster funnet';
-	@override String get downloadedSubtitle => 'Lastet ned';
 	@override String get noSubtitlesAvailable => 'Ingen undertekster tilgjengelig';
 	@override String get noAudioTracksAvailable => 'Ingen lydspor tilgjengelig';
 	@override String get noTracksAvailable => 'Ingen spor tilgjengelig';
 	@override String get subtitleDownloaded => 'Undertekst lastet ned';
+	@override String get subtitleDownloadedNotApplied => 'Underteksten ble lastet ned, men kunne ikke velges';
 	@override String get subtitleDownloadFailed => 'Kunne ikke laste ned undertekst';
 	@override String get searchLanguages => 'Søk etter språk...';
 }
@@ -2585,6 +2586,7 @@ extension on TranslationsNb {
 			'videoControls.qualityOriginal' => 'Original',
 			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
 			'videoControls.transcodeUnavailableFallback' => 'Transkoding utilgjengelig — spiller av i original kvalitet',
+			'videoControls.subtitleUnavailableFallback' => 'De valgte undertekstene kunne ikke lastes inn — avspillingen fortsetter uten undertekster',
 			'videoControls.pipButton' => 'Bilde-i-bilde-modus',
 			'videoControls.aspectRatioButton' => 'Sideforhold',
 			'videoControls.ambientLighting' => 'Omgivelseslys',
@@ -2616,11 +2618,11 @@ extension on TranslationsNb {
 			'videoControls.searchSubtitles' => 'Søk etter undertekster',
 			'videoControls.language' => 'Språk',
 			'videoControls.noSubtitlesFound' => 'Ingen undertekster funnet',
-			'videoControls.downloadedSubtitle' => 'Lastet ned',
 			'videoControls.noSubtitlesAvailable' => 'Ingen undertekster tilgjengelig',
 			'videoControls.noAudioTracksAvailable' => 'Ingen lydspor tilgjengelig',
 			'videoControls.noTracksAvailable' => 'Ingen spor tilgjengelig',
 			'videoControls.subtitleDownloaded' => 'Undertekst lastet ned',
+			'videoControls.subtitleDownloadedNotApplied' => 'Underteksten ble lastet ned, men kunne ikke velges',
 			'videoControls.subtitleDownloadFailed' => 'Kunne ikke laste ned undertekst',
 			'videoControls.searchLanguages' => 'Søk etter språk...',
 			'messages.markedAsWatched' => 'Merket som sett',
@@ -2633,9 +2635,9 @@ extension on TranslationsNb {
 			'messages.errorLoading' => ({required Object error}) => 'Feil: ${error}',
 			'messages.streamInterrupted' => 'Avspillingen ble avbrutt. Trykk på Spill av eller spol for å prøve på nytt.',
 			'messages.liveStreamInterrupted' => 'Direktesendingen ble avbrutt. Trykk på Spill av for å prøve på nytt.',
-			'messages.fileInfoNotAvailable' => 'Filinformasjon ikke tilgjengelig',
 			_ => null,
 		} ?? switch (path) {
+			'messages.fileInfoNotAvailable' => 'Filinformasjon ikke tilgjengelig',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Feil ved lasting av filinformasjon: ${error}',
 			'messages.errorLoadingSeries' => 'Feil ved lasting av serie',
 			'messages.musicNotSupported' => 'Musikkavspilling støttes ikke ennå',
@@ -3147,9 +3149,9 @@ extension on TranslationsNb {
 			'downloads.title' => 'Nedlastinger',
 			'downloads.manage' => 'Administrer',
 			'downloads.tvShows' => 'TV-serier',
-			'downloads.movies' => 'Filmer',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.movies' => 'Filmer',
 			'downloads.music' => 'Musikk',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} spor i nedlastingskø',
 			'downloads.noDownloads' => 'Ingen nedlastinger ennå',

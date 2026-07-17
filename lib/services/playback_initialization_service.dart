@@ -159,6 +159,7 @@ class PlaybackInitializationService {
     TranscodeQualityPreset qualityPreset = TranscodeQualityPreset.original,
     AudioQualityPreset? audioQualityPreset,
     int? selectedAudioStreamId,
+    SubtitleTrack? preferredSubtitleTrack,
     String? sessionIdentifier,
     String? transcodeSessionId,
   }) async {
@@ -204,6 +205,7 @@ class PlaybackInitializationService {
           qualityPreset: qualityPreset,
           audioQualityPreset: audioQualityPreset,
           selectedAudioStreamId: selectedAudioStreamId,
+          preferredSubtitleTrack: preferredSubtitleTrack,
           sessionIdentifier: sessionIdentifier,
           transcodeSessionId: transcodeSessionId,
         ),
@@ -238,7 +240,7 @@ class PlaybackInitializationService {
       appLogger.d('Could not load cached media info for offline playback', error: e);
     }
 
-    final sidecarSubtitles = await _discoverSidecarSubtitles(
+    final subtitleSidecars = await _discoverSidecarSubtitles(
       offlineVideoPath,
       metadata: metadata,
       mediaInfo: mediaInfo,
@@ -248,7 +250,7 @@ class PlaybackInitializationService {
       availableVersions: const [],
       videoUrl: _formatVideoUrl(offlineVideoPath),
       mediaInfo: mediaInfo,
-      externalSubtitles: sidecarSubtitles,
+      subtitleSidecars: subtitleSidecars,
       isOffline: true,
       playMethod: 'DirectPlay',
       selectedMediaIndex: selectedMediaIndex,
@@ -279,12 +281,12 @@ class PlaybackInitializationService {
   /// use `{video}_subs/{trackId}.{ext}` with a legacy `{videoDir}/subtitles/*`
   /// fallback. SAF videos are `content://` URIs, so sidecars live in the
   /// app-managed subtitle directory keyed by server/item id.
-  Future<List<SubtitleTrack>> _discoverSidecarSubtitles(
+  Future<List<PlaybackSubtitleSidecar>> _discoverSidecarSubtitles(
     String videoPath, {
     required MediaItem metadata,
     MediaSourceInfo? mediaInfo,
   }) async {
-    final subtitles = <SubtitleTrack>[];
+    final subtitles = <PlaybackSubtitleSidecar>[];
     final dirs = videoPath.startsWith('content://')
         ? await _safSidecarSubtitleDirs(metadata)
         : await _fileSidecarSubtitleDirs(videoPath);
@@ -302,13 +304,16 @@ class PlaybackInitializationService {
             : null;
 
         subtitles.add(
-          SubtitleTrack.uri(
-            Uri.file(entity.path).toString(),
-            title: cachedTrack?.displayTitle ?? cachedTrack?.language ?? 'Subtitle $fileName',
-            language: cachedTrack?.languageCode,
-            codec: cachedTrack?.codec,
-            isDefault: cachedTrack?.selected ?? false,
-            isForced: cachedTrack?.forced ?? false,
+          PlaybackSubtitleSidecar(
+            sourceStreamId: trackId,
+            track: SubtitleTrack.uri(
+              Uri.file(entity.path).toString(),
+              title: cachedTrack?.displayTitle ?? cachedTrack?.language ?? 'Subtitle $fileName',
+              language: cachedTrack?.languageCode,
+              codec: cachedTrack?.codec,
+              isDefault: cachedTrack?.selected ?? false,
+              isForced: cachedTrack?.forced ?? false,
+            ),
           ),
         );
       }

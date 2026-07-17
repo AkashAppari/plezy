@@ -250,14 +250,17 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
   Future<void> _switchLiveChannel(int delta) async {
     final channels = widget.live?.channels;
     if (channels == null || channels.isEmpty) return;
-    if (_playbackTransition != _PlaybackTransition.idle) return; // debounce concurrent switches
-
     final newIndex = _live.channelIndex + delta;
     if (newIndex < 0 || newIndex >= channels.length) return;
     final currentPlayer = player;
     if (currentPlayer == null) return;
 
-    _playbackTransition = _PlaybackTransition.switchingChannel;
+    final transitionLease = _tryAcquirePlaybackTransition(_PlaybackTransition.switchingChannel);
+    if (transitionLease == null) return; // debounce concurrent switches
+    bool isCurrentChannelSwitch() =>
+        mounted &&
+        player == currentPlayer &&
+        _ownsPlaybackTransition(transitionLease, expected: _PlaybackTransition.switchingChannel);
     _liveSeek.cancel();
 
     final previousSession = _live.session;
@@ -273,19 +276,19 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       // tuner/transcode session.
       session = await _startLiveSession(channel);
       if (session == null) return;
-      if (!mounted || player != currentPlayer) {
+      if (!isCurrentChannelSwitch()) {
         _abandonLiveSession(session);
         return;
       }
 
       final streamUrl = await session.streamUrlAt();
-      if (streamUrl == null || !mounted || player != currentPlayer) {
+      if (streamUrl == null || !isCurrentChannelSwitch()) {
         _abandonLiveSession(session);
         return;
       }
 
       await _setLiveStreamOptions(currentPlayer);
-      if (!mounted || player != currentPlayer) {
+      if (!isCurrentChannelSwitch()) {
         _abandonLiveSession(session);
         return;
       }
@@ -293,7 +296,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       _setPlayerState(() => _hasFirstFrame.value = false);
       replacementOpenStarted = true;
       await currentPlayer.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true, isLive: true);
-      if (!mounted || player != currentPlayer) {
+      if (!isCurrentChannelSwitch()) {
         _abandonLiveSession(session);
         return;
       }
@@ -303,6 +306,10 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       _stopLiveTimelineUpdates();
       if (previousSession != null) {
         await _sendLiveTimeline('stopped');
+      }
+      if (!isCurrentChannelSwitch()) {
+        _abandonLiveSession(session);
+        return;
       }
 
       _live.adoptSession(session);
@@ -322,13 +329,14 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       // would otherwise hold its server-side tuner until the backend times out.
       final orphan = session;
       if (orphan != null && _live.session != orphan) _abandonLiveSession(orphan);
+      if (!isCurrentChannelSwitch()) return;
       if (replacementOpenStarted && mounted && _live.session == previousSession) {
         _setPlayerState(() => _hasFirstFrame.value = true);
       }
       appLogger.e('Failed to switch channel', error: e);
       if (mounted) showErrorSnackBar(context, e.toString());
     } finally {
-      _playbackTransition = _PlaybackTransition.idle;
+      _releasePlaybackTransition(transitionLease);
     }
   }
 

@@ -1531,6 +1531,9 @@ class TranslationsVideoControlsEn {
 	/// en: 'Transcoding unavailable — playing original quality'
 	String get transcodeUnavailableFallback => 'Transcoding unavailable — playing original quality';
 
+	/// en: 'Selected subtitles could not be loaded — continuing without subtitles'
+	String get subtitleUnavailableFallback => 'Selected subtitles could not be loaded — continuing without subtitles';
+
 	/// en: 'Picture-in-Picture mode'
 	String get pipButton => 'Picture-in-Picture mode';
 
@@ -1605,9 +1608,6 @@ class TranslationsVideoControlsEn {
 	/// en: 'No subtitles found'
 	String get noSubtitlesFound => 'No subtitles found';
 
-	/// en: 'Downloaded'
-	String get downloadedSubtitle => 'Downloaded';
-
 	/// en: 'No subtitles available'
 	String get noSubtitlesAvailable => 'No subtitles available';
 
@@ -1619,6 +1619,9 @@ class TranslationsVideoControlsEn {
 
 	/// en: 'Subtitle downloaded'
 	String get subtitleDownloaded => 'Subtitle downloaded';
+
+	/// en: 'Subtitle downloaded, but it could not be selected'
+	String get subtitleDownloadedNotApplied => 'Subtitle downloaded, but it could not be selected';
 
 	/// en: 'Failed to download subtitle'
 	String get subtitleDownloadFailed => 'Failed to download subtitle';
@@ -5440,6 +5443,7 @@ extension on Translations {
 			'videoControls.qualityOriginal' => 'Original',
 			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
 			'videoControls.transcodeUnavailableFallback' => 'Transcoding unavailable — playing original quality',
+			'videoControls.subtitleUnavailableFallback' => 'Selected subtitles could not be loaded — continuing without subtitles',
 			'videoControls.pipButton' => 'Picture-in-Picture mode',
 			'videoControls.aspectRatioButton' => 'Aspect ratio',
 			'videoControls.ambientLighting' => 'Ambient lighting',
@@ -5471,11 +5475,11 @@ extension on Translations {
 			'videoControls.searchSubtitles' => 'Search Subtitles',
 			'videoControls.language' => 'Language',
 			'videoControls.noSubtitlesFound' => 'No subtitles found',
-			'videoControls.downloadedSubtitle' => 'Downloaded',
 			'videoControls.noSubtitlesAvailable' => 'No subtitles available',
 			'videoControls.noAudioTracksAvailable' => 'No audio tracks available',
 			'videoControls.noTracksAvailable' => 'No tracks available',
 			'videoControls.subtitleDownloaded' => 'Subtitle downloaded',
+			'videoControls.subtitleDownloadedNotApplied' => 'Subtitle downloaded, but it could not be selected',
 			'videoControls.subtitleDownloadFailed' => 'Failed to download subtitle',
 			'videoControls.searchLanguages' => 'Search languages...',
 			'messages.markedAsWatched' => 'Marked as watched',
@@ -5488,9 +5492,9 @@ extension on Translations {
 			'messages.errorLoading' => ({required Object error}) => 'Error: ${error}',
 			'messages.streamInterrupted' => 'The stream was interrupted. Press play or seek to retry.',
 			'messages.liveStreamInterrupted' => 'The live stream was interrupted. Press play to retry.',
-			'messages.fileInfoNotAvailable' => 'File information not available',
 			_ => null,
 		} ?? switch (path) {
+			'messages.fileInfoNotAvailable' => 'File information not available',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Error loading file info: ${error}',
 			'messages.errorLoadingSeries' => 'Error loading series',
 			'messages.musicNotSupported' => 'Music playback is not yet supported',
@@ -6002,9 +6006,9 @@ extension on Translations {
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Manage',
 			'downloads.tvShows' => 'TV Shows',
-			'downloads.movies' => 'Movies',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.movies' => 'Movies',
 			'downloads.music' => 'Music',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} tracks queued for download',
 			'downloads.noDownloads' => 'No downloads yet',

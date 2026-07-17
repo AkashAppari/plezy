@@ -39,6 +39,11 @@ class PlaybackInitializationOptions {
   /// server pick".
   final int? selectedAudioStreamId;
 
+  /// Preferred subtitle carried across navigation/reloads. Backends that put
+  /// embedded subtitles in the rendition can use this during negotiation;
+  /// sidecar-capable backends keep subtitle delivery independent.
+  final SubtitleTrack? preferredSubtitleTrack;
+
   /// Plex transcode `X-Plex-Session-Identifier`. Required for Plex transcode.
   final String? sessionIdentifier;
 
@@ -54,9 +59,23 @@ class PlaybackInitializationOptions {
     this.qualityPreset = TranscodeQualityPreset.original,
     this.audioQualityPreset,
     this.selectedAudioStreamId,
+    this.preferredSubtitleTrack,
     this.sessionIdentifier,
     this.transcodeSessionId,
   });
+}
+
+/// A subtitle sidecar that can be attached independently of the primary
+/// media stream.
+///
+/// [sourceStreamId] links the playable URI back to the authoritative server
+/// subtitle catalog. It is nullable for legacy/offline files whose filename
+/// cannot be mapped to cached stream metadata.
+class PlaybackSubtitleSidecar {
+  final int? sourceStreamId;
+  final SubtitleTrack track;
+
+  const PlaybackSubtitleSidecar({required this.sourceStreamId, required this.track});
 }
 
 /// Reason the transcode branch fell back to direct play.
@@ -73,7 +92,10 @@ class PlaybackInitializationResult {
   final List<MediaVersion> availableVersions;
   final String? videoUrl;
   final MediaSourceInfo? mediaInfo;
-  final List<SubtitleTrack> externalSubtitles;
+
+  /// Complete sidecar catalog for this source. Callers must resolve the active
+  /// subtitle choice and attach only the selected sidecar(s) at open time.
+  final List<PlaybackSubtitleSidecar> subtitleSidecars;
   final bool isOffline;
 
   /// `true` when [videoUrl] points at a backend transcoding stream.
@@ -113,11 +135,14 @@ class PlaybackInitializationResult {
       ? availableVersions[selectedMediaIndex]
       : null;
 
+  /// Compatibility view for consumers that only need the playable tracks.
+  List<SubtitleTrack> get externalSubtitles => subtitleSidecars.map((sidecar) => sidecar.track).toList(growable: false);
+
   PlaybackInitializationResult({
     required this.availableVersions,
     this.videoUrl,
     this.mediaInfo,
-    this.externalSubtitles = const [],
+    this.subtitleSidecars = const [],
     this.isOffline = false,
     this.isTranscoding = false,
     this.fallbackReason,

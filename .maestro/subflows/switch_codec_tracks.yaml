@@ -13,7 +13,7 @@ appId: com.edde746.plezy
       SHEET_MARKER: "${AUDIO_TRACK}"
 - assertVisible: "${SUBTITLE_TRACK}"
 - tapOn:
-    point: "70%,66%"
+    text: "${SUBTITLE_TRACK}"
 - runFlow:
     file: show_codec_track_sheet.yaml
     env:

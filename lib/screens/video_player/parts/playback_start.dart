@@ -113,6 +113,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           offlineLibraryMode: true,
           qualityPreset: _selectedQualityPreset,
           selectedAudioStreamId: _selectedAudioStreamId,
+          preferredSubtitleTrack: _preferredSubtitleTrack,
           sessionIdentifier: _playbackSessionIdentifier,
           transcodeSessionId: _playbackTranscodeSessionId,
         );
@@ -138,16 +139,24 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       }
       final result = playbackContext.result;
       final streamHeaders = playbackContext.streamHeaders;
+      var subtitleSelection = await _resolveSubtitleSelectionForOpen(
+        metadata: _currentMetadata,
+        result: result,
+        preferredAudioTrack: _preferredAudioTrack,
+        preferredSubtitleTrack: _preferredSubtitleTrack,
+        preferredSecondarySubtitleTrack: _preferredSecondarySubtitleTrack,
+      );
+      if (!attempt.isCurrent) return;
       // Initial start has no previous session to protect, so commit as soon
       // as the resolve lands (reload-style flows commit at the open
       // boundary instead).
-      _commitPlaybackSession(
-        PlaybackSession.fromContext(
-          playbackContext,
-          requestedQualityPreset: _selectedQualityPreset,
-          requestedMediaSourceId: _requestedMediaSourceId,
-        ),
+      var session = PlaybackSession.fromContext(
+        playbackContext,
+        requestedQualityPreset: _selectedQualityPreset,
+        requestedMediaSourceId: _requestedMediaSourceId,
+        subtitleSelection: subtitleSelection,
       );
+      _commitPlaybackSession(session);
 
       // Primary refresh-rate path: when metadata provides FPS, Android players
       // can switch before creating decoders. MPV still needs a startup refresh
@@ -221,7 +230,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         frameRatePlan.armStartupRefreshGate(currentPlayer);
         externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
           player: currentPlayer,
-          externalSubtitles: result.externalSubtitles,
+          externalSubtitles: subtitleSelection.sidecarsAtOpen,
         );
         final shouldAutoPlay =
             !shouldHoldPlaybackStart && !wtOwnsStart && externalSubtitlePlan.canStartBeforeTrackSetup;
@@ -234,7 +243,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           resumePosition: resumePosition,
           durationMs: _currentMetadata.durationMs,
         );
-        final didOpen = await _openMediaOnPlayer(
+        final openResult = await _openMediaOnPlayer(
           player: currentPlayer,
           settingsService: settingsService,
           videoUrl: result.videoUrl!,
@@ -247,7 +256,12 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           externalSubtitlesAtOpen: externalSubtitlePlan.subtitlesAtOpen,
           shouldContinue: () => attempt.isCurrent,
         );
-        if (!didOpen || !attempt.isCurrent) return;
+        if (!openResult.didOpen || !attempt.isCurrent) return;
+        if (openResult.sidecarFallbackUsed) {
+          session = _commitSidecarFallbackSession(session);
+          subtitleSelection = session.subtitleSelection;
+          externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(player: currentPlayer, externalSubtitles: const []);
+        }
 
         // Attach player to Watch Together session for sync (if in session).
         // With a frame-rate startup gate pending, sync readiness waits for
@@ -262,7 +276,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       } else {
         externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
           player: currentPlayer,
-          externalSubtitles: result.externalSubtitles,
+          externalSubtitles: subtitleSelection.sidecarsAtOpen,
           waitForFileLoaded: false,
         );
       }
@@ -316,12 +330,12 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           plexClient: mediaClient is PlexClient ? mediaClient : null,
           getProfileSettings: () => context.read<UserProfileProvider>().profileSettings,
           preferredAudioTrack: _preferredAudioTrack,
-          preferredSubtitleTrack: _preferredSubtitleTrack,
-          preferredSecondarySubtitleTrack: _preferredSecondarySubtitleTrack,
+          preferredSubtitleTrack: subtitleSelection.primaryTrack,
+          preferredSecondarySubtitleTrack: subtitleSelection.secondaryTrack,
         );
 
-        // Store external subtitles for re-use after backend fallback
-        _trackManager!.cacheExternalSubtitles(result.externalSubtitles);
+        // Store only the active sidecars for re-use after backend fallback.
+        _trackManager!.cacheExternalSubtitles(subtitleSelection.sidecarsAtOpen);
 
         final resumeForStartupFrame =
             frameRatePlan.needsStartupRefresh && externalSubtitlePlan.requiresPostOpenAdd && !wtOwnsStart;

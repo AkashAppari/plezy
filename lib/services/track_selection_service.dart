@@ -353,12 +353,12 @@ class TrackSelectionResult<T> {
 /// Service for selecting and applying audio and subtitle tracks based on
 /// preferences, user profiles, and per-media settings.
 class TrackSelectionService {
-  final Player player;
+  final Player? player;
   final MediaServerUserProfile? profileSettings;
   final MediaItem metadata;
   final MediaSourceInfo? plexMediaInfo;
 
-  TrackSelectionService({required this.player, this.profileSettings, required this.metadata, this.plexMediaInfo});
+  TrackSelectionService({this.player, this.profileSettings, required this.metadata, this.plexMediaInfo});
 
   /// Build list of preferred languages from a user profile
   List<String> _buildPreferredLanguages(MediaServerUserProfile profile, {required bool isAudio}) {
@@ -566,6 +566,13 @@ class TrackSelectionService {
     // Handle special "no subtitles" case
     if (preferred.id == 'no') {
       return SubtitleTrack.off;
+    }
+
+    final preferredUri = preferred.uri;
+    if (preferredUri != null) {
+      for (final track in availableTracks) {
+        if (track.uri == preferredUri) return track;
+      }
     }
 
     return findBestTrackMatch<SubtitleTrack>(
@@ -801,6 +808,11 @@ class TrackSelectionService {
     Function(AudioTrack)? onAudioTrackChanged,
     Function(SubtitleTrack)? onSubtitleTrackChanged,
   }) async {
+    final player = this.player;
+    if (player == null) {
+      throw StateError('A player is required to apply track selections');
+    }
+
     // Wait for tracks to be loaded
     if (player.state.tracks.audio.isEmpty && player.state.tracks.subtitle.isEmpty) {
       try {

@@ -56,6 +56,20 @@ class PlayerStreams {
   /// Stream that emits when the player has loaded the current media file.
   final Stream<void> fileLoaded;
 
+  /// Emits when mpv starts loading a new file. This delimits load-scoped
+  /// readiness and failure signals for callers that arm before [Player.open].
+  final Stream<void> fileStarted;
+
+  /// Emits only when the active file ends because loading or playback failed.
+  /// Generic platform/property errors remain on [error] and must not be
+  /// mistaken for a media-open failure.
+  final Stream<void> fileLoadFailed;
+
+  /// Emits once mpv has discovered a non-external audio or video track for
+  /// the current file. Unlike [fileLoaded], this can fire before remote
+  /// subtitle sidecars finish opening.
+  final Stream<void> primaryMediaReady;
+
   /// Stream of seekable buffer ranges from the demuxer cache.
   final Stream<List<BufferRange>> bufferRanges;
 
@@ -88,6 +102,9 @@ class PlayerStreams {
     required this.bufferRanges,
     required this.playbackRestart,
     this.fileLoaded = const Stream<void>.empty(),
+    this.fileStarted = const Stream<void>.empty(),
+    this.fileLoadFailed = const Stream<void>.empty(),
+    this.primaryMediaReady = const Stream<void>.empty(),
     required this.backendSwitched,
     this.trackTransition = const Stream<String>.empty(),
   });

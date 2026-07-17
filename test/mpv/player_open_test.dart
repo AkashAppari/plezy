@@ -545,6 +545,71 @@ void main() {
       );
     });
 
+    test('MPV exposes load-scoped start and terminal failure events', () async {
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        testBody: () async {
+          final player = PlayerNative();
+          try {
+            final fileStarted = expectLater(player.streams.fileStarted, emits(isNull));
+            player.handlePlayerEvent('start-file', null);
+            await fileStarted;
+
+            final fileLoadFailed = expectLater(player.streams.fileLoadFailed, emits(isNull));
+            player.handlePlayerEvent('end-file', {'reason': 'error'});
+            await fileLoadFailed;
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('MPV exposes primary media readiness before external subtitles finish', () async {
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        testBody: () async {
+          final player = PlayerNative();
+          var emissionCount = 0;
+          final subscription = player.streams.primaryMediaReady.listen((_) => emissionCount++);
+          try {
+            player.handlePlayerEvent('start-file', null);
+            player.handlePropertyChange('track-list', const [
+              {'type': 'sub', 'id': '2', 'external': true},
+            ]);
+            await Future<void>.delayed(Duration.zero);
+            expect(emissionCount, 0);
+
+            player.handlePropertyChange('track-list', const [
+              {'type': 'video', 'id': '4', 'external': false, 'image': true, 'albumart': true},
+              {'type': 'sub', 'id': '2', 'external': true},
+            ]);
+            await Future<void>.delayed(Duration.zero);
+            expect(emissionCount, 0);
+
+            player.handlePropertyChange('track-list', const [
+              {'type': 'video', 'id': '1', 'external': false},
+              {'type': 'sub', 'id': '2', 'external': true},
+            ]);
+            await Future<void>.delayed(Duration.zero);
+            expect(emissionCount, 1);
+
+            player.handlePropertyChange('track-list', const [
+              {'type': 'video', 'id': '1', 'external': false},
+              {'type': 'audio', 'id': '3', 'external': false},
+            ]);
+            await Future<void>.delayed(Duration.zero);
+            expect(emissionCount, 1);
+          } finally {
+            await subscription.cancel();
+            await player.dispose();
+          }
+        },
+      );
+    });
+
     test('MPV maps server-offset streams to absolute timeline positions', () async {
       final calls = <MethodCall>[];
 

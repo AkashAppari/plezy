@@ -652,6 +652,7 @@ class _TranslationsVideoControlsSv extends TranslationsVideoControlsEn {
 	@override String get qualityOriginal => 'Original';
 	@override String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
 	@override String get transcodeUnavailableFallback => 'Transkodning otillgänglig — spelar upp i originalkvalitet';
+	@override String get subtitleUnavailableFallback => 'De valda undertexterna kunde inte läsas in — uppspelningen fortsätter utan undertexter';
 	@override String get pipButton => 'Bild-i-bild läge';
 	@override String get aspectRatioButton => 'Bildförhållande';
 	@override String get ambientLighting => 'Ambientbelysning';
@@ -677,11 +678,11 @@ class _TranslationsVideoControlsSv extends TranslationsVideoControlsEn {
 	@override String get searchSubtitles => 'Sök undertexter';
 	@override String get language => 'Språk';
 	@override String get noSubtitlesFound => 'Inga undertexter hittades';
-	@override String get downloadedSubtitle => 'Nedladdad';
 	@override String get noSubtitlesAvailable => 'Inga undertexter tillgängliga';
 	@override String get noAudioTracksAvailable => 'Inga ljudspår tillgängliga';
 	@override String get noTracksAvailable => 'Inga spår tillgängliga';
 	@override String get subtitleDownloaded => 'Undertext nedladdad';
+	@override String get subtitleDownloadedNotApplied => 'Undertexten hämtades, men kunde inte väljas';
 	@override String get subtitleDownloadFailed => 'Kunde inte ladda ner undertext';
 	@override String get searchLanguages => 'Sök språk...';
 }
@@ -2585,6 +2586,7 @@ extension on TranslationsSv {
 			'videoControls.qualityOriginal' => 'Original',
 			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
 			'videoControls.transcodeUnavailableFallback' => 'Transkodning otillgänglig — spelar upp i originalkvalitet',
+			'videoControls.subtitleUnavailableFallback' => 'De valda undertexterna kunde inte läsas in — uppspelningen fortsätter utan undertexter',
 			'videoControls.pipButton' => 'Bild-i-bild läge',
 			'videoControls.aspectRatioButton' => 'Bildförhållande',
 			'videoControls.ambientLighting' => 'Ambientbelysning',
@@ -2616,11 +2618,11 @@ extension on TranslationsSv {
 			'videoControls.searchSubtitles' => 'Sök undertexter',
 			'videoControls.language' => 'Språk',
 			'videoControls.noSubtitlesFound' => 'Inga undertexter hittades',
-			'videoControls.downloadedSubtitle' => 'Nedladdad',
 			'videoControls.noSubtitlesAvailable' => 'Inga undertexter tillgängliga',
 			'videoControls.noAudioTracksAvailable' => 'Inga ljudspår tillgängliga',
 			'videoControls.noTracksAvailable' => 'Inga spår tillgängliga',
 			'videoControls.subtitleDownloaded' => 'Undertext nedladdad',
+			'videoControls.subtitleDownloadedNotApplied' => 'Undertexten hämtades, men kunde inte väljas',
 			'videoControls.subtitleDownloadFailed' => 'Kunde inte ladda ner undertext',
 			'videoControls.searchLanguages' => 'Sök språk...',
 			'messages.markedAsWatched' => 'Markerad som sedd',
@@ -2633,9 +2635,9 @@ extension on TranslationsSv {
 			'messages.errorLoading' => ({required Object error}) => 'Fel: ${error}',
 			'messages.streamInterrupted' => 'Uppspelningen avbröts. Tryck på play eller spola för att försöka igen.',
 			'messages.liveStreamInterrupted' => 'Livestreamen avbröts. Tryck på play för att försöka igen.',
-			'messages.fileInfoNotAvailable' => 'Filinformation inte tillgänglig',
 			_ => null,
 		} ?? switch (path) {
+			'messages.fileInfoNotAvailable' => 'Filinformation inte tillgänglig',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Fel vid laddning av filinformation: ${error}',
 			'messages.errorLoadingSeries' => 'Fel vid laddning av serie',
 			'messages.musicNotSupported' => 'Musikuppspelning stöds inte ännu',
@@ -3147,9 +3149,9 @@ extension on TranslationsSv {
 			'downloads.title' => 'Nedladdningar',
 			'downloads.manage' => 'Hantera',
 			'downloads.tvShows' => 'TV-serier',
-			'downloads.movies' => 'Filmer',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.movies' => 'Filmer',
 			'downloads.music' => 'Musik',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} låtar i nedladdningskö',
 			'downloads.noDownloads' => 'Inga nedladdningar ännu',

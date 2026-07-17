@@ -652,6 +652,7 @@ class _TranslationsVideoControlsKo extends TranslationsVideoControlsEn {
 	@override String get qualityOriginal => '원본';
 	@override String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
 	@override String get transcodeUnavailableFallback => '트랜스코딩을 사용할 수 없음 — 원본 화질로 재생';
+	@override String get subtitleUnavailableFallback => '선택한 자막을 불러올 수 없어 자막 없이 재생을 계속합니다';
 	@override String get pipButton => '픽처 인 픽처 모드';
 	@override String get aspectRatioButton => '화면비율';
 	@override String get ambientLighting => '주변 조명';
@@ -677,11 +678,11 @@ class _TranslationsVideoControlsKo extends TranslationsVideoControlsEn {
 	@override String get searchSubtitles => '자막 검색';
 	@override String get language => '언어';
 	@override String get noSubtitlesFound => '자막을 찾을 수 없습니다';
-	@override String get downloadedSubtitle => '다운로드됨';
 	@override String get noSubtitlesAvailable => '사용 가능한 자막 없음';
 	@override String get noAudioTracksAvailable => '사용 가능한 오디오 트랙 없음';
 	@override String get noTracksAvailable => '사용 가능한 트랙 없음';
 	@override String get subtitleDownloaded => '자막이 다운로드되었습니다';
+	@override String get subtitleDownloadedNotApplied => '자막을 다운로드했지만 선택할 수 없습니다';
 	@override String get subtitleDownloadFailed => '자막 다운로드에 실패했습니다';
 	@override String get searchLanguages => '언어 검색...';
 }
@@ -2582,6 +2583,7 @@ extension on TranslationsKo {
 			'videoControls.qualityOriginal' => '원본',
 			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
 			'videoControls.transcodeUnavailableFallback' => '트랜스코딩을 사용할 수 없음 — 원본 화질로 재생',
+			'videoControls.subtitleUnavailableFallback' => '선택한 자막을 불러올 수 없어 자막 없이 재생을 계속합니다',
 			'videoControls.pipButton' => '픽처 인 픽처 모드',
 			'videoControls.aspectRatioButton' => '화면비율',
 			'videoControls.ambientLighting' => '주변 조명',
@@ -2613,11 +2615,11 @@ extension on TranslationsKo {
 			'videoControls.searchSubtitles' => '자막 검색',
 			'videoControls.language' => '언어',
 			'videoControls.noSubtitlesFound' => '자막을 찾을 수 없습니다',
-			'videoControls.downloadedSubtitle' => '다운로드됨',
 			'videoControls.noSubtitlesAvailable' => '사용 가능한 자막 없음',
 			'videoControls.noAudioTracksAvailable' => '사용 가능한 오디오 트랙 없음',
 			'videoControls.noTracksAvailable' => '사용 가능한 트랙 없음',
 			'videoControls.subtitleDownloaded' => '자막이 다운로드되었습니다',
+			'videoControls.subtitleDownloadedNotApplied' => '자막을 다운로드했지만 선택할 수 없습니다',
 			'videoControls.subtitleDownloadFailed' => '자막 다운로드에 실패했습니다',
 			'videoControls.searchLanguages' => '언어 검색...',
 			'messages.markedAsWatched' => '시청 완료로 표시됨',
@@ -2630,9 +2632,9 @@ extension on TranslationsKo {
 			'messages.errorLoading' => ({required Object error}) => '오류: ${error}',
 			'messages.streamInterrupted' => '스트림이 중단되었습니다. 재생을 누르거나 탐색하여 다시 시도하세요.',
 			'messages.liveStreamInterrupted' => '라이브 스트림이 중단되었습니다. 재생을 눌러 다시 시도하세요.',
-			'messages.fileInfoNotAvailable' => '파일 정보가 없습니다',
 			_ => null,
 		} ?? switch (path) {
+			'messages.fileInfoNotAvailable' => '파일 정보가 없습니다',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => '파일 정보 로딩 중 오류: ${error}',
 			'messages.errorLoadingSeries' => '시리즈 로딩 중 오류',
 			'messages.musicNotSupported' => '음악 재생 미지원',
@@ -3144,9 +3146,9 @@ extension on TranslationsKo {
 			'downloads.title' => '다운로드',
 			'downloads.manage' => '관리',
 			'downloads.tvShows' => 'TV 프로그램',
-			'downloads.movies' => '영화',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.movies' => '영화',
 			'downloads.music' => '음악',
 			'downloads.tracksQueued' => ({required Object count}) => '${count}곡 다운로드 대기 중',
 			'downloads.noDownloads' => '다운로드 없음',
