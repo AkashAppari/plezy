@@ -158,6 +158,21 @@ void main() {
       );
     });
 
+    test('square keeps a grid-cell decode budget while avatar stays small', () {
+      DevicePerformance.debugReset(autoReduced: false, override: VisualEffectsSetting.auto);
+
+      // Cast cards fill poster-width grid cells (issue #1591): a retina cell
+      // needs well over the avatar cap, so they use the square budget.
+      expect(
+        MediaImageHelper.getMemCacheDimensions(displayWidth: 4000, displayHeight: 4000, imageType: ImageType.square),
+        (720, 720),
+      );
+      expect(
+        MediaImageHelper.getMemCacheDimensions(displayWidth: 4000, displayHeight: 4000, imageType: ImageType.avatar),
+        (300, 300),
+      );
+    });
+
     test('card artwork follows square, wide, and poster media shapes', () {
       for (final kind in [MediaKind.artist, MediaKind.album, MediaKind.track]) {
         expect(

@@ -19,8 +19,8 @@ enum ImageType {
   thumb, // 16:9 episode thumbnails
   logo, // Variable ratio clear logos
   heroLogo, // Large hero clear logos
-  avatar, // Square-ish user avatars
-  square, // 1:1 music artwork (albums, artists, tracks)
+  avatar, // Small square-ish avatars (user profiles, inline person headers)
+  square, // 1:1 grid-cell artwork (albums, artists, tracks, cast cards)
 }
 
 /// Backend-neutral image URL helper.

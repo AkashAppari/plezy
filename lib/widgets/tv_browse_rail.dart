@@ -1564,7 +1564,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                   width: cardWidth,
                   height: imageSize,
                   fit: BoxFit.cover,
-                  imageType: ImageType.avatar,
+                  imageType: ImageType.square,
                   fallbackIcon: Symbols.person_rounded,
                 ),
                 RasterizedGradient(
@@ -1631,7 +1631,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                   width: imageSize,
                   height: imageSize,
                   fit: BoxFit.cover,
-                  imageType: ImageType.avatar,
+                  imageType: ImageType.square,
                   fallbackIcon: Symbols.person_rounded,
                 ),
               ),
