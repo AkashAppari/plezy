@@ -54,7 +54,6 @@ import androidx.media3.exoplayer.audio.AudioCapabilities
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
-import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.extractor.mkv.MatroskaExtractor
@@ -93,6 +92,8 @@ interface ExoPlayerDelegate : com.edde746.plezy.shared.PlayerDelegate {
     errorMessage: String
   ): Boolean = false
 }
+
+internal fun playbackMimeType(isLive: Boolean): String? = if (isLive) MimeTypes.APPLICATION_M3U8 else null
 
 @OptIn(UnstableApi::class)
 class ExoPlayerCore(private val activity: Activity) : Player.Listener {
@@ -902,7 +903,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     lastDuration = 0L
     lastBufferedPosition = 0L
     // Dart already seeds the visible timeline before open. Emitting native
-    // zeroes here races server-offset Plex transcode restarts back to 0:00.
+    // zeroes here races HLS resume/restart state back to 0:00.
     delegate?.onPropertyChange("eof-reached", false)
   }
 
@@ -1203,7 +1204,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         "lastOutput=${describeAudioTrackConfig(previousAudioTrackConfig)}, actions=$lastAudioRecoveryAction"
     )
 
-    if (!setCurrentMediaForRetry(player, uri, savedPosition)) return false
+    player.setMediaItem(buildMediaItem(uri), savedPosition)
     player.prepare()
     player.playWhenReady = savedPlayWhenReady
     return true
@@ -1218,21 +1219,6 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   }
 
   private fun isEncodedAudioMimeType(mimeType: String): Boolean = mimeType.startsWith("audio/") && mimeType != MimeTypes.AUDIO_RAW
-
-  private fun setCurrentMediaForRetry(player: ExoPlayer, uri: String, positionMs: Long): Boolean {
-    if (currentMediaIsLive) {
-      val factory = dataSourceFactory ?: return false
-      val extractorsFactory = androidx.media3.extractor.ExtractorsFactory {
-        arrayOf(LatmMatroskaExtractor(MatroskaExtractor.FLAG_DISABLE_SEEK_FOR_CUES))
-      }
-      val mediaSource = ProgressiveMediaSource.Factory(factory, extractorsFactory)
-        .createMediaSource(MediaItem.fromUri(uri))
-      player.setMediaSource(mediaSource, positionMs)
-    } else {
-      player.setMediaItem(buildMediaItem(uri), positionMs)
-    }
-    return true
-  }
 
   private fun activeDoviTrackOutput(): DoviConvertingTrackOutput? = activeDoviMkvWrapper?.doviTrackOutput ?: activeDoviMp4Wrapper?.doviTrackOutput
 
@@ -2325,6 +2311,11 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     val mediaItemBuilder = MediaItem.Builder()
       .setUri(uri)
 
+    // Every Live TV backend negotiates HLS before opening the native player.
+    // Pin the MIME type so tokenized manifests never fall back to progressive
+    // extension sniffing, and so initial opens and recovery use one source path.
+    playbackMimeType(currentMediaIsLive)?.let(mediaItemBuilder::setMimeType)
+
     if (externalSubtitles.isNotEmpty()) {
       mediaItemBuilder.setSubtitleConfigurations(externalSubtitles.toList())
     }
@@ -2843,28 +2834,6 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     )
     emitSeekable(false, force = true)
 
-    if (isLive) {
-      // Live MKV streams lack Cues (seek index). FLAG_DISABLE_SEEK_FOR_CUES tells
-      // MatroskaExtractor to not seek for them, treating the stream as unseekable
-      // so data flows immediately without hanging.
-      // Headers already applied to httpDataSourceFactory above.
-      val extractorsFactory = androidx.media3.extractor.ExtractorsFactory {
-        arrayOf(LatmMatroskaExtractor(MatroskaExtractor.FLAG_DISABLE_SEEK_FOR_CUES))
-      }
-
-      val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory!!, extractorsFactory)
-        .createMediaSource(MediaItem.fromUri(uri))
-
-      exoPlayer?.apply {
-        setMediaSource(mediaSource, startPositionMs)
-        prepare()
-        playWhenReady = autoPlay
-      }
-
-      emitLog("info", "media", "Opened live: ${redactUri(uri)}, startPosition: ${startPositionMs}ms, autoPlay: $autoPlay, sessionTunneling=$currentTunneledPlayback")
-      return
-    }
-
     val mediaItem = buildMediaItem(uri)
 
     exoPlayer?.apply {
@@ -2873,7 +2842,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       playWhenReady = autoPlay
     }
 
-    emitLog("info", "media", "Opened: ${redactUri(uri)}, startPosition: ${startPositionMs}ms, autoPlay: $autoPlay, sessionTunneling=$currentTunneledPlayback, userTunneling=$tunnelingUserEnabled")
+    val sourceLabel = if (isLive) "live HLS" else "media"
+    emitLog("info", "media", "Opened $sourceLabel: ${redactUri(uri)}, startPosition: ${startPositionMs}ms, autoPlay: $autoPlay, sessionTunneling=$currentTunneledPlayback, userTunneling=$tunnelingUserEnabled")
   }
 
   fun setAudioDelay(seconds: Double) {

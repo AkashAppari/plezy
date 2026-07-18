@@ -267,7 +267,6 @@ class PlayerNative extends PlayerBase {
     bool play = true,
     bool isLive = false,
     List<SubtitleTrack>? externalSubtitles,
-    Duration timelineOffset = Duration.zero,
     Duration? timelineDuration,
   }) async {
     if (disposed) return;
@@ -277,7 +276,7 @@ class PlayerNative extends PlayerBase {
     // No transition is surfaced: the caller is replacing playback anyway.
     await _clearArmedNext(adoptIfRolledIn: false);
     final startPosition = media.start ?? Duration.zero;
-    configureTimeline(offset: timelineOffset, duration: timelineDuration);
+    configureTimeline(duration: timelineDuration);
     clearTracks();
     setExternalSubtitleMetadata(externalSubtitles);
     resetPlaybackProgress(startPosition);
@@ -359,8 +358,7 @@ class PlayerNative extends PlayerBase {
 
   @override
   Future<void> seek(Duration position) async {
-    final sourcePosition = sourceSeekPosition(position);
-    await runSeek(position, () => command(['seek', (sourcePosition.inMilliseconds / 1000.0).toString(), 'absolute']));
+    await runSeek(position, () => command(['seek', (position.inMilliseconds / 1000.0).toString(), 'absolute']));
   }
 
   @override

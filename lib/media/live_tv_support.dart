@@ -43,7 +43,7 @@ class LiveProgramInfo {
 ///   the server has seekable history) and rebuilds its stream URL for
 ///   time-shift; heartbeats go to `/:/timeline` and return capture-buffer
 ///   updates.
-/// - **Jellyfin** negotiates one direct stream URL up front; no time-shift,
+/// - **Jellyfin** negotiates one HLS transcode URL up front; no time-shift,
 ///   heartbeats go through `/Sessions/Playing*`, and [recover] re-uses the
 ///   same URL.
 ///
@@ -83,8 +83,8 @@ abstract class LiveTvPlaybackSession {
 
   /// Re-establish playback after stream death. Plex re-tunes (the previous
   /// capture session expires while the player exhausts its reconnect
-  /// attempts) applying the degradation flags; Jellyfin returns itself —
-  /// the session-less URL is simply re-opened. Returns `null` on failure.
+  /// attempts) applying the degradation flags; Jellyfin returns itself so
+  /// its negotiated HLS URL is re-opened. Returns `null` on failure.
   Future<LiveTvPlaybackSession?> recover({required bool directStream, required bool directStreamAudio});
 }
 
@@ -110,8 +110,15 @@ class LiveTvStreamResolution {
   final String? playSessionId;
   final String? mediaSourceId;
   final String? liveStreamId;
+  final String? playMethod;
 
-  const LiveTvStreamResolution({required this.url, this.playSessionId, this.mediaSourceId, this.liveStreamId});
+  const LiveTvStreamResolution({
+    required this.url,
+    this.playSessionId,
+    this.mediaSourceId,
+    this.liveStreamId,
+    this.playMethod,
+  });
 }
 
 /// Backend-neutral live-TV operations. Implementations are obtained via
@@ -126,8 +133,8 @@ class LiveTvStreamResolution {
 /// the optional [lineup] (Plex provider identifier) to [fetchChannels].
 ///
 /// Stream URL resolution differs sharply by backend: Plex's DVR allocates a
-/// transcode session and returns a session-scoped path; Jellyfin negotiates
-/// a direct-play URL. [startPlayback] owns that difference behind
+/// transcode session and returns a session-scoped HLS path; Jellyfin negotiates
+/// an HLS transcode URL. [startPlayback] owns that difference behind
 /// [LiveTvPlaybackSession] — it is the only entry playback callers use.
 abstract class LiveTvSupport {
   /// Recording and DVR administration, when implemented by this backend.
@@ -151,15 +158,15 @@ abstract class LiveTvSupport {
 
   /// Resolve a playable stream URL for [channelKey].
   ///
-  /// Jellyfin returns a negotiated stream URL plus the play session id. Plex
+  /// Jellyfin returns a negotiated HLS stream URL plus the play session id. Plex
   /// returns `null` because its stream URL is only valid after a tune;
   /// playback callers use [startPlayback], which owns that difference.
   Future<LiveTvStreamResolution?> resolveStreamUrl(String channelKey, {String? dvrKey});
 
   /// Start a playback session for [channelKey] — the single entry the player
   /// uses for initial launch and channel switching. Plex requires [dvrKey]
-  /// (tune + transcode-session setup); Jellyfin ignores it and negotiates a
-  /// direct stream URL. Returns `null` when the channel can't be started.
+  /// (tune + transcode-session setup); Jellyfin ignores it and negotiates an
+  /// HLS transcode URL. Returns `null` when the channel can't be started.
   Future<LiveTvPlaybackSession?> startPlayback(String channelKey, {String? dvrKey});
 
   /// Source URI to stamp into [FavoriteChannel] entries. Plex uses

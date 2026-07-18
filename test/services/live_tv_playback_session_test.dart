@@ -239,7 +239,7 @@ void main() {
       createdAt: DateTime.fromMillisecondsSinceEpoch(0),
     );
 
-    test('startPlayback negotiates one direct URL; no time-shift; recover reuses it', () async {
+    test('startPlayback negotiates one HLS URL; no time-shift; recover reuses it', () async {
       final client = JellyfinClient.forTesting(
         connection: conn(),
         httpClient: MockClient((request) async {
@@ -247,7 +247,12 @@ void main() {
             return jsonResponse({
               'PlaySessionId': 'play-1',
               'MediaSources': [
-                {'Id': 'source-1', 'Container': 'ts', 'LiveStreamId': 'live-1'},
+                {
+                  'Id': 'source-1',
+                  'Container': 'ts',
+                  'LiveStreamId': 'live-1',
+                  'TranscodingUrl': '/Videos/channel-1/live.m3u8?PlaySessionId=play-1',
+                },
               ],
             });
           }
@@ -266,13 +271,13 @@ void main() {
 
       final url = await session.streamUrlAt();
       expect(url, isNotNull);
-      expect(Uri.parse(url!).path, contains('/Videos/channel-1'));
+      expect(Uri.parse(url!).path, '/Videos/channel-1/live.m3u8');
       expect(Uri.parse(url).queryParameters['PlaySessionId'], 'play-1');
 
       // Time-shift unsupported — an offset request must not silently play live.
       expect(await session.streamUrlAt(offsetSeconds: 60), isNull);
 
-      // Session-less URL: recovery is just re-opening it.
+      // Recovery re-opens the negotiated HLS URL.
       expect(await session.recover(directStream: false, directStreamAudio: false), same(session));
     });
   });

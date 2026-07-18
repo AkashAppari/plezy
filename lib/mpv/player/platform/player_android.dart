@@ -138,17 +138,13 @@ class PlayerAndroid extends PlayerBase {
     bool play = true,
     bool isLive = false,
     List<SubtitleTrack>? externalSubtitles,
-    Duration timelineOffset = Duration.zero,
     Duration? timelineDuration,
   }) async {
     if (disposed) return;
     await _ensureInitialized();
     final startPosition = media.start ?? Duration.zero;
     final hasStartPosition = media.start != null && startPosition > Duration.zero;
-    // ExoPlayer reports Plex copyts transcodes in source-time coordinates,
-    // unlike mpv which rebases them to zero. Do not add the timeline offset
-    // again on Android ExoPlayer or seeks/progress jump to roughly 2x (#1221).
-    configureTimeline(offset: Duration.zero, duration: timelineDuration);
+    configureTimeline(duration: timelineDuration);
     clearTracks();
     setExternalSubtitleMetadata(externalSubtitles);
     setSeekable(false);
@@ -178,7 +174,7 @@ class PlayerAndroid extends PlayerBase {
             )
             .toList(),
     });
-    resetPlaybackProgress(media.start ?? timelineOffset);
+    resetPlaybackProgress(media.start ?? Duration.zero);
   }
 
   @override
@@ -200,8 +196,7 @@ class PlayerAndroid extends PlayerBase {
 
   @override
   Future<void> seek(Duration position) async {
-    final sourcePosition = sourceSeekPosition(position);
-    await runSeek(position, () => invoke('seek', {'positionMs': sourcePosition.inMilliseconds}));
+    await runSeek(position, () => invoke('seek', {'positionMs': position.inMilliseconds}));
   }
 
   @override

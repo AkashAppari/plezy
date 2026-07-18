@@ -11,7 +11,8 @@ import androidx.media3.extractor.ExtractorOutput
 import androidx.media3.extractor.PositionHolder
 import androidx.media3.extractor.SeekMap
 import androidx.media3.extractor.TrackOutput
-import androidx.media3.extractor.mkv.MatroskaExtractor
+import com.edde746.plezy.libass.media.AssHandler
+import com.edde746.plezy.libass.media.parser.AssSubtitleParserFactory
 import java.io.EOFException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -24,16 +25,15 @@ import org.robolectric.annotation.Config
 
 /**
  * Extracts the committed fixture (1s 440Hz sine, AAC-LC 48kHz stereo, LATM/LOAS
- * muxed into MKV as A_MS/ACM tag 0x1602 — the layout Plex produces when
- * Direct-Streaming HDHomeRun aac_latm audio) and verifies LOAS frames are
- * unwrapped to raw AAC with a synthesized AudioSpecificConfig.
+ * muxed into MKV as A_MS/ACM tag 0x1602) and verifies direct Matroska playback
+ * unwraps LOAS frames to raw AAC with a synthesized AudioSpecificConfig.
  *
  * Robolectric provides real android.util.* implementations — MatroskaExtractor
  * stores tracks in a SparseArray, which is a no-op stub on plain JVM.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
-class LatmMatroskaExtractorTest {
+class MatroskaLatmSupportTest {
 
   private class CapturedSample(val timeUs: Long, val flags: Int, val data: ByteArray)
 
@@ -121,7 +121,8 @@ class LatmMatroskaExtractorTest {
   private fun extractFixture(): FakeExtractorOutput {
     val data = fixtureData()
 
-    val extractor = LatmMatroskaExtractor(MatroskaExtractor.FLAG_DISABLE_SEEK_FOR_CUES)
+    val assHandler = AssHandler()
+    val extractor = ZlibMatroskaExtractor(AssSubtitleParserFactory(assHandler), assHandler)
     val output = FakeExtractorOutput()
     extractor.init(output)
 

@@ -1024,7 +1024,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
         'path': sessionPath,
         'mediaIndex': '0',
         'partIndex': '0',
-        'protocol': 'hls',
+        'protocol': _plexVideoHlsProtocol,
         'fastSeek': '1',
         'directPlay': '0',
         'directStream': directStream ? '1' : '0',
@@ -1066,7 +1066,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
         receiveTimeout: MediaServerTimeouts.receive,
         defaultHeaders: {'Accept-Language': 'en'},
       );
-      final decisionUrl = '${config.baseUrl}/video/:/transcode/universal/decision?$queryString';
+      final decisionUrl = '${config.baseUrl}$_plexVideoTranscodeBaseEndpoint/decision?$queryString';
       final decisionResponse = await decisionClient.get(decisionUrl);
 
       if (decisionResponse.statusCode != 200) {
@@ -1089,7 +1089,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
           .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
           .join('&');
 
-      return '/video/:/transcode/universal/start.m3u8?$startQuery';
+      return '$_plexVideoHlsStartEndpoint?$startQuery';
     } catch (e, st) {
       appLogger.e('Failed to build live stream path', error: e, stackTrace: st);
       return null;

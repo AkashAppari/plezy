@@ -22,7 +22,7 @@ class _FakeJellyfinClient implements JellyfinClient {
     int? subtitleStreamIndex,
   }) async {
     await startGate.future;
-    calls.add('started:$itemId:$playSessionId:$mediaSourceId:$liveStreamId');
+    calls.add('started:$itemId:$playSessionId:$mediaSourceId:$liveStreamId:$playMethod');
   }
 
   @override
@@ -65,6 +65,7 @@ void main() {
       playSessionId: 'live-session-1',
       mediaSourceId: 'source-1',
       liveStreamId: 'live-stream-1',
+      playMethod: 'Transcode',
     );
 
     final first = tracker.report(
@@ -97,7 +98,7 @@ void main() {
     await Future.wait([first, second, stopped]);
 
     expect(client.calls, [
-      'started:channel-1:live-session-1:source-1:live-stream-1',
+      'started:channel-1:live-session-1:source-1:live-stream-1:Transcode',
       'stopped:channel-1:live-session-1:source-1:live-stream-1',
     ]);
   });

@@ -165,9 +165,9 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
     final info = await _client.getPlaybackInfo(
       channelKey,
       autoOpenLiveStream: true,
-      enableDirectPlay: true,
-      enableDirectStream: true,
-      enableTranscoding: false,
+      enableDirectPlay: false,
+      enableDirectStream: false,
+      enableTranscoding: true,
       allowVideoStreamCopy: true,
       allowAudioStreamCopy: true,
     );
@@ -182,16 +182,17 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
     var playSessionId = nonEmptyString(info?['PlaySessionId']);
     var mediaSourceId = nonEmptyString(source['Id']);
     var liveStreamId = nonEmptyString(source['LiveStreamId']);
-    final rawUrl = nonEmptyString(source['DirectStreamUrl']);
-    final url = rawUrl != null
-        ? _client._withApiKey(rawUrl)
-        : _client.buildDirectStreamUrl(
-            channelKey,
-            container: nonEmptyString(source['Container']),
-            mediaSourceId: mediaSourceId,
-            playSessionId: playSessionId,
-            liveStreamId: liveStreamId,
-          );
+    final rawUrl = nonEmptyString(source['TranscodingUrl']);
+    if (rawUrl == null) {
+      appLogger.w('Jellyfin Live TV negotiation returned no HLS transcode URL');
+      return null;
+    }
+    final rawUri = Uri.tryParse(rawUrl);
+    if (rawUri == null || !rawUri.path.toLowerCase().endsWith('.m3u8')) {
+      appLogger.w('Jellyfin Live TV negotiation returned no HLS transcode URL');
+      return null;
+    }
+    final url = _client._withApiKey(rawUrl);
     final query = Uri.tryParse(url)?.queryParameters;
     playSessionId ??= query?['PlaySessionId'];
     mediaSourceId ??= query?['MediaSourceId'];
@@ -201,6 +202,7 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
       playSessionId: playSessionId,
       mediaSourceId: mediaSourceId,
       liveStreamId: liveStreamId,
+      playMethod: 'Transcode',
     );
   }
 
@@ -269,10 +271,10 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
   }
 }
 
-/// A Jellyfin live playback session: one negotiated direct-stream URL plus
+/// A Jellyfin live playback session: one negotiated HLS transcode URL plus
 /// `/Sessions/Playing*` heartbeats via [JellyfinLiveSessionTracker]. No
 /// program-scoped session and no time-shift — [recover] re-opens the same
-/// session-less URL.
+/// negotiated URL.
 class _JellyfinLiveTvPlaybackSession implements LiveTvPlaybackSession {
   final JellyfinClient _client;
   final String _channelKey;
@@ -285,6 +287,7 @@ class _JellyfinLiveTvPlaybackSession implements LiveTvPlaybackSession {
         playSessionId: resolution.playSessionId,
         mediaSourceId: resolution.mediaSourceId,
         liveStreamId: resolution.liveStreamId,
+        playMethod: resolution.playMethod,
       );
 
   @override

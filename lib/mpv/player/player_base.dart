@@ -58,7 +58,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   int _lastEmitMs = 0;
   int _lastCacheStateMs = 0;
   int _positionMs = 0;
-  Duration _timelineOffset = Duration.zero;
   Duration? _timelineDuration;
   int _nextPropId = 0;
   final Map<int, String> _propIdToName = {};
@@ -198,7 +197,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
       case 'time-pos':
         if (value is num) {
-          final pos = _toTimelinePosition(Duration(milliseconds: (value * 1000).round()));
+          final pos = Duration(milliseconds: (value * 1000).round());
           _positionMs = pos.inMilliseconds;
           // Only allocate Duration + copyWith + emit at ~4Hz (250ms).
           // Raw int is stored every tick so synchronous reads via _positionMs stay current.
@@ -213,7 +212,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
       case 'duration':
         if (value is num) {
-          final duration = _timelineDuration ?? _toTimelinePosition(Duration(milliseconds: (value * 1000).toInt()));
+          final duration = _timelineDuration ?? Duration(milliseconds: (value * 1000).toInt());
           _state = _state.copyWith(duration: duration);
           durationController.add(duration);
         }
@@ -230,7 +229,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           final nowMs = _throttleSw.elapsedMilliseconds;
           if (nowMs - _lastCacheStateMs < 250) break;
           _lastCacheStateMs = nowMs;
-          final buffer = _toTimelinePosition(Duration(milliseconds: (value * 1000).toInt()));
+          final buffer = Duration(milliseconds: (value * 1000).toInt());
           _state = _state.copyWith(buffer: buffer);
           bufferController.add(buffer);
           // Synthesize a single range for players without demuxer-cache-state (ExoPlayer).
@@ -329,7 +328,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     // Extract cache-end for the single buffer duration (replaces demuxer-cache-time)
     final cacheEnd = cacheState['cache-end'] as num?;
     if (cacheEnd != null) {
-      final buffer = _toTimelinePosition(Duration(milliseconds: (cacheEnd * 1000).toInt()));
+      final buffer = Duration(milliseconds: (cacheEnd * 1000).toInt());
       _state = _state.copyWith(buffer: buffer);
       bufferController.add(buffer);
     }
@@ -345,8 +344,8 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           if (start != null && end != null) {
             ranges.add(
               BufferRange(
-                start: _toTimelinePosition(Duration(milliseconds: (start * 1000).toInt())),
-                end: _toTimelinePosition(Duration(milliseconds: (end * 1000).toInt())),
+                start: Duration(milliseconds: (start * 1000).toInt()),
+                end: Duration(milliseconds: (end * 1000).toInt()),
               ),
             );
           }
@@ -561,24 +560,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   }
 
   @protected
-  void configureTimeline({Duration offset = Duration.zero, Duration? duration}) {
-    _timelineOffset = offset;
+  void configureTimeline({Duration? duration}) {
     _timelineDuration = duration;
   }
 
   @protected
-  Duration sourceSeekPosition(Duration timelinePosition) {
-    final sourcePosition = timelinePosition - _timelineOffset;
-    return sourcePosition.isNegative ? Duration.zero : sourcePosition;
-  }
-
-  Duration _toTimelinePosition(Duration sourcePosition) {
-    return sourcePosition + _timelineOffset;
-  }
-
-  @protected
   void resetPlaybackProgress(Duration sourcePosition) {
-    final position = _toTimelinePosition(sourcePosition);
+    final position = sourcePosition;
     _positionMs = position.inMilliseconds;
     _state = _state.copyWith(
       completed: false,

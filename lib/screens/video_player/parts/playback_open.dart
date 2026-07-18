@@ -607,7 +607,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         media,
         play: shouldPlay,
         externalSubtitles: externalSubtitles,
-        timelineOffset: timing.timelineOffset,
         timelineDuration: timing.timelineDuration,
       );
     }

@@ -2,8 +2,8 @@ part of '../../video_player_screen.dart';
 
 extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
   void _onVideoCompleted(bool completed, {bool skipAutoPlayCountdown = false}) async {
-    // Live TV streams are continuous — ignore spurious EOF events caused by
-    // inter-segment gaps in the chunked MKV transcode stream.
+    // Live TV streams are continuous — ignore transient EOF events while an
+    // HLS playlist refreshes or crosses a discontinuity.
     if (widget.isLive) return;
     if (!completed) return;
     // Ignore spurious EOF from the old file during an in-place media-source

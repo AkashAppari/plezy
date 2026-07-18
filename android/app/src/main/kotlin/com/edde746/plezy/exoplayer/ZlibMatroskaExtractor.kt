@@ -21,8 +21,7 @@ import com.edde746.plezy.libass.media.extractor.AssMatroskaExtractor
  *
  * LOAS/LATM AAC as A_MS/ACM — media3 sets audio/x-unknown for non-PCM ACM
  * tracks (silent playback). Detected tracks are wrapped with LatmTrackOutput,
- * which unwraps LOAS frames to raw AAC (see LatmMatroskaExtractor for the
- * Live TV counterpart).
+ * which unwraps LOAS frames to raw AAC for direct-playing Matroska files.
  */
 class ZlibMatroskaExtractor(
   subtitleParserFactory: SubtitleParser.Factory,

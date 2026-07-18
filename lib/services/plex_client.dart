@@ -82,6 +82,9 @@ part 'plex_client/parts/collections.dart';
 part 'plex_client/parts/play_queues.dart';
 part 'plex_client/parts/metadata_edit.dart';
 
+const _plexVideoTranscodeBaseEndpoint = '/video/:/transcode/universal';
+const _plexVideoHlsStartEndpoint = '$_plexVideoTranscodeBaseEndpoint/start.m3u8';
+const _plexVideoHlsProtocol = 'hls';
 const _plexHlsVideoTranscodeTarget =
     'add-transcode-target(type=videoProfile&context=streaming'
     '&protocol=hls&container=mpegts&videoCodec=h264%2Chevc%2Cmpeg2video'
@@ -2380,7 +2383,7 @@ class PlexClient
         selectedSubtitleTrack: selectedSubtitleTrack,
       );
       return await _runTranscodeDecision(
-        startEndpoint: _videoTranscodeStartEndpoint,
+        startEndpoint: _plexVideoHlsStartEndpoint,
         allParams: allParams,
         isOriginal: preset.isOriginal,
       );
@@ -2423,7 +2426,6 @@ class PlexClient
     }
   }
 
-  static const String _videoTranscodeStartEndpoint = '/video/:/transcode/universal/start.m3u8';
   static const String _musicTranscodeStartEndpoint = '/music/:/transcode/universal/start.mp3';
 
   /// Shared decision plumbing for the video and music transcode flows: GET
@@ -2472,7 +2474,7 @@ class PlexClient
 
   String _buildTranscodeStartPathFromParams(
     Map<String, String> params, {
-    String endpoint = _videoTranscodeStartEndpoint,
+    String endpoint = _plexVideoHlsStartEndpoint,
   }) {
     final startParams = Map<String, String>.from(params)..remove('X-Plex-Token');
     final startQuery = startParams.entries.map((e) => '${_plexEncode(e.key)}=${_plexEncode(e.value)}').join('&');
@@ -2482,7 +2484,7 @@ class PlexClient
   @visibleForTesting
   String buildTranscodeStartPathFromParamsForTesting(
     Map<String, String> params, {
-    String endpoint = _videoTranscodeStartEndpoint,
+    String endpoint = _plexVideoHlsStartEndpoint,
   }) {
     return _buildTranscodeStartPathFromParams(params, endpoint: endpoint);
   }
@@ -2511,7 +2513,7 @@ class PlexClient
       'path': '/library/metadata/$ratingKey',
       'mediaIndex': mediaIndex.toString(),
       'partIndex': partIndex.toString(),
-      'protocol': 'hls',
+      'protocol': _plexVideoHlsProtocol,
       'fastSeek': '1',
       'directPlay': isOriginal ? '1' : '0',
       'directStream': isOriginal ? '1' : '0',

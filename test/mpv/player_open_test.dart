@@ -181,7 +181,7 @@ void main() {
       );
     });
 
-    test('ExoPlayer maps copyts transcode streams as absolute timeline positions', () async {
+    test('ExoPlayer opens HLS transcodes at native timeline positions', () async {
       final calls = <MethodCall>[];
 
       await withMockPlayerChannels(
@@ -202,8 +202,7 @@ void main() {
             const timelineStart = Duration(seconds: 2058); // 34:18
             const timelineDuration = Duration(seconds: 2903); // 48:23
             await player.open(
-              Media('https://example.test/transcode.mkv'),
-              timelineOffset: timelineStart,
+              Media('https://example.test/start.m3u8', start: timelineStart),
               timelineDuration: timelineDuration,
             );
 
@@ -212,8 +211,8 @@ void main() {
 
             final openCall = calls.singleWhere((call) => call.method == 'open');
             final openArgs = Map<Object?, Object?>.from(openCall.arguments as Map);
-            expect(openArgs['startPositionMs'], 0);
-            expect(openArgs['hasStartPosition'], isFalse);
+            expect(openArgs['startPositionMs'], timelineStart.inMilliseconds);
+            expect(openArgs['hasStartPosition'], isTrue);
 
             await Future<void>.delayed(const Duration(milliseconds: 260));
             player.handlePropertyChange('time-pos', 2058.0);
@@ -232,7 +231,7 @@ void main() {
       );
     });
 
-    test('ExoPlayer source-offset open keeps timeline offset after stale native zero position', () async {
+    test('ExoPlayer HLS open keeps the requested position after stale native zero position', () async {
       final calls = <MethodCall>[];
       late PlayerAndroid player;
 
@@ -259,8 +258,7 @@ void main() {
             const timelineStart = Duration(seconds: 2058);
             const timelineDuration = Duration(seconds: 2903);
             await player.open(
-              Media('https://example.test/transcode.mkv'),
-              timelineOffset: timelineStart,
+              Media('https://example.test/start.m3u8', start: timelineStart),
               timelineDuration: timelineDuration,
             );
 
@@ -269,8 +267,8 @@ void main() {
 
             final openCall = calls.singleWhere((call) => call.method == 'open');
             final openArgs = Map<Object?, Object?>.from(openCall.arguments as Map);
-            expect(openArgs['startPositionMs'], 0);
-            expect(openArgs['hasStartPosition'], isFalse);
+            expect(openArgs['startPositionMs'], timelineStart.inMilliseconds);
+            expect(openArgs['hasStartPosition'], isTrue);
           } finally {
             await player.dispose();
           }
@@ -610,7 +608,7 @@ void main() {
       );
     });
 
-    test('MPV maps server-offset streams to absolute timeline positions', () async {
+    test('MPV opens HLS transcodes at native timeline positions', () async {
       final calls = <MethodCall>[];
 
       await withMockPlayerChannels(
@@ -629,8 +627,7 @@ void main() {
           final player = PlayerNative();
           try {
             await player.open(
-              Media('https://example.test/transcode.mkv'),
-              timelineOffset: const Duration(seconds: 10),
+              Media('https://example.test/start.m3u8', start: const Duration(seconds: 10)),
               timelineDuration: const Duration(seconds: 100),
             );
 
@@ -644,7 +641,7 @@ void main() {
 
             final seekCall = calls.lastWhere((call) => call.method == 'command');
             final args = Map<Object?, Object?>.from(seekCall.arguments as Map)['args'] as List;
-            expect(args, ['seek', '15.0', 'absolute']);
+            expect(args, ['seek', '25.0', 'absolute']);
             expect(player.state.position, const Duration(seconds: 25));
           } finally {
             await player.dispose();
@@ -653,7 +650,7 @@ void main() {
       );
     });
 
-    test('MPV refresh seek preserves timeline offset position', () async {
+    test('MPV HLS refresh seek preserves the requested position', () async {
       final calls = <MethodCall>[];
 
       await withMockPlayerChannels(
@@ -673,8 +670,7 @@ void main() {
           try {
             const timelineStart = Duration(milliseconds: 143894);
             await player.open(
-              Media('https://example.test/transcode.mkv'),
-              timelineOffset: timelineStart,
+              Media('https://example.test/start.m3u8', start: timelineStart),
               timelineDuration: const Duration(seconds: 1502),
             );
 
@@ -684,7 +680,7 @@ void main() {
 
             final seekCall = calls.lastWhere((call) => call.method == 'command');
             final args = Map<Object?, Object?>.from(seekCall.arguments as Map)['args'] as List;
-            expect(args, ['seek', '0.0', 'absolute']);
+            expect(args, ['seek', '143.894', 'absolute']);
             expect(player.state.position, timelineStart);
           } finally {
             await player.dispose();

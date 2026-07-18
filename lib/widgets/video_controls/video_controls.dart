@@ -388,6 +388,9 @@ bool shouldSkipDuplicateTimelineSeek({required Duration? lastDispatchedSeek, req
   return lastDispatchedSeek == finalSeek;
 }
 
+@visibleForTesting
+bool shouldStartHiddenDirectionalSeek(KeyEvent event) => event is KeyDownEvent;
+
 typedef PlaybackSourceChangeCallback =
     Future<PlaybackSourceChangeOutcome> Function({
       int? newMediaIndex,

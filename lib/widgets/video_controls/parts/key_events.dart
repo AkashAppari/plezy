@@ -237,7 +237,10 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
         final isHorizontal = key == LogicalKeyboardKey.arrowLeft || key == LogicalKeyboardKey.arrowRight;
         if (isHorizontal) {
           _showControlsWithTimelineFocus();
-          if (widget.canControl) {
+          // A repeat may arrive before the post-frame focus handoff reaches
+          // the timeline. Consume it here without adding another seek step;
+          // once focused, the timeline owns intentional held-key repeats.
+          if (shouldStartHiddenDirectionalSeek(event) && widget.canControl) {
             final forward = key == LogicalKeyboardKey.arrowRight;
             unawaited(_seekByTime(forward: forward));
           }

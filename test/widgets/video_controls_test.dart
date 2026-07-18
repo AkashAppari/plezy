@@ -1342,6 +1342,23 @@ void main() {
     });
   });
 
+  group('shouldStartHiddenDirectionalSeek', () {
+    test('accepts only the initial key-down event', () {
+      expect(shouldStartHiddenDirectionalSeek(_keyDown(LogicalKeyboardKey.arrowRight)), isTrue);
+      expect(
+        shouldStartHiddenDirectionalSeek(
+          const KeyRepeatEvent(
+            physicalKey: PhysicalKeyboardKey.arrowRight,
+            logicalKey: LogicalKeyboardKey.arrowRight,
+            timeStamp: Duration.zero,
+          ),
+        ),
+        isFalse,
+      );
+      expect(shouldStartHiddenDirectionalSeek(_keyUp(LogicalKeyboardKey.arrowRight)), isFalse);
+    });
+  });
+
   group('SyncOffsetControl', () {
     testWidgets('uses 100ms slider steps without rendering tick marks', (tester) async {
       LocaleSettings.setLocaleSync(AppLocale.en);

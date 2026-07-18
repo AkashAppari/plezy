@@ -1464,7 +1464,7 @@ void main() {
       expect(uri.queryParameters['api_key'], 'tok-abc');
     });
 
-    test('live TV stream resolution opens a direct stream instead of HLS transcode', () async {
+    test('live TV stream resolution requires an HLS transcode', () async {
       final requests = <Uri>[];
       String? capturedBody;
       final scoped = JellyfinClient.forTesting(
@@ -1498,30 +1498,28 @@ void main() {
 
       expect(requests.single.path, '/Items/channel-1/PlaybackInfo');
       expect(requests.single.queryParameters['AutoOpenLiveStream'], 'true');
-      expect(requests.single.queryParameters['EnableTranscoding'], 'false');
-      expect(requests.single.queryParameters['EnableDirectPlay'], 'true');
-      expect(requests.single.queryParameters['EnableDirectStream'], 'true');
+      expect(requests.single.queryParameters['EnableTranscoding'], 'true');
+      expect(requests.single.queryParameters['EnableDirectPlay'], 'false');
+      expect(requests.single.queryParameters['EnableDirectStream'], 'false');
       expect(requests.single.queryParameters['AllowVideoStreamCopy'], 'true');
       expect(requests.single.queryParameters['AllowAudioStreamCopy'], 'true');
       final body = jsonDecode(capturedBody!) as Map<String, dynamic>;
       expect(body['AutoOpenLiveStream'], isTrue);
-      expect(body['EnableTranscoding'], isFalse);
+      expect(body['EnableTranscoding'], isTrue);
+      expect(body['EnableDirectPlay'], isFalse);
+      expect(body['EnableDirectStream'], isFalse);
       expect(resolution, isNotNull);
       expect(resolution!.playSessionId, 'live-session-1');
       expect(resolution.mediaSourceId, 'source-1');
       expect(resolution.liveStreamId, 'open-stream-1');
+      expect(resolution.playMethod, 'Transcode');
       final uri = Uri.parse(resolution.url);
-      expect(uri.path, '/Videos/channel-1/stream');
-      expect(uri.queryParameters['Static'], 'true');
-      expect(uri.queryParameters['Container'], 'ts');
-      expect(uri.queryParameters['MediaSourceId'], 'source-1');
-      expect(uri.queryParameters['LiveStreamId'], 'open-stream-1');
+      expect(uri.path, '/Videos/channel-1/live.m3u8');
       expect(uri.queryParameters['PlaySessionId'], 'live-session-1');
-      expect(uri.queryParameters['DeviceId'], 'dev-xyz');
       expect(uri.queryParameters['api_key'], 'tok-abc');
     });
 
-    test('live TV stream resolution recovers identity from a negotiated direct URL', () async {
+    test('live TV stream resolution recovers identity from a negotiated HLS URL', () async {
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((request) async {
@@ -1531,8 +1529,8 @@ void main() {
                 'MediaSources': [
                   {
                     'Container': 'ts',
-                    'DirectStreamUrl':
-                        '/Videos/channel-1/stream?MediaSourceId=source-url&LiveStreamId=live-url&PlaySessionId=play-url',
+                    'TranscodingUrl':
+                        '/Videos/channel-1/live.m3u8?MediaSourceId=source-url&LiveStreamId=live-url&PlaySessionId=play-url',
                   },
                 ],
               }),
@@ -1551,6 +1549,30 @@ void main() {
       expect(resolution!.playSessionId, 'play-url');
       expect(resolution.mediaSourceId, 'source-url');
       expect(resolution.liveStreamId, 'live-url');
+      expect(resolution.playMethod, 'Transcode');
+    });
+
+    test('live TV stream resolution rejects a non-HLS fallback URL', () async {
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/Items/channel-1/PlaybackInfo') {
+            return http.Response(
+              jsonEncode({
+                'MediaSources': [
+                  {'DirectStreamUrl': '/Videos/channel-1/stream.ts'},
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response('{}', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      expect(await scoped.liveTv.resolveStreamUrl('channel-1'), isNull);
     });
 
     test('buildTrickplayTileUrl wires width, sheet index, api_key, and DeviceId', () {

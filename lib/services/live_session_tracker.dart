@@ -10,12 +10,13 @@ import 'playback_report_session.dart';
 /// Plex live path keeps its bespoke capture-buffer flow inline at the call
 /// site; this tracker only covers Jellyfin's `/Sessions/Playing*` flow.
 class JellyfinLiveSessionTracker {
-  JellyfinLiveSessionTracker({String? playSessionId, this.mediaSourceId, this.liveStreamId})
+  JellyfinLiveSessionTracker({String? playSessionId, this.mediaSourceId, this.liveStreamId, this.playMethod})
     : _playSessionId = playSessionId ?? generateSessionIdentifier();
 
   final String _playSessionId;
   final String? mediaSourceId;
   final String? liveStreamId;
+  final String? playMethod;
   PlaybackReportSession? _session;
 
   /// Session id reused across all heartbeats for this playback. Exposed
@@ -36,6 +37,7 @@ class JellyfinLiveSessionTracker {
         client: client,
         itemId: itemId,
         playSessionId: _playSessionId,
+        playMethod: playMethod,
         liveStreamId: liveStreamId,
       );
       await session.report(

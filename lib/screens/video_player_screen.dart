@@ -192,10 +192,9 @@ class _PlaybackAttempt {
 
 class _PlaybackOpenTiming {
   final Duration? mediaStart;
-  final Duration timelineOffset;
   final Duration? timelineDuration;
 
-  const _PlaybackOpenTiming({this.mediaStart, required this.timelineOffset, this.timelineDuration});
+  const _PlaybackOpenTiming({this.mediaStart, this.timelineDuration});
 }
 
 _PlaybackOpenTiming _playbackOpenTiming({
@@ -205,7 +204,6 @@ _PlaybackOpenTiming _playbackOpenTiming({
 }) {
   return _PlaybackOpenTiming(
     mediaStart: resumePosition,
-    timelineOffset: Duration.zero,
     timelineDuration: isTranscoding && durationMs != null ? Duration(milliseconds: durationMs) : null,
   );
 }
