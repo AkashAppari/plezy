@@ -125,7 +125,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
   Widget _buildContent(BuildContext context, {required bool hideSpoilers}) {
     final episode = _effectiveEpisode(context);
     final shouldBlur = hideSpoilers && episode.shouldHideSpoiler;
-    final qualityLabels = buildMediaQualityLabels(episode);
+    final qualityLabels = [...buildMediaQualityLabels(episode), ?buildMediaSizeLabel(episode)];
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
