@@ -3969,7 +3969,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     );
   }
 
-  bool _handleTvDetailRailItemActivated(MediaHub hub, MediaItem item) {
+  Future<bool> _handleTvDetailRailItemActivated(MediaHub hub, MediaItem item) async {
+    if (_isTvDetailEpisodeHub(hub) && item.isEpisode) {
+      await navigateToVideoPlayerWithRefresh(
+        context,
+        metadata: item,
+        isOffline: widget.isOffline,
+        onRefresh: () => unawaited(_refreshItemInPlace(item)),
+      );
+      return true;
+    }
     if (hub.id != _tvDetailActorsHubId) return false;
     final personId = item.raw?[_tvDetailActorPersonIdRawKey];
     if (personId is String && personId.isNotEmpty) {
