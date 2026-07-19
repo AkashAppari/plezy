@@ -1936,6 +1936,7 @@ class _TranslationsExploreRowsDe extends TranslationsExploreRowsEn {
 	@override String get trendingShows => 'Angesagte Serien';
 	@override String get popularMovies => 'Beliebte Filme';
 	@override String get popularShows => 'Beliebte Serien';
+	@override String get trendingAnime => 'Angesagte Anime';
 	@override String get suggestedAnime => 'Vorgeschlagene Anime';
 	@override String get airingAnime => 'Top laufende Anime';
 	@override String get popularAnime => 'Beliebteste Anime';
@@ -2926,6 +2927,7 @@ extension on TranslationsDe {
 			'explore.rows.trendingShows' => 'Angesagte Serien',
 			'explore.rows.popularMovies' => 'Beliebte Filme',
 			'explore.rows.popularShows' => 'Beliebte Serien',
+			'explore.rows.trendingAnime' => 'Angesagte Anime',
 			'explore.rows.suggestedAnime' => 'Vorgeschlagene Anime',
 			'explore.rows.airingAnime' => 'Top laufende Anime',
 			'explore.rows.popularAnime' => 'Beliebteste Anime',
@@ -3150,9 +3152,9 @@ extension on TranslationsDe {
 			'watchTogether.removeRoom' => 'Entfernen',
 			'watchTogether.guestSwitchUnavailable' => 'Wechsel fehlgeschlagen — Server nicht für Synchronisierung verfügbar',
 			'watchTogether.guestSwitchFailed' => 'Wechsel fehlgeschlagen — Inhalt auf diesem Server nicht gefunden',
-			'downloads.title' => 'Downloads',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Verwalten',
 			'downloads.tvShows' => 'Serien',
 			'downloads.movies' => 'Filme',

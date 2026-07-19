@@ -4602,6 +4602,9 @@ class TranslationsExploreRowsEn {
 	/// en: 'Popular Shows'
 	String get popularShows => 'Popular Shows';
 
+	/// en: 'Trending Anime'
+	String get trendingAnime => 'Trending Anime';
+
 	/// en: 'Suggested Anime'
 	String get suggestedAnime => 'Suggested Anime';
 
@@ -5787,6 +5790,7 @@ extension on Translations {
 			'explore.rows.trendingShows' => 'Trending Shows',
 			'explore.rows.popularMovies' => 'Popular Movies',
 			'explore.rows.popularShows' => 'Popular Shows',
+			'explore.rows.trendingAnime' => 'Trending Anime',
 			'explore.rows.suggestedAnime' => 'Suggested Anime',
 			'explore.rows.airingAnime' => 'Top Airing Anime',
 			'explore.rows.popularAnime' => 'Most Popular Anime',
@@ -6011,9 +6015,9 @@ extension on Translations {
 			'watchTogether.removeRoom' => 'Remove',
 			'watchTogether.guestSwitchUnavailable' => 'Couldn\'t switch — server unavailable for sync',
 			'watchTogether.guestSwitchFailed' => 'Couldn\'t switch — content not found on this server',
-			'downloads.title' => 'Downloads',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Manage',
 			'downloads.tvShows' => 'TV Shows',
 			'downloads.movies' => 'Movies',

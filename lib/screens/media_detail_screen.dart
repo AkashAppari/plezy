@@ -718,8 +718,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       // than one, the toggle opens a source chooser.
       final candidates = <WatchlistCandidate>[];
       for (final source in sources) {
-        final resolved = await source.resolveItemIds(_metadata.kind, ids);
-        if (resolved != null) candidates.add((source: source, ids: resolved));
+        try {
+          final resolved = await source.resolveItemIds(_metadata.kind, ids);
+          if (resolved != null) candidates.add((source: source, ids: resolved));
+        } catch (e, stackTrace) {
+          appLogger.d(
+            'Watchlist external-id resolution failed for ${source.id.name}',
+            error: e,
+            stackTrace: stackTrace,
+          );
+        }
       }
       if (!mounted || candidates.isEmpty) return;
       setState(() => _watchlistCandidates = candidates);
