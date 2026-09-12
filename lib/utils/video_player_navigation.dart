@@ -35,18 +35,51 @@ import '../i18n/strings.g.dart';
 
 const String kVideoPlayerRouteName = '/video_player';
 
-/// The route contract shared by VOD and Live TV playback.
+/// One video route per navigator, shared by VOD and Live TV.
 ///
-/// The stable route name drives player lifecycle observation, while the
-/// opaque zero-duration route prevents the underlying detail screen flashing
-/// during player startup and teardown.
-PageRouteBuilder<bool> buildVideoPlayerRoute({required WidgetBuilder builder}) {
-  return PageRouteBuilder<bool>(
-    settings: const RouteSettings(name: kVideoPlayerRouteName),
-    pageBuilder: (context, _, _) => builder(context),
-    transitionDuration: Duration.zero,
-    reverseTransitionDuration: Duration.zero,
-  );
+/// Commit through [push], not Navigator.push: a covered player still owns the
+/// native channel and must leave before another playback can take ownership.
+class VideoPlayerRoute extends PageRouteBuilder<bool> {
+  VideoPlayerRoute({required WidgetBuilder builder})
+    : super(
+        settings: const RouteSettings(name: kVideoPlayerRouteName),
+        pageBuilder: (context, _, _) => builder(context),
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+      );
+
+  // Reserve at route commit, not screen initState: another launch can arrive
+  // before the first frame. Navigator identity also isolates profile sessions.
+  static final _activeRoutes = Expando<VideoPlayerRoute>();
+  bool get isReplacingWithVideo => _isReplacingWithVideo;
+  bool _isReplacingWithVideo = false;
+
+  Future<bool?> push(NavigatorState navigator, {bool replaceCurrent = false}) {
+    final previous = _activeRoutes[navigator];
+    final replacingVideo = previous != null && previous.isActive;
+    if (replacingVideo) previous._isReplacingWithVideo = true;
+
+    final Future<bool?> result;
+    if (replacingVideo && !previous.isCurrent) {
+      // A covering settings/detail route is not part of the player session.
+      // Remove the exact old player, then put the new one above the cover.
+      navigator.removeRoute(previous, true);
+      result = navigator.push<bool>(this);
+    } else if (replacingVideo || replaceCurrent) {
+      result = navigator.pushReplacement<bool, bool>(this, result: true);
+    } else {
+      result = navigator.push<bool>(this);
+    }
+    _activeRoutes[navigator] = this;
+    return result;
+  }
+
+  @override
+  void dispose() {
+    final owner = navigator;
+    if (owner != null && identical(_activeRoutes[owner], this)) _activeRoutes[owner] = null;
+    super.dispose();
+  }
 }
 
 enum VideoPlayerRouteKind { vod, liveTv }
@@ -438,7 +471,7 @@ Future<bool?> navigateToVideoPlayer(
       return null;
     }
 
-    final route = buildVideoPlayerRoute(
+    final route = VideoPlayerRoute(
       builder: (_) => VideoPlayerScreen(
         metadata: metadata,
         preferredAudioTrack: preferredAudioTrack,
@@ -457,7 +490,7 @@ Future<bool?> navigateToVideoPlayer(
       ),
     );
 
-    pushFuture = usePushReplacement ? navigator.pushReplacement<bool, bool>(route) : navigator.push<bool>(route);
+    pushFuture = route.push(navigator, replaceCurrent: usePushReplacement);
     launchObserver?.mark('opening');
   } finally {
     if (markedInFlight) {

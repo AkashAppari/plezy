@@ -364,15 +364,13 @@ void main() {
             final successorKey = GlobalKey<VideoPlayerScreenState>();
             final successorPlayer = _ExitPlayer();
             unawaited(
-              screen.navigator.currentState!.push(
-                buildVideoPlayerRoute(
-                  builder: (_) => VideoPlayerScreen(
-                    key: successorKey,
-                    metadata: testMediaItem(id: 'successor'),
-                    isOffline: true,
-                  ),
+              VideoPlayerRoute(
+                builder: (_) => VideoPlayerScreen(
+                  key: successorKey,
+                  metadata: testMediaItem(id: 'successor'),
+                  isOffline: true,
                 ),
-              ),
+              ).push(screen.navigator.currentState!),
             );
             await tester.pump();
             successorKey.currentState!.player = successorPlayer;
@@ -769,16 +767,14 @@ _pushExitScreen(
     ),
   );
   unawaited(
-    navigator.currentState!.push(
-      buildVideoPlayerRoute(
-        builder: (_) => VideoPlayerScreen(
-          key: key,
-          metadata: testMediaItem(id: 'exit-original', serverId: 'srv-1', backend: MediaBackend.jellyfin),
-          selectedQualityPreset: TranscodeQualityPreset.original,
-          watchTogetherLease: watchTogether?.capturePlaybackLease(),
-        ),
+    VideoPlayerRoute(
+      builder: (_) => VideoPlayerScreen(
+        key: key,
+        metadata: testMediaItem(id: 'exit-original', serverId: 'srv-1', backend: MediaBackend.jellyfin),
+        selectedQualityPreset: TranscodeQualityPreset.original,
+        watchTogetherLease: watchTogether?.capturePlaybackLease(),
       ),
-    ),
+    ).push(navigator.currentState!),
   );
   await tester.pump();
   key.currentState!.player = fakePlayer;

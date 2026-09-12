@@ -652,10 +652,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     return [for (final subscription in subscriptions) subscription.cancel()];
   }
 
-  /// Set just before this screen replaces itself with another player route
-  /// (the fallback pushReplacement paths). Dispose then skips the app-level
-  /// player-exit side effects because the replacement continues the session.
-  bool _isReplacingWithVideo = false;
+  VideoPlayerRoute? _videoPlayerRoute;
+  bool get _isReplacingWithVideo => _videoPlayerRoute?.isReplacingWithVideo ?? false;
   ScrubPreviewSource? _scrubPreviewSource;
 
   /// Live TV session state (tune identity, heartbeats, capture buffer,
@@ -1263,6 +1261,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    _videoPlayerRoute = route is VideoPlayerRoute ? route : null;
 
     // Update video filter when dependencies change (orientation, screen size, etc.)
     WidgetsBinding.instance.addPostFrameCallback((_) {
