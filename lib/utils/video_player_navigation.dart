@@ -25,6 +25,7 @@ import '../services/playback_launch_observer.dart';
 import '../services/playback_coordinator.dart';
 import '../services/music/music_playback_service.dart';
 import 'app_logger.dart';
+import 'dialogs.dart';
 import 'global_key_utils.dart';
 import 'platform_detector.dart';
 import 'download_version_utils.dart';
@@ -40,7 +41,7 @@ const String kVideoPlayerRouteName = '/video_player';
 /// Commit through [push], not Navigator.push: a covered player still owns the
 /// native channel and must leave before another playback can take ownership.
 class VideoPlayerRoute extends PageRouteBuilder<bool> {
-  VideoPlayerRoute({required WidgetBuilder builder})
+  VideoPlayerRoute({required WidgetBuilder builder, this.watchTogetherLease})
     : super(
         settings: const RouteSettings(name: kVideoPlayerRouteName),
         pageBuilder: (context, _, _) => builder(context),
@@ -53,15 +54,28 @@ class VideoPlayerRoute extends PageRouteBuilder<bool> {
   static final _activeRoutes = Expando<VideoPlayerRoute>();
   bool get isReplacingWithVideo => _isReplacingWithVideo;
   bool _isReplacingWithVideo = false;
+  final WatchPlaybackLease? watchTogetherLease;
+
+  /// Consult the committed successor, not just the first replacement: several
+  /// launches can commit before the outgoing screen is disposed.
+  WatchPlaybackLease? get replacementWatchTogetherLease {
+    final owner = navigator;
+    if (!_isReplacingWithVideo || owner == null) return null;
+    final successor = _activeRoutes[owner];
+    return successor != this && successor?.isActive == true ? successor?.watchTogetherLease : null;
+  }
 
   Future<bool?> push(NavigatorState navigator, {bool replaceCurrent = false}) {
     final previous = _activeRoutes[navigator];
     final replacingVideo = previous != null && previous.isActive;
-    if (replacingVideo) previous._isReplacingWithVideo = true;
+    if (replacingVideo) {
+      previous._isReplacingWithVideo = true;
+      dismissDialogsOwnedBy(previous);
+    }
 
     final Future<bool?> result;
     if (replacingVideo && !previous.isCurrent) {
-      // A covering settings/detail route is not part of the player session.
+      // Unrelated covering routes are not part of the player session.
       // Remove the exact old player, then put the new one above the cover.
       navigator.removeRoute(previous, true);
       result = navigator.push<bool>(this);
@@ -472,6 +486,7 @@ Future<bool?> navigateToVideoPlayer(
     }
 
     final route = VideoPlayerRoute(
+      watchTogetherLease: playbackLease,
       builder: (_) => VideoPlayerScreen(
         metadata: metadata,
         preferredAudioTrack: preferredAudioTrack,
