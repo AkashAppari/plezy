@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_server_client.dart';
@@ -120,6 +121,38 @@ void main() {
     );
   });
 
+  testWidgets('a fatal player error ends the receipt failed at once, and Back keeps it failed', (tester) async {
+    final observer = PlaybackLaunchObserver(isCurrent: () => true);
+    final fakePlayer = _ObservedPlayer();
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      testBody: () async {
+        final screen = await _pushObservedScreen(tester, db: db, fakePlayer: fakePlayer, observer: observer);
+        expect(observer.snapshot()['stage'], 'playing');
+
+        fakePlayer.emitError(const PlayerError('Failed to open stream'));
+        await tester.pump();
+        // Terminal immediately — not via the route's exit, which a caller
+        // that cannot pop never reaches — and the route stays for Retry.
+        expect(observer.snapshot(), containsPair('stage', 'failed'));
+        expect(observer.snapshot(), containsPair('failure', {'code': 'playbackFailed'}));
+        expect(screen.key.currentState, isNotNull);
+        expect(find.widgetWithText(FilledButton, t.common.retry), findsOneWidget);
+
+        await tester.binding.handlePopRoute();
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
+        await tester.pump();
+        expect(screen.key.currentState, isNull);
+        expect(observer.snapshot(), containsPair('stage', 'failed'));
+        expect(observer.snapshot(), containsPair('failure', {'code': 'playbackFailed'}));
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+      },
+    );
+  });
+
   testWidgets('a genuine EOF completes the receipt at the duration and the exit keeps it', (tester) async {
     final observer = PlaybackLaunchObserver(isCurrent: () => true);
     final fakePlayer = _ObservedPlayer();
@@ -214,11 +247,15 @@ class _ObservedPlayer extends FakeSyncPlayer {
 
   int openCalls = 0;
   final _completedController = StreamController<bool>.broadcast();
+  final _errorController = StreamController<PlayerError>.broadcast();
 
   void emitCompleted(bool value) {
     setCompleted(value);
     _completedController.add(value);
   }
+
+  /// The backend gave up on the file (mpv `end-file reason=error`).
+  void emitError(PlayerError error) => _errorController.add(error);
 
   @override
   PlayerStreams get streams {
@@ -236,7 +273,7 @@ class _ObservedPlayer extends FakeSyncPlayer {
       tracks: base.tracks,
       track: base.track,
       log: base.log,
-      error: base.error,
+      error: _errorController.stream,
       audioDevice: base.audioDevice,
       audioDevices: base.audioDevices,
       bufferRanges: base.bufferRanges,
@@ -292,6 +329,7 @@ class _ObservedPlayer extends FakeSyncPlayer {
     if (disposed) return;
     await super.dispose(preserveDisplayMode: preserveDisplayMode);
     await _completedController.close();
+    await _errorController.close();
   }
 }
 
