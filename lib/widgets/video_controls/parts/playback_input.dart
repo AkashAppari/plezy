@@ -895,6 +895,11 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   /// Handle long-press start - activate 2x speed
   void _handleLongPressStart() {
     if (!widget.canControl || widget.isLive) return;
+    // One hold, three detectors (the full-screen surface, the skip zones, the
+    // controls overlay). A second one re-snapshotting the live rate would store
+    // the 2.0 this call already applied, and the restore would then write 2.0
+    // back instead of the rate the viewer was on.
+    if (_isLongPressing) return;
 
     _setControlsState(() {
       _isLongPressing = true;
@@ -919,6 +924,30 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   }
 
   void _handleLongPressCancel() => _handleLongPressEnd();
+
+  /// End a live 2x hold from outside the gesture callbacks — a pointer release,
+  /// a window blur, a lifecycle interruption, PiP, or teardown. Idempotent: any
+  /// number of these may fire for one hold, and most of them do.
+  void _endLongPressHold() {
+    _longPressPointer = null;
+    _handleLongPressEnd();
+  }
+
+  /// End the hold when the pointer that started it lifts or is cancelled. The
+  /// root Listener outlives every subtree a hold straddles, so it still sees the
+  /// release after the recognizer that owned the gesture has been unmounted and
+  /// stopped reporting it.
+  void _endLongPressHoldForPointer(int pointer) {
+    if (_longPressPointer != pointer) return;
+    _endLongPressHold();
+  }
+
+  /// Lifecycle interruption: hide, pause and inactive can all swallow the
+  /// button-up that ends a 2x hold, so it ends with the edge-adjustment cancel.
+  void _handleAppLifecycleInterruption() {
+    _cancelEdgeAdjustmentGesture();
+    _endLongPressHold();
+  }
 
   /// Build the visual indicator for long-press 2x speed.
   /// Manual (persistent for duration of press) — separate from the stream-driven
