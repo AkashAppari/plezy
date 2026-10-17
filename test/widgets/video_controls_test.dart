@@ -1,13 +1,16 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 
-import 'package:flutter/gestures.dart' show kLongPressTimeout;
+import 'package:drift/native.dart';
+import 'package:flutter/gestures.dart' show kLongPressTimeout, kPrimaryButton, PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:window_manager/window_manager.dart';
+import 'package:plezy/database/app_database.dart';
 import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_source_info.dart';
@@ -15,6 +18,8 @@ import 'package:plezy/media/media_version.dart';
 import 'package:plezy/models/shader_preset.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/services/playback_subtitle_resolver.dart';
+import 'package:plezy/services/pip_service.dart';
+import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/video_volume_controller.dart';
@@ -37,6 +42,7 @@ import 'package:plezy/widgets/video_controls/widgets/video_timeline_bar.dart';
 
 import '../test_helpers/watch_together_fakes.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/player_streams.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/theme.dart';
 
@@ -2335,6 +2341,207 @@ void main() {
       semantics.dispose();
     });
   });
+
+  // The hold-to-2x gesture writes 2.0 and only a gesture callback writes the
+  // pre-hold rate back, so any path that retires the controls subtree — PiP —
+  // or loses the button-up entirely — a release outside the window — left the
+  // player at 2x until some unrelated click or a settings change cleared it.
+  group('long-press 2x hold', () {
+    const windowChannel = MethodChannel('window_manager');
+    const macWindowChannel = MethodChannel('com.plezy/window_utils');
+    const surface = Size(1280, 720);
+    const videoCentre = Offset(640, 360);
+
+    late SettingsService settings;
+    late _FakeSyncPlayer player;
+    late PlayerChromeController chrome;
+    late PlayerToastController toast;
+    late VideoVolumeController volume;
+    late PlaybackStateProvider playbackState;
+    late WatchTogetherProvider watchTogether;
+    late AppDatabase database;
+    late ValueNotifier<bool> hasFirstFrame;
+
+    setUp(() async {
+      LocaleSettings.setLocaleSync(AppLocale.en);
+      await initializeDateFormatting('en');
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      settings = await SettingsService.getInstance();
+
+      TvDetectionService.debugSetAppleTVOverride(false);
+      PlatformDetector.debugSetIsDesktopOSOverride(true);
+
+      // Neither platform side exists under the test binding; unanswered calls
+      // from the desktop branch of initState would leave futures dangling.
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(windowChannel, (
+        call,
+      ) async {
+        return switch (call.method) {
+          'isAlwaysOnTop' || 'isMaximized' => false,
+          _ => null,
+        };
+      });
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(macWindowChannel, (
+        call,
+      ) async {
+        return call.method == 'isFullscreen' ? false : null;
+      });
+
+      database = AppDatabase.forTesting(NativeDatabase.memory());
+      player = _FakeSyncPlayer();
+      chrome = PlayerChromeController(initiallyVisible: true);
+      toast = PlayerToastController();
+      volume = VideoVolumeController(player: player, settings: settings, initialVolume: 100);
+      playbackState = PlaybackStateProvider();
+      watchTogether = WatchTogetherProvider();
+      hasFirstFrame = ValueNotifier<bool>(true);
+      PipService().isPipActive.value = false;
+    });
+
+    tearDown(() async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(windowChannel, null);
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        macWindowChannel,
+        null,
+      );
+      PipService().isPipActive.value = false;
+      TvDetectionService.debugSetAppleTVOverride(null);
+      PlatformDetector.debugSetIsDesktopOSOverride(null);
+      hasFirstFrame.dispose();
+      volume.dispose();
+      playbackState.dispose();
+      watchTogether.dispose();
+      chrome.dispose();
+      toast.dispose();
+      await database.close();
+    });
+
+    Future<void> pumpControls(WidgetTester tester) async {
+      tester.view.physicalSize = surface;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            Provider<AppDatabase>.value(value: database),
+            ChangeNotifierProvider<PlaybackStateProvider>.value(value: playbackState),
+            ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogether),
+          ],
+          child: MaterialApp(
+            theme: ThemeData(platform: TargetPlatform.linux, extensions: const [testMonoTokens]),
+            home: Scaffold(
+              body: PlexVideoControls(
+                player: player,
+                volumeController: volume,
+                metadata: testMediaItem(id: 'long-press-2x', title: 'Long Press'),
+                toastController: toast,
+                chromeController: chrome,
+                hasFirstFrame: hasFirstFrame,
+                canNavigateMediaItems: false,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      // Keep the chrome up for the whole test; flutter_test also rejects a
+      // pending auto-hide timer at teardown.
+      chrome.cancelAutoHide();
+    }
+
+    /// Presses the video and holds past [kLongPressTimeout], so the 2x hold is
+    /// live on return.
+    Future<TestGesture> startHold(WidgetTester tester) async {
+      final gesture = await tester.startGesture(videoCentre, kind: PointerDeviceKind.mouse, buttons: kPrimaryButton);
+      await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+      return gesture;
+    }
+
+    Future<void> unmountControls(WidgetTester tester) => tester.pumpWidget(const SizedBox.shrink());
+
+    /// Releasing the pointer re-arms the paused auto-hide timer; flutter_test
+    /// rejects a timer that outlives the test.
+    Future<void> releasePointer(WidgetTester tester, TestGesture gesture) async {
+      await gesture.up();
+      await tester.pump();
+      chrome.cancelAutoHide();
+    }
+
+    testWidgets('a hold PiP strands on the controls still restores the rate', (tester) async {
+      await pumpControls(tester);
+      final gesture = await startHold(tester);
+      expect(player.rateWrites, [2.0], reason: 'the hold applies 2x');
+
+      // PiP replaces the whole controls subtree with a placeholder — gesture
+      // detectors and the pointer Listener included — so no button-up can reach
+      // the hold again.
+      PipService().isPipActive.value = true;
+      await tester.pump();
+      expect(find.byType(DesktopVideoControls), findsNothing, reason: 'the controls subtree is gone');
+
+      expect(
+        player.rateWrites.last,
+        1.0,
+        reason: 'the rate is restored before the subtree that owns the hold disappears',
+      );
+
+      await releasePointer(tester, gesture);
+      await unmountControls(tester);
+    });
+
+    testWidgets('the button-up ends the hold when the overlay recognizer is unmounted', (tester) async {
+      await pumpControls(tester);
+      final gesture = await startHold(tester);
+      expect(player.rateWrites, [2.0], reason: 'the hold applies 2x');
+
+      // Nothing holds the chrome open for a press on the video itself, so it can
+      // fade out under the pointer and retire the overlay detector that owns the
+      // long press. The release still reaches the root Listener, but no longer a
+      // recognizer — the case a gesture callback cannot cover.
+      chrome.hide(ignoreHolds: true);
+      await tester.pumpAndSettle();
+      expect(find.byType(DesktopVideoControls), findsNothing, reason: 'the overlay detector is unmounted');
+
+      await releasePointer(tester, gesture);
+
+      expect(player.rateWrites.last, 1.0, reason: 'the release ends the hold from the pointer listener itself');
+      await unmountControls(tester);
+    });
+
+    testWidgets('losing the window ends the hold instead of leaving 2x behind', (tester) async {
+      await pumpControls(tester);
+      final gesture = await startHold(tester);
+      expect(player.rateWrites, [2.0], reason: 'the hold applies 2x');
+
+      // A release that lands outside the window (or inside an OS modal loop)
+      // delivers no button-up at all: the blur is the last signal the app gets.
+      (tester.state(find.byType(PlexVideoControls)) as WindowListener).onWindowBlur();
+      await tester.pump();
+
+      expect(player.rateWrites.last, 1.0, reason: 'the blur ends the hold');
+
+      await releasePointer(tester, gesture);
+      await unmountControls(tester);
+    });
+
+    testWidgets('an app going inactive ends the hold', (tester) async {
+      await pumpControls(tester);
+      final gesture = await startHold(tester);
+      expect(player.rateWrites, [2.0], reason: 'the hold applies 2x');
+
+      // Same swallow as the blur, one layer up: the app never sees the button-up.
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+
+      expect(player.rateWrites.last, 1.0, reason: 'going inactive ends the hold');
+
+      await releasePointer(tester, gesture);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await unmountControls(tester);
+    });
+  });
 }
 
 KeyDownEvent _keyDown(LogicalKeyboardKey key) {
@@ -2390,7 +2597,26 @@ class _FakeSyncPlayer implements Player {
   final Future<void> Function(String name, String value)? onSetProperty;
 
   @override
-  PlayerState get state => PlayerState();
+  String get playerType => 'mpv';
+
+  /// Every rate the controls asked this player for, in order. The hold-to-2x
+  /// regression is only fixed if the last write is the pre-hold rate.
+  final List<double> rateWrites = [];
+
+  /// The rate a real player would now be applying, so a long-press snapshot
+  /// reads back what was last written rather than a constant.
+  double get rate => rateWrites.isEmpty ? 1.0 : rateWrites.last;
+
+  @override
+  PlayerState get state => PlayerState(rate: rate);
+
+  @override
+  PlayerStreams get streams => emptyPlayerStreams();
+
+  @override
+  Future<void> setRate(double rate) async {
+    rateWrites.add(rate);
+  }
 
   @override
   Future<void> setProperty(String name, String value) {
