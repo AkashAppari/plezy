@@ -5,6 +5,7 @@ import '../../media/ids.dart';
 
 import 'package:flutter/gestures.dart'
     show
+        kLongPressTimeout,
         PointerCancelEvent,
         PointerDeviceKind,
         PointerDownEvent,
@@ -893,6 +894,17 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   /// Pointer that can own the 2x hold, recorded from the root Listener's
   /// pointer-down so a release the gesture recognizer never sees still ends it.
   int? _longPressPointer;
+
+  /// How long the play/pause hotkey must stay down before it turns into the 2x
+  /// hold. Matches the surface's long-press delay, so the keyboard and the
+  /// mouse read as the same gesture.
+  static const _keyHoldDelay = kLongPressTimeout;
+
+  /// Keyboard twin of [_longPressPointer]: the hold's timer, whether a press is
+  /// in flight, and whether that press has already turned into a hold.
+  Timer? _keyHoldTimer;
+  bool _keyHoldArmed = false;
+  bool _keyHoldEngaged = false;
   bool _showSpeedIndicator = false;
   StreamSubscription<double>? _rateSubscription;
   double? _lastReportedRate;
@@ -1121,6 +1133,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _focusNode.dispose();
     _skipMarkerFocusNode.dispose();
     _fallbackHasFirstFrame.dispose();
+    // A keyboard hold cannot restore through _cancelKeyHold during teardown
+    // (it drives setState); clear its flags and let the direct restore below
+    // put the rate back.
+    _keyHoldTimer?.cancel();
+    _keyHoldTimer = null;
+    _keyHoldArmed = false;
+    _keyHoldEngaged = false;
     // Restore original rate if long-press was active when disposed. The direct
     // player write stays: routing through onRateRequested (Watch Together) would
     // touch a room that is going away. The hold state is cleared with it so no
@@ -1201,8 +1220,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   /// reaches Flutter — so a 2x hold has to end here. Without this the rate
   /// stayed at 2.0 until some later click or settings change happened to clear
   /// it.
+  /// A keyboard hold has no release to wait for once the window stops taking
+  /// key events, so it ends with the pointer hold.
   @override
-  void onWindowBlur() => _endLongPressHold();
+  void onWindowBlur() {
+    _cancelKeyHold();
+    _endLongPressHold();
+  }
 
   @override
   Widget build(BuildContext context) {

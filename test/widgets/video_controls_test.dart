@@ -2541,6 +2541,75 @@ void main() {
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await unmountControls(tester);
     });
+
+    testWidgets('a tap on the play/pause key still toggles playback', (tester) async {
+      await pumpControls(tester);
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.space);
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.space);
+      await tester.pump();
+
+      expect(player.transport, ['playOrPause'], reason: 'a short press toggles, on the release');
+      expect(player.rateWrites, isEmpty, reason: 'a tap must not touch the rate');
+      chrome.cancelAutoHide();
+    });
+
+    testWidgets('holding the play/pause key runs 2x until it is released', (tester) async {
+      await pumpControls(tester);
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.space);
+      await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+
+      expect(player.rateWrites, [2.0], reason: 'the hold applies 2x');
+
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.space);
+      await tester.pump();
+
+      expect(player.rateWrites.last, 1.0, reason: 'the release restores the rate');
+      expect(player.transport, isEmpty, reason: 'a hold must never toggle playback');
+      chrome.cancelAutoHide();
+    });
+
+    testWidgets('auto-repeat does not re-snapshot the rate mid-hold', (tester) async {
+      await pumpControls(tester);
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.space);
+      await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+      for (var i = 0; i < 3; i++) {
+        await tester.sendKeyRepeatEvent(LogicalKeyboardKey.space);
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+
+      expect(player.rateWrites, [2.0], reason: 'one hold, one rate snapshot');
+
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.space);
+      await tester.pump();
+
+      expect(player.rateWrites.last, 1.0, reason: 'the restore still uses the pre-hold rate');
+      expect(player.transport, isEmpty);
+      chrome.cancelAutoHide();
+    });
+
+    testWidgets('a keyboard hold does not survive the window losing focus', (tester) async {
+      await pumpControls(tester);
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.space);
+      await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+      expect(player.rateWrites, [2.0], reason: 'the hold applies 2x');
+
+      // The key-up is delivered to another window, so the app never sees it.
+      (tester.state(find.byType(PlexVideoControls)) as WindowListener).onWindowBlur();
+      await tester.pump();
+
+      expect(player.rateWrites.last, 1.0, reason: 'the blur ends the hold');
+
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.space);
+      await tester.pump();
+
+      expect(player.transport, isEmpty, reason: 'the stale release must not toggle playback');
+      chrome.cancelAutoHide();
+    });
   });
 }
 
@@ -2602,6 +2671,19 @@ class _FakeSyncPlayer implements Player {
   /// Every rate the controls asked this player for, in order. The hold-to-2x
   /// regression is only fixed if the last write is the pre-hold rate.
   final List<double> rateWrites = [];
+
+  /// Play/pause requests in order. A tap on the play/pause key must still
+  /// toggle; only a held press may turn into 2x.
+  final List<String> transport = [];
+
+  @override
+  Future<void> play() async => transport.add('play');
+
+  @override
+  Future<void> pause() async => transport.add('pause');
+
+  @override
+  Future<void> playOrPause() async => transport.add('playOrPause');
 
   /// The rate a real player would now be applying, so a long-press snapshot
   /// reads back what was last written rather than a constant.
