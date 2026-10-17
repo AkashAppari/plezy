@@ -833,12 +833,15 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
 
     // Disk-backed forward cache. mpv's stock ~150 MiB RAM cache only banks a
     // couple of minutes, so pausing to wait out a bad connection lost the
-    // readahead on resume; see lib/mpv/disk_cache.dart for the values and the
-    // direct-play-only rule. Written on every open — enabled or reset — since
-    // the player is reused and must not carry a disk cache into a local file or
-    // a live stream.
+    // readahead on resume; see lib/mpv/disk_cache.dart for the values. Written
+    // on every open — enabled or reset — since the player is reused and must
+    // not carry a disk cache into a local file or a live stream.
+    //
+    // Transcodes are included on purpose: a remote server reached through Plex
+    // Relay answers with a transcode, and pulling ahead still makes the server
+    // produce more, which is exactly the "pause and let it download" case.
     try {
-      final cacheDir = mpvDiskCacheSupported && isNetworkVod && !isTranscoding ? mpvDiskCacheDirOrNull : null;
+      final cacheDir = mpvDiskCacheSupported && isNetworkVod ? mpvDiskCacheDirOrNull : null;
       if (cacheDir != null) {
         appLogger.i('Disk cache: ${kMpvDiskCacheReadaheadSecs ~/ 60}min readahead at $cacheDir');
       }
