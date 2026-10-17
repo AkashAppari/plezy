@@ -33,8 +33,67 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     return null;
   }
 
-  TransportCommand? _playPauseActivation(KeyEvent event) {
-    return event is KeyDownEvent ? _transportCommandFor(event) : null;
+  /// Whether this event is the software play/pause hotkey, the only key that
+  /// holds into 2x. Hardware media transport keys keep toggling on the press.
+  bool _isHoldablePlayPauseKey(KeyEvent event) =>
+      classifyTransportKey(event.logicalKey) == null && _transportCommandFor(event) != null;
+
+  /// Live TV and a non-controllable player have nothing to hold.
+  bool get _canKeyHold => widget.canControl && !widget.isLive;
+
+  /// Tap toggles play/pause, holding gives 2x — the keyboard twin of the
+  /// surface's long press. Down, auto-repeat and up are all consumed, so a
+  /// half-delivered press cannot leak to the route below.
+  ///
+  /// The toggle moves to the release: a press that is still undecided at the
+  /// hold delay is a hold, and toggling on the way down would pause the film
+  /// the viewer meant to skim.
+  bool _handlePlayPauseKey(KeyEvent event, TransportCommand command) {
+    // Hardware media keys and a player that cannot be controlled keep the
+    // instant toggle on the press.
+    if (!_canKeyHold || !_isHoldablePlayPauseKey(event)) {
+      if (event is KeyDownEvent) unawaited(_playOrPause(command: command));
+      return true;
+    }
+    if (event is KeyDownEvent) {
+      _keyHoldTimer?.cancel();
+      _keyHoldArmed = true;
+      _keyHoldTimer = Timer(_PlexVideoControlsState._keyHoldDelay, () {
+        _keyHoldTimer = null;
+        // Reuses the pointer hold, so the rate snapshot, the 2x badge and the
+        // restore all behave exactly as they do for the mouse.
+        _handleLongPressStart();
+        _keyHoldEngaged = _isLongPressing;
+      });
+      return true;
+    }
+    if (event is KeyUpEvent) {
+      if (!_keyHoldArmed) return true;
+      _keyHoldArmed = false;
+      _keyHoldTimer?.cancel();
+      _keyHoldTimer = null;
+      if (_keyHoldEngaged) {
+        _keyHoldEngaged = false;
+        _endLongPressHold();
+      } else {
+        unawaited(_playOrPause(command: TransportCommand.toggle));
+      }
+      return true;
+    }
+    // Auto-repeat belongs to the press that is already running.
+    return true;
+  }
+
+  /// Drop a half-armed or live keyboard hold whose release never arrived —
+  /// window blur, a lifecycle interruption, or teardown. Idempotent.
+  void _cancelKeyHold() {
+    _keyHoldTimer?.cancel();
+    _keyHoldTimer = null;
+    _keyHoldArmed = false;
+    if (_keyHoldEngaged) {
+      _keyHoldEngaged = false;
+      _endLongPressHold();
+    }
   }
 
   /// The player surface's Select action.
@@ -192,11 +251,12 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
 
     // Handle play/pause globally - works regardless of focus. The screen
     // announces the accepted command with a transient disc, so the chrome
-    // stays down and subtitles stay readable (#1676).
-    final globalCommand = _playPauseActivation(event);
+    // stays down and subtitles stay readable (#1676). The software hotkey goes
+    // through the tap/hold state machine (hold = 2x); hardware media keys keep
+    // toggling on the press.
+    final globalCommand = _transportCommandFor(event);
     if (globalCommand != null) {
-      unawaited(_playOrPause(command: globalCommand));
-      return true; // Event handled, stop propagation
+      return _handlePlayPauseKey(event, globalCommand);
     }
 
     // Fallback: handle all other shortcuts when focus has drifted away
@@ -292,8 +352,8 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     // The chrome deliberately stays down — the screen announces the accepted
     // command with a centred transient disc instead (#1676).
     if (transportCommand != null) {
-      if ((videoPlayerNavigationPreference() || isMobile) && event is KeyDownEvent) {
-        unawaited(_playOrPause(command: transportCommand));
+      if (videoPlayerNavigationPreference() || isMobile) {
+        _handlePlayPauseKey(event, transportCommand);
       }
       return KeyEventResult.handled;
     }
