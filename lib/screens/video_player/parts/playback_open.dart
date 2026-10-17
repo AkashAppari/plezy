@@ -840,11 +840,17 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     try {
       final cacheDir = mpvDiskCacheSupported && isNetworkVod && !isTranscoding ? mpvDiskCacheDirOrNull : null;
       if (cacheDir != null) {
-        appLogger.i('Disk cache: ${kMpvDiskCacheForwardBytes ~/ (1024 * 1024)}MiB forward at $cacheDir');
+        appLogger.i('Disk cache: ${kMpvDiskCacheReadaheadSecs ~/ 60}min readahead at $cacheDir');
       }
       final properties = cacheDir == null ? mpvDiskCacheDisableProperties() : mpvDiskCacheEnableProperties(cacheDir);
+      // Applied one key at a time: an unknown or unsupported property throws,
+      // and a single throw must not skip the rest of the tuning.
       for (final entry in properties.entries) {
-        await player.setProperty(entry.key, entry.value);
+        try {
+          await player.setProperty(entry.key, entry.value);
+        } catch (error) {
+          appLogger.w('Disk cache: mpv rejected ${entry.key}=${entry.value}', error: error);
+        }
       }
     } catch (error) {
       appLogger.w('Disk cache tuning failed; keeping the default RAM cache', error: error);
