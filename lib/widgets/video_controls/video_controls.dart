@@ -889,6 +889,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   /// when the screen swaps players.
   late VoidCallback _releaseSyncOffsetsListener;
   double? _rateBeforeLongPress;
+
+  /// Pointer that can own the 2x hold, recorded from the root Listener's
+  /// pointer-down so a release the gesture recognizer never sees still ends it.
+  int? _longPressPointer;
   bool _showSpeedIndicator = false;
   StreamSubscription<double>? _rateSubscription;
   double? _lastReportedRate;
@@ -978,8 +982,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _edgeAdjustmentLifecycleListener = AppLifecycleListener(
       onResume: _handleDeviceAdjustmentResume,
       onShow: _handleDeviceAdjustmentResume,
-      onHide: _cancelEdgeAdjustmentGesture,
-      onPause: _cancelEdgeAdjustmentGesture,
+      onHide: _handleAppLifecycleInterruption,
+      onPause: _handleAppLifecycleInterruption,
+      // An app losing the foreground never delivers the button-up that ends a
+      // 2x hold, so inactive ends it too.
+      onInactive: _endLongPressHold,
     );
     if (PlatformDetector.isDesktopOS()) {
       // Fullscreen chrome (the button icon, the macOS traffic lights) follows
@@ -1114,10 +1121,16 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _focusNode.dispose();
     _skipMarkerFocusNode.dispose();
     _fallbackHasFirstFrame.dispose();
-    // Restore original rate if long-press was active when disposed
+    // Restore original rate if long-press was active when disposed. The direct
+    // player write stays: routing through onRateRequested (Watch Together) would
+    // touch a room that is going away. The hold state is cleared with it so no
+    // stale flags outlive the teardown.
     if (_isLongPressing && _rateBeforeLongPress != null) {
       widget.player.setRate(_rateBeforeLongPress!);
     }
+    _isLongPressing = false;
+    _rateBeforeLongPress = null;
+    _longPressPointer = null;
     // Remove window listener and reset always-on-top if it was enabled
     if (PlatformDetector.isDesktopOS()) {
       windowManager.removeListener(this);
@@ -1148,6 +1161,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     if (isInPip) {
       widget.chromeController.hold(PlayerChromeHold.pip);
       _cancelEdgeAdjustmentGesture();
+      // PiP swaps the whole controls subtree — gesture detectors and the
+      // pointer Listener included — for a placeholder, so the hold's button-up
+      // can never arrive. Restore here or the viewer rides at 2x for the rest
+      // of the session.
+      _endLongPressHold();
     } else {
       widget.chromeController.release(PlayerChromeHold.pip);
     }
@@ -1178,6 +1196,14 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   // ignore: no-empty-block - required by WindowListener interface
   void onWindowResize() {}
 
+  /// Losing the window swallows a held mouse button's release — the release
+  /// lands outside it, or inside an OS modal loop, and no pointer event ever
+  /// reaches Flutter — so a 2x hold has to end here. Without this the rate
+  /// stayed at 2.0 until some later click or settings change happened to clear
+  /// it.
+  @override
+  void onWindowBlur() => _endLongPressHold();
+
   @override
   Widget build(BuildContext context) {
     final isMobile = PlatformDetector.isMobile(context) && !PlatformDetector.isTV();
@@ -1204,12 +1230,23 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
             // _handleGlobalKeyEvent.
             onPointerDown: (event) {
               _cancelAutoSkipFromUserInteraction();
+              // The press that can become a 2x hold. Captured here because this
+              // Listener sits outside every subtree a hold can outlive, so it
+              // still sees the release when the recognizer that owned the
+              // gesture has been unmounted.
+              _longPressPointer = event.pointer;
               if (isMobile) _handleTouchPointerDown(event);
             },
             onPointerHover: (_) => _cancelAutoSkipFromUserInteraction(),
             onPointerMove: isMobile ? _handleTouchPointerMove : null,
-            onPointerUp: isMobile ? _handleTouchPointerUp : null,
-            onPointerCancel: isMobile ? _handleTouchPointerCancel : null,
+            onPointerUp: (event) {
+              _endLongPressHoldForPointer(event.pointer);
+              if (isMobile) _handleTouchPointerUp(event);
+            },
+            onPointerCancel: (event) {
+              _endLongPressHoldForPointer(event.pointer);
+              if (isMobile) _handleTouchPointerCancel(event);
+            },
             onPointerSignal: _handlePointerSignal,
             onPointerPanZoomStart: (_) => _cancelAutoSkipFromUserInteraction(),
             child: MouseRegion(
