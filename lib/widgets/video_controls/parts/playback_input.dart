@@ -946,6 +946,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   /// button-up that ends a 2x hold, so it ends with the edge-adjustment cancel.
   void _handleAppLifecycleInterruption() {
     _cancelEdgeAdjustmentGesture();
+    _cancelKeyHold();
     _endLongPressHold();
   }
 
