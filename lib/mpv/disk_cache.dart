@@ -5,15 +5,25 @@ import 'package:path_provider/path_provider.dart';
 
 /// Disk-backed forward cache for mpv playback on desktop.
 ///
-/// mpv's stock demuxer cache is ~150 MiB in RAM — a couple of minutes at
-/// direct-play bitrates. Pausing to wait out a bad connection therefore banks
-/// almost nothing and resuming re-fetches from the server, which is the
-/// complaint this exists to fix: a pause should be able to pull the rest of
-/// the episode down while there is time to spare.
+/// mpv's stock demuxer cache is memory-only and bounded by
+/// `--demuxer-max-bytes` (150 MiB) and `--demuxer-readahead-secs` (20 s), so
+/// pausing to wait out a bad connection banks a couple of minutes at best and
+/// resuming re-fetches from the server. This keeps pulling the stream down
+/// while playback is paused, on disk instead of in RAM.
 ///
-/// Only direct play qualifies. A transcode stream is produced by the server on
-/// demand, so reading ahead of it buys nothing, and a paused transcode session
-/// can be reaped server-side anyway.
+/// Semantics that matter, straight from mpv's manual:
+///   * `--cache-on-disk` writes packet *data* to a temporary file and is
+///     append-only. It is not bounded by `--demuxer-max-bytes`.
+///   * While it is on, `--demuxer-max-bytes` and `--demuxer-max-back-bytes`
+///     bound the *metadata* only (roughly 50 MB per hour of media), so the
+///     stock values are left alone.
+///   * What actually bounds how far ahead mpv reads is
+///     `--demuxer-readahead-secs`, which is what this module raises.
+///   * The cache file is deleted when the media is closed.
+///   * `--cache-on-disk` is ignored unless `--cache` is active.
+///
+/// Only direct play qualifies: a transcode stream is produced by the server on
+/// demand, so reading ahead of it buys little and can keep a transcoder busy.
 ///
 /// The values are applied as mpv properties before open() from
 /// `_applyNetworkStreamTuning` in `parts/playback_open.dart`. Every key is
@@ -21,25 +31,15 @@ import 'package:path_provider/path_provider.dart';
 /// player is reused across items and would otherwise carry a disk cache into a
 /// local file or a live stream.
 
-/// mpv's documented default forward demuxer cache (150 MiB).
-const String kMpvDefaultDemuxerMaxBytes = '157286400';
-
-/// mpv's documented default backward demuxer cache (75 MiB).
-const String kMpvDefaultDemuxerMaxBackBytes = '78643200';
-
-/// mpv's default demuxer readahead.
+/// mpv's default demuxer readahead, restored for opens that must not cache.
 const String kMpvDefaultReadaheadSecs = '20';
 
-/// Forward cache ceiling: enough to bank a full 4K episode at streaming
-/// bitrates, bounded so a fast connection cannot fill the disk unbounded.
-const int kMpvDiskCacheForwardBytes = 2 * 1024 * 1024 * 1024;
-
-/// Backward cache, so a rewind after a long pause does not re-fetch either.
-const int kMpvDiskCacheBackBytes = 512 * 1024 * 1024;
-
-/// Readahead ceiling in seconds. The byte caps above govern in practice; this
-/// only stops a time-based default from cutting the cache short.
-const int kMpvDiskCacheReadaheadSecs = 3600;
+/// How far ahead mpv may read while the disk cache is on.
+///
+/// 30 minutes banks an entire episode for the bad-connection case this exists
+/// for, while still bounding the temporary file: a 20 Mbps direct-play stream
+/// tops out around 4.5 GB, and the file is deleted when playback closes.
+const int kMpvDiskCacheReadaheadSecs = 1800;
 
 /// Leftover cache files older than this are pruned when the directory is
 /// resolved. mpv deletes its own cache file on a clean shutdown; only a crash
@@ -76,30 +76,25 @@ void resetMpvDiskCacheDir() {
 /// Android and iOS keep their RAM cache and ExoPlayer buffer tiers.
 bool get mpvDiskCacheSupported => Platform.isWindows || Platform.isMacOS || Platform.isLinux;
 
-/// mpv properties that move the forward cache to disk in [cacheDir].
+/// mpv properties that move cached packets to disk in [cacheDir] and let mpv
+/// read far enough ahead for a pause to bank real media.
 Map<String, String> mpvDiskCacheEnableProperties(String cacheDir) => {
   'cache': 'yes',
   'cache-on-disk': 'yes',
-  'cache-dir': cacheDir,
-  'demuxer-max-bytes': '$kMpvDiskCacheForwardBytes',
-  'demuxer-max-back-bytes': '$kMpvDiskCacheBackBytes',
+  // The real option name: `cache-dir` does not exist in mpv and throws on set.
+  'demuxer-cache-dir': cacheDir,
   'demuxer-readahead-secs': '$kMpvDiskCacheReadaheadSecs',
-  // 0 = let the byte ceiling decide instead of a time limit.
-  'cache-secs': '0',
 };
 
 /// Properties that put every key in [mpvDiskCacheEnableProperties] back to
 /// mpv's default, for opens that must not inherit the disk cache.
 ///
-/// `cache` and `cache-dir` are deliberately left alone: `cache=auto` is mpv's
-/// own default and re-enabling it is not this code's business, and
-/// `cache-dir` is inert while `cache-on-disk=no`.
+/// `cache` is left alone: `cache=auto` is mpv's own default and re-enabling it
+/// is not this code's business. `demuxer-cache-dir` is only consulted while
+/// `cache-on-disk` is on, so it needs no reset.
 Map<String, String> mpvDiskCacheDisableProperties() => {
   'cache-on-disk': 'no',
-  'demuxer-max-bytes': kMpvDefaultDemuxerMaxBytes,
-  'demuxer-max-back-bytes': kMpvDefaultDemuxerMaxBackBytes,
   'demuxer-readahead-secs': kMpvDefaultReadaheadSecs,
-  'cache-secs': '0',
 };
 
 /// Resolves the directory mpv should use for the disk cache, creating it on
