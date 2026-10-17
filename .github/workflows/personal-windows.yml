@@ -1,0 +1,66 @@
+name: Personal Windows build
+
+# Personal fork build: Windows x64 only, unsigned, update checks off.
+# Upstream's build.yml stays untouched and is workflow_dispatch-only, so nothing
+# here affects edde746/plezy.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  # Pinned because windows/tool/install-patched-engine.ps1 asserts the SDK's
+  # engine revision; a different SDK installs an ABI-mismatched engine.
+  FLUTTER_VERSION: "3.47.1"
+
+jobs:
+  build-windows-x64:
+    name: Build Windows x64
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        shell: pwsh
+        run: flutter pub get --enforce-lockfile --no-example
+
+      - name: Install patched Flutter engine (DComp)
+        shell: pwsh
+        run: |
+          flutter precache --windows
+          .\windows\tool\install-patched-engine.ps1
+
+      - name: Build Windows x64
+        shell: pwsh
+        run: >
+          flutter build windows --release
+          --dart-define=ENABLE_UPDATE_CHECK=false
+          --dart-define=SENTRY_ENVIRONMENT=personal
+          --dart-define=GIT_COMMIT=${{ github.sha }}
+
+      - name: Verify bundle contents
+        shell: pwsh
+        run: |
+          $bundleDir = "build/windows/x64/runner/Release"
+          foreach ($file in @("plezy.exe", "flutter_windows.dll", "sqlite3.dll", "libmpv-2.dll", "data/app.so")) {
+            if (-not (Test-Path -LiteralPath (Join-Path $bundleDir $file))) {
+              throw "Missing from the bundle: $file"
+            }
+          }
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: plezy-personal-windows-x64
+          path: build/windows/x64/runner/Release/
