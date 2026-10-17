@@ -22,8 +22,10 @@ import 'package:path_provider/path_provider.dart';
 ///   * The cache file is deleted when the media is closed.
 ///   * `--cache-on-disk` is ignored unless `--cache` is active.
 ///
-/// Only direct play qualifies: a transcode stream is produced by the server on
-/// demand, so reading ahead of it buys little and can keep a transcoder busy.
+/// Applies to network video-on-demand on desktop; live streams and local files
+/// are left on mpv's defaults. Transcodes are included: a server reached over
+/// Plex Relay answers with a transcode, and reading ahead still makes the
+/// server produce more, which is the case this exists for.
 ///
 /// The values are applied as mpv properties before open() from
 /// `_applyNetworkStreamTuning` in `parts/playback_open.dart`. Every key is
