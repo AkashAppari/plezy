@@ -830,6 +830,25 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       );
     }
     await player.setProperty('stream-buffer-size', '${ringBytes ?? mpvDefaultStreamBufferBytes}');
+
+    // Disk-backed forward cache. mpv's stock ~150 MiB RAM cache only banks a
+    // couple of minutes, so pausing to wait out a bad connection lost the
+    // readahead on resume; see lib/mpv/disk_cache.dart for the values and the
+    // direct-play-only rule. Written on every open — enabled or reset — since
+    // the player is reused and must not carry a disk cache into a local file or
+    // a live stream.
+    try {
+      final cacheDir = mpvDiskCacheSupported && isNetworkVod && !isTranscoding ? mpvDiskCacheDirOrNull : null;
+      if (cacheDir != null) {
+        appLogger.i('Disk cache: ${kMpvDiskCacheForwardBytes ~/ (1024 * 1024)}MiB forward at $cacheDir');
+      }
+      final properties = cacheDir == null ? mpvDiskCacheDisableProperties() : mpvDiskCacheEnableProperties(cacheDir);
+      for (final entry in properties.entries) {
+        await player.setProperty(entry.key, entry.value);
+      }
+    } catch (error) {
+      appLogger.w('Disk cache tuning failed; keeping the default RAM cache', error: error);
+    }
   }
 
   /// Open [videoUrl] on [player]: stream tuning → open → native subtitle style.
