@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// Disk-backed forward cache for mpv playback on desktop.
@@ -65,13 +64,6 @@ Future<void> warmMpvDiskCacheDir({Directory? root}) async {
   if (_warmStarted) return;
   _warmStarted = true;
   _cacheDir = await resolveMpvDiskCacheDir(root: root);
-}
-
-/// Clears the resolved directory so a test can warm against its own root.
-@visibleForTesting
-void resetMpvDiskCacheDir() {
-  _cacheDir = null;
-  _warmStarted = false;
 }
 
 /// Whether the disk cache applies here: desktop only, where mpv is the player.

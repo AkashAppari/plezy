@@ -73,11 +73,9 @@ void main() {
       root = Directory.systemTemp.createTempSync('plezy_disk_cache_test');
       originalPathProvider = PathProviderPlatform.instance;
       PathProviderPlatform.instance = FakePathProvider(root);
-      resetMpvDiskCacheDir();
     });
 
     tearDown(() {
-      resetMpvDiskCacheDir();
       PathProviderPlatform.instance = originalPathProvider;
       if (root.existsSync()) root.deleteSync(recursive: true);
     });
