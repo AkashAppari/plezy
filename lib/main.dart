@@ -98,6 +98,7 @@ import 'utils/navigation_transitions.dart';
 import 'utils/log_redaction_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'utils/android_exit_diagnostics.dart';
+import 'mpv/disk_cache.dart';
 import 'utils/storage_failure.dart';
 import 'services/base_shared_preferences_service.dart';
 import 'services/prefs_recovery.dart';
@@ -173,6 +174,10 @@ void _bootstrapApp() {
 
   // Off the critical path: the version label only decorates a diagnostic.
   unawaited(_primeDiagnosticsVersion());
+
+  // Off the critical path: the disk-backed mpv cache directory is resolved
+  // once here so the playback open path can read it synchronously.
+  unawaited(warmMpvDiskCacheDir());
 
   AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.runApp);
   runApp(

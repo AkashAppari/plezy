@@ -12,6 +12,7 @@ import 'package:os_media_controls/os_media_controls.dart';
 import 'package:provider/provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
+import '../mpv/disk_cache.dart';
 import '../mpv/mpv.dart';
 import '../mpv/player/platform/player_android.dart';
 import '../mpv/player/player_native.dart';
