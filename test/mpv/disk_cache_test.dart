@@ -8,29 +8,44 @@ import '../test_helpers/io_fakes.dart';
 
 void main() {
   group('mpv disk cache properties', () {
-    test('enabling moves the cache to disk and raises the ceilings', () {
+    test('enabling moves cached packets to disk and raises the readahead', () {
       final properties = mpvDiskCacheEnableProperties(r'C:\temp\plezy_mpv_cache');
 
+      // cache-on-disk is ignored unless the cache itself is on.
+      expect(properties['cache'], 'yes');
       expect(properties['cache-on-disk'], 'yes');
-      expect(properties['cache-dir'], r'C:\temp\plezy_mpv_cache');
-      expect(properties['demuxer-max-bytes'], '$kMpvDiskCacheForwardBytes');
-      expect(properties['demuxer-max-back-bytes'], '$kMpvDiskCacheBackBytes');
+      expect(properties['demuxer-cache-dir'], r'C:\temp\plezy_mpv_cache');
       expect(properties['demuxer-readahead-secs'], '$kMpvDiskCacheReadaheadSecs');
-      // Byte ceilings govern the size, not a time limit.
-      expect(properties['cache-secs'], '0');
     });
 
-    test('the forward ceiling is far above mpv\'s 150 MiB default', () {
-      expect(kMpvDiskCacheForwardBytes, greaterThan(1024 * 1024 * 1024));
-      expect(kMpvDiskCacheForwardBytes, greaterThan(int.parse(kMpvDefaultDemuxerMaxBytes)));
+    test('uses the real mpv option name for the cache directory', () {
+      // `cache-dir` is not an mpv option; setting it throws, which used to
+      // abort the rest of the tuning.
+      final properties = mpvDiskCacheEnableProperties('/tmp/cache');
+
+      expect(properties.containsKey('cache-dir'), isFalse);
+      expect(properties.containsKey('demuxer-cache-dir'), isTrue);
+    });
+
+    test('does not touch the demuxer byte limits', () {
+      // With cache-on-disk those bound packet *metadata*, not the cache file,
+      // so mpv's stock values are the right ones.
+      final properties = mpvDiskCacheEnableProperties('/tmp/cache');
+
+      expect(properties.containsKey('demuxer-max-bytes'), isFalse);
+      expect(properties.containsKey('demuxer-max-back-bytes'), isFalse);
+      expect(properties.containsKey('cache-secs'), isFalse);
+    });
+
+    test('readahead is far above mpv\'s 20 second default', () {
+      expect(kMpvDiskCacheReadaheadSecs, greaterThan(600));
+      expect(int.parse(kMpvDefaultReadaheadSecs), 20);
     });
 
     test('disabling restores mpv defaults and turns the disk cache off', () {
       final properties = mpvDiskCacheDisableProperties();
 
       expect(properties['cache-on-disk'], 'no');
-      expect(properties['demuxer-max-bytes'], kMpvDefaultDemuxerMaxBytes);
-      expect(properties['demuxer-max-back-bytes'], kMpvDefaultDemuxerMaxBackBytes);
       expect(properties['demuxer-readahead-secs'], kMpvDefaultReadaheadSecs);
     });
 
@@ -42,9 +57,10 @@ void main() {
 
       expect(
         enabled.keys.where((key) => !disabled.containsKey(key)),
-        // `cache` and `cache-dir` are intentionally left as-is: `cache=auto` is
-        // mpv's own default and `cache-dir` is inert with cache-on-disk=no.
-        unorderedEquals(['cache', 'cache-dir']),
+        // `cache` and `demuxer-cache-dir` are intentionally left as-is:
+        // `cache=auto` is mpv's own default and the cache directory is only
+        // consulted while cache-on-disk is on.
+        unorderedEquals(['cache', 'demuxer-cache-dir']),
       );
     });
   });
